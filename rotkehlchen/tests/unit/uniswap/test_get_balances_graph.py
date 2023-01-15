@@ -83,8 +83,8 @@ def test_pagination(
 
     @store_call_args
     def mock_response(
-        *args,  # pylint: disable=unused-argument
-        **kwargs,
+            *args,  # pylint: disable=unused-argument
+            **kwargs,
     ):
         return next(get_response)
 

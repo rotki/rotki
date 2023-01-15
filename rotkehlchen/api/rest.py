@@ -1335,10 +1335,10 @@ class RestAPI():
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     def user_change_password(
-        self,
-        name: str,
-        current_password: str,
-        new_password: str,
+            self,
+            name: str,
+            current_password: str,
+            new_password: str,
     ) -> Response:
         result_dict: dict[str, Any] = {'result': None, 'message': ''}
 
@@ -1635,9 +1635,9 @@ class RestAPI():
         )
 
     def rebuild_assets_information(
-        self,
-        reset: Literal['soft', 'hard'],
-        ignore_warnings: bool,
+            self,
+            reset: Literal['soft', 'hard'],
+            ignore_warnings: bool,
     ) -> Response:
         msg = 'Invalid value for reset'
         if reset == 'soft':
@@ -1919,8 +1919,8 @@ class RestAPI():
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     def _add_xpub(
-        self,
-        xpub_data: 'XpubData',
+            self,
+            xpub_data: 'XpubData',
     ) -> dict[str, Any]:
         try:
             XpubManager(self.rotkehlchen.chains_aggregator).add_bitcoin_xpub(xpub_data=xpub_data)
@@ -1935,9 +1935,9 @@ class RestAPI():
         return OK_RESULT
 
     def add_xpub(
-        self,
-        xpub_data: 'XpubData',
-        async_query: bool,
+            self,
+            xpub_data: 'XpubData',
+            async_query: bool,
     ) -> Response:
         if async_query is True:
             return self._query_async(
@@ -1974,9 +1974,9 @@ class RestAPI():
         return OK_RESULT
 
     def delete_xpub(
-        self,
-        xpub_data: 'XpubData',
-        async_query: bool,
+            self,
+            xpub_data: 'XpubData',
+            async_query: bool,
     ) -> Response:
         if async_query is True:
             return self._query_async(
@@ -1997,8 +1997,8 @@ class RestAPI():
         return api_response(process_result(result_dict), status_code=status_code)
 
     def edit_xpub(
-        self,
-        xpub_data: 'XpubData',
+            self,
+            xpub_data: 'XpubData',
     ) -> Response:
         try:
             with self.rotkehlchen.data.db.user_write() as write_cursor:
@@ -3203,11 +3203,11 @@ class RestAPI():
         )
 
     def get_liquity_trove_events(
-        self,
-        async_query: bool,
-        reset_db_data: bool,  # pylint: disable=unused-argument
-        from_timestamp: Timestamp,
-        to_timestamp: Timestamp,
+            self,
+            async_query: bool,
+            reset_db_data: bool,  # pylint: disable=unused-argument
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
@@ -3220,11 +3220,11 @@ class RestAPI():
         )
 
     def get_liquity_stake_events(
-        self,
-        async_query: bool,
-        reset_db_data: bool,  # pylint: disable=unused-argument
-        from_timestamp: Timestamp,
-        to_timestamp: Timestamp,
+            self,
+            async_query: bool,
+            reset_db_data: bool,  # pylint: disable=unused-argument
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
@@ -3847,9 +3847,9 @@ class RestAPI():
         return _wrap_in_ok_result(info)
 
     def get_token_information(
-        self,
-        token_address: ChecksumEvmAddress,
-        async_query: bool,
+            self,
+            token_address: ChecksumEvmAddress,
+            async_query: bool,
     ) -> Response:
 
         if async_query is True:
@@ -4022,10 +4022,10 @@ class RestAPI():
         )
 
     def _get_avalanche_transactions(
-        self,
-        address: ChecksumEvmAddress,
-        from_timestamp: Timestamp,
-        to_timestamp: Timestamp,
+            self,
+            address: ChecksumEvmAddress,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> dict[str, Any]:
         avalanche = self.rotkehlchen.chains_aggregator.avalanche
         try:
@@ -4059,11 +4059,11 @@ class RestAPI():
         return {'result': result, 'message': msg, 'status_code': HTTPStatus.OK}
 
     def get_avalanche_transactions(
-        self,
-        async_query: bool,
-        address: ChecksumEvmAddress,
-        from_timestamp: Timestamp,
-        to_timestamp: Timestamp,
+            self,
+            async_query: bool,
+            address: ChecksumEvmAddress,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> Response:
         if async_query is True:
             return self._query_async(
@@ -4366,10 +4366,10 @@ class RestAPI():
         )
 
     def _query_kraken_staking_events(
-        self,
-        only_cache: bool,
-        query_filter: HistoryEventFilterQuery,
-        value_filter: HistoryEventFilterQuery,
+            self,
+            only_cache: bool,
+            query_filter: HistoryEventFilterQuery,
+            value_filter: HistoryEventFilterQuery,
     ) -> dict[str, Any]:
         history_events_db = DBHistoryEvents(self.rotkehlchen.data.db)
         table_filter = HistoryEventFilterQuery.make(
@@ -4637,9 +4637,9 @@ class RestAPI():
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def _get_ens_mappings(
-        self,
-        addresses: list[ChecksumEvmAddress],
-        ignore_cache: bool,
+            self,
+            addresses: list[ChecksumEvmAddress],
+            ignore_cache: bool,
     ) -> dict[str, Any]:
         mappings_to_send: dict[ChecksumEvmAddress, str] = {}
         try:
@@ -4675,9 +4675,9 @@ class RestAPI():
         return api_response(process_result(result_dict), status_code=status_code)
 
     def import_user_snapshot(
-        self,
-        balances_snapshot_file: Path,
-        location_data_snapshot_file: Path,
+            self,
+            balances_snapshot_file: Path,
+            location_data_snapshot_file: Path,
     ) -> Response:
         dbsnapshot = DBSnapshot(
             db_handler=self.rotkehlchen.data.db,

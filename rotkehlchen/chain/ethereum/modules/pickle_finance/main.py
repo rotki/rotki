@@ -48,8 +48,8 @@ class PickleFinance(EthereumModule):
         self.pickle = A_PICKLE.resolve_to_evm_token()
 
     def get_dill_balances(
-        self,
-        addresses: list[ChecksumEvmAddress],
+            self,
+            addresses: list[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, DillBalance]:
         """
         Query information for amount locked, pending rewards and time until unlock
@@ -120,8 +120,8 @@ class PickleFinance(EthereumModule):
         return api_output
 
     def balances_in_protocol(
-        self,
-        addresses: list[ChecksumEvmAddress],
+            self,
+            addresses: list[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, list['AssetBalance']]:
         """Queries all the pickles deposited and available to claim in the protocol"""
         dill_balances = self.get_dill_balances(addresses)

@@ -236,8 +236,8 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
         return can_query
 
     def rate_limited_in_last(
-        self,
-        seconds: Optional[int] = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME,
+            self,
+            seconds: Optional[int] = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME,
     ) -> bool:
         """Checks when we were last rate limited by CC and if it was within the given seconds"""
         if seconds is None:

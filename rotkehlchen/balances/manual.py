@@ -41,8 +41,8 @@ class ManuallyTrackedBalanceWithValue(NamedTuple):
 
 
 def get_manually_tracked_balances(
-    db: 'DBHandler',
-    balance_type: Optional[BalanceType] = None,
+        db: 'DBHandler',
+        balance_type: Optional[BalanceType] = None,
 ) -> list[ManuallyTrackedBalanceWithValue]:
     """Gets the manually tracked balances"""
     with db.conn.read_ctx() as cursor:

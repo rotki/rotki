@@ -152,8 +152,8 @@ def _write_location_data_csv_row(writer: 'csv.DictWriter', timestamp: Timestamp)
 
 
 def _write_balances_csv_row_with_invalid_headers(
-    writer: 'csv.DictWriter',
-    timestamp: Timestamp,
+        writer: 'csv.DictWriter',
+        timestamp: Timestamp,
 ) -> None:
     writer.writerow(
         {

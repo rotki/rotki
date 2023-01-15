@@ -333,7 +333,7 @@ def deserialize_trade_pair(pair: str) -> TradePair:
 
 
 def deserialize_asset_movement_category(
-    value: Union[str, HistoryEventType],
+        value: Union[str, HistoryEventType],
 ) -> AssetMovementCategory:
     """Takes a string and determines whether to accept it as an asset movement category
 

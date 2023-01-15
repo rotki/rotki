@@ -250,7 +250,7 @@ class EventsHistorian:
         return asset_movements, filter_total_found
 
     def query_history_events(
-        self,
+            self,
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery,
             only_cache: bool,

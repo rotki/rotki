@@ -23,9 +23,9 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def import_assets_from_file(
-    path: Path,
-    msg_aggregator: 'MessagesAggregator',
-    db_handler: 'DBHandler',
+        path: Path,
+        msg_aggregator: 'MessagesAggregator',
+        db_handler: 'DBHandler',
 ) -> None:
     """
     Import assets from the file at the defined path.
@@ -95,8 +95,8 @@ def import_assets_from_file(
 
 
 def export_assets_from_file(
-    dirpath: Optional[Path],
-    db_handler: 'DBHandler',
+        dirpath: Optional[Path],
+        db_handler: 'DBHandler',
 ) -> Path:
     """
     Creates a zip file with a json file containing the assets added by the user.

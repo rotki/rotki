@@ -375,8 +375,8 @@ class TaskManager():
         )]
 
     def get_base_entries_missing_prices(
-        self,
-        query_filter: HistoryEventFilterQuery,
+            self,
+            query_filter: HistoryEventFilterQuery,
     ) -> list[tuple[str, FVal, Asset, Timestamp]]:
         """
         Searches base entries missing usd prices that have not previously been checked in
@@ -398,8 +398,8 @@ class TaskManager():
         return db.rows_missing_prices_in_base_entries(filter_query=new_query_filter)
 
     def query_missing_prices_of_base_entries(
-        self,
-        entries_missing_prices: list[tuple[str, FVal, Asset, Timestamp]],
+            self,
+            entries_missing_prices: list[tuple[str, FVal, Asset, Timestamp]],
     ) -> None:
         """Queries missing prices for HistoryBaseEntry in database updating
         the price if it is found. Otherwise we add the id to the ignore list

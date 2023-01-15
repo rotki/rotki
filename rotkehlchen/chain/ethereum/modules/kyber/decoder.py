@@ -51,13 +51,13 @@ def _legacy_contracts_basic_info(tx_log: EvmTxReceiptLog) -> tuple[ChecksumEvmAd
 
 
 def _maybe_update_events_legacy_contrats(
-    decoded_events: list[HistoryBaseEntry],
-    sender: ChecksumEvmAddress,
-    source_asset: CryptoAsset,
-    destination_asset: CryptoAsset,
-    spent_amount: FVal,
-    return_amount: FVal,
-    notify_user: Callable[[HistoryBaseEntry, str], None],
+        decoded_events: list[HistoryBaseEntry],
+        sender: ChecksumEvmAddress,
+        source_asset: CryptoAsset,
+        destination_asset: CryptoAsset,
+        spent_amount: FVal,
+        return_amount: FVal,
+        notify_user: Callable[[HistoryBaseEntry, str], None],
 ) -> None:
     """
     Use the information from a trade transaction to modify the HistoryEvents from receive/send to

@@ -377,11 +377,11 @@ class CustomAsset(AssetWithNameAndType):
 
     @classmethod
     def initialize(
-        cls: type['CustomAsset'],
-        identifier: str,
-        name: str,
-        custom_asset_type: str,
-        notes: Optional[str] = None,
+            cls: type['CustomAsset'],
+            identifier: str,
+            name: str,
+            custom_asset_type: str,
+            notes: Optional[str] = None,
     ) -> 'CustomAsset':
         asset = CustomAsset(identifier=identifier)
         object.__setattr__(asset, 'asset_type', AssetType.CUSTOM_ASSET)

@@ -2068,11 +2068,11 @@ class LiquityTrovesHistoryResource(BaseMethodView):
     @require_premium_user(active_check=False)
     @use_kwargs(get_schema, location='json_and_query')
     def get(
-        self,
-        async_query: bool,
-        reset_db_data: bool,
-        from_timestamp: Timestamp,
-        to_timestamp: Timestamp,
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> Response:
         return self.rest_api.get_liquity_trove_events(
             async_query=async_query,
@@ -2089,11 +2089,11 @@ class LiquityStakingHistoryResource(BaseMethodView):
     @require_premium_user(active_check=False)
     @use_kwargs(get_schema, location='json_and_query')
     def get(
-        self,
-        async_query: bool,
-        reset_db_data: bool,
-        from_timestamp: Timestamp,
-        to_timestamp: Timestamp,
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> Response:
         return self.rest_api.get_liquity_stake_events(
             async_query=async_query,
@@ -2309,11 +2309,11 @@ class HistoricalAssetsPriceResource(BaseMethodView):
 
     @use_kwargs(put_schema, location='json')
     def put(
-        self,
-        from_asset: Asset,
-        to_asset: Asset,
-        price: Price,
-        timestamp: Timestamp,
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            price: Price,
+            timestamp: Timestamp,
     ) -> Response:
         return self.rest_api.add_manual_price(
             from_asset=from_asset,
@@ -2324,11 +2324,11 @@ class HistoricalAssetsPriceResource(BaseMethodView):
 
     @use_kwargs(patch_schema, location='json')
     def patch(
-        self,
-        from_asset: Asset,
-        to_asset: Asset,
-        price: Price,
-        timestamp: Timestamp,
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            price: Price,
+            timestamp: Timestamp,
     ) -> Response:
         return self.rest_api.edit_manual_price(
             from_asset=from_asset,
@@ -2343,10 +2343,10 @@ class HistoricalAssetsPriceResource(BaseMethodView):
 
     @use_kwargs(delete_schema)
     def delete(
-        self,
-        from_asset: Asset,
-        to_asset: Asset,
-        timestamp: Timestamp,
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
     ) -> Response:
         return self.rest_api.delete_manual_price(from_asset, to_asset, timestamp)
 
@@ -2434,11 +2434,11 @@ class AvalancheTransactionsResource(BaseMethodView):
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(
-        self,
-        async_query: bool,
-        address: ChecksumEvmAddress,
-        from_timestamp: Timestamp,
-        to_timestamp: Timestamp,
+            self,
+            async_query: bool,
+            address: ChecksumEvmAddress,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> Response:
         return self.rest_api.get_avalanche_transactions(
             async_query=async_query,
@@ -2646,9 +2646,9 @@ class AddressbookResource(BaseMethodView):
     @require_loggedin_user()
     @use_kwargs(post_delete_schema, location='json_and_view_args')
     def post(
-        self,
-        book_type: AddressbookType,
-        addresses: Optional[list[OptionalChainAddress]],
+            self,
+            book_type: AddressbookType,
+            addresses: Optional[list[OptionalChainAddress]],
     ) -> Response:
         return self.rest_api.get_addressbook_entries(
             book_type=book_type,

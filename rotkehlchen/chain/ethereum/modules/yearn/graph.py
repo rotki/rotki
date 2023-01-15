@@ -85,9 +85,9 @@ class YearnVaultsV2Graph:
         self.graph = Graph('https://api.thegraph.com/subgraphs/name/rareweasel/yearn-vaults-v2-subgraph-mainnet')  # noqa: E501
 
     def _process_event(
-        self,
-        events: list[dict[str, Any]],
-        event_type: Literal['deposit', 'withdraw'],
+            self,
+            events: list[dict[str, Any]],
+            event_type: Literal['deposit', 'withdraw'],
     ) -> list[YearnVaultEvent]:
         result = []
 
@@ -203,10 +203,10 @@ class YearnVaultsV2Graph:
         return result
 
     def get_all_events(
-        self,
-        addresses: list[EvmAddress],
-        from_block: int,
-        to_block: int,
+            self,
+            addresses: list[EvmAddress],
+            from_block: int,
+            to_block: int,
     ) -> dict[ChecksumEvmAddress, dict[str, list[YearnVaultEvent]]]:
 
         param_types = {

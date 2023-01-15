@@ -106,10 +106,10 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             raise NotImplementedError(f'AMM platform with location {self.location} not valid.')
 
     def _calculate_events_balances(
-        self,
-        address: ChecksumEvmAddress,
-        events: list[LiquidityPoolEvent],
-        balances: list[LiquidityPool],
+            self,
+            address: ChecksumEvmAddress,
+            events: list[LiquidityPoolEvent],
+            balances: list[LiquidityPool],
     ) -> list[LiquidityPoolEventsBalance]:
         """Given an address, its LP events and the current LPs participating in
         (`balances`), process each event (grouped by pool) aggregating the

@@ -210,11 +210,11 @@ class SignalSampler:
     """Signal based sampler."""
 
     def __init__(
-        self,
-        collector,
-        timer: int = TIMER,
-        interval: float = INTERVAL_SECONDS,
-        timer_signal: int = TIMER_SIGNAL,
+            self,
+            collector,
+            timer: int = TIMER,
+            interval: float = INTERVAL_SECONDS,
+            timer_signal: int = TIMER_SIGNAL,
     ) -> None:
 
         self.collector = collector
