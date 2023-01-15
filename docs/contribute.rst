@@ -411,6 +411,22 @@ Before each commit you should run the linting checks. They run ``flake8``, ``myp
 
 Do that by invoking ``make lint`` from the root directory of the project.
 
+Check and mock networking
+-----------------------------
+
+One of the biggest issues we have at rotki is that the backend testing is really slow. Currently the main reason for this is network calls. As rotki is a portfolio tracking and analytics tool, almost all of our tests are calling the network.
+
+We are in the process of trying to rectify this. For repetitive network calls that can be recorded we started trying to use vcr.py as stated in `this issue <https://github.com/rotki/rotki/issues/5373>`__. The problem with vcr.py is it is limited by the size of the cache in the CI. So still at places it would make sense to mock manually and keep any manual mocks we have.
+
+There is a nice way to run tests by disallowing network calls. This can help us detect if a test makes any non-mocked network calls. We are using the `pytest-socket <https://pypi.org/project/pytest-socket/>`__ module to achieve it.
+
+You can add ``--disable-socket`` to any pytest call and it will fail immediately for any network calls. You will probably need to also add ``--allow-hosts=127.0.0.1`` if the tests makes local network calls to the rotki api. This way you can discover all network calls and mock them.
+
+Mocking should happen with one of the following ways
+1. Using common fixtures for data mocking as started and shown `here <https://github.com/rotki/rotki/pull/5269`__. Read the PR description to get an idea.
+2. Using test specific mocking.
+3. For repeatable calls that would always return the same response from the network use the vcr.py approach.
+
 Alternative Linting and Static Analysis Tools
 ----------------------------------------------
 
