@@ -3,7 +3,7 @@ import logging
 from collections import defaultdict
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import Any, Iterator, TextIO
+from typing import Any, Iterator
 
 import requests
 
@@ -220,7 +220,7 @@ POAP_AIRDROPS = {
 }
 
 
-def get_airdrop_data(name: str, data_dir: Path) -> tuple[Iterator, TextIO]:
+def get_airdrop_data(name: str, data_dir: Path) -> Iterator[list[str]]:
     airdrops_dir = data_dir / 'airdrops'
     airdrops_dir.mkdir(parents=True, exist_ok=True)
     filename = airdrops_dir / f'{name}.csv'
@@ -245,10 +245,10 @@ def get_airdrop_data(name: str, data_dir: Path) -> tuple[Iterator, TextIO]:
                 f'File {filename} contains invalid data. Check logs.',
             ) from e
     # Verify the CSV file
-    csvfile = open(filename)
-    iterator = csv.reader(csvfile)
-    next(iterator)  # skip header
-    return iterator, csvfile
+    with open(filename) as csvfile:
+        iterator = csv.reader(csvfile)
+        next(iterator)  # skip header
+        yield from iterator
 
 
 def get_poap_airdrop_data(name: str, data_dir: Path) -> dict[str, Any]:
@@ -270,8 +270,8 @@ def get_poap_airdrop_data(name: str, data_dir: Path) -> dict[str, Any]:
         with open(filename, 'w') as outfile:
             outfile.write(rlk_jsondumps(json_data))
 
-    infile = open(filename)
-    data_dict = jsonloads_dict(infile.read())
+    with open(filename) as infile:
+        data_dict = jsonloads_dict(infile.read())
     return data_dict
 
 
@@ -286,8 +286,7 @@ def check_airdrops(
     """
     found_data: dict[ChecksumEvmAddress, dict] = defaultdict(lambda: defaultdict(dict))
     for protocol_name, airdrop_data in AIRDROPS.items():
-        data, csvfile = get_airdrop_data(protocol_name, data_dir)
-        for row in data:
+        for row in get_airdrop_data(protocol_name, data_dir):
             if len(row) < 2:
                 raise UnableToDecryptRemoteData(
                     f'Airdrop CSV for {protocol_name} contains an invalid row: {row}',
@@ -304,14 +303,13 @@ def check_airdrops(
                 'cow_mainnet',
                 'cow_gnosis',
             ):
-                amount = token_normalized_value_decimals(int(amount), 18)
+                amount = token_normalized_value_decimals(int(amount), 18)  # type: ignore
             if addr in addresses:
-                found_data[addr][protocol_name] = {
+                found_data[addr][protocol_name] = {  # type: ignore
                     'amount': str(amount),
                     'asset': airdrop_data[1],
                     'link': airdrop_data[2],
                 }
-        csvfile.close()
 
     for protocol_name, poap_airdrop_data in POAP_AIRDROPS.items():
         data_dict = get_poap_airdrop_data(protocol_name, data_dir)
@@ -319,10 +317,10 @@ def check_airdrops(
             # not doing to_checksum_address() here since the file addresses are checksummed
             # and doing to_checksum_address() so many times hits performance
             if addr in addresses:
-                if 'poap' not in found_data[addr]:
-                    found_data[addr]['poap'] = []
+                if 'poap' not in found_data[addr]:  # type: ignore[index]
+                    found_data[addr]['poap'] = []  # type: ignore[index]
 
-                found_data[addr]['poap'].append({
+                found_data[addr]['poap'].append({  # type: ignore[index]
                     'event': protocol_name,
                     'assets': assets,
                     'link': poap_airdrop_data[1],

@@ -246,10 +246,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                 log.debug(f'Failed to decode ENS set-text event due to {str(e)}')
                 return None, []
 
-            if address in ens_mapping:
-                name_to_show = ens_mapping[address]
-            else:
-                name_to_show = address
+            name_to_show = ens_mapping.get(address, address)
 
             notes = f'Set ENS {changed_key} attribute for {name_to_show}'
             decoded_events.append(HistoryBaseEntry(

@@ -137,10 +137,7 @@ class Covalent(ExternalServiceWithApiKey):
                 ) from e
 
             if response.status_code != 200:
-                if 'error_message' in result:
-                    error_message = result['error_message']
-                else:
-                    error_message = None
+                error_message = result.get('error_message', None)
                 raise RemoteError(
                     f'Covalent API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and '

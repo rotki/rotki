@@ -486,17 +486,18 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
     # check that POST with the file works.
     csv_dir2 = str(tmpdir_factory.mktemp('test_csv_dir_2'))
     _create_snapshot_with_valid_data_for_post(csv_dir2, Timestamp(1651075))
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'dbsnapshotsresource',
-        ),
-        files={
-            'balances_snapshot_file': open(f'{csv_dir2}/{BALANCES_FOR_IMPORT_FILENAME}'),
-            'location_data_snapshot_file': open(f'{csv_dir2}/{LOCATION_DATA_IMPORT_FILENAME}'),
-        },
-    )
-    assert_simple_ok_response(response)
+    with open(f'{csv_dir2}/{BALANCES_FOR_IMPORT_FILENAME}') as balances_file, open(f'{csv_dir2}/{LOCATION_DATA_IMPORT_FILENAME}') as locations_file:  # noqa: E501
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'dbsnapshotsresource',
+            ),
+            files={
+                'balances_snapshot_file': balances_file,
+                'location_data_snapshot_file': locations_file,
+            },
+        )
+        assert_simple_ok_response(response)
 
     # check that importing a snapshot that is present in the db fails.
     csv_dir3 = str(tmpdir_factory.mktemp('test_csv_dir3'))

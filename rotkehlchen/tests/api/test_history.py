@@ -343,22 +343,23 @@ def test_history_debug_import(rotkehlchen_api_server):
         else:
             assert_simple_ok_response(response)
     else:
-        response = requests.patch(
-            api_url_for(
-                rotkehlchen_api_server,
-                'historyprocessingdebugresource',
-            ),
-            files={'filepath': open(str(filepath))},
-            data={'async_query': async_query},
-        )
-        if async_query is True:
-            result = wait_for_async_task_with_result(
-                server=rotkehlchen_api_server,
-                task_id=response.json()['result']['task_id'],
+        with open(str(filepath)) as infile:
+            response = requests.patch(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'historyprocessingdebugresource',
+                ),
+                files={'filepath': infile},
+                data={'async_query': async_query},
             )
-            assert result is True
-        else:
-            assert_simple_ok_response(response)
+            if async_query is True:
+                result = wait_for_async_task_with_result(
+                    server=rotkehlchen_api_server,
+                    task_id=response.json()['result']['task_id'],
+                )
+                assert result is True
+            else:
+                assert_simple_ok_response(response)
     assert_pnl_debug_import(
         filepath=filepath,
         database=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,

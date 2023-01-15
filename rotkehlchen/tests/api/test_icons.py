@@ -30,15 +30,15 @@ def test_upload_custom_icon(rotkehlchen_api_server, file_upload, data_dir):
     gno_id_quoted = urllib.parse.quote_plus(A_GNO.identifier)
 
     if file_upload:
-        files = {'file': open(filepath, 'rb')}
-        response = requests.post(
-            api_url_for(
-                rotkehlchen_api_server,
-                'asseticonsresource',
-            ),
-            files=files,
-            data={'asset': gno_id_quoted},
-        )
+        with open(filepath, 'rb') as infile:
+            response = requests.post(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'asseticonsresource',
+                ),
+                files={'file': infile},
+                data={'asset': gno_id_quoted},
+            )
     else:
         json_data = {'file': str(filepath), 'asset': gno_id_quoted}
         response = requests.put(
@@ -83,15 +83,15 @@ def test_upload_custom_icon_errors(rotkehlchen_api_server, file_upload):
         bad_filepath = Path(temp_directory) / 'somefile.bad'
         shutil.copyfile(filepath, bad_filepath)
         if file_upload:
-            files = {'file': open(bad_filepath, 'rb')}
-            response = requests.post(
-                api_url_for(
-                    rotkehlchen_api_server,
-                    'asseticonsresource',
-                ),
-                json={'asset': urllib.parse.quote_plus(A_GNO.identifier)},
-                files=files,
-            )
+            with open(bad_filepath, 'rb') as infile:
+                response = requests.post(
+                    api_url_for(
+                        rotkehlchen_api_server,
+                        'asseticonsresource',
+                    ),
+                    json={'asset': urllib.parse.quote_plus(A_GNO.identifier)},
+                    files={'file': infile},
+                )
         else:
             json_data = {
                 'file': str(bad_filepath),

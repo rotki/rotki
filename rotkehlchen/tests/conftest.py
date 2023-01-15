@@ -104,9 +104,14 @@ if sys.platform == 'darwin':
 @pytest.fixture(autouse=True, scope="session")
 def profiler(request):
     profiler_instance = None
+    stack_stream = None
 
-    if request.config.option.profiler == 'flamegraph-trace':
-        from tools.profiling.sampler import (  # pylint: disable=import-outside-toplevel  # noqa: E501
+    if request.config.option.profiler is None:
+        yield  # no profiling
+    elif request.config.option.profiler != 'flamegraph-trace':
+        raise ValueError(f'Gave unknown profiler option: {request.config.option.profiler}')
+    else:  # flamegraph profiler on
+        from tools.profiling.sampler import (  # pylint: disable=import-outside-toplevel
             FlameGraphCollector,
             TraceSampler,
         )
@@ -114,14 +119,13 @@ def profiler(request):
         now = datetime.datetime.now()
         tmpdirname = tempfile.gettempdir()
         stack_path = Path(tmpdirname) / f'{now:%Y%m%d_%H%M}_stack.data'
-        test_warnings.warn(UserWarning(
-            f'Stack data is saved at: {stack_path}',
-        ))
-        stack_stream = open(stack_path, 'w')
-        flame = FlameGraphCollector(stack_stream)
-        profiler_instance = TraceSampler(flame)
-
-    yield
+        with open(stack_path, 'w') as stack_stream:
+            test_warnings.warn(UserWarning(
+                f'Stack data is saved at: {stack_path}',
+            ))
+            flame = FlameGraphCollector(stack_stream)
+            profiler_instance = TraceSampler(flame)
+            yield
 
     if profiler_instance is not None:
         profiler_instance.stop()

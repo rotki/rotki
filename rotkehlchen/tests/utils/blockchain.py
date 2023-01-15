@@ -54,10 +54,7 @@ def assert_btc_balances_result(
         else:
             assert FVal(standalone[account]['usd_value']) > ZERO
 
-    if 'assets' in result['totals']:
-        totals = result['totals']['assets']
-    else:
-        totals = result['totals']
+    totals = result['totals'].get('assets', result['totals'])
     if also_eth:
         assert len(totals) >= 2  # ETH and any other tokens that may exist
     else:

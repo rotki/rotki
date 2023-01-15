@@ -49,24 +49,25 @@ def test_data_import_cointracking(rotkehlchen_api_server, file_upload):
     dir_path = Path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     filepath = dir_path / 'data' / 'cointracking_trades_list.csv'
 
-    if file_upload:
-        files = {'file': open(filepath, 'rb')}
-        response = requests.post(
-            api_url_for(
-                rotkehlchen_api_server,
-                'dataimportresource',
-            ),
-            files=files,
-            data={'source': 'cointracking'},
-        )
-    else:
-        json_data = {'source': 'cointracking', 'file': str(filepath)}
-        response = requests.put(
-            api_url_for(
-                rotkehlchen_api_server,
-                'dataimportresource',
-            ), json=json_data,
-        )
+    with open(filepath, 'rb') as infile:
+        if file_upload:
+            files = {'file': infile}
+            response = requests.post(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'dataimportresource',
+                ),
+                files=files,
+                data={'source': 'cointracking'},
+            )
+        else:
+            json_data = {'source': 'cointracking', 'file': str(filepath)}
+            response = requests.put(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'dataimportresource',
+                ), json=json_data,
+            )
 
     result = assert_proper_response_with_result(response)
     assert result is True
@@ -246,24 +247,25 @@ def test_data_import_wrong_extension(rotkehlchen_api_server, file_upload):
     with TemporaryDirectory() as temp_directory:
         bad_filepath = Path(temp_directory) / 'somefile.bad'
         shutil.copyfile(filepath, bad_filepath)
-        if file_upload:
-            files = {'file': open(bad_filepath, 'rb')}
-            response = requests.post(
-                api_url_for(
-                    rotkehlchen_api_server,
-                    'dataimportresource',
-                ),
-                files=files,
-                data={'source': 'cointracking'},
-            )
-        else:
-            json_data = {'source': 'cointracking', 'file': str(bad_filepath)}
-            response = requests.put(
-                api_url_for(
-                    rotkehlchen_api_server,
-                    'dataimportresource',
-                ), json=json_data,
-            )
+        with open(bad_filepath, 'rb') as infile:
+            if file_upload:
+                files = {'file': infile}
+                response = requests.post(
+                    api_url_for(
+                        rotkehlchen_api_server,
+                        'dataimportresource',
+                    ),
+                    files=files,
+                    data={'source': 'cointracking'},
+                )
+            else:
+                json_data = {'source': 'cointracking', 'file': str(bad_filepath)}
+                response = requests.put(
+                    api_url_for(
+                        rotkehlchen_api_server,
+                        'dataimportresource',
+                    ), json=json_data,
+                )
 
     assert_error_response(
         response=response,
@@ -408,28 +410,29 @@ def test_data_import_custom_format(rotkehlchen_api_server, file_upload):
     dir_path = Path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     filepath = dir_path / 'data' / 'cointracking_custom_dates.csv'
 
-    if file_upload:
-        files = {'file': open(filepath, 'rb')}
-        response = requests.post(
-            api_url_for(
-                rotkehlchen_api_server,
-                'dataimportresource',
-            ),
-            files=files,
-            data={'source': 'cointracking', 'timestamp_format': '%d/%m/%Y %H:%M'},
-        )
-    else:
-        json_data = {
-            'source': 'cointracking',
-            'file': str(filepath),
-            'timestamp_format': '%d/%m/%Y %H:%M',
-        }
-        response = requests.put(
-            api_url_for(
-                rotkehlchen_api_server,
-                'dataimportresource',
-            ), json=json_data,
-        )
+    with open(filepath, 'rb') as infile:
+        if file_upload:
+            files = {'file': infile}
+            response = requests.post(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'dataimportresource',
+                ),
+                files=files,
+                data={'source': 'cointracking', 'timestamp_format': '%d/%m/%Y %H:%M'},
+            )
+        else:
+            json_data = {
+                'source': 'cointracking',
+                'file': str(filepath),
+                'timestamp_format': '%d/%m/%Y %H:%M',
+            }
+            response = requests.put(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'dataimportresource',
+                ), json=json_data,
+            )
 
     result = assert_proper_response_with_result(response)
     assert result is True
@@ -510,17 +513,18 @@ def test_docker_async_import(rotkehlchen_api_server):
     """
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'binance_history.csv'
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'dataimportresource',
-        ), data={
-            'async_query': True,
-            'source': 'binance',
-        }, files={
-            'file': open(filepath, 'rb'),
-        },
-    )
-    result = assert_proper_response_with_result(response)
-    outcome = wait_for_async_task(rotkehlchen_api_server, result['task_id'])
+    with open(filepath, 'rb') as infile:
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'dataimportresource',
+            ), data={
+                'async_query': True,
+                'source': 'binance',
+            }, files={
+                'file': infile,
+            },
+        )
+        result = assert_proper_response_with_result(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, result['task_id'])
     assert outcome['message'] == ''

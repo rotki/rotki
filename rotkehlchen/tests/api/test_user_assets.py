@@ -925,13 +925,14 @@ def test_importing_user_assets_list(rotkehlchen_api_server, method, file_type):
             ), json={'action': 'upload', 'file': str(filepath)},
         )
     else:
-        response = requests.post(
-            api_url_for(
-                rotkehlchen_api_server,
-                'userassetsresource',
-            ), json={'action': 'upload'},
-            files={'file': open(filepath, 'rb')},
-        )
+        with open(filepath, 'rb') as infile:
+            response = requests.post(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'userassetsresource',
+                ), json={'action': 'upload'},
+                files={'file': infile},
+            )
 
     assert_simple_ok_response(response)
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
