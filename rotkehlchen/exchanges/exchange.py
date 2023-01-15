@@ -37,10 +37,6 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 ExchangeQueryBalances = tuple[Optional[dict[AssetWithOracles, Balance]], str]
-ExchangeHistorySuccessCallback = Callable[
-    [list[Trade], list[MarginPosition], list[AssetMovement], Any],
-    None,
-]
 
 ExchangeHistoryFailCallback = Callable[[str], None]
 ExchangeHistoryNewStepCallback = Callable[[str], None]
