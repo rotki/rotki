@@ -32,10 +32,10 @@ class ManualPriceOracle:
 
     @classmethod
     def query_historical_price(
-        cls,
-        from_asset: Asset,
-        to_asset: Asset,
-        timestamp: Timestamp,
+            cls,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
     ) -> Price:
         price_entry = GlobalDBHandler().get_historical_price(
             from_asset=from_asset,

@@ -1070,8 +1070,8 @@ class Balancer(EthereumModule):
             )
 
     def get_balances(
-        self,
-        addresses: list[ChecksumEvmAddress],
+            self,
+            addresses: list[ChecksumEvmAddress],
     ) -> AddressToPoolBalances:
         """Get the balances of the given addresses in any Balancer pool
 
@@ -1090,11 +1090,11 @@ class Balancer(EthereumModule):
         return protocol_balance.address_to_pool_balances
 
     def get_events_history(
-        self,
-        addresses: list[ChecksumEvmAddress],
-        reset_db_data: bool,
-        from_timestamp: Timestamp,
-        to_timestamp: Timestamp,
+            self,
+            addresses: list[ChecksumEvmAddress],
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> AddressToPoolEventsBalances:
         """Get the events history of the given addresses
 

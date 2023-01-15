@@ -12,11 +12,11 @@ SignalHandler = Callable[[int, FrameType], None]
 
 class Timer:
     def __init__(
-        self,
-        callback: SignalHandler,
-        timer: int = TIMER,
-        interval: float = INTERVAL_SECONDS,
-        timer_signal: int = TIMER_SIGNAL,
+            self,
+            callback: SignalHandler,
+            timer: int = TIMER,
+            interval: float = INTERVAL_SECONDS,
+            timer_signal: int = TIMER_SIGNAL,
     ) -> None:
 
         assert callable(callback), "callback must be callable"

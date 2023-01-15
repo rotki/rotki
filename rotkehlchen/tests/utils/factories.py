@@ -110,12 +110,12 @@ CUSTOM_USDT = EvmToken.initialize(
 
 
 def make_ethereum_event(
-    index: int,
-    tx_hash: Optional[bytes] = None,
-    asset: CryptoAsset = CUSTOM_USDT,
-    counterparty: Optional[str] = None,
-    event_type: HistoryEventType = HistoryEventType.UNKNOWN,
-    event_subtype: HistoryEventSubType = HistoryEventSubType.NONE,
+        index: int,
+        tx_hash: Optional[bytes] = None,
+        asset: CryptoAsset = CUSTOM_USDT,
+        counterparty: Optional[str] = None,
+        event_type: HistoryEventType = HistoryEventType.UNKNOWN,
+        event_subtype: HistoryEventSubType = HistoryEventSubType.NONE,
 ) -> HistoryBaseEntry:
     if tx_hash is None:
         tx_hash = make_random_bytes(42)
@@ -134,7 +134,7 @@ def make_ethereum_event(
 
 
 def generate_tx_entries_response(
-    data: list[tuple[EvmTransaction, list[HistoryBaseEntry]]],
+        data: list[tuple[EvmTransaction, list[HistoryBaseEntry]]],
 ) -> list:
     result = []
     for tx, events in data:

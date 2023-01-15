@@ -176,9 +176,9 @@ class XpubManager():
         self.lock = Semaphore()
 
     def _derive_xpub_addresses(
-        self,
-        xpub_data: XpubData,
-        new_xpub: bool,
+            self,
+            xpub_data: XpubData,
+            new_xpub: bool,
     ) -> None:
         """Derives new xpub addresses, and adds all those until the addresses that
         have not had any transactions to the tracked bitcoin addresses
@@ -307,8 +307,8 @@ class XpubManager():
             self.chains_aggregator.sync_bitcoin_accounts_with_db(write_cursor, xpub_data.blockchain)  # noqa: E501
 
     def check_for_new_xpub_addresses(
-        self,
-        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+            self,
+            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> None:
         """Checks all xpub addresses and sees if new addresses got used.
         If they did it adds them for tracking.

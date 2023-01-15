@@ -53,11 +53,11 @@ class CurveDecoder(DecoderInterface):
         self.curve_pools = read_curve_pools()
 
     def _decode_curve_remove_events(
-        self,
-        tx_log: EvmTxReceiptLog,
-        transaction: EvmTransaction,
-        decoded_events: list[HistoryBaseEntry],
-        user_address: ChecksumEvmAddress,
+            self,
+            tx_log: EvmTxReceiptLog,
+            transaction: EvmTransaction,
+            decoded_events: list[HistoryBaseEntry],
+            user_address: ChecksumEvmAddress,
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """Decode information related to withdrawing assets from curve pools"""
         for event in decoded_events:
@@ -104,10 +104,10 @@ class CurveDecoder(DecoderInterface):
         return None, []
 
     def _decode_curve_deposit_events(
-        self,
-        tx_log: EvmTxReceiptLog,
-        decoded_events: list[HistoryBaseEntry],
-        user_address: ChecksumEvmAddress,
+            self,
+            tx_log: EvmTxReceiptLog,
+            decoded_events: list[HistoryBaseEntry],
+            user_address: ChecksumEvmAddress,
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """Decode information related to depositing assets in curve pools"""
         for event in decoded_events:

@@ -188,8 +188,8 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         return address_events_balances
 
     def get_balances(
-        self,
-        addresses: list[ChecksumEvmAddress],
+            self,
+            addresses: list[ChecksumEvmAddress],
     ) -> AddressToLPBalances:
         """Get the addresses' balances in the Sushiswap protocol
 

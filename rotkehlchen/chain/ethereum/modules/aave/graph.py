@@ -679,16 +679,16 @@ class AaveGraphInquirer(AaveInquirer):
         )
 
     def _process_graph_query_result(
-        self,
-        query: dict[str, Any],
-        deposits: list[AaveDepositWithdrawalEvent],
-        withdrawals: list[AaveDepositWithdrawalEvent],
-        borrows: list[AaveBorrowEvent],
-        repays: list[AaveRepayEvent],
-        liquidation_calls: list[AaveLiquidationEvent],
-        user_merged_data: dict[str, Any],
-        from_ts: Timestamp,
-        to_ts: Timestamp,
+            self,
+            query: dict[str, Any],
+            deposits: list[AaveDepositWithdrawalEvent],
+            withdrawals: list[AaveDepositWithdrawalEvent],
+            borrows: list[AaveBorrowEvent],
+            repays: list[AaveRepayEvent],
+            liquidation_calls: list[AaveLiquidationEvent],
+            user_merged_data: dict[str, Any],
+            from_ts: Timestamp,
+            to_ts: Timestamp,
     ) -> None:
         """
         Given a query result from the graph this function extracts information for:

@@ -170,13 +170,13 @@ class Ftx(ExchangeInterface):
         return True, ''
 
     def _make_request(
-        self,
-        endpoint: str,
-        start_time: Optional[Timestamp] = None,
-        end_time: Optional[Timestamp] = None,
-        min_id: Optional[int] = None,
-        limit: int = PAGINATION_LIMIT,
-        order: Optional[str] = FTX_QUERY_ORDER,
+            self,
+            endpoint: str,
+            start_time: Optional[Timestamp] = None,
+            end_time: Optional[Timestamp] = None,
+            min_id: Optional[int] = None,
+            limit: int = PAGINATION_LIMIT,
+            order: Optional[str] = FTX_QUERY_ORDER,
     ) -> Union[list[dict[str, Any]], dict[str, list[Any]]]:
         """Performs an FTX API Query for endpoint adding the needed information to
         authenticate user and handling errors.
@@ -502,9 +502,9 @@ class Ftx(ExchangeInterface):
         return trades, (start_ts, end_ts)
 
     def _deserialize_asset_movement(
-        self,
-        raw_data: dict[str, Any],
-        movement_type: AssetMovementCategory,
+            self,
+            raw_data: dict[str, Any],
+            movement_type: AssetMovementCategory,
     ) -> Optional[AssetMovement]:
         """Processes a single deposit/withdrawal from FTX and deserializes it
 

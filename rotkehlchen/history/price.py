@@ -116,9 +116,9 @@ class PriceHistorian():
 
     @staticmethod
     def get_price_for_special_asset(
-        from_asset: Asset,
-        to_asset: Asset,
-        timestamp: Timestamp,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
     ) -> Optional[Price]:
         """
         Query the historical price on `timestamp` for `from_asset` in `to_asset`

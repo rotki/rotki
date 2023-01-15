@@ -18,10 +18,10 @@ UNISWAP_ADDR = string_to_evm_address('0xcaf012cB72f2c7152b255E091837E3a628F739e7
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_associated_locations(
-    rotkehlchen_api_server_with_exchanges,
-    added_exchanges,
-    ethereum_accounts,  # pylint: disable=unused-argument
-    start_with_valid_premium,  # pylint: disable=unused-argument
+        rotkehlchen_api_server_with_exchanges,
+        added_exchanges,
+        ethereum_accounts,  # pylint: disable=unused-argument
+        start_with_valid_premium,  # pylint: disable=unused-argument
 ):
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     mock_exchange_data_in_db(added_exchanges, rotki)

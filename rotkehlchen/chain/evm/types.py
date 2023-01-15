@@ -65,8 +65,8 @@ class WeightedNode:
 
     @classmethod
     def deserialize(
-        cls: type['WeightedNode'],
-        data: dict[str, str],
+            cls: type['WeightedNode'],
+            data: dict[str, str],
     ) -> 'WeightedNode':
         return WeightedNode(
             identifier=int(data['identifier']),

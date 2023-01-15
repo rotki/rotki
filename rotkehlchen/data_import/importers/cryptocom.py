@@ -286,11 +286,11 @@ class CryptocomImporter(BaseExchangeImporter):
             )
 
     def _import_cryptocom_associated_entries(
-        self,
-        cursor: DBCursor,
-        data: Any,
-        tx_kind: str,
-        timestamp_format: str = '%Y-%m-%d %H:%M:%S',
+            self,
+            cursor: DBCursor,
+            data: Any,
+            tx_kind: str,
+            timestamp_format: str = '%Y-%m-%d %H:%M:%S',
     ) -> None:
         """Look for events that have associated entries and handle them as trades.
 

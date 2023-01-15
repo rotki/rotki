@@ -108,9 +108,9 @@ def kraken_ledger_entry_type_to_ours(value: str) -> HistoryEventType:
 
 
 def history_event_from_kraken(
-    events: list[dict[str, Any]],
-    name: str,
-    msg_aggregator: MessagesAggregator,
+        events: list[dict[str, Any]],
+        name: str,
+        msg_aggregator: MessagesAggregator,
 ) -> tuple[list[HistoryBaseEntry], bool]:
     """
     This function gets raw data from kraken and creates a list of related history events
@@ -966,8 +966,8 @@ class Kraken(ExchangeInterface):
         return trade
 
     def process_kraken_trades(
-        self,
-        raw_data: list[HistoryBaseEntry],
+            self,
+            raw_data: list[HistoryBaseEntry],
     ) -> tuple[list[Trade], Timestamp]:
         """
         Given a list of history events we process them to create Trade objects. The valid

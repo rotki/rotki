@@ -366,9 +366,9 @@ class Inquirer():
 
     @staticmethod
     def add_defi_oracles(
-        uniswap_v2: Optional['UniswapV2Oracle'],
-        uniswap_v3: Optional['UniswapV3Oracle'],
-        saddle: Optional['SaddleOracle'],
+            uniswap_v2: Optional['UniswapV2Oracle'],
+            uniswap_v3: Optional['UniswapV3Oracle'],
+            saddle: Optional['SaddleOracle'],
     ) -> None:
         Inquirer()._uniswapv2 = uniswap_v2
         Inquirer()._uniswapv3 = uniswap_v3
@@ -875,8 +875,8 @@ class Inquirer():
         return (assets_price * FVal(data[0])) / (10 ** lp_token.decimals)
 
     def find_yearn_price(
-        self,
-        token: EvmToken,
+            self,
+            token: EvmToken,
     ) -> Optional[Price]:
         """
         Query price for a yearn vault v2 token using the pricePerShare method

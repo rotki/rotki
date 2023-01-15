@@ -144,8 +144,8 @@ class YearnVaultsV2(EthereumModule):
         return result
 
     def get_balances(
-        self,
-        given_eth_balances: 'GIVEN_ETH_BALANCES',
+            self,
+            given_eth_balances: 'GIVEN_ETH_BALANCES',
     ) -> dict[ChecksumEvmAddress, dict[ChecksumEvmAddress, YearnVaultBalance]]:
 
         if isinstance(given_eth_balances, dict):

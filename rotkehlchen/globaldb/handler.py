@@ -1408,8 +1408,8 @@ class GlobalDBHandler():
 
     @staticmethod
     def get_manual_prices(
-        from_asset: Optional[Asset],
-        to_asset: Optional[Asset],
+            from_asset: Optional[Asset],
+            to_asset: Optional[Asset],
     ) -> list[dict[str, Union[int, str]]]:
         """Returns prices added to the database by the user for an asset"""
         querystr = (
@@ -1600,7 +1600,7 @@ class GlobalDBHandler():
 
     @staticmethod
     def get_general_cache_last_queried_ts_by_key(
-        key_parts: Iterable[Union[str, GeneralCacheType]],
+            key_parts: Iterable[Union[str, GeneralCacheType]],
     ) -> Timestamp:
         """
         Get the last_queried_ts of the oldest stored element by key_parts. If there is no such

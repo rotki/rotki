@@ -219,9 +219,9 @@ class PremiumSyncManager():
         return self._sync_data_from_server_and_replace_local()
 
     def _sync_if_allowed(
-        self,
-        sync_approval: Literal['yes', 'no', 'unknown'],
-        result: SyncCheckResult,
+            self,
+            sync_approval: Literal['yes', 'no', 'unknown'],
+            result: SyncCheckResult,
     ) -> None:
         if result.can_sync == CanSync.ASK_USER:
             if sync_approval == 'unknown':

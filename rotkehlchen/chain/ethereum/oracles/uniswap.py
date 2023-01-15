@@ -70,18 +70,18 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
 
     @abc.abstractmethod
     def get_pool(
-        self,
-        token_0: EvmToken,
-        token_1: EvmToken,
+            self,
+            token_0: EvmToken,
+            token_1: EvmToken,
     ) -> list[str]:
         """Given two tokens returns a list of pools where they can be swapped"""
         ...
 
     @abc.abstractmethod
     def get_pool_price(
-        self,
-        pool_addr: ChecksumEvmAddress,
-        block_identifier: BlockIdentifier = 'latest',
+            self,
+            pool_addr: ChecksumEvmAddress,
+            block_identifier: BlockIdentifier = 'latest',
     ) -> PoolPrice:
         """Returns the price for the tokens in the given pool and the token0 and
         token1 of the pool.
@@ -91,10 +91,10 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
         ...
 
     def _find_pool_for(
-        self,
-        asset: EvmToken,
-        link_asset: EvmToken,
-        path: list[str],
+            self,
+            asset: EvmToken,
+            link_asset: EvmToken,
+            path: list[str],
     ) -> bool:
         pools = self.get_pool(asset, link_asset)
         for pool in pools:
@@ -326,9 +326,9 @@ class UniswapV3Oracle(UniswapOracle):
         return [best_pool]
 
     def get_pool_price(
-        self,
-        pool_addr: ChecksumEvmAddress,
-        block_identifier: BlockIdentifier = 'latest',
+            self,
+            pool_addr: ChecksumEvmAddress,
+            block_identifier: BlockIdentifier = 'latest',
     ) -> PoolPrice:
         """
         Returns the units of token1 that one token0 can buy
@@ -389,9 +389,9 @@ class UniswapV2Oracle(UniswapOracle):
 
     @cache_response_timewise()
     def get_pool(
-        self,
-        token_0: EvmToken,
-        token_1: EvmToken,
+            self,
+            token_0: EvmToken,
+            token_1: EvmToken,
     ) -> list[str]:
         result = self.uniswap_v2_factory.call(
             node_inquirer=self.ethereum,
@@ -404,9 +404,9 @@ class UniswapV2Oracle(UniswapOracle):
         return [result]
 
     def get_pool_price(
-        self,
-        pool_addr: ChecksumEvmAddress,
-        block_identifier: BlockIdentifier = 'latest',
+            self,
+            pool_addr: ChecksumEvmAddress,
+            block_identifier: BlockIdentifier = 'latest',
     ) -> PoolPrice:
         """
         Returns the units of token1 that one token0 can buy
