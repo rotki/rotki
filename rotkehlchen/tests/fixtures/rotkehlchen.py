@@ -3,6 +3,7 @@ from contextlib import ExitStack
 from unittest.mock import patch
 
 import pytest
+import requests
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB
@@ -32,6 +33,7 @@ from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
 from rotkehlchen.tests.utils.mock import (
+    MockResponse,
     mock_proxies,
     patch_avalanche_request,
     patch_etherscan_request,
@@ -156,6 +158,14 @@ def initialize_mock_rotkehlchen_instance(
     settings_patch = patch.object(rotki, 'get_settings', side_effect=mock_get_settings)
 
     original_unlock = rotki.data.unlock
+    original_requests_get = requests.get
+
+    def mock_requests_get(url, *args, **kwargs):
+        if url == 'https://api.cryptoscamdb.org/v1/addresses':
+            return MockResponse(200, '{"success": true, "result":{}}')
+
+        # else
+        return original_requests_get(url, *args, **kwargs)
 
     def augmented_unlock(user, password, create_new, initial_settings):
         """This is an augmented_unlock for the tests where after the original data.unlock
@@ -184,6 +194,7 @@ def initialize_mock_rotkehlchen_instance(
     # does not run during tests
     size_patch = patch('rotkehlchen.rotkehlchen.ICONS_BATCH_SIZE', new=0)
     sleep_patch = patch('rotkehlchen.rotkehlchen.ICONS_QUERY_SLEEP', new=999999)
+    requests_patch = patch('requests.get', wraps=mock_requests_get)
 
     create_new = True
     if use_custom_database is not None:
@@ -207,6 +218,8 @@ def initialize_mock_rotkehlchen_instance(
                 side_effect=lambda *args: None,
             )
             stack.enter_context(migrations_patch)
+        else:  # at least mock cryptoscamdb calls as they are useless in tests
+            stack.enter_context(requests_patch)
 
         if perform_upgrades_at_unlock is False:
             upgrades_patch = patch.object(
