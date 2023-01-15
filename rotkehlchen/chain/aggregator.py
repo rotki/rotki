@@ -1295,6 +1295,9 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         transactions/activity for the account in the chain.
 
         Returns a list of tuples of the address and the chain it was active in
+
+        May raise:
+        - RemoteError if any of the calls fail
         """
         filtered_accounts = []
         for account in accounts:

@@ -22,31 +22,34 @@ def data_migration_8(rotki: 'Rotkehlchen') -> None:
     with rotki.data.db.conn.read_ctx() as cursor:
         accounts = rotki.data.db.get_blockchain_accounts(cursor)
 
-    filtered_result = rotki.chains_aggregator.filter_active_evm_addresses(accounts.eth)
-    to_add_accounts = []
-    for chain, account in filtered_result:  # add them to chain aggregator
-        if chain == SupportedBlockchain.ETHEREUM:
-            continue
+    # when we sync a remote database the migrations are executed but the chain_manager
+    # has not been created yet
+    if (chains_aggregator := getattr(rotki, 'chains_aggregator', None)) is not None:
+        filtered_result = chains_aggregator.filter_active_evm_addresses(accounts.eth)
+        to_add_accounts = []
+        for chain, account in filtered_result:  # add them to chain aggregator
+            if chain == SupportedBlockchain.ETHEREUM:
+                continue
 
-        try:
-            rotki.chains_aggregator.modify_blockchain_accounts(
-                blockchain=chain,
-                accounts=[account],
-                append_or_remove='append',
-            )
-        except InputError:
-            log.debug(f'Not adding {account} to {chain} since it already exists')
-            continue
-        to_add_accounts.append((chain, account))
+            try:
+                chains_aggregator.modify_blockchain_accounts(
+                    blockchain=chain,
+                    accounts=[account],
+                    append_or_remove='append',
+                )
+            except InputError:
+                log.debug(f'Not adding {account} to {chain} since it already exists')
+                continue
+            to_add_accounts.append((chain, account))
 
-    with rotki.data.db.user_write() as write_cursor:
-        for chain, account in to_add_accounts:  # add them to the DB
-            rotki.data.db.add_blockchain_accounts(
-                write_cursor=write_cursor,
-                account_data=[BlockchainAccountData(
-                    chain=chain,
-                    address=account,
-                )],  # not duplicating label and tags as it's chain specific
-            )
+        with rotki.data.db.user_write() as write_cursor:
+            for chain, account in to_add_accounts:  # add them to the DB
+                rotki.data.db.add_blockchain_accounts(
+                    write_cursor=write_cursor,
+                    account_data=[BlockchainAccountData(
+                        chain=chain,
+                        address=account,
+                    )],  # not duplicating label and tags as it's chain specific
+                )
 
     log.debug('Exit data_migration_8')
