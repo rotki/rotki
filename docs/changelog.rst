@@ -13,6 +13,7 @@ Changelog
 * :bug:`-` Fixed an edge case where users would be swamped with "This socket is already used by another greenlet" errors during websocket communication between backend and frontend.
 * :bug:`-` Transfers of ether between tracked accounts will now have a correct label in the UI.
 * :bug:`-` Trades involving delisted bitfinex pairs will now be properly read by rotki.
+* :bug:`5390` Profit for ethereum validators will now be handled correctly if the deposit was made on beacon chain genesis.
 * :feature:`784` Add support for OKX exchange
 
 * :release:`1.26.3 <2022-12-30>`
