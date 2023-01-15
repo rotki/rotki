@@ -7,7 +7,7 @@ import requests
 from bs4 import BeautifulSoup, SoupStrainer
 
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
@@ -21,6 +21,9 @@ from .structures import ValidatorDailyStats
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+DAY_AFTER_ETH2_GENESIS = Timestamp(1606780800)
+INITIAL_ETH_DEPOSIT = FVal(32)
 
 
 class ValidatorBalance(NamedTuple):
@@ -137,6 +140,13 @@ def scrape_validator_daily_stats(
                 column_pos += 1
             elif column_pos == 2:
                 pnl = _parse_fval(column.string, 'income')
+                # if the validator makes profit in the genesis day beaconchain returns a
+                # profit of deposit + validation reward. We need to subtract the deposit value
+                # to obtain the actual pnl.
+                # Example: https://beaconcha.in/validator/999/stats
+                if pnl > ONE and timestamp == DAY_AFTER_ETH2_GENESIS:
+                    pnl -= INITIAL_ETH_DEPOSIT
+
                 column_pos += 1
             elif column_pos == 3:
                 start_amount = _parse_fval(column.string, 'start amount')

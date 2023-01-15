@@ -2,6 +2,7 @@ import datetime
 import re
 from contextlib import ExitStack
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -26,6 +27,10 @@ from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.history.price import PriceHistorian
+    from rotkehlchen.user_messages import MessagesAggregator
 
 ADDR1 = string_to_evm_address('0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397')
 ADDR2 = string_to_evm_address('0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19')
@@ -888,3 +893,47 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             )
         last_stat = stats[:len(expected_stats)][-1]
         assert last_stat.pnl_balance.amount == expected_stats[-1].pnl_balance.amount * FVal(0.45)  # noqa: E501
+
+
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
+def test_validator_daily_stats_with_genesis_event(
+        network_mocking: bool,
+        price_historian: 'PriceHistorian',  # pylint: disable=unused-argument
+        function_scope_messages_aggregator: 'MessagesAggregator',
+) -> None:
+    """
+    Test that if profit returned by beaconchain on genesis is > 32 ETH the app
+    handles it correctly.
+    """
+    validator_index = 999
+
+    with mock_scrape_validator_daily_stats(network_mocking):
+        stats = scrape_validator_daily_stats(
+            validator_index=validator_index,
+            last_known_timestamp=Timestamp(0),
+            msg_aggregator=function_scope_messages_aggregator,
+        )
+    assert stats == [
+        ValidatorDailyStats(
+            validator_index=999,
+            timestamp=Timestamp(1606780800),
+            start_amount=FVal('0'),
+            end_amount=FVal('32.01201'),
+            pnl=FVal('0.01201'),
+            start_usd_price=FVal(1.55),
+            end_usd_price=FVal(1.55),
+            missed_attestations=2,
+            ownership_percentage=ONE,
+        ), ValidatorDailyStats(
+            validator_index=999,
+            timestamp=Timestamp(1606694400),
+            start_amount=ZERO,
+            end_amount=ZERO,
+            pnl=ZERO,
+            amount_deposited=FVal(32),
+            deposits_number=1,
+            start_usd_price=FVal(1.55),
+            end_usd_price=FVal(1.55),
+            ownership_percentage=ONE,
+        ),
+    ]
