@@ -92,6 +92,7 @@ ignore = [
     "RET508",  # https://github.com/charliermarsh/ruff/issues/1035
     "PGH003",  # we do use blanket type: ignore. Perhaps can fix in the future
     "SIM108",  # we do use ternary operator when it makes sense. But forcing it everywhere makes the code unreadable.
+    "PLR2004", # we try to use constant vars where possile but this complains abouttoo many things
 ]
 # Exclude a variety of commonly ignored directories.
 exclude = [
@@ -118,7 +119,16 @@ exclude = [
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 target-version = "py39"
-per-file-ignores = {"tools/*" = ["T201"],"rotkehlchen/__main__.py" = ["T201"],"rotkehlchen/api/server.py" = ["T201"],"rotkehlchen/args.py" = ["T201"],"rotkehlchen/db/minimized_schema.py" = ["E501"],"rotkehlchen/globaldb/minimized_schema.py" = ["E501"]}
+
+[tool.ruff.per-file-ignores]
+
+"tools/*" = ["T201"]  # got prints in tools
+"rotkehlchen/__main__.py" = ["T201"]  # got prints in main
+"rotkehlchen/api/server.py" = ["T201"]  # got prints in server.py
+"rotkehlchen/args.py" = ["T201"]  # got prints in args.py
+"rotkehlchen/db/minimized_schema.py" = ["E501"]  # huge lines there
+"rotkehlchen/globaldb/minimized_schema.py" = ["E501"]  # huge lines there
+
 
 [tool.ruff.flake8-quotes]
 docstring-quotes = "double"

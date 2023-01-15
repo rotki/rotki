@@ -74,7 +74,7 @@ def decode_event_data_abi(
     log_topic_names = get_abi_input_names(ABIEvent({'inputs': log_topics_abi}))
 
     if len(topics) != len(log_topic_types):
-        raise DeserializationError('Expected {0} log topics.  Got {1}'.format(
+        raise DeserializationError('Expected {} log topics.  Got {}'.format(
             len(log_topic_types),
             len(topics),
         ))
