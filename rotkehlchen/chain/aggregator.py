@@ -997,21 +997,26 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             )
             for address, deposits in liquity_balances.items():
                 collateral = deposits.collateral.balance
-                eth_balances[address].assets[A_ETH] += collateral
+                if collateral.amount > ZERO:
+                    eth_balances[address].assets[A_ETH] += collateral
 
             # Get staked amounts
             liquity_staked = liquity_module.liquity_staking_balances(
                 addresses=self.queried_addresses_for_module('liquity'),
             )
             for address, staked_info in liquity_staked.items():
-                eth_balances[address].assets[A_LQTY] += staked_info['staked'].balance
+                staked_balance = staked_info['staked'].balance
+                if staked_balance.amount > ZERO:
+                    eth_balances[address].assets[A_LQTY] += staked_balance
 
             # Get stability pool balances
             liquity_stability_pool = liquity_module.get_stability_pool_balances(
                 addresses=self.queried_addresses_for_module('liquity'),
             )
             for address, staked_info in liquity_stability_pool.items():
-                eth_balances[address].assets[A_LUSD] += staked_info['deposited'].balance
+                staked_balance = staked_info['deposited'].balance
+                if staked_balance.amount > ZERO:
+                    eth_balances[address].assets[A_LUSD] += staked_balance
 
         # Finally count the balances detected in various protocols in defi balances
         self.add_defi_balances_to_account()
