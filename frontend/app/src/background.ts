@@ -225,8 +225,15 @@ async function closeApp() {
   try {
     await pyHandler.exitPyProc();
   } finally {
-    if (process.platform !== 'win32') {
-      app.exit();
+    // In some cases app object might be already disposed
+    try {
+      if (process.platform !== 'win32') {
+        app.exit();
+      }
+    } catch (e: any) {
+      if (e.message !== 'Object has been destroyed') {
+        console.error(e);
+      }
     }
   }
 }
