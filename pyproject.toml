@@ -51,6 +51,9 @@ select = [
     # "D",  # pydocstule -- too many docstuff we don't use
     "N",
     "B",
+    # "EM",  #  our exceptions use f strings everywhere. Very little upside to this and I don't think it's cleaner code
+    "ISC",
+    "ICN",
     "T",
     "UP",
     "YTT",

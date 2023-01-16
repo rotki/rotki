@@ -356,10 +356,9 @@ class DBHistoryEvents():
             log.error(f'Didnt get correct valid usd_value for history_events query. {str(e)}')
 
         query = (
-            'SELECT asset, SUM(CAST(amount AS REAL)), SUM(CAST(usd_value AS REAL)) ' +
-            'FROM history_events ' +
-            query_filters +
-            ' GROUP BY asset;'
+            f'SELECT asset, SUM(CAST(amount AS REAL)), SUM(CAST(usd_value AS REAL)) '
+            f'FROM history_events {query_filters}'
+            f' GROUP BY asset;'
         )
         cursor.execute(query, bindings)
         assets_amounts = []
