@@ -2,7 +2,7 @@ mypy==0.991
 mypy-extensions==0.4.3
 pylint==2.15.10
 astroid==2.13.2  # engine of pylint, upgrade them together
-ruff==0.0.222
+ruff==0.0.223
 double-indent-rotki==0.1.7  # our fork of double indent
 unify==0.5
 flake8==6.0.0
