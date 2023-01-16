@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional, cast
 
 from rotkehlchen.chain.ethereum.decoding.constants import ETHADDRESS_TO_KNOWN_NAME
 from rotkehlchen.constants import ENS_UPDATE_INTERVAL
@@ -11,6 +11,7 @@ from rotkehlchen.types import (
     AddressbookEntry,
     AddressbookType,
     AddressNameSource,
+    ChainAddress,
     ChecksumEvmAddress,
     EnsMapping,
     OptionalChainAddress,
@@ -145,9 +146,14 @@ def _blockchain_address_to_name(
         db: DBHandler,
         chain_address: OptionalChainAddress,
 ) -> Optional[str]:
-    """Returns the label of an ethereum blockchain account with the given address or
-    None if there is no such account or the account has no label set.
+    """Returns the label of an evm blockchain account with the given address or
+    None if there is no such account or the account has no label set or blockchain is
+    not specified.
     """
+    if chain_address.blockchain is None:
+        return None
+
+    chain_address = cast(ChainAddress, chain_address)
     return db.get_blockchain_account_label(chain_address=chain_address)
 
 

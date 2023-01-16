@@ -3,11 +3,14 @@ from unittest.mock import Mock
 
 import pytest
 
-from rotkehlchen.chain.ethereum.names import FetcherFunc, NamePrioritizer
+from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.evm.names import FetcherFunc, NamePrioritizer, search_for_addresses_names
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
     AddressbookEntry,
     AddressNameSource,
+    ChainAddress,
     ChecksumEvmAddress,
     OptionalChainAddress,
     SupportedBlockchain,
@@ -77,3 +80,27 @@ def get_fetchers_with_names(
         fetchers[source_id] = make_fetcher(returned_name)
 
     return fetchers
+
+
+def test_uses_sources_only_when_needed(evm_address, database: 'DBHandler'):
+    """
+    Tests that names sources are not used when they are not supposed to be used. For example
+    blockchain labels shouldn't be used when blockchain is not specified.
+    """
+    with database.user_write() as write_cursor:
+        database.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.ETHEREUM,
+                address=evm_address,
+                label='Account label',
+            )],
+        )
+    names = search_for_addresses_names(
+        database=database,
+        chain_addresses=[ChainAddress(
+            address=evm_address,
+            blockchain=None,
+        )],
+    )
+    assert names == [], 'No names should have been returned since the blockchain was None'
