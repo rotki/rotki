@@ -52,7 +52,7 @@ const { addressNameSelector } = useAddressesNamesStore();
 
 const ethName = computed<string | null>(() => {
   if (!get(scrambleData) || get(tx)) {
-    return get(addressNameSelector(get(text)));
+    return get(addressNameSelector(text, chain));
   }
 
   return null;
