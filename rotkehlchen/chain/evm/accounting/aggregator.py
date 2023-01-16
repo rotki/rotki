@@ -3,6 +3,7 @@ import logging
 import pkgutil
 from types import ModuleType
 from typing import TYPE_CHECKING, Union
+from rotkehlchen.accounting.ledger_actions import LedgerActionType
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.constants import MODULES_PACKAGE, MODULES_PREFIX_LENGTH
@@ -11,7 +12,7 @@ from rotkehlchen.errors.misc import ModuleLoadingError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import MessagesAggregator
 
-from .structures import TxEventSettings
+from .structures import TxEventSettings, TxMultitakeTreatment
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
@@ -104,22 +105,17 @@ class EVMAccountingAggregators():
     def __init__(self, aggregators: list[EVMAccountingAggregator]) -> None:
         self.aggregators = aggregators
 
-    def get_accounting_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:
+    def _get_internal_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:
         """
-        Iterate through loaded accountants and get accounting settings for each event type
-
-        This also contains the default built-in settings.
+        Returns accounting settings for events that can come from various decoders and thus
+        don't have any particular counterparty.
         """
         result = {}
-        for aggregator in self.aggregators:
-            result.update(aggregator.get_accounting_settings(pot))
-
-        # Also add the default settings
         gas_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.FEE) + '__' + CPT_GAS  # noqa: E501
         result[gas_key] = TxEventSettings(
             taxable=pot.settings.include_gas_costs,
-            count_entire_amount_spend=True,
-            count_cost_basis_pnl=True,
+            count_entire_amount_spend=pot.settings.include_gas_costs,
+            count_cost_basis_pnl=pot.settings.include_crypto2crypto,
             take=1,
             method='spend',
         )
@@ -155,6 +151,76 @@ class EVMAccountingAggregators():
             take=1,
             method='acquisition',
         )
+        return result
+
+    def _get_settings_for_editable_customizations(
+            self,
+            pot: 'AccountingPot',
+    ) -> dict[str, TxEventSettings]:
+        """
+        Returns accounting settings that allow users to customize events. Settings generated here
+        don't have any particular counterparty and thus can be easily set by the users in the UI.
+        Users are supposed to apply these settings in Evm Trasactions view.
+        """
+        result = {}
+        fee_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.FEE)
+        result[fee_key] = TxEventSettings(
+            taxable=True,
+            count_entire_amount_spend=True,
+            count_cost_basis_pnl=True,
+            method='spend',
+            take=1,
+        )
+        renew_key = str(HistoryEventType.RENEW) + '__' + str(HistoryEventSubType.NONE)
+        result[renew_key] = TxEventSettings(
+            taxable=True,
+            count_entire_amount_spend=True,
+            count_cost_basis_pnl=True,
+            method='spend',
+            take=1,
+        )
+        swap_key = str(HistoryEventType.TRADE) + '__' + str(HistoryEventSubType.SPEND)
+        result[swap_key] = TxEventSettings(
+            taxable=True,
+            count_entire_amount_spend=False,
+            count_cost_basis_pnl=True,
+            method='spend',
+            take=2,
+            multitake_treatment=TxMultitakeTreatment.SWAP,
+        )
+        airdrop_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.AIRDROP)
+        result[airdrop_key] = TxEventSettings(
+            taxable=LedgerActionType.AIRDROP in pot.settings.taxable_ledger_actions,
+            # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
+            count_entire_amount_spend=False,
+            count_cost_basis_pnl=False,
+            method='acquisition',
+            take=1,
+        )
+        reward_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.REWARD)
+        result[reward_key] = TxEventSettings(
+            taxable=True,
+            # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
+            count_entire_amount_spend=False,
+            count_cost_basis_pnl=False,
+            method='acquisition',
+            take=1,
+        )
+        return result
+
+    def get_accounting_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:
+        """
+        Iterate through loaded accountants and get accounting settings for each event type
+
+        This also contains the default built-in settings.
+        """
+        result = {}
+        for aggregator in self.aggregators:
+            result.update(aggregator.get_accounting_settings(pot))
+
+        # Using | operator is safe since dicts keys are unique and won't be overriden
+        result |= self._get_internal_settings(pot)
+        result |= self._get_settings_for_editable_customizations(pot)
         return result
 
     def reset(self) -> None:
