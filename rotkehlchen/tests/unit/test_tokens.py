@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -126,7 +126,7 @@ def test_last_queried_ts(tokens, freezer):
         assert int(after_first_query[0][1]) >= beginning
 
         continuation = beginning + 10
-        freezer.move_to(datetime.fromtimestamp(continuation))
+        freezer.move_to(datetime.datetime.fromtimestamp(continuation, tz=datetime.timezone.utc))
         # Detect again
         tokens.detect_tokens(
             only_cache=False,

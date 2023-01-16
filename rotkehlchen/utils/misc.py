@@ -50,8 +50,15 @@ def ts_ms_to_sec(ts: TimestampMS) -> Timestamp:
     return Timestamp(int(ts / 1000))
 
 
-def create_timestamp(datestr: str, formatstr: str = '%Y-%m-%d %H:%M:%S') -> Timestamp:
-    """Can throw ValueError due to strptime"""
+def create_timestamp(datestr: str, formatstr: str) -> Timestamp:
+    """
+    Connvert datestr to unix timestamp (int) depending on the given formatstr.
+    Example format str: '%Y-%m-%d %H:%M:%S. More details here:
+    https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
+
+    May raise:
+    - ValueError due to strptime
+    """
     return Timestamp(calendar.timegm(time.strptime(datestr, formatstr)))
 
 
@@ -116,9 +123,12 @@ def timestamp_to_date(
 ) -> str:
     """Transforms a timestamp to a datesring depending on given formatstr and UTC/local choice"""
     if treat_as_local is False:
-        date = datetime.datetime.utcfromtimestamp(ts).strftime(formatstr)
+        date = datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc).strftime(formatstr)
     else:  # localtime
-        date = datetime.datetime.fromtimestamp(ts).strftime(formatstr)
+        date = datetime.datetime.fromtimestamp(
+            ts,
+            tz=datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo,
+        ).strftime(formatstr)
 
     # Depending on the formatstr we could have empty strings at the end. Strip them.
     return date.rstrip()

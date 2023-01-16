@@ -1657,8 +1657,8 @@ class RestAPI():
         premium = self.rotkehlchen.premium
 
         if premium is None or not premium.is_active():
-            today = datetime.datetime.today()
-            start_of_day_today = datetime.datetime(today.year, today.month, today.day)
+            today = datetime.datetime.now(tz=datetime.timezone.utc)
+            start_of_day_today = datetime.datetime(today.year, today.month, today.day, tzinfo=datetime.timezone.utc)  # noqa: E501
             from_ts = Timestamp(int((start_of_day_today - datetime.timedelta(days=14)).timestamp()))  # noqa: E501
 
         data = self.rotkehlchen.data.db.get_netvalue_data(from_ts, include_nfts)

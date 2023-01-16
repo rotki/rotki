@@ -116,7 +116,7 @@ def profiler(request):
             TraceSampler,
         )
 
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(tz=datetime.timezone.utc)
         tmpdirname = tempfile.gettempdir()
         stack_path = Path(tmpdirname) / f'{now:%Y%m%d_%H%M}_stack.data'
         with open(stack_path, 'w') as stack_stream:

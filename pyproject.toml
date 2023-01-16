@@ -72,7 +72,9 @@ select = [
     "PLE",
     "PLR",
     "PLW",
-    "COM"
+    "PIE",
+    "COM",
+    "DTZ"
     # "RUF",  # ruff specific rules, we enable only those we need below
 ]
 extend-select = [

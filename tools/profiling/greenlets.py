@@ -1,6 +1,6 @@
+import datetime
 import json
 import sys
-from datetime import datetime
 from typing import Any
 
 import greenlet
@@ -38,7 +38,7 @@ def install_switch_log():
                         'origin': str(origin),
                         'target': str(target),
                         'target_callstack': callstack,
-                        'time': datetime.utcnow().isoformat(),
+                        'time': datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
                     },
                 ),
             )

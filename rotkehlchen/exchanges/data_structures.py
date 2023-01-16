@@ -1,6 +1,6 @@
+import datetime
 import logging
 from dataclasses import dataclass
-from datetime import datetime
 from typing import TYPE_CHECKING, Any, Iterator, NamedTuple, Optional
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
@@ -301,7 +301,7 @@ class Trade(AccountingEventMixin):
     def __str__(self) -> str:
         return (
             f'trade at {str(self.location)} location and date '
-            f'{datetime.fromtimestamp(self.timestamp)} '
+            f'{datetime.datetime.fromtimestamp(self.timestamp, tz=datetime.timezone.utc)} '
             f'of type {str(self.trade_type)} with base asset: {self.base_asset.symbol_or_name()} '
             f'and quote asset: {self.quote_asset.symbol_or_name()}'
         )

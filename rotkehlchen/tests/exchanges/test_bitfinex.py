@@ -1,6 +1,6 @@
+import datetime
 import warnings as test_warnings
 from contextlib import ExitStack
-from datetime import datetime
 from http import HTTPStatus
 from unittest.mock import MagicMock, call, patch
 
@@ -444,7 +444,7 @@ def test_delisted_pair_trades_work(mock_bitfinex):
     assert trade == expected_trade
 
 
-@pytest.mark.freeze_time(datetime(2020, 12, 3, 12, 0, 0))
+@pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.timezone.utc))
 def test_query_online_trade_history_case_1(mock_bitfinex):
     """Test pagination logic for trades works as expected when each request
     does not return a result already processed.
@@ -607,7 +607,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
         api_query_mock = stack.enter_context(api_query_patch)
         trades, _ = mock_bitfinex.query_online_trade_history(
             start_ts=Timestamp(0),
-            end_ts=Timestamp(int(datetime.now().timestamp())),
+            end_ts=Timestamp(int(datetime.datetime.now(tz=datetime.timezone.utc).timestamp())),
         )
         assert api_query_mock.call_args_list == expected_calls
         expected_trades = [
@@ -667,7 +667,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
         assert trades == expected_trades
 
 
-@pytest.mark.freeze_time(datetime(2020, 12, 3, 12, 0, 0))
+@pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.timezone.utc))
 def test_query_online_trade_history_case_2(mock_bitfinex):
     """Test pagination logic for trades works as expected when a request
     returns a result already processed in the previous request.
@@ -785,7 +785,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
         stack.enter_context(api_query_patch)
         trades, _ = mock_bitfinex.query_online_trade_history(
             start_ts=Timestamp(0),
-            end_ts=Timestamp(int(datetime.now().timestamp())),
+            end_ts=Timestamp(int(datetime.datetime.now(tz=datetime.timezone.utc).timestamp())),
         )
         expected_trades = [
             Trade(
@@ -933,7 +933,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitfinex):
     assert asset_movement == expected_asset_movement
 
 
-@pytest.mark.freeze_time(datetime(2020, 12, 3, 12, 0, 0))
+@pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.timezone.utc))
 def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
     """Test pagination logic for asset movements works as expected when each
     request does not return a result already processed.
@@ -1142,7 +1142,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
         api_query_mock = stack.enter_context(api_query_patch)
         asset_movements = mock_bitfinex.query_online_deposits_withdrawals(
             start_ts=Timestamp(0),
-            end_ts=Timestamp(int(datetime.now().timestamp())),
+            end_ts=Timestamp(int(datetime.datetime.now(tz=datetime.timezone.utc).timestamp())),
         )
         assert api_query_mock.call_args_list == expected_calls
 
@@ -1189,7 +1189,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
         assert asset_movements == expected_asset_movements
 
 
-@pytest.mark.freeze_time(datetime(2020, 12, 3, 12, 0, 0))
+@pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.timezone.utc))
 def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
     """Test pagination logic for asset movements works as expected when a
     request returns a result already processed in the previous request.
@@ -1343,7 +1343,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
         stack.enter_context(api_query_patch)
         asset_movements = mock_bitfinex.query_online_deposits_withdrawals(
             start_ts=Timestamp(0),
-            end_ts=Timestamp(int(datetime.now().timestamp())),
+            end_ts=Timestamp(int(datetime.datetime.now(tz=datetime.timezone.utc).timestamp())),
         )
         wbtc_fee_asset = A_WBTC
         eur_fee_asset = A_EUR

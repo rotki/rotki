@@ -156,7 +156,7 @@ class Okx(ExchangeInterface):
         if len(params) != 0:
             path += f'?{urlencode(params)}'
 
-        datestr = datetime.datetime.utcnow().isoformat(timespec='milliseconds') + 'Z'
+        datestr = datetime.datetime.now(tz=datetime.timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')  # noqa: E501
         signature = self._generate_signature(datestr, method, path, '')
         self.session.headers.update({
             'OK-ACCESS-TIMESTAMP': datestr,

@@ -1,5 +1,5 @@
+import datetime
 import warnings as test_warnings
-from datetime import datetime, timedelta
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from unittest.mock import MagicMock, call, patch
@@ -524,8 +524,8 @@ def test_api_query_paginated_stops_timestamp_gt_end_ts(mock_bitstamp):
     `end_ts`.
     """
     api_limit = 2
-    now = datetime.now().replace(microsecond=0)
-    gt_now = now + timedelta(seconds=1)
+    now = datetime.datetime.now(tz=datetime.timezone.utc).replace(microsecond=0)
+    gt_now = now + datetime.timedelta(seconds=1)
     now_ts = int(now.timestamp())
     gt_now_iso = gt_now.isoformat()
     options = {
@@ -573,7 +573,7 @@ def test_api_query_paginated_stops_timestamp_gt_end_ts(mock_bitstamp):
     assert result == []
 
 
-@pytest.mark.freeze_time(datetime(2020, 12, 3, 12, 0, 0))
+@pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.timezone.utc))
 def test_api_query_paginated_trades_pagination(mock_bitstamp):
     """Test pagination logic for trades works as expected.
 
@@ -647,7 +647,7 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
     }
     """
     api_limit = 2
-    now = datetime.now()
+    now = datetime.datetime.now(tz=datetime.timezone.utc)
     now_ts = int(now.timestamp())
     options = {
         'since_id': USER_TRANSACTION_MIN_SINCE_ID,
@@ -1002,7 +1002,7 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
         assert mock_api_query_paginated.call_args == expected_call
 
 
-@pytest.mark.freeze_time(datetime(2020, 12, 3, 12, 0, 0))
+@pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.timezone.utc))
 @pytest.mark.parametrize('bitstamp_api_key', ['123456'])
 @pytest.mark.parametrize('bitstamp_api_secret', [str.encode('abcdefg')])
 def test_api_query_request_headers_checks(mock_bitstamp):
