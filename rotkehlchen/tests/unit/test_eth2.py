@@ -1,6 +1,6 @@
+import datetime
 import re
 from contextlib import ExitStack
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -207,7 +207,7 @@ ADDR1_VALIDATOR_RESPONSE = [
 ]
 
 
-@pytest.mark.freeze_time(datetime(2020, 11, 10, 21, 42, 57))
+@pytest.mark.freeze_time(datetime.datetime(2020, 11, 10, 21, 42, 57, tzinfo=datetime.timezone.utc))
 @pytest.mark.parametrize('default_mock_price_value', [FVal(2)])
 @pytest.mark.parametrize('eth2_mock_data', [{
     'eth1': {
@@ -301,7 +301,7 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
     the more he stakes. Probably need to adjust test so it does not do that.
     """
     start_ts = 1604506685
-    freezer.move_to(datetime.fromtimestamp(start_ts))
+    freezer.move_to(datetime.datetime.fromtimestamp(start_ts, tz=datetime.timezone.utc))
     get_deposits_patch = patch.object(
         eth2.beaconchain, 'get_validator_deposits', wraps=eth2.beaconchain.get_validator_deposits,  # noqa: E501
     )
@@ -319,14 +319,20 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         assert '0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b' in get_deposits_patch.call_args.args[0]  # noqa: E501
 
         # NB: Move time to ts_now + REQUEST_DELTA_TS - 2
-        freezer.move_to(datetime.fromtimestamp(start_ts + REQUEST_DELTA_TS - 2))
+        freezer.move_to(datetime.datetime.fromtimestamp(
+            start_ts + REQUEST_DELTA_TS - 2,
+            tz=datetime.timezone.utc,
+        ))
         eth2.get_staking_deposits([ADDR1])
         assert get_address_validator_patch.call_count == 1
         assert get_deposits_patch.call_count == 2
         get_deposits_patch.assert_called_with([])
 
         # NB: Move time to ts_now + REQUEST_DELTA_TS + 2
-        freezer.move_to(datetime.fromtimestamp(start_ts + REQUEST_DELTA_TS + 2))
+        freezer.move_to(datetime.datetime.fromtimestamp(
+            start_ts + REQUEST_DELTA_TS + 2,
+            tz=datetime.timezone.utc,
+        ))
         eth2.get_staking_deposits([ADDR1])
         assert get_address_validator_patch.call_count == 2
         get_address_validator_patch.assert_called_with(ADDR1)

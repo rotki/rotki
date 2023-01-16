@@ -32,9 +32,9 @@ import argparse
 # - Add the option to filter the data for plotting, effectivelly allowing
 #   zooming
 import collections
+import datetime
 import pickle
 from contextlib import suppress
-from datetime import datetime
 from itertools import chain
 from typing import Any, Optional
 
@@ -50,7 +50,7 @@ MEMORY = 1
 
 def ts_to_dt(string_ts):
     """converts a string timestamp to a datatime object"""
-    return datetime.fromtimestamp(int(float(string_ts)))
+    return datetime.datetime.fromtimestamp(int(float(string_ts)), tz=datetime.timezone.utc)
 
 
 def plot_date_axis(axes):

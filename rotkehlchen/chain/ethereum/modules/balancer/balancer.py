@@ -963,7 +963,7 @@ class Balancer(EthereumModule):
         from_timestamp = ts_now() if timestamp is None else timestamp
         midnight_epoch = int(
             datetime.datetime.combine(
-                datetime.datetime.fromtimestamp(from_timestamp),
+                datetime.datetime.fromtimestamp(from_timestamp, tz=datetime.timezone.utc),
                 datetime.time.min,
             ).timestamp(),
         )

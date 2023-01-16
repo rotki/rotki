@@ -1,9 +1,9 @@
+import datetime
 import gc
 import os
 import pickle
 import time
 import tracemalloc
-from datetime import datetime
 from types import FrameType
 
 from .constants import MINUTE
@@ -22,7 +22,7 @@ class TraceProfiler:
         self.datadir = datadir
         self.profiling = True
 
-        now = datetime.now()
+        now = datetime.datetime.now(tz=datetime.timezone.utc)
         trace_file = '{:%Y%m%d_%H%M}_trace.pickle'.format(now)
         trace_path = os.path.join(self.datadir, trace_file)
         self.trace_stream = open(trace_path, 'wb')  # noqa: SIM115  # we close at stop()

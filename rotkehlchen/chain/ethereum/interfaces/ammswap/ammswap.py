@@ -8,9 +8,9 @@ This interface is used at the moment in:
 - Sushiswap Module
 """
 import abc
+import datetime
 import logging
 from collections import defaultdict
-from datetime import datetime, time
 from typing import TYPE_CHECKING, Literal, Optional
 
 from gevent.lock import Semaphore
@@ -360,7 +360,10 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         )
         querystr = format_query_indentation(TOKEN_DAY_DATAS_QUERY.format())
         today_epoch = int(
-            datetime.combine(datetime.utcnow().date(), time.min).timestamp(),
+            datetime.datetime.combine(
+                datetime.datetime.now(datetime.timezone.utc).date(),
+                datetime.time.min,
+            ).timestamp(),
         )
         param_types = {
             '$limit': 'Int!',

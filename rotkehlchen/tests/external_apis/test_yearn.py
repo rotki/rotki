@@ -41,7 +41,7 @@ def test_yearn_api(database):
     assert token.protocol == YEARN_VAULTS_V2_PROTOCOL
 
     # trigger the query again and check that the timestamp was updated
-    future_timestamp = datetime.datetime.now() + datetime.timedelta(seconds=WEEK_IN_SECONDS)
+    future_timestamp = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=WEEK_IN_SECONDS)  # noqa: E501
     with freeze_time(future_timestamp):
         query_yearn_vaults(database)
 
