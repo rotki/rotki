@@ -26,7 +26,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.checks import assert_asset_result_order
 from rotkehlchen.tests.utils.constants import A_GNO, A_RDN
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
-from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.tests.utils.mock import MockResponse, patch_requests_for_cryptoscamdb
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import ChainID, Location
 
@@ -173,13 +173,14 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
         result = assert_proper_response_with_result(response)
         assert assets_after_deletion <= set(result)
 
-        # Fetch remote assets to be ignored
-        response = requests.post(
-            api_url_for(
-                rotkehlchen_api_server_with_exchanges,
-                'ignoredassetsresource',
-            ),
-        )
+        # Mock fetching remote assets to be ignored
+        with patch('requests.get', wraps=patch_requests_for_cryptoscamdb):
+            response = requests.post(
+                api_url_for(
+                    rotkehlchen_api_server_with_exchanges,
+                    'ignoredassetsresource',
+                ),
+            )
         result = assert_proper_response_with_result(response)
         assert result >= 1
         assert len(rotki.data.db.get_ignored_assets(cursor)) > len(assets_after_deletion)

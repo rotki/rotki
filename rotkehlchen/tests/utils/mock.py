@@ -5,10 +5,12 @@ from pathlib import Path
 from typing import Any, Optional
 from unittest.mock import patch
 
+import requests
 from hexbytes import HexBytes
 
 from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR
 
+original_requests_get = requests.get
 MOCK_WEB3_LAST_BLOCK_INT = 16210873
 MOCK_WEB3_LAST_BLOCK_HEX = '0xf75bb9'
 
@@ -70,6 +72,14 @@ class MockWeb3():
     @property
     def net(self):
         return namedtuple('Version', ['version'])(version=1)
+
+
+def patch_requests_for_cryptoscamdb(url, *args, **kwargs):
+    if url == 'https://api.cryptoscamdb.org/v1/addresses':
+        return MockResponse(200, '{"success": true, "result":{}}')
+
+    # else
+    return original_requests_get(url, *args, **kwargs)
 
 
 def patch_web3_request(test_specific_mock_data):
