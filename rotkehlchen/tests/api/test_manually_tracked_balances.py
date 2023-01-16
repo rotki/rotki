@@ -104,10 +104,10 @@ def _populate_initial_balances(api_server) -> list[dict[str, Any]]:
         'location': 'blockchain',
         'balance_type': 'asset',
     }, {
-        "asset": "BTC",
-        "label": "My XPUB BTC wallet",
-        "amount": "1.425",
-        "location": "blockchain",
+        'asset': 'BTC',
+        'label': 'My XPUB BTC wallet',
+        'amount': '1.425',
+        'location': 'blockchain',
         'balance_type': 'asset',
     }, {
         'asset': A_BNB.identifier,
@@ -117,25 +117,25 @@ def _populate_initial_balances(api_server) -> list[dict[str, Any]]:
         'tags': ['private'],
         'balance_type': 'asset',
     }, {
-        "asset": "ETH",
-        "label": "The ETH I owe to Siretfel. Must pay money or with my life",
-        "amount": "1",
+        'asset': 'ETH',
+        'label': 'The ETH I owe to Siretfel. Must pay money or with my life',
+        'amount': '1',
         'tags': ['private'],
-        "location": "blockchain",
+        'location': 'blockchain',
         'balance_type': 'liability',
     }, {
-        "asset": "ETH",
-        "label": "ETH owed to the Finanzamt",
-        "amount": "1",
+        'asset': 'ETH',
+        'label': 'ETH owed to the Finanzamt',
+        'amount': '1',
         'tags': ['private'],
-        "location": "blockchain",
+        'location': 'blockchain',
         'balance_type': 'liability',
     }, {
-        "asset": "USD",
-        "label": "My gambling debt",
-        "amount": "100",
+        'asset': 'USD',
+        'label': 'My gambling debt',
+        'amount': '100',
         'tags': None,
-        "location": "external",
+        'location': 'external',
         'balance_type': 'liability',
     }]
     response = requests.put(
@@ -205,7 +205,7 @@ def test_add_and_query_manually_tracked_balances(
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
-                "allbalancesresource",
+                'allbalancesresource',
             ), json={'async_query': async_query},
         )
         if async_query:
@@ -360,16 +360,16 @@ def test_add_edit_manually_tracked_balances_errors(
     are handled properly"""
     _populate_tags(rotkehlchen_api_server)
     balances = {'balances': [{
-        "asset": "XMR",
-        "label": "My monero wallet",
-        "amount": "50.315",
-        "tags": ["public", "mInEr"],
-        "location": "blockchain",
+        'asset': 'XMR',
+        'label': 'My monero wallet',
+        'amount': '50.315',
+        'tags': ['public', 'mInEr'],
+        'location': 'blockchain',
     }, {
-        "asset": "BTC",
-        "label": "My XPUB BTC wallet",
-        "amount": "1.425",
-        "location": "blockchain",
+        'asset': 'BTC',
+        'label': 'My XPUB BTC wallet',
+        'amount': '1.425',
+        'location': 'blockchain',
     }]}
 
     # invalid initial input type
@@ -628,11 +628,11 @@ def test_add_edit_unknown_tags(rotkehlchen_api_server):
 
     # Try adding a new balance but with an unknown tag
     balances = [{
-        "asset": "ETC",
-        "label": "My ETC wallet",
-        "amount": "500.115",
-        "tags": ["notexisting", "mInEr"],
-        "location": "blockchain",
+        'asset': 'ETC',
+        'label': 'My ETC wallet',
+        'amount': '500.115',
+        'tags': ['notexisting', 'mInEr'],
+        'location': 'blockchain',
     }]
     response = requests.put(
         api_url_for(
@@ -648,7 +648,7 @@ def test_add_edit_unknown_tags(rotkehlchen_api_server):
     )
 
     balances = initial_balances[:1]
-    balances[0]['tags'] = ["notexisting", "mInEr"]
+    balances[0]['tags'] = ['notexisting', 'mInEr']
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
@@ -721,7 +721,7 @@ def test_delete_manually_tracked_balances_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Invalid input type",
+        contained_in_msg='Invalid input type',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

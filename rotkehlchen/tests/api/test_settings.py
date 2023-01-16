@@ -26,7 +26,7 @@ from rotkehlchen.types import (
 
 def test_querying_settings(rotkehlchen_api_server, username):
     """Make sure that querying settings works for logged in user"""
-    response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource'))
     assert_proper_response(response)
     json_data = response.json()
 
@@ -45,7 +45,7 @@ def test_querying_settings(rotkehlchen_api_server, username):
     assert_simple_ok_response(response)
 
     # and now with no logged in user it should fail
-    response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource'))
     assert_error_response(
         response=response,
         contained_in_msg='No user is currently logged in',
@@ -56,7 +56,7 @@ def test_querying_settings(rotkehlchen_api_server, username):
 def test_set_settings(rotkehlchen_api_server):
     """Happy case settings modification test"""
     # Get the starting settings
-    response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource'))
     assert_proper_response(response)
     json_data = response.json()
     original_settings = json_data['result']
@@ -136,7 +136,7 @@ def test_set_settings(rotkehlchen_api_server):
         assert result[setting] == value, msg
 
     # now check that the same settings are returned in a settings query
-    response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource'))
     assert_proper_response(response)
     json_data = response.json()
     result = json_data['result']
@@ -184,7 +184,7 @@ def test_set_rpc_endpoint_fail_not_set_others(
 @pytest.mark.parametrize('rpc_setting', ['ksm_rpc_endpoint'])
 def test_unset_rpc_endpoint(rotkehlchen_api_server, rpc_setting):
     """Test the rpc endpoint can be unset"""
-    response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource'))
     assert_proper_response(response)
     json_data = response.json()
     assert json_data['message'] == ''
@@ -193,7 +193,7 @@ def test_unset_rpc_endpoint(rotkehlchen_api_server, rpc_setting):
 
     data = {'settings': {rpc_setting: ''}}
 
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_proper_response(response)
 
     json_data = response.json()
@@ -207,7 +207,7 @@ def test_disable_taxfree_after_period(rotkehlchen_api_server):
     data = {
         'settings': {'taxfree_after_period': -1},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_proper_response(response)
     json_data = response.json()
     assert json_data['result']['taxfree_after_period'] is None
@@ -216,7 +216,7 @@ def test_disable_taxfree_after_period(rotkehlchen_api_server):
     data = {
         'settings': {'taxfree_after_period': -5},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='The taxfree_after_period value can not be negative',
@@ -226,7 +226,7 @@ def test_disable_taxfree_after_period(rotkehlchen_api_server):
     data = {
         'settings': {'taxfree_after_period': 0},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='The taxfree_after_period value can not be set to zero',
@@ -243,7 +243,7 @@ def test_set_unknown_settings(rotkehlchen_api_server):
     data = {
         'settings': {'invalid_setting': 5555},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='{"invalid_setting": ["Unknown field."',
@@ -261,7 +261,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     data = {
         'settings': {'premium_should_sync': 444},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Not a valid boolean',
@@ -272,7 +272,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     data = {
         'settings': {'include_crypto2crypto': 'ffdsdasd'},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Not a valid boolean',
@@ -283,7 +283,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     data = {
         'settings': {'ui_floating_precision': -1},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Floating numbers precision in the UI must be between 0 and 8',
@@ -292,7 +292,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     data = {
         'settings': {'ui_floating_precision': 9},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Floating numbers precision in the UI must be between 0 and 8',
@@ -303,7 +303,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     data = {
         'settings': {'ui_floating_precision': 'dasdsds'},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Not a valid integer',
@@ -314,7 +314,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     data = {
         'settings': {'taxfree_after_period': -2},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='The taxfree_after_period value can not be negative, except',
@@ -325,7 +325,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     data = {
         'settings': {'taxfree_after_period': 'dsad'},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='dsad is not a valid integer',
@@ -336,7 +336,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     data = {
         'settings': {'balance_save_frequency': 0},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='The number of hours after which balances should be saved should be >= 1',
@@ -347,7 +347,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     data = {
         'settings': {'balance_save_frequency': 'dasdsd'},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Not a valid integer',
@@ -358,7 +358,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     data = {
         'settings': {'include_gas_costs': 55.1},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Not a valid boolean',
@@ -369,7 +369,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     data = {
         'settings': {'main_currency': 'DSDSDSAD'},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Unknown asset DSDSDSAD',
@@ -380,7 +380,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     data = {
         'settings': {'main_currency': 243243},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Tried to initialize an asset out of a non-string identifier',
@@ -391,7 +391,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     data = {
         'settings': {'date_display_format': 124.1},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Not a valid string',
@@ -402,7 +402,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     data = {
         'settings': {'active_modules': 55},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='"active_modules": ["Not a valid list."',
@@ -413,7 +413,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     data = {
         'settings': {'active_modules': ['makerdao_dsr', 'foo']},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='"active_modules": ["foo is not a valid module"]',
@@ -436,7 +436,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     address1 = make_evm_address()
     data = {'module': 'aave', 'address': address1}
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,
+        api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'), json=data,
     )
     result = assert_proper_response_with_result(response)
     assert result == {'aave': [address1]}
@@ -444,7 +444,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     address2 = make_evm_address()
     data = {'module': 'makerdao_vaults', 'address': address2}
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,
+        api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'), json=data,
     )
     result = assert_proper_response_with_result(response)
     assert_queried_addresses_match(result, {
@@ -455,7 +455,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     # add same address to another module/protocol
     data = {'module': 'aave', 'address': address2}
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,
+        api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'), json=data,
     )
     result = assert_proper_response_with_result(response)
     assert_queried_addresses_match(result, {
@@ -466,7 +466,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     # try to add an address that already exists for a module/protocol and assert we get an error
     data = {'module': 'aave', 'address': address1}
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,
+        api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'), json=data,
     )
     assert_error_response(
         response=response,
@@ -478,7 +478,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     address3 = make_evm_address()
     data = {'module': 'makerdao_dsr', 'address': address3}
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,
+        api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'), json=data,
     )
     result = assert_proper_response_with_result(response)
     assert_queried_addresses_match(result, {
@@ -488,7 +488,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     })
 
     response = requests.delete(
-        api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,
+        api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'), json=data,
     )
     result = assert_proper_response_with_result(response)
     assert_queried_addresses_match(result, {
@@ -499,7 +499,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     # try to remove a non-existing address and module combination and assert we get an error
     data = {'module': 'makerdao_vaults', 'address': address1}
     response = requests.delete(
-        api_url_for(rotkehlchen_api_server, "queriedaddressesresource"), json=data,
+        api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'), json=data,
     )
     assert_error_response(
         response=response,
@@ -508,7 +508,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     )
 
     # test that getting the queried addresses per module works
-    response = requests.get(api_url_for(rotkehlchen_api_server, "queriedaddressesresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'))
     result = assert_proper_response_with_result(response)
     assert_queried_addresses_match(result, {
         'aave': [address1, address2],
@@ -520,34 +520,34 @@ def test_excluded_exchanges_settings(rotkehlchen_api_server):
     exchanges_input = {
         'settings': {
             'non_syncing_exchanges': [
-                ExchangeLocationID(name="test_name", location=Location.KRAKEN).serialize(),
-                ExchangeLocationID(name="test_name2", location=Location.KRAKEN).serialize(),
+                ExchangeLocationID(name='test_name', location=Location.KRAKEN).serialize(),
+                ExchangeLocationID(name='test_name2', location=Location.KRAKEN).serialize(),
             ],
         },
     }
     exchanges_expected = [
-        ExchangeLocationID(name="test_name", location=Location.KRAKEN).serialize(),
-        ExchangeLocationID(name="test_name2", location=Location.KRAKEN).serialize(),
+        ExchangeLocationID(name='test_name', location=Location.KRAKEN).serialize(),
+        ExchangeLocationID(name='test_name2', location=Location.KRAKEN).serialize(),
     ]
 
     exchanges_bad_input = {
         'settings': {
             'non_syncing_exchanges': [
-                ExchangeLocationID(name="bad_name", location=Location.KRAKEN).serialize(),
-                ExchangeLocationID(name="bad_name", location=Location.KRAKEN).serialize(),
+                ExchangeLocationID(name='bad_name', location=Location.KRAKEN).serialize(),
+                ExchangeLocationID(name='bad_name', location=Location.KRAKEN).serialize(),
             ],
         },
     }
 
     requests.put(
-        api_url_for(rotkehlchen_api_server, "settingsresource"),
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
         json=exchanges_input,
     )
-    response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource")).json()
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource')).json()
     assert response['result']['non_syncing_exchanges'] == exchanges_expected
 
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "settingsresource"),
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
         json=exchanges_bad_input,
     )
     assert response.status_code == 400

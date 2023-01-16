@@ -136,7 +136,7 @@ class ExchangeManager():
         exchange_info = []
         for location, exchanges in self.connected_exchanges.items():
             for exchangeobj in exchanges:
-                data = {"location": str(location), "name": exchangeobj.name}
+                data = {'location': str(location), 'name': exchangeobj.name}
                 if location == Location.KRAKEN:  # ignore type since we know this is kraken here
                     data[KRAKEN_ACCOUNT_TYPE_KEY] = str(exchangeobj.account_type)  # type: ignore
                 if location == Location.FTX:

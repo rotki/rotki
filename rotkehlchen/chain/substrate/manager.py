@@ -648,6 +648,6 @@ def wait_until_a_node_is_available(
     except gevent.Timeout as e:
         chain = substrate_manager.chain
         raise RemoteError(
-            f"{chain} manager does not have nodes availables after waiting "
+            f'{chain} manager does not have nodes availables after waiting '
             f"{seconds} seconds. {chain} balances won't be queried.",
         ) from e

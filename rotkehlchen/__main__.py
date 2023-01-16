@@ -26,12 +26,12 @@ def main() -> None:
         else:
             tb = traceback.format_exc()
             logging.critical(tb)
-            print("Failed to start rotkehlchen backend:\n{}".format(tb))
+            print('Failed to start rotkehlchen backend:\n{}'.format(tb))
             sys.exit(1)
     except:  # noqa: B001, E722, RUF100  # pylint: disable=bare-except
         tb = traceback.format_exc()
         logging.critical(tb)
-        print("Failed to start rotkehlchen backend:\n{}".format(tb))
+        print('Failed to start rotkehlchen backend:\n{}'.format(tb))
         sys.exit(1)
 
     rotkehlchen_server.main()

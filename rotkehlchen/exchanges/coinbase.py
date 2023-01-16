@@ -348,7 +348,7 @@ class Coinbase(ExchangeInterface):
         If you want just the first results then set ignore_pagination to True.
         """
         all_items: list[Any] = []
-        request_verb = "GET"
+        request_verb = 'GET'
         # initialize next_uri before loop
         next_uri = f'/{self.apiversion}/{endpoint}'
         if options:

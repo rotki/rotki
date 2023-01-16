@@ -258,7 +258,7 @@ def check_result_of_history_creation_for_remote_errors(  # pylint: disable=usele
 
 
 def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
-    invalid_payload = "[{"
+    invalid_payload = '[{'
 
     def mock_binance_api_queries(url, timeout):  # pylint: disable=unused-argument
         if remote_errors:
@@ -881,7 +881,7 @@ def mock_history_processing(
 def mock_etherscan_transaction_response(etherscan: Etherscan, remote_errors: bool):
     def mocked_request_dict(url, *_args, **_kwargs):
         if remote_errors:
-            return MockResponse(200, "[{")
+            return MockResponse(200, '[{')
 
         addr1_tx = f"""{{"blockNumber":"54092","timeStamp":"1439048640","hash":"{TX_HASH_STR1}","nonce":"0","blockHash":"0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{ETH_ADDRESS1}","to":"","value":"11901464239480000000000000","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"{MOCK_INPUT_DATA_HEX}","contractAddress":"0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"8569454"}}"""  # noqa: E501
         addr1_receipt = f"""{{"blockHash":"0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159","blockNumber":"0xdd1987","contractAddress":null,"cumulativeGasUsed":"0x1ba9a3f","effectiveGasPrice":"0xd4026e5de","from":"0x1627158aca8a8e2039f5ba3023c04a2129c634f1","gasUsed":"0x3251a","logs":[],"status":"0x1","to":"0xf8fdc3aa1f5a1ac20dd8596cd3d5b471ad305de1","transactionHash":"{TX_HASH_STR1}","transactionIndex":"0x12c","type":"0x2"}}"""  # noqa: E501

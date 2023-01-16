@@ -241,7 +241,7 @@ def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYP
 def upgrade_other_assets(cursor: 'DBCursor') -> ASSET_CREATION_TYPE:
     """Create the bindings tuple for the assets and common_asset_details tables using the
     information from the V2 tables for non ethereum assets"""
-    chains = ",".join([f'"{x}"' for x in ('C',)])
+    chains = ','.join([f'"{x}"' for x in ('C',)])
     result = cursor.execute(
         f'SELECT A.identifier, A.type, A.name, A.symbol, A.started, A.swapped_for, A.coingecko, '
         f'A.cryptocompare, B.forked FROM assets as A JOIN common_asset_details AS B '

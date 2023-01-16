@@ -33,7 +33,7 @@ class LogNokwargsChecker(BaseChecker):
         'E9001': (
             LOGNOKWARGS_MSG,
             LOGNOKWARGS_SYMBOL,
-            "Message Help is empty",
+            'Message Help is empty',
         ),
     }
 

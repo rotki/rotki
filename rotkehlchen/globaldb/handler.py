@@ -1696,7 +1696,7 @@ class GlobalDBHandler():
                     # Get ids for assets to insert them in the user db
                     write_cursor.execute('SELECT identifier from assets')
                     ids = write_cursor.fetchall()
-                    ids_proccesed = ", ".join([f'("{id[0]}")' for id in ids])
+                    ids_proccesed = ', '.join([f'("{id[0]}")' for id in ids])
                     user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_proccesed};')  # noqa: E501
                     user_db_cursor.switch_foreign_keys('ON')
 

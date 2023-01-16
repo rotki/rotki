@@ -33,8 +33,8 @@ class RotkehlchenServer():
         self.stop_event = gevent.event.Event()
         domain_list = []
         if self.args.api_cors:
-            if "," in self.args.api_cors:
-                for domain in self.args.api_cors.split(","):
+            if ',' in self.args.api_cors:
+                for domain in self.args.api_cors.split(','):
                     domain_list.append(str(domain))
             else:
                 domain_list.append(str(self.args.api_cors))

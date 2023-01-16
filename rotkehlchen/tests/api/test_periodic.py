@@ -24,13 +24,13 @@ def test_query_periodic(rotkehlchen_api_server_with_exchanges):
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "allbalancesresource",
+                'allbalancesresource',
             ), json={'save_data': True},
         )
     assert_proper_response(response)
 
     response = requests.get(
-        api_url_for(rotkehlchen_api_server_with_exchanges, "periodicdataresource"),
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'periodicdataresource'),
     )
     result = assert_proper_response_with_result(response)
     assert len(result) == 3

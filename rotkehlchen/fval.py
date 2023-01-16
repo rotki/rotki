@@ -167,7 +167,7 @@ class FVal():
             raise ConversionError(f'Tried to ask for exact int from {self.num}')
         return int(self.num)
 
-    def is_close(self, other: AcceptableFValInitInput, max_diff: str = "1e-6") -> bool:
+    def is_close(self, other: AcceptableFValInitInput, max_diff: str = '1e-6') -> bool:
         evaluated_max_diff = FVal(max_diff)
 
         if not isinstance(other, FVal):
@@ -182,6 +182,6 @@ def _evaluate_input(other: Any) -> Union[Decimal, int]:
     if isinstance(other, FVal):
         return other.num
     if not isinstance(other, int):
-        raise NotImplementedError("Expected either FVal or int.")
+        raise NotImplementedError('Expected either FVal or int.')
     # else
     return other

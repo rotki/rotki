@@ -266,7 +266,7 @@ def test_query_only_details_and_not_vaults(rotkehlchen_api_server, ethereum_acco
     # Query the details first
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "makerdaovaultdetailsresource",
+        'makerdaovaultdetailsresource',
     ))
     details = assert_proper_response_with_result(response)
     _check_vault_details_values(
@@ -276,7 +276,7 @@ def test_query_only_details_and_not_vaults(rotkehlchen_api_server, ethereum_acco
     # And then query the vaults, which should just use the cached value
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "makerdaovaultsresource",
+        'makerdaovaultsresource',
     ))
     vaults = assert_proper_response_with_result(response)
     _check_vaults_values(vaults, ethereum_accounts[0])
@@ -288,7 +288,7 @@ def test_query_vaults_details_non_premium(rotkehlchen_api_server):
     """Check querying the vaults details endpoint without premium does not work"""
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "makerdaovaultdetailsresource",
+        'makerdaovaultdetailsresource',
     ))
     assert_error_response(
         response=response,
@@ -317,7 +317,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
     """
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "makerdaovaultsresource",
+        'makerdaovaultsresource',
     ))
     vaults = assert_proper_response_with_result(response)
     vault_6021 = {
@@ -350,7 +350,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "makerdaovaultdetailsresource",
+        'makerdaovaultdetailsresource',
     ))
     vault_6021_details = {
         'identifier': 6021,
@@ -447,7 +447,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "makerdaovaultsresource",
+        'makerdaovaultsresource',
     ))
     # That proxy has 3 vaults. We only want to test 8913, which is closed/repaid so just keep that
     vaults = [x for x in assert_proper_response_with_result(response) if x['identifier'] == 8913]
@@ -472,7 +472,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "makerdaovaultdetailsresource",
+        'makerdaovaultdetailsresource',
     ))
     vault_8913_details = {
         'identifier': 8913,
@@ -541,7 +541,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
     """Check vault info and details for a vault with USDC as collateral"""
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "makerdaovaultsresource",
+        'makerdaovaultsresource',
     ))
     vaults = assert_proper_response_with_result(response)
     vault_7588 = MakerdaoVault(
@@ -564,7 +564,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
     )
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "makerdaovaultdetailsresource",
+        'makerdaovaultdetailsresource',
     ))
     vault_7588_details = {
         'identifier': 7588,
@@ -639,7 +639,7 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
     """
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "makerdaovaultsresource",
+        'makerdaovaultsresource',
     ))
     vaults = assert_proper_response_with_result(response)
     vault_8543 = {
@@ -683,7 +683,7 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
     assert_serialized_dicts_equal(vaults[1], vault_8632, ignore_keys=VAULT_IGNORE_KEYS)
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "makerdaovaultdetailsresource",
+        'makerdaovaultdetailsresource',
     ))
     vault_8543_details = {
         'identifier': 8543,
@@ -820,7 +820,7 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "makerdaovaultsresource",
+        'makerdaovaultsresource',
     ))
     # That proxy has 3 vaults. We only want to test 7538, which is closed/repaid so just keep that
     vaults = [x for x in assert_proper_response_with_result(response) if x['identifier'] == 7538]
@@ -844,7 +844,7 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "makerdaovaultdetailsresource",
+        'makerdaovaultdetailsresource',
     ))
     vault_7538_details = {
         'identifier': 7538,

@@ -165,7 +165,7 @@ def get_expected_events_balances_2():
         # Response index 0
         UniswapPoolEventsBalance(
             address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
-            pool_address=string_to_evm_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),
+            pool_address=string_to_evm_address('0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55'),
             token0=A_WETH,
             token1=dice_token,
             events=[
@@ -175,7 +175,7 @@ def get_expected_events_balances_2():
                     address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
                     timestamp=Timestamp(1598270334),
                     event_type=EventType.MINT_UNISWAP,
-                    pool_address=string_to_evm_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
+                    pool_address=string_to_evm_address('0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55'),  # noqa: E501
                     token0=A_WETH,
                     token1=dice_token,
                     amount0=AssetAmount(FVal('1.580431277572006656')),
@@ -189,7 +189,7 @@ def get_expected_events_balances_2():
                     address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
                     timestamp=Timestamp(1599000975),
                     event_type=EventType.BURN_UNISWAP,
-                    pool_address=string_to_evm_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
+                    pool_address=string_to_evm_address('0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55'),  # noqa: E501
                     token0=A_WETH,
                     token1=dice_token,
                     amount0=AssetAmount(FVal('0.970300671842796406')),
@@ -205,7 +205,7 @@ def get_expected_events_balances_2():
         # Response index 3
         UniswapPoolEventsBalance(
             address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
-            pool_address=string_to_evm_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
+            pool_address=string_to_evm_address('0x7CDc560CC66126a5Eb721e444abC30EB85408f7A'),  # noqa: E501
             token0=EvmToken('eip155:1/erc20:0x26E43759551333e57F073bb0772F50329A957b30'),  # DGVC
             token1=A_WETH,
             events=[
@@ -215,7 +215,7 @@ def get_expected_events_balances_2():
                     address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
                     timestamp=Timestamp(1598391968),
                     event_type=EventType.MINT_UNISWAP,
-                    pool_address=string_to_evm_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),    # noqa: 501 # noqa: E501
+                    pool_address=string_to_evm_address('0x7CDc560CC66126a5Eb721e444abC30EB85408f7A'),    # noqa: 501 # noqa: E501
                     token0=EvmToken('eip155:1/erc20:0x26E43759551333e57F073bb0772F50329A957b30'),    # noqa: 501 # DGVC
                     token1=A_WETH,
                     amount0=AssetAmount(FVal('322.230285353834005677')),
@@ -229,7 +229,7 @@ def get_expected_events_balances_2():
                     address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
                     timestamp=Timestamp(1598607431),
                     event_type=EventType.BURN_UNISWAP,
-                    pool_address=string_to_evm_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
+                    pool_address=string_to_evm_address('0x7CDc560CC66126a5Eb721e444abC30EB85408f7A'),  # noqa: E501
                     token0=EvmToken('eip155:1/erc20:0x26E43759551333e57F073bb0772F50329A957b30'),    # noqa: 501 # DGVC
                     token1=A_WETH,
                     amount0=AssetAmount(FVal('224.7799861151427733')),
@@ -264,7 +264,7 @@ def test_get_events_history_filtering_by_timestamp_case1(
     expected_events_balances_1 = [
         UniswapPoolEventsBalance(
             address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
-            pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
+            pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),
             token0=A_DOLLAR_BASED.resolve_to_evm_token(),
             token1=A_WETH.resolve_to_evm_token(),
             events=[
@@ -274,7 +274,7 @@ def test_get_events_history_filtering_by_timestamp_case1(
                     address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
                     timestamp=Timestamp(1604273256),
                     event_type=EventType.MINT_UNISWAP,
-                    pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
+                    pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),  # noqa: E501
                     token0=A_DOLLAR_BASED.resolve_to_evm_token(),
                     token1=A_WETH.resolve_to_evm_token(),
                     amount0=AssetAmount(FVal('605.773209925184996494')),

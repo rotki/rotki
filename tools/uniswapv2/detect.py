@@ -142,7 +142,7 @@ def pairs_and_token_details_from_graph() -> dict[str, Any]:
 def write_result_to_file(result: Any, name: str) -> None:
     filepath = root_path / 'rotkehlchen' / 'data' / name
     filepath.touch(exist_ok=True)
-    with filepath.open(mode="w") as f:
+    with filepath.open(mode='w') as f:
         f.write(json.dumps(result))
 
 
@@ -156,7 +156,7 @@ def read_file_if_exists(name: str) -> Optional[dict[str, Any]]:
     return data
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         prog='Uniswap LP tokens address extractor',
         description=(

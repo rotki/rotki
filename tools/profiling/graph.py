@@ -54,8 +54,8 @@ def ts_to_dt(string_ts):
 
 
 def plot_date_axis(axes):
-    date_fmt = dates.DateFormatter("%d/%b")
-    hour_fmt = dates.DateFormatter("%H:%M")
+    date_fmt = dates.DateFormatter('%d/%b')
+    hour_fmt = dates.DateFormatter('%H:%M')
 
     # TODO: set xaxis minor interval dynamically
 
@@ -64,7 +64,7 @@ def plot_date_axis(axes):
     # less than 5 days and interval of 3 is okay
     axes.xaxis.set_minor_locator(dates.HourLocator(interval=4))
     axes.xaxis.set_minor_formatter(hour_fmt)
-    axes.xaxis.set_tick_params(which="major", pad=15)
+    axes.xaxis.set_tick_params(which='major', pad=15)
 
 
 def plot_configure(figure):
@@ -145,12 +145,12 @@ def memory_objcount(output, data_list, topn=10):
     values = [alltime_data[label] for label in labels]
 
     if not values:
-        print("file is empty")
+        print('file is empty')
         return
 
     # plot only once to share the labels and colors
     axes.stackplot(alltime_timestamps, *values, labels=labels)
-    axes.legend(loc="upper left", fontsize="small")
+    axes.legend(loc='upper left', fontsize='small')
 
     plot_date_axis(axes)
     plot_configure(fig)
@@ -177,10 +177,10 @@ def memory_timeline(output, data_list):
 
         memory_max = max(max(memory), memory_max)
 
-        memory_axes.plot(timestamp, memory, color="b")
+        memory_axes.plot(timestamp, memory, color='b')
 
         if last_ts is not None:
-            plt.axvspan(last_ts, timestamp[0], color="y", alpha=0.1, lw=0)
+            plt.axvspan(last_ts, timestamp[0], color='y', alpha=0.1, lw=0)
 
         last_ts = timestamp[-1]
 
@@ -189,7 +189,7 @@ def memory_timeline(output, data_list):
     memory_axes.set_ylim(0, memory_max)
 
     plot_date_axis(memory_axes)
-    memory_axes.set_ylabel("Memory (MB)", color="b")
+    memory_axes.set_ylabel('Memory (MB)', color='b')
     plot_configure(fig)
     plt.savefig(output)
 
@@ -199,7 +199,7 @@ def memory_subplot(output, data_list):
     executions, keep in mind that the time-axis will be skewed, since each plot
     has a differente running time but the same plotting area."""
     number_plots = len(data_list)
-    fig, all_memory_axes = plt.subplots(1, number_plots, sharey="row")
+    fig, all_memory_axes = plt.subplots(1, number_plots, sharey='row')
 
     if number_plots == 1:
         all_memory_axes = [all_memory_axes]
@@ -211,22 +211,22 @@ def memory_subplot(output, data_list):
     # give room for the lines and axes
     memory_max *= 1.1
 
-    hour_fmt = dates.DateFormatter("%H:%M")
+    hour_fmt = dates.DateFormatter('%H:%M')
     for count, (data, memory_axes) in enumerate(zip(data_list, all_memory_axes)):
         timestamp = [line[TIMESTAMP] for line in data]
         memory = [line[MEMORY] for line in data]
 
         dt_start_time = timestamp[0]
         hours = timestamp[-1] - dt_start_time
-        label = "{start_date:%Y-%m-%d}\n{runtime}".format(start_date=dt_start_time, runtime=hours)
+        label = '{start_date:%Y-%m-%d}\n{runtime}'.format(start_date=dt_start_time, runtime=hours)
 
-        memory_axes.plot(timestamp, memory, color="b")
+        memory_axes.plot(timestamp, memory, color='b')
         memory_axes.set_ylim(0, memory_max)
         memory_axes.xaxis.set_major_formatter(hour_fmt)
         memory_axes.set_xlabel(label)
 
         if len(data_list) == 1 or count == 0:
-            memory_axes.set_ylabel("Memory (MB)")
+            memory_axes.set_ylabel('Memory (MB)')
         else:
             memory_axes.get_yaxis().set_visible(False)
 
@@ -251,8 +251,8 @@ def latency_scatter(output, data_list):
             last = current
 
     if latency:
-        axes.set_ylabel("Latency (sec)")
-        axes.scatter(timestamp, latency, s=10, alpha=0.1, marker=",", edgecolors="none")
+        axes.set_ylabel('Latency (sec)')
+        axes.scatter(timestamp, latency, s=10, alpha=0.1, marker=',', edgecolors='none')
         axes.set_xlim(min(timestamp), max(timestamp))
         axes.set_ylim(0, max(latency) * 1.1)
 
@@ -262,7 +262,7 @@ def latency_scatter(output, data_list):
             continue
 
         if last_ts is not None:
-            plt.axvspan(last_ts, timestamps[0], color="y", alpha=0.1, lw=0)
+            plt.axvspan(last_ts, timestamps[0], color='y', alpha=0.1, lw=0)
 
         last_ts = timestamps[-1]
 
@@ -314,57 +314,57 @@ def main():
     parser = argparse.ArgumentParser()
 
     # first action
-    action_parser = parser.add_subparsers(dest="action")
-    memory_parser = action_parser.add_parser("memory")
-    latency_parser = action_parser.add_parser("latency")
+    action_parser = parser.add_subparsers(dest='action')
+    memory_parser = action_parser.add_parser('memory')
+    latency_parser = action_parser.add_parser('latency')
 
     # memory subaction
-    memory_plot_parser = memory_parser.add_subparsers(dest="plot")
-    memory_subplot_parser = memory_plot_parser.add_parser("subplot")
-    memory_timeline_parser = memory_plot_parser.add_parser("timeline")
-    memory_objcount_parser = memory_plot_parser.add_parser("objcount")
+    memory_plot_parser = memory_parser.add_subparsers(dest='plot')
+    memory_subplot_parser = memory_plot_parser.add_parser('subplot')
+    memory_timeline_parser = memory_plot_parser.add_parser('timeline')
+    memory_objcount_parser = memory_plot_parser.add_parser('objcount')
 
-    memory_subplot_parser.add_argument("data", nargs="+")
-    memory_subplot_parser.add_argument("--output", default="memory.png", type=str)
+    memory_subplot_parser.add_argument('data', nargs='+')
+    memory_subplot_parser.add_argument('--output', default='memory.png', type=str)
 
-    memory_timeline_parser.add_argument("data", nargs="+")
-    memory_timeline_parser.add_argument("--output", default="memory_timeline.png", type=str)
+    memory_timeline_parser.add_argument('data', nargs='+')
+    memory_timeline_parser.add_argument('--output', default='memory_timeline.png', type=str)
 
-    memory_objcount_parser.add_argument("data", nargs="+")
-    memory_objcount_parser.add_argument("--output", default="memory_objcount.png", type=str)
-    memory_objcount_parser.add_argument("--topn", default=10, type=int)
+    memory_objcount_parser.add_argument('data', nargs='+')
+    memory_objcount_parser.add_argument('--output', default='memory_objcount.png', type=str)
+    memory_objcount_parser.add_argument('--topn', default=10, type=int)
 
     # latency subaction
-    latency_plot_parser = latency_parser.add_subparsers(dest="plot")
-    latency_scatter_parser = latency_plot_parser.add_parser("scatter")
+    latency_plot_parser = latency_parser.add_subparsers(dest='plot')
+    latency_scatter_parser = latency_plot_parser.add_parser('scatter')
 
-    latency_scatter_parser.add_argument("data", nargs="+")
-    latency_scatter_parser.add_argument("--interval", default=INTERVAL_SECONDS, type=float)
-    latency_scatter_parser.add_argument("--output", default="latency_scatter.png", type=str)
+    latency_scatter_parser.add_argument('data', nargs='+')
+    latency_scatter_parser.add_argument('--interval', default=INTERVAL_SECONDS, type=float)
+    latency_scatter_parser.add_argument('--output', default='latency_scatter.png', type=str)
 
     arguments = parser.parse_args()
-    plt.style.use("ggplot")
+    plt.style.use('ggplot')
 
-    if arguments.action == "memory" and arguments.plot == "subplot":
+    if arguments.action == 'memory' and arguments.plot == 'subplot':
         data_list = [memory_data(path) for path in arguments.data]
         data_list = list(filter(len, data_list))
         memory_subplot(arguments.output, data_list)
 
-    elif arguments.action == "memory" and arguments.plot == "timeline":
+    elif arguments.action == 'memory' and arguments.plot == 'timeline':
         data_list = [memory_data(path) for path in arguments.data]
         data_list = list(filter(len, data_list))
         memory_timeline(arguments.output, data_list)
 
-    elif arguments.action == "memory" and arguments.plot == "objcount":
+    elif arguments.action == 'memory' and arguments.plot == 'objcount':
         data_list = [objcount_data(path) for path in arguments.data]
         data_list = list(filter(len, data_list))
         memory_objcount(arguments.output, data_list, topn=arguments.topn)
 
-    elif arguments.action == "latency" and arguments.plot == "scatter":
+    elif arguments.action == 'latency' and arguments.plot == 'scatter':
         data_list = [latency_data(path) for path in arguments.data]
         data_list = list(filter(len, data_list))
         latency_scatter(arguments.output, data_list)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

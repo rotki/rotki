@@ -26,7 +26,7 @@ def test_set_own_rpc_endpoint(rotkehlchen_api_server):
     # Set ksm_rpc_endpoint with a reliable endpoint (e.g. NOT Parity)
     test_node_endpoint = KUSAMA_TEST_NODES[1].endpoint()
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "settingsresource"),
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
         json={'settings': {'ksm_rpc_endpoint': test_node_endpoint}},
     )
 
@@ -65,7 +65,7 @@ def test_unset_own_rpc_endpoint(ksm_rpc_endpoint, rotkehlchen_api_server):
 
     # Unset ksm_rpc_endpoint
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "settingsresource"),
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
         json={'settings': {'ksm_rpc_endpoint': ''}},
     )
 

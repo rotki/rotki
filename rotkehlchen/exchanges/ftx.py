@@ -183,7 +183,7 @@ class Ftx(ExchangeInterface):
         This function can raise:
         - RemoteError
         """
-        request_verb = "GET"
+        request_verb = 'GET'
         backoff = INITIAL_BACKOFF_TIME
 
         # Use a while loop to retry request if rate limit is reached

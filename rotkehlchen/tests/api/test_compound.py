@@ -50,7 +50,7 @@ def test_query_compound_balances(rotkehlchen_api_server, ethereum_accounts):
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "compoundbalancesresource",
+            'compoundbalancesresource',
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -98,7 +98,7 @@ def test_query_compound_balances_module_not_activated(
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "compoundbalancesresource",
+            'compoundbalancesresource',
         ))
     assert_error_response(
         response=response,
@@ -536,7 +536,7 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "compoundhistoryresource",
+            'compoundhistoryresource',
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -598,7 +598,7 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
 def test_query_compound_history_non_premium(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "compoundhistoryresource",
+        'compoundhistoryresource',
     ))
     assert_error_response(
         response=response,

@@ -18,7 +18,7 @@ def install_switch_log():
     previous_callback = greenlet.gettrace()
 
     def log_every_switch(event: str, args: Any) -> None:
-        if event == "switch":
+        if event == 'switch':
             origin, target = args
 
             # Collecting the complete stack frame because the top-level
@@ -34,11 +34,11 @@ def install_switch_log():
             print(
                 json.dumps(
                     {
-                        "event": "Switching",
-                        "origin": str(origin),
-                        "target": str(target),
-                        "target_callstack": callstack,
-                        "time": datetime.utcnow().isoformat(),
+                        'event': 'Switching',
+                        'origin': str(origin),
+                        'target': str(target),
+                        'target_callstack': callstack,
+                        'time': datetime.utcnow().isoformat(),
                     },
                 ),
             )

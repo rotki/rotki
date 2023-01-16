@@ -16,7 +16,7 @@ def test_add_get_external_service(rotkehlchen_api_server):
     """Tests that adding and retrieving external service credentials works"""
     # With no data an empty response should be returned
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
     )
     result = assert_proper_response_with_result(response)
     assert result == {}
@@ -31,7 +31,7 @@ def test_add_get_external_service(rotkehlchen_api_server):
         {'name': 'cryptocompare', 'api_key': 'key2'},
     ]}
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
     result = assert_proper_response_with_result(response)
@@ -39,7 +39,7 @@ def test_add_get_external_service(rotkehlchen_api_server):
 
     # Query again and see that the newly added services are returned
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
     )
     result = assert_proper_response_with_result(response)
     assert result == expected_result
@@ -49,7 +49,7 @@ def test_add_get_external_service(rotkehlchen_api_server):
     expected_result['cryptocompare']['api_key'] = new_key
     data = {'services': [{'name': 'cryptocompare', 'api_key': new_key}]}
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
     result = assert_proper_response_with_result(response)
@@ -57,7 +57,7 @@ def test_add_get_external_service(rotkehlchen_api_server):
 
     # Query again and see that the modified services are returned
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
     )
     result = assert_proper_response_with_result(response)
     assert result == expected_result
@@ -121,7 +121,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     """Tests that errors at adding external service credentials are handled properly"""
     # Missing data
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
     )
     assert_error_response(
         response=response,
@@ -132,7 +132,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     # invalid type for services
     data = {'services': 'foo'}
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
     assert_error_response(
@@ -144,7 +144,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     # invalid type for services list element
     data = {'services': ['foo']}
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
     assert_error_response(
@@ -156,7 +156,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     # Missing api_key entry
     data = {'services': [{'name': 'etherscan'}]}
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
     assert_error_response(
@@ -168,7 +168,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     # Missing name entry
     data = {'services': [{'api_key': 'goookey'}]}
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
     assert_error_response(
@@ -180,7 +180,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     # Unsupported service name
     data = {'services': [{'name': 'unknown', 'api_key': 'goookey'}]}
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
     assert_error_response(
@@ -192,7 +192,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     # Invalid type for service name
     data = {'services': [{'name': 23.2, 'api_key': 'goookey'}]}
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
     assert_error_response(
@@ -204,7 +204,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     # Invalid type for api_key
     data = {'services': [{'name': 'etherscan', 'api_key': 53.2}]}
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
     assert_error_response(
@@ -218,7 +218,7 @@ def test_remove_external_services_errors(rotkehlchen_api_server):
     """Tests that errors at removing external service credentials are handled properly"""
     # Missing data
     response = requests.delete(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
     )
     assert_error_response(
         response=response,
@@ -229,7 +229,7 @@ def test_remove_external_services_errors(rotkehlchen_api_server):
     # Wrong type for services
     data = {'services': 23.5}
     response = requests.delete(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
     assert_error_response(
@@ -241,7 +241,7 @@ def test_remove_external_services_errors(rotkehlchen_api_server):
     # Wrong type for services list element
     data = {'services': [55]}
     response = requests.delete(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
     assert_error_response(
@@ -253,7 +253,7 @@ def test_remove_external_services_errors(rotkehlchen_api_server):
     # Unsupported service name in the list
     data = {'services': ['unknown', 'etherscan']}
     response = requests.delete(
-        api_url_for(rotkehlchen_api_server, "externalservicesresource"),
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
     assert_error_response(

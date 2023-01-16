@@ -22,7 +22,7 @@ class NotBooleanChecker(BaseChecker):
         'E9011': (
             NONBOOLEANNOT_MSG,
             NONBOOLEANNOT_SYMBOL,
-            "Message Help is empty",
+            'Message Help is empty',
         ),
     }
 

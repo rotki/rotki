@@ -61,7 +61,7 @@ def main(directory: str):
     sys.exit(0)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Uploads screenshots to imgur')
     parser.add_argument(
         'directory',

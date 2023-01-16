@@ -8,12 +8,12 @@ def find_directories_with_missing_init(path: str) -> set[str]:
     py_directories: set[str] = set()
     for root, dirs, files in os.walk(path):
         with suppress(ValueError):
-            dirs.remove("__pycache__")
+            dirs.remove('__pycache__')
 
         for name in files:
-            if name == "__init__.py":
+            if name == '__init__.py':
                 package_dirs.add(root)
-            if name.endswith(".py"):
+            if name.endswith('.py'):
                 py_directories.add(root)
 
     return py_directories - package_dirs
@@ -26,7 +26,7 @@ def test_no_missing_init():
     directories that are missing the files.
     """
 
-    rotki_path = os.path.abspath(os.path.join(os.path.abspath(__file__), "..", ".."))
+    rotki_path = os.path.abspath(os.path.join(os.path.abspath(__file__), '..', '..'))
     directories_with_missing_init = find_directories_with_missing_init(rotki_path)
 
     if directories_with_missing_init:
@@ -35,4 +35,4 @@ def test_no_missing_init():
                 f'Found directory {directory} missing an init',
             ))
 
-    assert not directories_with_missing_init, "some directories are missing __init__.py files"
+    assert not directories_with_missing_init, 'some directories are missing __init__.py files'

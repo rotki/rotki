@@ -356,7 +356,7 @@ def test_is_valid_derivation_path():
     assert msg == 'Found negative integer node -1 in xpub derivation path'
     valid, msg = is_valid_derivation_path("m/0/40/15'")
     expected_msg = (
-        "Derivation paths accepted by rotki should have no hardened nodes. "
+        'Derivation paths accepted by rotki should have no hardened nodes. '
         "Meaning no nodes with a '"
     )
     assert not valid

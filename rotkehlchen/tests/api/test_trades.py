@@ -374,7 +374,7 @@ def test_add_trades(rotkehlchen_api_server):
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
-                "tradesresource",
+                'tradesresource',
             ),
         )
         result = assert_proper_response_with_result(response)
@@ -452,7 +452,7 @@ def test_add_trades(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=zero_rate_trade,
     )
 
@@ -477,7 +477,7 @@ def test_add_trades(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=fee_and_no_fee_currency_trade,
     )
 
@@ -503,7 +503,7 @@ def test_add_trades(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=fee_is_zero_trade,
     )
 
@@ -527,7 +527,7 @@ def assert_all_missing_fields_are_handled(correct_trade, server):
         response = requests.put(
             api_url_for(
                 server,
-                "tradesresource",
+                'tradesresource',
             ), json=broken_trade,
         )
         assert_error_response(
@@ -570,7 +570,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Failed to deserialize a timestamp entry from string foo",
+        contained_in_msg='Failed to deserialize a timestamp entry from string foo',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # Test that invalid location type is handled
@@ -584,7 +584,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Failed to deserialize Location value from non string value",
+        contained_in_msg='Failed to deserialize Location value from non string value',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # Test that invalid location is handled
@@ -640,7 +640,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Failed to deserialize trade type symbol from",
+        contained_in_msg='Failed to deserialize trade type symbol from',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # Test that unknown value for trade_type is handled
@@ -665,7 +665,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
@@ -679,7 +679,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
@@ -693,7 +693,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
@@ -707,7 +707,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
@@ -721,7 +721,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
@@ -735,7 +735,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
@@ -749,7 +749,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
@@ -763,7 +763,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
@@ -777,7 +777,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
@@ -791,7 +791,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
@@ -824,7 +824,7 @@ def test_edit_trades(rotkehlchen_api_server_with_exchanges):
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "tradesresource",
+                'tradesresource',
             ),
         )
     assert_proper_response(response)
@@ -841,7 +841,7 @@ def test_edit_trades(rotkehlchen_api_server_with_exchanges):
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "tradesresource",
+            'tradesresource',
         ), json=original_poloniex_trades[0],
     )
     assert_error_response(response, contained_in_msg='fee cannot be zero')
@@ -851,7 +851,7 @@ def test_edit_trades(rotkehlchen_api_server_with_exchanges):
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "tradesresource",
+            'tradesresource',
         ), json=original_poloniex_trades[1],
     )
     assert_error_response(response, contained_in_msg='fee and fee_currency must be provided')
@@ -860,7 +860,7 @@ def test_edit_trades(rotkehlchen_api_server_with_exchanges):
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "tradesresource",
+            'tradesresource',
         ), json=original_poloniex_trades[2],
     )
     assert_proper_response(response)
@@ -872,7 +872,7 @@ def test_edit_trades(rotkehlchen_api_server_with_exchanges):
         response = requests.patch(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "tradesresource",
+                'tradesresource',
             ), json=trade,
         )
         assert_proper_response(response)
@@ -886,7 +886,7 @@ def test_edit_trades(rotkehlchen_api_server_with_exchanges):
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "tradesresource",
+                'tradesresource',
             ), json={'location': 'binance'},
         )
     trades = assert_proper_response_with_result(response)['entries']
@@ -914,12 +914,12 @@ def test_edit_trades_errors(rotkehlchen_api_server):
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=trade,
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Missing data for required field",
+        contained_in_msg='Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     trade['trade_id'] = 'this_id_does_not_exit'
@@ -927,12 +927,12 @@ def test_edit_trades_errors(rotkehlchen_api_server):
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=trade,
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Tried to edit non existing trade id",
+        contained_in_msg='Tried to edit non existing trade id',
         status_code=HTTPStatus.CONFLICT,
     )
     # Check that invalid trade_id type is is handled
@@ -940,12 +940,12 @@ def test_edit_trades_errors(rotkehlchen_api_server):
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=trade,
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Not a valid string",
+        contained_in_msg='Not a valid string',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -961,7 +961,7 @@ def test_delete_trades(rotkehlchen_api_server_with_exchanges):
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "tradesresource",
+                'tradesresource',
             ),
         )
     trades = assert_proper_response_with_result(response)['entries']
@@ -985,7 +985,7 @@ def test_delete_trades(rotkehlchen_api_server_with_exchanges):
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "tradesresource",
+                'tradesresource',
             ), json={'location': 'poloniex'},
         )
     trades = assert_proper_response_with_result(response)['entries']
@@ -998,12 +998,12 @@ def test_delete_trades_trades_errors(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ),
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Missing data for required field",
+        contained_in_msg='Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

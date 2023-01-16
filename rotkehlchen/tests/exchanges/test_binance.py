@@ -497,7 +497,7 @@ def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binan
             expected_warnings_num=0,
             expected_errors_num=0,
         )
-        testing_deposits = "amount" in deposits
+        testing_deposits = 'amount' in deposits
 
         # From here and on test unexpected data
         # invalid timestamp

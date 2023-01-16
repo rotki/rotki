@@ -31,7 +31,7 @@ def _wait_for_listening_port(
             if conn.status == 'LISTEN' and conn.laddr[1] == port_number:
                 return
 
-    raise RuntimeError(f"{port_number} is not bound")
+    raise RuntimeError(f'{port_number} is not bound')
 
 
 def create_api_server(
@@ -56,7 +56,7 @@ def create_api_server(
 
 def api_url_for(api_server: APIServer, endpoint: str, **kwargs) -> str:
     with api_server.flask_app.app_context():
-        return url_for(f"v1_resources.{endpoint}", **kwargs)
+        return url_for(f'v1_resources.{endpoint}', **kwargs)
 
 
 def assert_proper_response(
@@ -65,7 +65,7 @@ def assert_proper_response(
 ) -> None:
     assert (
         response is not None and
-        response.headers["Content-Type"] == "application/json"
+        response.headers['Content-Type'] == 'application/json'
     )
     if status_code:
         assert response.status_code == status_code, f'Response contains unexpected status code. Details {response.json()}'  # noqa: E501
@@ -167,7 +167,7 @@ def wait_for_async_task(
     with gevent.Timeout(timeout):
         while True:
             response = requests.get(
-                api_url_for(server, "specific_async_tasks_resource", task_id=task_id),
+                api_url_for(server, 'specific_async_tasks_resource', task_id=task_id),
             )
             json_data = response.json()
             data = json_data['result']

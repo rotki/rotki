@@ -23,9 +23,9 @@ class TraceProfiler:
         self.profiling = True
 
         now = datetime.now()
-        trace_file = "{:%Y%m%d_%H%M}_trace.pickle".format(now)
+        trace_file = '{:%Y%m%d_%H%M}_trace.pickle'.format(now)
         trace_path = os.path.join(self.datadir, trace_file)
-        self.trace_stream = open(trace_path, "wb")  # noqa: SIM115  # we close at stop()
+        self.trace_stream = open(trace_path, 'wb')  # noqa: SIM115  # we close at stop()
         tracemalloc.start(15)
 
         # Take snapshots at slower pace because the size of the samples is not

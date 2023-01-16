@@ -24,9 +24,9 @@ class DillBalance(NamedTuple):
 
     def serialize(self) -> dict[str, Any]:
         return {
-            "locked_amount": self.dill_amount.serialize(),
-            "pending_rewards": self.pending_rewards.serialize(),
-            "locked_until": self.lock_time,
+            'locked_amount': self.dill_amount.serialize(),
+            'pending_rewards': self.pending_rewards.serialize(),
+            'locked_until': self.lock_time,
         }
 
 

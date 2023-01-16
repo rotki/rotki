@@ -930,7 +930,7 @@ class DBHandler:
         """Returns a list of amm events optionally filtered by time, location
         and address
         """
-        events_sql_str = ", ".join([f'"{EventType.serialize_for_db(event)}"' for event in events])
+        events_sql_str = ', '.join([f'"{EventType.serialize_for_db(event)}"' for event in events])
         querystr = f'SELECT * FROM amm_events WHERE amm_events.type IN ({events_sql_str}) '
 
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
@@ -2413,7 +2413,7 @@ class DBHandler:
         for table_entry in TABLES_WITH_ASSETS:
             table_name = table_entry[0]
             columns = table_entry[1:]
-            columns_str = ", ".join(columns)
+            columns_str = ', '.join(columns)
             bindings: Union[tuple, tuple[str]] = ()
             condition = ''
             if table_name in ('manually_tracked_balances', 'timed_balances'):

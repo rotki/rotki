@@ -55,7 +55,7 @@ class YearnVaultsV2(EthereumModule):
             )
         except RemoteError as e:
             self.msg_aggregator.add_error(
-                SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Yearn V2", error_msg=str(e)),
+                SUBGRAPH_REMOTE_ERROR_MSG.format(protocol='Yearn V2', error_msg=str(e)),
             )
             raise ModuleInitializationFailure('Yearn Vaults v2 Subgraph remote error') from e
 

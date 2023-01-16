@@ -43,7 +43,7 @@ def check_proper_unlock_result(
 def check_user_status(api_server) -> dict[str, str]:
     # Check users status
     response = requests.get(
-        api_url_for(api_server, "usersresource"),
+        api_url_for(api_server, 'usersresource'),
     )
     result = assert_proper_response_with_result(response)
     return result
@@ -53,7 +53,7 @@ def test_loggedin_user_querying(rotkehlchen_api_server, username, data_dir):
     """Start with a logged in user and make sure we can query all users"""
     Path(data_dir / 'another_user').mkdir()
     Path(data_dir / 'another_user' / 'rotkehlchen.db').touch()
-    response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
     result = assert_proper_response_with_result(response)
     assert result[username] == 'loggedin'
     assert result['another_user'] == 'loggedout'
@@ -68,7 +68,7 @@ def test_not_loggedin_user_querying(rotkehlchen_api_server, username, data_dir):
     Path(data_dir / username).mkdir(exist_ok=True)
     Path(data_dir / username / 'rotkehlchen.db').touch()
 
-    response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
     result = assert_proper_response_with_result(response)
     assert result[username] == 'loggedout'
     assert result['another_user'] == 'loggedout'
@@ -84,12 +84,12 @@ def test_user_creation(rotkehlchen_api_server, data_dir):
         'name': username,
         'password': '1234',
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
     result = assert_proper_response_with_result(response)
     check_proper_unlock_result(result, {'submit_usage_analytics': True})
 
     # Query users and make sure the new user is logged in
-    response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
     result = assert_proper_response_with_result(response)
     assert result[username] == 'loggedin'
     assert len(result) == 1
@@ -108,12 +108,12 @@ def test_user_creation_with_no_analytics(rotkehlchen_api_server, data_dir):
         'password': '1234',
         'initial_settings': {'submit_usage_analytics': False},
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
     result = assert_proper_response_with_result(response)
     check_proper_unlock_result(result, {'submit_usage_analytics': False})
 
     # Query users and make sure the new user is logged in
-    response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
     result = assert_proper_response_with_result(response)
     assert result[username] == 'loggedin'
     assert len(result) == 1
@@ -132,7 +132,7 @@ def test_user_creation_permission_error(rotkehlchen_api_server, data_dir):
         'name': username,
         'password': '1234',
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Failed to create directory for user: [Errno 13] Permission denied',
@@ -162,12 +162,12 @@ def test_user_creation_with_premium_credentials(rotkehlchen_api_server, data_dir
     )
 
     with patched_premium_at_start:
-        response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+        response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
     result = assert_proper_response_with_result(response)
     check_proper_unlock_result(result)
 
     # Query users and make sure the new user is logged in
-    response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
     result = assert_proper_response_with_result(response)
     assert result[username] == 'loggedin'
     assert len(result) == 1
@@ -196,7 +196,7 @@ def test_user_creation_with_invalid_premium_credentials(rotkehlchen_api_server, 
         'premium_api_key': 'foo',
         'premium_api_secret': 'boo',
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Provided API/Key secret format is invalid',
@@ -213,7 +213,7 @@ def test_user_creation_with_invalid_premium_credentials(rotkehlchen_api_server, 
         'premium_api_key': VALID_PREMIUM_KEY,
         'premium_api_secret': VALID_PREMIUM_SECRET,
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
 
     expected_msg = (
         'Could not verify keys for the new account. Rotkehlchen API key was rejected by server'
@@ -237,12 +237,12 @@ def test_user_creation_with_invalid_premium_credentials(rotkehlchen_api_server, 
         'name': username,
         'password': '1234',
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
     result = assert_proper_response_with_result(response)
     check_proper_unlock_result(result)
 
     # Query users and make sure the new user is logged in
-    response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
     result = assert_proper_response_with_result(response)
     assert result[username] == 'loggedin'
     assert len(result) == 2
@@ -259,7 +259,7 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     data = {
         'password': '1234',
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Missing data for required field',
@@ -269,7 +269,7 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     data = {
         'name': username,
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Missing data for required field',
@@ -280,7 +280,7 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
         'name': 5435345.31,
         'password': '1234',
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Not a valid string',
@@ -291,7 +291,7 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
         'name': username,
         'password': 4535,
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Not a valid string',
@@ -303,7 +303,7 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
         'password': '1234',
         'premium_api_key': 'asdsada',
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Must provide both or neither of api key/secret',
@@ -314,7 +314,7 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
         'password': '1234',
         'premium_api_secret': 'asdsada',
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Must provide both or neither of api key/secret',
@@ -325,7 +325,7 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
         'password': '1234',
         'premium_api_key': True,
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Not a valid string',
@@ -336,7 +336,7 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
         'password': '1234',
         'premium_api_secret': 45.2,
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Not a valid string',
@@ -352,7 +352,7 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
         'name': 'another_user',
         'password': '1234',
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='User another_user already exists',
@@ -367,7 +367,7 @@ def test_user_creation_with_already_loggedin_user(rotkehlchen_api_server, userna
         'name': username,
         'password': '1234',
     }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
     msg = (
         f'Can not create a new user because user {username} is already logged in. '
         f'Log out of that user first'
@@ -469,7 +469,7 @@ def test_user_logout(rotkehlchen_api_server, username):
     # Logout of a non-existing/different user
     data = {'action': 'logout'}
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name='nobody'),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name='nobody'),
         json=data,
     )
     assert_error_response(
@@ -482,7 +482,7 @@ def test_user_logout(rotkehlchen_api_server, username):
     # Logout of the active user
     data = {'action': 'logout'}
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     assert_simple_ok_response(response)
@@ -490,7 +490,7 @@ def test_user_logout(rotkehlchen_api_server, username):
 
     # Now try to log out of the same user again
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     assert_error_response(
@@ -518,7 +518,7 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     # Logout of the active user
     data = {'action': 'logout'}
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     assert_simple_ok_response(response)
@@ -531,7 +531,7 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     # Now let's try to login
     data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     # And make sure it works
@@ -547,7 +547,7 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     # Logout again
     data = {'action': 'logout'}
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     assert_simple_ok_response(response)
@@ -560,7 +560,7 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     # Now try to login with a wrong password
     data = {'password': 'wrong_password', 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     task_id = assert_ok_async_response(response)
@@ -579,7 +579,7 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     # Now let's manually add valid but not authenticable premium credentials in the DB
     data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     task_id = assert_ok_async_response(response)
@@ -588,7 +588,7 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     rotki.data.db.set_rotkehlchen_premium(credentials)
     data = {'action': 'logout'}
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     assert_simple_ok_response(response)
@@ -596,7 +596,7 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     # And try to login while having these unauthenticable premium credentials in the DB
     data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     # And make sure it works despite having unauthenticable premium credentials in the DB
@@ -628,7 +628,7 @@ def test_user_set_premium_credentials(rotkehlchen_api_server, username):
     data = {'premium_api_key': VALID_PREMIUM_KEY, 'premium_api_secret': VALID_PREMIUM_SECRET}
     with patched_premium_at_set:
         response = requests.patch(
-            api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+            api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
             json=data,
         )
     assert_simple_ok_response(response)
@@ -657,14 +657,14 @@ def test_user_del_premium_credentials(rotkehlchen_api_server, username):
     data = {'premium_api_key': VALID_PREMIUM_KEY, 'premium_api_secret': VALID_PREMIUM_SECRET}
     with patched_premium_at_set:
         response = requests.patch(
-            api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+            api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
             json=data,
         )
     with patched_get:
         assert rotki.premium.is_active()
 
     # Delete premium credentials for current user
-    response = requests.delete(api_url_for(rotkehlchen_api_server, "userpremiumkeyresource",
+    response = requests.delete(api_url_for(rotkehlchen_api_server, 'userpremiumkeyresource',
                                            name=username))
     assert_simple_ok_response(response)
     assert rotki.premium is None
@@ -684,7 +684,7 @@ def test_user_login_user_dir_permission_error(rotkehlchen_api_server, data_dir):
 
     data = {'password': '123', 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     task_id = assert_ok_async_response(response)
@@ -709,7 +709,7 @@ def test_user_login_db_permission_error(rotkehlchen_api_server, data_dir):
     os.chmod(db_path, 0o200)
     data = {'password': '123', 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     task_id = assert_ok_async_response(response)
@@ -727,7 +727,7 @@ def test_user_set_premium_credentials_errors(rotkehlchen_api_server, username):
     # Set premium credentials for non-logged in user
     data = {'premium_api_key': 'dadssad', 'premium_api_secret': 'jhjhkh'}
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name='another_user'),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name='another_user'),
         json=data,
     )
     assert_error_response(
@@ -739,7 +739,7 @@ def test_user_set_premium_credentials_errors(rotkehlchen_api_server, username):
     # Set valid format but not authenticated premium credentials for logged in user
     data = {'premium_api_key': VALID_PREMIUM_KEY, 'premium_api_secret': VALID_PREMIUM_SECRET}
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     assert_error_response(
@@ -755,7 +755,7 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     # Now let's try to login while the user is already logged in
     data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     task_id = assert_ok_async_response(response)
@@ -775,7 +775,7 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     # Logout of the active user
     data = {'action': 'logout'}
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     assert_simple_ok_response(response)
@@ -784,7 +784,7 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     # Now let's try to login with an invalid password
     data = {'password': 'wrong-password', 'sync_approval': 'unknown', 'async_query': True}
     response = requests.post(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     task_id = assert_ok_async_response(response)
@@ -800,7 +800,7 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     # Login action without a password
     data = {'sync_approval': 'unknown'}
     response = requests.post(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     assert_error_response(
@@ -823,7 +823,7 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     # No action and no premium credentials
     data = {}
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     assert_error_response(
@@ -836,7 +836,7 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     # No action and only premium key
     data = {'premium_api_key': VALID_PREMIUM_KEY}
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     assert_error_response(
@@ -849,7 +849,7 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     # No action and only premium secret
     data = {'premium_api_secret': VALID_PREMIUM_SECRET}
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     assert_error_response(
@@ -862,7 +862,7 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     # Invalid action type
     data = {'action': 555.3, 'premium_api_key': '123', 'premium_api_secret': '1'}
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     assert_error_response(
@@ -875,7 +875,7 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     # Invalid action string
     data = {'action': 'chopwood', 'premium_api_key': '123', 'premium_api_secret': '1'}
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     assert_error_response(
@@ -888,7 +888,7 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     # Invalid password type
     data = {'password': True, 'sync_approval': 'unknown'}
     response = requests.post(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     assert_error_response(

@@ -18,7 +18,7 @@ def test_query_defi_balances(rotkehlchen_api_server, ethereum_accounts):  # pyli
     """
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "defibalancesresource",
+        'defibalancesresource',
     ))
     result = assert_proper_response_with_result(response)
 

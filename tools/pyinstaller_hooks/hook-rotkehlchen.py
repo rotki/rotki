@@ -19,7 +19,7 @@ def copy_metadata(package_name):
 
 
 # Add metadata of all required packages to allow pkg_resources.require() to work
-required_packages = [("rotkehlchen", [])]
+required_packages = [('rotkehlchen', [])]
 while required_packages:
     req_name, req_extras = required_packages.pop()
     for req in pkg_resources.get_distribution(req_name).requires(req_extras):

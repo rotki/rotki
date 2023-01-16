@@ -347,7 +347,7 @@ class Independentreserve(ExchangeInterface):
         """Validates that the IndependentReserve API key is good for usage in rotki"""
         try:
             self._api_query(verb='post', method_type='Private', path='GetAccounts')
-            return True, ""
+            return True, ''
 
         except RemoteError as e:
             return False, str(e)

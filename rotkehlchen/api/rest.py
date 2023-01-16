@@ -232,8 +232,8 @@ def api_response(
         log_result: bool = True,
 ) -> Response:
     if status_code == HTTPStatus.NO_CONTENT:
-        assert not result, "Provided 204 response with non-zero length response"
-        data = ""
+        assert not result, 'Provided 204 response with non-zero length response'
+        data = ''
     else:
         data = json.dumps(result)
 
@@ -242,9 +242,9 @@ def api_response(
             data,
             status_code,
             {
-                "mimetype": "application/json",
-                "Content-Type": "application/json",
-                "rotki-log-result": log_result,  # popped by after request callback
+                'mimetype': 'application/json',
+                'Content-Type': 'application/json',
+                'rotki-log-result': log_result,  # popped by after request callback
             }),
     )
     return response
@@ -3548,7 +3548,7 @@ class RestAPI():
                 (
                     b'',
                     HTTPStatus.NOT_MODIFIED,
-                    {"mimetype": "image/png", "Content-Type": "image/png"},
+                    {'mimetype': 'image/png', 'Content-Type': 'image/png'},
                 ),
             )
 
@@ -3557,13 +3557,13 @@ class RestAPI():
             response = make_response(
                 (
                     b'',
-                    HTTPStatus.NOT_FOUND, {"mimetype": "image/png", "Content-Type": "image/png"}),
+                    HTTPStatus.NOT_FOUND, {'mimetype': 'image/png', 'Content-Type': 'image/png'}),
             )
         else:
             response = make_response(
                 (
                     image_data,
-                    HTTPStatus.OK, {"mimetype": "image/png", "Content-Type": "image/png"}),
+                    HTTPStatus.OK, {'mimetype': 'image/png', 'Content-Type': 'image/png'}),
             )
             response.set_etag(hashlib.md5(image_data).hexdigest())
 

@@ -79,7 +79,7 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
     p.add_argument(
         '--api-cors',
         help='Comma separated list of domains for the API to accept cross origin requests.',
-        default="http://localhost:*/*",
+        default='http://localhost:*/*',
         type=str,
     )
     p.add_argument(

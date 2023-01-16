@@ -101,7 +101,7 @@ if sys.platform == 'darwin':
         return tmpdir_factory.mktemp(name, numbered=True)
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=True, scope='session')
 def profiler(request):
     profiler_instance = None
     stack_stream = None

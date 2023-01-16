@@ -331,7 +331,7 @@ def setup_urls(
         elif len(url_tuple) == 3:
             route, resource_cls, endpoint = url_tuple  # type: ignore
         else:
-            raise ValueError(f"Invalid URL format: {url_tuple!r}")
+            raise ValueError(f'Invalid URL format: {url_tuple!r}')
         blueprint.add_url_rule(
             route,
             view_func=resource_cls.as_view(endpoint, rest_api_object=rest_api),

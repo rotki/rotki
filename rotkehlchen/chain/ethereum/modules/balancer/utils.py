@@ -37,9 +37,9 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 UNISWAP_REMOTE_ERROR_MSG = (
-    "Could not initialize the Uniswap subgraph due to {error_msg}. "
+    'Could not initialize the Uniswap subgraph due to {error_msg}. '
     "All Balancer balances and historical queries won't be able to use a "
-    "secondary price oracle for requesting the USD price of the unsupported tokens. "
+    'secondary price oracle for requesting the USD price of the unsupported tokens. '
     "Probably will get fixed with time. If not report it to rotki's support channel"
 )
 

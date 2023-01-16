@@ -10,11 +10,11 @@ def assert_serialized_lists_equal(
         max_length_to_check: Optional[int] = None,
         ignore_keys: Optional[list] = None,
         length_list_keymap: Optional[dict] = None,
-        max_diff: str = "1e-6",
+        max_diff: str = '1e-6',
 ) -> None:
     """Compares lists of serialized dicts"""
-    assert isinstance(a, list), "Expected 2 lists. Comparing {type(a)} to {type(b)}"
-    assert isinstance(b, list), "Expected 2 lists. Comparing {type(a)} to {type(b)}"
+    assert isinstance(a, list), 'Expected 2 lists. Comparing {type(a)} to {type(b)}'
+    assert isinstance(b, list), 'Expected 2 lists. Comparing {type(a)} to {type(b)}'
     if not max_length_to_check:
         assert len(a) == len(b), f"Lists don't have the same key length {len(a)} != {len(b)}"
     for idx, a_entry in enumerate(a):
@@ -39,7 +39,7 @@ def assert_serialized_dicts_equal(
         b: dict,
         ignore_keys: Optional[list] = None,
         length_list_keymap: Optional[dict] = None,
-        max_diff: str = "1e-6",
+        max_diff: str = '1e-6',
         same_key_length=True,
 ) -> None:
     """Compares serialized dicts so that serialized numbers can be compared for equality"""

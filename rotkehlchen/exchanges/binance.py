@@ -278,7 +278,7 @@ class Binance(ExchangeInterface):
                 return False, 'API Key does not match the given secret'
             if 'Timestamp for this request was' in error:
                 return False, (
-                    f"Local system clock is not in sync with {self.name} server. "
+                    f'Local system clock is not in sync with {self.name} server. '
                     f"Try syncing your system's clock"
                 )
             # else reraise

@@ -197,7 +197,7 @@ def test_history_export_csv_errors(
     temporary_file = Path(Path(csv_dir) / 'f.txt')
     temporary_file.touch()
     response = requests.get(
-        api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource"),
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource'),
         json={'directory_path': str(temporary_file)},
     )
     assert_error_response(

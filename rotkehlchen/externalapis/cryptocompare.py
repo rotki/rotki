@@ -182,7 +182,7 @@ def _check_hourly_data_sanity(
         if diff != 3600:
             raise RemoteError(
                 'Unexpected data format in cryptocompare query_endpoint_histohour. '
-                "Problem at indices {} and {} of {}_to_{} prices. Time difference is: {}".format(
+                'Problem at indices {} and {} of {}_to_{} prices. Time difference is: {}'.format(
                     index, index + 1, from_asset.symbol, to_asset.symbol, diff),
             )
 
@@ -792,8 +792,8 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
         # else
         log.debug(
             f"Couldn't find historical price from {from_asset} to "
-            f"{to_asset} at timestamp {timestamp} through cryptocompare."
-            f" Attempting to get daily price...",
+            f'{to_asset} at timestamp {timestamp} through cryptocompare.'
+            f' Attempting to get daily price...',
         )
         price = self.query_endpoint_pricehistorical(from_asset, to_asset, timestamp)
         if price == Price(ZERO):
