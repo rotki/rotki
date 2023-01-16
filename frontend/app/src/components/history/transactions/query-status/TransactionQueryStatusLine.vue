@@ -4,6 +4,7 @@ import { type EthereumTransactionQueryData } from '@/types/websocket-messages';
 defineProps<{ item: EthereumTransactionQueryData }>();
 
 const { getLabel, getItemTranslationKey } = useTransactionQueryStatus();
+const { getChain } = useSupportedChains();
 </script>
 
 <template>
@@ -17,7 +18,7 @@ const { getLabel, getItemTranslationKey } = useTransactionQueryStatus();
     </template>
     <template #address>
       <div class="font-weight-bold px-2 text-no-wrap">
-        <hash-link :text="item.address" />
+        <hash-link :text="item.address" :chain="getChain(item.evmChain)" />
       </div>
     </template>
     <template #start>

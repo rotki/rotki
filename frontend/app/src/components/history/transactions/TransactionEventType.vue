@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
-
+import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type ActionDataEntry } from '@/store/types';
 import { getEventCounterpartyData, useEventTypeData } from '@/utils/history';
 import { type EthTransactionEventEntry } from '@/types/history/tx';
 
-const props = defineProps({
-  event: {
-    required: true,
-    type: Object as PropType<EthTransactionEventEntry>
-  }
-});
+const props = defineProps<{
+  event: EthTransactionEventEntry;
+  chain: Blockchain;
+}>();
 
 const { event } = toRefs(props);
 
@@ -68,7 +65,7 @@ const { t } = useI18n();
     <div class="ml-4">
       <div class="font-weight-bold text-uppercase">{{ attrs.label }}</div>
       <div v-if="event.locationLabel" class="grey--text">
-        <hash-link :text="event.locationLabel" />
+        <hash-link :text="event.locationLabel" :chain="chain" />
       </div>
       <div v-if="event.customized" class="pt-1">
         <v-chip small label color="primary accent-1">

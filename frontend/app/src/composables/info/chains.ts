@@ -1,4 +1,4 @@
-import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef, type Ref } from 'vue';
 import {
@@ -7,6 +7,7 @@ import {
   type SupportedChains
 } from '@/types/api/chains';
 import { useMainStore } from '@/store/main';
+import { isBlockchain } from '@/types/blockchain/chains';
 
 const isEvmChain = (info: ChainInfo): info is EvmChainInfo => {
   return info.type === 'evm';
@@ -75,6 +76,16 @@ export const useSupportedChains = createSharedComposable(() => {
     );
   };
 
+  const getChain = (evmChain: string): Blockchain => {
+    const chainData = get(txEvmChains).find(
+      ({ evmChainName }) => evmChainName === evmChain
+    );
+    if (chainData && isBlockchain(chainData.id)) {
+      return chainData.id;
+    }
+    return Blockchain.ETH;
+  };
+
   return {
     supportedChains,
     evmChains,
@@ -82,6 +93,7 @@ export const useSupportedChains = createSharedComposable(() => {
     txEvmChains,
     getNativeAsset,
     getEvmChainName,
+    getChain,
     getChainInfoById,
     isEvm,
     supportsTransactions

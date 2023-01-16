@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import {
   type EthTransactionEntry,
@@ -24,13 +23,10 @@ const TableExpandContainer = defineAsyncComponent(
   () => import('@/components/helper/table/TableExpandContainer.vue')
 );
 
-const props = defineProps({
-  transaction: {
-    required: true,
-    type: Object as PropType<EthTransactionEntry>
-  },
-  colspan: { required: true, type: Number }
-});
+const props = defineProps<{
+  transaction: EthTransactionEntry;
+  colspan: number;
+}>();
 
 const emit = defineEmits<{
   (e: 'edit:event', data: EthTransactionEventEntry): void;
@@ -47,6 +43,8 @@ const { transaction } = toRefs(props);
 
 const css = useCssModule();
 const { tc } = useI18n();
+
+const { getChain } = useSupportedChains();
 
 const headers: DataTableHeader[] = [
   {
@@ -144,7 +142,10 @@ watch(transaction, (current, old) => {
                 :hide-default-header="$vuetify.breakpoint.mdAndUp"
               >
                 <template #item.type="{ item }">
-                  <transaction-event-type :event="item" />
+                  <transaction-event-type
+                    :event="item"
+                    :chain="getChain(transaction.evmChain)"
+                  />
                 </template>
                 <template #item.asset="{ item }">
                   <transaction-event-asset :event="item" />
@@ -154,6 +155,7 @@ watch(transaction, (current, old) => {
                     :notes="item.notes"
                     :amount="item.balance.amount"
                     :asset="item.asset"
+                    :chain="getChain(transaction.evmChain)"
                   />
                 </template>
                 <template #item.actions="{ item }">

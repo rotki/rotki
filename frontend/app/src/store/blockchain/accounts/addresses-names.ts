@@ -17,6 +17,8 @@ import { TaskType } from '@/types/task-type';
 import { uniqueObjects, uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
 import { isValidEthAddress } from '@/utils/text';
+import { type Chains } from '@/types/asset-urls';
+import { isBlockchain } from '@/types/blockchain/chains';
 
 export const useAddressesNamesStore = defineStore('addressesNames', () => {
   const { enableAliasNames } = storeToRefs(useFrontendSettingsStore());
@@ -147,16 +149,21 @@ export const useAddressesNamesStore = defineStore('addressesNames', () => {
   };
 
   const addressNameSelector = (
-    address: string,
-    blockchain: Blockchain = Blockchain.ETH
+    address: MaybeRef<string>,
+    blockchain: MaybeRef<Chains> = Blockchain.ETH
   ) =>
     computed<string | null>(() => {
       if (!get(enableAliasNames)) return null;
 
+      let chain = get(blockchain);
+      if (!isBlockchain(chain)) {
+        chain = Blockchain.ETH;
+      }
+      const addr = get(address);
       const found = get(addressesNames).filter(
         item =>
-          item.address === address &&
-          (item.blockchain === blockchain || item.blockchain === null)
+          item.address === addr &&
+          (item.blockchain === chain || item.blockchain === null)
       );
 
       if (found.length === 0) return null;

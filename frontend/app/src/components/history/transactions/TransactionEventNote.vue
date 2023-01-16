@@ -1,19 +1,25 @@
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { bigNumberify } from '@/utils/bignumbers';
 import { isValidEthAddress, isValidTxHash } from '@/utils/text';
 
-defineProps({
-  notes: { required: false, type: String, default: '' },
-  amount: {
-    required: false,
-    type: BigNumber,
-    default: null
-  },
-  asset: { required: false, type: String, default: '' }
-});
+withDefaults(
+  defineProps<{
+    notes?: string;
+    amount?: BigNumber | null;
+    asset?: string;
+    chain?: Blockchain;
+  }>(),
+  {
+    notes: '',
+    amount: null,
+    asset: '',
+    chain: Blockchain.ETH
+  }
+);
 
 enum NoteType {
   ADDRESS = 'address',
@@ -34,7 +40,7 @@ interface NoteFormat {
 
 const formatNotes = (
   notes: string,
-  amount: BigNumber,
+  amount: BigNumber | null,
   assetId: string
 ): NoteFormat[] => {
   const { assetSymbol } = useAssetInfoRetrieval();
@@ -68,6 +74,7 @@ const formatNotes = (
     }
 
     const isAmount =
+      amount &&
       !isNaN(Number.parseFloat(word)) &&
       bigNumberify(word).eq(amount) &&
       amount.gt(0) &&
@@ -135,6 +142,7 @@ const formatNotes = (
           }"
           :text="note.address"
           :tx="note.type === 'tx'"
+          :chain="chain"
         />
       </span>
       <span v-else-if="note.type === 'amount'" :key="index">

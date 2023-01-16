@@ -289,6 +289,8 @@ export default class PyHandler {
       );
       // Notify the main window every 2 seconds until it acks the notification
       handler.setFailureNotification(window, err, BackendCode.TERMINATED);
+      this.childProcess = undefined;
+      this._port = undefined;
     };
 
     this.onChildExit = (code: number, signal: any) => {
@@ -303,10 +305,12 @@ export default class PyHandler {
           BackendCode.TERMINATED
         );
       }
+      this.childProcess = undefined;
+      this._port = undefined;
     };
 
-    childProcess.on('error', this.onChildError);
-    childProcess.on('exit', this.onChildExit);
+    childProcess.once('error', this.onChildError);
+    childProcess.once('exit', this.onChildExit);
 
     if (childProcess) {
       this.logToFile(
@@ -360,7 +364,7 @@ export default class PyHandler {
         return;
       }
 
-      client.on('exit', () => {
+      client.once('exit', () => {
         this.logToFile(
           `The Python sub-process was terminated successfully (${client.killed})`
         );
@@ -368,7 +372,7 @@ export default class PyHandler {
         this.childProcess = undefined;
         this._port = undefined;
       });
-      client.on('error', e => {
+      client.once('error', e => {
         reject(e);
       });
       client.kill();
