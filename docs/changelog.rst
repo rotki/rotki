@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`5402` Fix issue where the wrong filepath is used when deleting user DB backup in Windows.
 * :bug:`-` Fixed an edge case where users would be swamped with "This socket is already used by another greenlet" errors during websocket communication between backend and frontend.
 * :bug:`-` Transfers of ether between tracked accounts will now have a correct label in the UI.
 * :bug:`-` Trades involving delisted bitfinex pairs will now be properly read by rotki.
