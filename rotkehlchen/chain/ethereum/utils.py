@@ -25,26 +25,26 @@ log = RotkehlchenLogsAdapter(logger)
 # https://github.com/ethereum/web3.py/issues/1839
 ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS = [
     {
-        "constant": True,
-        "inputs": [
+        'constant': True,
+        'inputs': [
             {
-                "name": "node",
-                "type": "bytes32",
+                'name': 'node',
+                'type': 'bytes32',
             },
             {
-                "name": "coinType",
-                "type": "uint256",
-            },
-        ],
-        "name": "addr",
-        "outputs": [
-            {
-                "name": "ret",
-                "type": "bytes",
+                'name': 'coinType',
+                'type': 'uint256',
             },
         ],
-        "payable": False,
-        "type": "function",
+        'name': 'addr',
+        'outputs': [
+            {
+                'name': 'ret',
+                'type': 'bytes',
+            },
+        ],
+        'payable': False,
+        'type': 'function',
     },
 ]
 MULTICALL_CHUNKS = 20

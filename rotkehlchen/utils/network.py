@@ -95,7 +95,7 @@ def retry_calls(
             if handle_429 and result.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 if tries == 0:
                     raise RemoteError(
-                        f"{location} query for {method_name} failed after {times} tries",
+                        f'{location} query for {method_name} failed after {times} tries',
                     )
 
                 log.debug(
@@ -116,7 +116,7 @@ def retry_calls(
             )
             if tries == 0:
                 raise RemoteError(
-                    "{} query for {} failed after {} tries. Reason: {}".format(
+                    '{} query for {} failed after {} tries. Reason: {}'.format(
                         location,
                         method_name,
                         times,

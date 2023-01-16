@@ -28,7 +28,7 @@ def encrypt(key: bytes, source: bytes) -> str:
     source += bytes([padding]) * padding  # Python 2.x: source += chr(padding) * padding
     # store the iv at the beginning and encrypt
     data = iv + (encryptor.update(source) + encryptor.finalize())
-    return base64.b64encode(data).decode("latin-1")
+    return base64.b64encode(data).decode('latin-1')
 
 
 def decrypt(key: bytes, given_source: str) -> bytes:
@@ -40,7 +40,7 @@ def decrypt(key: bytes, given_source: str) -> bytes:
     """
     assert isinstance(key, bytes), 'key should be given in bytes'
     assert isinstance(given_source, str), 'source should be given in string'
-    source = base64.b64decode(given_source.encode("latin-1"))
+    source = base64.b64decode(given_source.encode('latin-1'))
     digest = hashes.Hash(hashes.SHA256())
     digest.update(key)
     key = digest.finalize()  # use SHA-256 over our key to get a proper-sized AES key

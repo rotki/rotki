@@ -363,7 +363,7 @@ def test_jsonloads_dict():
 
 def test_jsonloads_list():
     result = jsonloads_list('["foo", "boo", 3]')
-    assert result == ["foo", "boo", 3]
+    assert result == ['foo', 'boo', 3]
     with pytest.raises(JSONDecodeError) as e:
         jsonloads_list('{"foo": 1, "boo": "value"}')
     assert 'Returned json is not a list' in str(e.value)

@@ -565,7 +565,7 @@ def test_nfts_ignoring_works(rotkehlchen_api_server, endpoint):
 
 
 @requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
-@pytest.mark.parametrize('ethereum_accounts', [["0x7277F7849966426d345D8F6B9AFD1d3d89183083"]])
+@pytest.mark.parametrize('ethereum_accounts', [['0x7277F7849966426d345D8F6B9AFD1d3d89183083']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
 def test_nft_no_price(rotkehlchen_api_server):

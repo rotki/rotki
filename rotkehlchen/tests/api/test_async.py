@@ -34,7 +34,7 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
     binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_balance_response)
 
     # Check querying the async taks resource when no async task is scheduled
-    response = requests.get(api_url_for(server, "asynctasksresource"))
+    response = requests.get(api_url_for(server, 'asynctasksresource'))
     result = assert_proper_response_with_result(response)
     assert result == {'completed': [], 'pending': []}
 
@@ -64,7 +64,7 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
         while True:
             # and now query for the task result and assert on it
             response = requests.get(
-                api_url_for(server, "specific_async_tasks_resource", task_id=task_id),
+                api_url_for(server, 'specific_async_tasks_resource', task_id=task_id),
             )
             assert_proper_response(response)
             json_data = response.json()
@@ -85,7 +85,7 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
 
     # Finally try to query an unknown task id and check proper error is returned
     response = requests.get(
-        api_url_for(server, "specific_async_tasks_resource", task_id=568),
+        api_url_for(server, 'specific_async_tasks_resource', task_id=568),
     )
     assert_error_response(
         response=response,
@@ -127,7 +127,7 @@ def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges):
     while True:
         # and now query for the task result and assert on it
         response = requests.get(
-            api_url_for(server, "specific_async_tasks_resource", task_id=task_id),
+            api_url_for(server, 'specific_async_tasks_resource', task_id=task_id),
         )
         result = assert_proper_response_with_result(response)
         if result['status'] == 'pending':

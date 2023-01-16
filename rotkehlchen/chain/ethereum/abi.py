@@ -90,7 +90,7 @@ def decode_event_data_abi(
     duplicate_names = set(log_topic_names).intersection(log_data_names)
     if duplicate_names:
         raise DeserializationError(
-            f"The following argument names are duplicated "
+            f'The following argument names are duplicated '
             f"between event inputs: '{', '.join(duplicate_names)}'",
         )
 

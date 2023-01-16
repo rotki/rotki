@@ -19,14 +19,14 @@ from .timer import TIMER, TIMER_SIGNAL, Timer
 #   amount of memory used by the type (heapy is a good alternative for this)
 # - Experiment with heapy or PySizer for memory profiling / leak hunting
 
-FlameStack = NewType("FlameStack", str)
+FlameStack = NewType('FlameStack', str)
 FlameGraph = dict[FlameStack, float]
 
 
 def frame_format(frame: FrameType) -> str:
     block_name = frame.f_code.co_name
-    module_name = frame.f_globals.get("__name__")
-    return "{}({})".format(block_name, module_name)
+    module_name = frame.f_globals.get('__name__')
+    return '{}({})'.format(block_name, module_name)
 
 
 def collect_frames(frame: FrameType) -> list[str]:
@@ -41,13 +41,13 @@ def collect_frames(frame: FrameType) -> list[str]:
 
 
 def flamegraph_format(stack_count: FlameGraph) -> str:
-    return "\n".join("%s %d" % (key, value) for key, value in sorted(stack_count.items()))
+    return '\n'.join('%s %d' % (key, value) for key, value in sorted(stack_count.items()))
 
 
 def sample_stack(stack_count: FlameGraph, frame: FrameType, timespent: float) -> None:
     callstack = collect_frames(frame)
 
-    formatted_stack = FlameStack(";".join(callstack))
+    formatted_stack = FlameStack(';'.join(callstack))
     stack_count[formatted_stack] += timespent
 
 
@@ -61,7 +61,7 @@ def process_memory_mb(pid: int) -> float:
 
 def sample_memory(timestamp: float, pid: int, stream: IO) -> None:
     memory = process_memory_mb(pid)
-    stream.write("{timestamp:.6f} {memory:.4f}\n".format(timestamp=timestamp, memory=memory))
+    stream.write('{timestamp:.6f} {memory:.4f}\n'.format(timestamp=timestamp, memory=memory))
 
 
 def sample_objects(timestamp: float, stream: IO) -> None:

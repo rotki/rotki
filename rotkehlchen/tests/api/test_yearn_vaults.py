@@ -539,7 +539,7 @@ def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
             setup.enter_ethereum_patches(stack)
             response = requests.get(api_url_for(
                 rotkehlchen_api_server,
-                "yearnvaultshistoryresource",
+                'yearnvaultshistoryresource',
             ), json={'async_query': async_query})
             if async_query:
                 task_id = assert_ok_async_response(response)
@@ -591,7 +591,7 @@ def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
 def test_query_yearn_vault_history_non_premium(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "yearnvaultshistoryresource",
+        'yearnvaultshistoryresource',
     ))
     assert_error_response(
         response=response,
@@ -623,7 +623,7 @@ def test_query_yearn_vault_v2_balances(rotkehlchen_api_server, ethereum_accounts
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "yearnvaultsv2balancesresource",
+            'yearnvaultsv2balancesresource',
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -714,7 +714,7 @@ def test_query_yearn_vault_v2_history(rotkehlchen_api_server, ethereum_accounts)
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "yearnvaultsv2historyresource",
+            'yearnvaultsv2historyresource',
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)

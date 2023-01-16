@@ -32,14 +32,14 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 chains_id = {
-    "ethereum": 1,
-    "rsk": 30,
-    "binance_chain": 56,
-    "matic": 137,
-    "fantom_opera": 250,
-    "arbitrum": 42161,
-    "avalanche": 43114,
-    "palm": 11297108109,
+    'ethereum': 1,
+    'rsk': 30,
+    'binance_chain': 56,
+    'matic': 137,
+    'fantom_opera': 250,
+    'arbitrum': 42161,
+    'avalanche': 43114,
+    'palm': 11297108109,
 }
 
 

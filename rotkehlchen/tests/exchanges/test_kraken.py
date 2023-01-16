@@ -647,14 +647,14 @@ def test_emptry_kraken_balance_response():
 
 def test_timestamp_deserialization():
     """Test the function that allows to deserialize timestamp from different types"""
-    assert deserialize_timestamp_from_kraken("1458994442.2353") == 1458994442
+    assert deserialize_timestamp_from_kraken('1458994442.2353') == 1458994442
     assert deserialize_timestamp_from_kraken(1458994442.2353) == 1458994442
     assert deserialize_timestamp_from_kraken(1458994442) == 1458994442
     assert deserialize_timestamp_from_kraken(FVal(1458994442.2353)) == 1458994442
     with pytest.raises(DeserializationError):
-        deserialize_timestamp_from_kraken("234a")
+        deserialize_timestamp_from_kraken('234a')
     with pytest.raises(DeserializationError):
-        deserialize_timestamp_from_kraken("")
+        deserialize_timestamp_from_kraken('')
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
@@ -819,9 +819,9 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             'stakingresource',
         ),
         json={
-            "from_timestamp": 1628994442,
-            "to_timestamp": 1640493377,
-            "asset": "ETH2",
+            'from_timestamp': 1628994442,
+            'to_timestamp': 1640493377,
+            'asset': 'ETH2',
         },
     )
     result = assert_proper_response_with_result(response)
@@ -835,9 +835,9 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             'stakingresource',
         ),
         json={
-            "from_timestamp": 1458994441,
-            "to_timestamp": 1640493377,
-            "event_subtypes": ['reward'],
+            'from_timestamp': 1458994441,
+            'to_timestamp': 1640493377,
+            'event_subtypes': ['reward'],
         },
     )
     result = assert_proper_response_with_result(response)
@@ -849,9 +849,9 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             'stakingresource',
         ),
         json={
-            "from_timestamp": 1458994441,
-            "to_timestamp": 1640493377,
-            "event_subtypes": [
+            'from_timestamp': 1458994441,
+            'to_timestamp': 1640493377,
+            'event_subtypes': [
                 'reward',
                 'deposit asset',
             ],
@@ -867,12 +867,12 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             'stakingresource',
         ),
         json={
-            "ascending": [False],
-            "async_query": False,
-            "limit": 10,
-            "offset": 0,
-            "only_cache": True,
-            "order_by_attributes": ["random_column"],
+            'ascending': [False],
+            'async_query': False,
+            'limit': 10,
+            'offset': 0,
+            'only_cache': True,
+            'order_by_attributes': ['random_column'],
         },
     )
     assert_error_response(
@@ -888,12 +888,12 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             'stakingresource',
         ),
         json={
-            "ascending": [False],
-            "async_query": False,
-            "limit": 10,
-            "offset": 0,
-            "only_cache": True,
-            "order_by_attributes": ["event_type"],
+            'ascending': [False],
+            'async_query': False,
+            'limit': 10,
+            'offset': 0,
+            'only_cache': True,
+            'order_by_attributes': ['event_type'],
         },
     )
     assert_proper_response_with_result(response)

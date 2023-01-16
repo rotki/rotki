@@ -65,7 +65,7 @@ def test_query_empty_blockchain_balances(rotkehlchen_api_server):
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "named_blockchain_balances_resource",
+        'named_blockchain_balances_resource',
         blockchain='BTC',
     ))
     assert_proper_response(response)
@@ -75,7 +75,7 @@ def test_query_empty_blockchain_balances(rotkehlchen_api_server):
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "blockchainbalancesresource",
+        'blockchainbalancesresource',
     ))
     assert_proper_response(response)
     data = response.json()
@@ -114,7 +114,7 @@ def test_query_bitcoin_blockchain_bech32_balances(
         setup.enter_blockchain_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "blockchainbalancesresource",
+            'blockchainbalancesresource',
         ))
     result = assert_proper_response_with_result(response)
     assert_btc_balances_result(
@@ -177,7 +177,7 @@ def test_query_blockchain_balances(
     with setup.bitcoin_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "named_blockchain_balances_resource",
+            'named_blockchain_balances_resource',
             blockchain='BTC',
         ), json={'async_query': async_query})
         if async_query:
@@ -254,7 +254,7 @@ def test_query_blockchain_balances_ignore_cache(
         # Query ETH and token balances once
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "named_blockchain_balances_resource",
+            'named_blockchain_balances_resource',
             blockchain='ETH',
         ))
         result = assert_proper_response_with_result(response)
@@ -272,7 +272,7 @@ def test_query_blockchain_balances_ignore_cache(
         # Query again and make sure this time cache is used
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "named_blockchain_balances_resource",
+            'named_blockchain_balances_resource',
             blockchain='ETH',
         ))
         result = assert_proper_response_with_result(response)
@@ -290,7 +290,7 @@ def test_query_blockchain_balances_ignore_cache(
         # Finally query with ignoring the cache
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "named_blockchain_balances_resource",
+            'named_blockchain_balances_resource',
             blockchain='ETH',
         ), json={'ignore_cache': True})
         result = assert_proper_response_with_result(response)
@@ -332,7 +332,7 @@ def _add_blockchain_accounts_test_start(
             setup.enter_blockchain_patches(stack)
             requests.get(api_url_for(
                 api_server,
-                "blockchainbalancesresource",
+                'blockchainbalancesresource',
             ))
 
     new_eth_accounts = [make_evm_address(), make_evm_address()]
@@ -397,7 +397,7 @@ def _add_blockchain_accounts_test_start(
         setup.enter_blockchain_patches(stack)
         response = requests.get(api_url_for(
             api_server,
-            "blockchainbalancesresource",
+            'blockchainbalancesresource',
         ))
     result = assert_proper_response_with_result(response)
     assert_eth_balances_result(
@@ -546,7 +546,7 @@ def test_add_blockchain_accounts(
     # Try adding an already saved BCH address in different format
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
-        "blockchainsaccountsresource",
+        'blockchainsaccountsresource',
         blockchain='BCH',
     ), json={'accounts': [
         # 12tkqA9xSoowkzoERHMWNKsTey55YEBqkv
@@ -559,7 +559,7 @@ def test_add_blockchain_accounts(
     # Try adding a segwit BTC address
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
-        "blockchainsaccountsresource",
+        'blockchainsaccountsresource',
         blockchain='BCH',
     ), json={'accounts': [
         {'address': 'bc1qazcm763858nkj2dj986etajv6wquslv8uxwczt'},
@@ -569,7 +569,7 @@ def test_add_blockchain_accounts(
     # Try adding same BCH address but in different formats
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
-        "blockchainsaccountsresource",
+        'blockchainsaccountsresource',
         blockchain='BCH',
     ), json={
         'accounts': [
@@ -662,7 +662,7 @@ def test_no_etherscan_is_detected(rotkehlchen_api_server):
         setup.enter_ethereum_patches(stack)
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
-            "blockchainsaccountsresource",
+            'blockchainsaccountsresource',
             blockchain='ETH',
         ), json={'accounts': [{'address': new_address}]})
         assert_proper_response(response)
@@ -692,7 +692,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
     data = {'accounts': [account]}
     response = requests.request(
         method,
-        api_url_for(rotkehlchen_api_server, "blockchainsaccountsresource", blockchain='DDASDAS'),
+        api_url_for(rotkehlchen_api_server, 'blockchainsaccountsresource', blockchain='DDASDAS'),
         json=data,
     )
     assert_error_response(
@@ -746,7 +746,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
     data = {'accounts': []}
     response = requests.request(
         method,
-        api_url_for(rotkehlchen_api_server, "blockchainsaccountsresource", blockchain='ETH'),
+        api_url_for(rotkehlchen_api_server, 'blockchainsaccountsresource', blockchain='ETH'),
         json=data,
     )
     verb = 'add' if method == 'PUT' else 'remove'
@@ -1447,7 +1447,7 @@ def _remove_blockchain_accounts_test_start(
         setup.enter_ethereum_patches(stack)
         response = requests.delete(api_url_for(
             api_server,
-            "blockchainsaccountsresource",
+            'blockchainsaccountsresource',
             blockchain='ETH',
         ), json={'accounts': removed_eth_accounts, 'async_query': async_query})
         if async_query:
@@ -1484,7 +1484,7 @@ def _remove_blockchain_accounts_test_start(
         setup.enter_blockchain_patches(stack)
         response = requests.get(api_url_for(
             api_server,
-            "blockchainbalancesresource",
+            'blockchainbalancesresource',
         ))
     result = assert_proper_response_with_result(response)
     assert_eth_balances_result(
@@ -1569,7 +1569,7 @@ def test_remove_blockchain_accounts(
         setup.enter_blockchain_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "blockchainbalancesresource",
+            'blockchainbalancesresource',
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -1616,7 +1616,7 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
     request_data = {'accounts': [{'address': ethereum_accounts[0], 'tags': ['public']}]}
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
-        "blockchainsaccountsresource",
+        'blockchainsaccountsresource',
         blockchain='ETH',
     ), json=request_data)
     assert_proper_response(response)
@@ -1638,7 +1638,7 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
         setup.enter_ethereum_patches(stack)
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
-            "blockchainsaccountsresource",
+            'blockchainsaccountsresource',
             blockchain='ETH',
         ), json={'accounts': [ethereum_accounts[0], unknown_account]})
     assert_error_response(
@@ -1695,11 +1695,11 @@ def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_ser
     # Now add 2 accounts both of them using tags
     new_btc_accounts = [UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]
     accounts_data = [{
-        "address": new_btc_accounts[0],
-        "label": 'my btc miner',
+        'address': new_btc_accounts[0],
+        'label': 'my btc miner',
         'tags': ['public', 'desktop'],
     }, {
-        "address": new_btc_accounts[1],
+        'address': new_btc_accounts[1],
         'label': 'other account',
         'tags': ['desktop'],
     }]

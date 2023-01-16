@@ -17,7 +17,7 @@ def test_add_and_query_tags(
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ),
     )
     assert_proper_response(response)
@@ -34,7 +34,7 @@ def test_add_and_query_tags(
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=tag1,
     )
     assert_proper_response(response)
@@ -52,7 +52,7 @@ def test_add_and_query_tags(
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=tag2,
     )
     assert_proper_response(response)
@@ -71,7 +71,7 @@ def test_add_and_query_tags(
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=tag3,
     )
     assert_error_response(
@@ -84,7 +84,7 @@ def test_add_and_query_tags(
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ),
     )
     assert_proper_response(response)
@@ -114,7 +114,7 @@ def test_add_tag_without_description(
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=tag1,
     )
     assert_proper_response(response)
@@ -127,7 +127,7 @@ def test_add_tag_without_description(
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ),
     )
     assert_proper_response(response)
@@ -158,7 +158,7 @@ def test_add_edit_tag_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=tag,
     )
     assert_error_response(
@@ -178,7 +178,7 @@ def test_add_edit_tag_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=tag,
     )
     assert_error_response(
@@ -197,7 +197,7 @@ def test_add_edit_tag_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=tag,
     )
     assert_error_response(
@@ -222,7 +222,7 @@ def test_add_edit_tag_errors(
                 verb,
                 api_url_for(
                     rotkehlchen_api_server,
-                    "tagsresource",
+                    'tagsresource',
                 ), json=tag,
             )
             assert_error_response(
@@ -237,7 +237,7 @@ def test_add_edit_tag_errors(
             verb,
             api_url_for(
                 rotkehlchen_api_server,
-                "tagsresource",
+                'tagsresource',
             ), json=tag,
         )
         assert_error_response(
@@ -252,7 +252,7 @@ def test_add_edit_tag_errors(
             verb,
             api_url_for(
                 rotkehlchen_api_server,
-                "tagsresource",
+                'tagsresource',
             ), json=tag,
         )
         assert_error_response(
@@ -270,7 +270,7 @@ def test_add_edit_tag_errors(
             verb,
             api_url_for(
                 rotkehlchen_api_server,
-                "tagsresource",
+                'tagsresource',
             ), json=tag,
         )
         assert_error_response(
@@ -288,7 +288,7 @@ def test_add_edit_tag_errors(
             verb,
             api_url_for(
                 rotkehlchen_api_server,
-                "tagsresource",
+                'tagsresource',
             ), json=tag,
         )
         assert_error_response(
@@ -317,7 +317,7 @@ def test_edit_tags(
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=tag1,
     )
     assert_proper_response(response)
@@ -330,7 +330,7 @@ def test_edit_tags(
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=tag2,
     )
     assert_proper_response(response)
@@ -345,7 +345,7 @@ def test_edit_tags(
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=edit_tag_data,
     )
     assert_proper_response(response)
@@ -365,7 +365,7 @@ def test_edit_tags(
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=edit_tag_data,
     )
     assert_proper_response(response)
@@ -384,7 +384,7 @@ def test_edit_tags(
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=edit_tag_data,
     )
     assert_proper_response(response)
@@ -403,7 +403,7 @@ def test_edit_tags(
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=edit_tag_data,
     )
     assert_proper_response(response)
@@ -418,7 +418,7 @@ def test_edit_tags(
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=edit_tag_data,
     )
     assert_error_response(
@@ -435,7 +435,7 @@ def test_edit_tags(
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=edit_tag_data,
     )
     assert_error_response(
@@ -448,7 +448,7 @@ def test_edit_tags(
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ),
     )
     assert_proper_response(response)
@@ -481,7 +481,7 @@ def test_delete_tags(
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=tag1,
     )
     assert_proper_response(response)
@@ -494,7 +494,7 @@ def test_delete_tags(
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=tag2,
     )
     assert_proper_response(response)
@@ -506,7 +506,7 @@ def test_delete_tags(
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ),
     )
     assert_proper_response(response)
@@ -522,7 +522,7 @@ def test_delete_tags(
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=delete_tag_data,
     )
     assert_proper_response(response)
@@ -534,7 +534,7 @@ def test_delete_tags(
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=delete_tag_data,
     )
     assert_error_response(
@@ -547,7 +547,7 @@ def test_delete_tags(
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ),
     )
     assert_proper_response(response)
@@ -571,7 +571,7 @@ def test_delete_tag_errors(
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=data,
     )
     assert_error_response(
@@ -584,7 +584,7 @@ def test_delete_tag_errors(
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=data,
     )
     assert_error_response(
@@ -641,11 +641,11 @@ def test_delete_utilized_tag(rotkehlchen_api_server):
         btc_balances=btc_balances,
     )
     accounts_data = [{
-        "address": new_btc_accounts[0],
-        "label": 'my btc miner',
+        'address': new_btc_accounts[0],
+        'label': 'my btc miner',
         'tags': ['public', 'desktop'],
     }, {
-        "address": new_btc_accounts[1],
+        'address': new_btc_accounts[1],
         'label': 'other account',
         'tags': ['desktop'],
     }]
@@ -664,7 +664,7 @@ def test_delete_utilized_tag(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "tagsresource",
+            'tagsresource',
         ), json=delete_tag_data,
     )
     assert_proper_response(response)

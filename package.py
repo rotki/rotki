@@ -165,12 +165,12 @@ class Environment:
             shell=True,
         ).strip()
 
-        if unmerged_commits != "0":
+        if unmerged_commits != '0':
             logger.error(
-                f"Found {unmerged_commits} in bugfixes that have not been merged for release",
+                f'Found {unmerged_commits} in bugfixes that have not been merged for release',
             )
             sys.exit(1)
-        logger.info("branch is up to date with bugfixes")
+        logger.info('branch is up to date with bugfixes')
 
     def check_environment(self) -> None:
         if self.arch not in SUPPORTED_ARCHS:
@@ -452,7 +452,7 @@ class MacPackaging:
             logger.error(f'failed to create a fat binary {source} {destination}')
             sys.exit(1)
 
-        archs = subprocess.check_output(f'lipo -archs {destination}', encoding="utf-8", shell=True)
+        archs = subprocess.check_output(f'lipo -archs {destination}', encoding='utf-8', shell=True)
 
         if archs.strip() != 'x86_64 arm64':
             logger.error(f'{destination} was not a fat binary, only has {archs}')
@@ -542,7 +542,7 @@ class MacPackaging:
         temp = build_directory / 'temp'
         temp.mkdir(parents=True, exist_ok=True)
 
-        wheels_directory = build_directory / "wheels"
+        wheels_directory = build_directory / 'wheels'
         wheels_directory.mkdir(parents=True, exist_ok=True)
 
         x86_64 = temp / 'x86_64'

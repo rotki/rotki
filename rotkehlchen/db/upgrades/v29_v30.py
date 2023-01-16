@@ -16,7 +16,7 @@ def upgrade_v29_to_v30(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         # Cannot add a REFERENCES column with non-NULL default value
         cursor.switch_foreign_keys('OFF')
         cursor.execute(
-            "ALTER TABLE manually_tracked_balances ADD category "
+            'ALTER TABLE manually_tracked_balances ADD category '
             "CHAR(1) NOT NULL DEFAULT('A') REFERENCES balance_category(category);",
         )
         cursor.switch_foreign_keys('ON')

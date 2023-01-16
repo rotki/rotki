@@ -572,8 +572,8 @@ def test_global_db_restore(globaldb, database):
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
-        name="Not a scam",
-        symbol="NSCM",
+        name='Not a scam',
+        symbol='NSCM',
         started=0,
         underlying_tokens=[UnderlyingToken(
             address=address_to_delete,
@@ -629,7 +629,7 @@ def test_global_db_restore(globaldb, database):
         fee=None,
         fee_currency=None,
         link='',
-        notes="",
+        notes='',
     )
 
     with database.user_write() as write_cursor:
@@ -710,8 +710,8 @@ def test_global_db_reset(globaldb, database):
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
-        name="Not a scam",
-        symbol="NSCM",
+        name='Not a scam',
+        symbol='NSCM',
         started=0,
         underlying_tokens=[UnderlyingToken(
             address=address_to_delete,

@@ -422,7 +422,7 @@ def test_ftx_trade_history_unexpected_data(mock_ftx):
 
 @pytest.mark.parametrize('mocked_current_prices', [{
     A_USDC: ONE,
-    "ETH": FVal(2000),
+    'ETH': FVal(2000),
 }])
 def test_balances(mock_ftx: Ftx):
     """Test that balances are correctly extracted"""

@@ -341,7 +341,7 @@ def create_blueprint(url_prefix: str) -> Blueprint:
     # Take a look at this SO question on hints how to organize versioned
     # API with flask:
     # http://stackoverflow.com/questions/28795561/support-multiple-api-versions-in-flask#28797512
-    return Blueprint("v1_resources", __name__, url_prefix=url_prefix)
+    return Blueprint('v1_resources', __name__, url_prefix=url_prefix)
 
 
 class BaseMethodView(MethodView):

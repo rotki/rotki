@@ -208,7 +208,7 @@ class Iconomi(ExchangeInterface):
 
         try:
             self._api_query('get', 'user/balance')
-            return True, ""
+            return True, ''
 
         except RemoteError:
             return False, 'Provided API Key is invalid'

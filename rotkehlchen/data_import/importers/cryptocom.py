@@ -407,7 +407,7 @@ class CryptocomImporter(BaseExchangeImporter):
                         ONE
                         if len(debited_rows) == 1
                         else deserialize_asset_amount(
-                            debited_row["Native Amount (in USD)"],
+                            debited_row['Native Amount (in USD)'],
                         ) / total_debited_usd
                     )
                     quote_amount_sold = deserialize_asset_amount(

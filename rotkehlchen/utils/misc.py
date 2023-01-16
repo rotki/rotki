@@ -76,7 +76,7 @@ def iso8601ts_to_timestamp(datestr: str) -> Timestamp:
     https://stackoverflow.com/questions/127803/how-do-i-parse-an-iso-8601-formatted-date/49784038#49784038
     """
     # Required due to problems with fromisoformat recognizing the ZULU mark
-    datestr = datestr.replace("Z", "+00:00")
+    datestr = datestr.replace('Z', '+00:00')
     # The following function does not always properly handle fractions of a second
     # so let's just remove it and round to the nearest second since we only deal
     # with seconds in the rotkehlchen timestamps

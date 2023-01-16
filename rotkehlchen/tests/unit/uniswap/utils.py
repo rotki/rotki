@@ -191,7 +191,7 @@ def const_lp_1_events() -> list[LiquidityPoolEvent]:
             address=TEST_ADDRESS_1,
             timestamp=Timestamp(1604273256),
             event_type=EventType.MINT_UNISWAP,
-            pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
+            pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),  # noqa: E501
             token0=A_DOLLAR_BASED.resolve_to_evm_token(),
             token1=A_WETH.resolve_to_evm_token(),
             amount0=AssetAmount(FVal('605.773209925184996494')),
@@ -207,7 +207,7 @@ def const_lp_1_events() -> list[LiquidityPoolEvent]:
             address=TEST_ADDRESS_1,
             timestamp=Timestamp(1604283808),
             event_type=EventType.BURN_UNISWAP,
-            pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
+            pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),  # noqa: E501
             token0=A_DOLLAR_BASED.resolve_to_evm_token(),
             token1=A_WETH.resolve_to_evm_token(),
             amount0=AssetAmount(FVal('641.26289347330654345')),
@@ -228,7 +228,7 @@ def const_lp_2_events() -> list[LiquidityPoolEvent]:
             address=TEST_ADDRESS_1,
             timestamp=Timestamp(1598270334),
             event_type=EventType.MINT_UNISWAP,
-            pool_address=string_to_evm_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
+            pool_address=string_to_evm_address('0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55'),  # noqa: E501
             token0=A_WETH.resolve_to_evm_token(),
             token1=A_BTR.resolve_to_evm_token(),
             amount0=AssetAmount(FVal('1.580431277572006656')),
@@ -244,7 +244,7 @@ def const_lp_2_events() -> list[LiquidityPoolEvent]:
             address=TEST_ADDRESS_1,
             timestamp=Timestamp(1599000975),
             event_type=EventType.BURN_UNISWAP,
-            pool_address=string_to_evm_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
+            pool_address=string_to_evm_address('0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55'),  # noqa: E501
             token0=A_WETH.resolve_to_evm_token(),
             token1=A_BTR.resolve_to_evm_token(),
             amount0=AssetAmount(FVal('0.970300671842796406')),
@@ -258,7 +258,7 @@ def const_lp_2_events() -> list[LiquidityPoolEvent]:
 def const_lp_1_events_balance() -> LiquidityPoolEventsBalance:
     return LiquidityPoolEventsBalance(
         address=TEST_ADDRESS_1,
-        pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
+        pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),
         token0=A_DOLLAR_BASED.resolve_to_evm_token(),
         token1=A_WETH.resolve_to_evm_token(),
         events=const_lp_1_events(),
@@ -271,7 +271,7 @@ def const_lp_1_events_balance() -> LiquidityPoolEventsBalance:
 def const_lp_2_events_balance() -> LiquidityPoolEventsBalance:
     return LiquidityPoolEventsBalance(
         address=TEST_ADDRESS_1,
-        pool_address=string_to_evm_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),
+        pool_address=string_to_evm_address('0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55'),
         token0=A_WETH.resolve_to_evm_token(),
         token1=A_BTR.resolve_to_evm_token(),
         events=const_lp_2_events(),
@@ -291,7 +291,7 @@ def const_lp_3_events() -> list[LiquidityPoolEvent]:
             address=TEST_ADDRESS_1,
             timestamp=Timestamp(1604273256),
             event_type=EventType.MINT_UNISWAP,
-            pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
+            pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),  # noqa: E501
             token0=A_DOLLAR_BASED.resolve_to_evm_token(),
             token1=A_WETH.resolve_to_evm_token(),
             amount0=AssetAmount(FVal('605.773209925184996494')),
@@ -307,7 +307,7 @@ def const_lp_3_events() -> list[LiquidityPoolEvent]:
             address=TEST_ADDRESS_1,
             timestamp=Timestamp(1604283808),
             event_type=EventType.BURN_UNISWAP,
-            pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
+            pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),  # noqa: E501
             token0=A_DOLLAR_BASED.resolve_to_evm_token(),
             token1=A_WETH.resolve_to_evm_token(),
             amount0=AssetAmount(FVal('600')),
@@ -320,7 +320,7 @@ def const_lp_3_events() -> list[LiquidityPoolEvent]:
 
 def const_lp_3_balance() -> LiquidityPool:
     return LiquidityPool(
-        address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
+        address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),
         assets=[
             LiquidityPoolAsset(
                 token=A_DOLLAR_BASED.resolve_to_evm_token(),
@@ -352,7 +352,7 @@ def const_lp_3_balance() -> LiquidityPool:
 def const_lp_3_events_balance() -> LiquidityPoolEventsBalance:
     return LiquidityPoolEventsBalance(
         address=TEST_ADDRESS_1,
-        pool_address=string_to_evm_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
+        pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),
         token0=A_DOLLAR_BASED.resolve_to_evm_token(),
         token1=A_WETH.resolve_to_evm_token(),
         events=const_lp_3_events(),

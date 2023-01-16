@@ -19,7 +19,7 @@ class Timer:
             timer_signal: int = TIMER_SIGNAL,
     ) -> None:
 
-        assert callable(callback), "callback must be callable"
+        assert callable(callback), 'callback must be callable'
 
         signal.signal(timer_signal, self.callback)  # type: ignore
         signal.setitimer(timer, interval, interval)

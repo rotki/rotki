@@ -318,7 +318,7 @@ class Rotkehlchen():
             chain_id=chains_id['avalanche'],
         )
         avalanche_manager = AvalancheManager(
-            avaxrpc_endpoint="https://api.avax.network/ext/bc/C/rpc",
+            avaxrpc_endpoint='https://api.avax.network/ext/bc/C/rpc',
             covalent=self.covalent_avalanche,
             msg_aggregator=self.msg_aggregator,
         )

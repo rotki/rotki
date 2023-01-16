@@ -76,7 +76,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
         trade_type=TradeType.BUY,
         amount=AssetAmount(FVal('0.05772716')),
         rate=Price(FVal('190.3783245183029963712055123')),
-        fee=Fee(FVal("0.02")),
+        fee=Fee(FVal('0.02')),
         fee_currency=A_EUR,
         link='',
         notes='',
@@ -127,7 +127,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
         asset=A_ETH,
         amount=AssetAmount(FVal('0.05770427')),
         fee_asset=A_ETH,
-        fee=Fee(FVal("0.0001")),
+        fee=Fee(FVal('0.0001')),
         link='',
     )]
     assert expected_movements == asset_movements
@@ -1082,7 +1082,7 @@ def assert_custom_cointracking(rotki: Rotkehlchen):
         asset=A_ETH,
         amount=AssetAmount(FVal('0.05770427')),
         fee_asset=A_ETH,
-        fee=Fee(FVal("0.0001")),
+        fee=Fee(FVal('0.0001')),
         link='',
     )]
     assert expected_movements == asset_movements

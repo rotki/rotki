@@ -231,7 +231,7 @@ def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges):
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "exchangebalancesresource",
+                'exchangebalancesresource',
                 location='kraken',
             ),
         )
@@ -306,7 +306,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
     data = {'location': 3434, 'name': 'foo', 'api_key': 'ddddd', 'api_secret': 'fffffff'}
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
-            api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data,
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
         )
     assert_error_response(
         response=response,
@@ -318,7 +318,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
     data = {'location': 'kraken', 'name': 55, 'api_key': 'ddddd', 'api_secret': 'fffffff'}
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
-            api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data,
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
         )
     assert_error_response(
         response=response,
@@ -330,7 +330,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
     data = {'api_key': 'ddddd', 'api_secret': 'fffffff'}
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
-            api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data,
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
         )
     assert_error_response(
         response=response,
@@ -342,7 +342,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
     data = {'name': 'kraken', 'api_key': True, 'api_secret': 'fffffff'}
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
-            api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data,
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
         )
     assert_error_response(
         response=response,
@@ -354,7 +354,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
     data = {'name': 'kraken', 'api_secret': 'fffffff'}
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
-            api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data,
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
         )
     assert_error_response(
         response=response,
@@ -366,7 +366,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
     data = {'name': 'kraken', 'api_key': 'ddddd', 'api_secret': 234.1}
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
-            api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data,
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
         )
     assert_error_response(
         response=response,
@@ -378,7 +378,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
     data = {'name': 'kraken', 'api_key': 'ddddd'}
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
-            api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data,
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
         )
     assert_error_response(
         response=response,
@@ -439,7 +439,7 @@ def test_remove_exchange(rotkehlchen_api_server):
 
     # now try to remove a non-registered exchange
     data = {'location': 'binance', 'name': 'my_binance'}
-    response = requests.delete(api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data)
+    response = requests.delete(api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='binance exchange my_binance is not registered',
@@ -461,7 +461,7 @@ def test_remove_exchange_errors(rotkehlchen_api_server):
 
     # invalid type for exchange location
     data = {'location': 5533, 'name': 'foo'}
-    response = requests.delete(api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data)
+    response = requests.delete(api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Failed to deserialize Location value from non string value',
@@ -470,7 +470,7 @@ def test_remove_exchange_errors(rotkehlchen_api_server):
 
     # invalid type for exchange name
     data = {'location': 'kraken', 'name': 55}
-    response = requests.delete(api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data)
+    response = requests.delete(api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data)
     assert_error_response(
         response=response,
         contained_in_msg='Not a valid string',
@@ -478,7 +478,7 @@ def test_remove_exchange_errors(rotkehlchen_api_server):
     )
 
     # omit exchange location at removal
-    response = requests.delete(api_url_for(rotkehlchen_api_server, "exchangesresource"))
+    response = requests.delete(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
     assert_error_response(
         response=response,
         contained_in_msg='Missing data for required field',
@@ -781,12 +781,12 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
     # and now query them in a specific time range excluding some asset movements
     data = {'from_timestamp': 1439994442, 'to_timestamp': 1458994442, 'async_query': async_query}
     with setup.polo_patch:
-        response = requests.get(api_url_for(server, "assetmovementsresource"), json=data)
+        response = requests.get(api_url_for(server, 'assetmovementsresource'), json=data)
         assert_okay(response)
     # do the same but with query args. This serves as test of from/to timestamp with query args
     with setup.polo_patch:
         response = requests.get(
-            api_url_for(server, "assetmovementsresource") + '?' + urlencode(data))
+            api_url_for(server, 'assetmovementsresource') + '?' + urlencode(data))
         assert_okay(response)
 
     # and now test pagination
@@ -925,7 +925,7 @@ def test_query_asset_movements_over_limit(
 
         # now query kraken which has a ton of DB entries
         response = requests.get(
-            api_url_for(server, "assetmovementsresource"),
+            api_url_for(server, 'assetmovementsresource'),
             json={'location': 'kraken'},
         )
         result = assert_proper_response_with_result(response)

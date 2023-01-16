@@ -218,9 +218,9 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
         base_asset=A_ETH,
         quote_asset=A_USD,
         trade_type=TradeType.SELL,
-        amount=FVal("100.45"),
-        rate=FVal("88.90014932802389248382279741"),
-        fee=FVal("10.1"),
+        amount=FVal('100.45'),
+        rate=FVal('88.90014932802389248382279741'),
+        fee=FVal('10.1'),
         fee_currency=A_USD,
         link='1e14d574-30fa-5d85-b02c-6be0d851d61d',
     ), Trade(
@@ -229,9 +229,9 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
         base_asset=A_BTC,
         quote_asset=A_USD,
         trade_type=TradeType.BUY,
-        amount=FVal("486.34313725"),
-        rate=FVal("9.997920454875299055122012005"),
-        fee=FVal("1.01"),
+        amount=FVal('486.34313725'),
+        rate=FVal('9.997920454875299055122012005'),
+        fee=FVal('1.01'),
         fee_currency=A_USD,
         link='9e14d574-30fa-5d85-b02c-6be0d851d61d',
     )]
@@ -712,66 +712,66 @@ def test_coinbase_query_deposit_withdrawals_unexpected_data(function_scope_coinb
 
 def test_asset_conversion():
     trade_b = {
-        "id": "77c5ad72-764e-414b-8bdb-b5aed20fb4b1",
-        "type": "trade",
-        "status": "completed",
-        "amount": {
-            "amount": "-1000.000000",
-            "currency": "USDC",
+        'id': '77c5ad72-764e-414b-8bdb-b5aed20fb4b1',
+        'type': 'trade',
+        'status': 'completed',
+        'amount': {
+            'amount': '-1000.000000',
+            'currency': 'USDC',
         },
-        "native_amount": {
-            "amount": "-1000.00",
-            "currency": "USD",
+        'native_amount': {
+            'amount': '-1000.00',
+            'currency': 'USD',
         },
-        "description": None,
-        "created_at": "2020-06-08T02:32:15Z",
-        "updated_at": "2021-06-08T02:32:16Z",
-        "resource": "transaction",
-        "resource_path": "/v2/accounts/sd5af/transactions/77c5ad72-764e-414b-8bdb-b5aed20fb4b1",
-        "instant_exchange": False,
-        "trade": {
-            "id": "5dceef97-ef34-41e6-9171-3e60cd01639e",
-            "resource": "trade",
-            "resource_path": "/v2/accounts/sd5af/trades/5dceef97-ef34-41e6-9171-3e60cd01639e",
+        'description': None,
+        'created_at': '2020-06-08T02:32:15Z',
+        'updated_at': '2021-06-08T02:32:16Z',
+        'resource': 'transaction',
+        'resource_path': '/v2/accounts/sd5af/transactions/77c5ad72-764e-414b-8bdb-b5aed20fb4b1',
+        'instant_exchange': False,
+        'trade': {
+            'id': '5dceef97-ef34-41e6-9171-3e60cd01639e',
+            'resource': 'trade',
+            'resource_path': '/v2/accounts/sd5af/trades/5dceef97-ef34-41e6-9171-3e60cd01639e',
         },
-        "details": {
-            "title": "Converted from USD Coin",
-            "subtitle": "Using USDC Wallet",
-            "header": "Converted 1,000.0000 USDC ($1,000.00)",
-            "health": "positive",
-            "payment_method_name": "USDC Wallet",
+        'details': {
+            'title': 'Converted from USD Coin',
+            'subtitle': 'Using USDC Wallet',
+            'header': 'Converted 1,000.0000 USDC ($1,000.00)',
+            'health': 'positive',
+            'payment_method_name': 'USDC Wallet',
         },
     }
 
     trade_a = {
-        "id": "8f530cd1-5ec0-4aae-afdc-198502a53b17",
-        "type": "trade",
-        "status": "completed",
-        "amount": {
-            "amount": "0.01694165",
-            "currency": "BTC",
+        'id': '8f530cd1-5ec0-4aae-afdc-198502a53b17',
+        'type': 'trade',
+        'status': 'completed',
+        'amount': {
+            'amount': '0.01694165',
+            'currency': 'BTC',
         },
-        "native_amount": {
-            "amount": "910.00",
-            "currency": "USD",
+        'native_amount': {
+            'amount': '910.00',
+            'currency': 'USD',
         },
-        "description": None,
-        "created_at": "2020-06-08T02:32:16Z",
-        "updated_at": "2020-06-08T02:32:16Z",
-        "resource": "transaction",
-        "resource_path": "/v2/accounts/sd5af/transactions/8f530cd1-5ec0-4aae-afdc-198502a53b17",
-        "instant_exchange": False,
-        "trade": {
-            "id": "5dceef97-ef34-41e6-9171-3e60cd01639e",
-            "resource": "trade",
-            "resource_path": "/v2/accounts/sd5af/trades/5dceef97-ef34-41e6-9171-3e60cd01639e",
+        'description': None,
+        'created_at': '2020-06-08T02:32:16Z',
+        'updated_at': '2020-06-08T02:32:16Z',
+        'resource': 'transaction',
+        'resource_path': '/v2/accounts/sd5af/transactions/8f530cd1-5ec0-4aae-afdc-198502a53b17',
+        'instant_exchange': False,
+        'trade': {
+            'id': '5dceef97-ef34-41e6-9171-3e60cd01639e',
+            'resource': 'trade',
+            'resource_path': '/v2/accounts/sd5af/trades/5dceef97-ef34-41e6-9171-3e60cd01639e',
         },
-        "details": {
-            "title": "Converted to Bitcoin",
-            "subtitle": "Using USDC Wallet",
-            "header": "Converted 0.01694165 BTC ($910.00)",
-            "health": "positive",
-            "payment_method_name": "USDC Wallet",
+        'details': {
+            'title': 'Converted to Bitcoin',
+            'subtitle': 'Using USDC Wallet',
+            'header': 'Converted 0.01694165 BTC ($910.00)',
+            'health': 'positive',
+            'payment_method_name': 'USDC Wallet',
         },
     }
 
@@ -794,66 +794,66 @@ def test_asset_conversion():
 def test_asset_conversion_not_stable_coin():
     """Test a conversion using a from asset that is not a stable coin"""
     trade_a = {
-        "id": "77c5ad72-764e-414b-8bdb-b5aed20fb4b1",
-        "type": "trade",
-        "status": "completed",
-        "amount": {
-            "amount": "-6000.000000",
-            "currency": "1INCH",
+        'id': '77c5ad72-764e-414b-8bdb-b5aed20fb4b1',
+        'type': 'trade',
+        'status': 'completed',
+        'amount': {
+            'amount': '-6000.000000',
+            'currency': '1INCH',
         },
-        "native_amount": {
-            "amount": "-1000.00",
-            "currency": "USD",
+        'native_amount': {
+            'amount': '-1000.00',
+            'currency': 'USD',
         },
-        "description": None,
-        "created_at": "2020-06-08T02:32:15Z",
-        "updated_at": "2021-06-08T02:32:16Z",
-        "resource": "transaction",
-        "resource_path": "/v2/accounts/sd5af/transactions/77c5ad72-764e-414b-8bdb-b5aed20fb4b1",
-        "instant_exchange": False,
-        "trade": {
-            "id": "5dceef97-ef34-41e6-9171-3e60cd01639e",
-            "resource": "trade",
-            "resource_path": "/v2/accounts/sd5af/trades/5dceef97-ef34-41e6-9171-3e60cd01639e",
+        'description': None,
+        'created_at': '2020-06-08T02:32:15Z',
+        'updated_at': '2021-06-08T02:32:16Z',
+        'resource': 'transaction',
+        'resource_path': '/v2/accounts/sd5af/transactions/77c5ad72-764e-414b-8bdb-b5aed20fb4b1',
+        'instant_exchange': False,
+        'trade': {
+            'id': '5dceef97-ef34-41e6-9171-3e60cd01639e',
+            'resource': 'trade',
+            'resource_path': '/v2/accounts/sd5af/trades/5dceef97-ef34-41e6-9171-3e60cd01639e',
         },
-        "details": {
-            "title": "Converted from USD Coin",
-            "subtitle": "Using USDC Wallet",
-            "header": "Converted 1,000.0000 USDC ($1,000.00)",
-            "health": "positive",
-            "payment_method_name": "USDC Wallet",
+        'details': {
+            'title': 'Converted from USD Coin',
+            'subtitle': 'Using USDC Wallet',
+            'header': 'Converted 1,000.0000 USDC ($1,000.00)',
+            'health': 'positive',
+            'payment_method_name': 'USDC Wallet',
         },
     }
 
     trade_b = {
-        "id": "8f530cd1-5ec0-4aae-afdc-198502a53b17",
-        "type": "trade",
-        "status": "completed",
-        "amount": {
-            "amount": "0.01694165",
-            "currency": "BTC",
+        'id': '8f530cd1-5ec0-4aae-afdc-198502a53b17',
+        'type': 'trade',
+        'status': 'completed',
+        'amount': {
+            'amount': '0.01694165',
+            'currency': 'BTC',
         },
-        "native_amount": {
-            "amount": "910.00",
-            "currency": "USD",
+        'native_amount': {
+            'amount': '910.00',
+            'currency': 'USD',
         },
-        "description": None,
-        "created_at": "2020-06-08T02:32:16Z",
-        "updated_at": "2020-06-08T02:32:16Z",
-        "resource": "transaction",
-        "resource_path": "/v2/accounts/sd5af/transactions/8f530cd1-5ec0-4aae-afdc-198502a53b17",
-        "instant_exchange": False,
-        "trade": {
-            "id": "5dceef97-ef34-41e6-9171-3e60cd01639e",
-            "resource": "trade",
-            "resource_path": "/v2/accounts/sd5af/trades/5dceef97-ef34-41e6-9171-3e60cd01639e",
+        'description': None,
+        'created_at': '2020-06-08T02:32:16Z',
+        'updated_at': '2020-06-08T02:32:16Z',
+        'resource': 'transaction',
+        'resource_path': '/v2/accounts/sd5af/transactions/8f530cd1-5ec0-4aae-afdc-198502a53b17',
+        'instant_exchange': False,
+        'trade': {
+            'id': '5dceef97-ef34-41e6-9171-3e60cd01639e',
+            'resource': 'trade',
+            'resource_path': '/v2/accounts/sd5af/trades/5dceef97-ef34-41e6-9171-3e60cd01639e',
         },
-        "details": {
-            "title": "Converted to Bitcoin",
-            "subtitle": "Using USDC Wallet",
-            "header": "Converted 0.01694165 BTC ($910.00)",
-            "health": "positive",
-            "payment_method_name": "USDC Wallet",
+        'details': {
+            'title': 'Converted to Bitcoin',
+            'subtitle': 'Using USDC Wallet',
+            'header': 'Converted 0.01694165 BTC ($910.00)',
+            'health': 'positive',
+            'payment_method_name': 'USDC Wallet',
         },
     }
 
@@ -876,66 +876,66 @@ def test_asset_conversion_not_stable_coin():
 def test_asset_conversion_zero_fee():
     """Test a conversion with 0 fee"""
     trade_a = {
-        "id": "77c5ad72-764e-414b-8bdb-b5aed20fb4b1",
-        "type": "trade",
-        "status": "completed",
-        "amount": {
-            "amount": "-6000.000000",
-            "currency": "1INCH",
+        'id': '77c5ad72-764e-414b-8bdb-b5aed20fb4b1',
+        'type': 'trade',
+        'status': 'completed',
+        'amount': {
+            'amount': '-6000.000000',
+            'currency': '1INCH',
         },
-        "native_amount": {
-            "amount": "-1000.00",
-            "currency": "USD",
+        'native_amount': {
+            'amount': '-1000.00',
+            'currency': 'USD',
         },
-        "description": None,
-        "created_at": "2020-06-08T02:32:16Z",
-        "updated_at": "2021-06-08T02:32:16Z",
-        "resource": "transaction",
-        "resource_path": "/v2/accounts/sd5af/transactions/77c5ad72-764e-414b-8bdb-b5aed20fb4b1",
-        "instant_exchange": False,
-        "trade": {
-            "id": "5dceef97-ef34-41e6-9171-3e60cd01639e",
-            "resource": "trade",
-            "resource_path": "/v2/accounts/sd5af/trades/5dceef97-ef34-41e6-9171-3e60cd01639e",
+        'description': None,
+        'created_at': '2020-06-08T02:32:16Z',
+        'updated_at': '2021-06-08T02:32:16Z',
+        'resource': 'transaction',
+        'resource_path': '/v2/accounts/sd5af/transactions/77c5ad72-764e-414b-8bdb-b5aed20fb4b1',
+        'instant_exchange': False,
+        'trade': {
+            'id': '5dceef97-ef34-41e6-9171-3e60cd01639e',
+            'resource': 'trade',
+            'resource_path': '/v2/accounts/sd5af/trades/5dceef97-ef34-41e6-9171-3e60cd01639e',
         },
-        "details": {
-            "title": "Converted from USD Coin",
-            "subtitle": "Using USDC Wallet",
-            "header": "Converted 1,000.0000 USDC ($1,000.00)",
-            "health": "positive",
-            "payment_method_name": "USDC Wallet",
+        'details': {
+            'title': 'Converted from USD Coin',
+            'subtitle': 'Using USDC Wallet',
+            'header': 'Converted 1,000.0000 USDC ($1,000.00)',
+            'health': 'positive',
+            'payment_method_name': 'USDC Wallet',
         },
     }
 
     trade_b = {
-        "id": "8f530cd1-5ec0-4aae-afdc-198502a53b17",
-        "type": "trade",
-        "status": "completed",
-        "amount": {
-            "amount": "0.01694165",
-            "currency": "BTC",
+        'id': '8f530cd1-5ec0-4aae-afdc-198502a53b17',
+        'type': 'trade',
+        'status': 'completed',
+        'amount': {
+            'amount': '0.01694165',
+            'currency': 'BTC',
         },
-        "native_amount": {
-            "amount": "1000.00",
-            "currency": "USD",
+        'native_amount': {
+            'amount': '1000.00',
+            'currency': 'USD',
         },
-        "description": None,
-        "created_at": "2020-06-08T02:32:16Z",
-        "updated_at": "2020-06-08T02:32:16Z",
-        "resource": "transaction",
-        "resource_path": "/v2/accounts/sd5af/transactions/8f530cd1-5ec0-4aae-afdc-198502a53b17",
-        "instant_exchange": False,
-        "trade": {
-            "id": "5dceef97-ef34-41e6-9171-3e60cd01639e",
-            "resource": "trade",
-            "resource_path": "/v2/accounts/sd5af/trades/5dceef97-ef34-41e6-9171-3e60cd01639e",
+        'description': None,
+        'created_at': '2020-06-08T02:32:16Z',
+        'updated_at': '2020-06-08T02:32:16Z',
+        'resource': 'transaction',
+        'resource_path': '/v2/accounts/sd5af/transactions/8f530cd1-5ec0-4aae-afdc-198502a53b17',
+        'instant_exchange': False,
+        'trade': {
+            'id': '5dceef97-ef34-41e6-9171-3e60cd01639e',
+            'resource': 'trade',
+            'resource_path': '/v2/accounts/sd5af/trades/5dceef97-ef34-41e6-9171-3e60cd01639e',
         },
-        "details": {
-            "title": "Converted to Bitcoin",
-            "subtitle": "Using USDC Wallet",
-            "header": "Converted 0.01694165 BTC ($910.00)",
-            "health": "positive",
-            "payment_method_name": "USDC Wallet",
+        'details': {
+            'title': 'Converted to Bitcoin',
+            'subtitle': 'Using USDC Wallet',
+            'header': 'Converted 0.01694165 BTC ($910.00)',
+            'health': 'positive',
+            'payment_method_name': 'USDC Wallet',
         },
     }
 
@@ -961,69 +961,69 @@ def test_asset_conversion_choosing_fee_asset():
     """
 
     trade_a = {
-        "id": "REDACTED",
-        "type": "trade",
-        "status": "completed",
-        "amount": {
-            "amount": "-37734.034561",
-            "currency": "ETH",
+        'id': 'REDACTED',
+        'type': 'trade',
+        'status': 'completed',
+        'amount': {
+            'amount': '-37734.034561',
+            'currency': 'ETH',
         },
-        "native_amount": {
-            "amount": "-79362.22",
-            "currency": "USD",
+        'native_amount': {
+            'amount': '-79362.22',
+            'currency': 'USD',
         },
-        "description": None,
-        "created_at": "2021-10-12T13:23:56Z",
-        "updated_at": "2021-10-12T13:23:56Z",
-        "resource": "transaction",
-        "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
-        "instant_exchange": False,
-        "trade": {
-            "id": "id_of_trade",
-            "resource": "trade",
-            "resource_path": "/v2/accounts/REDACTED/trades/id_of_trade",
+        'description': None,
+        'created_at': '2021-10-12T13:23:56Z',
+        'updated_at': '2021-10-12T13:23:56Z',
+        'resource': 'transaction',
+        'resource_path': '/v2/accounts/REDACTED/transactions/REDACTED',
+        'instant_exchange': False,
+        'trade': {
+            'id': 'id_of_trade',
+            'resource': 'trade',
+            'resource_path': '/v2/accounts/REDACTED/trades/id_of_trade',
         },
-        "details": {
-            "title": "Converted from ETH",
-            "subtitle": "Using ETH Wallet",
-            "header": "Converted 37,734.034561 ETH ($79,362.22)",
-            "health": "positive",
-            "payment_method_name": "ETH Wallet",
+        'details': {
+            'title': 'Converted from ETH',
+            'subtitle': 'Using ETH Wallet',
+            'header': 'Converted 37,734.034561 ETH ($79,362.22)',
+            'health': 'positive',
+            'payment_method_name': 'ETH Wallet',
         },
-        "hide_native_amount": False,
+        'hide_native_amount': False,
     }
 
     trade_b = {
-        "id": "REDACTED",
-        "type": "trade",
-        "status": "completed",
-        "amount": {
-            "amount": "552.315885836",
-            "currency": "BTC",
+        'id': 'REDACTED',
+        'type': 'trade',
+        'status': 'completed',
+        'amount': {
+            'amount': '552.315885836',
+            'currency': 'BTC',
         },
-        "native_amount": {
-            "amount": "77827.94",
-            "currency": "USD",
+        'native_amount': {
+            'amount': '77827.94',
+            'currency': 'USD',
         },
-        "description": None,
-        "created_at": "2021-10-12T13:23:55Z",
-        "updated_at": "2021-10-12T13:23:57Z",
-        "resource": "transaction",
-        "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
-        "instant_exchange": False,
-        "trade": {
-            "id": "id_of_trade",
-            "resource": "trade",
-            "resource_path": "/v2/accounts/REDACTED/trades/id_of_trade",
+        'description': None,
+        'created_at': '2021-10-12T13:23:55Z',
+        'updated_at': '2021-10-12T13:23:57Z',
+        'resource': 'transaction',
+        'resource_path': '/v2/accounts/REDACTED/transactions/REDACTED',
+        'instant_exchange': False,
+        'trade': {
+            'id': 'id_of_trade',
+            'resource': 'trade',
+            'resource_path': '/v2/accounts/REDACTED/trades/id_of_trade',
         },
-        "details": {
-            "title": "Converted to BTC",
-            "subtitle": "Using ETH Wallet",
-            "header": "Converted 552.31588584 BTC ($77,827.94)",
-            "health": "positive",
-            "payment_method_name": "ETH Wallet",
+        'details': {
+            'title': 'Converted to BTC',
+            'subtitle': 'Using ETH Wallet',
+            'header': 'Converted 552.31588584 BTC ($77,827.94)',
+            'health': 'positive',
+            'payment_method_name': 'ETH Wallet',
         },
-        "hide_native_amount": False,
+        'hide_native_amount': False,
     }
 
     trade = trade_from_conversion(trade_a, trade_b)

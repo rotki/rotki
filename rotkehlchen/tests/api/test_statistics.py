@@ -45,7 +45,7 @@ def test_query_statistics_netvalue(
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "allbalancesresource",
+                'allbalancesresource',
             ), json={'save_data': True},
         )
     assert_proper_response(response)
@@ -54,7 +54,7 @@ def test_query_statistics_netvalue(
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "statisticsnetvalueresource",
+            'statisticsnetvalueresource',
         ),
     )
 
@@ -257,7 +257,7 @@ def test_query_statistics_value_distribution(
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "allbalancesresource",
+                'allbalancesresource',
             ), json={'save_data': True},
         )
     assert_proper_response(response)
@@ -286,7 +286,7 @@ def test_query_statistics_value_distribution(
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "statisticsvaluedistributionresource",
+            'statisticsvaluedistributionresource',
         ), json={'distribution_by': 'location'},
     )
     assert_okay_by_location(response)
@@ -294,7 +294,7 @@ def test_query_statistics_value_distribution(
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "statisticsvaluedistributionresource",
+            'statisticsvaluedistributionresource',
         ) + '?distribution_by=location',
     )
     assert_okay_by_location(response)
@@ -303,7 +303,7 @@ def test_query_statistics_value_distribution(
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "statisticsvaluedistributionresource",
+            'statisticsvaluedistributionresource',
         ), json={'distribution_by': 'asset'},
     )
     if start_with_valid_premium:
@@ -360,7 +360,7 @@ def test_query_statistics_value_distribution_errors(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "statisticsvaluedistributionresource",
+            'statisticsvaluedistributionresource',
         ),
     )
     assert_error_response(
@@ -373,7 +373,7 @@ def test_query_statistics_value_distribution_errors(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "statisticsvaluedistributionresource",
+            'statisticsvaluedistributionresource',
         ), json={'distribution_by': 'haircolor'},
     )
     assert_error_response(

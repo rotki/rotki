@@ -303,7 +303,7 @@ def test_query_transactions(rotkehlchen_api_server):
     # Check that transactions per address and in a specific time range can be
     # queried and that this is from the DB and not etherscan
     def mock_etherscan_get(url, *args, **kwargs):  # pylint: disable=unused-argument
-        return MockResponse(200, "{}")
+        return MockResponse(200, '{}')
     etherscan_patch = patch.object(rotki.chains_aggregator.ethereum.node_inquirer.etherscan.session, 'get', wraps=mock_etherscan_get)  # noqa: E501
     with etherscan_patch as mock_call:
         response = requests.get(

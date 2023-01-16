@@ -117,7 +117,7 @@ class Balancer(EthereumModule):
             )
         except RemoteError as e:
             self.msg_aggregator.add_error(
-                SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
+                SUBGRAPH_REMOTE_ERROR_MSG.format(protocol='Balancer', error_msg=str(e)),
             )
             raise ModuleInitializationFailure('subgraph remote error') from e
 
@@ -225,7 +225,7 @@ class Balancer(EthereumModule):
                 )
             except RemoteError as e:
                 self.msg_aggregator.add_error(
-                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol='Balancer', error_msg=str(e)),
                 )
                 raise
 
@@ -395,7 +395,7 @@ class Balancer(EthereumModule):
                 )
             except RemoteError as e:
                 self.msg_aggregator.add_error(
-                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol='Balancer', error_msg=str(e)),
                 )
                 raise
 
@@ -692,11 +692,11 @@ class Balancer(EthereumModule):
                         if usd_price == ZERO:
                             is_missing_token_price = True
                             self.msg_aggregator.add_error(
-                                f"Failed to request the USD price of {token.identifier} at "
-                                f"timestamp {invest_event.timestamp}. The USD price of the "
-                                f"Balancer {event_type} for the pool {bpt_event.pool_address_token.evm_address} "  # noqa: E501
+                                f'Failed to request the USD price of {token.identifier} at '
+                                f'timestamp {invest_event.timestamp}. The USD price of the '
+                                f'Balancer {event_type} for the pool {bpt_event.pool_address_token.evm_address} '  # noqa: E501
                                 f"at transaction {bpt_event.tx_hash} can't be calculated and "
-                                f"it will be set to zero.",
+                                f'it will be set to zero.',
                             )
 
                 if is_missing_token_price is True:
@@ -721,7 +721,7 @@ class Balancer(EthereumModule):
             usd_price = Inquirer().find_usd_price(token)
             if usd_price == Price(ZERO):
                 self.msg_aggregator.add_error(
-                    f"Failed to request the USD price of {token.identifier}. "
+                    f'Failed to request the USD price of {token.identifier}. '
                     f"Balances of the balancer pools that have this token won't be accurate.",
                 )
                 continue
@@ -764,7 +764,7 @@ class Balancer(EthereumModule):
                 )
             except RemoteError as e:
                 self.msg_aggregator.add_error(
-                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol='Balancer', error_msg=str(e)),
                 )
                 raise
 
@@ -873,7 +873,7 @@ class Balancer(EthereumModule):
                 )
             except RemoteError as e:
                 self.msg_aggregator.add_error(
-                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol='Balancer', error_msg=str(e)),
                 )
                 raise
 
@@ -944,7 +944,7 @@ class Balancer(EthereumModule):
         for unknown_token in unknown_tokens:
             if unknown_token.evm_address not in token_to_prices:
                 self.msg_aggregator.add_error(
-                    f"Failed to request the USD price of {unknown_token.identifier}. "
+                    f'Failed to request the USD price of {unknown_token.identifier}. '
                     f"Balances of the balancer pools that have this token won't be accurate.",
                 )
         return token_to_prices

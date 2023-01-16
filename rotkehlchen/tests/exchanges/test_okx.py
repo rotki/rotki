@@ -722,7 +722,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: Okx):
 }
             """
         else:
-            data = ""
+            data = ''
         return MockResponse(200, data)
 
     with patch.object(

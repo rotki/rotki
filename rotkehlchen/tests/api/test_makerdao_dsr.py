@@ -673,7 +673,7 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
         'timestamp': 1588182567,
         'tx_hash': '0x618fc9542890a2f58ab20a3c12d173b3638af11fda813e61788e242b4fc9a756',
     }]
-    assert_serialized_lists_equal(movements, expected_movements, max_diff="1e-26")
+    assert_serialized_lists_equal(movements, expected_movements, max_diff='1e-26')
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
 
@@ -695,7 +695,7 @@ def test_dsr_for_account_with_proxy_but_no_dsr(
     assert len(json_data['result']['balances']) == 0
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "makerdaodsrhistoryresource",
+        'makerdaodsrhistoryresource',
     ))
     json_data = response.json()
     assert json_data['message'] == ''

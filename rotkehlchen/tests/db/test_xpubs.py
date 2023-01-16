@@ -101,7 +101,7 @@ def test_edit_bitcoin_xpub(setup_db_for_xpub_tests):
     db, xpub, _, _, _ = setup_db_for_xpub_tests
 
     with db.user_write() as cursor:
-        db.add_tag(cursor, 'test', description="test", background_color='000000', foreground_color='111111')  # noqa: E501
+        db.add_tag(cursor, 'test', description='test', background_color='000000', foreground_color='111111')  # noqa: E501
         db.edit_bitcoin_xpub(
             cursor,
             XpubData(

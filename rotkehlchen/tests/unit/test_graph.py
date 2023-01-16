@@ -33,7 +33,7 @@ def test_exception_retries():
     querystr = format_query_indentation(TEST_QUERY_1.format())
 
     client = MagicMock()
-    client.execute.side_effect = Exception("any message")
+    client.execute.side_effect = Exception('any message')
 
     backoff_factor_patch = patch(
         'rotkehlchen.chain.ethereum.graph.RETRY_BACKOFF_FACTOR',
@@ -59,7 +59,7 @@ def test_success_result():
     """Test a successful response returns result as expected and does not
     triggers the retry logic.
     """
-    expected_result = {"schema": [{"data1"}, {"data2"}]}
+    expected_result = {'schema': [{'data1'}, {'data2'}]}
 
     graph = Graph(TEST_URL_1)
     param_types = {'$limit': 'Int!'}

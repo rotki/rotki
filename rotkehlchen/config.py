@@ -14,7 +14,7 @@ log = RotkehlchenLogsAdapter(logger)
 def get_xdg_data_home() -> Path:
     directory = os.environ.get('XDG_DATA_HOME', None)
     if directory is None:
-        home = os.path.expanduser("~")
+        home = os.path.expanduser('~')
         directory = os.path.join(home, '.local', 'share')
 
     return Path(directory)
@@ -32,7 +32,7 @@ def get_win32_appdata() -> Path:
 
 
 def old_data_directory() -> Path:
-    home = os.path.expanduser("~")
+    home = os.path.expanduser('~')
     directory = os.path.join(home, '.rotkehlchen')
     return Path(directory)
 

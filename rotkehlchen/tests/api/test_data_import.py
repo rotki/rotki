@@ -329,7 +329,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "dataimportresource",
+            'dataimportresource',
         ), json=json_data,
     )
     assert_error_response(
@@ -343,7 +343,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "dataimportresource",
+            'dataimportresource',
         ), json=json_data,
     )
     assert_error_response(

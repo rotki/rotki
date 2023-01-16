@@ -24,7 +24,7 @@ class RKLEncoder(json.JSONEncoder):
         if isinstance(obj, (TradeType, Location)):
             return str(obj)
         if isinstance(obj, float):
-            raise ValueError("Trying to json encode a float.")
+            raise ValueError('Trying to json encode a float.')
         if isinstance(obj, Asset):
             return obj.identifier
 

@@ -57,5 +57,5 @@ lines.append('}')
 
 # Save to the file
 db_module = 'db' if db_name == 'user' else 'globaldb'
-with open(f'rotkehlchen/{db_module}/minimized_schema.py', "w") as f:
+with open(f'rotkehlchen/{db_module}/minimized_schema.py', 'w') as f:
     f.write('\n'.join(lines) + '\n')

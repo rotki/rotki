@@ -20,12 +20,12 @@ def test_query_messages(rotkehlchen_api_server_with_exchanges):
     # warnings due to unsupported assets found during querying
     with setup.polo_patch:
         response = requests.get(
-            api_url_for(rotkehlchen_api_server_with_exchanges, "tradesresource"))
+            api_url_for(rotkehlchen_api_server_with_exchanges, 'tradesresource'))
     assert_proper_response(response)
 
     # and now query for the messages
     response = requests.get(
-        api_url_for(rotkehlchen_api_server_with_exchanges, "messagesresource"),
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'messagesresource'),
     )
     result = assert_proper_response_with_result(response)
     errors = result['errors']
@@ -38,7 +38,7 @@ def test_query_messages(rotkehlchen_api_server_with_exchanges):
     # now query for the messages again and make sure that nothing is return, since
     # our previous query should have popped all the messages in the queue
     response = requests.get(
-        api_url_for(rotkehlchen_api_server_with_exchanges, "messagesresource"),
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'messagesresource'),
     )
     assert_proper_response(response)
     data = response.json()

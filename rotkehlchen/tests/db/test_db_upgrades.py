@@ -470,7 +470,7 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument
     ).fetchall()
 
     # check that the trades with invalid fee/fee_currency are present at this point
-    trades_before = cursor.execute('SELECT * FROM trades WHERE id != ? AND id != ?', ("foo1", "foo2")).fetchall()  # noqa: E501
+    trades_before = cursor.execute('SELECT * FROM trades WHERE id != ? AND id != ?', ('foo1', 'foo2')).fetchall()  # noqa: E501
     assert trades_before == [
         ('1111111', 1595640208, 'external', 'ETH', 'USD', 'buy', '1.5541', '22.1', '3.4', 'USD', None, None),  # noqa: E501
         ('1111112', 1595640208, 'external', 'ETH', 'USD', 'buy', '1.5541', '22.1', '3.4', None, None, None),  # noqa: E501
@@ -909,7 +909,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
             cursor.execute(f'SELECT timestamp from {table_name}')
             assert cursor.fetchall() == expected_result
         cursor.execute('SELECT blockchain from web3_nodes LIMIT 1')
-        assert cursor.fetchall() == [("ETH",)]
+        assert cursor.fetchall() == [('ETH',)]
 
         # Check that data is correct
         xpub_mappings_in_db = cursor.execute('SELECT * FROM xpub_mappings').fetchall()

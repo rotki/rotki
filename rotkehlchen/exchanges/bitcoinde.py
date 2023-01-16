@@ -256,7 +256,7 @@ class Bitcoinde(ExchangeInterface):
 
         try:
             self._api_query('get', 'account')
-            return True, ""
+            return True, ''
 
         except RemoteError as e:
             return False, str(e)
