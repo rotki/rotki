@@ -1525,10 +1525,10 @@ def test_db_schema_sanity_check(database):
         cursor.execute('CREATE TABLE ens_mappings(column2 TEXT)')
         connection.schema_sanity_check()
     assert 'in your user database differ' in str(exception_info.value)
-    with pytest.raises(DBSchemaError) as exception_info, database.user_write() as cursor:
+    # Make sure that having an extra table does not break the sanity check
+    with database.user_write() as cursor:
         cursor.execute('CREATE TABLE new_table(some_column integer)')
         connection.schema_sanity_check()
-    assert 'unexpected tables: {\'new_table\'}' in str(exception_info.value)
     with pytest.raises(DBSchemaError) as exception_info, database.user_write() as cursor:
         cursor.execute('DROP TABLE user_notes;')
         connection.schema_sanity_check()

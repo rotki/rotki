@@ -539,10 +539,12 @@ class DBConnection:
             # Check what extra tables are in the db
             extra_tables = tables_data_from_db.keys() - self.minimized_schema.keys()
             if len(extra_tables) > 0:
-                raise DBSchemaError(
+                logger.info(
                     f'Your {db_name} database has the following unexpected tables: '
-                    f'{extra_tables}. ' + DEFAULT_SANITY_CHECK_MESSAGE,
+                    f'{extra_tables}. Feel free to delete them.',
                 )
+                for extra_table in extra_tables:
+                    tables_data_from_db.pop(extra_table)
 
             # Check structure of which tables in the database differ from the expected.
             differing_tables_properties: dict[str, tuple[tuple[str, str], str]] = {}
