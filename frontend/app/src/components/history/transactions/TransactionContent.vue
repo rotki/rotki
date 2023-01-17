@@ -50,7 +50,7 @@ const props = defineProps({
   },
   externalAccountFilter: {
     required: false,
-    type: Object as PropType<GeneralAccount | null>,
+    type: Array as PropType<GeneralAccount[]>,
     default: null
   },
   useExternalAccountFilter: {
@@ -274,13 +274,13 @@ const saveData = async (
 };
 
 const options: Ref<PaginationOptions | null> = ref(null);
-const account: Ref<GeneralAccount | null> = ref(null);
+const accounts: Ref<GeneralAccount[]> = ref([]);
 
-const usedAccount: ComputedRef<GeneralAccount | null> = computed(() => {
+const usedAccount: ComputedRef<GeneralAccount[]> = computed(() => {
   if (get(useExternalAccountFilter)) {
     return get(externalAccountFilter);
   }
-  return get(account);
+  return get(accounts);
 });
 
 const updatePayloadHandler = async () => {
@@ -300,10 +300,10 @@ const updatePayloadHandler = async () => {
 
   let filterAddress = {};
   const usedAccountVal = get(usedAccount);
-  if (usedAccountVal) {
+  if (usedAccountVal.length > 0) {
     filterAddress = {
-      address: usedAccountVal!.address,
-      evmChain: getEvmChainName(usedAccountVal.chain)
+      address: usedAccountVal[0].address,
+      evmChain: getEvmChainName(usedAccountVal[0].chain)
     };
   }
 
@@ -450,7 +450,7 @@ const { evmChains, getEvmChainName } = useSupportedChains();
               <v-col v-if="!useExternalAccountFilter">
                 <div>
                   <blockchain-account-selector
-                    v-model="account"
+                    v-model="accounts"
                     :chains="evmChains"
                     dense
                     :label="tc('transactions.filter.account')"

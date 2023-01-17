@@ -1,49 +1,60 @@
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
-import { type PropType } from 'vue';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 
-type AccountData = GeneralAccount | GeneralAccount[] | null;
+const props = withDefaults(
+  defineProps<{
+    label?: string;
+    hint?: boolean;
+    loading?: boolean;
+    usableAddresses?: string[];
+    multiple?: boolean;
+    value: GeneralAccount[];
+    chains: Blockchain[];
+    outlined?: boolean;
+    dense?: boolean;
+    noPadding?: boolean;
+    hideOnEmptyUsable?: boolean;
+  }>(),
+  {
+    label: '',
+    hint: false,
+    loading: false,
+    usableAddresses: () => [],
+    multiple: false,
+    chains: () => [],
+    outlined: false,
+    dense: false,
+    noPadding: false,
+    hideOnEmptyUsable: false
+  }
+);
 
-// Rolled back because the inference doesn't work for Object|Array
-// TODO: figure out if there is a way to do defineProps<{}> with a union
-const props = defineProps({
-  label: { required: false, type: String, default: '' },
-  hint: { required: false, type: Boolean, default: false },
-  loading: { required: false, type: Boolean, default: false },
-  usableAddresses: {
-    required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
-  },
-  multiple: { required: false, type: Boolean, default: false },
-  value: {
-    required: false,
-    type: [Object, Array] as PropType<AccountData>,
-    default: null
-  },
-  chains: {
-    required: false,
-    type: Array as PropType<Blockchain[]>,
-    default: () => []
-  },
-  outlined: { required: false, type: Boolean, default: false },
-  dense: { required: false, type: Boolean, default: false },
-  noPadding: { required: false, type: Boolean, default: false },
-  hideOnEmptyUsable: { required: false, type: Boolean, default: false }
-});
-
-const emit = defineEmits<{ (e: 'input', value: AccountData): void }>();
-
-const { t } = useI18n();
+const emit = defineEmits<{
+  (e: 'input', value: GeneralAccount[]): void;
+}>();
 
 const { chains, value, usableAddresses, hideOnEmptyUsable } = toRefs(props);
+
 const search = ref('');
+const { t } = useI18n();
+
 const { accounts } = storeToRefs(useAccountBalancesStore());
+
+const mappedValue = computed(() => {
+  const accounts = get(value);
+  if (!accounts) {
+    return null;
+  }
+  if (accounts.length === 1) {
+    return accounts[0];
+  }
+  return accounts;
+});
 
 const selectableAccounts = computed(() => {
   const filteredChains = get(chains);
@@ -93,7 +104,13 @@ const filter = (item: GeneralAccount, queryText: string) => {
   return labelMatches || tagMatches || addressMatches;
 };
 
-const input = (value: AccountData) => emit('input', value);
+const input = (value: null | GeneralAccount | GeneralAccount[]) => {
+  if (Array.isArray(value)) {
+    emit('input', value);
+  } else {
+    emit('input', value ? [value] : []);
+  }
+};
 
 const { dark } = useTheme();
 </script>
@@ -102,7 +119,7 @@ const { dark } = useTheme();
   <v-card v-bind="$attrs">
     <div :class="noPadding ? null : 'mx-4 pt-2'">
       <v-autocomplete
-        :value="value"
+        :value="mappedValue"
         :items="displayedAccounts"
         :filter="filter"
         auto-select-first

@@ -41,7 +41,7 @@ const modules: Module[] = [
 
 const chains = [Blockchain.ETH];
 
-const selectedAccount = ref<GeneralAccount | null>(null);
+const selectedAccounts = ref<GeneralAccount[]>([]);
 const protocol = ref<DefiProtocol | null>(null);
 const premium = usePremium();
 const route = useRoute();
@@ -62,10 +62,7 @@ const isProtocol = (protocol: DefiProtocol) =>
     return protocols.length > 0 && protocols.includes(protocol);
   });
 
-const selectedAddresses = computed(() => {
-  const account = get(selectedAccount);
-  return account ? [account.address] : [];
-});
+const selectedAddresses = useArrayMap(selectedAccounts, a => a.address);
 
 const selectedProtocols = computed(() => {
   const selected = get(protocol);
@@ -199,7 +196,7 @@ onMounted(async () => {
     <v-row class="mt-8" no-gutters>
       <v-col cols="12" sm="6" class="pe-sm-4">
         <blockchain-account-selector
-          v-model="selectedAccount"
+          v-model="selectedAccounts"
           class="pt-2"
           hint
           outlined

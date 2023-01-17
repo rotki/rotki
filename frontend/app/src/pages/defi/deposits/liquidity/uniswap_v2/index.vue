@@ -25,7 +25,7 @@ import { Section } from '@/types/status';
 const modules = [Module.UNISWAP];
 const chains = [Blockchain.ETH];
 
-const selectedAccount = ref<GeneralAccount | null>(null);
+const selectedAccounts = ref<GeneralAccount[]>([]);
 const selectedPools = ref<string[]>([]);
 
 const store = useUniswapStore();
@@ -54,10 +54,7 @@ const primaryRefreshing = isSectionRefreshing(Section.DEFI_UNISWAP_V2_BALANCES);
 const secondaryRefreshing = isSectionRefreshing(Section.DEFI_UNISWAP_EVENTS);
 const premium = usePremium();
 
-const selectedAddresses = computed(() => {
-  const account = get(selectedAccount);
-  return account ? [account.address] : [];
-});
+const selectedAddresses = useArrayMap(selectedAccounts, a => a.address);
 
 const balances: ComputedRef<XswapBalance[]> = computed(() => {
   const addresses = get(selectedAddresses);
@@ -132,7 +129,7 @@ const lpType = LpType.UNISWAP_V2;
     <v-row class="mt-4">
       <v-col>
         <blockchain-account-selector
-          v-model="selectedAccount"
+          v-model="selectedAccounts"
           :chains="chains"
           :usable-addresses="addresses"
           flat

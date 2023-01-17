@@ -73,20 +73,23 @@ watch(breakpoint, () => {
   set(page, 1);
 });
 
-const selectedAccount = ref<GeneralAccount | null>(null);
+const selectedAccounts = ref<GeneralAccount[]>([]);
 const selectedCollection = ref<string | null>(null);
 const premium = usePremium();
 
-watch(selectedAccount, () => set(page, 1));
+watch(selectedAccounts, () => set(page, 1));
 watch(selectedCollection, () => set(page, 1));
 
 const items = computed(() => {
-  const account = get(selectedAccount);
+  const accounts = get(selectedAccounts);
   const selection = get(selectedCollection);
-  if (account || selection) {
+  const hasAccounts = accounts.length > 0;
+  if (hasAccounts || selection) {
     return get(nfts)
       .filter(({ address, collection }) => {
-        const sameAccount = account ? address === account.address : true;
+        const sameAccount = hasAccounts
+          ? accounts.find(a => a.address === address)
+          : true;
         const sameCollection = selection ? selection === collection.name : true;
         return sameAccount && sameCollection;
       })
@@ -174,7 +177,7 @@ const fetchNfts = async (ignoreCache = false) => {
 const noData = computed(
   () =>
     get(visibleNfts).length === 0 &&
-    !(get(selectedCollection) || get(selectedAccount))
+    !(get(selectedCollection) || get(selectedAccounts).length > 0)
 );
 
 const { fetchNftsPrices } = useAssetPricesApi();
@@ -241,7 +244,7 @@ const sortNfts = (
         <v-row align="center">
           <v-col :cols="isMobile ? '12' : '6'">
             <blockchain-account-selector
-              v-model="selectedAccount"
+              v-model="selectedAccounts"
               :label="tc('nft_gallery.select_account')"
               :chains="chains"
               dense

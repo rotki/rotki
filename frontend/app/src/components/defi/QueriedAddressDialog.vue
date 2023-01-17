@@ -1,28 +1,21 @@
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type PropType, type Ref } from 'vue';
+import { type Ref } from 'vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
-import { type Nullable } from '@/types';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { assert } from '@/utils/assertions';
 
-const props = defineProps({
-  module: {
-    required: false,
-    type: String as PropType<Module>,
-    default: null
-  }
-});
+const props = defineProps<{ module: Module }>();
 
-const emit = defineEmits(['close']);
+const emit = defineEmits<{ (e: 'close'): void }>();
 
 const { module } = toRefs(props);
 
-const account: Ref<Nullable<GeneralAccount>> = ref(null);
+const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
 const ETH = Blockchain.ETH;
 
 const store = useQueriedAddressesStore();
@@ -72,13 +65,13 @@ const usableAddresses = computed(() => {
 
 const addAddress = async function () {
   const currentModule = get(module);
-  const currentAccount = get(account);
-  assert(currentModule && currentAccount);
+  const currentAccount = get(selectedAccounts);
+  assert(currentModule && currentAccount.length > 0);
   await addQueriedAddress({
     module: currentModule,
-    address: currentAccount.address
+    address: currentAccount[0].address
   });
-  set(account, null);
+  set(selectedAccounts, null);
 };
 
 const getAccount = (address: string): GeneralAccount => {
@@ -88,7 +81,7 @@ const getAccount = (address: string): GeneralAccount => {
 };
 
 const close = () => {
-  set(account, null);
+  set(selectedAccounts, null);
   emit('close');
 };
 </script>
@@ -109,7 +102,7 @@ const close = () => {
         <v-row no-gutters align="center" class="flex-nowrap">
           <v-col>
             <blockchain-account-selector
-              v-model="account"
+              v-model="selectedAccounts"
               outlined
               flat
               dense
@@ -126,7 +119,7 @@ const close = () => {
             <v-btn
               icon
               color="primary"
-              :disabled="account === null"
+              :disabled="selectedAccounts === null"
               @click="addAddress"
             >
               <v-icon>mdi-plus</v-icon>
