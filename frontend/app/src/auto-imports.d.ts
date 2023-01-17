@@ -328,7 +328,7 @@ declare global {
   const useTooltip: typeof import('./composables/graphs')['useTooltip']
   const useTradeFilters: typeof import('./composables/filters/trades')['useTradeFilters']
   const useTransactionFilter: typeof import('./composables/filters/transactions')['useTransactionFilter']
-  const useTransactionQueryStatus: typeof import('./composables/txs')['useTransactionQueryStatus']
+  const useTransactionQueryStatus: typeof import('./composables/history/transactions/query-status')['useTransactionQueryStatus']
   const useTransition: typeof import('@vueuse/core')['useTransition']
   const useTrunc: typeof import('@vueuse/math')['useTrunc']
   const useUrlSearchParams: typeof import('@vueuse/core')['useUrlSearchParams']
@@ -692,7 +692,7 @@ declare module 'vue' {
     readonly useTooltip: UnwrapRef<typeof import('./composables/graphs')['useTooltip']>
     readonly useTradeFilters: UnwrapRef<typeof import('./composables/filters/trades')['useTradeFilters']>
     readonly useTransactionFilter: UnwrapRef<typeof import('./composables/filters/transactions')['useTransactionFilter']>
-    readonly useTransactionQueryStatus: UnwrapRef<typeof import('./composables/txs')['useTransactionQueryStatus']>
+    readonly useTransactionQueryStatus: UnwrapRef<typeof import('./composables/history/transactions/query-status')['useTransactionQueryStatus']>
     readonly useTransition: UnwrapRef<typeof import('@vueuse/core')['useTransition']>
     readonly useTrunc: UnwrapRef<typeof import('@vueuse/math')['useTrunc']>
     readonly useUrlSearchParams: UnwrapRef<typeof import('@vueuse/core')['useUrlSearchParams']>

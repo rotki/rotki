@@ -592,6 +592,7 @@ const { evmChains, getEvmChainName } = useSupportedChains();
               <transaction-events
                 :transaction="item"
                 :colspan="headers.length"
+                :show-event-detail="protocols.length > 0"
                 @edit:event="editEventHandler"
                 @delete:event="promptForDelete"
               />

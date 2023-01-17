@@ -17,6 +17,7 @@ import {
   type AddressesAndEvmChainPayload,
   type EthTransaction,
   EthTransactionCollectionResponse,
+  EthTransactionEventDetail,
   type NewEthTransactionEvent,
   type TransactionEventRequestPayload,
   type TransactionRequestPayload
@@ -144,6 +145,17 @@ export const useTransactionsApi = () => {
     return handleResponse(response);
   };
 
+  const getEventDetails = async (
+    identifier: number
+  ): Promise<EthTransactionEventDetail> => {
+    const response = await api.instance.get<
+      ActionResult<EthTransactionEventDetail>
+    >('/history/events/details', {
+      params: axiosSnakeCaseTransformer({ identifier })
+    });
+    return EthTransactionEventDetail.parse(handleResponse(response));
+  };
+
   return {
     fetchEthTransactionsTask,
     fetchEthTransactions,
@@ -152,6 +164,7 @@ export const useTransactionsApi = () => {
     reDecodeMissingTransactionEvents,
     addTransactionEvent,
     editTransactionEvent,
-    deleteTransactionEvent
+    deleteTransactionEvent,
+    getEventDetails
   };
 };

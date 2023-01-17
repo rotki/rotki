@@ -2587,7 +2587,11 @@
   },
   "liquity_staking_details": {
     "refresh_tooltip": "Refresh the staked amounts and events",
-    "select_account": "Select account"
+    "select_account": "Select account",
+    "view": {
+      "hide": "Hide liquity staking detail",
+      "show": "Show liquity staking detail"
+    }
   },
   "liquity_staking_events": {
     "title": "Stake Events"

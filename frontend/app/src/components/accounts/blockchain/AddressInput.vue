@@ -1,27 +1,21 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { trimOnPaste } from '@/utils/event';
 
-const props = defineProps({
-  addresses: {
-    required: true,
-    type: Array as PropType<string[]>
-  },
-  disabled: {
-    required: true,
-    type: Boolean
-  },
-  multi: {
-    required: true,
-    type: Boolean
-  },
-  errorMessages: {
-    required: true,
-    type: Object as PropType<Record<string, string[]>>
+const props = withDefaults(
+  defineProps<{
+    addresses: string[];
+    disabled: boolean;
+    multi: boolean;
+    errorMessages?: string[];
+  }>(),
+  {
+    errorMessages: () => []
   }
-});
+);
 
-const emit = defineEmits(['update:addresses']);
+const emit = defineEmits<{
+  (e: 'update:addresses', addresses: string[]): void;
+}>();
 
 const { t, tc } = useI18n();
 const { errorMessages, addresses, disabled } = toRefs(props);
@@ -64,11 +58,6 @@ const onPasteAddress = (event: ClipboardEvent) => {
     set(address, paste);
   }
 };
-
-const errors = computed(() => {
-  const messages = get(errorMessages);
-  return messages['address'];
-});
 
 const updateAddresses = (addresses: string[]) => {
   emit('update:addresses', addresses);
@@ -115,7 +104,7 @@ const rules = [
         class="account-form__address"
         :label="t('common.account')"
         :rules="rules"
-        :error-messages="errors"
+        :error-messages="errorMessages"
         autocomplete="off"
         :disabled="disabled"
         @paste="onPasteAddress"
@@ -125,7 +114,7 @@ const rules = [
         v-model="userAddresses"
         outlined
         :disabled="disabled"
-        :error-messages="errors"
+        :error-messages="errorMessages"
         :hint="t('account_form.labels.addresses_hint')"
         :label="t('account_form.labels.addresses')"
         @paste="onPasteMulti"
