@@ -21,7 +21,7 @@ import {
 import { balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 
-const selectedAccount: Ref<GeneralAccount | null> = ref(null);
+const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
 const liquityStore = useLiquityStore();
 const { staking, stakingPools } = toRefs(liquityStore);
 const { fetchStaking, fetchPools } = liquityStore;
@@ -37,8 +37,8 @@ const aggregatedStake: ComputedRef<LiquityStakingDetail | null> = computed(
     let stakes: LiquityStakingDetail | null = null;
 
     for (const address in allStakes) {
-      const account = get(selectedAccount);
-      if (account && account.address !== address) {
+      const account = get(selectedAccounts);
+      if (account.length > 0 && account[0].address !== address) {
         continue;
       }
       const stake = allStakes[address];
@@ -69,8 +69,8 @@ const aggregatedStakingPool: ComputedRef<LiquityPoolDetail | null> = computed(
     let pools: LiquityPoolDetail | null = null;
 
     for (const address in allPools) {
-      const account = get(selectedAccount);
-      if (account && account.address !== address) {
+      const account = get(selectedAccounts);
+      if (account.length > 0 && account[0].address !== address) {
         continue;
       }
       const pool = allPools[address];
@@ -115,7 +115,7 @@ const { fetchTransactions } = useTransactions();
     <v-row align="center" no-gutters class="pt-2">
       <v-col cols="6">
         <blockchain-account-selector
-          v-model="selectedAccount"
+          v-model="selectedAccounts"
           :label="tc('liquity_staking_details.select_account')"
           :chains="chains"
           dense
@@ -153,7 +153,7 @@ const { fetchTransactions } = useTransactions();
       :protocol="TransactionEventProtocol.LIQUITY"
       :event-type="HistoryEventType.STAKING"
       :use-external-account-filter="true"
-      :external-account-filter="selectedAccount"
+      :external-account-filter="selectedAccounts"
       @fetch="fetchTransactions"
     />
   </div>

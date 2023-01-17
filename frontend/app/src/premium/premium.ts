@@ -153,20 +153,12 @@ export const ThemeManager = () => {
   return createFactory(load('ThemeManager'));
 };
 
-export const Grants = () => {
-  return createFactory(load('Grants'));
-};
-
 export const Sushi = () => {
   return createFactory(load('Sushi'));
 };
 
 export const LiquityTroveEvents = () => {
   return createFactory(load('LiquityTroveEvents'));
-};
-
-export const LiquityStakeEvents = () => {
-  return createFactory(load('LiquityStakeEvents'));
 };
 
 declare global {
