@@ -215,19 +215,20 @@ const chartSectionHeight = computed<string>(() => {
   }
 
   &__net-worth {
-    :deep() {
+    :deep(.amount-display) {
       .amount-display {
         &__value {
           font-size: 3.5em;
           line-height: 4rem;
+
           @media (max-width: 450px) {
             font-size: 2.4em;
             line-height: 2.4rem;
           }
         }
 
-        .amount-currency {
-          font-size: 2rem;
+        &__currency {
+          font-size: 1.5rem;
         }
       }
     }

@@ -22,8 +22,8 @@ const { addQueriedAddress, deleteQueriedAddress } = store;
 const { accounts } = storeToRefs(useAccountBalancesStore());
 
 const setSelectedAccounts = (addresses: string[]): void => {
-  const selected = get(accounts).filter(account =>
-    addresses.includes(account.address)
+  const selected = get(accounts).filter(
+    account => account.chain === ETH && addresses.includes(account.address)
   );
   set(selectedAccounts, selected);
 };

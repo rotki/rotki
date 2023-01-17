@@ -462,15 +462,17 @@ const showResetConfirmation = () => {
 </template>
 
 <style scoped lang="scss">
-:deep() {
-  .v-expansion-panel-content {
-    &__wrap {
-      padding: 0 0 16px;
+:deep(.v-expansion-panel) {
+  .v-expansion-panel {
+    &-content {
+      &__wrap {
+        padding: 0 0 16px;
+      }
     }
-  }
 
-  .v-expansion-panel-header {
-    padding: 16px 0;
+    &-header {
+      padding: 16px 0;
+    }
   }
 }
 </style>

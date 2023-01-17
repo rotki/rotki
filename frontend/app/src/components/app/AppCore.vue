@@ -74,32 +74,22 @@ onBeforeMount(() => {
 </template>
 
 <style scoped lang="scss">
-:deep() {
-  .v-main {
-    padding: 0 !important;
-  }
+.v-main {
+  padding: 0 !important;
+}
 
-  .v-app-bar {
-    &::after {
-      height: 1px;
-      display: block;
-      width: 100%;
-      content: '';
-      border-bottom: var(--v-rotki-light-grey-darken1) solid thin;
-    }
+.v-app-bar {
+  &::after {
+    height: 1px;
+    display: block;
+    width: 100%;
+    content: '';
+    border-bottom: var(--v-rotki-light-grey-darken1) solid thin;
   }
 }
 
 .app {
   &__app-bar {
-    :deep() {
-      .v-toolbar {
-        &__content {
-          padding: 0 1rem;
-        }
-      }
-    }
-
     &__button {
       i {
         &:focus {

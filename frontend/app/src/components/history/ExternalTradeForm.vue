@@ -597,7 +597,6 @@ onMounted(() => {
 </template>
 
 <style scoped lang="scss">
-/* stylelint-disable */
 .external-trade-form {
   &__action-hint {
     width: 60px;
@@ -609,28 +608,28 @@ onMounted(() => {
     margin-bottom: 30px;
 
     :deep(.v-input) {
-      .v-input {
-        position: static;
+      position: static;
 
+      .v-input {
         &__slot {
           margin-bottom: 0;
           background: transparent !important;
         }
+      }
 
+      &.v-input {
         &--is-disabled {
-          .v-input__control {
-            .v-input__slot {
-              &::before {
-                content: none;
+          .v-input {
+            &__control {
+              .v-input {
+                &__slot {
+                  &::before {
+                    content: none;
+                  }
+                }
               }
             }
           }
-        }
-
-        .v-text-field__details {
-          position: absolute;
-          bottom: -30px;
-          width: 100%;
         }
 
         &--is-enabled {
@@ -645,17 +644,29 @@ onMounted(() => {
             border-radius: 4px;
           }
 
-          &.v-input--is-focused {
-            &::before {
-              border: 2px solid var(--v-primary-base) !important;
+          &.v-input {
+            &--is-focused {
+              &::before {
+                border: 2px solid var(--v-primary-base) !important;
+              }
             }
           }
 
-          &.error--text {
-            &::before {
-              border: 2px solid var(--v-error-base) !important;
+          &.error {
+            &--text {
+              &::before {
+                border: 2px solid var(--v-error-base) !important;
+              }
             }
           }
+        }
+      }
+
+      .v-text-field {
+        &__details {
+          position: absolute;
+          bottom: -30px;
+          width: 100%;
         }
       }
     }
@@ -667,38 +678,23 @@ onMounted(() => {
       transform: translateY(-50%);
     }
   }
-
-  :deep(.v-select) {
-    .v-select.v-text-field--outlined:not(.v-text-field--single-line) {
-      .v-select__selections {
-        padding: 0 !important;
-      }
-    }
-  }
 }
 
 .theme {
   &--dark {
     .external-trade-form {
       &__grouped-amount-input {
-        :deep(.v-input) {
-          .v-input {
-            &__slot {
-              &::before {
-                border-color: hsla(0, 0%, 100%, 0.24) !important;
-              }
-            }
+        /* stylelint-disable selector-class-pattern,selector-nested-pattern */
 
-            &--is-enabled {
-              &::before {
-                border-color: hsla(0, 0%, 100%, 0.24);
-              }
-            }
+        :deep(.v-input--is-enabled),
+        :deep(.v-input__slot) {
+          &::before {
+            border-color: hsla(0, 0%, 100%, 0.24);
           }
         }
+        /* stylelint-enable selector-class-pattern,selector-nested-pattern */
       }
     }
   }
 }
-/* stylelint-enable */
 </style>

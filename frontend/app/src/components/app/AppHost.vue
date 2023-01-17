@@ -52,19 +52,18 @@ watch(adaptiveLanguage, language => {
   overflow: hidden;
 
   &--animations-disabled {
-    :deep() {
-      * {
-        &:not(.animate) {
-          // ignore manual animation (e.g. animation on login screen)
+    /* stylelint-disable plugin/stylelint-bem-namics */
 
-          &,
-          &::before,
-          &::after {
-            animation-timing-function: steps(5, end) !important;
-          }
-        }
+    :deep(:not(.animate)) {
+      // ignore manual animation (e.g. animation on login screen)
+
+      &,
+      &::before,
+      &::after {
+        animation-timing-function: steps(5, end) !important;
       }
     }
+    /* stylelint-enable plugin/stylelint-bem-namics */
   }
 }
 </style>

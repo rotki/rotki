@@ -176,20 +176,12 @@ const { t, tc } = useI18n();
 </template>
 
 <style scoped lang="scss">
-:deep() {
+:deep(.v-tabs-bar) {
   .v-tabs-bar {
     &__content {
       background-color: var(--v-rotki-light-grey-darken1);
       border-radius: 4px 0 0 4px;
       height: 100%;
-    }
-  }
-
-  .v-tab {
-    &__active {
-      &::before {
-        opacity: 1 !important;
-      }
     }
   }
 }
@@ -244,7 +236,8 @@ const { t, tc } = useI18n();
       }
     }
 
-    /* stylelint-disable selector-class-pattern,selector-nested-pattern, rule-empty-line-before */
+    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
     .theme--dark &--active {
       background-color: var(--v-dark-lighten1);
       color: white;
@@ -253,7 +246,7 @@ const { t, tc } = useI18n();
         background-color: var(--v-dark-base) !important;
       }
     }
-    /* stylelint-enable selector-class-pattern,selector-nested-pattern, rule-empty-line-before */
+    /* stylelint-enable selector-class-pattern,selector-nested-pattern */
   }
 }
 </style>

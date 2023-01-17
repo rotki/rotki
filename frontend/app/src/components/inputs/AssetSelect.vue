@@ -267,31 +267,6 @@ watch(value, async () => {
 </template>
 
 <style scoped lang="scss">
-:deep() {
-  .v-select {
-    &__slot {
-      height: 56px;
-      margin-top: -2px;
-
-      .v-label {
-        top: 20px;
-      }
-
-      .v-input {
-        &__icon {
-          padding-top: 20px;
-        }
-      }
-    }
-
-    &__selections {
-      margin-top: 4px;
-      display: flex;
-      flex-flow: nowrap;
-    }
-  }
-}
-
 .asset-select {
   &__details {
     padding-top: 4px;
@@ -303,7 +278,11 @@ watch(value, async () => {
   }
 
   &--outlined {
-    :deep() {
+    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+    :deep(.v-select__slot) {
+      /* stylelint-enable selector-class-pattern,selector-nested-pattern */
+
       .v-input {
         &__icon {
           &--append {
@@ -318,6 +297,32 @@ watch(value, async () => {
             }
           }
         }
+      }
+    }
+  }
+
+  /* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+  :deep(.v-select__slot) {
+    /* stylelint-enable selector-class-pattern,selector-nested-pattern */
+    height: 56px;
+    margin-top: -2px;
+
+    .v-label {
+      top: 20px;
+    }
+
+    .v-input {
+      &__icon {
+        padding-top: 20px;
+      }
+    }
+
+    .v-select {
+      &__selections {
+        margin-top: 4px;
+        display: flex;
+        flex-flow: nowrap;
       }
     }
   }

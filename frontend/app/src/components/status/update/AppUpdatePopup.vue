@@ -163,14 +163,13 @@ onMounted(async () => {
 </template>
 <style scoped lang="scss">
 .update-popup {
-  :deep() {
-    .v-snack {
-      &__wrapper {
-        margin: 16px;
-        width: 400px;
-        box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1) !important;
-      }
-    }
+  /* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+  :deep(.v-snack__wrapper) {
+    margin: 16px;
+    width: 400px;
+    box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1) !important;
   }
+  /* stylelint-enable selector-class-pattern,selector-nested-pattern */
 }
 </style>

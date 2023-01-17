@@ -117,11 +117,11 @@ const contentStyle = computed(() => {
   }
 }
 
-:deep() {
-  .v-card {
-    border-bottom-left-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
+:deep(.v-card) {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
 
+  .v-card {
     &__actions {
       padding: 1rem 1.5rem !important;
     }

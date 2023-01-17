@@ -226,12 +226,6 @@ const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
 
 <style scoped lang="scss">
 .timeframe-settings {
-  :deep() {
-    .v-chip {
-      cursor: pointer;
-    }
-  }
-
   &--active {
     color: white !important;
     background-color: var(--v-primary-base) !important;

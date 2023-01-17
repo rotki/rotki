@@ -79,6 +79,7 @@ watch(value, () => {
         <v-col>
           <revealable-input
             outlined
+            sensitive-key
             :value="editMode ? currentValue : ''"
             class="service-key__api-key"
             :hint="currentValue ? '' : hint"
@@ -147,17 +148,6 @@ watch(value, () => {
   &__content {
     &__delete {
       margin-top: 10px;
-    }
-
-    :deep() {
-      .v-input {
-        &--is-disabled {
-          .v-icon,
-          .v-label {
-            color: green !important;
-          }
-        }
-      }
     }
   }
 }

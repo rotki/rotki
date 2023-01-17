@@ -94,7 +94,8 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
     {
       text: t('common.asset').toString(),
       value: 'asset',
-      class: 'text-no-wrap'
+      class: 'text-no-wrap',
+      width: '99%'
     },
     {
       text: t('common.price_in_symbol', {
@@ -107,8 +108,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
     {
       text: t('common.amount').toString(),
       value: 'amount',
-      align: 'end',
-      width: '99%'
+      align: 'end'
     },
     {
       text: t('common.value_in_symbol', {

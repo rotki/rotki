@@ -74,10 +74,12 @@ const calculateFontSize = (symbol: string) => {
       <template #activator="{ on }">
         <menu-tooltip-button
           :tooltip="tc('currency_drop_down.profit_currency')"
-          class-name="currency-dropdown secondary--text text--lighten-4"
+          class-name="secondary--text text--lighten-4"
           :on-menu="on"
         >
-          {{ currency.unicodeSymbol }}
+          <span class="currency-dropdown">
+            {{ currency.unicodeSymbol }}
+          </span>
         </menu-tooltip-button>
       </template>
       <div>
@@ -125,15 +127,13 @@ const calculateFontSize = (symbol: string) => {
 </template>
 
 <style scoped lang="scss">
-:deep() {
-  .currency-dropdown {
-    font-size: 1.6em !important;
-    font-weight: bold !important;
+.currency-dropdown {
+  font-size: 1.8em !important;
+  font-weight: bold !important;
 
-    &__list {
-      max-height: 400px;
-      overflow-y: scroll;
-    }
+  &__list {
+    max-height: 400px;
+    overflow-y: scroll;
   }
 }
 

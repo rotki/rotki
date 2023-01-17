@@ -22,7 +22,7 @@ const headers = computed<DataTableHeader[]>(() => [
     text: t('common.asset').toString(),
     class: 'text-no-wrap',
     value: 'asset',
-    cellClass: 'asset-info'
+    width: '99%'
   },
   {
     text: t('common.price_in_symbol', {
@@ -36,7 +36,6 @@ const headers = computed<DataTableHeader[]>(() => [
     text: t('common.amount').toString(),
     value: 'amount',
     class: 'text-no-wrap',
-    cellClass: 'asset-divider',
     align: 'end'
   },
   {
@@ -94,22 +93,6 @@ const getPrice = (asset: string) => {
 </template>
 
 <style scoped lang="scss">
-:deep() {
-  .asset-divider {
-    width: 100%;
-
-    @media (min-width: 2000px) {
-      width: 50%;
-    }
-  }
-
-  .asset-info {
-    @media (min-width: 2000px) {
-      width: 200px;
-    }
-  }
-}
-
 .account-asset-balances {
   &__balance {
     &__asset {

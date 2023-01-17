@@ -130,13 +130,13 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
   display: flex;
   flex-direction: column;
 
-  :deep() {
-    .v-card {
-      &__text {
-        display: flex;
-        flex-direction: column;
-      }
-    }
+  /* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+  :deep(.v-card__text) {
+    display: flex;
+    flex-direction: column;
   }
+
+  /* stylelint-enable selector-class-pattern,selector-nested-pattern */
 }
 </style>

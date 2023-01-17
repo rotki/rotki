@@ -156,16 +156,14 @@ const { getBlockie } = useBlockie();
       max-width: 120px;
     }
 
-    :deep() {
-      .v-chip {
-        background-color: white !important;
+    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
 
-        &--label {
-          border-top-right-radius: 0 !important;
-          border-bottom-right-radius: 0 !important;
-        }
-      }
+    :deep(.v-chip--label) {
+      border-top-right-radius: 0 !important;
+      border-bottom-right-radius: 0 !important;
     }
+
+    /* stylelint-enable selector-class-pattern,selector-nested-pattern */
   }
 
   &__actions {

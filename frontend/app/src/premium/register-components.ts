@@ -46,7 +46,6 @@ import TableExpandContainer from '@/components/helper/table/TableExpandContainer
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import StatisticsGraphSettings from '@/components/settings/StatisticsGraphSettings.vue';
@@ -104,7 +103,6 @@ export function registerComponents(): void {
   // version 9
   Vue.component('Card', Card);
   Vue.component('LiquidityPoolSelector', LiquidityPoolSelector);
-  Vue.component('TradeLocationSelector', TradeLocationSelector);
   Vue.component('TableFilter', TableFilter);
   // version 10
   Vue.component('DataTable', DataTable);

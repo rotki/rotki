@@ -28,9 +28,10 @@ body {
 
 .theme {
   &--light {
-    /* stylelint-disable */
+    /* stylelint-disable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators */
+
     .v-btn:not(.v-btn--flat):not(.v-btn--text):not(.v-btn--outlined):not(.primary) {
-      /* stylelint-enable */
+      /* stylelint-enable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators */
       background-color: transparent;
     }
   }
