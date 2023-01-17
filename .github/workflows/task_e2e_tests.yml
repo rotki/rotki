@@ -62,13 +62,16 @@ jobs:
           pip install -e .
       - name: Restore dependencies
         working-directory: ./frontend
-        run: pnpm install
+        run: pnpm install && pnpm install cypress -wD
       - name: Run e2e tests
-        env:
-          ARGS: "--browser chrome"
-          CYPRESS_ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
-        run: pnpm run --filter rotki test:integration-ci
-        working-directory: ./frontend
+        uses: cypress-io/github-action@v5
+        with:
+          browser: chrome
+          working-directory: ./frontend/app
+          config-file: cypress.config.ts
+          start: npm run serve -- --port 22230, npm run serve:backend
+          wait-on: 'http://localhost:22221/api/1/ping, http://localhost:22230'
+          install: false
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
