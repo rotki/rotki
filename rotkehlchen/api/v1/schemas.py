@@ -225,11 +225,11 @@ class EvmTransactionQuerySchema(
     asset = AssetField(expected_type=CryptoAsset, load_default=None)
     exclude_ignored_assets = fields.Boolean(load_default=True)
     evm_chain = EvmChainNameField(required=False, load_default=None)
-    event_types = fields.List(
+    event_types = DelimitedOrNormalList(
         SerializableEnumField(enum_class=HistoryEventType),
         load_default=None,
     )
-    event_subtypes = fields.List(
+    event_subtypes = DelimitedOrNormalList(
         SerializableEnumField(enum_class=HistoryEventSubType),
         load_default=None,
     )
