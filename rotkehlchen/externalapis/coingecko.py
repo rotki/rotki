@@ -8,7 +8,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.resolver import strethaddress_to_identifier
+from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -18,7 +18,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Price, Timestamp
+from rotkehlchen.types import ChainID, EvmTokenKind, Price, Timestamp
 from rotkehlchen.utils.misc import create_timestamp, set_user_agent, timestamp_to_date, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 
@@ -34,7 +34,7 @@ class CoingeckoAssetData(NamedTuple):
     image_url: str
 
 
-DELISTED_ASSETS = [
+DELISTED_ASSETS = {
     strethaddress_to_identifier('0x0F72714B35a366285Df85886A2eE174601292A17'),
     'FLUZ',
     'EBCH',
@@ -296,7 +296,52 @@ DELISTED_ASSETS = [
     strethaddress_to_identifier('0x43f11c02439e2736800433b4594994Bd43Cd066D'),
     'TOR',
     strethaddress_to_identifier('0x5c6D51ecBA4D8E4F20373e3ce96a62342B125D6d'),
-]
+    strethaddress_to_identifier('0xfec0cF7fE078a500abf15F1284958F22049c2C7e'),
+    strethaddress_to_identifier('0xe1A178B681BD05964d3e3Ed33AE731577d9d96dD'),
+    strethaddress_to_identifier('0xfD62247943F94C3910A4922af2C62C2D3fAC2a8f'),
+    strethaddress_to_identifier('0x68eb95Dc9934E19B86687A10DF8e364423240E94'),
+    strethaddress_to_identifier('0x1d462414fe14cf489c7A21CaC78509f4bF8CD7c0'),
+    strethaddress_to_identifier('0x0223fc70574214F65813fE336D870Ac47E147fAe'),
+    strethaddress_to_identifier('0x151202C9c18e495656f372281F493EB7698961D5'),
+    strethaddress_to_identifier('0xDE1E0AE6101b46520cF66fDC0B1059c5cC3d106c'),
+    strethaddress_to_identifier('0x1CCAA0F2a7210d76E1fDec740d5F323E2E1b1672'),
+    strethaddress_to_identifier('0x1829aA045E21E0D59580024A951DB48096e01782'),
+    strethaddress_to_identifier('0x6DD4e4Aad29A40eDd6A409b9c1625186C9855b4D'),
+    strethaddress_to_identifier('0x423b5F62b328D0D6D44870F4Eee316befA0b2dF5'),
+    strethaddress_to_identifier('0x5E6b6d9aBAd9093fdc861Ea1600eBa1b355Cd940'),
+    strethaddress_to_identifier('0x4Cd988AfBad37289BAAf53C13e98E2BD46aAEa8c'),
+    strethaddress_to_identifier('0x4618519de4C304F3444ffa7f812dddC2971cc688'),
+    strethaddress_to_identifier('0x7CC62d8E80Be9bEa3947F3443aD136f50f75b505'),
+    strethaddress_to_identifier('0x1966d718A565566e8E202792658D7b5Ff4ECe469'),
+    strethaddress_to_identifier('0x4355fC160f74328f9b383dF2EC589bB3dFd82Ba0'),
+    strethaddress_to_identifier('0xc42209aCcC14029c1012fB5680D95fBd6036E2a0'),
+    strethaddress_to_identifier('0x9972A0F24194447E73a7e8b6CD26a52e02DDfAD5'),
+    strethaddress_to_identifier('0x3209f98BeBF0149B769ce26D71F7aEA8E435EfEa'),
+    strethaddress_to_identifier('0x8B40761142B9aa6dc8964e61D0585995425C3D94'),
+    strethaddress_to_identifier('0x9389434852b94bbaD4c8AfEd5B7BDBc5Ff0c2275'),
+    strethaddress_to_identifier('0x445f51299Ef3307dBD75036dd896565F5B4BF7A5'),
+    strethaddress_to_identifier('0x5c543e7AE0A1104f78406C340E9C64FD9fCE5170'),
+    strethaddress_to_identifier('0xb4bebD34f6DaaFd808f73De0d10235a92Fbb6c3D'),
+    strethaddress_to_identifier('0x7C81542ED859A2061538FEE22B6544a235B9557D'),
+    strethaddress_to_identifier('0xbf0f3cCB8fA385A287106FbA22e6BB722F94d686'),
+    strethaddress_to_identifier('0x19D3364A399d251E894aC732651be8B0E4e85001'),
+    strethaddress_to_identifier('0xB98Df7163E61bf053564bde010985f67279BBCEC'),
+    strethaddress_to_identifier('0xBFa4D8AA6d8a379aBFe7793399D3DdaCC5bBECBB'),
+    strethaddress_to_identifier('0xEd279fDD11cA84bEef15AF5D39BB4d4bEE23F0cA'),
+    strethaddress_to_identifier('0x63739d137EEfAB1001245A8Bd1F3895ef3e186E7'),
+    strethaddress_to_identifier('0xdA816459F1AB5631232FE5e97a05BBBb94970c95'),
+    evm_address_to_identifier(address='0x007EA5C0Ea75a8DF45D288a4debdD5bb633F9e56', chain_id=ChainID.BINANCE, token_type=EvmTokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x3f515f0a8e93F2E2f891ceeB3Db4e62e202d7110', chain_id=ChainID.BINANCE, token_type=EvmTokenKind.ERC20),  # noqa: E501
+    'BBK-2',
+    'IFC',
+    'MEC',
+    'PAI',
+    'PPC',
+    'HOLY',
+    'COIN',
+    'WNDR',
+    'DESO',
+}
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [
     'btc',

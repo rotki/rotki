@@ -23,4 +23,5 @@ COMMON_ASSETS_MAPPINGS: Final[dict[str, str]] = {
     evm_address_to_identifier('0x0F5D2fB29fb7d3CFeE444a200298f468908cC942', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MANA',  # noqa: E501
     evm_address_to_identifier('0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LRC',  # noqa: E501
     evm_address_to_identifier('0xc944E90C64B2c07662A292be6244BDf05Cda44a7', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'GRT',  # noqa: E501
+    evm_address_to_identifier('0xdd974D5C2e2928deA5F71b9825b8b646686BD200', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'KNC',  # noqa: E501
 }
