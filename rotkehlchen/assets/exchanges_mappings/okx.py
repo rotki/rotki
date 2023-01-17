@@ -1,5 +1,6 @@
 from rotkehlchen.assets.exchanges_mappings.common import COMMON_ASSETS_MAPPINGS
-from rotkehlchen.constants.resolver import strethaddress_to_identifier
+from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
+from rotkehlchen.types import ChainID, EvmTokenKind
 
 
 WORLD_TO_OKX = COMMON_ASSETS_MAPPINGS | {
@@ -56,4 +57,7 @@ WORLD_TO_OKX = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0xD7EFB00d12C2c13131FD319336Fdf952525dA2af'): 'XPR',
     strethaddress_to_identifier('0xcbeAEc699431857FDB4d37aDDBBdc20E132D4903'): 'YOYO',  # noqa: E501
     strethaddress_to_identifier('0x05f4a42e251f2d52b8ed15E9FEdAacFcEF1FAD27'): 'ZIL',
+    evm_address_to_identifier('0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PICKLE',  # noqa: E501
+    evm_address_to_identifier('0x4C2e59D098DF7b6cBaE0848d66DE2f8A4889b9C3', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FODL',  # noqa: E501
+    evm_address_to_identifier('0xEB9A4B185816C354dB92DB09cC3B50bE60b901b6', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ORS',  # noqa: E501
 }

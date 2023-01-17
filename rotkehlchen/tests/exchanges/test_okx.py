@@ -2,9 +2,9 @@ import warnings as test_warnings
 from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.converters import asset_from_okx
+from rotkehlchen.assets.converters import UNSUPPORTED_OKEX_ASSETS, asset_from_okx
 from rotkehlchen.constants.assets import A_ETH, A_SOL, A_USDC, A_USDT
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.okx import Okx
 from rotkehlchen.fval import FVal
@@ -41,6 +41,12 @@ def test_assets_are_known(mock_okx: Okx):
                 f'Found unknown asset {e.identifier} in OKX. '
                 f'Support for it has to be added',
             ))
+        except UnsupportedAsset as e:
+            if okx_asset not in UNSUPPORTED_OKEX_ASSETS:
+                test_warnings.warn(UserWarning(
+                    f'Found unsupported asset {e.identifier} in OKX. '
+                    f'Support for it has to be added',
+                ))
 
 
 def test_okx_api_signature(mock_okx: Okx):

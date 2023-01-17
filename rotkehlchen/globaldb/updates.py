@@ -36,7 +36,7 @@ ASSETS_VERSION_KEY = 'assets_version'
 ASSETS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/updates.sql'  # noqa: E501
 ASSET_COLLECTIONS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_updates.sql'  # noqa: E501
 ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_mappings_updates.sql'  # noqa: E501
-
+FIRST_VERSION_WITH_COLLECTIONS = 16
 
 class UpdateFileType(Enum):
     ASSETS = auto()
@@ -685,15 +685,6 @@ class AssetsUpdater():
                 url=assets_url,
                 connection=connection,
             )
-            asset_collections_file = _query_file_or_rollback(
-                url=asset_collections_url,
-                connection=connection,
-            )
-            asset_collections_mappings_file = _query_file_or_rollback(
-                url=asset_collections_mappings_url,
-                connection=connection,
-            )
-
             self._apply_single_version_update(
                 connection=connection,
                 version=version,
@@ -701,20 +692,31 @@ class AssetsUpdater():
                 assets_conflicts=assets_conflicts,
                 update_file_type=UpdateFileType.ASSETS,
             )
-            self._apply_single_version_update(
-                connection=connection,
-                version=version,
-                text=asset_collections_file,
-                assets_conflicts=None,
-                update_file_type=UpdateFileType.ASSET_COLLECTIONS,
-            )
-            self._apply_single_version_update(
-                connection=connection,
-                version=version,
-                text=asset_collections_mappings_file,
-                assets_conflicts=None,
-                update_file_type=UpdateFileType.ASSET_COLLECTIONS_MAPPINGS,
-            )
+
+            if version >= FIRST_VERSION_WITH_COLLECTIONS:
+                asset_collections_file = _query_file_or_rollback(
+                    url=asset_collections_url,
+                    connection=connection,
+                )
+                asset_collections_mappings_file = _query_file_or_rollback(
+                    url=asset_collections_mappings_url,
+                    connection=connection,
+                )
+                self._apply_single_version_update(
+                    connection=connection,
+                    version=version,
+                    text=asset_collections_file,
+                    assets_conflicts=None,
+                    update_file_type=UpdateFileType.ASSET_COLLECTIONS,
+                )
+                self._apply_single_version_update(
+                    connection=connection,
+                    version=version,
+                    text=asset_collections_mappings_file,
+                    assets_conflicts=None,
+                    update_file_type=UpdateFileType.ASSET_COLLECTIONS_MAPPINGS,
+                )
+
             version += 1
 
         if self.conflicts == []:

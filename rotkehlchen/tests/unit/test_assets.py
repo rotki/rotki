@@ -14,13 +14,13 @@ from rotkehlchen.assets.spam_assets import KNOWN_ETH_SPAM_TOKENS
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import get_or_create_evm_token, symbol_to_ethereum_token
 from rotkehlchen.constants.assets import A_DAI, A_USDT
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.types import ChainID
+from rotkehlchen.types import ChainID, EvmTokenKind
 
 
 def test_unknown_asset():
@@ -84,136 +84,136 @@ def test_cryptocompare_asset_support(cryptocompare):
     """Try to detect if a token that we have as not supported by cryptocompare got added"""
     cc_assets = cryptocompare.all_coins()
     exceptions = (
-        ethaddress_to_identifier('0xc88Be04c809856B75E3DfE19eB4dCf0a3B15317a'),  # noqa: E501 # Bankcoin Cash but Balkan Coin in CC
-        ethaddress_to_identifier('0xEf51c9377FeB29856E61625cAf9390bD0B67eA18'),     # noqa: E501 # Bionic but Benja Coin in CC
+        strethaddress_to_identifier('0xc88Be04c809856B75E3DfE19eB4dCf0a3B15317a'),  # noqa: E501 # Bankcoin Cash but Balkan Coin in CC
+        strethaddress_to_identifier('0xEf51c9377FeB29856E61625cAf9390bD0B67eA18'),     # noqa: E501 # Bionic but Benja Coin in CC
         'BTG-2',   # Bitgem but Bitcoin Gold in CC
-        ethaddress_to_identifier('0x499A6B77bc25C26bCf8265E2102B1B3dd1617024'),  # noqa: E501 # Bitether but Bither in CC
+        strethaddress_to_identifier('0x499A6B77bc25C26bCf8265E2102B1B3dd1617024'),  # noqa: E501 # Bitether but Bither in CC
         'CBC-2',   # Cashbery coin but Casino Betting Coin in CC
-        ethaddress_to_identifier('0x17B26400621695c2D8C2D8869f6259E82D7544c4'),  # noqa: E501 #  CustomContractnetwork but CannaCoin in CC
-        ethaddress_to_identifier('0xa456b515303B2Ce344E9d2601f91270f8c2Fea5E'),  # noqa: E501 # Cornichon but Corn in CC
+        strethaddress_to_identifier('0x17B26400621695c2D8C2D8869f6259E82D7544c4'),  # noqa: E501 #  CustomContractnetwork but CannaCoin in CC
+        strethaddress_to_identifier('0xa456b515303B2Ce344E9d2601f91270f8c2Fea5E'),  # noqa: E501 # Cornichon but Corn in CC
         'CTX',     # Centauri coin but CarTaxi in CC
-        ethaddress_to_identifier('0xf14922001A2FB8541a433905437ae954419C2439'),  # noqa: E501 # Direct insurance token but DitCoin in CC
+        strethaddress_to_identifier('0xf14922001A2FB8541a433905437ae954419C2439'),  # noqa: E501 # Direct insurance token but DitCoin in CC
         'DRM',     # Dreamcoin but Dreamchain in CC
-        ethaddress_to_identifier('0x82fdedfB7635441aA5A92791D001fA7388da8025'),  # noqa: E501 # Digital Ticks but Data Exchange in CC
+        strethaddress_to_identifier('0x82fdedfB7635441aA5A92791D001fA7388da8025'),  # noqa: E501 # Digital Ticks but Data Exchange in CC
         'GNC',     # Galaxy network but Greencoin in CC
-        ethaddress_to_identifier('0xfF5c25D2F40B47C4a37f989DE933E26562Ef0Ac0'),  # noqa: E501 # Kora network but Knekted in CC
-        ethaddress_to_identifier('0x49bD2DA75b1F7AF1E4dFd6b1125FEcDe59dBec58'),  # noqa: E501 # Linkey but LuckyCoin in CC
-        ethaddress_to_identifier('0x5D4d57cd06Fa7fe99e26fdc481b468f77f05073C'),  # noqa: E501 # Netkoin but Neurotoken in CC
-        ethaddress_to_identifier('0xD56daC73A4d6766464b38ec6D91eB45Ce7457c44'),  # noqa: E501 # Panvala but Pantos in CC
-        ethaddress_to_identifier('0x4689a4e169eB39cC9078C0940e21ff1Aa8A39B9C'),  # noqa: E501 # Proton token but Pink Taxi Token in CC
-        ethaddress_to_identifier('0x7Dc4f41294697a7903C4027f6Ac528C5d14cd7eB'),  # noqa: E501 # Remicoin but Russian Miner Coin in CC
-        ethaddress_to_identifier('0xBb1f24C0c1554b9990222f036b0AaD6Ee4CAec29'),  # noqa: E501 # Cryptosoul but Phantasma in CC
-        ethaddress_to_identifier('0x72430A612Adc007c50e3b6946dBb1Bb0fd3101D1'),  # noqa: E501 # Thingschain but True Investment Coin in CC
-        ethaddress_to_identifier('0x9a49f02e128a8E989b443a8f94843C0918BF45E7'),  # noqa: E501 # TOKOK but Tokugawa Coin in CC
-        ethaddress_to_identifier('0x9a9bB9b4b11BF8eccff84B58a6CCCCD4058A7f0D'),  # noqa: E501 # Bitcoin card but Vindax Coin in CC
-        ethaddress_to_identifier('0x1da015eA4AD2d3e5586E54b9fB0682Ca3CA8A17a'),  # noqa: E501 # Dragon Token but Dark Token in CC
-        ethaddress_to_identifier('0x9C78EE466D6Cb57A4d01Fd887D2b5dFb2D46288f'),  # noqa: E501 # Must (Cometh) but Must protocol in CC
+        strethaddress_to_identifier('0xfF5c25D2F40B47C4a37f989DE933E26562Ef0Ac0'),  # noqa: E501 # Kora network but Knekted in CC
+        strethaddress_to_identifier('0x49bD2DA75b1F7AF1E4dFd6b1125FEcDe59dBec58'),  # noqa: E501 # Linkey but LuckyCoin in CC
+        strethaddress_to_identifier('0x5D4d57cd06Fa7fe99e26fdc481b468f77f05073C'),  # noqa: E501 # Netkoin but Neurotoken in CC
+        strethaddress_to_identifier('0xD56daC73A4d6766464b38ec6D91eB45Ce7457c44'),  # noqa: E501 # Panvala but Pantos in CC
+        strethaddress_to_identifier('0x4689a4e169eB39cC9078C0940e21ff1Aa8A39B9C'),  # noqa: E501 # Proton token but Pink Taxi Token in CC
+        strethaddress_to_identifier('0x7Dc4f41294697a7903C4027f6Ac528C5d14cd7eB'),  # noqa: E501 # Remicoin but Russian Miner Coin in CC
+        strethaddress_to_identifier('0xBb1f24C0c1554b9990222f036b0AaD6Ee4CAec29'),  # noqa: E501 # Cryptosoul but Phantasma in CC
+        strethaddress_to_identifier('0x72430A612Adc007c50e3b6946dBb1Bb0fd3101D1'),  # noqa: E501 # Thingschain but True Investment Coin in CC
+        strethaddress_to_identifier('0x9a49f02e128a8E989b443a8f94843C0918BF45E7'),  # noqa: E501 # TOKOK but Tokugawa Coin in CC
+        strethaddress_to_identifier('0x9a9bB9b4b11BF8eccff84B58a6CCCCD4058A7f0D'),  # noqa: E501 # Bitcoin card but Vindax Coin in CC
+        strethaddress_to_identifier('0x1da015eA4AD2d3e5586E54b9fB0682Ca3CA8A17a'),  # noqa: E501 # Dragon Token but Dark Token in CC
+        strethaddress_to_identifier('0x9C78EE466D6Cb57A4d01Fd887D2b5dFb2D46288f'),  # noqa: E501 # Must (Cometh) but Must protocol in CC
         'eip155:137/erc20:0x9C78EE466D6Cb57A4d01Fd887D2b5dFb2D46288f',  # noqa: E501 # Must (Cometh) but Must protocol in CC
-        ethaddress_to_identifier('0x73968b9a57c6E53d41345FD57a6E6ae27d6CDB2F'),  # noqa: E501 # Stake DAO token but TerraSDT in CC
+        strethaddress_to_identifier('0x73968b9a57c6E53d41345FD57a6E6ae27d6CDB2F'),  # noqa: E501 # Stake DAO token but TerraSDT in CC
         'eip155:137/erc20:0x361A5a4993493cE00f61C32d4EcCA5512b82CE90',  # noqa: E501 # Stake DAO token but TerraSDT in CC
         'eip155:42161/erc20:0x7bA4a00d54A07461D9DB2aEF539e91409943AdC9',  # noqa: E501 # Stake DAO token but TerraSDT in CC
-        ethaddress_to_identifier('0x3449FC1Cd036255BA1EB19d65fF4BA2b8903A69a'),  # noqa: E501 # Basis Cash but BACoin in CC
-        ethaddress_to_identifier('0xaF1250fa68D7DECD34fD75dE8742Bc03B29BD58e'),  # noqa: E501 # waiting until cryptocompare fixes historical price for this. https://github.com/rotki/rotki/pull/2176
+        strethaddress_to_identifier('0x3449FC1Cd036255BA1EB19d65fF4BA2b8903A69a'),  # noqa: E501 # Basis Cash but BACoin in CC
+        strethaddress_to_identifier('0xaF1250fa68D7DECD34fD75dE8742Bc03B29BD58e'),  # noqa: E501 # waiting until cryptocompare fixes historical price for this. https://github.com/rotki/rotki/pull/2176
         'FLOW',    # FLOW from dapper labs but "Flow Protocol" in CC
-        ethaddress_to_identifier('0x8A9c4dfe8b9D8962B31e4e16F8321C44d48e246E'),  # noqa: E501 # Name change token but Polyswarm in CC
-        ethaddress_to_identifier('0x1966d718A565566e8E202792658D7b5Ff4ECe469'),  # noqa: E501 # newdex token but Index token in CC
-        ethaddress_to_identifier('0x1F3f9D3068568F8040775be2e8C03C103C61f3aF'),  # noqa: E501 # Archer DAO Governance token but Archcoin in CC
-        ethaddress_to_identifier('0x9A0aBA393aac4dFbFf4333B06c407458002C6183'),  # noqa: E501 # Acoconut token but Asiacoin in CC
-        ethaddress_to_identifier('0x6a6c2adA3Ce053561C2FbC3eE211F23d9b8C520a'),  # noqa: E501 # Tontoken but Tokamak network in CC
-        ethaddress_to_identifier('0xB5FE099475d3030DDe498c3BB6F3854F762A48Ad'),  # noqa: E501 # Finiko token but FunKeyPai network in CC
-        ethaddress_to_identifier('0xb0dFd28d3CF7A5897C694904Ace292539242f858'),  # noqa: E501 # Lotto token but LottoCoin in CC
+        strethaddress_to_identifier('0x8A9c4dfe8b9D8962B31e4e16F8321C44d48e246E'),  # noqa: E501 # Name change token but Polyswarm in CC
+        strethaddress_to_identifier('0x1966d718A565566e8E202792658D7b5Ff4ECe469'),  # noqa: E501 # newdex token but Index token in CC
+        strethaddress_to_identifier('0x1F3f9D3068568F8040775be2e8C03C103C61f3aF'),  # noqa: E501 # Archer DAO Governance token but Archcoin in CC
+        strethaddress_to_identifier('0x9A0aBA393aac4dFbFf4333B06c407458002C6183'),  # noqa: E501 # Acoconut token but Asiacoin in CC
+        strethaddress_to_identifier('0x6a6c2adA3Ce053561C2FbC3eE211F23d9b8C520a'),  # noqa: E501 # Tontoken but Tokamak network in CC
+        strethaddress_to_identifier('0xB5FE099475d3030DDe498c3BB6F3854F762A48Ad'),  # noqa: E501 # Finiko token but FunKeyPai network in CC
+        strethaddress_to_identifier('0xb0dFd28d3CF7A5897C694904Ace292539242f858'),  # noqa: E501 # Lotto token but LottoCoin in CC
         'eip155:56/erc20:0xF301C8435D4dFA51641f71B0615aDD794b52c8E9',
-        ethaddress_to_identifier('0xE4E822C0d5b329E8BB637972467d2E313824eFA0'),  # noqa: E501 # Dfinance token but XFinance in CC
-        ethaddress_to_identifier('0xE081b71Ed098FBe1108EA48e235b74F122272E68'),  # noqa: E501 # Gold token but Golden Goose in CC
+        strethaddress_to_identifier('0xE4E822C0d5b329E8BB637972467d2E313824eFA0'),  # noqa: E501 # Dfinance token but XFinance in CC
+        strethaddress_to_identifier('0xE081b71Ed098FBe1108EA48e235b74F122272E68'),  # noqa: E501 # Gold token but Golden Goose in CC
         'ACM',     # AC Milan Fan Token but Actinium in CC
         'TFC',     # TheFutbolCoin but The Freedom Coin in CC
-        ethaddress_to_identifier('0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14'),  # noqa: E501 # balanced crypto pie but 0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14 in CC
-        ethaddress_to_identifier('0x7aBc60B3290F68c85f495fD2e0c3Bd278837a313'),  # noqa: E501 # Cyber Movie Chain but Crowdmachine in CC
-        ethaddress_to_identifier('0xBAE235823D7255D9D48635cEd4735227244Cd583'),  # noqa: E501 # Staker Token but Gateio Stater in CC
-        ethaddress_to_identifier('0xe2DA716381d7E0032CECaA5046b34223fC3f218D'),  # noqa: E501 # Carbon Utility Token but CUTCoin in CC
-        ethaddress_to_identifier('0x1FA3bc860bF823d792f04F662f3AA3a500a68814'),  # noqa: E501 # 1X Short Bitcoin Token but Hedgecoin in CC
-        ethaddress_to_identifier('0xc7283b66Eb1EB5FB86327f08e1B5816b0720212B'),  # noqa: E501 # Tribe Token (FEI) but another TribeToken in CC
-        ethaddress_to_identifier('0x16980b3B4a3f9D89E33311B5aa8f80303E5ca4F8'),  # noqa: E501 # Kira Network (KEX) but another KEX in CC
+        strethaddress_to_identifier('0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14'),  # noqa: E501 # balanced crypto pie but 0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14 in CC
+        strethaddress_to_identifier('0x7aBc60B3290F68c85f495fD2e0c3Bd278837a313'),  # noqa: E501 # Cyber Movie Chain but Crowdmachine in CC
+        strethaddress_to_identifier('0xBAE235823D7255D9D48635cEd4735227244Cd583'),  # noqa: E501 # Staker Token but Gateio Stater in CC
+        strethaddress_to_identifier('0xe2DA716381d7E0032CECaA5046b34223fC3f218D'),  # noqa: E501 # Carbon Utility Token but CUTCoin in CC
+        strethaddress_to_identifier('0x1FA3bc860bF823d792f04F662f3AA3a500a68814'),  # noqa: E501 # 1X Short Bitcoin Token but Hedgecoin in CC
+        strethaddress_to_identifier('0xc7283b66Eb1EB5FB86327f08e1B5816b0720212B'),  # noqa: E501 # Tribe Token (FEI) but another TribeToken in CC
+        strethaddress_to_identifier('0x16980b3B4a3f9D89E33311B5aa8f80303E5ca4F8'),  # noqa: E501 # Kira Network (KEX) but another KEX in CC
         'eip155:56/erc20:0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E',  # noqa: E501 # Kira Network (KEX) but another KEX in CC
         'DON',     # Donnie Finance but Donation Coin in CC
         'BAG',     # Baguette but not in CC
-        ethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'),  # noqa: E501 # Gitcoin (GTC) but another GTC in CC
-        ethaddress_to_identifier('0x6D0F5149c502faf215C89ab306ec3E50b15e2892'),  # noqa: E501 # Portion (PRT) but another PRT in CC
+        strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'),  # noqa: E501 # Gitcoin (GTC) but another GTC in CC
+        strethaddress_to_identifier('0x6D0F5149c502faf215C89ab306ec3E50b15e2892'),  # noqa: E501 # Portion (PRT) but another PRT in CC
         'eip155:56/erc20:0xAF00aAc2431b04EF6afD904d19B08D5146e3A9A0',  # noqa: E501 # Portion (PRT) but another PRT in CC
         'eip155:56/erc20:0xaC472D0EED2B8a2f57a6E304eA7eBD8E88D1d36f',  # Animecoin (ANI) but another ANI in CC  # noqa: E501
         'eip155:56/erc20:0xb897D0a0f68800f8Be7D69ffDD1c24b69f57Bf3e',  # Electra Protocol (XEP) but another XEP in CC  # noqa: E501
-        ethaddress_to_identifier('0xcbb20D755ABAD34cb4a9b5fF6Dd081C76769f62e'),  # noqa: E501 # Cash Global Coin (CGC) but another CGC in CC
-        ethaddress_to_identifier('0x9BE89D2a4cd102D8Fecc6BF9dA793be995C22541'),  # noqa: E501 # Binance Wrapped BTC (BBTC) but another BBTC in CC
+        strethaddress_to_identifier('0xcbb20D755ABAD34cb4a9b5fF6Dd081C76769f62e'),  # noqa: E501 # Cash Global Coin (CGC) but another CGC in CC
+        strethaddress_to_identifier('0x9BE89D2a4cd102D8Fecc6BF9dA793be995C22541'),  # noqa: E501 # Binance Wrapped BTC (BBTC) but another BBTC in CC
         'eip155:56/erc20:0x42F6f551ae042cBe50C739158b4f0CAC0Edb9096',  # noqa: E501 # Nerve Finance (NRV) but another NRV in CC
         'EDR-2',   # Endor Protocol Token but we have E-Dinar Coin
-        ethaddress_to_identifier('0xDa007777D86AC6d989cC9f79A73261b3fC5e0DA0'),  # noqa: E501 # Dappnode (NODE) but another NODE in CC
+        strethaddress_to_identifier('0xDa007777D86AC6d989cC9f79A73261b3fC5e0DA0'),  # noqa: E501 # Dappnode (NODE) but another NODE in CC
         'QI',  # BENQI (QI) but another QI in CC
-        ethaddress_to_identifier('0x1A4b46696b2bB4794Eb3D4c26f1c55F9170fa4C5'),  # noqa: E501 # BitDao (BIT) but another BIT in CC
-        ethaddress_to_identifier('0x993864E43Caa7F7F12953AD6fEb1d1Ca635B875F'),  # noqa: E501 # Singularity DAO (SDAO) but another SDAO in CC
+        strethaddress_to_identifier('0x1A4b46696b2bB4794Eb3D4c26f1c55F9170fa4C5'),  # noqa: E501 # BitDao (BIT) but another BIT in CC
+        strethaddress_to_identifier('0x993864E43Caa7F7F12953AD6fEb1d1Ca635B875F'),  # noqa: E501 # Singularity DAO (SDAO) but another SDAO in CC
         'eip155:56/erc20:0x90Ed8F1dc86388f14b64ba8fb4bbd23099f18240',  # noqa: E501 # Singularity DAO (SDAO) but another SDAO in CC
-        ethaddress_to_identifier('0x114f1388fAB456c4bA31B1850b244Eedcd024136'),  # noqa: E501 # Cool Vauld (COOL) but another COOL in CC
-        ethaddress_to_identifier('0xD70240Dd62F4ea9a6A2416e0073D72139489d2AA'),  # noqa: E501 # Glyph vault (GLYPH) but another GLYPH in CC
-        ethaddress_to_identifier('0x269616D549D7e8Eaa82DFb17028d0B212D11232A'),  # noqa: E501 # PUNK vault (PUNK) but another PUNK in CC
-        ethaddress_to_identifier('0x2d94AA3e47d9D5024503Ca8491fcE9A2fB4DA198'),  # noqa: E501 # Bankless token (BANK) but another BANK in CC
+        strethaddress_to_identifier('0x114f1388fAB456c4bA31B1850b244Eedcd024136'),  # noqa: E501 # Cool Vauld (COOL) but another COOL in CC
+        strethaddress_to_identifier('0xD70240Dd62F4ea9a6A2416e0073D72139489d2AA'),  # noqa: E501 # Glyph vault (GLYPH) but another GLYPH in CC
+        strethaddress_to_identifier('0x269616D549D7e8Eaa82DFb17028d0B212D11232A'),  # noqa: E501 # PUNK vault (PUNK) but another PUNK in CC
+        strethaddress_to_identifier('0x2d94AA3e47d9D5024503Ca8491fcE9A2fB4DA198'),  # noqa: E501 # Bankless token (BANK) but another BANK in CC
         'eip155:137/erc20:0xDB7Cb471dd0b49b29CAB4a1C14d070f27216a0Ab',  # noqa: E501 # Bankless token (BANK) but another BANK in CC
-        ethaddress_to_identifier('0x1456688345527bE1f37E9e627DA0837D6f08C925'),  # noqa: E501 # USDP stablecoin (USDP) but another USDP in CC
+        strethaddress_to_identifier('0x1456688345527bE1f37E9e627DA0837D6f08C925'),  # noqa: E501 # USDP stablecoin (USDP) but another USDP in CC
         'POLIS',  # Star Atlas DAO (POLIS) but another POLIS in CC
-        ethaddress_to_identifier('0x670f9D9a26D3D42030794ff035d35a67AA092ead'),  # noqa: E501 # XBullion Token (GOLD) but another GOLD in CC
-        ethaddress_to_identifier('0x3b58c52C03ca5Eb619EBa171091c86C34d603e5f'),  # noqa: E501 # MCI Coin (MCI) but another MCI in CC
-        ethaddress_to_identifier('0x5dD57Da40e6866C9FcC34F4b6DDC89F1BA740DfE'),  # noqa: E501 # Bright(BRIGHT) but another BRIGHT in CC
+        strethaddress_to_identifier('0x670f9D9a26D3D42030794ff035d35a67AA092ead'),  # noqa: E501 # XBullion Token (GOLD) but another GOLD in CC
+        strethaddress_to_identifier('0x3b58c52C03ca5Eb619EBa171091c86C34d603e5f'),  # noqa: E501 # MCI Coin (MCI) but another MCI in CC
+        strethaddress_to_identifier('0x5dD57Da40e6866C9FcC34F4b6DDC89F1BA740DfE'),  # noqa: E501 # Bright(BRIGHT) but another BRIGHT in CC
         'eip155:100/erc20:0x83FF60E2f93F8eDD0637Ef669C69D5Fb4f64cA8E',  # noqa: E501 # Bright(BRIGHT) but another BRIGHT in CC
-        ethaddress_to_identifier('0x40284109c3309A7C3439111bFD93BF5E0fBB706c'),  # noqa: E501 # Motiv protocol but another MOV in CC
-        ethaddress_to_identifier('0xba5BDe662c17e2aDFF1075610382B9B691296350'),  # noqa: E501 # Super Rare but another RARE in CC
-        ethaddress_to_identifier('0x9D65fF81a3c488d585bBfb0Bfe3c7707c7917f54'),  # noqa: E501 # SSV token but another SSV in CC
-        ethaddress_to_identifier('0x7b35Ce522CB72e4077BaeB96Cb923A5529764a00'),  # noqa: E501 # Impermax but another IMX in CC
+        strethaddress_to_identifier('0x40284109c3309A7C3439111bFD93BF5E0fBB706c'),  # noqa: E501 # Motiv protocol but another MOV in CC
+        strethaddress_to_identifier('0xba5BDe662c17e2aDFF1075610382B9B691296350'),  # noqa: E501 # Super Rare but another RARE in CC
+        strethaddress_to_identifier('0x9D65fF81a3c488d585bBfb0Bfe3c7707c7917f54'),  # noqa: E501 # SSV token but another SSV in CC
+        strethaddress_to_identifier('0x7b35Ce522CB72e4077BaeB96Cb923A5529764a00'),  # noqa: E501 # Impermax but another IMX in CC
         'eip155:137/erc20:0x60bB3D364B765C497C8cE50AE0Ae3f0882c5bD05',  # noqa: E501 # Impermax but another IMX in CC
         'eip155:42161/erc20:0x9c67eE39e3C4954396b9142010653F17257dd39C',  # noqa: E501 # Impermax but another IMX in CC
         'eip155:43114/erc20:0xeA6887e4a9CdA1B77E70129E5Fba830CdB5cdDef',  # noqa: E501 # Impermax but another IMX in CC
-        ethaddress_to_identifier('0x47481c1b44F2A1c0135c45AA402CE4F4dDE4D30e'),  # noqa: E501 # Meetple but another MPT in CC
+        strethaddress_to_identifier('0x47481c1b44F2A1c0135c45AA402CE4F4dDE4D30e'),  # noqa: E501 # Meetple but another MPT in CC
         'eip155:56/erc20:0xE4FAE3Faa8300810C835970b9187c268f55D998F',  # noqa: E501 # catecoin but another CATE in CC
         'eip155:56/erc20:0x20de22029ab63cf9A7Cf5fEB2b737Ca1eE4c82A6'  # noqa: E501 # tranchess but another CHESS in CC
         'BNC',  # Bifrost but another BNC in CC
         'eip155:56/erc20:0x8C851d1a123Ff703BD1f9dabe631b69902Df5f97',  # noqa: E501 # BinaryX but anohter BNX in CC
         'eip155:56/erc20:0x23CE9e926048273eF83be0A3A8Ba9Cb6D45cd978',  # noqa: E501 # Mines of Dalarnia but a different DAR in CC
-        ethaddress_to_identifier('0xEf51c9377FeB29856E61625cAf9390bD0B67eA18'),  # noqa: E501 # Bionic but another BNC in CC
+        strethaddress_to_identifier('0xEf51c9377FeB29856E61625cAf9390bD0B67eA18'),  # noqa: E501 # Bionic but another BNC in CC
         'CHESS',  # tranchess but another chess in CC
         'BNC',  # bifrost but another BNC in CC
-        ethaddress_to_identifier('0x9e6C59321CEB205d5d3BC6c539c017aF6159B16c'),  # noqa: E501 # Mindcell but another MDC in CC
+        strethaddress_to_identifier('0x9e6C59321CEB205d5d3BC6c539c017aF6159B16c'),  # noqa: E501 # Mindcell but another MDC in CC
         'TIME',  # Wonderland but another TIME in CC
         'STARS',  # StarLaunch but another STARS in CC
-        ethaddress_to_identifier('0x60EF10EDfF6D600cD91caeCA04caED2a2e605Fe5'),  # noqa: E501 # Mochi inu but MOCHI SWAP in CC
-        ethaddress_to_identifier('0x3496B523e5C00a4b4150D6721320CdDb234c3079'),  # noqa: E501 # numbers protocol but another NUM in CC
+        strethaddress_to_identifier('0x60EF10EDfF6D600cD91caeCA04caED2a2e605Fe5'),  # noqa: E501 # Mochi inu but MOCHI SWAP in CC
+        strethaddress_to_identifier('0x3496B523e5C00a4b4150D6721320CdDb234c3079'),  # noqa: E501 # numbers protocol but another NUM in CC
         'eip155:56/erc20:0xeCEB87cF00DCBf2D4E2880223743Ff087a995aD9',  # noqa: E501 # numbers protocol but another NUM in CC
-        ethaddress_to_identifier('0x8dB253a1943DdDf1AF9bcF8706ac9A0Ce939d922'),  # noqa: E501 # unbound protocol but another UNB in CC
+        strethaddress_to_identifier('0x8dB253a1943DdDf1AF9bcF8706ac9A0Ce939d922'),  # noqa: E501 # unbound protocol but another UNB in CC
         'eip155:56/erc20:0x301AF3Eff0c904Dc5DdD06FAa808f653474F7FcC',  # noqa: E501 # unbound protocol but another UNB in CC
         'eip155:56/erc20:0xDa4714fEE90Ad7DE50bC185ccD06b175D23906c1',  # noqa: E501 # gozilla but another GODZ in CC
         'DFL',  # Defi land but another DFL in CC
         'CDEX',  # Codex but another CDEX in CC
         'MIMO',  # mimosa but another MIMO in CC
-        ethaddress_to_identifier('0x73d7c860998CA3c01Ce8c808F5577d94d545d1b4'),  # noqa: E501 # IXS token but IXS swap in CC
+        strethaddress_to_identifier('0x73d7c860998CA3c01Ce8c808F5577d94d545d1b4'),  # noqa: E501 # IXS token but IXS swap in CC
         'TULIP',  # Solfarm but TULIP project in CC
         'AIR',  # altair but another AIR in CC
-        ethaddress_to_identifier('0xfC1Cb4920dC1110fD61AfaB75Cf085C1f871b8C6'),  # noqa: E501 # edenloop but cc has electron
-        ethaddress_to_identifier('0x3392D8A60B77F8d3eAa4FB58F09d835bD31ADD29'),  # noqa: E501 # indiegg but cc has indicoin
+        strethaddress_to_identifier('0xfC1Cb4920dC1110fD61AfaB75Cf085C1f871b8C6'),  # noqa: E501 # edenloop but cc has electron
+        strethaddress_to_identifier('0x3392D8A60B77F8d3eAa4FB58F09d835bD31ADD29'),  # noqa: E501 # indiegg but cc has indicoin
         'NBT',  # nanobyte but cc has nix bridge
         'eip155:43114/erc20:0x3CE2fceC09879af073B53beF5f4D04327a1bC032',  # noqa: E501 # Hurricane nft but cc has nano healthcare
         'ZBC',  # zebec but cc has zilbercoin
         'MINE',  # spacemine but cc has instamine
         'eip155:56/erc20:0x6397de0F9aEDc0F7A8Fa8B438DDE883B9c201010',  # noqa: E501 # sincity but cc has sinnoverse
         'GST-2',  # green satoshi coin but cc has gstcoin
-        ethaddress_to_identifier('0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),  # noqa: E501 # gearbox but cc has metagear
-        ethaddress_to_identifier('0xA68Dd8cB83097765263AdAD881Af6eeD479c4a33'),  # noqa: E501 # fees.wtf but cc has WTF token
+        strethaddress_to_identifier('0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),  # noqa: E501 # gearbox but cc has metagear
+        strethaddress_to_identifier('0xA68Dd8cB83097765263AdAD881Af6eeD479c4a33'),  # noqa: E501 # fees.wtf but cc has WTF token
         'AUSD',  # alpaca usd but cc has appeal dollar
         'PLY',  # Aurigami but cc has playcoin
         'MLS',  # Pikaster but cc has crop
-        ethaddress_to_identifier('0xcCeD5B8288086BE8c38E23567e684C3740be4D48'),  # noqa: E501 # rouletteToken but cc has Runner land
-        ethaddress_to_identifier('0xb4bebD34f6DaaFd808f73De0d10235a92Fbb6c3D'),  # noqa: E501 # Yearn index but cc has yeti finance
-        ethaddress_to_identifier('0xC76FB75950536d98FA62ea968E1D6B45ffea2A55'),  # noqa: E501 # Unit protocol but cc has clash of lilliput
-        ethaddress_to_identifier('0xbc6E06778708177a18210181b073DA747C88490a'),  # noqa: E501 # Syndicate but cc has mobland
-        ethaddress_to_identifier('0x23894DC9da6c94ECb439911cAF7d337746575A72'),  # noqa: E501 # geojam but cc has tune.fm
+        strethaddress_to_identifier('0xcCeD5B8288086BE8c38E23567e684C3740be4D48'),  # noqa: E501 # rouletteToken but cc has Runner land
+        strethaddress_to_identifier('0xb4bebD34f6DaaFd808f73De0d10235a92Fbb6c3D'),  # noqa: E501 # Yearn index but cc has yeti finance
+        strethaddress_to_identifier('0xC76FB75950536d98FA62ea968E1D6B45ffea2A55'),  # noqa: E501 # Unit protocol but cc has clash of lilliput
+        strethaddress_to_identifier('0xbc6E06778708177a18210181b073DA747C88490a'),  # noqa: E501 # Syndicate but cc has mobland
+        strethaddress_to_identifier('0x23894DC9da6c94ECb439911cAF7d337746575A72'),  # noqa: E501 # geojam but cc has tune.fm
         'WELL',  # Moonwell but cc has well
-        ethaddress_to_identifier('0xeEd4d7316a04ee59de3d301A384262FFbDbd589a'),  # noqa: E501 # Page network but cc has PhiGold
-        ethaddress_to_identifier('0xbb70AdbE39408cB1E5258702ea8ADa7c81165b73'),  # noqa: E501 # AnteDao but cc has ante
+        strethaddress_to_identifier('0xeEd4d7316a04ee59de3d301A384262FFbDbd589a'),  # noqa: E501 # Page network but cc has PhiGold
+        strethaddress_to_identifier('0xbb70AdbE39408cB1E5258702ea8ADa7c81165b73'),  # noqa: E501 # AnteDao but cc has ante
         'eip155:56/erc20:0xDCEcf0664C33321CECA2effcE701E710A2D28A3F',  # Alpaca USD but cc has appeal dollar  # noqa: E501
         'GBPT',  # pound but cc has listed poundtoken
         'MNFT',  # mongol NFT but cc has marvelous NFT
@@ -222,15 +222,26 @@ def test_cryptocompare_asset_support(cryptocompare):
         'BSX',  # basilixc but cc has bitspace
         'eip155:43114/erc20:0xb54f16fB19478766A268F172C9480f8da1a7c9C3',  # noqa: E501 # wonderland but a different time in cc
         'eip155:56/erc20:0x5F2F6c4C491B690216E0f8Ea753fF49eF4E36ba6',  # noqa: E501 # Metaland but cc has crops
-        ethaddress_to_identifier('0x2620638EDA99F9e7E902Ea24a285456EE9438861'),  # noqa: E501 # crust storeage but cc has consentium
+        strethaddress_to_identifier('0x2620638EDA99F9e7E902Ea24a285456EE9438861'),  # noqa: E501 # crust storeage but cc has consentium
         'FB',  # fitbit but cc has fenerbache
         'CMP',  # cadecius but cc has compcoin
         'KUSD',  # kolibri usd but cc has kowala
-        ethaddress_to_identifier('0x4b13006980aCB09645131b91D259eaA111eaF5Ba'),  # noqa: E501 # mycelium but cc has a different one
+        strethaddress_to_identifier('0x4b13006980aCB09645131b91D259eaA111eaF5Ba'),  # noqa: E501 # mycelium but cc has a different one
         'eip155:42161/erc20:0xC74fE4c715510Ec2F8C61d70D397B32043F55Abe',  # noqa: E501 # mycelium but cc has a different one
         'eip155:56/erc20:0xfEB4e9B932eF708c498Cc997ABe51D0EE39300cf',  # noqa: E501 # getkicks but cc has sessia
-        ethaddress_to_identifier('0x06450dEe7FD2Fb8E39061434BAbCFC05599a6Fb8'),  # noqa: E501 xen crypto but cc has xenxin
-        ethaddress_to_identifier('0x3593D125a4f7849a1B059E64F4517A86Dd60c95d'),  # noqa: E501 mantra dao but cc has another MO
+        strethaddress_to_identifier('0x06450dEe7FD2Fb8E39061434BAbCFC05599a6Fb8'),  # noqa: E501 xen crypto but cc has xenxin
+        strethaddress_to_identifier('0x3593D125a4f7849a1B059E64F4517A86Dd60c95d'),  # noqa: E501 mantra dao but cc has another MO
+        strethaddress_to_identifier('0x9b5161a41B58498Eb9c5FEBf89d60714089d2253'),  # noqa: E501 metafinance but cc has meta fighter
+        strethaddress_to_identifier('0x3593D125a4f7849a1B059E64F4517A86Dd60c95d'),  # noqa: E501 metafinance but cc has meta fighter
+        'eip155:56/erc20:0x186866858aEf38c05829166A7711b37563e15994',    # noqa: E501 # hold finance but cc has hashflow
+        'STC',  # starchain but cc has satoshi island
+        'KCAL',  # kcal but cc has pantasma energy
+        'MC',  # mechaverse but cc has merit circle
+        'eip155:250/erc20:0x904f51a2E7eEaf76aaF0418cbAF0B71149686f4A',  # noqa: E501 fantom maker but cc has fane mma
+        'ARG',  # argentina fc token but cc has argentum
+        'eip155:56/erc20:0x9df90628D40c72F85137e8cEE09dde353a651266',  # noqa: E501 mechaverse but cc has merit circle
+        'ALT',  # aptos launch but cc has alitas
+        strethaddress_to_identifier('0x329cf160F30D21006bCD24b67EAde561E54CDE4c'),  # noqa: E501 carecoin but cc has carebit
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -280,7 +291,7 @@ def test_case_does_not_matter_for_asset_constructor():
     # We use a token that is only in ethereum (redacted)
     a3 = symbol_to_ethereum_token('BTRFLY')
     a4 = symbol_to_ethereum_token('BtRfLy')
-    assert a3.identifier == a4.identifier == ethaddress_to_identifier('0xC0d4Ceb216B3BA9C3701B291766fDCbA977ceC3A')  # noqa: E501
+    assert a3.identifier == a4.identifier == strethaddress_to_identifier('0xC0d4Ceb216B3BA9C3701B291766fDCbA977ceC3A')  # noqa: E501
 
 
 @pytest.mark.skipif(
@@ -296,65 +307,65 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
     # If coingecko identifier is missing test is trying to suggest possible assets.
     symbol_checked_exceptions = (  # This is the list of already checked assets
         # only 300 in coingecko is spartan coin: https://www.coingecko.com/en/coins/spartan
-        ethaddress_to_identifier('0xaEc98A708810414878c3BCDF46Aad31dEd4a4557'),
+        strethaddress_to_identifier('0xaEc98A708810414878c3BCDF46Aad31dEd4a4557'),
         # no arcade city in coingeko. Got other ARC symbol tokens
-        ethaddress_to_identifier('0xAc709FcB44a43c35F0DA4e3163b117A17F3770f5'),
+        strethaddress_to_identifier('0xAc709FcB44a43c35F0DA4e3163b117A17F3770f5'),
         # no avalon in coingecko. Got travalala.com
-        ethaddress_to_identifier('0xeD247980396B10169BB1d36f6e278eD16700a60f'),
+        strethaddress_to_identifier('0xeD247980396B10169BB1d36f6e278eD16700a60f'),
         # no Bionic in coingecko. Got Bnoincoin
-        ethaddress_to_identifier('0xEf51c9377FeB29856E61625cAf9390bD0B67eA18'),
+        strethaddress_to_identifier('0xEf51c9377FeB29856E61625cAf9390bD0B67eA18'),
         # no Bitair in coingecko. Got other BTCA symbol tokens
-        ethaddress_to_identifier('0x02725836ebF3eCDb1cDf1c7b02FcbBfaa2736AF8'),
+        strethaddress_to_identifier('0x02725836ebF3eCDb1cDf1c7b02FcbBfaa2736AF8'),
         # no Bither in coingecko. Got other BTR symbol tokens
-        ethaddress_to_identifier('0xcbf15FB8246F679F9Df0135881CB29a3746f734b'),
+        strethaddress_to_identifier('0xcbf15FB8246F679F9Df0135881CB29a3746f734b'),
         # no Content and Ad Network in coingecko. Got other CAN symbol tokens
-        ethaddress_to_identifier('0x5f3789907b35DCe5605b00C0bE0a7eCDBFa8A841'),
+        strethaddress_to_identifier('0x5f3789907b35DCe5605b00C0bE0a7eCDBFa8A841'),
         # no DICE money in coingecko. Got other CET symbol tokens
-        ethaddress_to_identifier('0xF660cA1e228e7BE1fA8B4f5583145E31147FB577'),
+        strethaddress_to_identifier('0xF660cA1e228e7BE1fA8B4f5583145E31147FB577'),
         # no Cyberfi in coingecko. Got other CFI symbol tokens
-        ethaddress_to_identifier('0x12FEF5e57bF45873Cd9B62E9DBd7BFb99e32D73e'),
+        strethaddress_to_identifier('0x12FEF5e57bF45873Cd9B62E9DBd7BFb99e32D73e'),
         # The DAO is not in coingecko. Got other DAO symbol tokens
-        ethaddress_to_identifier('0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413'),
+        strethaddress_to_identifier('0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413'),
         # no Earth Token in coingecko. Got other EARTH symbol token and in BSC
-        ethaddress_to_identifier('0x900b4449236a7bb26b286601dD14d2bDe7a6aC6c'),
+        strethaddress_to_identifier('0x900b4449236a7bb26b286601dD14d2bDe7a6aC6c'),
         # no iDice in coingecko. Got other ICE symbol token
-        ethaddress_to_identifier('0x5a84969bb663fb64F6d015DcF9F622Aedc796750'),
+        strethaddress_to_identifier('0x5a84969bb663fb64F6d015DcF9F622Aedc796750'),
         # no InvestFeed token in coingecko. Got other IFT symbol token
-        ethaddress_to_identifier('0x7654915A1b82D6D2D0AFc37c52Af556eA8983c7E'),
+        strethaddress_to_identifier('0x7654915A1b82D6D2D0AFc37c52Af556eA8983c7E'),
         # no Invacio token in coingecko. Got other INV symbol token
-        ethaddress_to_identifier('0xEcE83617Db208Ad255Ad4f45Daf81E25137535bb'),
+        strethaddress_to_identifier('0xEcE83617Db208Ad255Ad4f45Daf81E25137535bb'),
         # no Live Start token in coingecko. Got other LIVE symbol token
-        ethaddress_to_identifier('0x24A77c1F17C547105E14813e517be06b0040aa76'),
+        strethaddress_to_identifier('0x24A77c1F17C547105E14813e517be06b0040aa76'),
         # no Musiconomi in coingecko. Got other MCI symbol token
-        ethaddress_to_identifier('0x138A8752093F4f9a79AaeDF48d4B9248fab93c9C'),
+        strethaddress_to_identifier('0x138A8752093F4f9a79AaeDF48d4B9248fab93c9C'),
         # no Remicoin in coingecko. Got other RMC symbol token
-        ethaddress_to_identifier('0x7Dc4f41294697a7903C4027f6Ac528C5d14cd7eB'),
+        strethaddress_to_identifier('0x7Dc4f41294697a7903C4027f6Ac528C5d14cd7eB'),
         # no Sola token in coingecko. Got other SOL symbol token
-        ethaddress_to_identifier('0x1F54638b7737193FFd86c19Ec51907A7c41755D8'),
+        strethaddress_to_identifier('0x1F54638b7737193FFd86c19Ec51907A7c41755D8'),
         # no Bitcoin card token in coingecko. Got other VD symbol token
-        ethaddress_to_identifier('0x9a9bB9b4b11BF8eccff84B58a6CCCCD4058A7f0D'),
+        strethaddress_to_identifier('0x9a9bB9b4b11BF8eccff84B58a6CCCCD4058A7f0D'),
         # no Venus Energy token in coingecko. Got other VENUS symbol token
-        ethaddress_to_identifier('0xEbeD4fF9fe34413db8fC8294556BBD1528a4DAca'),
+        strethaddress_to_identifier('0xEbeD4fF9fe34413db8fC8294556BBD1528a4DAca'),
         # no WinToken in coingecko. Got other WIN symbol token
-        ethaddress_to_identifier('0xBfaA8cF522136C6FAfC1D53Fe4b85b4603c765b8'),
+        strethaddress_to_identifier('0xBfaA8cF522136C6FAfC1D53Fe4b85b4603c765b8'),
         # no Snowball in coingecko. Got other SNBL symbol token
-        ethaddress_to_identifier('0x198A87b3114143913d4229Fb0f6D4BCb44aa8AFF'),
+        strethaddress_to_identifier('0x198A87b3114143913d4229Fb0f6D4BCb44aa8AFF'),
         # Token suggestion doesn't match token in db
-        ethaddress_to_identifier('0xFD25676Fc2c4421778B18Ec7Ab86E7C5701DF187'),
+        strethaddress_to_identifier('0xFD25676Fc2c4421778B18Ec7Ab86E7C5701DF187'),
         # Token suggestion doesn't match token in db
-        ethaddress_to_identifier('0xcca0c9c383076649604eE31b20248BC04FdF61cA'),
+        strethaddress_to_identifier('0xcca0c9c383076649604eE31b20248BC04FdF61cA'),
         # Token suggestion doesn't match token in db
-        ethaddress_to_identifier('0xAef38fBFBF932D1AeF3B808Bc8fBd8Cd8E1f8BC5'),
+        strethaddress_to_identifier('0xAef38fBFBF932D1AeF3B808Bc8fBd8Cd8E1f8BC5'),
         # Token suggestion doesn't match token in db
-        ethaddress_to_identifier('0x662aBcAd0b7f345AB7FfB1b1fbb9Df7894f18e66'),
+        strethaddress_to_identifier('0x662aBcAd0b7f345AB7FfB1b1fbb9Df7894f18e66'),
         # Token suggestion doesn't match token in db
-        ethaddress_to_identifier('0x497bAEF294c11a5f0f5Bea3f2AdB3073DB448B56'),
+        strethaddress_to_identifier('0x497bAEF294c11a5f0f5Bea3f2AdB3073DB448B56'),
         # Token suggestion doesn't match token in db
-        ethaddress_to_identifier('0xAbdf147870235FcFC34153828c769A70B3FAe01F'),
+        strethaddress_to_identifier('0xAbdf147870235FcFC34153828c769A70B3FAe01F'),
         # Token suggestion doesn't match token in db
-        ethaddress_to_identifier('0x4DF47B4969B2911C966506E3592c41389493953b'),
+        strethaddress_to_identifier('0x4DF47B4969B2911C966506E3592c41389493953b'),
         # Token suggestion doesn't match token in db
-        ethaddress_to_identifier('0xB563300A3BAc79FC09B93b6F84CE0d4465A2AC27'),
+        strethaddress_to_identifier('0xB563300A3BAc79FC09B93b6F84CE0d4465A2AC27'),
         'ACC',  # no Adcoin in Coingecko. Got other ACC symbol token
         'APH',  # no Aphelion in Coingecko. Got other APH symbol token
         'ARCH',  # no ARCH in Coingecko. Got other ARCH symbol token
@@ -379,25 +390,25 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
         'XNS',  # no Insolar in Coingecko. Got other XNS symbol token
         'PIGGY',  # Coingecko listed another asset PIGGY that is not Piggy Coin
         # coingecko listed CAR that is not our token CarBlock.io
-        ethaddress_to_identifier('0x4D9e23a3842fE7Eb7682B9725cF6c507C424A41B'),
+        strethaddress_to_identifier('0x4D9e23a3842fE7Eb7682B9725cF6c507C424A41B'),
         # coingecko listed newb farm with symbol NEWB that is not our newb
-        ethaddress_to_identifier('0x5A63Eb358a751b76e58325eadD86c2473fC40e87'),
+        strethaddress_to_identifier('0x5A63Eb358a751b76e58325eadD86c2473fC40e87'),
         # coingecko has BigBang Core (BBC) that is not tradove
-        ethaddress_to_identifier('0xe7D3e4413E29ae35B0893140F4500965c74365e5'),
+        strethaddress_to_identifier('0xe7D3e4413E29ae35B0893140F4500965c74365e5'),
         # MNT is Meownaut in coingecko and not media network token
-        ethaddress_to_identifier('0xA9877b1e05D035899131DBd1e403825166D09f92'),
+        strethaddress_to_identifier('0xA9877b1e05D035899131DBd1e403825166D09f92'),
         # Project quantum in coingecko but we have Qubitica
-        ethaddress_to_identifier('0xCb5ea3c190d8f82DEADF7ce5Af855dDbf33e3962'),
+        strethaddress_to_identifier('0xCb5ea3c190d8f82DEADF7ce5Af855dDbf33e3962'),
         # We have Cashbery Coin for symbol CBC that is not listed in the coingecko list
         'CBC-2',
         # We have Air token for symbol AIR. Got another AIR symbol token
-        ethaddress_to_identifier('0x27Dce1eC4d3f72C3E457Cc50354f1F975dDEf488'),
+        strethaddress_to_identifier('0x27Dce1eC4d3f72C3E457Cc50354f1F975dDEf488'),
         # We have Acorn Collective for symbol OAK. Got another OAK symbol token
-        ethaddress_to_identifier('0x5e888B83B7287EED4fB7DA7b7d0A0D4c735d94b3'),
+        strethaddress_to_identifier('0x5e888B83B7287EED4fB7DA7b7d0A0D4c735d94b3'),
         # Coingecko has yearn v1 vault yUSD
-        ethaddress_to_identifier('0x0ff3773a6984aD900f7FB23A9acbf07AC3aDFB06'),
+        strethaddress_to_identifier('0x0ff3773a6984aD900f7FB23A9acbf07AC3aDFB06'),
         # Coingecko has yearn v1 vault yUSD (different vault from above but same symbol)
-        ethaddress_to_identifier('0x4B5BfD52124784745c1071dcB244C6688d2533d3'),
+        strethaddress_to_identifier('0x4B5BfD52124784745c1071dcB244C6688d2533d3'),
         # Coingecko has Aston Martin Cognizant Fan Token and we have AeroME
         'AM',
         # Coingecko has Swarm (BZZ) and we have SwarmCoin
@@ -405,71 +416,71 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
         # Coingecko has aircoin and we have a different airtoken
         'AIR-2',
         # Coingecko has Attlas Token and we have Authorship
-        ethaddress_to_identifier('0x2dAEE1AA61D60A252DC80564499A69802853583A'),
+        strethaddress_to_identifier('0x2dAEE1AA61D60A252DC80564499A69802853583A'),
         # Coingecko has Lever Network and we have Leverj
-        ethaddress_to_identifier('0x0F4CA92660Efad97a9a70CB0fe969c755439772C'),
+        strethaddress_to_identifier('0x0F4CA92660Efad97a9a70CB0fe969c755439772C'),
         # Coingecko has Twirl Governance Token and we have Target Coin
-        ethaddress_to_identifier('0xAc3Da587eac229C9896D919aBC235CA4Fd7f72c1'),
+        strethaddress_to_identifier('0xAc3Da587eac229C9896D919aBC235CA4Fd7f72c1'),
         # Coingecko has MyWish and we have another WISH (ethereum addresses don't match)
-        ethaddress_to_identifier('0x1b22C32cD936cB97C28C5690a0695a82Abf688e6'),
+        strethaddress_to_identifier('0x1b22C32cD936cB97C28C5690a0695a82Abf688e6'),
         # Coingecko has DroneFly and we have KlondikeCoin for symbol KDC
         'KDC',
         # Coingecko has CoinStarter and we have Student Coin for symbol STC
-        ethaddress_to_identifier('0x15B543e986b8c34074DFc9901136d9355a537e7E'),
+        strethaddress_to_identifier('0x15B543e986b8c34074DFc9901136d9355a537e7E'),
         # Coingecko has Nano Dogecoin symbol:ndc and we have NEVERDIE
-        ethaddress_to_identifier('0xA54ddC7B3CcE7FC8b1E3Fa0256D0DB80D2c10970'),
+        strethaddress_to_identifier('0xA54ddC7B3CcE7FC8b1E3Fa0256D0DB80D2c10970'),
         # Coingecko has olecoin and we have Olive
-        ethaddress_to_identifier('0x9d9223436dDD466FC247e9dbbD20207e640fEf58'),
+        strethaddress_to_identifier('0x9d9223436dDD466FC247e9dbbD20207e640fEf58'),
         # Coingecko has orica and we have origami
-        ethaddress_to_identifier('0xd2Fa8f92Ea72AbB35dBD6DECa57173d22db2BA49'),
+        strethaddress_to_identifier('0xd2Fa8f92Ea72AbB35dBD6DECa57173d22db2BA49'),
         # Coingeckop has a different storm token
-        ethaddress_to_identifier('0xD0a4b8946Cb52f0661273bfbC6fD0E0C75Fc6433'),
+        strethaddress_to_identifier('0xD0a4b8946Cb52f0661273bfbC6fD0E0C75Fc6433'),
         # We have Centra (CTR) but coingecko has creator platform
-        ethaddress_to_identifier('0x96A65609a7B84E8842732DEB08f56C3E21aC6f8a'),
+        strethaddress_to_identifier('0x96A65609a7B84E8842732DEB08f56C3E21aC6f8a'),
         # We have Gladius Token (GLA) but coingecko has Galaxy adventure
-        ethaddress_to_identifier('0x71D01dB8d6a2fBEa7f8d434599C237980C234e4C'),
+        strethaddress_to_identifier('0x71D01dB8d6a2fBEa7f8d434599C237980C234e4C'),
         # We have reftoken (REF) and coingecko has Ref Finance
-        ethaddress_to_identifier('0x89303500a7Abfb178B274FD89F2469C264951e1f'),
+        strethaddress_to_identifier('0x89303500a7Abfb178B274FD89F2469C264951e1f'),
         # We have Aidus (AID) and coingecko has aidcoin
-        ethaddress_to_identifier('0xD178b20c6007572bD1FD01D205cC20D32B4A6015'),
+        strethaddress_to_identifier('0xD178b20c6007572bD1FD01D205cC20D32B4A6015'),
         # We have depository network but coingecko has depo
-        ethaddress_to_identifier('0x89cbeAC5E8A13F0Ebb4C74fAdFC69bE81A501106'),
+        strethaddress_to_identifier('0x89cbeAC5E8A13F0Ebb4C74fAdFC69bE81A501106'),
         # Sinthetic ETH but coingecko has iEthereum
-        ethaddress_to_identifier('0xA9859874e1743A32409f75bB11549892138BBA1E'),
+        strethaddress_to_identifier('0xA9859874e1743A32409f75bB11549892138BBA1E'),
         # blocklancer but coingecko has Linker
-        ethaddress_to_identifier('0x63e634330A20150DbB61B15648bC73855d6CCF07'),
+        strethaddress_to_identifier('0x63e634330A20150DbB61B15648bC73855d6CCF07'),
         # Kora network but coingecko Knekted
-        ethaddress_to_identifier('0xfF5c25D2F40B47C4a37f989DE933E26562Ef0Ac0'),
+        strethaddress_to_identifier('0xfF5c25D2F40B47C4a37f989DE933E26562Ef0Ac0'),
         # gambit but coingecko has another gambit
-        ethaddress_to_identifier('0xF67451Dc8421F0e0afEB52faa8101034ed081Ed9'),
+        strethaddress_to_identifier('0xF67451Dc8421F0e0afEB52faa8101034ed081Ed9'),
         # publica but coingecko has another polkalab
-        ethaddress_to_identifier('0x55648De19836338549130B1af587F16beA46F66B'),
+        strethaddress_to_identifier('0x55648De19836338549130B1af587F16beA46F66B'),
         # Spin protocol but spinada in coingecko
-        ethaddress_to_identifier('0x4F22310C27eF39FEAA4A756027896DC382F0b5E2'),
+        strethaddress_to_identifier('0x4F22310C27eF39FEAA4A756027896DC382F0b5E2'),
         # REBL but another REBL (rebel finance) in coingecko
-        ethaddress_to_identifier('0x5F53f7A8075614b699Baad0bC2c899f4bAd8FBBF'),
+        strethaddress_to_identifier('0x5F53f7A8075614b699Baad0bC2c899f4bAd8FBBF'),
         # Sp8de (SPX) but another SPX in coingecko
-        ethaddress_to_identifier('0x05aAaA829Afa407D83315cDED1d45EB16025910c'),
+        strethaddress_to_identifier('0x05aAaA829Afa407D83315cDED1d45EB16025910c'),
         # marginless but another MRS in coingecko
-        ethaddress_to_identifier('0x1254E59712e6e727dC71E0E3121Ae952b2c4c3b6'),
+        strethaddress_to_identifier('0x1254E59712e6e727dC71E0E3121Ae952b2c4c3b6'),
         # oyster (PRL) but another PRL in coingecko
-        ethaddress_to_identifier('0x1844b21593262668B7248d0f57a220CaaBA46ab9'),
+        strethaddress_to_identifier('0x1844b21593262668B7248d0f57a220CaaBA46ab9'),
         # oyster shell but another SHL in coingecko
-        ethaddress_to_identifier('0x8542325B72C6D9fC0aD2Ca965A78435413a915A0'),
+        strethaddress_to_identifier('0x8542325B72C6D9fC0aD2Ca965A78435413a915A0'),
         # dorado but another DOR in coingecko
-        ethaddress_to_identifier('0x906b3f8b7845840188Eab53c3f5AD348A787752f'),
+        strethaddress_to_identifier('0x906b3f8b7845840188Eab53c3f5AD348A787752f'),
         # FundYourselfNow but coingecko has affyn
-        ethaddress_to_identifier('0x88FCFBc22C6d3dBaa25aF478C578978339BDe77a'),
+        strethaddress_to_identifier('0x88FCFBc22C6d3dBaa25aF478C578978339BDe77a'),
         # hat exchange but coingecko has joe hat token
-        ethaddress_to_identifier('0x9002D4485b7594e3E850F0a206713B305113f69e'),
+        strethaddress_to_identifier('0x9002D4485b7594e3E850F0a206713B305113f69e'),
         # iconomi but coingecko has icon v2
-        ethaddress_to_identifier('0x888666CA69E0f178DED6D75b5726Cee99A87D698'),
+        strethaddress_to_identifier('0x888666CA69E0f178DED6D75b5726Cee99A87D698'),
         # we have mcap and coingecko has meta capital
-        ethaddress_to_identifier('0x93E682107d1E9defB0b5ee701C71707a4B2E46Bc'),
+        strethaddress_to_identifier('0x93E682107d1E9defB0b5ee701C71707a4B2E46Bc'),
         # we have primalbase but coingecko has property blockchain
-        ethaddress_to_identifier('0xF4c07b1865bC326A3c01339492Ca7538FD038Cc0'),
+        strethaddress_to_identifier('0xF4c07b1865bC326A3c01339492Ca7538FD038Cc0'),
         # Sphere Identity and coingecko has Xid Network
-        ethaddress_to_identifier('0xB110eC7B1dcb8FAB8dEDbf28f53Bc63eA5BEdd84'),
+        strethaddress_to_identifier('0xB110eC7B1dcb8FAB8dEDbf28f53Bc63eA5BEdd84'),
         # We have ultracoin and coingecko has unitech
         'UTC',
         # We have sonic and coingecko has secretworld
@@ -483,34 +494,42 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
         # We have aerocoin and coingecko has aerochain
         'AERO',
         # coingecko has prime dai and we have pickle dai
-        ethaddress_to_identifier('0x6949Bb624E8e8A90F87cD2058139fcd77D2F3F87'),
+        strethaddress_to_identifier('0x6949Bb624E8e8A90F87cD2058139fcd77D2F3F87'),
         # sinovate but we have sincity
         'SIN',
         # Hedge protocol but we have Hede crypto coin (book)
-        ethaddress_to_identifier('0xfFe8196bc259E8dEDc544d935786Aa4709eC3E64'),
+        strethaddress_to_identifier('0xfFe8196bc259E8dEDc544d935786Aa4709eC3E64'),
         # realchain but coingecko has reactor
-        ethaddress_to_identifier('0x13f25cd52b21650caa8225C9942337d914C9B030'),
+        strethaddress_to_identifier('0x13f25cd52b21650caa8225C9942337d914C9B030'),
         # we have plutusdefi (usde) but coingecko has energi dollar
         'USDE',
         # gearbox is not returned by the coingecko api
-        ethaddress_to_identifier('0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),
+        strethaddress_to_identifier('0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),
         # bitcoindark but coingecko has bitdollars
         'BTCD',
-        ethaddress_to_identifier('0x78a73B6CBc5D183CE56e786f6e905CaDEC63547B'),
+        strethaddress_to_identifier('0x78a73B6CBc5D183CE56e786f6e905CaDEC63547B'),
         # defidollar but has been marked as inactive
-        ethaddress_to_identifier('0x5BC25f649fc4e26069dDF4cF4010F9f706c23831'),
+        strethaddress_to_identifier('0x5BC25f649fc4e26069dDF4cF4010F9f706c23831'),
         # zeus but has been marked as inactive
-        ethaddress_to_identifier('0xe7E4279b80D319EDe2889855135A22021baf0907'),
+        strethaddress_to_identifier('0xe7E4279b80D319EDe2889855135A22021baf0907'),
         # tok but has been marked as inactive
-        ethaddress_to_identifier('0x9a49f02e128a8E989b443a8f94843C0918BF45E7'),
+        strethaddress_to_identifier('0x9a49f02e128a8E989b443a8f94843C0918BF45E7'),
         # fabrik but another ft in coingecko
-        ethaddress_to_identifier('0x78a73B6CBc5D183CE56e786f6e905CaDEC63547B'),
+        strethaddress_to_identifier('0x78a73B6CBc5D183CE56e786f6e905CaDEC63547B'),
         # memorycoin but cc has monopoly
         'MMC',
         # lendconnect but cc has localtraders
-        ethaddress_to_identifier('0x05C7065d644096a4E4C3FE24AF86e36dE021074b'),
+        strethaddress_to_identifier('0x05C7065d644096a4E4C3FE24AF86e36dE021074b'),
         # tether GBPT but cc has poundtoken
         'GBPT',
+        # hope eth and not huobi eth
+        evm_address_to_identifier(address='0xc46F2004006d4C770346f60a7BaA3f1Cc67dFD1c', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x1fDeAF938267ca43388eD1FdB879eaF91e920c7A', chain_id=ChainID.MATIC, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xE38faf9040c7F09958c638bBDB977083722c5156', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xDa7c0de432a9346bB6e96aC74e3B61A36d8a77eB', chain_id=ChainID.ARBITRUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xc46F2004006d4C770346f60a7BaA3f1Cc67dFD1c', chain_id=ChainID.GNOSIS, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        # peth from maker but congecko has another PETH
+        strethaddress_to_identifier('0xf53AD2c6851052A81B42133467480961B2321C09'),
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier
@@ -542,7 +561,7 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
         if have_id is False and (len(suggestions) == 0 or identifier in symbol_checked_exceptions):
             continue  # no coingecko identifier and no suggestion or is in known exception
 
-        msg = f'Asset {identifier} with symbol {asset_data.symbol} coingecko mapping does not exist.'  # noqa: E501
+        msg = f'Asset {identifier} with symbol {asset_data.symbol} coingecko mapping {asset_data.coingecko} does not exist.'  # noqa: E501
         if len(suggestions) != 0:
             for s in suggestions:
                 msg += f'\nSuggestion: id:{s[0]} name:{s[1]} symbol:{s[2]}'

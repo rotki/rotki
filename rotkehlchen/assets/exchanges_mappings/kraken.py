@@ -219,4 +219,8 @@ WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     'APT': 'APT',
     'PARA': 'PARA',
     'STX': 'STX',
+    evm_address_to_identifier('0xd9Fcd98c322942075A5C3860693e9f4f03AAE07b', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'EUL',  # noqa: E501
+    'FLR': 'FLR',
+    evm_address_to_identifier('0x467719aD09025FcC6cF6F8311755809d45a5E5f3', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WAXL',  # noqa: E501
+    evm_address_to_identifier('0xb3999F658C0391d94A37f7FF328F3feC942BcADC', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'HFT',  # noqa: E501
 }

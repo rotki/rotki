@@ -90,6 +90,8 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # A similar named token, coin(o) with symbol CNO has data
     # both in cmc and paprika, but CON doesn't so we don't support it
     'CON',
+    # CORE (CORE) but cc and coingecko have cvault
+    'CORE',
     # CorgiCoin. No data found except from here:
     # https://coinmarketcap.com/currencies/corgicoin/
     'CORG',
@@ -469,6 +471,8 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'XSILV',  # No information found about its relation with XGOLD
     'ZILD',  # neither in coingecko nor cryptocompare
     'ZK',  # couldn't find what asset is this
+    'GBIT',  # neither in coingecko nor cryptocompare
+    'MCCX',  # neither in coingecko nor cryptocompare
     # bittrex tokenized stocks -- not sure how to handle yet
     'AAPL',
     'ABNB',
@@ -740,6 +744,11 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'PRMX',  # no cryptocompare/coingecko data
     'ASTROBOY',  # no cc/coingecko data
     'HIOD',  # no cc/coingecko data
+    'HIVALHALLA',  # no cc/coingecko data
+    'HIBIRDS',  # no cc/coingecko data
+    'ASTRA',  # no cc/coingecko data
+    'CLUB',  # no cc/coingecko data
+    'TEM',  # no cc/coingecko data
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets
@@ -762,6 +771,13 @@ UNSUPPORTED_GEMINI_ASSETS = (
     'LAUD',  # no information about this asset
     'SPEL',  # Spell moon (SPEL). No information about this token
 )
+
+UNSUPPORTED_OKEX_ASSETS = {
+    'CORE',  # CORE(CORE) but APIs list cvault
+    'GALFT',  # not in cc or coingecko
+    'SOLO',  # no information about this listing
+    'EC',  # not in cc or coingecko
+}
 
 # Exchange symbols that are clearly for testing purposes. They appear in all
 # these places: supported currencies list, supported exchange pairs list and
@@ -1113,6 +1129,10 @@ def asset_from_okx(okx_name: str) -> AssetWithOracles:
     """
     if not isinstance(okx_name, str):
         raise DeserializationError(f'Got non-string type {type(okx_name)} for okx asset')
+
+    if okx_name in UNSUPPORTED_OKEX_ASSETS:
+        raise UnsupportedAsset(okx_name)
+
     name = OKX_TO_WORLD.get(okx_name, okx_name)
     return symbol_to_asset_or_token(name)
 

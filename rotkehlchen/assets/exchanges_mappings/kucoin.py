@@ -216,4 +216,8 @@ WORLD_TO_KUCOIN = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x2a3bFF78B79A009976EeA096a51A948a3dC00e34', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WILD',  # noqa: E501
     evm_address_to_identifier('0x881Ba05de1E78f549cC63a8f6Cabb1d4AD32250D', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'P00LS',  # noqa: E501
     evm_address_to_identifier('0x9fa69536d1cda4A04cFB50688294de75B505a9aE', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'DERC',  # noqa: E501
+    evm_address_to_identifier('0xB0c7a3Ba49C7a6EaBa6cD4a96C55a1391070Ac9A', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MAGIC',  # noqa: E501
+    evm_address_to_identifier('0xb3999F658C0391d94A37f7FF328F3feC942BcADC', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'HFT',  # noqa: E501
+    evm_address_to_identifier('0x9df90628D40c72F85137e8cEE09dde353a651266', ChainID.BINANCE, EvmTokenKind.ERC20): 'MM',  # noqa: E501
+    evm_address_to_identifier('0xDd13DEdeCEbDA566322195bc4451D672A148752C', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PRIMAL',  # noqa: E501
 }
