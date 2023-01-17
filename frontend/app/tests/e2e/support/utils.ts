@@ -15,6 +15,8 @@ export function selectLocation(element: string, value: string) {
   cy.get(`#balance-location__${identifier}`).click();
 }
 
+let counter = 0;
+
 type QueryTarget = { method: 'POST' | 'GET'; url: string };
 /**
  * Used to wait for an async query to complete.
@@ -24,17 +26,29 @@ type QueryTarget = { method: 'POST' | 'GET'; url: string };
  * @param timeout How long the util will wait for the /api/1/tasks/task_id to
  * complete
  */
-export const waitForAsyncQuery = (url: QueryTarget, timeout = 120000) => {
-  cy.intercept(url).as('asyncQuery');
+export const waitForAsyncQuery = (
+  { url, method }: QueryTarget,
+  timeout = 120000
+) => {
+  const urlBase = url.indexOf('/api/1/') + '/api/1/'.length;
+  const baseIdentifier = url.substr(urlBase).replace('/', '_');
+  counter++;
+  const queryIdentifier = `q_${counter}_${baseIdentifier}`;
+  const taskIdentifier = `t_${counter}_${baseIdentifier}`;
 
-  cy.wait('@asyncQuery', { timeout })
+  cy.intercept({
+    url,
+    method
+  }).as(queryIdentifier);
+
+  cy.wait(`@${queryIdentifier}`, { timeout })
     .its('response.body')
     .then(body => {
       cy.intercept({
         method: 'GET',
         url: `/api/1/tasks/${body.result.task_id}`
-      }).as('task');
-      cy.wait('@task', { timeout })
+      }).as(taskIdentifier);
+      cy.wait(`@${taskIdentifier}`, { timeout })
         .its('response.statusCode')
         .should('equal', 200);
     });

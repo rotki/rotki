@@ -39,10 +39,13 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
     cy.get('.big-dialog__buttons__confirm').click();
 
     if (balance.blockchain === 'ETH') {
-      waitForAsyncQuery({
-        method: 'POST',
-        url: '/api/1/assets/prices/latest'
-      });
+      waitForAsyncQuery(
+        {
+          method: 'POST',
+          url: '/api/1/assets/prices/latest'
+        },
+        240000
+      );
     }
 
     cy.get('.big-dialog', { timeout: 120000 }).should('not.be.visible');
