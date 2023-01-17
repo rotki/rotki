@@ -7,7 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import SUSHISWAP_EVENTS_TYPES, EventType
 from rotkehlchen.chain.ethereum.modules.sushiswap import (
     SUSHISWAP_EVENTS_PREFIX,
     SushiswapPoolEvent,
@@ -213,7 +213,7 @@ def test_get_events_history_filtering_by_timestamp(
 
     with rotki.data.db.conn.read_ctx() as cursor:
         # Make sure they end up in the DB
-        events = rotki.data.db.get_amm_events(cursor, [EventType.MINT_SUSHISWAP, EventType.BURN_SUSHISWAP])  # noqa: E501
+        events = rotki.data.db.get_amm_events(cursor, SUSHISWAP_EVENTS_TYPES)
         assert len(events) != 0
         # test sushiswap data purging from the db works
         response = requests.delete(api_url_for(
@@ -222,5 +222,5 @@ def test_get_events_history_filtering_by_timestamp(
             module_name='sushiswap',
         ))
         assert_simple_ok_response(response)
-        events = rotki.data.db.get_amm_events(cursor, [EventType.MINT_SUSHISWAP, EventType.BURN_SUSHISWAP])  # noqa: E501
+        events = rotki.data.db.get_amm_events(cursor, SUSHISWAP_EVENTS_TYPES)
         assert len(events) == 0

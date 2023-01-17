@@ -7,12 +7,12 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.interfaces.ammswap.ammswap import AMMSwapPlatform
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
+    UNISWAP_EVENTS_TYPES,
     AddressEvents,
     AddressEventsBalances,
     AddressToLPBalances,
     AssetToPrice,
     DDAddressEvents,
-    EventType,
     LiquidityPoolAsset,
     ProtocolBalance,
 )
@@ -170,7 +170,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
         if new_addresses:
             start_ts = Timestamp(0)
             for address in new_addresses:
-                for event_type in EventType:
+                for event_type in UNISWAP_EVENTS_TYPES:
                     new_address_events = self._get_events_graph(
                         address=address,
                         start_ts=start_ts,
@@ -192,7 +192,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
         # Request existing DB addresses' events
         if existing_addresses and to_timestamp > min_end_ts:
             for address in existing_addresses:
-                for event_type in EventType:
+                for event_type in UNISWAP_EVENTS_TYPES:
                     address_new_events = self._get_events_graph(
                         address=address,
                         start_ts=min_end_ts,
@@ -223,7 +223,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             for address in addresses:
                 db_events = self.database.get_amm_events(
                     cursor=cursor,
-                    events=[EventType.MINT_UNISWAP, EventType.BURN_UNISWAP],
+                    events=UNISWAP_EVENTS_TYPES,
                     from_ts=from_timestamp,
                     to_ts=to_timestamp,
                     address=address,

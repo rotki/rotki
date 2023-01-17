@@ -8,7 +8,7 @@ import requests
 from flaky import flaky
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import UNISWAP_EVENTS_TYPES, EventType
 from rotkehlchen.chain.ethereum.modules.uniswap import (
     UNISWAP_EVENTS_PREFIX,
     UniswapPoolEvent,
@@ -355,7 +355,7 @@ def test_get_events_history_filtering_by_timestamp_case1(
 
     with rotki.data.db.conn.read_ctx() as cursor:
         # Make sure they end up in the DB
-        events = rotki.data.db.get_amm_events(cursor, [EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])  # noqa: E501
+        events = rotki.data.db.get_amm_events(cursor, UNISWAP_EVENTS_TYPES)
         assert len(events) != 0
         # test uniswap data purging from the db works
         response = requests.delete(api_url_for(
@@ -364,7 +364,7 @@ def test_get_events_history_filtering_by_timestamp_case1(
             module_name='uniswap',
         ))
         assert_simple_ok_response(response)
-        events = rotki.data.db.get_amm_events(cursor, [EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])  # noqa: E501
+        events = rotki.data.db.get_amm_events(cursor, UNISWAP_EVENTS_TYPES)
         assert len(events) == 0
 
 
@@ -442,7 +442,7 @@ def test_get_events_history_filtering_by_timestamp_case2(
 
     with rotki.data.db.conn.read_ctx() as cursor:
         # Make sure they end up in the DB
-        events = rotki.data.db.get_amm_events(cursor, [EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])  # noqa: E501
+        events = rotki.data.db.get_amm_events(cursor, UNISWAP_EVENTS_TYPES)
         assert len(events) != 0
         # test all data purging from the db works and also deletes uniswap data
         response = requests.delete(api_url_for(
@@ -450,7 +450,7 @@ def test_get_events_history_filtering_by_timestamp_case2(
             'ethereummoduledataresource',
         ))
         assert_simple_ok_response(response)
-        events = rotki.data.db.get_amm_events(cursor, [EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])  # noqa: E501
+        events = rotki.data.db.get_amm_events(cursor, UNISWAP_EVENTS_TYPES)
         assert len(events) == 0
 
 

@@ -124,6 +124,10 @@ class EventType(Enum):
         raise RuntimeError(f'Corrupt value {self} for EventType -- Should never happen')
 
 
+UNISWAP_EVENTS_TYPES = (EventType.MINT_UNISWAP, EventType.BURN_UNISWAP)
+SUSHISWAP_EVENTS_TYPES = (EventType.MINT_SUSHISWAP, EventType.BURN_SUSHISWAP)
+
+
 LiquidityPoolEventDBTuple = (
     tuple[
         bytes,  # tx_hash
