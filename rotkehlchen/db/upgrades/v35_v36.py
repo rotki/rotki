@@ -1,8 +1,8 @@
 import json
 import logging
 from typing import TYPE_CHECKING
-from rotkehlchen.accounting.structures.base import LIQUITY_STAKING_DETAILS
 
+from rotkehlchen.accounting.structures.base import LIQUITY_STAKING_DETAILS
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.db.settings import DEFAULT_ACTIVE_MODULES
@@ -575,6 +575,16 @@ def _upgrade_liquity_staking_events(write_cursor: 'DBCursor', conn: 'DBConnectio
     log.debug('Exit _upgrade_liquity_staking_events')
 
 
+def _remove_old_tables(write_cursor: 'DBCursor') -> None:
+    """In 1.27.0 we added a check for old tables in the DB.
+
+    This found that many old DBs still have an eth_tokens table which was left there
+    and was not removed in some old upgrade. Time to clean up."""
+    log.debug('Enter _remove_old_tables')
+    write_cursor.execute('DROP TABLE IF EXISTS eth_tokens')
+    log.debug('Exit _remove_old_tables')
+
+
 def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v35 to v36
 
@@ -588,7 +598,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - rename web3_nodes to rpc_nodes
     """
     log.debug('Entered userdb v35->v36 upgrade')
-    progress_handler.set_total_steps(11)
+    progress_handler.set_total_steps(12)
     with db.user_write() as write_cursor:
         _remove_adex(write_cursor)
         progress_handler.new_step()
@@ -611,6 +621,8 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _add_okx(write_cursor)
         progress_handler.new_step()
         _upgrade_liquity_staking_events(write_cursor, db.conn)
+        progress_handler.new_step()
+        _remove_old_tables(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finished userdb v35->v36 upgrade')
