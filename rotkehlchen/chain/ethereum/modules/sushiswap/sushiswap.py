@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING, Optional
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.interfaces.ammswap.ammswap import AMMSwapPlatform
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
+    SUSHISWAP_EVENTS_TYPES,
     AddressEvents,
     AddressEventsBalances,
     AddressToLPBalances,
     AssetToPrice,
     DDAddressEvents,
-    EventType,
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
@@ -101,7 +101,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         if new_addresses:
             start_ts = Timestamp(0)
             for address in new_addresses:
-                for event_type in EventType:
+                for event_type in SUSHISWAP_EVENTS_TYPES:
                     new_address_events = self._get_events_graph(
                         address=address,
                         start_ts=start_ts,
@@ -123,7 +123,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         # Request existing DB addresses' events
         if existing_addresses and to_timestamp > min_end_ts:
             for address in existing_addresses:
-                for event_type in EventType:
+                for event_type in SUSHISWAP_EVENTS_TYPES:
                     address_new_events = self._get_events_graph(
                         address=address,
                         start_ts=min_end_ts,
@@ -154,7 +154,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
             for address in addresses:
                 db_events = self.database.get_amm_events(
                     cursor=cursor,
-                    events=[EventType.MINT_SUSHISWAP, EventType.BURN_SUSHISWAP],
+                    events=SUSHISWAP_EVENTS_TYPES,
                     from_ts=from_timestamp,
                     to_ts=to_timestamp,
                     address=address,

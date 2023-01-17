@@ -7,7 +7,7 @@ import tempfile
 from collections import defaultdict
 from contextlib import contextmanager, suppress
 from pathlib import Path
-from typing import Any, Iterator, Literal, Optional, Sequence, Union, cast, overload
+from typing import Any, Iterable, Iterator, Literal, Optional, Sequence, Union, cast, overload
 
 from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -922,7 +922,7 @@ class DBHandler:
     def get_amm_events(
             self,
             cursor: 'DBCursor',
-            events: list[EventType],
+            events: Iterable[EventType],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             address: Optional[ChecksumEvmAddress] = None,
