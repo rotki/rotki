@@ -1,30 +1,26 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
-import { type DIALOG_TYPES, TYPE_INFO, themes } from '@/types/dialogs';
+import { DialogType, themes } from '@/types/dialogs';
 
-const props = defineProps({
-  title: { required: true, type: String },
-  subtitle: { required: false, type: String, default: '' },
-  display: { required: true, type: Boolean },
-  loading: { required: false, type: Boolean, default: false },
-  actionDisabled: { required: false, type: Boolean, default: false },
-  primaryAction: {
-    required: false,
-    type: String,
-    default: null
-  },
-  secondaryAction: {
-    required: false,
-    type: String,
-    default: null
-  },
-  confirmType: {
-    required: false,
-    type: String as PropType<typeof DIALOG_TYPES[number]>,
-    default: TYPE_INFO
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    subtitle?: string;
+    display: boolean;
+    loading?: boolean;
+    actionDisabled?: boolean;
+    primaryAction?: string | null;
+    secondaryAction?: string | null;
+    confirmType?: DialogType;
+  }>(),
+  {
+    subtitle: '',
+    loading: false,
+    actionDisabled: false,
+    primaryAction: () => null,
+    secondaryAction: () => null,
+    confirmType: DialogType.INFO
   }
-});
-
+);
 const { tc } = useI18n();
 
 const { subtitle, primaryAction, secondaryAction } = toRefs(props);

@@ -1,31 +1,49 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
-import { themes } from '@/types/dialogs';
+import { DialogType, themes } from '@/types/dialogs';
 
-const props = defineProps({
-  title: { required: true, type: String },
-  message: { required: true, type: String },
-  display: { type: Boolean, required: true },
-  primaryAction: { type: String, required: false, default: 'Confirm' },
-  secondaryAction: { type: String, required: false, default: 'Cancel' },
-  confirmType: {
-    type: String as PropType<keyof typeof themes>,
-    required: false,
-    default: 'info'
-  },
-  disabled: { type: Boolean, required: false, default: false },
-  singleAction: { required: false, type: Boolean, default: false },
-  loading: { required: false, type: Boolean, default: false },
-  maxWidth: { required: false, type: String, default: '500' }
-});
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    message: string;
+    display: boolean;
+    primaryAction?: string | null;
+    secondaryAction?: string | null;
+    confirmType?: DialogType;
+    disabled?: boolean;
+    singleAction?: boolean;
+    loading?: boolean;
+    maxWidth?: string;
+  }>(),
+  {
+    primaryAction: null,
+    secondaryAction: null,
+    confirmType: DialogType.INFO,
+    disabled: false,
+    singleAction: false,
+    loading: false,
+    maxWidth: '500'
+  }
+);
 
-const emit = defineEmits(['confirm', 'cancel']);
+const emit = defineEmits<{
+  (e: 'confirm'): void;
+  (e: 'cancel'): void;
+}>();
 
-const { confirmType } = toRefs(props);
+const { confirmType, primaryAction, secondaryAction } = toRefs(props);
+
+const { tc } = useI18n();
+
 const color = computed(() => themes[get(confirmType)].color);
 const icon = computed(() => themes[get(confirmType)].icon);
-const confirm = () => emit('confirm');
-const cancel = () => emit('cancel');
+
+const primaryText = computed(() => {
+  return get(primaryAction) || tc('common.actions.confirm');
+});
+
+const secondaryText = computed(() => {
+  return get(secondaryAction) || tc('common.actions.cancel');
+});
 </script>
 
 <template>
@@ -36,7 +54,7 @@ const cancel = () => emit('cancel');
       persistent
       :max-width="maxWidth"
       class="confirm-dialog"
-      @keydown.esc.stop="cancel()"
+      @keydown.esc.stop="emit('cancel')"
     >
       <v-card data-cy="confirm-dialog">
         <v-card-title
@@ -67,9 +85,9 @@ const cancel = () => emit('cancel');
             outlined
             text
             data-cy="button-cancel"
-            @click="cancel()"
+            @click="emit('cancel')"
           >
-            {{ secondaryAction }}
+            {{ secondaryText }}
           </v-btn>
           <v-btn
             :color="color"
@@ -77,9 +95,9 @@ const cancel = () => emit('cancel');
             :disabled="disabled"
             data-cy="button-confirm"
             :loading="loading"
-            @click="confirm()"
+            @click="emit('confirm')"
           >
-            {{ primaryAction }}
+            {{ primaryText }}
           </v-btn>
         </v-card-actions>
       </v-card>
