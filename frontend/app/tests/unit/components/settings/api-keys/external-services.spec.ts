@@ -8,6 +8,7 @@ import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useSessionStore } from '@/store/session';
 import { type ExternalServiceKeys } from '@/types/user';
+import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import createCustomPinia from '../../../utils/create-pinia';
 
 vi.mock('@/services/settings/external-services-api', () => ({
@@ -37,7 +38,10 @@ describe('ExternalServices.vue', () => {
     return mount(ExternalServices, {
       pinia,
       vuetify,
-      stubs: ['v-dialog', 'card-title', 'card', 'i18n'],
+      components: {
+        EvmChainIcon
+      },
+      stubs: ['v-tooltip', 'v-dialog', 'card-title', 'card', 'i18n'],
       propsData: {
         value: ''
       }
@@ -68,11 +72,13 @@ describe('ExternalServices.vue', () => {
       const setService = api.setExternalServices as any;
       setService.mockResolvedValueOnce(mockResponse);
       await wrapper
-        .find('.external-services__etherscan-key input')
+        .find('.external-services__ethereum-etherscan-key input')
         .setValue('123');
       await wrapper.vm.$nextTick();
       await wrapper
-        .find('.external-services__etherscan-key .service-key__buttons__save')
+        .find(
+          '.external-services__ethereum-etherscan-key .service-key__buttons__save'
+        )
         .trigger('click');
       await flushPromises();
       expect(setService).toHaveBeenCalledWith([
@@ -104,11 +110,13 @@ describe('ExternalServices.vue', () => {
       const setService = api.setExternalServices as any;
       setService.mockRejectedValueOnce(new Error('mock failure'));
       await wrapper
-        .find('.external-services__etherscan-key input')
+        .find('.external-services__ethereum-etherscan-key input')
         .setValue('123');
       await wrapper.vm.$nextTick();
       await wrapper
-        .find('.external-services__etherscan-key .service-key__buttons__save')
+        .find(
+          '.external-services__ethereum-etherscan-key .service-key__buttons__save'
+        )
         .trigger('click');
       await flushPromises();
       const store = useMessageStore();
@@ -119,7 +127,7 @@ describe('ExternalServices.vue', () => {
       expect(
         wrapper
           .find(
-            '.external-services__etherscan-key .service-key__content__delete'
+            '.external-services__ethereum-etherscan-key .service-key__content__delete'
           )
           .attributes('disabled')
       ).toBe('disabled');
@@ -135,7 +143,9 @@ describe('ExternalServices.vue', () => {
     test('save is disabled', async () => {
       expect(
         wrapper
-          .find('.external-services__etherscan-key .service-key__buttons__save')
+          .find(
+            '.external-services__ethereum-etherscan-key .service-key__buttons__save'
+          )
           .attributes('disabled')
       ).toBe('disabled');
     });
@@ -151,7 +161,9 @@ describe('ExternalServices.vue', () => {
     });
 
     test('the fields get updated', async () => {
-      const etherscanKey = wrapper.find('.external-services__etherscan-key');
+      const etherscanKey = wrapper.find(
+        '.external-services__ethereum-etherscan-key'
+      );
       const cryptoCompare = wrapper.find(
         '.external-services__cryptocompare-key'
       );
@@ -165,7 +177,9 @@ describe('ExternalServices.vue', () => {
       const deleteService = api.deleteExternalServices as any;
       deleteService.mockResolvedValueOnce({});
       await wrapper
-        .find('.external-services__etherscan-key .service-key__content__delete')
+        .find(
+          '.external-services__ethereum-etherscan-key .service-key__content__delete'
+        )
         .trigger('click');
       await wrapper.vm.$nextTick();
 

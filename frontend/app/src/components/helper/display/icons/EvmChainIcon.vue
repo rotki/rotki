@@ -8,7 +8,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  size: '24px'
+  size: '24px',
+  tooltip: false
 });
 
 const { chain } = toRefs(props);

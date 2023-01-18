@@ -2,17 +2,30 @@
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { trimOnPaste } from '@/utils/event';
 
-const props = defineProps({
-  value: { required: true, type: String },
-  title: { required: true, type: String },
-  description: { required: false, type: String, default: '' },
-  loading: { required: false, type: Boolean, default: false },
-  tooltip: { required: false, type: String, default: '' },
-  hint: { required: false, type: String, default: '' },
-  label: { required: false, type: String, default: '' }
-});
+const props = withDefaults(
+  defineProps<{
+    value: string;
+    title?: string;
+    description?: string;
+    loading?: boolean;
+    tooltip?: string;
+    hint?: string;
+    label?: string;
+  }>(),
+  {
+    title: '',
+    description: '',
+    loading: false,
+    tooltip: '',
+    hint: '',
+    label: ''
+  }
+);
 
-const emit = defineEmits(['input', 'delete-key', 'save']);
+const emit = defineEmits<{
+  (e: 'delete-key'): void;
+  (e: 'save', value: string): void;
+}>();
 
 const { t } = useI18n();
 const { value } = toRefs(props);
@@ -68,10 +81,10 @@ watch(value, () => {
 
 <template>
   <v-card flat>
-    <v-card-title>
+    <v-card-title v-if="title">
       {{ title }}
     </v-card-title>
-    <v-card-subtitle>
+    <v-card-subtitle v-if="description">
       {{ description }}
     </v-card-subtitle>
     <v-card-text class="service-key__content">

@@ -48,8 +48,8 @@ const rpcSettingTabs: RpcSettingTab[] = [
         </v-tab>
       </v-tabs>
       <v-divider />
-      <v-tabs-items v-model="rpcSettingTab" class="pt-8">
-        <v-tab-item v-for="tab in rpcSettingTabs" :key="tab.chain">
+      <v-tabs-items v-model="rpcSettingTab">
+        <v-tab-item v-for="tab in rpcSettingTabs" :key="tab.chain" class="pt-8">
           <component :is="tab.component" />
         </v-tab-item>
       </v-tabs-items>

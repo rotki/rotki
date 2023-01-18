@@ -1922,9 +1922,9 @@
       "title": "Error"
     },
     "etherscan": {
-      "delete_tooltip": "Deletes the Etherscan API key",
-      "description": "Recommended for any Ethereum blockchain balances or transactions if you are not using your own node.",
-      "hint": "Enter your Etherscan API key",
+      "delete_tooltip": "Deletes the {chain} Etherscan API key",
+      "description": "Recommended for any EVM blockchain balances or transactions if you are not using your own node.",
+      "hint": "Enter your {chain} Etherscan API key",
       "label": "API key",
       "title": "Etherscan"
     },
@@ -1945,13 +1945,6 @@
       "label": "API Key",
       "link": "You can apply for an API key {link}",
       "title": "Opensea"
-    },
-    "optimism_etherscan": {
-      "delete_tooltip": "Deletes the Optimism Etherscan API key",
-      "description": "Recommended for any Optimism blockchain balances or transactions if you are not using your own node.",
-      "hint": "Enter your Optimism Etherscan API key",
-      "label": "API key",
-      "title": "Optimism Etherscan"
     },
     "set": {
       "error": {

@@ -1888,7 +1888,7 @@
     },
     "etherscan": {
       "delete_tooltip": "Deletes the Etherscan API key",
-      "description": "Recommended for any Ethereum blockchain balances or transactions if you are not using your own node.",
+      "description": "Recommended for any EVM blockchain balances or transactions if you are not using your own node.",
       "hint": "Enter your Etherscan API key",
       "label": "API key",
       "title": "Etherscan"
