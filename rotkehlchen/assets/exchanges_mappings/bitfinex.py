@@ -75,7 +75,6 @@ WORLD_TO_BITFINEX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x6F87D756DAf0503d08Eb8993686c7Fc01Dc44fB1', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TRADE',  # noqa: E501
     evm_address_to_identifier('0x2a3bFF78B79A009976EeA096a51A948a3dC00e34', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WILD',  # noqa: E501
     evm_address_to_identifier('0x607F4C5BB672230e8672085532f7e901544a7375', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RLC',  # noqa: E501
-    evm_address_to_identifier('0xdd974D5C2e2928deA5F71b9825b8b646686BD200', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'KNC',  # noqa: E501
     evm_address_to_identifier('0x7659CE147D0e714454073a5dd7003544234b6Aa0', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'XCAD',  # noqa: E501
     'ONE-2': 'ONE',
 }

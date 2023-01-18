@@ -772,7 +772,7 @@ UNSUPPORTED_GEMINI_ASSETS = (
     'SPEL',  # Spell moon (SPEL). No information about this token
 )
 
-UNSUPPORTED_OKEX_ASSETS = {
+UNSUPPORTED_OKX_ASSETS = {
     'CORE',  # CORE(CORE) but APIs list cvault
     'GALFT',  # not in cc or coingecko
     'SOLO',  # no information about this listing
@@ -1130,7 +1130,7 @@ def asset_from_okx(okx_name: str) -> AssetWithOracles:
     if not isinstance(okx_name, str):
         raise DeserializationError(f'Got non-string type {type(okx_name)} for okx asset')
 
-    if okx_name in UNSUPPORTED_OKEX_ASSETS:
+    if okx_name in UNSUPPORTED_OKX_ASSETS:
         raise UnsupportedAsset(okx_name)
 
     name = OKX_TO_WORLD.get(okx_name, okx_name)
