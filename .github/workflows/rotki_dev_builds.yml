@@ -288,7 +288,7 @@ jobs:
         run: |
           ROTKI_VERSION=$(cat .bumpversion.cfg | grep 'current_version = ' | sed -n -e 's/current_version = //p')
           POSTFIX=$(if git describe --tags --exact-match "$REVISION" &>/dev/null; then echo ''; else echo '-dev'; fi)
-          ROTKI_VERSION=${ROTKI_VERSION}${POSTFIX}-$(date +'%Y.%m.%d')
+          ROTKI_VERSION=${ROTKI_VERSION}${POSTFIX}$(date +'%Y%m%d')
           echo "version=${ROTKI_VERSION}" >> $GITHUB_OUTPUT
       - name: Build Information
         id: build_information
