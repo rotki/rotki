@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -51,5 +52,12 @@ def data_migration_8(rotki: 'Rotkehlchen') -> None:
                         address=account,
                     )],  # not duplicating label and tags as it's chain specific
                 )
+
+        # notify frontend of which accounts were migrated, so they can order token detection
+        if len(to_add_accounts) != 0:
+            rotki.msg_aggregator.add_message(
+                message_type=WSMessageType.EVM_ADDRESS_MIGRATION,
+                data=[{'evm_chain': x[0], 'address': x[1]} for x in to_add_accounts],
+            )
 
     log.debug('Exit data_migration_8')

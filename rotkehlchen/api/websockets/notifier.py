@@ -1,7 +1,7 @@
 import json
 import logging
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from gevent.lock import Semaphore
 from geventwebsocket import WebSocketApplication
@@ -67,7 +67,7 @@ class RotkiNotifier():
     def broadcast(
             self,
             message_type: 'WSMessageType',
-            to_send_data: dict[str, Any],
+            to_send_data: Union[dict[str, Any], list[Any]],
             success_callback: Optional[Callable] = None,
             success_callback_args: Optional[dict[str, Any]] = None,
             failure_callback: Optional[Callable] = None,
