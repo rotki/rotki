@@ -1,7 +1,7 @@
 import json
 import logging
 from collections import deque
-from typing import TYPE_CHECKING, Any, Deque, Optional
+from typing import TYPE_CHECKING, Any, Deque, Optional, Union
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -71,7 +71,7 @@ class MessagesAggregator():
     def add_message(
             self,
             message_type: WSMessageType,
-            data: dict[str, Any],
+            data: Union[dict[str, Any], list[Any]],
     ) -> None:
         fallback_msg = json.dumps({'type': str(message_type), 'data': data})  # noqa: E501  # kind of silly to repeat it here. Same code in broadcast
 

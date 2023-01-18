@@ -92,3 +92,22 @@ The messages sent by rotki when a user is logging in and a db upgrade is happeni
 - ``start_db_version``: DB version that user's database had before any upgrades began. This is the version of the DB when rotki first starts.
 - ``current_upgrade``: Structure that holds information about currently running upgrade. Contains: `from_db_version` - version of the database that currently running upgrade is being applied to; `total_steps` - total number of steps that currently running upgrade consists of; `current_step` - step that the upgrade is at as of this websocket message. 
 - ``target_db_version``: The target version of the DB. When this is reached, the upgrade process will have finished.
+
+
+EVM Addresses Migrations
+============================
+
+At the user DB migrations when a new evm chain is introduced rotki will do a migration that will add any addresses used in mainnet to the new evm chain. At the same time it needs to notify the frontend that new evm chain/ evm address combination was added at migration so the frontend can do extra actions such as detecting tokens. The message is simple and just contains the list of migrated addresses if any.
+
+::
+
+    {
+        "type": "evm_address_migration",
+        "data": [{
+	    "evm_chain": "optimism",
+	    "address": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12"
+	}, {
+	    "evm_chain": "optimism",
+	    "address": "0xFeebabE6b0418eC13b30aAdF129F5DcDd4f70CeA"
+	}]
+    }
