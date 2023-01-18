@@ -390,7 +390,11 @@ def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
     - Try to create a collection with missing fields
     - Try to add an Unknown asset
     - Try to add to a collection that doesn't exists
+    - Add an asset that was newly introduced to a collection
     """
+    update_text_assets = """INSERT INTO assets(identifier, name, type) VALUES("MYBONK", "Bonk", "Y"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("MYBONK", "BONK", "bonk", "BONK", NULL, 1672279200, NULL);
+    *
+    """  # noqa: E501
     update_text_collection = """INSERT INTO asset_collections(id, name) VALUES (99999999, "My custom ETH")
     *
     """  # noqa: E501
@@ -398,11 +402,20 @@ def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
     *
     INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84");
     *
+    INSERT INTO multiasset_mappings(collection_id, asset) VALUES (1, "MYBONK");
+    *
     """  # noqa: E501
 
     # consume warnings to remove any warning that might have been kept in the object
     assets_updater.msg_aggregator.consume_warnings()
     connection = GlobalDBHandler().conn
+    assets_updater._apply_single_version_update(
+        connection=connection,
+        version=999,  # doesn't matter
+        text=update_text_assets,
+        assets_conflicts={},
+        update_file_type=UpdateFileType.ASSETS,
+    )
     assets_updater._apply_single_version_update(
         connection=connection,
         version=999,  # doesn't matter
@@ -424,6 +437,6 @@ def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
     warnings = assets_updater.msg_aggregator.consume_warnings()
     assert warnings == [
         'Skipping entry during assets collection update to v999 due to a deserialization error. At asset DB update could not parse asset collection data out of INSERT INTO asset_collections(id, name) VALUES (99999999, "My custom ETH")',  # noqa: E501
-        'Tried to add unknown asset ETH99999 to collection of assets. Unknown asset ETH99999 provided.. Skipping',  # noqa: E501
+        'Tried to add unknown asset ETH99999 to collection of assets. Skipping',
         'Skipping entry during assets collection multimapping update to v999 due to a deserialization error. Tried to add asset to collection with id 99999999 but it does not exist',  # noqa: E501
     ]

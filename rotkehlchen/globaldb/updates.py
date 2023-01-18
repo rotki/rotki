@@ -38,6 +38,7 @@ ASSET_COLLECTIONS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/
 ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_mappings_updates.sql'  # noqa: E501
 FIRST_VERSION_WITH_COLLECTIONS = 16
 
+
 class UpdateFileType(Enum):
     ASSETS = auto()
     ASSET_COLLECTIONS = auto()
@@ -402,8 +403,11 @@ class AssetsUpdater():
             )
 
         # check that the asset exists and so does the collection
-        Asset(groups[1]).check_existence()
         with connection.read_ctx() as cursor:
+            cursor.execute('SELECT COUNT(*) FROM assets where identifier=?', (groups[1],))
+            if cursor.fetchone()[0] == 0:
+                raise UnknownAsset(groups[1])
+
             cursor.execute(
                 'SELECT COUNT(*) FROM asset_collections WHERE id=?',
                 (self._parse_value(groups[0]),),
@@ -560,7 +564,7 @@ class AssetsUpdater():
                     )
                 except UnknownAsset as e:
                     self.msg_aggregator.add_warning(
-                        f'Tried to add unknown asset {e.identifier} to collection of assets. {str(e)}. Skipping',  # noqa: E501
+                        f'Tried to add unknown asset {e.identifier} to collection of assets. Skipping',  # noqa: E501
                     )
             else:
                 log.error(f'Could not process entry {full_insert} during asset update to version {version}')  # noqa: E501
