@@ -311,7 +311,7 @@ class Premium():
         there is an error returned by the server
         - Raises PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
-        signature, data = self.sign('statistics_rendererv2', version=4)
+        signature, data = self.sign('statistics_rendererv2', version=5)
         self.session.headers.update({
             'API-SIGN': base64.b64encode(signature.digest()),
         })
