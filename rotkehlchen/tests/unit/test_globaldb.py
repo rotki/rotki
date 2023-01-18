@@ -1063,10 +1063,10 @@ def test_edit_token_with_missing_information(database):
     Test that editing a token that already exists with missing information doesn't
     raise any error and the information is updated
     """
-    token_address = string_to_evm_address('0xf53AD2c6851052A81B42133467480961B2321C09')
+    token_address = make_evm_address()
     peth = get_or_create_evm_token(
         userdb=database,
-        symbol='PETH',
+        symbol='IDONTEXIST',
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         evm_address=token_address,
@@ -1077,14 +1077,14 @@ def test_edit_token_with_missing_information(database):
     # Querying adding missing key information should update the asset
     peth = get_or_create_evm_token(
         userdb=database,
-        symbol='PETH',
-        name='Pooled Ether',
+        symbol='IDONTEXIST',
+        name='IDONTEXIST NAME',
         decimals=18,
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         evm_address=token_address,
     )
-    assert peth.name == 'Pooled Ether'
+    assert peth.name == 'IDONTEXIST NAME'
     assert peth.decimals == 18
 
 

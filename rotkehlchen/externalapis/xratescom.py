@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup, SoupStrainer
 
 from rotkehlchen.assets.asset import FiatAsset
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
@@ -62,7 +62,7 @@ def _scrape_xratescom_exchange_rates(url: str) -> dict[FiatAsset, Price]:
 
         try:
             to_asset = FiatAsset(parts[1])
-        except UnknownAsset:
+        except (UnknownAsset, WrongAssetType):
             log.debug(f'Skipping {parts[1]} asset because its not a known fiat asset while parsing x-rates.com page')  # noqa: E501
             tr = tr.find_next_sibling()
             continue

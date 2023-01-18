@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import YEARN_VAULTS_V1_PROTOCOL
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
@@ -360,6 +361,11 @@ def _upgrade_address_book_table(cursor: 'DBCursor') -> None:
     cursor.execute('ALTER TABLE address_book_new RENAME TO address_book;')
 
 
+def _update_yearn_v1_protocol(cursor: 'DBCursor') -> None:
+    """Update the protocol name for yearn assets"""
+    cursor.execute('UPDATE evm_tokens SET protocol=? WHERE protocol="yearn-v1"', (YEARN_VAULTS_V1_PROTOCOL,))  # noqa: E501
+
+
 def migrate_to_v4(connection: 'DBConnection') -> None:
     """Upgrades globalDB to v4 by creating and populating the contract data + abi tables.
 
@@ -380,5 +386,6 @@ def migrate_to_v4(connection: 'DBConnection') -> None:
         _populate_asset_collections(cursor, root_dir)
         _populate_multiasset_mappings(cursor, root_dir)
         _upgrade_address_book_table(cursor)
+        _update_yearn_v1_protocol(cursor)
 
     log.debug('Finished globaldb v3->v4 upgrade')

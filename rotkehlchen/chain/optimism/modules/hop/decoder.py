@@ -2,15 +2,14 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.constants.assets import A_ETH, A_HETH_OPT, A_WETH_OPT
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -32,24 +31,8 @@ class HopDecoder(DecoderInterface):
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         self.base_tools = base_tools
-        self.weth = get_or_create_evm_token(
-            userdb=base_tools.database,
-            symbol='WETH',
-            name='Wrapped Ether',
-            decimals=18,
-            chain_id=ChainID.OPTIMISM,
-            token_kind=EvmTokenKind.ERC20,
-            evm_address=string_to_evm_address('0x4200000000000000000000000000000000000006'),
-        )
-        self.heth = get_or_create_evm_token(
-            userdb=self.base_tools.database,
-            symbol='hETH',
-            name='ETH Hop Token',
-            decimals=18,
-            chain_id=ChainID.OPTIMISM,
-            token_kind=EvmTokenKind.ERC20,
-            evm_address=string_to_evm_address('0xE38faf9040c7F09958c638bBDB977083722c5156'),
-        )
+        self.weth = A_WETH_OPT.resolve_to_evm_token()
+        self.heth = A_HETH_OPT.resolve_to_evm_token()
 
     def _decode_receive_eth(  # pylint: disable=no-self-use
             self,
