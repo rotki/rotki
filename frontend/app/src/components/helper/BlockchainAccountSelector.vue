@@ -39,22 +39,26 @@ const emit = defineEmits<{
   (e: 'input', value: GeneralAccount[]): void;
 }>();
 
-const { chains, value, usableAddresses, hideOnEmptyUsable } = toRefs(props);
+const { chains, value, usableAddresses, hideOnEmptyUsable, multiple } =
+  toRefs(props);
 
 const search = ref('');
 const { t } = useI18n();
 
 const { accounts } = storeToRefs(useAccountBalancesStore());
 
-const mappedValue = computed(() => {
+const internalValue = computed(() => {
   const accounts = get(value);
+  if (get(multiple)) {
+    return accounts;
+  }
+
   if (!accounts) {
     return null;
   }
   if (accounts.length === 1) {
     return accounts[0];
   }
-  return accounts;
 });
 
 const selectableAccounts: ComputedRef<GeneralAccount[]> = computed(() => {
@@ -124,7 +128,7 @@ const getItemKey = (item: GeneralAccount) => item.address + item.chain;
   <v-card v-bind="$attrs">
     <div :class="noPadding ? null : 'mx-4 pt-2'">
       <v-autocomplete
-        :value="mappedValue"
+        :value="internalValue"
         :items="displayedAccounts"
         :filter="filter"
         auto-select-first
