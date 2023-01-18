@@ -67,7 +67,10 @@ const save = async () => {
     logger.error(e);
     let message = e.message;
     if (e instanceof ApiValidationError) {
-      const errors = e.getValidationErrors({ xpub: '', derivationPath: '' });
+      const errors = e.getValidationErrors({
+        xpub: '',
+        derivationPath: ''
+      });
       if (typeof errors === 'string') {
         message = errors;
       } else {

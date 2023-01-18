@@ -13,7 +13,6 @@ import FloatingPrecisionSetting from '@/components/settings/general/FloatingPrec
 import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
 import MainCurrencySetting from '@/components/settings/general/MainCurrencySetting.vue';
 import NumericSeparatorsSettings from '@/components/settings/general/NumericSeparatorsSettings.vue';
-import EthereumRpcNodeManager from '@/components/settings/general/rpc/EthereumRpcNodeManager.vue';
 import RpcSettings from '@/components/settings/general/rpc/RpcSettings.vue';
 import TreatEthAsEth2Setting from '@/components/settings/general/TreatEthAsEth2Setting.vue';
 import UsageAnalyticsSetting from '@/components/settings/general/UsageAnalyticsSetting.vue';
@@ -64,7 +63,6 @@ const { t } = useI18n();
 
       <rounding-settings />
     </setting-category>
-    <ethereum-rpc-node-manager />
     <rpc-settings />
     <price-oracle-settings />
     <frontend-settings />

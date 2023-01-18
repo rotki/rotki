@@ -1,30 +1,30 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { between, required, requiredIf } from '@vuelidate/validators';
-import { type PropType } from 'vue';
-import { type EthereumRpcNode, getPlaceholderNode } from '@/types/settings';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { type EvmRpcNode, getPlaceholderNode } from '@/types/settings';
 
 const { t, tc } = useI18n();
 
-const props = defineProps({
-  value: {
-    required: true,
-    type: Object as PropType<EthereumRpcNode>
-  },
-  isEtherscan: {
-    required: true,
-    type: Boolean
-  },
-  errorMessages: {
-    required: false,
-    type: Object as PropType<Record<string, string | string[]>>,
-    default: null
+const props = withDefaults(
+  defineProps<{
+    value: EvmRpcNode;
+    chain: Blockchain;
+    isEtherscan: boolean;
+    errorMessages?: Record<string, string | string[]>;
+  }>(),
+  {
+    errorMessages: () => ({})
   }
-});
+);
 
-const emit = defineEmits(['input', 'update:valid']);
-const { value, errorMessages } = toRefs(props);
-const state = reactive<EthereumRpcNode>(getPlaceholderNode());
+const emit = defineEmits<{
+  (e: 'input', value: EvmRpcNode): void;
+  (e: 'update:valid', valid: boolean): void;
+}>();
+
+const { chain, value, errorMessages } = toRefs(props);
+const state = reactive<EvmRpcNode>(getPlaceholderNode(get(chain)));
 const rules = {
   name: { required },
   endpoint: { required: requiredIf(() => state.name !== 'etherscan') },
@@ -33,7 +33,7 @@ const rules = {
 
 const v$ = useVuelidate(rules, state, { $externalResults: errorMessages });
 
-const updateState = (selectedNode: EthereumRpcNode): void => {
+const updateState = (selectedNode: EvmRpcNode): void => {
   state.identifier = selectedNode.identifier;
   state.name = selectedNode.name;
   state.endpoint = selectedNode.endpoint;

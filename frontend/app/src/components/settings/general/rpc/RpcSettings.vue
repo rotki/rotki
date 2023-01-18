@@ -1,85 +1,58 @@
 <script setup lang="ts">
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { Defaults } from '@/data/defaults';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-
-const ksmRpcEndpoint = ref(Defaults.KSM_RPC_ENDPOINT);
-const dotRpcEndpoint = ref(Defaults.DOT_RPC_ENDPOINT);
-const { ksmRpcEndpoint: ksmRpc, dotRpcEndpoint: dotRpc } = storeToRefs(
-  useGeneralSettingsStore()
-);
+import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type Component, type Ref } from 'vue';
+import EthRpcSetting from '@/components/settings/general/rpc/EthRpcSetting.vue';
+import OptimismRpcSetting from '@/components/settings/general/rpc/OptimismRpcSetting.vue';
+import KsmRpcSetting from '@/components/settings/general/rpc/KsmRpcSetting.vue';
+import DotRpcSetting from '@/components/settings/general/rpc/DotRpcSetting.vue';
 
 const { tc } = useI18n();
 
-const ksmSuccessMessage = (endpoint: string) => {
-  if (endpoint) {
-    return tc('general_settings.validation.ksm_rpc.success_set', 0, {
-      endpoint
-    });
-  }
-  return tc('general_settings.validation.ksm_rpc.success_unset');
-};
+interface RpcSettingTab {
+  chain: Blockchain;
+  component: Component;
+}
 
-const dotSuccessMessage = (endpoint: string) => {
-  if (endpoint) {
-    return tc('general_settings.validation.dot_rpc.success_set', 0, {
-      endpoint
-    });
-  }
-  return tc('general_settings.validation.dot_rpc.success_unset');
-};
+const rpcSettingTab: Ref<number> = ref(0);
 
-onMounted(() => {
-  set(ksmRpcEndpoint, get(ksmRpc) || Defaults.KSM_RPC_ENDPOINT);
-  set(dotRpcEndpoint, get(dotRpc) || Defaults.DOT_RPC_ENDPOINT);
-});
+const rpcSettingTabs: RpcSettingTab[] = [
+  {
+    chain: Blockchain.ETH,
+    component: EthRpcSetting
+  },
+  {
+    chain: Blockchain.OPTIMISM,
+    component: OptimismRpcSetting
+  },
+  {
+    chain: Blockchain.KSM,
+    component: KsmRpcSetting
+  },
+  {
+    chain: Blockchain.DOT,
+    component: DotRpcSetting
+  }
+];
 </script>
 
 <template>
   <card class="mt-8">
     <template #title>
-      {{ tc('general_settings.local_nodes.title') }}
+      {{ tc('general_settings.rpc_node_setting.title') }}
     </template>
 
-    <settings-option
-      #default="{ error, success, update }"
-      setting="ksmRpcEndpoint"
-      :error-message="tc('general_settings.validation.ksm_rpc.error')"
-      :success-message="ksmSuccessMessage"
-    >
-      <v-text-field
-        v-model="ksmRpcEndpoint"
-        outlined
-        class="general-settings__fields__ksm-rpc-endpoint"
-        :label="tc('general_settings.labels.ksm_rpc_endpoint')"
-        type="text"
-        :success-messages="success"
-        :error-messages="error"
-        clearable
-        @paste="update($event.clipboardData.getData('text'))"
-        @click:clear="update('')"
-        @change="update($event)"
-      />
-    </settings-option>
-    <settings-option
-      #default="{ error, success, update }"
-      setting="dotRpcEndpoint"
-      :error-message="tc('general_settings.validation.dot_rpc.error')"
-      :success-message="dotSuccessMessage"
-    >
-      <v-text-field
-        v-model="dotRpcEndpoint"
-        outlined
-        class="general-settings__fields__dot-rpc-endpoint"
-        :label="tc('general_settings.labels.dot_rpc_endpoint')"
-        type="text"
-        :success-messages="success"
-        :error-messages="error"
-        clearable
-        @paste="update($event.clipboardData.getData('text'))"
-        @click:clear="update('')"
-        @change="update($event)"
-      />
-    </settings-option>
+    <div>
+      <v-tabs v-model="rpcSettingTab">
+        <v-tab v-for="tab in rpcSettingTabs" :key="tab.chain">
+          <chain-display :chain="tab.chain" dense />
+        </v-tab>
+      </v-tabs>
+      <v-divider />
+      <v-tabs-items v-model="rpcSettingTab" class="pt-8">
+        <v-tab-item v-for="tab in rpcSettingTabs" :key="tab.chain">
+          <component :is="tab.component" />
+        </v-tab-item>
+      </v-tabs-items>
+    </div>
   </card>
 </template>
