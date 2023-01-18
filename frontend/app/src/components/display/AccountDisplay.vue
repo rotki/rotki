@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type GeneralAccount } from '@rotki/common/lib/account';
+import { type Account } from '@rotki/common/lib/account';
 import { truncateAddress } from '@/filters';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -11,7 +11,7 @@ const AssetIcon = defineAsyncComponent(
 
 const props = withDefaults(
   defineProps<{
-    account: GeneralAccount;
+    account: Account;
     useAliasName?: boolean;
     truncate?: boolean;
   }>(),
@@ -96,17 +96,5 @@ const { getBlockie } = useBlockie();
 <style scoped lang="scss">
 .blur-content {
   filter: blur(0.75em);
-}
-
-.account-display {
-  &__label {
-    > span {
-      display: inline-block;
-      text-overflow: clip;
-      padding-top: 6px;
-      line-height: 20px;
-      max-width: 180px;
-    }
-  }
 }
 </style>

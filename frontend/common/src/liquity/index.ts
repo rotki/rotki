@@ -16,25 +16,6 @@ export const LiquityBalances = z.record(LiquityBalance);
 
 export type LiquityBalances = z.infer<typeof LiquityBalances>;
 
-const TroveEvent = z.object({
-  kind: z.literal('trove'),
-  sequenceNumber: z.string(),
-  tx: z.string(),
-  address: z.string(),
-  timestamp: z.number(),
-  debtAfter: AssetBalance,
-  debtDelta: AssetBalance,
-  collateralAfter: AssetBalance,
-  collateralDelta: AssetBalance,
-  troveOperation: z.string()
-});
-
-export type TroveEvent = z.infer<typeof TroveEvent>;
-
-export const TroveEvents = z.record(z.array(TroveEvent));
-
-export type TroveEvents = z.infer<typeof TroveEvents>;
-
 export const LiquityStakingDetail = z.object({
   ethRewards: AssetBalance,
   lusdRewards: AssetBalance,

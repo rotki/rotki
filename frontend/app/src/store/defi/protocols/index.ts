@@ -342,28 +342,22 @@ export const useDefiSupportedProtocolsStore = defineStore(
         }
 
         if (showAll || protocols.includes(DefiProtocol.LIQUITY)) {
-          const { events, balances } = useLiquityStore();
+          const { balances } = useLiquityStore();
           const balanceAddress = Object.keys(balances);
-          const eventAddresses = Object.keys(events);
 
           loans.push(
-            ...[...balanceAddress, ...eventAddresses]
-              .filter(uniqueStrings)
-              .map(address => {
-                let troveId = 0;
-                if (balances[address]) {
-                  troveId = balances[address].troveId;
-                }
-                return {
-                  identifier: `Trove ${troveId} - ${truncateAddress(
-                    address,
-                    6
-                  )}`,
-                  protocol: DefiProtocol.LIQUITY,
-                  owner: address,
-                  asset: ''
-                };
-              })
+            ...balanceAddress.filter(uniqueStrings).map(address => {
+              let troveId = 0;
+              if (balances[address]) {
+                troveId = balances[address].troveId;
+              }
+              return {
+                identifier: `Trove ${troveId} - ${truncateAddress(address, 6)}`,
+                protocol: DefiProtocol.LIQUITY,
+                owner: address,
+                asset: ''
+              };
+            })
           );
         }
 
@@ -551,13 +545,12 @@ export const useDefiSupportedProtocolsStore = defineStore(
         if (loan.protocol === DefiProtocol.LIQUITY) {
           assert(loan.owner);
           const { owner } = loan;
-          const { balances, events } = useLiquityStore();
+          const { balances } = useLiquityStore();
 
           return {
             owner,
             protocol: loan.protocol,
-            balance: balances[owner],
-            events: events[owner] ?? []
+            balance: balances[owner]
           } satisfies LiquityLoan;
         }
 
@@ -821,8 +814,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
       await Promise.all([
         makerDaoStore.fetchMakerDAOVaultDetails(refresh),
         compoundStore.fetchHistory(refresh),
-        aaveStore.fetchHistory({ refresh }),
-        liquityStore.fetchEvents(refresh)
+        aaveStore.fetchHistory({ refresh })
       ]);
 
       setStatus(Status.LOADED, premiumSection);

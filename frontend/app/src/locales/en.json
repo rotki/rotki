@@ -433,15 +433,6 @@
           "title": "Liquity Balances"
         }
       },
-      "liquity_events": {
-        "error": {
-          "description": "Failed to retrieve Liquity events: {message}",
-          "title": "Liquity Events"
-        },
-        "task": {
-          "title": "Querying Liquity Events"
-        }
-      },
       "liquity_pools": {
         "error": {
           "description": "Failed to query Liquity Pools: {message}",
@@ -3120,17 +3111,14 @@
       "total_hint": "From deposit interest"
     },
     "common": {
-      "after": "After",
       "apr": "APR",
       "asset": "Asset",
-      "before": "Before",
       "collateral": "Collateral",
       "debt": "Debt",
       "no_entries_found": "No {title} entries found",
       "pool": "Pool",
       "profit_loss": "Profit/Loss",
-      "select_address": "@:common.select_address",
-      "stake": "Stake"
+      "select_address": "@:common.select_address"
     },
     "compound": {
       "debt_loss": "Debt Loss",
@@ -3194,15 +3182,6 @@
         "pnl": "PnL",
         "total_pnl": "Total PnL"
       }
-    },
-    "liquity": {
-      "headers": {
-        "collateral": "Collateral",
-        "debt": "Debt",
-        "operation": "Operation"
-      },
-      "stake_events": "Stake Events",
-      "trove_events": "Trove Events"
     },
     "staking": {
       "balance_overview": "Balance Overview",

@@ -1,8 +1,7 @@
 import {
   LiquityBalances,
   LiquityPoolDetails,
-  LiquityStakingDetails,
-  TroveEvents
+  LiquityStakingDetails
 } from '@rotki/common/lib/liquity';
 import { type Ref } from 'vue';
 import { type OnError } from '@/store/typing';
@@ -15,7 +14,6 @@ import { useLiquityApi } from '@/services/defi/liquity';
 
 export const useLiquityStore = defineStore('defi/liquity', () => {
   const balances: Ref<LiquityBalances> = ref({});
-  const events: Ref<TroveEvents> = ref({});
   const staking: Ref<LiquityStakingDetails> = ref({});
   const stakingPools: Ref<LiquityPoolDetails> = ref({});
 
@@ -25,7 +23,6 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
   const {
     fetchLiquityStakingPools,
     fetchLiquityBalances,
-    fetchLiquityTroveEvents,
     fetchLiquityStaking
   } = useLiquityApi();
 
@@ -103,44 +100,6 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
     );
   };
 
-  const fetchEvents = async (refresh = false): Promise<void> => {
-    const meta: TaskMeta = {
-      title: t('actions.defi.liquity_events.task.title').toString()
-    };
-
-    const onError: OnError = {
-      title: t('actions.defi.liquity_events.error.title').toString(),
-      error: message =>
-        t('actions.defi.liquity_events.error.description', {
-          message
-        }).toString()
-    };
-
-    await fetchDataAsync(
-      {
-        task: {
-          type: TaskType.LIQUITY_EVENTS,
-          section: Section.DEFI_LIQUITY_EVENTS,
-          meta,
-          query: async () => await fetchLiquityTroveEvents(),
-          parser: result => TroveEvents.parse(result),
-          onError
-        },
-        state: {
-          isPremium,
-          activeModules
-        },
-        requires: {
-          premium: true,
-          module: Module.LIQUITY
-        },
-
-        refresh
-      },
-      events
-    );
-  };
-
   const fetchStaking = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
       title: t('actions.defi.liquity_staking.task.title').toString()
@@ -182,21 +141,17 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
     const { resetStatus } = useStatusUpdater(Section.DEFI_LIQUITY_BALANCES);
 
     set(balances, {});
-    set(events, {});
     set(staking, {});
 
     resetStatus(Section.DEFI_LIQUITY_BALANCES);
-    resetStatus(Section.DEFI_LIQUITY_EVENTS);
     resetStatus(Section.DEFI_LIQUITY_STAKING);
   };
 
   return {
     balances,
-    events,
     staking,
     stakingPools,
     fetchBalances,
-    fetchEvents,
     fetchStaking,
     fetchPools,
     reset

@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { type AssetBalance, type BigNumber } from '@rotki/common';
 import { type ComputedRef, type PropType } from 'vue';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import LiquityCollateral from '@/components/defi/loan/loans/liquity/LiquityCollateral.vue';
 import LiquityLiquidation from '@/components/defi/loan/loans/liquity/LiquityLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 
-import { LiquityTroveEvents } from '@/premium/premium';
 import { type LiquityLoan } from '@/store/defi/liquity/types';
-import { Section } from '@/types/status';
+import {
+  HistoryEventType,
+  TransactionEventProtocol
+} from '@/types/transaction';
 
 const props = defineProps({
   loan: {
@@ -30,7 +33,6 @@ const liquidationPrice: ComputedRef<BigNumber | null> = computed(
   () => get(loan).balance.liquidationPrice
 );
 const premium = usePremium();
-const loadingEvents = isSectionLoading(Section.DEFI_LIQUITY_EVENTS);
 const { tc } = useI18n();
 </script>
 
@@ -73,10 +75,20 @@ const { tc } = useI18n();
             v-if="!premium"
             :title="tc('liquity_lending.trove_events')"
           />
-          <liquity-trove-events
-            v-else
-            :events="loan.events"
-            :loading="loadingEvents"
+
+          <transaction-content
+            use-external-account-filter
+            :section-title="tc('liquity_lending.trove_events')"
+            :protocols="[TransactionEventProtocol.LIQUITY]"
+            :event-types="[
+              HistoryEventType.WITHDRAWAL,
+              HistoryEventType.SPEND,
+              HistoryEventType.DEPOSIT
+            ]"
+            :external-account-filter="{
+              address: loan.owner,
+              chain: Blockchain.ETH
+            }"
           />
         </v-col>
       </v-row>

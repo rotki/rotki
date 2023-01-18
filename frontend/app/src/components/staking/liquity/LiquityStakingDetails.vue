@@ -6,18 +6,17 @@ import {
   type LiquityStakingDetail
 } from '@rotki/common/lib/liquity';
 import { type ComputedRef, type Ref } from 'vue';
+import {
+  HistoryEventType,
+  TransactionEventProtocol
+} from '@/types/transaction';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TransactionContent from '@/components/history/transactions/TransactionContent.vue';
 import LiquityPools from '@/components/staking/liquity/LiquityPools.vue';
 import LiquityStake from '@/components/staking/liquity/LiquityStake.vue';
 
 import { useLiquityStore } from '@/store/defi/liquity';
-import { useTransactions } from '@/store/history/transactions';
 import { Section } from '@/types/status';
-import {
-  HistoryEventType,
-  TransactionEventProtocol
-} from '@/types/transaction';
 import { balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 
@@ -106,8 +105,6 @@ const refresh = async () => {
   await fetchStaking(true);
   await fetchPools(true);
 };
-
-const { fetchTransactions } = useTransactions();
 </script>
 
 <template>
@@ -149,12 +146,11 @@ const { fetchTransactions } = useTransactions();
     </v-row>
 
     <transaction-content
+      use-external-account-filter
       :section-title="tc('liquity_staking_events.title')"
-      :protocol="TransactionEventProtocol.LIQUITY"
-      :event-type="HistoryEventType.STAKING"
-      :use-external-account-filter="true"
+      :protocols="[TransactionEventProtocol.LIQUITY]"
+      :event-types="[HistoryEventType.STAKING]"
       :external-account-filter="selectedAccounts"
-      @fetch="fetchTransactions"
     />
   </div>
 </template>

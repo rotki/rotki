@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { type GeneralAccount } from '@rotki/common/lib/account';
-import { type ComputedRef, type PropType, type Ref } from 'vue';
+import { type Account, type GeneralAccount } from '@rotki/common/lib/account';
+import { type ComputedRef, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
+import {
+  type HistoryEventType,
+  type TransactionEventProtocol
+} from '@/types/transaction';
 import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
 import { useTxQueryStatusStore } from '@/store/history/query-status';
 import { useTransactions } from '@/store/history/transactions';
@@ -16,10 +20,6 @@ import {
 } from '@/types/history/tx';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import {
-  type HistoryEventType,
-  type TransactionEventProtocol
-} from '@/types/transaction';
 import { getCollectionData } from '@/utils/collection';
 import { useConfirmStore } from '@/store/confirm';
 import { IgnoreActionType } from '@/types/history/ignored';
@@ -37,49 +37,35 @@ const Fragment = defineAsyncComponent(
   () => import('@/components/helper/Fragment')
 );
 
-const props = defineProps({
-  protocol: {
-    required: false,
-    type: String as PropType<TransactionEventProtocol>,
-    default: ''
-  },
-  eventType: {
-    required: false,
-    type: String as PropType<HistoryEventType>,
-    default: ''
-  },
-  externalAccountFilter: {
-    required: false,
-    type: Array as PropType<GeneralAccount[]>,
-    default: null
-  },
-  useExternalAccountFilter: {
-    required: false,
-    type: Boolean,
-    default: false
-  },
-  sectionTitle: {
-    required: false,
-    type: String,
-    default: ''
+const props = withDefaults(
+  defineProps<{
+    protocols?: TransactionEventProtocol[];
+    eventTypes?: HistoryEventType[];
+    externalAccountFilter?: Account[];
+    useExternalAccountFilter?: boolean;
+    sectionTitle?: string;
+  }>(),
+  {
+    protocols: () => [],
+    eventTypes: () => [],
+    externalAccountFilter: () => [],
+    useExternalAccountFilter: false,
+    sectionTitle: ''
   }
-});
+);
 
 const { tc } = useI18n();
 const {
-  protocol,
+  protocols,
   useExternalAccountFilter,
   externalAccountFilter,
   sectionTitle,
-  eventType
+  eventTypes
 } = toRefs(props);
 
 const usedTitle: ComputedRef<string> = computed(() => {
   return get(sectionTitle) || tc('transactions.title');
 });
-
-const emit = defineEmits<{ (e: 'fetch', refresh: boolean): void }>();
-const fetch = (refresh = false) => emit('fetch', refresh);
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -115,6 +101,7 @@ const { transactions } = storeToRefs(transactionStore);
 const { isTaskRunning } = useTasks();
 
 const {
+  fetchTransactions,
   fetchTransactionEvents,
   updateTransactionsPayload,
   addTransactionEvent,
@@ -162,7 +149,7 @@ const form = ref<InstanceType<typeof TransactionEventForm> | null>(null);
 const selected: Ref<EthTransactionEntry[]> = ref([]);
 
 const { filters, matchers, updateFilter } = useTransactionFilter(
-  !!get(protocol)
+  get(protocols).length > 0
 );
 
 const { ignore } = useIgnore(
@@ -174,7 +161,7 @@ const { ignore } = useIgnore(
     })
   },
   selected,
-  fetch
+  fetchTransactions
 );
 
 const toggleIgnore = async (item: EthTransactionEntry) => {
@@ -276,7 +263,7 @@ const saveData = async (
 const options: Ref<PaginationOptions | null> = ref(null);
 const accounts: Ref<GeneralAccount[]> = ref([]);
 
-const usedAccount: ComputedRef<GeneralAccount[]> = computed(() => {
+const usedAccount: ComputedRef<Account[]> = computed(() => {
   if (get(useExternalAccountFilter)) {
     return get(externalAccountFilter);
   }
@@ -313,11 +300,11 @@ const updatePayloadHandler = async () => {
     ...filterAddress
   };
 
-  const protocolVal = get(protocol);
-  if (protocolVal) payload.protocols = [protocolVal];
+  const protocolsVal = get(protocols);
+  if (protocolsVal?.length > 0) payload.protocols = protocolsVal;
 
-  const eventTypeVal = get(eventType);
-  if (eventTypeVal) payload.eventTypes = [eventTypeVal];
+  const eventTypesVal = get(eventTypes);
+  if (eventTypesVal?.length > 0) payload.eventTypes = eventTypesVal;
 
   await updateTransactionsPayload(payload);
 };
@@ -364,7 +351,7 @@ const loading = isSectionLoading(Section.TX);
 const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
 const { isAllFinished } = toRefs(useTxQueryStatusStore());
 
-const { pause, resume, isActive } = useIntervalFn(() => fetch(), 10000);
+const { pause, resume, isActive } = useIntervalFn(fetchTransactions, 10000);
 
 watch(
   [loading, eventTaskLoading, isAllFinished],
@@ -418,7 +405,7 @@ const { evmChains, getEvmChainName } = useSupportedChains();
         <refresh-button
           :loading="loading"
           :tooltip="tc('transactions.refresh_tooltip')"
-          @refresh="fetch(true)"
+          @refresh="fetchTransactions(true)"
         />
         {{ usedTitle }}
       </template>
