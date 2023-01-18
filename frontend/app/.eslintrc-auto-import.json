@@ -200,6 +200,7 @@
     "useEventBus": true,
     "useEventListener": true,
     "useEventSource": true,
+    "useEvmNodesApi": true,
     "useEyeDropper": true,
     "useFavicon": true,
     "useFetch": true,

@@ -1741,7 +1741,7 @@
   "eth2_validator_limit_row": {
     "label": "Beacon chain validators"
   },
-  "ethereum_rpc_node_manager": {
+  "evm_rpc_node_manager": {
     "activate_error": {
       "title": "Activating/Deactivating node {node} failed"
     },
@@ -1775,7 +1775,6 @@
     "private_node": "This is a private node added by the user",
     "private_node_hint": "Private nodes take priority over public nodes",
     "public_node": "This is a public node",
-    "title": "Ethereum RPC Nodes",
     "weight": "Node weight {weight}%"
   },
   "exchange_balances": {
@@ -2113,8 +2112,8 @@
       "version_update_check": "Set the version update check period while in app",
       "version_update_check_enabled": "Enabled"
     },
-    "local_nodes": {
-      "title": "Local Nodes"
+    "rpc_node_setting": {
+      "title": "RPC node setting"
     },
     "thousand_separator": {
       "validation": {
