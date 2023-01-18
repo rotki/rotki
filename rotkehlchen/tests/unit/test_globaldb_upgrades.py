@@ -22,11 +22,12 @@ from rotkehlchen.globaldb.upgrades.v3_v4 import (
 from rotkehlchen.globaldb.utils import GLOBAL_DB_FILENAME, GLOBAL_DB_VERSION
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
-from rotkehlchen.types import ChainID, EvmTokenKind
+from rotkehlchen.types import YEARN_VAULTS_V1_PROTOCOL, ChainID, EvmTokenKind
 from rotkehlchen.utils.misc import ts_now
 
 # TODO: Perhaps have a saved version of that global DB for the tests and query it too?
 ASSETS_IN_V2_GLOBALDB = 3095
+YEARN_V1_ASSETS_IN_V3 = 32
 
 
 def _count_sql_file_sentences(file_name: str, skip_statements: int = 0):
@@ -190,6 +191,8 @@ def test_upgrade_v3_v4(globaldb):
             ('contract_abi', 'contract_data'),
         )
         assert cursor.fetchone()[0] == 2
+        cursor.execute('SELECT COUNT(*) from evm_tokens WHERE protocol="yearn-v1"')
+        assert cursor.fetchone()[0] == YEARN_V1_ASSETS_IN_V3
 
     # execute upgrade
     with ExitStack() as stack:
@@ -278,6 +281,12 @@ def test_upgrade_v3_v4(globaldb):
             ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'ETH', 'lefteris GTC'),
             ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', None, 'yabir everywhere'),
         ]
+
+        # check that yearn tokens got their protocol updated
+        cursor.execute('SELECT COUNT(*) from evm_tokens WHERE protocol="yearn-v1"')
+        assert cursor.fetchone()[0] == 0
+        cursor.execute('SELECT COUNT(*) from evm_tokens WHERE protocol=?', (YEARN_VAULTS_V1_PROTOCOL,))  # noqa: E501
+        assert cursor.fetchone()[0] == YEARN_V1_ASSETS_IN_V3
 
 
 @pytest.mark.parametrize('globaldb_version', [2])

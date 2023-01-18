@@ -4,7 +4,6 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.makerdao.sai.constants import CPT_SAI
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -14,8 +13,8 @@ from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_ETH, A_SAI, A_WETH
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction, Location
+from rotkehlchen.constants.assets import A_ETH, A_PETH, A_SAI, A_WETH
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -58,15 +57,7 @@ class MakerdaosaiDecoder(DecoderInterface):
         self.weth = A_WETH.resolve_to_evm_token()
         self.eth = A_ETH.resolve_to_crypto_asset()
         self.sai = A_SAI.resolve_to_evm_token()
-        self.peth = get_or_create_evm_token(
-            userdb=self.base_tools.database,
-            symbol='PETH',
-            name='Pooled Ether',
-            decimals=18,
-            chain_id=ChainID.ETHEREUM,
-            token_kind=EvmTokenKind.ERC20,
-            evm_address=POOLED_ETHER_ADDRESS,
-        )
+        self.peth = A_PETH.resolve_to_evm_token()
 
     def _decode_sai_tub(
             self,
