@@ -47,6 +47,8 @@ export const useTransactions = defineStore('history/transactions', () => {
     []
   );
 
+  const decodedTxEvents: Ref<string[]> = ref([]);
+
   const counterparties = ref<string[]>([]);
 
   const { t } = useI18n();
@@ -272,20 +274,36 @@ export const useTransactions = defineStore('history/transactions', () => {
   ): Promise<void> => {
     const isFetchAll = transactions === null;
 
-    let payload: TransactionHashAndEvmChainPayload[] = [];
+    let payloads: TransactionHashAndEvmChainPayload[] = [];
 
     if (isFetchAll) {
-      payload = get(txEvmChains).map(chain => ({
+      payloads = get(txEvmChains).map(chain => ({
         evmChain: chain.evmChainName
       }));
     } else {
       if (transactions.length === 0) return;
-      const mapped = transactions.map(({ evmChain, txHash }) => ({
-        evmChain,
-        txHash
-      }));
+      const decodedTxEventsVal = [...get(decodedTxEvents)];
+      const mapped = transactions
+        .filter(({ evmChain, txHash }) => {
+          const key = evmChain + txHash;
+          const decoded = decodedTxEventsVal.includes(key);
 
-      payload = Object.entries(groupBy(mapped, 'evmChain')).map(
+          if (decoded) {
+            return false;
+          }
+          decodedTxEventsVal.push(key);
+          set(decodedTxEvents, decodedTxEventsVal);
+
+          return true;
+        })
+        .map(({ evmChain, txHash }) => ({
+          evmChain,
+          txHash
+        }));
+
+      if (mapped.length === 0) return;
+
+      payloads = Object.entries(groupBy(mapped, 'evmChain')).map(
         ([evmChain, item]) => ({
           evmChain,
           txHashes: item.map(({ txHash }) => txHash)
@@ -295,7 +313,7 @@ export const useTransactions = defineStore('history/transactions', () => {
 
     const taskType = TaskType.TX_EVENTS;
     const { taskId } = await fetchEthTransactionEvents({
-      data: payload,
+      data: payloads,
       ignoreCache
     });
     const taskMeta = {
@@ -306,6 +324,16 @@ export const useTransactions = defineStore('history/transactions', () => {
     const { result } = await awaitTask(taskId, taskType, taskMeta, true);
 
     if (result) {
+      const decodedTxEventsVal = [...get(decodedTxEvents)];
+      payloads.forEach(payload => {
+        if (payload.txHashes) {
+          payload.txHashes.forEach(txHash => {
+            const key = payload.evmChain + txHash;
+            decodedTxEventsVal.splice(decodedTxEventsVal.indexOf(key), 1);
+          });
+        }
+      });
+      set(decodedTxEvents, decodedTxEventsVal);
       await fetchTransactions();
     }
   };

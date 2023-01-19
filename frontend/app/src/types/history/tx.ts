@@ -3,9 +3,20 @@ import { z } from 'zod';
 import { type PaginationRequestPayload } from '@/types/common';
 import { EntryMeta } from '@/types/history/meta';
 
-const EthTransactionEventExtraData = z
-  .object({ asset: z.string(), stakedAmount: NumericString })
-  .partial();
+const LiquityStakingEventExtraData = z.object({
+  asset: z.string(),
+  stakedAmount: NumericString
+});
+
+export const EthTransactionEventDetail = z
+  .object({
+    liquityStaking: LiquityStakingEventExtraData
+  })
+  .nullish();
+
+export type EthTransactionEventDetail = z.infer<
+  typeof EthTransactionEventDetail
+>;
 
 export const EthTransactionEvent = z.object({
   eventIdentifier: z.string(),
@@ -15,7 +26,6 @@ export const EthTransactionEvent = z.object({
   locationLabel: z.string().nullish(),
   eventType: z.string().nullish(),
   eventSubtype: z.string().nullish(),
-  extraData: EthTransactionEventExtraData.nullish(),
   asset: z.string(),
   balance: Balance,
   notes: z.string().nullish(),
@@ -29,7 +39,8 @@ export type NewEthTransactionEvent = Omit<
 >;
 export const EthTransactionEventWithMeta = z.object({
   customized: z.boolean(),
-  entry: EthTransactionEvent
+  entry: EthTransactionEvent,
+  hasDetails: z.boolean()
 });
 export type EthTransactionEventWithMeta = z.infer<
   typeof EthTransactionEventWithMeta
@@ -82,8 +93,16 @@ export const TxEntryMeta = EntryMeta.merge(
     decodedEvents: z.array(EthTransactionEventWithMeta).nullish()
   })
 );
-
 export type TxEntryMeta = z.infer<typeof TxEntryMeta>;
+
+export const TxEventEntryMeta = EntryMeta.merge(
+  z.object({
+    customized: z.boolean(),
+    hasDetails: z.boolean()
+  })
+);
+
+export type TxEventEntryMeta = z.infer<typeof TxEventEntryMeta>;
 
 export const EthTransactionCollectionResponse = z.object({
   entries: z.array(
@@ -103,4 +122,4 @@ export interface EthTransactionEntry extends EthTransaction, TxEntryMeta {}
 
 export interface EthTransactionEventEntry
   extends EthTransactionEvent,
-    EntryMeta {}
+    TxEventEntryMeta {}

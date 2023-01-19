@@ -1,18 +1,25 @@
 <script setup lang="ts">
-import { type AssetBalance } from '@rotki/common';
-import { type ComputedRef, type PropType } from 'vue';
-import TransactionEventExtraData from '@/components/history/transactions/TransactionEventExtraData.vue';
+import { type Ref } from 'vue';
+import {
+  TransactionEventProtocol,
+  TransactionEventType
+} from '@/types/transaction';
+import TransactionEventLiquityExtraData from '@/components/history/transactions/TransactionEventLiquityExtraData.vue';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { TransactionEventType } from '@/types/transaction';
 import { getEventType } from '@/utils/history';
 import { type EthTransactionEventEntry } from '@/types/history/tx';
 
-const props = defineProps({
-  event: {
-    required: true,
-    type: Object as PropType<EthTransactionEventEntry>
+const props = withDefaults(
+  defineProps<{
+    event: EthTransactionEventEntry;
+    showEventDetail?: boolean;
+  }>(),
+  {
+    showEventDetail: false
   }
-});
+);
+
+const { tc } = useI18n();
 
 const { event } = toRefs(props);
 const { assetSymbol } = useAssetInfoRetrieval();
@@ -24,27 +31,7 @@ const showBalance = computed<boolean>(() => {
 const eventAsset = computed(() => get(event).asset);
 const symbol = assetSymbol(eventAsset);
 
-const staking: ComputedRef<AssetBalance | null> = computed(() => {
-  const stakingProtocols = ['liquity'];
-  const { counterparty: protocol, extraData, balance, asset } = get(event);
-
-  if (!(protocol && stakingProtocols.includes(protocol))) {
-    return null;
-  }
-
-  const stakedAmount = extraData?.stakedAmount;
-  if (!stakedAmount) {
-    return null;
-  }
-  const { usdValue, amount } = balance;
-  const usdPrice = usdValue.div(amount);
-
-  return {
-    asset,
-    usdValue: stakedAmount.multipliedBy(usdPrice),
-    amount: stakedAmount
-  };
-});
+const extraDataPanel: Ref<number[]> = ref([]);
 </script>
 <template>
   <div>
@@ -70,6 +57,31 @@ const staking: ComputedRef<AssetBalance | null> = computed(() => {
         {{ symbol }}
       </div>
     </div>
-    <transaction-event-extra-data v-if="staking" :staking="staking" />
+    <v-expansion-panels
+      v-if="
+        showEventDetail &&
+        event.hasDetails &&
+        event.counterparty === TransactionEventProtocol.LIQUITY
+      "
+      v-model="extraDataPanel"
+      multiple
+    >
+      <v-expansion-panel>
+        <v-expansion-panel-header>
+          <template #default="{ open }">
+            <div class="success--text font-weight-bold">
+              {{
+                open
+                  ? tc('liquity_staking_details.view.hide')
+                  : tc('liquity_staking_details.view.show')
+              }}
+            </div>
+          </template>
+        </v-expansion-panel-header>
+        <v-expansion-panel-content class="pt-4">
+          <transaction-event-liquity-extra-data :event="event" />
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+    </v-expansion-panels>
   </div>
 </template>

@@ -144,10 +144,13 @@ onMounted(() => {
 
     <address-input
       :addresses="addresses"
-      :error-messages="errorMessages"
+      :error-messages="errorMessages.address"
       :disabled="loading"
       :multi="!accountToEdit"
-      @update:addresses="addresses = $event"
+      @update:addresses="
+        delete errorMessages['address'];
+        addresses = $event;
+      "
     />
     <account-data-input
       :tags="tags"

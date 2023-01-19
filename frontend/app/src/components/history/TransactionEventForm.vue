@@ -4,6 +4,10 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { type PropType } from 'vue';
+import {
+  HistoryEventSubType,
+  type HistoryEventType
+} from '@/types/transaction';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
@@ -24,10 +28,6 @@ import {
   type NewEthTransactionEvent
 } from '@/types/history/tx';
 import { TaskType } from '@/types/task-type';
-import {
-  HistoryEventSubType,
-  type HistoryEventType
-} from '@/types/transaction';
 import { One, Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useEventTypeData } from '@/utils/history';

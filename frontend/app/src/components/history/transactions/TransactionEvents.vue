@@ -5,7 +5,6 @@ import {
   type EthTransactionEventEntry,
   type EthTransactionEventWithMeta
 } from '@/types/history/tx';
-import { transformEntryWithMeta } from '@/utils/history';
 
 const TransactionEventNote = defineAsyncComponent(
   () => import('@/components/history/transactions/TransactionEventNote.vue')
@@ -23,10 +22,16 @@ const TableExpandContainer = defineAsyncComponent(
   () => import('@/components/helper/table/TableExpandContainer.vue')
 );
 
-const props = defineProps<{
-  transaction: EthTransactionEntry;
-  colspan: number;
-}>();
+const props = withDefaults(
+  defineProps<{
+    transaction: EthTransactionEntry;
+    colspan: number;
+    showEventDetail?: boolean;
+  }>(),
+  {
+    showEventDetail: false
+  }
+);
 
 const emit = defineEmits<{
   (e: 'edit:event', data: EthTransactionEventEntry): void;
@@ -76,7 +81,11 @@ const headers: DataTableHeader[] = [
 const events = computed<EthTransactionEventEntry[]>(() => {
   return get(transaction).decodedEvents!.map(
     (event: EthTransactionEventWithMeta) => {
-      return transformEntryWithMeta(event);
+      const { entry, ...entriesMeta } = event;
+      return {
+        ...entry,
+        ...entriesMeta
+      };
     }
   );
 });
@@ -148,7 +157,10 @@ watch(transaction, (current, old) => {
                   />
                 </template>
                 <template #item.asset="{ item }">
-                  <transaction-event-asset :event="item" />
+                  <transaction-event-asset
+                    :event="item"
+                    :show-event-detail="showEventDetail"
+                  />
                 </template>
                 <template #item.description="{ item }">
                   <transaction-event-note
