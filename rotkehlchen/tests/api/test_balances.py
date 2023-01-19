@@ -764,7 +764,7 @@ def test_query_ksm_balances(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('avax_accounts', [[AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR]])
-@pytest.mark.parametrize('web3_mock_data', [{'covalent_balances': 'test_balances/covalent_query_balances.json'}])  # noqa: E501
+@pytest.mark.parametrize('avalanche_mock_data', [{'covalent_balances': 'test_balances/covalent_query_balances.json'}])  # noqa: E501
 def test_query_avax_balances(rotkehlchen_api_server):
     """Test query the AVAX balances when multiple accounts are set up works as
     expected.

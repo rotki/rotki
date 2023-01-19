@@ -25,14 +25,9 @@ from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.covalent import Covalent
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
+from rotkehlchen.tests.utils.evm import maybe_mock_evm_inquirer
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.tests.utils.mock import (
-    MOCK_WEB3_LAST_BLOCK_INT,
-    mock_proxies,
-    patch_avalanche_request,
-    patch_etherscan_request,
-    patch_web3_request,
-)
+from rotkehlchen.tests.utils.mock import mock_proxies, patch_avalanche_request
 from rotkehlchen.tests.utils.substrate import (
     KUSAMA_DEFAULT_OWN_RPC_ENDPOINT,
     KUSAMA_MAIN_ASSET_DECIMALS,
@@ -41,6 +36,47 @@ from rotkehlchen.tests.utils.substrate import (
     wait_until_all_substrate_nodes_connected,
 )
 from rotkehlchen.types import BTCAddress, ChainID, ChecksumEvmAddress, SupportedBlockchain
+
+
+def _initialize_and_yield_evm_inquirer_fixture(
+        parent_stack,
+        klass,
+        class_path,
+        manager_connect_at_start,
+        greenlet_manager,
+        database,
+        mock_other_web3,
+        mock_data,
+        mocked_proxies,
+):
+    with ExitStack() as init_stack:
+        if mock_other_web3 is True:
+            init_stack.enter_context(patch(  # at init of Inquirer attempt no connection if mocking
+                class_path,
+                return_value=lambda *args: None,
+            ))
+        inquirer = klass(
+            greenlet_manager=greenlet_manager,
+            database=database,
+            connect_at_start=manager_connect_at_start,
+        )
+
+    if mock_other_web3 is False:  # no mocking means we should wait till connect is done
+        wait_until_all_nodes_connected(
+            connect_at_start=manager_connect_at_start,
+            evm_inquirer=inquirer,
+        )
+
+    maybe_mock_evm_inquirer(
+        should_mock=mock_other_web3,
+        parent_stack=parent_stack,
+        evm_inquirer=inquirer,
+        manager_connect_at_start=manager_connect_at_start,
+        mock_data=mock_data,
+    )
+    if mocked_proxies is not None:
+        parent_stack.enter_context(mock_proxies(mocked_proxies))
+    return inquirer
 
 
 @pytest.fixture(name='number_of_eth_accounts')
@@ -135,8 +171,21 @@ def fixture_should_mock_web3() -> bool:
     return False
 
 
-@pytest.fixture(name='web3_mock_data')
-def fixture_web3_mock_data():
+@pytest.fixture(name='ethereum_mock_data')
+def fixture_ethereum_mock_data():
+    """Can contain mocked data for both etherscan and web3 requests"""
+    return {}
+
+
+@pytest.fixture(name='optimism_mock_data')
+def fixture_optimism_mock_data():
+    """Can contain mocked data for both etherscan and web3 requests"""
+    return {}
+
+
+@pytest.fixture(name='avalanche_mock_data')
+def fixture_avalance_mock_data():
+    """Can contain mocked data for both etherscan and web3 requests"""
     return {}
 
 
@@ -151,54 +200,27 @@ def fixture_mock_other_web3(network_mocking, should_mock_web3):
     return False
 
 
-@pytest.fixture(name='web3_mocking')
-def fixture_web3_mocking(network_mocking, should_mock_web3, web3_mock_data):
-    """A fixture to mock web3 and all related (such as inquirer) stuff if needed.
-    When called all web3 requests are mocked and so are all related requests
-
-    Eventually web3 mocking and network mocking should be identical
-    but as we create web3 mocks we have to go step by step and activate where
-    possible
-    """
-    if network_mocking is False:
-        yield
-    elif should_mock_web3 is True:
-        with ExitStack() as stack:
-            stack.enter_context(patch_web3_request(web3_mock_data))
-            stack.enter_context(patch(
-                'rotkehlchen.chain.ethereum.node_inquirer.EthereumInquirer.query_highest_block',
-                return_value=MOCK_WEB3_LAST_BLOCK_INT,
-            ))
-            yield
-    else:
-        yield
-
-
 @pytest.fixture(name='ethereum_inquirer')
 def fixture_ethereum_inquirer(
         ethereum_manager_connect_at_start,
         greenlet_manager,
         database,
-        web3_mocking,  # pylint: disable=unused-argument
         mock_other_web3,
-        web3_mock_data,
+        ethereum_mock_data,
         mocked_proxies,
 ):
-    ethereum_inquirer = EthereumInquirer(
-        greenlet_manager=greenlet_manager,
-        database=database,
-        connect_at_start=ethereum_manager_connect_at_start,
-    )
-    wait_until_all_nodes_connected(
-        connect_at_start=ethereum_manager_connect_at_start,
-        evm_inquirer=ethereum_inquirer,
-    )
     with ExitStack() as stack:
-        if mock_other_web3 is True:
-            stack.enter_context(patch_etherscan_request(etherscan=ethereum_inquirer.etherscan, mock_data=web3_mock_data))  # noqa: E501
-        if mocked_proxies is not None:
-            stack.enter_context(mock_proxies(mocked_proxies))
-        yield ethereum_inquirer
+        yield _initialize_and_yield_evm_inquirer_fixture(
+            parent_stack=stack,
+            klass=EthereumInquirer,
+            class_path='rotkehlchen.chain.ethereum.node_inquirer.EthereumInquirer',
+            manager_connect_at_start=ethereum_manager_connect_at_start,
+            greenlet_manager=greenlet_manager,
+            database=database,
+            mock_other_web3=mock_other_web3,
+            mock_data=ethereum_mock_data,
+            mocked_proxies=mocked_proxies,
+        )
 
 
 @pytest.fixture(name='ethereum_manager')
@@ -240,18 +262,21 @@ def fixture_optimism_inquirer(
         optimism_manager_connect_at_start,
         greenlet_manager,
         database,
+        mock_other_web3,
+        optimism_mock_data,
 ):
-    optimism_inquirer = OptimismInquirer(
-        greenlet_manager=greenlet_manager,
-        database=database,
-        connect_at_start=optimism_manager_connect_at_start,
-    )
-    wait_until_all_nodes_connected(
-        connect_at_start=optimism_manager_connect_at_start,
-        evm_inquirer=optimism_inquirer,
-    )
-
-    return optimism_inquirer
+    with ExitStack() as stack:
+        yield _initialize_and_yield_evm_inquirer_fixture(
+            parent_stack=stack,
+            klass=OptimismInquirer,
+            class_path='rotkehlchen.chain.optimism.node_inquirer.OptimismInquirer',
+            manager_connect_at_start=optimism_manager_connect_at_start,
+            greenlet_manager=greenlet_manager,
+            database=database,
+            mock_other_web3=mock_other_web3,
+            mock_data=optimism_mock_data,
+            mocked_proxies=None,
+        )
 
 
 @pytest.fixture(name='optimism_manager')
@@ -407,7 +432,7 @@ def fixture_avalanche_manager(
         messages_aggregator,
         covalent_avalanche,
         network_mocking,
-        web3_mock_data,
+        avalanche_mock_data,
 ):
     avalanche_manager = AvalancheManager(
         avaxrpc_endpoint='https://api.avax.network/ext/bc/C/rpc',
@@ -415,7 +440,7 @@ def fixture_avalanche_manager(
         msg_aggregator=messages_aggregator,
     )
     if network_mocking:
-        with patch_avalanche_request(avalanche_manager, web3_mock_data):
+        with patch_avalanche_request(avalanche_manager, avalanche_mock_data):
             yield avalanche_manager
     else:
         yield avalanche_manager

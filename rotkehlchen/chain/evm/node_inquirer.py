@@ -317,6 +317,24 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
         return balance
 
+    def _init_web3(self, node: NodeName) -> tuple[Web3, str]:
+        """Initialize a new Web3 object based on a given endpoint"""
+        rpc_endpoint = node.endpoint
+        parsed_rpc_endpoint = urlparse(node.endpoint)
+        if not parsed_rpc_endpoint.scheme:
+            rpc_endpoint = f'http://{node.endpoint}'
+        provider = HTTPProvider(
+            endpoint_uri=node.endpoint,
+            request_kwargs={'timeout': self.rpc_timeout},
+        )
+        ens = ENS(provider) if self.chain_id == ChainID.ETHEREUM else None
+        web3 = Web3(provider, ens=ens)
+        if self.chain_id == ChainID.OPTIMISM:  # for now only optimism needs this
+            # https://web3py.readthedocs.io/en/stable/middleware.html#why-is-geth-poa-middleware-necessary
+            web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+
+        return web3, rpc_endpoint
+
     def attempt_connect(
             self,
             node: NodeName,
@@ -332,27 +350,13 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         if node_connected:
             return True, f'Already connected to {node} {self.chain_name} node'
 
-        rpc_endpoint = node.endpoint
-        try:
-            parsed_rpc_endpoint = urlparse(node.endpoint)
-            if not parsed_rpc_endpoint.scheme:
-                rpc_endpoint = f'http://{node.endpoint}'
-            provider = HTTPProvider(
-                endpoint_uri=node.endpoint,
-                request_kwargs={'timeout': self.rpc_timeout},
-            )
-            ens = ENS(provider)
-            web3 = Web3(provider, ens=ens)
+        web3, rpc_endpoint = self._init_web3(node)
+        try:  # it is here that an actual connection is attempted
+            is_connected = web3.isConnected()
         except requests.exceptions.RequestException:
             message = f'Failed to connect to {self.chain_name} node {node} at endpoint {rpc_endpoint}'  # noqa: E501
             log.warning(message)
             return False, message
-
-        if self.chain_id == ChainID.OPTIMISM:  # for now only optimism needs this
-            # https://web3py.readthedocs.io/en/stable/middleware.html#why-is-geth-poa-middleware-necessary
-            web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-        try:
-            is_connected = web3.isConnected()
         except AssertionError:
             # Terrible, terrible hack but needed due to https://github.com/rotki/rotki/issues/1817
             is_connected = False

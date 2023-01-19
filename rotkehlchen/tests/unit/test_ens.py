@@ -21,7 +21,7 @@ from rotkehlchen.types import SupportedBlockchain
 
 
 @pytest.mark.parametrize('should_mock_web3', [True])
-@pytest.mark.parametrize('web3_mock_data', [{
+@pytest.mark.parametrize('ethereum_mock_data', [{
     'eth_call': {
         '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e': {
             '0x0178b8bf59bf8936dba1550677fa0e3950bc703b90b92ab9423bfbced145233f4050bff6': {
@@ -79,7 +79,7 @@ def test_ens_lookup(ethereum_inquirer, call_order, ethereum_manager_connect_at_s
 
 
 @pytest.mark.parametrize('should_mock_web3', [True])
-@pytest.mark.parametrize('web3_mock_data', [{
+@pytest.mark.parametrize('ethereum_mock_data', [{
     'eth_call': {
         '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e': {
             '0x0178b8bf9de0b76f3b87380f0bcb9e41b403c69b88b01fbeaf785e83f38a6879902af71b': {
@@ -145,7 +145,7 @@ def test_ens_lookup_multichain(
 
 
 @pytest.mark.parametrize('should_mock_web3', [True])
-@pytest.mark.parametrize('web3_mock_data', [{
+@pytest.mark.parametrize('ethereum_mock_data', [{
     'eth_call': {
         '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e': {
             '0x0178b8bfe4ce152682c62d25dbc668723afbc7d9b6baa21b5c1e9a19f94213198a2e5efb': {
