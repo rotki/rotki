@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type EthereumTransactionQueryData } from '@/types/websocket-messages';
+import { type EvmTransactionQueryData } from '@/types/websocket-messages';
 
-defineProps<{ item: EthereumTransactionQueryData }>();
+defineProps<{ item: EvmTransactionQueryData }>();
 
 const { getLabel, getItemTranslationKey } = useTransactionQueryStatus();
 const { getChain } = useSupportedChains();

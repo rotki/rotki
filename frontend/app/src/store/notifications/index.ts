@@ -5,16 +5,8 @@ import {
   Severity
 } from '@rotki/common/lib/messages';
 import { useSessionApi } from '@/services/session';
-import { SocketMessageType } from '@/types/websocket-messages';
 import { backoff } from '@/utils/backoff';
 import { uniqueStrings } from '@/utils/data';
-import { logger } from '@/utils/logging';
-import {
-  handleEthereumTransactionStatus,
-  handleLegacyMessage,
-  handleLoginStatus,
-  handleSnapshotError
-} from '@/utils/message-handling';
 
 const notificationDefaults = (): NotificationPayload => ({
   title: '',
@@ -46,6 +38,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
   const data = ref<NotificationData[]>([]);
   const { tc } = useI18n();
   const { consumeMessages } = useSessionApi();
+  const { handlePollingMessage } = useMessageHandling();
   let isRunning = false;
 
   const count = computed(() => get(data).length);
@@ -112,30 +105,6 @@ export const useNotificationsStore = defineStore('notifications', () => {
     setNotifications(notifications);
   };
 
-  const handleNotification = async (
-    message: string,
-    isWarning: boolean
-  ): Promise<void> => {
-    try {
-      const object = JSON.parse(message);
-      if (!object.type) {
-        notify(handleLegacyMessage(message, isWarning, tc));
-      }
-
-      if (object.type === SocketMessageType.BALANCES_SNAPSHOT_ERROR) {
-        notify(handleSnapshotError(object, tc));
-      } else if (object.type === SocketMessageType.EVM_TRANSACTION_STATUS) {
-        await handleEthereumTransactionStatus(object);
-      } else if (object.type === SocketMessageType.LOGIN_STATUS) {
-        await handleLoginStatus(object);
-      } else {
-        logger.error('unsupported message:', message);
-      }
-    } catch {
-      notify(handleLegacyMessage(message, isWarning, tc));
-    }
-  };
-
   const consume = async (): Promise<void> => {
     if (isRunning) {
       return;
@@ -150,11 +119,11 @@ export const useNotificationsStore = defineStore('notifications', () => {
       messages.errors
         .filter(uniqueStrings)
         .filter(error => !existing.includes(error))
-        .forEach(message => handleNotification(message, false));
+        .forEach(message => handlePollingMessage(message, false));
       messages.warnings
         .filter(uniqueStrings)
         .filter(warning => !existing.includes(warning))
-        .forEach(message => handleNotification(message, true));
+        .forEach(message => handlePollingMessage(message, true));
     } catch (e: any) {
       const message = e.message || e;
       notify({

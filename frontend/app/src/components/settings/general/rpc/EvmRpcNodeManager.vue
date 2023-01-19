@@ -4,7 +4,6 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RpcNodeForm from '@/components/settings/general/rpc/RpcNodeForm.vue';
-import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
 import { usePeriodicStore } from '@/store/session/periodic';

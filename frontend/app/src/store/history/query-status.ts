@@ -1,30 +1,29 @@
 import { type ComputedRef } from 'vue';
 import {
-  type EthereumTransactionQueryData,
-  EthereumTransactionsQueryStatus
+  type EvmTransactionQueryData,
+  EvmTransactionsQueryStatus
 } from '@/types/websocket-messages';
 
 export const useTxQueryStatusStore = defineStore(
   'history/transactionsQueryStatus',
   () => {
-    const queryStatus = ref<Record<string, EthereumTransactionQueryData>>({});
+    const queryStatus = ref<Record<string, EvmTransactionQueryData>>({});
 
-    const setQueryStatus = (data: EthereumTransactionQueryData): void => {
+    const setQueryStatus = (data: EvmTransactionQueryData): void => {
       const status = { ...get(queryStatus) };
       const { address, evmChain } = data;
       const key = address + evmChain;
 
-      if (data.status === EthereumTransactionsQueryStatus.ACCOUNT_CHANGE) {
+      if (data.status === EvmTransactionsQueryStatus.ACCOUNT_CHANGE) {
         return;
       }
 
       if (
-        data.status ===
-        EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED
+        data.status === EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED
       ) {
         status[key] = {
           ...data,
-          status: EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS
+          status: EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS
         };
       } else {
         status[key] = data;
@@ -37,10 +36,10 @@ export const useTxQueryStatusStore = defineStore(
       set(queryStatus, {});
     };
 
-    const isStatusFinished = (item: EthereumTransactionQueryData) => {
+    const isStatusFinished = (item: EvmTransactionQueryData) => {
       return (
         item.status ===
-        EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED
+        EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED
       );
     };
 

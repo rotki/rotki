@@ -1,6 +1,5 @@
 import { type MaybeRef } from '@vueuse/core';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type Ref } from 'vue';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -10,7 +9,7 @@ import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 import { useChainsAccountsStore } from '@/store/blockchain/accounts/chains';
 
 export const useTokenDetection = (
-  chain: Ref<Blockchain>,
+  chain: MaybeRef<Blockchain>,
   accountAddress: MaybeRef<string | null> = null
 ) => {
   const { isTaskRunning } = useTasks();
