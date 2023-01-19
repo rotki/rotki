@@ -6,10 +6,11 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_OPTIMISM_USDT, A_USDT
+from rotkehlchen.constants.assets import A_ETH, A_USDT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.types import ChainID, EvmTransaction, Location, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
@@ -32,6 +33,7 @@ def test_decoders_initialization(ethereum_transaction_decoder):
         'Makerdaosai',
         'Oneinchv1',
         'Oneinchv2',
+        'OptimismBridge',
         'PickleFinance',
         'Sushiswap',
         'Uniswapv1',
@@ -83,6 +85,7 @@ def test_decoders_initialization(ethereum_transaction_decoder):
         'yearn-v2',
         'balancer-v1',
         'balancer-v2',
+        'optimism',
     }
 
 

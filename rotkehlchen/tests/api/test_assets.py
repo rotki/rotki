@@ -671,7 +671,7 @@ def test_search_assets(rotkehlchen_api_server):
         },
     )
     result = assert_proper_response_with_result(response)
-    assert len(result) == 3
+    assert len(result) == 4
     assert any([entry['name'] == 'Ethereum' for entry in result])
     for entry in result:
         assert entry['symbol'] == 'ETH'
@@ -699,15 +699,17 @@ def test_search_assets(rotkehlchen_api_server):
         },
     )
     result = assert_proper_response_with_result(response)
-    assert len(result) == 2
+    assert len(result) == 3
     assert any([entry['name'] == 'Ethereum' for entry in result])
     for entry in result:
         assert entry['symbol'] == 'ETH'
         assert entry['identifier'] != 'ETH2'
-        if entry['name'] != 'Binance-Peg Ethereum Token':
-            assert 'evm_chain' not in entry
-        else:
+        if entry['name'] == 'Binance-Peg Ethereum Token':
             assert entry['evm_chain'] == 'binance'
+        elif entry['name'] == 'Ether':
+            assert entry['evm_chain'] == 'optimism'
+        else:
+            assert 'evm_chain' not in entry
     assert_asset_result_order(data=result, is_ascending=True, order_field='name')
     assert all(['custom_asset_type' not in entry.keys() and not entry['is_custom_asset'] for entry in result])  # noqa: E501
 
