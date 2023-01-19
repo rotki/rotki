@@ -1,32 +1,25 @@
 import { useBlockie } from '@/composables/accounts/blockie';
+import { createBlockie } from '@/utils/blockie';
 
 describe('accounts/blockie', () => {
   const { cache, getBlockie } = useBlockie();
   let firstBlockie = '';
   const address = '0x790b4086d106eafd913e71843aed987efe291c92';
 
-  beforeAll(() => {
+  beforeEach(() => {
     vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
-  const mockCanvasDataUrl = (address: string) => {
-    const canvas = document.createElement('canvas');
-    canvas.toDataURL = () => `${address.toLowerCase()}face`;
-
-    vi.spyOn(document, 'createElement').mockReturnValue(canvas);
-  };
-
   it('should create new blockie', () => {
-    mockCanvasDataUrl(address);
     firstBlockie = getBlockie(address);
-    expect(document.createElement).toHaveBeenCalledOnce();
+    expect(createBlockie).toHaveBeenCalled();
   });
 
   it('should not create new blockie', () => {
     const addressInUppercase = '0x790B4086D106EAFD913E71843AED987EFE291C92';
-    mockCanvasDataUrl(addressInUppercase);
     const newBlockie = getBlockie(addressInUppercase);
-    expect(document.createElement).not.toHaveBeenCalledOnce();
+    expect(createBlockie).not.toHaveBeenCalled();
     expect(firstBlockie).toEqual(newBlockie);
   });
 

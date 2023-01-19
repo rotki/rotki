@@ -7,12 +7,12 @@ import { FrontendSettings } from '@/types/frontend-settings';
 vi.mock('@/services/blockchain/addresses-names', () => ({
   useAddressesNamesApi: vi.fn().mockReturnValue({
     getEnsNamesTask: vi.fn().mockResolvedValue(1),
-    getEnsNames: vi.fn().mockResolvedValue({}),
+    getEnsNames: vi.fn().mockResolvedValue([]),
     getAddressBook: vi.fn().mockResolvedValue([]),
     addAddressBook: vi.fn().mockResolvedValue(true),
     updateAddressBook: vi.fn().mockResolvedValue(true),
     deleteAddressBook: vi.fn().mockResolvedValue(true),
-    getAddressesNames: vi.fn().mockResolvedValue({})
+    getAddressesNames: vi.fn().mockResolvedValue([])
   })
 }));
 
