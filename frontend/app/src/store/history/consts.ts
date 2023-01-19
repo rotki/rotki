@@ -322,7 +322,8 @@ export const transactionEventTypeMapping: Record<
     [HistoryEventSubType.GOVERNANCE]: TransactionEventType.GOVERNANCE,
     [HistoryEventSubType.DEPLOY]: TransactionEventType.DEPLOY,
     [HistoryEventSubType.REMOVE_ASSET]: TransactionEventType.WITHDRAW,
-    [HistoryEventSubType.PLACE_ORDER]: TransactionEventType.PLACE_ORDER
+    [HistoryEventSubType.PLACE_ORDER]: TransactionEventType.PLACE_ORDER,
+    [HistoryEventSubType.NONE]: TransactionEventType.APPROVAL
   },
   [HistoryEventType.TRANSFER]: {
     [HistoryEventSubType.NONE]: TransactionEventType.TRANSFER
