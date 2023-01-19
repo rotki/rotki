@@ -390,9 +390,8 @@ class DBConnection:
         except Exception:
             self.rollback_savepoint(savepoint_name)
             raise
-        else:
-            self.release_savepoint(savepoint_name)
         finally:
+            self.release_savepoint(savepoint_name)
             cursor.close()
 
     def _enter_savepoint(self, savepoint_name: Optional[str] = None) -> tuple['DBCursor', str]:
@@ -450,10 +449,12 @@ class DBConnection:
             )
         self.execute(f'{rollback_or_release} SAVEPOINT "{savepoint_name}"')
 
-        # Rollback all savepoints until, and including, the one with name `savepoint_name`
-        self.savepoints = dict.fromkeys(list_savepoints[:list_savepoints.index(savepoint_name)])
-        if len(self.savepoints) == 0:  # mark if we are out of all savepoints
-            self.savepoint_greenlet_id = None
+        # Release all savepoints until, and including, the one with name `savepoint_name`.
+        # with rollback we don't remove the savepoints since they are not released yet.
+        if rollback_or_release == 'RELEASE':
+            self.savepoints = dict.fromkeys(list_savepoints[:list_savepoints.index(savepoint_name)])  # noqa: E501
+            if len(self.savepoints) == 0:  # mark if we are out of all savepoints
+                self.savepoint_greenlet_id = None
 
     def rollback_savepoint(self, savepoint_name: Optional[str] = None) -> None:
         """
