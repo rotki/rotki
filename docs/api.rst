@@ -12149,7 +12149,7 @@ Events Details
 
       {
           "result": {
-              "sub-swaps": [
+              "sub_swaps": [
                   {"from_amount": "100.0", "to_amount": "0.084", "from_asset": "eip155:1/erc20:0x6B3595068778DD592e39A122f4f5a5cF09C90fE2", "to_asset": "ETH"},
                   {"from_amount": "0.084", "to_amount": "98.2", "from_asset": "ETH", "to_asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7"}
               ]
@@ -12158,8 +12158,8 @@ Events Details
       }
 
    :resjson object result: A dictionary with the details. It may contain one of the following amount of details.
-   :resjson list sub-swaps: A list with the details of each sub-swap. Each entry contains the following keys: from_amount, to_amount, from_asset, to_asset.
-   :resjson dict liquity-staking: Information about assets that were staked in liquity in this event.
+   :resjson list sub_swaps: A list with the details of each sub-swap. Each entry contains the following keys: from_amount, to_amount, from_asset, to_asset.
+   :resjson dict liquity_staking: Information about assets that were staked in liquity in this event.
 
    :statuscode 200: The details were returned successfully.
    :statuscode 400: Provided JSON is in some way malformed.

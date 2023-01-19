@@ -71,8 +71,8 @@ HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
     Optional[str],  # extra_data
 ]
 
-SUB_SWAPS_DETAILS = 'sub-swaps'
-LIQUITY_STAKING_DETAILS = 'liquity-staking'
+SUB_SWAPS_DETAILS = 'sub_swaps'
+LIQUITY_STAKING_DETAILS = 'liquity_staking'
 
 ALL_DETAILS_KEYS = {
     SUB_SWAPS_DETAILS,

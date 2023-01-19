@@ -1278,7 +1278,7 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
     cursor.execute('SELECT extra_data FROM history_events WHERE counterparty="liquity"')
     assert cursor.fetchall() == [
         (None,),
-        ('{"liquity-staking": {"staked_amount": "0", "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"}}',),  # noqa: E501
+        ('{"liquity_staking": {"staked_amount": "0", "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"}}',),  # noqa: E501
         (None,),
     ]
 
