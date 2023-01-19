@@ -395,7 +395,7 @@ const showDeleteConfirmation = () => {
   );
 };
 
-const { evmChains, getEvmChainName } = useSupportedChains();
+const { evmChains, getEvmChainName, getChain } = useSupportedChains();
 </script>
 
 <template>
@@ -505,6 +505,7 @@ const { evmChains, getEvmChainName } = useSupportedChains();
                   :text="item.txHash"
                   :truncate-length="8"
                   :full-address="$vuetify.breakpoint.lgAndUp"
+                  :chain="getChain(item.evmChain)"
                   tx
                 />
                 <v-chip
