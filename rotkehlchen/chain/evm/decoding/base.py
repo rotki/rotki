@@ -6,7 +6,7 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
 from rotkehlchen.constants import ONE
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -29,10 +29,12 @@ class BaseDecoderTools():
     def __init__(
             self,
             database: 'DBHandler',
+            chain_id: ChainID,
             is_non_conformant_erc721_fn: Callable[[ChecksumEvmAddress], bool],
             address_is_exchange_fn: Callable[[ChecksumEvmAddress], Optional[str]],
     ) -> None:
         self.database = database
+        self.chain_id = chain_id
         self.address_is_exchange = address_is_exchange_fn
         self.is_non_conformant_erc721 = is_non_conformant_erc721_fn
         with self.database.conn.read_ctx() as cursor:
@@ -60,7 +62,7 @@ class BaseDecoderTools():
         self.tracked_accounts = self.database.get_blockchain_accounts(cursor)
 
     def is_tracked(self, adddress: ChecksumEvmAddress) -> bool:
-        return adddress in self.tracked_accounts.eth
+        return adddress in self.tracked_accounts.get(self.chain_id.to_blockchain())
 
     def decode_direction(
             self,
@@ -69,8 +71,8 @@ class BaseDecoderTools():
     ) -> Optional[tuple[HistoryEventType, Optional[str], str, str]]:
         """Depending on addresses, if they are tracked by the user or not, if they
         are an exchange address etc. determine the type of event to classify the transfer as"""
-        tracked_from = from_address in self.tracked_accounts.eth
-        tracked_to = to_address in self.tracked_accounts.eth
+        tracked_from = from_address in self.tracked_accounts.get(self.chain_id.to_blockchain())
+        tracked_to = to_address in self.tracked_accounts.get(self.chain_id.to_blockchain())
         if not tracked_from and not tracked_to:
             return None
 
