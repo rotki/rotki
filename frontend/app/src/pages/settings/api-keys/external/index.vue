@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { type Ref } from 'vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ApiKeyBox from '@/components/settings/api-keys/ApiKeyBox.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
@@ -13,9 +14,26 @@ import {
   type ExternalServiceKeys,
   type ExternalServiceName
 } from '@/types/user';
+import { toSentenceCase } from '@/utils/text';
 
-const etherscanKey = ref('');
-const optimismEtherscanKey = ref('');
+const evmEtherscanTabIndex: Ref<number> = ref(0);
+
+interface EvmEtherscanTab {
+  key: ExternalServiceName;
+  value: string;
+}
+
+const evmEtherscanTabs: Record<string, EvmEtherscanTab> = reactive({
+  ethereum: {
+    key: 'etherscan',
+    value: ''
+  },
+  optimism: {
+    key: 'optimism_etherscan',
+    value: ''
+  }
+});
+
 const cryptocompareKey = ref('');
 const covalentKey = ref('');
 const beaconchainKey = ref('');
@@ -44,13 +62,13 @@ const updateKeys = ({
   opensea,
   optimismEtherscan
 }: ExternalServiceKeys) => {
+  evmEtherscanTabs.ethereum.value = etherscan?.apiKey || '';
+  evmEtherscanTabs.optimism.value = optimismEtherscan?.apiKey || '';
   set(cryptocompareKey, cryptocompare?.apiKey || '');
   set(covalentKey, covalent?.apiKey || '');
-  set(etherscanKey, etherscan?.apiKey || '');
   set(beaconchainKey, beaconchain?.apiKey || '');
   set(loopringKey, loopring?.apiKey || '');
   set(openseaKey, opensea?.apiKey || '');
-  set(optimismEtherscanKey, optimismEtherscan?.apiKey || '');
 };
 
 const save = async (serviceName: ExternalServiceName, key: string) => {
@@ -130,33 +148,43 @@ onMounted(async () => {
     </template>
 
     <api-key-box>
-      <service-key
-        v-model="etherscanKey"
-        class="external-services__etherscan-key"
-        :title="tc('external_services.etherscan.title')"
-        :description="tc('external_services.etherscan.description')"
-        :label="tc('external_services.etherscan.label')"
-        :hint="tc('external_services.etherscan.hint')"
-        :loading="loading"
-        :tooltip="tc('external_services.etherscan.delete_tooltip')"
-        @save="save('etherscan', $event)"
-        @delete-key="showConfirmation('etherscan')"
-      />
-    </api-key-box>
-
-    <api-key-box>
-      <service-key
-        v-model="optimismEtherscanKey"
-        class="external-services__optimism-etherscan-key"
-        :title="tc('external_services.optimism_etherscan.title')"
-        :description="tc('external_services.optimism_etherscan.description')"
-        :label="tc('external_services.optimism_etherscan.label')"
-        :hint="tc('external_services.optimism_etherscan.hint')"
-        :loading="loading"
-        :tooltip="tc('external_services.optimism_etherscan.delete_tooltip')"
-        @save="save('optimism_etherscan', $event)"
-        @delete-key="showConfirmation('optimism_etherscan')"
-      />
+      <v-card flat>
+        <v-card-title>
+          {{ tc('external_services.etherscan.title') }}
+        </v-card-title>
+        <v-card-subtitle>
+          {{ tc('external_services.etherscan.description') }}
+        </v-card-subtitle>
+      </v-card>
+      <v-tabs v-model="evmEtherscanTabIndex">
+        <v-tab v-for="(_, chain) in evmEtherscanTabs" :key="chain">
+          <evm-chain-icon :chain="chain" />
+          <div class="ml-2">{{ chain }}</div>
+        </v-tab>
+      </v-tabs>
+      <v-divider />
+      <v-tabs-items v-model="evmEtherscanTabIndex">
+        <v-tab-item
+          v-for="(tab, chain) in evmEtherscanTabs"
+          :key="chain"
+          class="pt-4"
+        >
+          <service-key
+            v-model="tab.value"
+            :class="`external-services__${chain}-etherscan-key`"
+            :label="tc('external_services.etherscan.label')"
+            :hint="tc('external_services.etherscan.hint')"
+            :loading="loading"
+            :tooltip="
+              tc('external_services.etherscan.delete_tooltip', 0, {
+                chain: toSentenceCase(chain)
+              })
+            "
+            @save="save(tab.key, $event)"
+            @delete-key="showConfirmation(tab.key)"
+          />
+        </v-tab-item>
+      </v-tabs-items>
     </api-key-box>
 
     <api-key-box>
