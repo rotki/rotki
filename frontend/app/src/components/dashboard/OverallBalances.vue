@@ -19,6 +19,7 @@ import { useStatisticsStore } from '@/store/statistics';
 import { Section } from '@/types/status';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
+import { useSessionAuthStore } from '@/store/session/auth';
 
 const { t } = useI18n();
 const { currencySymbol, floatingPrecision } = storeToRefs(
@@ -110,7 +111,13 @@ const setTimeframe = async (value: TimeFrameSetting) => {
   await frontendStore.updateSetting({ lastKnownTimeframe: value });
 };
 
-watch(premium, async () => fetchNetValue());
+const { logged } = storeToRefs(useSessionAuthStore());
+
+watch(premium, async () => {
+  if (get(logged)) {
+    await fetchNetValue();
+  }
+});
 
 onMounted(() => {
   const isPremium = get(premium);

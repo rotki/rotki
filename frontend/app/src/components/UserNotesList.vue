@@ -11,6 +11,7 @@ import {
   setupEntryLimit
 } from '@/utils/collection';
 import { logger } from '@/utils/logging';
+import { useSessionAuthStore } from '@/store/session/auth';
 
 const getDefaultForm = () => {
   return {
@@ -164,9 +165,12 @@ const confirmDelete = async () => {
 };
 
 const premium = usePremium();
+const { logged } = storeToRefs(useSessionAuthStore());
 
 watch([filter, premium], async () => {
-  await fetchNotes();
+  if (get(logged)) {
+    await fetchNotes();
+  }
 });
 
 debouncedWatch(

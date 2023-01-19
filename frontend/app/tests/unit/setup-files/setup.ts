@@ -43,4 +43,12 @@ beforeAll(() => {
       })
     };
   });
+
+  vi.mock('@/utils/blockie', () => {
+    return {
+      createBlockie: vi
+        .fn()
+        .mockImplementation(({ seed }) => `${seed.toLowerCase()}face`)
+    };
+  });
 });

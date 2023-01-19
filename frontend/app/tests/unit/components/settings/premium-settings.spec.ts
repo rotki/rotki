@@ -18,6 +18,7 @@ vi.mock('@/composables/electron-interop', () => {
     interop: mockInterop
   };
 });
+
 vi.mock('@/services/rotkehlchen-api');
 
 describe('PremiumSettings.vue', () => {
