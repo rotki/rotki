@@ -9,7 +9,7 @@ psutil==5.9.4
 pytest-freezer==0.4.6
 git+https://github.com/rotki/pytest-deadfixtures@87d2be8#egg=pytest-deadfixtures # temporarily due to false positive
 pytest-socket==0.5.1
-pytest-recording==0.12.1
+pytest-vcr==1.0.2
 freezegun==1.2.2
 flaky==3.7.0
 

@@ -21,6 +21,11 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 2
+      - name: Checkout test caching
+        uses: actions/checkout@v3
+        with:
+          repository: rotki/test-caching
+          path: test-caching
       - name: Load env
         uses: rotki/action-env@v1
         with:
@@ -35,11 +40,6 @@ jobs:
         with:
           path: ~/.cache/.rotkehlchen-test-dir
           key: ${{ runner.os }}-testdir
-      - name: Cache rotkehlchen tests cassettes (network mocks) directory
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/.rotkehlchen-cassettes-dir
-          key: ${{ runner.os }}-cassettesdir
       - name: Setup minupnpc
         if: runner.os == 'Windows'
         run: |          
@@ -69,16 +69,9 @@ jobs:
       - name: Install pytest annotation plugin
         run: |     
           pip install pytest-github-actions-annotate-failures
-      - name: Parse commit message for vcrpy cassette rewrite path
-        id: parse-cassette-rewrite-path
-        run: |
-          commit_message=$(git log --max-count=1 --format=%B HEAD)
-          result=$(echo $commit_message | sed '/CASSETTE_REWRITE_PATH/!d' | cut -d "=" -f 2)
-          echo "result=${result}" >> $GITHUB_OUTPUT
       - name: Run tests
         env:
-          CASSETTE_REWRITE_PATH: ${{steps.parse-cassette-rewrite-path.result}}
-          PYTEST_ARGS: '--durations=150 --disable-recording'
+          PYTEST_ARGS: '--durations=150'
           FORCE_COLOR: 1
         run: |
           if [ "${{ runner.os }}" == 'macOS' ];
@@ -87,7 +80,7 @@ jobs:
           else
             COVERAGE_ARGS='--cov=./'
           fi          
-          
+          export CASSETTES_DIR=$HOME/work/rotki/rotki/test-caching
           python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS rotkehlchen/tests
           python pytestgeventwrapper.py --dead-fixtures
         shell: bash

@@ -24,8 +24,10 @@ format:
 clean:
 	rm -rf build/ dist/ rotkehlchen_py_dist/ htmlcov/ rotkehlchen.egg-info/ *.dmg frontend/app/dist/ frontend/app/build/
 
+
 docker-image:
 	packaging/docker-image.sh
+
 
 test-assets:
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_binance.py::test_binance_assets_are_known
@@ -48,3 +50,7 @@ test-assets:
 	python pytestgeventwrapper.py rotkehlchen/tests/exchanges/test_independentreserve.py::test_assets_are_known
 	python pytestgeventwrapper.py rotkehlchen/tests/unit/test_zerionsdk.py::test_protocol_names_are_known
 	python pytestgeventwrapper.py rotkehlchen/tests/unit/test_zerionsdk.py::test_query_all_protocol_balances_for_account
+
+
+create-cassettes:
+	RECORD_CASSETTES=true && python pytestgeventwrapper.py -m vcr rotkehlchen/tests

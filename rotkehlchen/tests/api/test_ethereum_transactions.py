@@ -1463,6 +1463,7 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
     assert result['entries_limit'] == FREE_ETH_TX_LIMIT
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x59ABf3837Fa962d6853b4Cc0a19513AA031fd32b']])  # noqa: E501
 @patch.object(EthereumTransactions, '_get_internal_transactions_for_ranges', lambda *args, **kargs: None)  # noqa: E501
 @patch.object(EthereumTransactions, '_get_erc20_transfers_for_ranges', lambda *args, **kargs: None)
