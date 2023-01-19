@@ -127,26 +127,29 @@ class IconManager():
                 image_data = f.read()
             return image_data
 
-        # Then our only chance is coingecko
-        try:
-            asset = asset.resolve_to_asset_with_oracles()
-        except (UnknownAsset, WrongAssetType):
-            return None
+        # check if the asset is in a collection
+        collection_main_asset_id = GlobalDBHandler().get_collection_main_asset(asset.identifier)
+        asset_to_query_icon = asset
 
-        needed_path = self.iconfile_path(asset)
-        if needed_path.is_file():
+        if collection_main_asset_id is not None:
+            # get the asset with the lowest lex order
+            asset_to_query_icon = Asset(collection_main_asset_id)
+
+        needed_path = self.iconfile_path(asset_to_query_icon)
+        if needed_path.is_file() is True:
             with open(needed_path, 'rb') as f:
                 image_data = f.read()
             return image_data
 
+        # Then our only chance is coingecko
         # If we don't have the image check if this is a valid coingecko asset
         try:
-            coingecko_id = asset.to_coingecko()
-        except UnsupportedAsset:
+            asset_to_query_icon = asset_to_query_icon.resolve_to_asset_with_oracles()
+            coingecko_id = asset_to_query_icon.to_coingecko()
+        except (UnknownAsset, WrongAssetType, UnsupportedAsset):
             return None
 
-        # else query coingecko for the icons and cache all of them
-        if self.query_coingecko_for_icon(asset, coingecko_id) is False:
+        if self.query_coingecko_for_icon(asset_to_query_icon, coingecko_id) is False:
             return None
 
         if not needed_path.is_file():

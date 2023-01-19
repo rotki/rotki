@@ -507,7 +507,7 @@ class AssetsUpdater():
         (assets updates, collections updates or mappings updates) set in update_file_type.
 
         If conflicts appear while processing the assets those are handled. Deserialization
-        errors are catched and the user is warned about them.
+        errors are caught and the user is warned about them.
         """
         lines = text.splitlines()
         for action, full_insert in zip(*[iter(lines)] * 2):
@@ -537,7 +537,6 @@ class AssetsUpdater():
                         version=version,
                     )
             elif update_file_type == UpdateFileType.ASSET_COLLECTIONS:
-                # if it wasn't an asset let's check if it is an asset collection
                 try:
                     self._process_asset_collection(
                         connection=connection,
@@ -550,7 +549,6 @@ class AssetsUpdater():
                         f'to a deserialization error. {str(e)}',
                     )
             elif update_file_type == UpdateFileType.ASSET_COLLECTIONS_MAPPINGS:
-                # try now a new mapping
                 try:
                     self._process_multiasset_mapping(
                         connection=connection,

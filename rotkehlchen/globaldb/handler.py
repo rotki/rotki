@@ -1931,3 +1931,15 @@ class GlobalDBHandler():
             raise UnknownAsset(identifier)
 
         return AssetType.deserialize_from_db(type_in_db[0])
+
+    @staticmethod
+    def get_collection_main_asset(identifier: str) -> Optional[str]:
+        """
+        Given an asset identifier return id of the asset in the collection with the lowest
+        lexicographical order.
+        """
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute('SELECT A.asset FROM multiasset_mappings AS A JOIN multiasset_mappings AS B ON A.collection_id=B.collection_id WHERE B.asset=? ORDER BY A.asset LIMIT 1', (identifier,))  # noqa: E501
+            result = cursor.fetchone()
+
+        return result[0] if result is not None else None

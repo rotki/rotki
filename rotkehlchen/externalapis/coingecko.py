@@ -30,7 +30,6 @@ class CoingeckoAssetData(NamedTuple):
     identifier: str
     symbol: str
     name: str
-    description: str
     image_url: str
 
 
@@ -514,7 +513,6 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
                 identifier=asset_coingecko_id,
                 symbol=data['symbol'],  # pylint: disable=unsubscriptable-object
                 name=data['name'],  # pylint: disable=unsubscriptable-object
-                description=data['description']['en'],  # pylint: disable=unsubscriptable-object
                 image_url=data['image']['small'],  # pylint: disable=unsubscriptable-object
             )
         except KeyError as e:
