@@ -82,8 +82,8 @@ def patch_requests_for_cryptoscamdb(url, *args, **kwargs):
     return original_requests_get(url, *args, **kwargs)
 
 
-def patch_web3_request(test_specific_mock_data):
-    """Patches all requests going to web3 through the rpc provider
+def patch_web3_request(given_web3, test_specific_mock_data):
+    """Patches all requests going to web3 through the given provider
 
     Has some pre-determined mock responses but also accepts test_specific_mock_data
     to determine certain responses per-test
@@ -104,7 +104,6 @@ def patch_web3_request(test_specific_mock_data):
         result = method_dict.get(method)
         if result is None:
             raise AssertionError(f'No web3 mock for {method} and {params}')
-
         if isinstance(result, str):
             final_result = result
         elif isinstance(result, dict):
@@ -130,45 +129,80 @@ def patch_web3_request(test_specific_mock_data):
         counter += 1
         return json_result
 
-    return patch(
-        'web3.providers.rpc.HTTPProvider.make_request',
+    return patch.object(
+        given_web3.provider,
+        'make_request',
         wraps=mock_web3_make_request,
     )
 
 
-ETHERSCAN_ETH_CALL_RE = re.compile('.*action=(.*)&to=(.*)&data=(.*)&.*')
+ETHERSCAN_ACTION_RE = re.compile('.*action=(.*?)&(.*)')
+ETHERSCAN_ETH_CALL_RE = re.compile('&to=(.*)&data=(.*)&.*')
+ETHERSCAN_BLOCKNOBYTIME_RE = re.compile('&timestamp=(.*)&closest=(.*)&.*')
 
 
-def patch_etherscan_request(etherscan, mock_data):
+def _mock_etherscan_eth_call(counter, url, eth_call_data):
+    match = ETHERSCAN_ETH_CALL_RE.search(url)
+    if match is None:
+        raise AssertionError(f'Could not parse etherscan query: {url} for eth call')
+
+    contract_to = match.group(1)
+    data = match.group(2)
+    if eth_call_data is None:
+        raise AssertionError(f'No eth_call mock data given in test for {contract_to=} and {data=}')  # noqa: E501
+
+    contract_result = eth_call_data.get(contract_to)
+    if contract_result is None:
+        raise AssertionError(f'{contract_to=} not found in eth_call mock data')
+
+    data_result = contract_result.get(data)
+    if data_result is None:
+        raise AssertionError(f'{data=} not found in eth_call mock data for contract {contract_to}')  # noqa: E501
+
+    if 'latest' not in data_result:
+        raise AssertionError(f'No latest mock result given in test for {contract_to=} and {data=}')  # noqa: E501
+
+    result = data_result['latest']
+    return f'{{"id": {counter}, "jsonrpc": "2.0", "result": "{result}"}}'
+
+
+def _mock_etherscan_getblocknobytime(url, data):
+    match = ETHERSCAN_BLOCKNOBYTIME_RE.search(url)
+    if match is None:
+        raise AssertionError(f'Could not parse etherscan query: {url} for blocknobytime')
+
+    timestamp = match.group(1)
+    closest = match.group(2)
+    if data is None:
+        raise AssertionError('No blocknobytime mock data given in test')
+
+    block_result = data.get(timestamp)
+    if block_result is None:
+        raise AssertionError(f'{timestamp=} not found in blocknobytime mock data')
+
+    assert closest == 'before'
+    return f'{{"status":"1","message":"OK","result":"{block_result}"}}'
+
+
+def patch_etherscan_request(etherscan, mock_data: dict[str, Any]):
     """Patches all requests going to the passed etherscan object with the given data"""
     counter = 0
 
     def mock_etherscan_query(url, **kwargs):  # pylint: disable=unused-argument
         nonlocal counter
-        match = ETHERSCAN_ETH_CALL_RE.search(url)
-        if match is None:  # only for eth_call for now
+        match = ETHERSCAN_ACTION_RE.search(url)
+        if match is None:
             raise AssertionError(f'Could not parse etherscan query: {url}')
 
-        contract_to = match.group(2)
-        data = match.group(3)
+        action = match.group(1)
+        if action == 'eth_call':
+            contents = _mock_etherscan_eth_call(counter, url, mock_data.get(action))
+        elif action == 'getblocknobytime':
+            contents = _mock_etherscan_getblocknobytime(url, mock_data.get(action))
+        else:
+            raise AssertionError(f'Unexpected action {action} at etherscan query parsing: {url}')
 
-        eth_call_data = mock_data.get('eth_call')
-        if eth_call_data is None:
-            raise AssertionError(f'No eth_call mock data given in test for {contract_to=} and {data=}')  # noqa: E501
-
-        contract_result = eth_call_data.get(contract_to)
-        if contract_result is None:
-            raise AssertionError(f'{contract_to=} not found in eth_call mock data')
-
-        data_result = contract_result.get(data)
-        if data_result is None:
-            raise AssertionError(f'{data=} not found in eth_call mock data for contract {contract_to}')  # noqa: E501
-
-        if 'latest' not in data_result:
-            raise AssertionError(f'No latest mock result given in test for {contract_to=} and {data=}')  # noqa: E501
-
-        result = data_result['latest']
-        contents = f'{{"id": {counter}, "jsonrpc": "2.0", "result": "{result}"}}'
+        counter += 1
         return MockResponse(200, contents)
 
     return patch.object(

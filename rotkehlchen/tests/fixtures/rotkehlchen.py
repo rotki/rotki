@@ -28,13 +28,13 @@ from rotkehlchen.tests.utils.database import (
     mock_db_schema_sanity_check,
 )
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
+from rotkehlchen.tests.utils.evm import maybe_mock_evm_inquirer
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
 from rotkehlchen.tests.utils.mock import (
     mock_proxies,
     patch_avalanche_request,
-    patch_etherscan_request,
     patch_requests_for_cryptoscamdb,
 )
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
@@ -130,6 +130,7 @@ def initialize_mock_rotkehlchen_instance(
         manually_tracked_balances,
         default_mock_price_value,
         ethereum_manager_connect_at_start,
+        optimism_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
@@ -141,6 +142,7 @@ def initialize_mock_rotkehlchen_instance(
         perform_upgrades_at_unlock,
         perform_nodes_insertion,
         current_price_oracles_order,
+        network_mocking,
 ):
     if not start_with_logged_in_user:
         return
@@ -172,9 +174,10 @@ def initialize_mock_rotkehlchen_instance(
         return return_value
     data_unlock_patch = patch.object(rotki.data, 'unlock', side_effect=augmented_unlock)
 
-    eth_rpcconnect_patch = patch(
+    rpc_nodes_result = ethereum_manager_connect_at_start + optimism_manager_connect_at_start if network_mocking is False else []  # noqa: E501
+    evm_rpcconnect_patch = patch(
         'rotkehlchen.db.dbhandler.DBHandler.get_rpc_nodes',
-        return_value=ethereum_manager_connect_at_start,
+        return_value=rpc_nodes_result,
     )
 
     ksm_rpcconnect_patch = patch(
@@ -195,7 +198,7 @@ def initialize_mock_rotkehlchen_instance(
     with ExitStack() as stack:
         stack.enter_context(settings_patch)
         stack.enter_context(data_unlock_patch)
-        stack.enter_context(eth_rpcconnect_patch)
+        stack.enter_context(evm_rpcconnect_patch)
         stack.enter_context(ksm_rpcconnect_patch)
         stack.enter_context(size_patch)
         stack.enter_context(sleep_patch)
@@ -264,10 +267,15 @@ def initialize_mock_rotkehlchen_instance(
         mocked_price_queries=mocked_price_queries,
         default_mock_value=default_mock_price_value,
     )
-    wait_until_all_nodes_connected(
-        connect_at_start=ethereum_manager_connect_at_start,
-        evm_inquirer=rotki.chains_aggregator.ethereum.node_inquirer,
-    )
+    if network_mocking is False:
+        wait_until_all_nodes_connected(
+            connect_at_start=ethereum_manager_connect_at_start,
+            evm_inquirer=rotki.chains_aggregator.ethereum.node_inquirer,
+        )
+        wait_until_all_nodes_connected(
+            connect_at_start=optimism_manager_connect_at_start,
+            evm_inquirer=rotki.chains_aggregator.optimism.node_inquirer,
+        )
     wait_until_all_substrate_nodes_connected(
         substrate_manager_connect_at_start=kusama_manager_connect_at_start,
         substrate_manager=rotki.chains_aggregator.kusama,
@@ -316,6 +324,7 @@ def fixture_rotkehlchen_api_server(
         manually_tracked_balances,
         default_mock_price_value,
         ethereum_manager_connect_at_start,
+        optimism_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
@@ -329,7 +338,9 @@ def fixture_rotkehlchen_api_server(
         current_price_oracles_order,
         network_mocking,
         mock_other_web3,
-        web3_mock_data,
+        ethereum_mock_data,
+        optimism_mock_data,
+        avalanche_mock_data,
         mocked_proxies,
 ):
     """A partially mocked rotkehlchen server instance"""
@@ -358,6 +369,7 @@ def fixture_rotkehlchen_api_server(
         manually_tracked_balances=manually_tracked_balances,
         default_mock_price_value=default_mock_price_value,
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        optimism_manager_connect_at_start=optimism_manager_connect_at_start,
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         max_tasks_num=max_tasks_num,
@@ -369,23 +381,26 @@ def fixture_rotkehlchen_api_server(
         perform_upgrades_at_unlock=perform_upgrades_at_unlock,
         perform_nodes_insertion=perform_nodes_insertion,
         current_price_oracles_order=current_price_oracles_order,
+        network_mocking=network_mocking,
     )
     with ExitStack() as stack:
         if start_with_logged_in_user is True:
             if network_mocking is True:
-                patch_avalanche = patch_avalanche_request(
+                stack.enter_context(patch_avalanche_request(
                     api_server.rest_api.rotkehlchen.chains_aggregator.avalanche,
-                    web3_mock_data,
-                )
-
-                stack.enter_context(patch_avalanche)
-                if mock_other_web3 is True:
-                    ethereum_inquirer = api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer  # noqa: E501
-                    eth_etherscan_patch = patch_etherscan_request(
-                        etherscan=ethereum_inquirer.etherscan,
-                        mock_data=web3_mock_data,
+                    avalanche_mock_data,
+                ))
+                for evm_chain, connect_at_start, mock_data in (
+                        ('ethereum', ethereum_manager_connect_at_start, ethereum_mock_data),
+                        ('optimism', optimism_manager_connect_at_start, optimism_mock_data),
+                ):
+                    maybe_mock_evm_inquirer(
+                        should_mock=mock_other_web3,
+                        parent_stack=stack,
+                        evm_inquirer=getattr(api_server.rest_api.rotkehlchen.chains_aggregator, evm_chain).node_inquirer,  # noqa: E501
+                        manager_connect_at_start=connect_at_start,
+                        mock_data=mock_data,
                     )
-                    stack.enter_context(eth_etherscan_patch)
 
             if mocked_proxies is not None:
                 stack.enter_context(mock_proxies(mocked_proxies))
@@ -415,6 +430,7 @@ def rotkehlchen_instance(
         manually_tracked_balances,
         default_mock_price_value,
         ethereum_manager_connect_at_start,
+        optimism_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
@@ -426,6 +442,7 @@ def rotkehlchen_instance(
         perform_upgrades_at_unlock,
         perform_nodes_insertion,
         current_price_oracles_order,
+        network_mocking,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -448,6 +465,7 @@ def rotkehlchen_instance(
         manually_tracked_balances=manually_tracked_balances,
         default_mock_price_value=default_mock_price_value,
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        optimism_manager_connect_at_start=optimism_manager_connect_at_start,
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         max_tasks_num=max_tasks_num,
@@ -459,6 +477,7 @@ def rotkehlchen_instance(
         perform_upgrades_at_unlock=perform_upgrades_at_unlock,
         perform_nodes_insertion=perform_nodes_insertion,
         current_price_oracles_order=current_price_oracles_order,
+        network_mocking=network_mocking,
     )
     return uninitialized_rotkehlchen
 
