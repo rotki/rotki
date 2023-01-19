@@ -1,9 +1,10 @@
 import { type Ref } from 'vue';
+import { type DialogType } from '@/types/dialogs';
 
 interface ConfirmationMessage {
   title: string;
   message: string;
-  type?: string;
+  type?: DialogType;
   singleAction?: boolean;
   primaryAction?: string;
   secondaryAction?: string;

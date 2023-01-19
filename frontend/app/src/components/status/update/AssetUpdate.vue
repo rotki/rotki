@@ -135,7 +135,8 @@ const showDoneConfirmation = () => {
         remoteVersion: get(remoteVersion)
       }),
       primaryAction: tc('asset_update.success.ok'),
-      singleAction: true
+      singleAction: true,
+      type: 'success'
     },
     updateComplete
   );
