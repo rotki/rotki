@@ -27,7 +27,6 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
-    ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
     EvmTransaction,
@@ -130,6 +129,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         self.dbevents = DBHistoryEvents(self.database)
         self.base = BaseDecoderTools(
             database=database,
+            chain_id=self.evm_inquirer.chain_id,
             is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
             address_is_exchange_fn=self._address_is_exchange,
         )
@@ -655,7 +655,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 found_token = get_or_create_evm_token(
                     userdb=self.database,
                     evm_address=tx_log.address,
-                    chain_id=ChainID.ETHEREUM,
                     token_kind=token_kind,
                     evm_inquirer=self.evm_inquirer,
                 )

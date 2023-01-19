@@ -54,7 +54,7 @@ def test_hop_l2_deposit(database, ethereum_inquirer):
 
 
 @pytest.mark.vcr
-@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
+@pytest.mark.parametrize('optimism_accounts', [[ADDY]])
 def test_hop_optimism_eth_receive(database, optimism_inquirer):
     """Data taken from
     https://optimistic.etherscan.io/tx/0x8394c39e1f030a04aa8359f0322257632282a7dfa419b3c9ffc8ab61205a815d

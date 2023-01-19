@@ -6,7 +6,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_USDT
+from rotkehlchen.constants.assets import A_ETH, A_OPTIMISM_USDT, A_USDT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
@@ -147,16 +147,17 @@ def test_no_logs_and_zero_eth(
     ]
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[
-    '0x4bBa290826C253BD854121346c370a9886d1bC26',
-    '0xED2f12B896d0C7BFf4050d3D8c4f95Bd61aAa12d',
-]])
-@pytest.mark.parametrize('chain', [ChainID.ETHEREUM, ChainID.OPTIMISM])
+@pytest.mark.parametrize('ethereum_accounts,optimism_accounts,tether_address,chain', [
+    (['0x4bBa290826C253BD854121346c370a9886d1bC26', '0xED2f12B896d0C7BFf4050d3D8c4f95Bd61aAa12d'], [], '0xdAC17F958D2ee523a2206206994597C13D831ec7', ChainID.ETHEREUM),  # noqa: E501
+    ([], ['0x4bBa290826C253BD854121346c370a9886d1bC26', '0xED2f12B896d0C7BFf4050d3D8c4f95Bd61aAa12d'], '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58', ChainID.OPTIMISM),  # noqa: E501
+])
 def test_simple_erc20_transfer(
         database,
         ethereum_accounts,
+        optimism_accounts,
         ethereum_transaction_decoder,
         optimism_transaction_decoder,
+        tether_address,
         chain,
 ):
     """
@@ -164,9 +165,9 @@ def test_simple_erc20_transfer(
     https://etherscan.io/tx/0xbb58b36ddc027a1070131e68b915e5f0dca37767b020ed164eda681725b5ca4e
     """
     evmhash = deserialize_evm_tx_hash('0xbb58b36ddc027a1070131e68b915e5f0dca37767b020ed164eda681725b5ca4e')  # noqa: E501
-    from_address = ethereum_accounts[0]
-    to_address = ethereum_accounts[1]
-    tether_address = string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7')
+    accounts = ethereum_accounts if chain == ChainID.ETHEREUM else optimism_accounts
+    from_address = accounts[0]
+    to_address = accounts[1]
     transaction = EvmTransaction(
         tx_hash=evmhash,
         chain_id=chain,
@@ -231,7 +232,7 @@ def test_simple_erc20_transfer(
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRANSFER,
             event_subtype=HistoryEventSubType.NONE,
-            asset=A_USDT,
+            asset=A_USDT if chain is ChainID.ETHEREUM else A_OPTIMISM_USDT,
             balance=Balance(amount=FVal('38.002229')),
             location_label=from_address,
             notes=f'Transfer 38.002229 USDT from {from_address} to {to_address}',
@@ -242,14 +243,14 @@ def test_simple_erc20_transfer(
     ]
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[
-    '0x4bBa290826C253BD854121346c370a9886d1bC26',
-    '0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC',
-]])
-@pytest.mark.parametrize('chain', [ChainID.ETHEREUM, ChainID.OPTIMISM])
+@pytest.mark.parametrize('ethereum_accounts,optimism_accounts,chain', [
+    (['0x4bBa290826C253BD854121346c370a9886d1bC26', '0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC'], [], ChainID.ETHEREUM),  # noqa: E501
+    ([], ['0x4bBa290826C253BD854121346c370a9886d1bC26', '0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC'], ChainID.OPTIMISM),  # noqa: E501
+])
 def test_eth_transfer(
         database,
         ethereum_accounts,
+        optimism_accounts,
         ethereum_transaction_decoder,
         optimism_transaction_decoder,
         chain,
@@ -259,8 +260,9 @@ def test_eth_transfer(
     https://etherscan.io/tx/0x8caa7df2ebebfceb98207605e64691202b9e7498c3cccdbccb41c1600cf16e65
     """
     evmhash = deserialize_evm_tx_hash('0x8caa7df2ebebfceb98207605e64691202b9e7498c3cccdbccb41c1600cf16e65')  # noqa: E501
-    from_address = ethereum_accounts[0]
-    to_address = ethereum_accounts[1]
+    accounts = ethereum_accounts if chain is ChainID.ETHEREUM else optimism_accounts
+    from_address = accounts[0]
+    to_address = accounts[1]
     transaction = EvmTransaction(
         tx_hash=evmhash,
         chain_id=chain,
@@ -325,11 +327,14 @@ def test_eth_transfer(
     ]
 
 
-@pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
-@pytest.mark.parametrize('chain', [ChainID.ETHEREUM, ChainID.OPTIMISM])
+@pytest.mark.parametrize('ethereum_accounts,optimism_accounts,chain', [
+    (['0x4bBa290826C253BD854121346c370a9886d1bC26'], [], ChainID.ETHEREUM),
+    ([], ['0x4bBa290826C253BD854121346c370a9886d1bC26'], ChainID.OPTIMISM),
+])
 def test_eth_spend(
         database,
         ethereum_accounts,
+        optimism_accounts,
         ethereum_transaction_decoder,
         optimism_transaction_decoder,
         chain,
@@ -339,7 +344,7 @@ def test_eth_spend(
     https://etherscan.io/tx/0x8caa7df2ebebfceb98207605e64691202b9e7498c3cccdbccb41c1600cf16e65
     """
     evmhash = deserialize_evm_tx_hash('0x8caa7df2ebebfceb98207605e64691202b9e7498c3cccdbccb41c1600cf16e65')  # noqa: E501
-    from_address = ethereum_accounts[0]
+    from_address = ethereum_accounts[0] if chain is ChainID.ETHEREUM else optimism_accounts[0]
     to_address = string_to_evm_address('0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC')
     transaction = EvmTransaction(
         tx_hash=evmhash,
