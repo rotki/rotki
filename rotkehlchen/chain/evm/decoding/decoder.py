@@ -655,6 +655,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 found_token = get_or_create_evm_token(
                     userdb=self.database,
                     evm_address=tx_log.address,
+                    chain_id=self.evm_inquirer.chain_id,
                     token_kind=token_kind,
                     evm_inquirer=self.evm_inquirer,
                 )

@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.tokens import EvmTokens
+from rotkehlchen.constants.assets import A_OPTIMISM_ETH
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
@@ -17,7 +18,7 @@ class OptimismTokens(EvmTokens):
 
     # -- methods that need to be implemented per chain
     def _get_token_exceptions(self) -> list[ChecksumEvmAddress]:
-        exceptions = []
+        exceptions = [A_OPTIMISM_ETH.resolve_to_evm_token().evm_address]
         with self.db.conn.read_ctx() as cursor:
             ignored_assets = self.db.get_ignored_assets(cursor=cursor)
 
