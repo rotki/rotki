@@ -225,8 +225,7 @@ def test_open_savepoint_with_savepoint_other_context():
 def test_rollback_in_savepoints():
     """
     Test that savepoints are released when an error is raised. This verifies
-    that the effect of rollback is not rollback + release. A release is needed
-    always.
+    that a rollback is always followed up by a release since that is required.
     """
     conn = DBConnection(
         path=':memory:',

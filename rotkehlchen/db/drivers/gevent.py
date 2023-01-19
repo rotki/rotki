@@ -450,7 +450,7 @@ class DBConnection:
         self.execute(f'{rollback_or_release} SAVEPOINT "{savepoint_name}"')
 
         # Release all savepoints until, and including, the one with name `savepoint_name`.
-        # with rollback we don't remove the savepoints since they are not released yet.
+        # For rollback we don't remove the savepoints since they are not released yet.
         if rollback_or_release == 'RELEASE':
             self.savepoints = dict.fromkeys(list_savepoints[:list_savepoints.index(savepoint_name)])  # noqa: E501
             if len(self.savepoints) == 0:  # mark if we are out of all savepoints
