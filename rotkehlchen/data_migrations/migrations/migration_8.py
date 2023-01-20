@@ -57,7 +57,7 @@ def data_migration_8(rotki: 'Rotkehlchen') -> None:
         if len(to_add_accounts) != 0:
             rotki.msg_aggregator.add_message(
                 message_type=WSMessageType.EVM_ADDRESS_MIGRATION,
-                data=[{'evm_chain': x[0], 'address': x[1]} for x in to_add_accounts],
+                data=[{'evm_chain': str(x[0]), 'address': x[1]} for x in to_add_accounts],
             )
 
     log.debug('Exit data_migration_8')

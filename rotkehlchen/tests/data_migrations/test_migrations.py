@@ -1,4 +1,5 @@
 import json
+import operator
 from contextlib import ExitStack
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -468,7 +469,8 @@ def test_migration_7_nodes(rotkehlchen_api_server: 'APIServer'):
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address(), make_evm_address(), make_evm_address(), make_evm_address()]])  # noqa: E501
-def test_migration_8(rotkehlchen_api_server, ethereum_accounts):
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+def test_migration_8(rotkehlchen_api_server, ethereum_accounts, websocket_connection):
     """
     Test that accounts are properly duplicated from ethereum to optimism and avalanche
     """
@@ -500,3 +502,14 @@ def test_migration_8(rotkehlchen_api_server, ethereum_accounts):
     assert set(rotki.chains_aggregator.accounts.avax) == set(avalanche_addresses)
     assert set(accounts.optimism) == set(optimism_addresses)
     assert set(rotki.chains_aggregator.accounts.optimism) == set(optimism_addresses)
+
+    websocket_connection.wait_until_messages_num(num=1, timeout=10)
+    assert websocket_connection.messages_num() == 1
+    msg = websocket_connection.pop_message()
+    assert msg['type'] == 'evm_address_migration'
+    assert sorted(msg['data'], key=operator.itemgetter('evm_chain', 'address')) == sorted([
+        {'evm_chain': 'avalanche', 'address': ethereum_accounts[1]},
+        {'evm_chain': 'avalanche', 'address': ethereum_accounts[3]},
+        {'evm_chain': 'optimism', 'address': ethereum_accounts[2]},
+        {'evm_chain': 'optimism', 'address': ethereum_accounts[3]},
+    ], key=operator.itemgetter('evm_chain', 'address'))
