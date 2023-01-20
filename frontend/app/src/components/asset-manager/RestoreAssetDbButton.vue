@@ -49,8 +49,11 @@ async function restoreAssets(resetType: ResetType) {
   }
 }
 
+const { navigateToUserLogin } = useAppNavigation();
+
 async function updateComplete() {
   await logout();
+  await navigateToUserLogin();
   setConnected(false);
   await restartBackend();
   await connect();
