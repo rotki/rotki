@@ -16,7 +16,7 @@ export async function fetchDataAsync<T extends TaskMeta, R>(
     !get(data.state.activeModules).includes(data.requires.module) ||
     (data.requires.premium && !get(data.state.isPremium))
   ) {
-    logger.debug('module inactive or not premium');
+    logger.debug(`module ${data.requires.module} inactive or not premium`);
     return;
   }
   const { awaitTask, isTaskRunning } = useTasks();

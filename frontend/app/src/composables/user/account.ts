@@ -5,6 +5,8 @@ import {
   type LoginCredentials
 } from '@/types/login';
 import { setLastLogin } from '@/utils/account-management';
+import { useWebsocketStore } from '@/store/websocket';
+import { useMainStore } from '@/store/main';
 
 export const useAccountManagement = () => {
   const loading = ref(false);
@@ -15,6 +17,7 @@ export const useAccountManagement = () => {
   const { showGetPremiumButton, showPremiumDialog } = usePremiumReminder();
   const { navigateToDashboard } = useAppNavigation();
   const { createAccount, login } = useSessionStore();
+  const { connect } = useWebsocketStore();
   const authStore = useSessionAuthStore();
   const { logged } = storeToRefs(authStore);
   const { updateLoginStatus } = authStore;
@@ -22,6 +25,7 @@ export const useAccountManagement = () => {
   const createNewAccount = async (payload: CreateAccountPayload) => {
     set(loading, true);
     set(error, '');
+    await connect();
     const result = await createAccount(payload);
     set(loading, false);
 
@@ -41,6 +45,7 @@ export const useAccountManagement = () => {
     syncApproval
   }: LoginCredentials) => {
     set(loading, true);
+    await connect();
     const result = await login({
       username,
       password,
@@ -72,11 +77,16 @@ export const useAutoLogin = () => {
   const autolog = ref(false);
 
   const { login } = useSessionStore();
+  const { connected } = storeToRefs(useMainStore());
   const { logged } = storeToRefs(useSessionAuthStore());
   const { resetSessionBackend } = useBackendManagement();
   const { showGetPremiumButton, showPremiumDialog } = usePremiumReminder();
 
-  onMounted(async () => {
+  watch(connected, async connected => {
+    if (!connected) {
+      return;
+    }
+
     await resetSessionBackend();
 
     set(autolog, true);
