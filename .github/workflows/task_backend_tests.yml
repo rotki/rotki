@@ -78,7 +78,7 @@ jobs:
       - name: Run tests
         env:
           CASSETTE_REWRITE_PATH: ${{steps.parse-cassette-rewrite-path.result}}
-          PYTEST_ARGS: '--durations=150'
+          PYTEST_ARGS: '--durations=150 --disable-recording'
           FORCE_COLOR: 1
         run: |
           if [ "${{ runner.os }}" == 'macOS' ];
