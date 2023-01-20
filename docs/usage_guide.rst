@@ -1847,6 +1847,17 @@ by going to ``https://rotki.example.com`` on your phone or tablet.
 Alternatively if you already have a VPN setup to your private network or on the machine you could use this VPN connection
 to securely connect to the rotki instance that runs in this network machine.
 
+.. image:: images/rotki_docker_warning.png
+   :alt: Rotki warning for docker
+   :align: center
+
+
+For the awareness reason, if the app is run in docker, you will see this warning every time it is opened.
+You can turn it off by running rotki docker image with this ``environment variable``::
+
+   ROTKI_ACCEPT_DOCKER_RISK=1
+
+
 Troubleshooting
 *****************
 
