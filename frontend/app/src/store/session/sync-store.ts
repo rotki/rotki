@@ -12,10 +12,10 @@ export const useSyncStoreStore = defineStore('syncStore', () => {
   const { notify } = useNotificationsStore();
   const { tc } = useI18n();
 
-  async function forceSync(
+  const forceSync = async (
     action: MaybeRef<SyncAction>,
     logout: () => Promise<void>
-  ): Promise<void> {
+  ): Promise<void> => {
     const taskType = TaskType.FORCE_SYNC;
     if (get(isTaskRunning(taskType))) {
       return;
@@ -64,7 +64,8 @@ export const useSyncStoreStore = defineStore('syncStore', () => {
     } catch (e: any) {
       notifyFailure(e.message);
     }
-  }
+  };
+
   return {
     forceSync
   };

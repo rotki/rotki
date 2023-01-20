@@ -76,9 +76,14 @@ const showConfirmation = (action: SyncAction) => {
   set(displayConfirmation, true);
 };
 
+const actionLogout = async () => {
+  await logout();
+  await navigateToUserLogin();
+};
+
 const performSync = async () => {
   set(pending, true);
-  await forceSync(syncAction, logout);
+  await forceSync(syncAction, actionLogout);
   set(pending, false);
 };
 
@@ -104,6 +109,8 @@ const importFilesCompleted = computed<boolean>(
 const { setMessage } = useMessageStore();
 
 const api = useSnapshotApi();
+
+const { navigateToUserLogin } = useAppNavigation();
 
 const importSnapshot = async () => {
   if (!get(importFilesCompleted)) return;
@@ -151,7 +158,7 @@ const importSnapshot = async () => {
     });
 
     setTimeout(() => {
-      startPromise(logout());
+      startPromise(actionLogout());
     }, 3000);
   }
 

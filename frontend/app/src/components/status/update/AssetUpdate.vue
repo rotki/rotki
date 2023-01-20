@@ -107,8 +107,11 @@ const updateAssets = async (resolution?: ConflictResolution) => {
   }
 };
 
+const { navigateToUserLogin } = useAppNavigation();
+
 const updateComplete = async () => {
   await logout();
+  await navigateToUserLogin();
   setConnected(false);
   await restartBackend();
   await connect();
