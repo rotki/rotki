@@ -38,7 +38,8 @@ export enum HistoryEventSubType {
   RETURN_WRAPPED = 'return wrapped',
   DONATE = 'donate',
   NFT = 'nft',
-  PLACE_ORDER = 'place order'
+  PLACE_ORDER = 'place order',
+  LIQUIDATE = 'liquidate'
 }
 
 export const HistoryEventSubTypeEnum = z.nativeEnum(HistoryEventSubType);
@@ -64,7 +65,8 @@ export enum TransactionEventType {
   RENEW = 'renew',
   PLACE_ORDER = 'place_order',
   TRANSFER = 'transfer',
-  CLAIM_REWARD = 'claim_reward'
+  CLAIM_REWARD = 'claim_reward',
+  LIQUIDATE = 'liquidate'
 }
 
 export const TransactionEventTypeEnum = z.nativeEnum(TransactionEventType);

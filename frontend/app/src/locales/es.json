@@ -3755,6 +3755,7 @@
         "donate": "Donate",
         "gas_fee": "Gas Fee",
         "governance": "Governance",
+        "liquidate": "Liquidate",
         "place_order": "Place Order",
         "receive": "Receive",
         "receive_donation": "Receive Donation",

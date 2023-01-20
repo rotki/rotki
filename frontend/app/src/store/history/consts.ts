@@ -288,6 +288,11 @@ export const useTransactionEventTypeData = createSharedComposable(() => {
         identifier: TransactionEventType.CLAIM_REWARD,
         label: tc('transactions.events.type.claim_reward'),
         icon: 'mdi-gift'
+      },
+      {
+        identifier: TransactionEventType.LIQUIDATE,
+        label: tc('transactions.events.type.liquidate'),
+        icon: 'mdi-water'
       }
     ]
   );
@@ -306,6 +311,7 @@ export const transactionEventTypeMapping: Record<
     [HistoryEventSubType.PAYBACK_DEBT]: TransactionEventType.REPAY,
     [HistoryEventSubType.RETURN_WRAPPED]: TransactionEventType.SEND,
     [HistoryEventSubType.DONATE]: TransactionEventType.DONATE,
+    [HistoryEventSubType.LIQUIDATE]: TransactionEventType.LIQUIDATE,
     [HistoryEventSubType.NONE]: TransactionEventType.SEND
   },
   [HistoryEventType.RECEIVE]: {
