@@ -395,7 +395,8 @@ const showDeleteConfirmation = () => {
   );
 };
 
-const { evmChains, getEvmChainName, getChain } = useSupportedChains();
+const { txEvmChains, getEvmChainName, getChain } = useSupportedChains();
+const txChains = useArrayMap(txEvmChains, x => x.id);
 </script>
 
 <template>
@@ -438,7 +439,7 @@ const { evmChains, getEvmChainName, getChain } = useSupportedChains();
                 <div>
                   <blockchain-account-selector
                     v-model="accounts"
-                    :chains="evmChains"
+                    :chains="txChains"
                     dense
                     :label="tc('transactions.filter.account')"
                     outlined
