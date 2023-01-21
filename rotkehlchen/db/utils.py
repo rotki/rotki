@@ -23,7 +23,15 @@ from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.substrate.utils import is_valid_substrate_address
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import HexColorCode, Location, Price, SupportedBlockchain, Timestamp
+from rotkehlchen.types import (
+    AssetMovementCategory,
+    HexColorCode,
+    Location,
+    Price,
+    SupportedBlockchain,
+    Timestamp,
+    TradeType,
+)
 from rotkehlchen.utils.misc import pairwise_longest, rgetattr, timestamp_to_date
 
 if TYPE_CHECKING:
@@ -366,3 +374,42 @@ def table_exists(cursor: 'DBCursor', name: str) -> bool:
     return cursor.execute(
         f'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="{name}"',
     ).fetchone()[0] == 1
+
+
+DBTupleType = Literal[
+    'trade',
+    'asset_movement',
+    'margin_position',
+    'evm_transaction',
+]
+
+
+def db_tuple_to_str(
+        data: tuple[Any, ...],
+        tuple_type: DBTupleType,
+) -> str:
+    """Turns a tuple DB entry for trade, or asset_movement into a user readable string
+
+    This is only intended for error messages.
+    """
+    if tuple_type == 'trade':
+        return (
+            f'{TradeType.deserialize_from_db(data[5])} trade with id {data[0]} '
+            f'in {Location.deserialize_from_db(data[2])} and base/quote asset {data[3]} / '
+            f'{data[4]} at timestamp {data[1]}'
+        )
+    if tuple_type == 'asset_movement':
+        return (
+            f'{AssetMovementCategory.deserialize_from_db(data[2])} of '
+            f'{data[4]} with id {data[0]} '
+            f'in {Location.deserialize_from_db(data[1])} at timestamp {data[3]}'
+        )
+    if tuple_type == 'margin_position':
+        return (
+            f'Margin position with id {data[0]} in {Location.deserialize_from_db(data[1])} '
+            f'for {data[5]} closed at timestamp {data[3]}'
+        )
+
+    # else can only be evm transaction
+    assert tuple_type == 'evm_transaction', 'only DBTupleType possible here is evm_transaction'
+    return f'EVM transaction with hash 0x{data[0].hex()} and chain id {data[1]}'
