@@ -77,10 +77,12 @@ from rotkehlchen.db.settings import (
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
     DBAssetBalance,
+    DBTupleType,
     LocationData,
     SingleDBAssetBalance,
     Tag,
     combine_asset_balances,
+    db_tuple_to_str,
     deserialize_tags_from_db,
     form_query_to_filter_timestamps,
     insert_tag_mappings,
@@ -110,7 +112,6 @@ from rotkehlchen.serialization.deserialize import deserialize_hex_color_code, de
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    AssetMovementCategory,
     BTCAddress,
     ChainAddress,
     ChainID,
@@ -124,7 +125,6 @@ from rotkehlchen.types import (
     ModuleName,
     SupportedBlockchain,
     Timestamp,
-    TradeType,
     UserNote,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -140,14 +140,6 @@ DBINFO_FILENAME = 'dbinfo.json'
 MAIN_DB_NAME = 'rotkehlchen.db'
 TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
 
-DBTupleType = Literal[
-    'trade',
-    'asset_movement',
-    'margin_position',
-    'evm_transaction',
-    'amm_swap',
-    'accounting_event',
-]
 
 # Tuples that contain first the name of a table and then the columns that
 # reference assets ids. This is used to query all assets that a user owns.
@@ -174,44 +166,6 @@ def _protect_password_sqlcipher(password: str) -> str:
     source: https://stackoverflow.com/a/603579/110395
 """
     return password.replace(r'"', r'""')
-
-
-def db_tuple_to_str(
-        data: tuple[Any, ...],
-        tuple_type: DBTupleType,
-) -> str:
-    """Turns a tuple DB entry for trade, or asset_movement into a user readable string
-
-    This is only intended for error messages.
-
-    TODO: Add some unit tests
-    """
-    if tuple_type == 'trade':
-        return (
-            f'{TradeType.deserialize_from_db(data[5])} trade with id {data[0]} '
-            f'in {Location.deserialize_from_db(data[2])} and base/quote asset {data[3]} / '
-            f'{data[4]} at timestamp {data[1]}'
-        )
-    if tuple_type == 'asset_movement':
-        return (
-            f'{AssetMovementCategory.deserialize_from_db(data[2])} of '
-            f'{data[4]} with id {data[0]} '
-            f'in {Location.deserialize_from_db(data[1])} at timestamp {data[3]}'
-        )
-    if tuple_type == 'margin_position':
-        return (
-            f'Margin position with id {data[0]} in  {Location.deserialize_from_db(data[1])} '
-            f'for {data[5]} closed at timestamp {data[3]}'
-        )
-    if tuple_type == 'evm_transaction':
-        return f'EVM transaction with hash "{data[0].hex()}" and chain id {data[1]}'
-    if tuple_type == 'amm_swap':
-        return (
-            f'AMM swap with id {data[0]}-{data[1]} '
-            f'in {Location.deserialize_from_db(data[6])} '
-        )
-
-    raise AssertionError('db_tuple_to_str() called with invalid tuple_type {tuple_type}')
 
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
