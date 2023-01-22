@@ -78,7 +78,7 @@ def test_query_ledger_actions(events_historian, function_scope_messages_aggregat
             only_cache=False,
         )
 
-    assert any((action.timestamp < selected_timestamp for action in actions))
+    assert any(action.timestamp < selected_timestamp for action in actions)
     assert length == 2
 
 

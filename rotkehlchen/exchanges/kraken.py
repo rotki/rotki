@@ -939,7 +939,7 @@ class Kraken(ExchangeInterface):
                 )
                 return None
 
-            rate = Price((receive_part.balance.amount / amount))
+            rate = Price(receive_part.balance.amount / amount)
 
         # If kfee was found we use it as the fee for the trade
         fee: Optional[Fee] = None
