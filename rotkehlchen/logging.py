@@ -49,11 +49,11 @@ def add_logging_level(
         method_name = level_name.lower()
 
     if hasattr(logging, level_name):
-        raise AttributeError('{} already defined in logging module'.format(level_name))
+        raise AttributeError(f'{level_name} already defined in logging module')
     if hasattr(logging, method_name):
-        raise AttributeError('{} already defined in logging module'.format(method_name))
+        raise AttributeError(f'{method_name} already defined in logging module')
     if hasattr(logging.getLoggerClass(), method_name):
-        raise AttributeError('{} already defined in logger class'.format(method_name))
+        raise AttributeError(f'{method_name} already defined in logger class')
 
     # This method was inspired by the answers to Stack Overflow post
     # http://stackoverflow.com/q/2183233/2988730, especially
@@ -96,7 +96,7 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
         msg = str(given_msg)
         greenlet = gevent.getcurrent()
         greenlet_name = get_greenlet_name(greenlet)
-        msg = greenlet_name + ': ' + msg + ','.join(' {}={}'.format(a[0], a[1]) for a in kwargs.items())  # noqa: E501
+        msg = greenlet_name + ': ' + msg + ','.join(f' {a[0]}={a[1]}' for a in kwargs.items())  # noqa: E501
         return msg, {}
 
     def trace(self, msg: str, *args: Any, **kwargs: Any) -> None:

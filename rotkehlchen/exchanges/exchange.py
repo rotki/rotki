@@ -53,10 +53,10 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             database: 'DBHandler',
     ):
         assert isinstance(api_key, T_ApiKey), (
-            'api key for {} should be a string'.format(name)
+            f'api key for {name} should be a string'
         )
         assert isinstance(secret, T_ApiSecret), (
-            'secret for {} should be a bytestring'.format(name)
+            f'secret for {name} should be a bytestring'
         )
         super().__init__()
         self.name = name

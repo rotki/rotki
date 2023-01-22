@@ -175,7 +175,7 @@ class ExchangeManager():
         For some exchanges there is more attributes to add
         """
         if location not in SUPPORTED_EXCHANGES:  # also checked via marshmallow
-            return False, 'Attempted to register unsupported exchange {}'.format(name)
+            return False, f'Attempted to register unsupported exchange {name}'
 
         if self.get_exchange(name=name, location=location) is not None:
             return False, f'{str(location)} exchange {name} is already registered'

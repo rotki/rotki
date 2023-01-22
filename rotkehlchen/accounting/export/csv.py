@@ -49,7 +49,7 @@ def _dict_to_csv_file(path: Path, dictionary_list: list) -> None:
     fields not in fieldnames
     """
     if len(dictionary_list) == 0:
-        log.debug('Skipping writting empty CSV for {}'.format(path))
+        log.debug(f'Skipping writting empty CSV for {path}')
         return
 
     with open(path, 'w', newline='') as f:

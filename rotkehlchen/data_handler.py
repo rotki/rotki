@@ -96,7 +96,7 @@ class DataHandler():
         else:
             try:
                 if not user_data_dir.exists():
-                    raise AuthenticationError('User {} does not exist'.format(username))
+                    raise AuthenticationError(f'User {username} does not exist')
 
                 if not (user_data_dir / 'rotkehlchen.db').exists():
                     raise PermissionError
