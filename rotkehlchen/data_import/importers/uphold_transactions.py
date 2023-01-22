@@ -106,40 +106,39 @@ Activity from uphold with uphold transaction id:
                     self.add_trade(cursor, trade)
                 else:
                     log.debug(f'Ignoring trade with Destination Amount: {destination_amount}.')
-        elif origin == 'uphold':
-            if transaction_type == 'out':
-                if origin_asset == destination_asset:  # Withdrawals
-                    asset_movement = AssetMovement(
-                        location=Location.UPHOLD,
-                        category=AssetMovementCategory.WITHDRAWAL,
-                        address=None,
-                        transaction_id=None,
+        elif origin == 'uphold' and transaction_type == 'out':
+            if origin_asset == destination_asset:  # Withdrawals
+                asset_movement = AssetMovement(
+                    location=Location.UPHOLD,
+                    category=AssetMovementCategory.WITHDRAWAL,
+                    address=None,
+                    transaction_id=None,
+                    timestamp=timestamp,
+                    asset=origin_asset,
+                    amount=origin_amount,
+                    fee=Fee(fee),
+                    fee_asset=fee_asset,
+                    link='',
+                )
+                self.add_asset_movement(cursor, asset_movement)
+            else:  # Trades (sell)
+                if origin_amount > 0:
+                    trade = Trade(
                         timestamp=timestamp,
-                        asset=origin_asset,
+                        location=Location.UPHOLD,
+                        base_asset=origin_asset,
+                        quote_asset=destination_asset,
+                        trade_type=TradeType.SELL,
                         amount=origin_amount,
+                        rate=Price(destination_amount / origin_amount),
                         fee=Fee(fee),
-                        fee_asset=fee_asset,
+                        fee_currency=fee_asset,
                         link='',
+                        notes=notes,
                     )
-                    self.add_asset_movement(cursor, asset_movement)
-                else:  # Trades (sell)
-                    if origin_amount > 0:
-                        trade = Trade(
-                            timestamp=timestamp,
-                            location=Location.UPHOLD,
-                            base_asset=origin_asset,
-                            quote_asset=destination_asset,
-                            trade_type=TradeType.SELL,
-                            amount=origin_amount,
-                            rate=Price(destination_amount / origin_amount),
-                            fee=Fee(fee),
-                            fee_currency=fee_asset,
-                            link='',
-                            notes=notes,
-                        )
-                        self.add_trade(cursor, trade)
-                    else:
-                        log.debug(f'Ignoring trade with Origin Amount: {origin_amount}.')
+                    self.add_trade(cursor, trade)
+                else:
+                    log.debug(f'Ignoring trade with Origin Amount: {origin_amount}.')
         elif destination == 'uphold' and transaction_type == 'in':
             if origin_asset == destination_asset:  # Deposits
                 asset_movement = AssetMovement(
