@@ -15,6 +15,7 @@ import {
   type EthTransaction,
   type EthTransactionEntry,
   type EthTransactionEventEntry,
+  type EvmChainAddress,
   type NewEthTransactionEvent,
   type TransactionRequestPayload
 } from '@/types/history/tx';
@@ -263,7 +264,7 @@ const saveData = async (
 const options: Ref<PaginationOptions | null> = ref(null);
 const accounts: Ref<GeneralAccount[]> = ref([]);
 
-const usedAccount: ComputedRef<Account[]> = computed(() => {
+const usedAccounts: ComputedRef<Account[]> = computed(() => {
   if (get(useExternalAccountFilter)) {
     return get(externalAccountFilter);
   }
@@ -285,19 +286,21 @@ const updatePayloadHandler = async () => {
     };
   }
 
-  let filterAddress = {};
-  const usedAccountVal = get(usedAccount);
-  if (usedAccountVal.length > 0) {
-    filterAddress = {
-      address: usedAccountVal[0].address,
-      evmChain: getEvmChainName(usedAccountVal[0].chain)
-    };
+  let filterAccounts: EvmChainAddress[] = [];
+  const usedAccountsVal = get(usedAccounts);
+  if (usedAccountsVal.length > 0) {
+    filterAccounts = usedAccountsVal.map(account => {
+      return {
+        address: account.address,
+        evmChain: getEvmChainName(account.chain)!
+      };
+    });
   }
 
   const payload: Writeable<Partial<TransactionRequestPayload>> = {
     ...(get(filters) as Partial<TransactionRequestPayload>),
     ...paginationOptions,
-    ...filterAddress
+    accounts: filterAccounts
   };
 
   const protocolsVal = get(protocols);
@@ -342,7 +345,7 @@ const setPage = (page: number) => {
   }
 };
 
-watch(usedAccount, async () => {
+watch(usedAccounts, async () => {
   let newOptions = null;
   if (get(options)) {
     newOptions = {
@@ -448,6 +451,7 @@ const txChains = useArrayMap(txEvmChains, x => x.id);
                     v-model="accounts"
                     :chains="txChains"
                     dense
+                    multiple
                     :label="tc('transactions.filter.account')"
                     outlined
                     no-padding

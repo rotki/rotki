@@ -208,14 +208,20 @@ const getItemKey = (item: GeneralAccount) => item.address + item.chain;
     }
   }
 
-  :deep(.v-select) {
-    .v-select {
-      &__selections {
-        input {
-          min-width: 0;
-        }
-      }
+  /* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+  :deep(.v-select__selections) {
+    padding: 2px;
+
+    .v-chip {
+      margin: 2px;
+    }
+
+    input {
+      min-width: 0;
     }
   }
+
+  /* stylelint-enable selector-class-pattern,selector-nested-pattern */
 }
 </style>

@@ -100,7 +100,7 @@ describe('ExternalServices.vue', () => {
         .trigger('click');
       await flushPromises();
       const store = useMessageStore();
-      expect(store.message.description).toMatch('cryptocompare');
+      expect(store.message.description).toMatch('Cryptocompare');
       expect(setService).toHaveBeenCalledWith([
         { name: 'cryptocompare', apiKey: '123' }
       ]);

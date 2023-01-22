@@ -786,11 +786,11 @@
     },
     "transactions": {
       "error": {
-        "description": "Failed query for {address}: {error}",
+        "description": "Failed query for {address} ({chain}): {error}",
         "title": "Evm Transactions Query"
       },
       "task": {
-        "description": "Retrieving txns for {address}",
+        "description": "Retrieving txns for {address} ({chain})",
         "title": "Evm Transactions"
       }
     },

@@ -14,7 +14,7 @@ import {
   type ExternalServiceKeys,
   type ExternalServiceName
 } from '@/types/user';
-import { toSentenceCase } from '@/utils/text';
+import { toCapitalCase, toSentenceCase } from '@/utils/text';
 
 const evmEtherscanTabIndex: Ref<number> = ref(0);
 
@@ -82,7 +82,7 @@ const save = async (serviceName: ExternalServiceName, key: string) => {
     setMessage({
       title: tc('external_services.set.success.title'),
       description: tc('external_services.set.success.message', 0, {
-        serviceName
+        serviceName: toCapitalCase(serviceName.split('_').join(' '))
       }),
       success: true
     });
