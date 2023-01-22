@@ -140,7 +140,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 query_str += f'&{name}={value}'
 
         api_key = self._get_api_key()
-        if api_key is None:
+        if api_key is None:  # noqa: SIM102  # https://github.com/charliermarsh/ruff/issues/2094
             if not self.warning_given:
                 self.msg_aggregator.add_warning(
                     f'You do not have an {self.chain} Etherscan API key configured. rotki '

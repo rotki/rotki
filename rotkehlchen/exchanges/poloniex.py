@@ -265,16 +265,14 @@ class Poloniex(ExchangeInterface):
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Poloniex API request failed due to {str(e)}') from e
 
-            if response is None:
-                if tries >= 1:
-                    backoff_seconds = 20 / tries
-                    log.debug(
-                        f'Got a recoverable poloniex error. '
-                        f'Backing off for {backoff_seconds}',
-                    )
-                    gevent.sleep(backoff_seconds)
-                    tries -= 1
-                    continue
+            if response is None and tries >= 1:
+                backoff_seconds = 20 / tries
+                log.debug(
+                    f'Got a recoverable poloniex error. '
+                    f'Backing off for {backoff_seconds}',
+                )
+                gevent.sleep(backoff_seconds)
+                tries -= 1
             else:
                 break
 
