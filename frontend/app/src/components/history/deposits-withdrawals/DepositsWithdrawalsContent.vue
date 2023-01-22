@@ -166,15 +166,23 @@ watch(filters, async (filter, oldValue) => {
     return;
   }
   let newOptions = null;
-  if (get(options)) {
+  const optionsVal = get(options);
+  if (optionsVal) {
     newOptions = {
-      ...get(options)!,
+      ...optionsVal,
       page: 1
     };
   }
 
   await updatePaginationHandler(newOptions);
 });
+
+const setPage = (page: number) => {
+  const optionsVal = get(options);
+  if (optionsVal) {
+    updatePaginationHandler({ ...optionsVal, page });
+  }
+};
 
 const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS;
 </script>
@@ -219,7 +227,7 @@ const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS;
       </v-row>
     </template>
 
-    <collection-handler :collection="assetMovements">
+    <collection-handler :collection="assetMovements" @set-page="setPage">
       <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
         <data-table
           v-model="selected"

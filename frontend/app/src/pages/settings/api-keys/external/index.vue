@@ -158,7 +158,9 @@ onMounted(async () => {
       </v-card>
       <v-tabs v-model="evmEtherscanTabIndex">
         <v-tab v-for="(_, chain) in evmEtherscanTabs" :key="chain">
-          <evm-chain-icon :chain="chain" />
+          <adaptive-wrapper>
+            <evm-chain-icon :chain="chain" />
+          </adaptive-wrapper>
           <div class="ml-2">{{ chain }}</div>
         </v-tab>
       </v-tabs>

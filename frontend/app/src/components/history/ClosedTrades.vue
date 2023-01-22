@@ -300,15 +300,23 @@ watch(filters, async (filters, oldValue) => {
     return;
   }
   let newOptions = null;
-  if (get(options)) {
+  const optionsVal = get(options);
+  if (optionsVal) {
     newOptions = {
-      ...get(options)!,
+      ...optionsVal,
       page: 1
     };
   }
 
   await updatePaginationHandler(newOptions);
 });
+
+const setPage = (page: number) => {
+  const optionsVal = get(options);
+  if (optionsVal) {
+    updatePaginationHandler({ ...optionsVal, page });
+  }
+};
 
 const fetch = (refresh = false) => emit('fetch', refresh);
 
@@ -410,7 +418,7 @@ const showDeleteConfirmation = () => {
         </v-row>
       </template>
 
-      <collection-handler :collection="trades">
+      <collection-handler :collection="trades" @set-page="setPage">
         <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
           <data-table
             v-model="selected"

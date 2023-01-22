@@ -332,7 +332,8 @@ export const transactionEventTypeMapping: Record<
     [HistoryEventSubType.NONE]: TransactionEventType.APPROVAL
   },
   [HistoryEventType.TRANSFER]: {
-    [HistoryEventSubType.NONE]: TransactionEventType.TRANSFER
+    [HistoryEventSubType.NONE]: TransactionEventType.TRANSFER,
+    [HistoryEventSubType.BRIDGE]: TransactionEventType.BRIDGE
   },
   [HistoryEventType.TRADE]: {
     [HistoryEventSubType.SPEND]: TransactionEventType.SWAP_OUT,
