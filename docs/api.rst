@@ -2287,34 +2287,42 @@ Query supported ethereum modules
 Querying evm transactions
 =================================
 
-.. http:get:: /api/(version)/blockchains/evm/transactions/(address)
-
-   .. note::
-      This endpoint also accepts parameters as query arguments.
+.. http:post:: /api/(version)/blockchains/evm/transactions/
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a GET on the evm transactions endpoint will query all evm transactions for all the tracked user addresses. Caller can also specify a chain and/or an address to further filter the query. Also they can limit the queried transactions by timestamps and can filter transactions by related event's properties (asset, protocols and whether to exclude transactions with ignored assets). If the user is not premium and has more than the transaction limit then the returned transaction will be limited to that number. Any filtering will also be limited. Transactions are returned most recent first.
+   Doing a POST on the evm transactions endpoint will query all evm transactions for all the tracked user addresses. Caller can also specify a chain and/or an address to further filter the query. Also they can limit the queried transactions by timestamps and can filter transactions by related event's properties (asset, protocols and whether to exclude transactions with ignored assets). If the user is not premium and has more than the transaction limit then the returned transaction will be limited to that number. Any filtering will also be limited. Transactions are returned most recent first.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/evm/transactions/0xdAC17F958D2ee523a2206206994597C13D831ec7/ HTTP/1.1
+      POST /api/1/blockchains/evm/transactions HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"from_timestamp": 1514764800, "to_timestamp": 1572080165, "only_cache": false}
+      {
+          "accounts": [{
+	      "address": "0x3CAdbeB58CB5162439908edA08df0A305b016dA8",
+	      "evm_chain": "optimism"
+	  }, {
+	      "address": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238"
+	  }],
+          "from_timestamp": 1514764800,
+	  "to_timestamp": 1572080165,
+	  "only_cache": false
+      }
 
    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson list[string] order_by_attributes: This is the list of attributes of the transaction by which to order the results.
    :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
+   :reqjson list[string] accounts: List of accounts to filter by. Each account contains an ``"address"`` key which is required and is an evm address. It can also contains an ``"evm_chain"`` field which is the specific chain for which to limit the address.
    :reqjson int from_timestamp: The timestamp after which to return transactions. If not given zero is considered as the start.
    :reqjson int to_timestamp: The timestamp until which to return transactions. If not given all transactions from ``from_timestamp`` until now are returned.
    :reqjson bool only_cache: If true then only the ethereum transactions in the DB are queried.
-   :reqjson string evm_chain: Optional. The name of the evm chain by which to filter transactions. ``"ethereum"``, ``"optimism"`` etc.
+   :reqjson string evm_chain: Optional. The name of the evm chain by which to filter all transactions. ``"ethereum"``, ``"optimism"`` etc.
    :reqjson string asset: Optional. Serialized asset to filter by.
    :reqjson list protocols: Optional. Protocols (counterparties) to filter by. List of strings.
    :reqjson bool exclude_ignored_assets: Optional. Whether to exclude transactions with ignored assets. Default true.
@@ -2524,18 +2532,18 @@ Querying evm transactions
 Request transactions event decoding
 =======================================
 
-.. http:post:: /api/(version)/blockchains/evm/transactions
+.. http:put:: /api/(version)/blockchains/evm/transactions
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a POST on the evm transactions endpoint will request a decoding of the given transactions and generation of decoded events. That basically entails querying the transaction receipts for each transaction hash and then decoding all events. If events are already queried and ignore_cache is true they will be deleted and requeried.
+   Doing a PUT on the evm transactions endpoint will request a decoding of the given transactions and generation of decoded events. That basically entails querying the transaction receipts for each transaction hash and then decoding all events. If events are already queried and ignore_cache is true they will be deleted and requeried.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/blockchains/evm/transactions HTTP/1.1
+      PUT /api/1/blockchains/evm/transactions HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 

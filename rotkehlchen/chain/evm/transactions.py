@@ -8,6 +8,7 @@ from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
+from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
@@ -117,9 +118,9 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         - pysqlcipher3.dbapi2.OperationalError if the SQL query fails due to
         invalid filtering arguments.
         """
-        query_addresses = filter_query.addresses
-        if query_addresses is not None:
-            accounts = query_addresses
+        query_accounts = filter_query.accounts
+        if query_accounts is not None:
+            accounts = [x.address for x in query_accounts]
         else:
             with self.database.conn.read_ctx() as cursor:
                 accounts = self.database.get_blockchain_accounts(cursor).get(
@@ -521,7 +522,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 )
             else:
                 tx_filter_query = EvmTransactionsFilterQuery.make(
-                    addresses=addresses,
+                    accounts=[EvmAccount(address=x) for x in addresses],
                     chain_id=self.evm_inquirer.chain_id,
                 )
 

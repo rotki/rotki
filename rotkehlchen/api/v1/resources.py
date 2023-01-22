@@ -108,7 +108,7 @@ from rotkehlchen.api.v1.schemas import (
     OptionalAddressesWithBlockchainsListSchema,
     OptionalEthereumAddressSchema,
     QueriedAddressesSchema,
-    RequiredEthereumAddressSchema,
+    RequiredEvmAddressSchema,
     ReverseEnsSchema,
     RpcAddNodeSchema,
     RpcNodeEditSchema,
@@ -469,13 +469,13 @@ class AssociatedLocations(BaseMethodView):
 
 
 class EvmTransactionsResource(BaseMethodView):
-    get_schema = EvmTransactionQuerySchema()
-    post_schema = EvmTransactionDecodingSchema()
+    post_schema = EvmTransactionQuerySchema()
+    put_schema = EvmTransactionDecodingSchema()
     delete_schema = EvmTransactionPurgingSchema()
 
     @require_loggedin_user()
-    @ignore_kwarg_parser.use_kwargs(get_schema, location='json_and_query_and_view_args')
-    def get(
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(
             self,
             async_query: bool,
             only_cache: bool,
@@ -490,8 +490,8 @@ class EvmTransactionsResource(BaseMethodView):
         )
 
     @require_loggedin_user()
-    @use_kwargs(post_schema, location='json_and_query')
-    def post(
+    @use_kwargs(put_schema, location='json_and_query')
+    def put(
             self,
             async_query: bool,
             ignore_cache: bool,
@@ -793,7 +793,7 @@ class AssetsReplaceResource(BaseMethodView):
 class EthereumAssetsResource(BaseMethodView):
 
     get_schema = OptionalEthereumAddressSchema()
-    delete_schema = RequiredEthereumAddressSchema()
+    delete_schema = RequiredEvmAddressSchema()
 
     def make_edit_schema(self) -> ModifyEvmTokenSchema:
         return ModifyEvmTokenSchema(

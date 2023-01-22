@@ -8,6 +8,7 @@ from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
+from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -121,14 +122,14 @@ class DBTimestampFilter(DBFilter):
 class DBETHTransactionJoinsFilter(DBFilter):
     """ This join filter does 2 things:
 
-    1. If addresses is not None or empty, find transactions involving any of the addresses.
-    Including in an internal. This uses the mappings we create in the DB at transaction
+    1. If accounts is not None, find transactions involving any of the address/chain combos.
+    Including internal ones. This uses the mappings we create in the DB at transaction
     addition to signify relevant addresses for a transaction.
 
     2. If join_events is True, join history_events which makes it possible to apply
     filters by history_events' properties
     """
-    addresses: Optional[list[ChecksumEvmAddress]]
+    accounts: Optional[list[EvmAccount]]
     should_join_events: bool = False
     chain_id: Optional[SUPPORTED_CHAIN_IDS] = None
 
@@ -140,19 +141,24 @@ class DBETHTransactionJoinsFilter(DBFilter):
                 'LEFT JOIN (SELECT event_identifier, counterparty, asset, type, subtype FROM history_events) '  # noqa: E501
                 'ON evm_transactions.tx_hash=event_identifier',
             )
-        if self.addresses is not None:
-            questionmarks = '?' * len(self.addresses)
+        if self.accounts is not None:
             query_filter_str = (
-                f'INNER JOIN evmtx_address_mappings WHERE '
-                f'evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND '
-                f'evmtx_address_mappings.address IN ({",".join(questionmarks)})'
+                'INNER JOIN evmtx_address_mappings WHERE '
+                'evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND ('
             )
-            bindings += self.addresses
-            if self.chain_id is not None:
-                query_filter_str += ' AND evmtx_address_mappings.chain_id=?'
-                bindings.append(self.chain_id.serialize_for_db())
+            individual_queries = []
+            for address, paired_chain_id in self.accounts:
+                individual_query = '(evmtx_address_mappings.address = ?'
+                bindings.append(address)
+                if paired_chain_id is not None:
+                    individual_query += ' AND evmtx_address_mappings.chain_id=?'
+                    bindings.append(paired_chain_id.serialize_for_db())
+                individual_query += ')'
 
-            query_filters.append(query_filter_str)
+                individual_queries.append(individual_query)
+
+            query_filter_str += ' OR '.join(individual_queries)
+            query_filters.append(query_filter_str + ')')
 
         elif self.chain_id is not None:
             query_filters.append(
@@ -392,12 +398,12 @@ class FilterWithLocation():
 class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @property
-    def addresses(self) -> Optional[list[ChecksumEvmAddress]]:
+    def accounts(self) -> Optional[list[EvmAccount]]:
         if self.join_clause is None:
             return None
 
         ethaddress_filter = cast('DBETHTransactionJoinsFilter', self.join_clause)
-        return ethaddress_filter.addresses
+        return ethaddress_filter.accounts
 
     @property
     def chain_id(self) -> Optional[SUPPORTED_CHAIN_IDS]:
@@ -412,7 +418,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
-            addresses: Optional[list[ChecksumEvmAddress]] = None,
+            accounts: Optional[list[EvmAccount]] = None,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             tx_hash: Optional[EVMTxHash] = None,
@@ -453,10 +459,10 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
                 event_types is not None or
                 event_subtypes is not None
             )
-            if addresses is not None or should_join_events is True:
+            if accounts is not None or should_join_events is True:
                 filter_query.join_clause = DBETHTransactionJoinsFilter(
                     and_op=False,
-                    addresses=addresses,
+                    accounts=accounts,
                     should_join_events=should_join_events,
                     chain_id=chain_id,
                 )

@@ -35,6 +35,7 @@ from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.substrate.types import SubstrateAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_substrate_address_from_public_key,
@@ -208,6 +209,33 @@ class DBOrderBySchema(Schema):
             )
 
 
+class OptionalEthereumAddressSchema(Schema):
+    address = EthereumAddressField(required=False, load_default=None)
+    evm_chain = EvmChainNameField(required=False, load_default=ChainID.ETHEREUM)
+
+
+class RequiredEvmAddressOptionalChainSchema(Schema):
+    address = EthereumAddressField(required=True)
+    evm_chain = EvmChainNameField(
+        required=False,
+        limit_to=get_args(SUPPORTED_CHAIN_IDS),  # type: ignore
+        load_default=None,
+    )
+
+    @post_load
+    def transform_data(  # pylint: disable=no-self-use
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        return EvmAccount(data['address'], chain_id=data['evm_chain'])
+
+
+class RequiredEvmAddressSchema(Schema):
+    address = EthereumAddressField(required=True)
+    evm_chain = EvmChainNameField(required=True)
+
+
 class EvmTransactionPurgingSchema(Schema):
     evm_chain = EvmChainNameField(required=False, load_default=None)
 
@@ -218,7 +246,11 @@ class EvmTransactionQuerySchema(
         DBPaginationSchema,
         DBOrderBySchema,
 ):
-    address = EthereumAddressField(load_default=None)
+    accounts = fields.List(
+        fields.Nested(RequiredEvmAddressOptionalChainSchema),
+        load_default=None,
+        validate=lambda data: len(data) != 0,
+    )
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
     protocols = DelimitedOrNormalList(fields.String(), load_default=None)
@@ -275,7 +307,6 @@ class EvmTransactionQuerySchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        address = data.get('address')
         protocols, asset = data['protocols'], data['asset']
         exclude_ignored_assets = data['exclude_ignored_assets']
         event_types = data['event_types']
@@ -284,7 +315,7 @@ class EvmTransactionQuerySchema(
             order_by_rules=create_order_by_rules_list(data),
             limit=data['limit'],
             offset=data['offset'],
-            addresses=[address] if address is not None else None,
+            accounts=data['accounts'],
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
             chain_id=data['evm_chain'],
@@ -1746,16 +1777,6 @@ class IgnoredActionsModifySchema(Schema):
         return data
 
 
-class OptionalEthereumAddressSchema(Schema):
-    address = EthereumAddressField(required=False, load_default=None)
-    evm_chain = EvmChainNameField(required=False, load_default=ChainID.ETHEREUM)
-
-
-class RequiredEthereumAddressSchema(Schema):
-    address = EthereumAddressField(required=True)
-    evm_chain = EvmChainNameField(required=True)
-
-
 class OptionalEvmTokenInformationSchema(Schema):
     address = EthereumAddressField(required=False)
     evm_chain = EvmChainNameField(required=False)
@@ -1960,14 +1981,14 @@ class AssetsMappingSchema(Schema):
     identifiers = DelimitedOrNormalList(fields.String(required=True), required=True)
 
 
-class EvmTokenSchema(BaseCryptoAssetSchema, RequiredEthereumAddressSchema):
+class EvmTokenSchema(BaseCryptoAssetSchema, RequiredEvmAddressSchema):
     token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=True)
     decimals = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
             min=0,
             max=18,
-            error='Ethereum token decimals should range from 0 to 18',
+            error='Evm token decimals should range from 0 to 18',
         ),
         required=True,
     )
