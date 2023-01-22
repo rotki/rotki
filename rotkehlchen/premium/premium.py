@@ -137,7 +137,7 @@ class Premium():
         self.status = SubscriptionStatus.UNKNOWN
         self.session = requests.session()
         self.apiversion = '1'
-        self.uri = 'https://rotki.com/api/{}/'.format(self.apiversion)
+        self.uri = f'https://rotki.com/api/{self.apiversion}/'
         self.reset_credentials(credentials)
 
     def reset_credentials(self, credentials: PremiumCredentials) -> None:

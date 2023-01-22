@@ -238,7 +238,7 @@ class HDKey():
         """
         path: Optional[str]
         if self.path is not None:
-            path = '{}/{}'.format(self.path, str(index))
+            path = f'{self.path}/{str(index)}'
         else:
             path = None
         xpub_bytes = b58decode(child_xpub)

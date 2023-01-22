@@ -218,7 +218,7 @@ def memory_subplot(output, data_list):
 
         dt_start_time = timestamp[0]
         hours = timestamp[-1] - dt_start_time
-        label = '{start_date:%Y-%m-%d}\n{runtime}'.format(start_date=dt_start_time, runtime=hours)
+        label = f'{dt_start_time:%Y-%m-%d}\n{hours}'
 
         memory_axes.plot(timestamp, memory, color='b')
         memory_axes.set_ylim(0, memory_max)

@@ -227,9 +227,9 @@ class Poloniex(ExchangeInterface):
             })
             params = urlencode(req)
             if params == '':
-                url = '{host}{path}'.format(host=self.uri, path=path)
+                url = f'{self.uri}{path}'
             else:
-                url = '{host}{path}?{params}'.format(host=self.uri, path=path, params=params)
+                url = f'{self.uri}{path}?{params}'
             response = self.session.get(url, params={}, timeout=DEFAULT_TIMEOUT_TUPLE)
 
         if response.status_code == 504:

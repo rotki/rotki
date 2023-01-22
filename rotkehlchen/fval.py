@@ -49,7 +49,7 @@ class FVal():
         return f'{self.num:f}'
 
     def __repr__(self) -> str:
-        return 'FVal({})'.format(str(self.num))
+        return f'FVal({str(self.num)})'
 
     def __gt__(self, other: AcceptableFValOtherInput) -> bool:
         evaluated_other = _evaluate_input(other)

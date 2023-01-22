@@ -26,7 +26,7 @@ FlameGraph = dict[FlameStack, float]
 def frame_format(frame: FrameType) -> str:
     block_name = frame.f_code.co_name
     module_name = frame.f_globals.get('__name__')
-    return '{}({})'.format(block_name, module_name)
+    return f'{block_name}({module_name})'
 
 
 def collect_frames(frame: FrameType) -> list[str]:
@@ -61,7 +61,7 @@ def process_memory_mb(pid: int) -> float:
 
 def sample_memory(timestamp: float, pid: int, stream: IO) -> None:
     memory = process_memory_mb(pid)
-    stream.write('{timestamp:.6f} {memory:.4f}\n'.format(timestamp=timestamp, memory=memory))
+    stream.write(f'{timestamp:.6f} {memory:.4f}\n')
 
 
 def sample_objects(timestamp: float, stream: IO) -> None:

@@ -185,7 +185,7 @@ class Bitcoinde(ExchangeInterface):
         Queries Bitcoin.de with the given verb for the given path and options
         """
         assert verb in ('get', 'post'), (
-            'Given verb {} is not a valid HTTP verb'.format(verb)
+            f'Given verb {verb} is not a valid HTTP verb'
         )
 
         request_path_no_args = '/v4/' + path
