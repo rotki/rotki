@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Optional, get_args
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_BEGIN
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
+from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.optimism.constants import OPTIMISM_BEGIN
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, TransactionsNotDecodedFilterQuery
@@ -536,7 +537,7 @@ class DBEvmTx():
                 cursor=cursor,
                 filter_=EvmTransactionsFilterQuery.make(
                     tx_hash=GENESIS_HASH,
-                    addresses=[account],
+                    accounts=[EvmAccount(address=account)],
                     chain_id=chain_id,
                 ),
                 has_premium=True,

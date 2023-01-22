@@ -359,7 +359,7 @@ class EventsHistorian:
         tx_filter_query = EvmTransactionsFilterQuery.make(
             limit=None,
             offset=None,
-            addresses=None,
+            accounts=None,
             # We need to have history of transactions since before the range
             from_ts=Timestamp(0),
             to_ts=end_ts,

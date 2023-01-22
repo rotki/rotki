@@ -1,4 +1,5 @@
 from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
@@ -116,7 +117,14 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
         assert result == []
 
         # Now try transaction by relevant addresses
-        result = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(addresses=[ETH_ADDRESS1, make_evm_address()], chain_id=ChainID.ETHEREUM), has_premium=True)  # noqa: E501
+        result = dbevmtx.get_evm_transactions(
+            cursor=cursor,
+            filter_=EvmTransactionsFilterQuery.make(
+                accounts=[EvmAccount(ETH_ADDRESS1), EvmAccount(make_evm_address())],
+                chain_id=ChainID.ETHEREUM,
+            ),
+            has_premium=True,
+        )
         assert result == [tx1, tx3]
 
 
@@ -266,7 +274,10 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
 
         result, total_filter_count = dbevmtx.get_evm_transactions_and_limit_info(
             cursor=cursor,
-            filter_=EvmTransactionsFilterQuery.make(addresses=[ETH_ADDRESS3], chain_id=ChainID.ETHEREUM),  # noqa: E501
+            filter_=EvmTransactionsFilterQuery.make(
+                accounts=[EvmAccount(ETH_ADDRESS3, chain_id=ChainID.ETHEREUM)],
+                chain_id=ChainID.ETHEREUM,
+            ),
             has_premium=True,
         )
         assert {x.tx_hash for x in result} == {b'1', b'3', b'4'}
@@ -276,7 +287,9 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         # internal tx mappings
         result, total_filter_count = dbevmtx.get_evm_transactions_and_limit_info(
             cursor=cursor,
-            filter_=EvmTransactionsFilterQuery.make(addresses=[ETH_ADDRESS1], chain_id=ChainID.ETHEREUM),  # noqa: E501
+            filter_=EvmTransactionsFilterQuery.make(
+                accounts=[EvmAccount(ETH_ADDRESS1)],
+                chain_id=ChainID.ETHEREUM),
             has_premium=True,
         )
         assert result == [tx1, tx3, tx4, tx5]
@@ -284,14 +297,20 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
 
         result = dbevmtx.get_evm_transactions(
             cursor=cursor,
-            filter_=EvmTransactionsFilterQuery.make(addresses=[address_4], chain_id=ChainID.ETHEREUM),  # noqa: E501
+            filter_=EvmTransactionsFilterQuery.make(
+                accounts=[EvmAccount(address_4)],
+                chain_id=ChainID.ETHEREUM,
+            ),
             has_premium=True,
         )
         assert result == [tx3]
 
         result = dbevmtx.get_evm_transactions(
             cursor=cursor,
-            filter_=EvmTransactionsFilterQuery.make(addresses=[ETH_ADDRESS3], chain_id=ChainID.ETHEREUM),  # noqa: E501
+            filter_=EvmTransactionsFilterQuery.make(
+                accounts=[EvmAccount(ETH_ADDRESS3)],
+                chain_id=ChainID.ETHEREUM,
+            ),
             has_premium=True,
         )
         assert result == [tx1, tx3, tx4]

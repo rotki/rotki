@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from typing import Any, Literal, NamedTuple
+from typing import Any, Literal, NamedTuple, Optional
 
 from eth_typing import HexAddress, HexStr
 
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain
+from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChecksumEvmAddress, SupportedBlockchain
 
 
 def string_to_evm_address(value: str) -> ChecksumEvmAddress:
@@ -79,3 +79,8 @@ class WeightedNode:
             weight=FVal(data['weight']) / 100,
             active=bool(data['active']),
         )
+
+
+class EvmAccount(NamedTuple):
+    address: ChecksumEvmAddress
+    chain_id: Optional[SUPPORTED_CHAIN_IDS] = None

@@ -190,7 +190,7 @@ def assert_force_redecode_txns_works(api_server: 'APIServer', hashes: Optional[l
         function_call_counters.append(stack.enter_context(get_eth_txns_patch))
         function_call_counters.append(stack.enter_context(get_or_query_txn_receipt_patch))
 
-        response = requests.post(
+        response = requests.put(
             api_url_for(
                 api_server,
                 'evmtransactionsresource',
@@ -251,7 +251,7 @@ def test_query_transactions(rotkehlchen_api_server):
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # Check that we get all transactions
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -306,16 +306,16 @@ def test_query_transactions(rotkehlchen_api_server):
         return MockResponse(200, '{}')
     etherscan_patch = patch.object(rotki.chains_aggregator.ethereum.node_inquirer.etherscan.session, 'get', wraps=mock_etherscan_get)  # noqa: E501
     with etherscan_patch as mock_call:
-        response = requests.get(
+        response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
-                'per_address_evm_transactions_resource',
-                address='0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7',
+                'evmtransactionsresource',
             ), json={
                 'async_query': async_query,
                 'from_timestamp': 1461399856,
                 'to_timestamp': 1494458860,
                 'evm_chain': 'ethereum',
+                'accounts': [{'address': '0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7'}],
             },
         )
         if async_query:
@@ -335,7 +335,7 @@ def test_query_transactions(rotkehlchen_api_server):
 
     # Also check that requesting decoding of tx_hashes gets receipts and decodes events
     hashes = [EXPECTED_AFB7_TXS[0]['tx_hash'], EXPECTED_4193_TXS[0]['tx_hash']]
-    response = requests.post(
+    response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -375,7 +375,7 @@ def test_query_transactions(rotkehlchen_api_server):
             assert events[0].balance.usd_value == events[0].balance.amount * FVal(1.5)
 
     # see that if same transaction hash is requested for decoding events are not re-decoded
-    response = requests.post(
+    response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -409,7 +409,7 @@ def test_query_transactions(rotkehlchen_api_server):
     assert_force_redecode_txns_works(rotkehlchen_api_server, None)
 
     # see that empty list of hashes to decode is an error
-    response = requests.post(
+    response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -426,7 +426,7 @@ def test_query_transactions(rotkehlchen_api_server):
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_request_transaction_decoding_errors(rotkehlchen_api_server):
     """Test that the request transaction decoding endpoint handles input errors"""
-    response = requests.post(
+    response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -444,7 +444,7 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    response = requests.post(
+    response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -462,7 +462,7 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    response = requests.post(
+    response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -481,7 +481,7 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server):
     )
 
     nonexisting_hash = '0x1c4f300f4d9e6436825ed0dc85716df4648a64a29570280c6e6261acf041aa41'
-    response = requests.post(
+    response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -500,7 +500,7 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server):
     )
 
     # trying to get transactions for a chaind that doesn't support yet them
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -559,7 +559,7 @@ def test_query_over_10k_transactions(rotkehlchen_api_server):
 
     expected_at_least = 16097  # 30/08/2020
     with mock_some_etherscan_queries(rotki.chains_aggregator.ethereum.node_inquirer.etherscan):
-        response = requests.get(
+        response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
                 'evmtransactionsresource',
@@ -585,12 +585,11 @@ def test_query_over_10k_transactions(rotkehlchen_api_server):
 
 def test_query_transactions_errors(rotkehlchen_api_server):
     # Malformed address
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'per_address_evm_transactions_resource',
-            address='0xasdasd',
-        ),
+            'evmtransactionsresource',
+        ), json={'accounts': [{'address': '0xasdasd'}]},
     )
     assert_error_response(
         response=response,
@@ -599,12 +598,15 @@ def test_query_transactions_errors(rotkehlchen_api_server):
     )
 
     # Malformed from_timestamp
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'per_address_evm_transactions_resource',
-            address='0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7',
-        ), json={'from_timestamp': 'foo'},
+            'evmtransactionsresource',
+        ),
+        json={
+            'accounts': [{'address': '0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7'}],
+            'from_timestamp': 'foo',
+        },
     )
     assert_error_response(
         response=response,
@@ -613,12 +615,15 @@ def test_query_transactions_errors(rotkehlchen_api_server):
     )
 
     # Malformed to_timestamp
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'per_address_evm_transactions_resource',
-            address='0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7',
-        ), json={'to_timestamp': 'foo'},
+            'evmtransactionsresource',
+        ),
+        json={
+            'accounts': [{'address': '0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7'}],
+            'to_timestamp': 'foo',
+        },
     )
     assert_error_response(
         response=response,
@@ -627,12 +632,16 @@ def test_query_transactions_errors(rotkehlchen_api_server):
     )
 
     # Invalid order_by_attribute
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'per_address_evm_transactions_resource',
-            address='0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7',
-        ), json={'order_by_attributes': ['tim3'], 'ascending': [False]},
+            'evmtransactionsresource',
+        ),
+        json={
+            'accounts': [{'address': '0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7'}],
+            'order_by_attributes': ['tim3'],
+            'ascending': [False],
+        },
     )
     assert_error_response(
         response=response,
@@ -693,7 +702,7 @@ def test_query_transactions_over_limit(
     # Check that we get all transactions correctly even if we query two times
     for _ in range(2):
         for idx, address in enumerate(ethereum_accounts):
-            response = requests.get(
+            response = requests.post(
                 api_url_for(
                     rotkehlchen_api_server,
                     'evmtransactionsresource',
@@ -701,7 +710,7 @@ def test_query_transactions_over_limit(
                     'evm_chain': 'ethereum',
                     'from_timestamp': start_ts,
                     'to_timestamp': end_ts,
-                    'address': address,
+                    'accounts': [{'address': address}],
                 },
             )
             result = assert_proper_response_with_result(response)
@@ -776,7 +785,7 @@ def test_query_transactions_from_to_address(
     # Check that we get all transactions correctly even if we query two times
     for _ in range(2):
         for address in ethereum_accounts:
-            response = requests.get(
+            response = requests.post(
                 api_url_for(
                     rotkehlchen_api_server,
                     'evmtransactionsresource',
@@ -784,7 +793,7 @@ def test_query_transactions_from_to_address(
                     'evm_chain': 'ethereum',
                     'from_timestamp': start_ts,
                     'to_timestamp': end_ts,
-                    'address': address,
+                    'accounts': [{'address': address}],
                 },
             )
             result = assert_proper_response_with_result(response)
@@ -895,7 +904,7 @@ def test_query_transactions_removed_address(
     assert_proper_response_with_result(response)
 
     # Check that only the 3 remaining transactions from the other account are returned
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -952,7 +961,7 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
 
     with mock_etherscan_transaction_response(rotki.chains_aggregator.ethereum.node_inquirer.etherscan, ethereum_accounts):  # noqa: E501
         # Check that we get transaction both when we query all accounts and each one individually
-        response = requests.get(
+        response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
                 'evmtransactionsresource',
@@ -964,25 +973,29 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
         assert result['entries_found'] == 2
         assert result['entries_total'] == 2
 
-        response = requests.get(
+        response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
-                'per_address_evm_transactions_resource',
-                address=ethereum_accounts[0],
+                'evmtransactionsresource',
             ),
-            json={'evm_chain': 'ethereum'},
+            json={
+                'evm_chain': 'ethereum',
+                'accounts': [{'address': ethereum_accounts[0]}],
+            },
         )
         result = assert_proper_response_with_result(response)
         assert len(result['entries']) == 1
         assert result['entries_found'] == 1
         assert result['entries_total'] == 2
-        response = requests.get(
+        response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
-                'per_address_evm_transactions_resource',
-                address=ethereum_accounts[1],
+                'evmtransactionsresource',
             ),
-            json={'evm_chain': 'ethereum'},
+            json={
+                'evm_chain': 'ethereum',
+                'accounts': [{'address': ethereum_accounts[1], 'evm_chain': 'ethereum'}],
+            },
         )
         result = assert_proper_response_with_result(response)
         assert len(result['entries']) == 2
@@ -1020,7 +1033,7 @@ def test_query_transactions_check_decoded_events(
         gevent.joinall(rotki.greenlet_manager.greenlets)
         rotki.task_manager._maybe_decode_evm_transactions()
         gevent.joinall(rotki.greenlet_manager.greenlets)
-        response = requests.get(
+        response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
                 'evmtransactionsresource',
@@ -1280,7 +1293,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         dbevmtx.add_evm_transactions(cursor, [tx4], relevant_address=ethereum_accounts[2])
         dbevents.add_history_events(cursor, [event1, event2, event3, event4, event5, event6], ChainID.ETHEREUM)  # noqa: E501
 
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -1296,7 +1309,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         contained_in_msg='{"protocols": ["protocols have to be either not passed or contain at least one item"]}',  # noqa: E501
     )
 
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -1304,14 +1317,14 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         json={
             'evm_chain': 'ethereum',
             'asset': A_WETH.serialize(),
-            'address': ethereum_accounts[0],
+            'accounts': [{'address': ethereum_accounts[0]}],
         },
     )
     result = assert_proper_response_with_result(response)
     expected = generate_tx_entries_response([(tx2, [event4]), (tx1, [event3])])
     assert result['entries'] == expected
 
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -1322,7 +1335,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     expected = generate_tx_entries_response([(tx1, [event1, event2])])
     assert result['entries'] == expected
 
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -1333,7 +1346,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     expected = generate_tx_entries_response([(tx2, [event4]), (tx1, [event3])])
     assert result['entries'] == expected
 
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -1344,7 +1357,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     expected = generate_tx_entries_response([(tx1, [event2, event3])])
     assert result['entries'] == expected
 
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -1360,7 +1373,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     assert result['entries'] == expected
 
     # test that filtering by type works
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -1375,7 +1388,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     assert result['entries'] == expected
 
     # test that filtering by subtype works
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -1412,7 +1425,7 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
         dbevmtx.add_evm_transactions(cursor, [tx1, tx2, tx3], relevant_address=ethereum_accounts[0])  # noqa: E501
         dbevents.add_history_events(cursor, [event1, event2, event3, event4])
 
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -1434,7 +1447,7 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
     assert result['entries_total'] == 3
     assert result['entries_limit'] == FREE_ETH_TX_LIMIT
 
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -1462,7 +1475,7 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer'):
     """
     tx_str = '0x6cbae2712ded4254cc0dbd3daa9528b049c27095b5216a4c52e2e3be3d6905a5'
     # Make sure that the transactions get decoded
-    response = requests.post(
+    response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -1477,7 +1490,7 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer'):
     assert_simple_ok_response(response)
 
     # retrieve the transaction
-    response = requests.get(api_url_for(
+    response = requests.post(api_url_for(
         rotkehlchen_api_server,
         'evmtransactionsresource',
     ), json={'async_query': False, 'from_timestamp': 1668407732, 'to_timestamp': 1668407737, 'evm_chain': 'ethereum'})  # noqa: E501

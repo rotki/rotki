@@ -223,11 +223,6 @@ URLS_V1: URLS = [
     ('/blockchains/supported', SupportedChainsResource),
     ('/blockchains/evm/transactions', EvmTransactionsResource),
     ('/blockchains/evm/transactions/decode', EvmPendingTransactionsDecodingResource),
-    (
-        '/blockchains/evm/transactions/<string:address>',
-        EvmTransactionsResource,
-        'per_address_evm_transactions_resource',
-    ),
     ('/blockchains/ETH2/validators', Eth2ValidatorsResource),
     ('/blockchains/ETH2/stake/deposits', Eth2StakeDepositsResource),
     ('/blockchains/ETH2/stake/details', Eth2StakeDetailsResource),

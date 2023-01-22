@@ -37,7 +37,7 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer'):
     """
     async_query = random.choice([False, True])
     # Ask for all evm transactions (test addy has both optimism and mainnet)
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',
@@ -69,7 +69,7 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer'):
 
     # After querying make sure pagination and only_cache work properly for multiple chains
     for evm_chain in ('ethereum', 'optimism'):
-        response = requests.get(
+        response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
                 'evmtransactionsresource',

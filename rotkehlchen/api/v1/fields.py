@@ -37,6 +37,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
 )
 from rotkehlchen.types import (
+    SUPPORTED_CHAIN_IDS,
     ApiKey,
     ApiSecret,
     AssetAmount,
@@ -368,6 +369,10 @@ class EvmChainNameField(fields.Field):
     chain to serialize to chain id, so the frontend does not have to remember a
     mapping of chain id to evm chain name"""
 
+    def __init__(self, *, limit_to: Optional[list[SUPPORTED_CHAIN_IDS]] = None, **kwargs: Any) -> None:  # noqa: E501
+        self.limit_to = limit_to
+        super().__init__(**kwargs)
+
     @staticmethod
     def _serialize(
             value: ChainID,
@@ -388,6 +393,12 @@ class EvmChainNameField(fields.Field):
             chain_id = ChainID.deserialize_from_name(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
+
+        if self.limit_to is not None and chain_id not in self.limit_to:
+            raise ValidationError(
+                f'Given chain_id {value} is not one of '
+                f'{",".join([str(x) for x in self.limit_to])} as needed by the endpoint',
+            )
 
         return chain_id
 

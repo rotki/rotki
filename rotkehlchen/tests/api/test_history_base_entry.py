@@ -293,7 +293,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
             history=[event1, event2],
         )
 
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'evmtransactionsresource',

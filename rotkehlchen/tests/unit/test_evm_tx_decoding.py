@@ -9,7 +9,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
@@ -36,7 +36,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
         transactions = dbevmtx.get_evm_transactions(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(
-                addresses=[addr1],
+                accounts=[EvmAccount(addr1)],
                 tx_hash=approve_tx_hash,
                 chain_id=ChainID.ETHEREUM,
             ),

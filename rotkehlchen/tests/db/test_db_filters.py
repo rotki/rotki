@@ -1,5 +1,6 @@
 import pytest
 
+from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.db.filtering import (
     DBETHTransactionJoinsFilter,
     DBFilterOrder,
@@ -14,18 +15,18 @@ from rotkehlchen.types import Location, Timestamp
 
 
 def test_ethereum_transaction_filter():
-    addresses = [make_evm_address()]
+    address = make_evm_address()
     filter_query = EvmTransactionsFilterQuery.make(
         limit=10,
         offset=10,
-        addresses=addresses,
+        accounts=[EvmAccount(address=address)],
         from_ts=Timestamp(1),
         to_ts=Timestamp(999),
     )
     query, bindings = filter_query.prepare()
-    assert query == ' INNER JOIN evmtx_address_mappings WHERE evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND evmtx_address_mappings.address IN (?)  AND ((timestamp >= ? AND timestamp <= ?)) ORDER BY timestamp ASC LIMIT 10 OFFSET 10'  # noqa: E501
+    assert query == ' INNER JOIN evmtx_address_mappings WHERE evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND ((evmtx_address_mappings.address = ?))  AND ((timestamp >= ? AND timestamp <= ?)) ORDER BY timestamp ASC LIMIT 10 OFFSET 10'  # noqa: E501
     assert bindings == [
-        addresses[0],
+        address,
         filter_query.from_ts,
         filter_query.to_ts,
     ]
@@ -41,8 +42,8 @@ def test_ethereum_transaction_filter():
 def test_filter_arguments(and_op, order_by, pagination):
     """This one is just like the ethereum transactions filter test, but also using
     it as a testbed to test combinations of arguments"""
-    addresses = [make_evm_address(), make_evm_address()]
-    address_filter = DBETHTransactionJoinsFilter(and_op=False, addresses=addresses)
+    accounts = [EvmAccount(make_evm_address()), EvmAccount(make_evm_address())]
+    address_filter = DBETHTransactionJoinsFilter(and_op=False, accounts=accounts)
     time_filter = DBTimestampFilter(and_op=True, from_ts=Timestamp(1), to_ts=Timestamp(999))
     location_filter = DBLocationFilter(and_op=True, location=Location.KRAKEN)
     order_by_obj = DBFilterOrder(rules=[('timestamp', True)], case_sensitive=True) if order_by else None  # noqa: E501
@@ -57,9 +58,9 @@ def test_filter_arguments(and_op, order_by, pagination):
     query, bindings = filter_query.prepare()
 
     if and_op:
-        expected_query = ' INNER JOIN evmtx_address_mappings WHERE evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND evmtx_address_mappings.address IN (?,?)  AND ((timestamp >= ? AND timestamp <= ?) AND (location=?))'  # noqa: E501
+        expected_query = ' INNER JOIN evmtx_address_mappings WHERE evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND ((evmtx_address_mappings.address = ?) OR (evmtx_address_mappings.address = ?))  AND ((timestamp >= ? AND timestamp <= ?) AND (location=?))'  # noqa: E501
     else:
-        expected_query = ' INNER JOIN evmtx_address_mappings WHERE evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND evmtx_address_mappings.address IN (?,?)  AND ((timestamp >= ? AND timestamp <= ?) OR (location=?))'  # noqa: E501
+        expected_query = ' INNER JOIN evmtx_address_mappings WHERE evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND ((evmtx_address_mappings.address = ?) OR (evmtx_address_mappings.address = ?))  AND ((timestamp >= ? AND timestamp <= ?) OR (location=?))'  # noqa: E501
 
     if order_by:
         expected_query += ' ORDER BY timestamp ASC'
@@ -69,8 +70,8 @@ def test_filter_arguments(and_op, order_by, pagination):
 
     assert query == expected_query
     assert bindings == [
-        addresses[0],
-        addresses[1],
+        accounts[0].address,
+        accounts[1].address,
         time_filter.from_ts,
         time_filter.to_ts,
         location_filter.location.serialize_for_db(),
