@@ -451,11 +451,11 @@ def test_migration_7_nodes(rotkehlchen_api_server: 'APIServer'):
 
     # check that the task to connect the ethereum node is spawned
     expected_greenlet_name = 'Attempt connection to LlamaNodes ethereum node'
-    assert any((expected_greenlet_name in greenlet.task_name for greenlet in rotki.greenlet_manager.greenlets)) is True  # noqa: E501
+    assert any(expected_greenlet_name in greenlet.task_name for greenlet in rotki.greenlet_manager.greenlets) is True  # noqa: E501
 
     nodes = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM)
     # check that weight is correct for nodes
-    assert sum((node.weight for node in nodes)) == ONE
+    assert sum(node.weight for node in nodes) == ONE
     llama_node_in_db = False
     for node in nodes:
         if node.node_info.endpoint == 'https://eth.llamarpc.com':
