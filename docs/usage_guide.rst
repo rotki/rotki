@@ -13,7 +13,7 @@ In this section we are going to see how to use various parts of the rotki applic
 First time sign-up
 ====================
 
-When you start rotki you are greeted with a sign-in/signup prompt.
+When you start rotki you are greeted with a sign-in/signup prompt. rotki is a local app and the user will exist only in your local system. The account used in `rotki.com <https://rotki.com/>`__ doesn't exist locally and is used only to manage your payments for the premium subscription.
 
 .. image:: images/rotki_login_screen.png
    :alt: Creating a new account
@@ -21,11 +21,10 @@ When you start rotki you are greeted with a sign-in/signup prompt.
 
 .. role:: red
 
-For creating an account press "Create New Account".
-You can choose to enable premium feature or not.
+For creating a local account press "Create New Account". If you already have a premium subscription, you can choose to associate this local account with your premium subscription via the use of api keys.
 
 If you want to restore an account using premium sync during the account creation, then you can **Enable premium**,
-and enable **Restore synced database**, and insert your **API Key** and the **secret** here.
+and enable **Restore synced database** (:ref:`restore_backup_premium`), insert your **API Key** and the **secret** here. Api key and secret can be found in your account page at `rotki.com <https://rotki.com/>`__ .
 
 Then you can click **Continue** button.
 
@@ -35,7 +34,7 @@ Then you can click **Continue** button.
 
 You have to provide a username and a password:
 
-  - **Username**: it is just an identifier for your database; a local user.
+  - **Username**: it is just an identifier for your database. This is the local user. It **doesn't** need to match any previous username or the username of your premium subscription at `rotki.com <https://rotki.com/>`__ .
   - **Password**: :red:`Do not forget this password`. It is used to encrypt all your local files.
 
 For a completely new account, premium API key and secret can be added either using the prompt provided or using :ref:`set-up-rotki-premium`
@@ -48,10 +47,13 @@ after logging in with the new account.
 All accounts are created in the rotki directory, see the section :ref:`rotki_data_directory` to know where it is located.
 
 
+.. _restore_backup_premium:
+
 Create a new account that restores a backed up database (premium user only)
 =============================================================================
 
-If you have a premium subscription and you want to create a new local account that restores the backed up database, for example in a different device, you must add the **API key/secret** and :red:`use the same password`. If the password is not the same, opening the database will fail.
+You may need to move the rotki database to a new device, for example after your old one was destroyed and left no backups. Normally you can do that manually, so long as you keep backups (which is something you should always do!). But as a premum user, you can restore the encrypted database that is backed up at the `rotki.com <https://rotki.com/>`__ server.
+To do that you must follow the instructions described in the previous section, add the **API key/secret** and :red:`use the same password` that you were using for the local user of that database. If the password is not the same, opening the database will fail. Do not use the password of your `rotki.com <https://rotki.com/>`__ account here.
 
 .. image:: images/rotki_premium_signup_failed.png
    :alt: Sign-up with existing premium subscription using a wrong password
@@ -68,7 +70,7 @@ If you want to move your data to another system or want to restore it then you w
 Sign-in
 =========
 
-If you already have an account just write the name and the password at the sign in prompt.
+If you already have a local rotki account just write the name and the password at the sign in prompt. Note that this is not the online account you create at `rotki.com <https://rotki.com/>`__ to buy a premium subscription.
 
 .. _set-up-rotki-premium:
 
