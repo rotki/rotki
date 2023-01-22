@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTxQueryStatusStore } from '@/store/history/query-status';
-import { type EthereumTransactionQueryData } from '@/types/websocket-messages';
+import { type EvmTransactionQueryData } from '@/types/websocket-messages';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import TransactionQueryStatusDialog from '@/components/history/transactions/query-status/TransactionQueryStatusDialog.vue';
 import TransactionQueryStatusCurrent from '@/components/history/transactions/query-status/TransactionQueryStatusCurrent.vue';
@@ -15,11 +15,11 @@ const { queryStatus, isAllFinished, length } = toRefs(store);
 
 const { isStatusFinished, resetQueryStatus } = store;
 
-const sortedQueryStatus = computed<EthereumTransactionQueryData[]>(() => {
+const sortedQueryStatus = computed<EvmTransactionQueryData[]>(() => {
   const statuses = Object.values(get(queryStatus));
 
   return statuses.sort(
-    (a: EthereumTransactionQueryData, b: EthereumTransactionQueryData) =>
+    (a: EvmTransactionQueryData, b: EvmTransactionQueryData) =>
       (isStatusFinished(a) ? 1 : 0) - (isStatusFinished(b) ? 1 : 0)
   );
 });

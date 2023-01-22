@@ -1,3 +1,5 @@
+import { type SemiPartial } from '../index';
+
 export enum Severity {
   WARNING = 'warning',
   ERROR = 'error',
@@ -27,3 +29,8 @@ export interface NotificationData extends NotificationBase {
   readonly duration: number;
   readonly date: Date;
 }
+
+export type Notification = SemiPartial<
+  NotificationPayload,
+  'title' | 'message'
+>;

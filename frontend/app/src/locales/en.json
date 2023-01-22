@@ -3015,6 +3015,10 @@
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"
+    },
+    "address_migration": {
+      "title": "Address has been added to {chain}|Addresses have been added to {chain}",
+      "message": "The following address has been added to {chain}: {addresses}|The following addresses have been added to {chain}: {addresses}"
     }
   },
   "notification_popup": {

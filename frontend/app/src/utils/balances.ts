@@ -29,7 +29,6 @@ import { assetSum, balanceSum } from '@/utils/calculation';
 import { getTags } from '@/utils/tags';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { useSupportedChains } from '@/composables/info/chains';
 
 export const removeZeroAssets = (entries: AssetBalances): AssetBalances => {
   const balances = { ...entries };

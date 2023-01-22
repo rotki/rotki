@@ -79,7 +79,7 @@ const primaryProgress: ComputedRef<Progress | null> = computed(() => {
     return null;
   }
   const { currentStep, fromDbVersion, totalSteps } = status.currentUpgrade;
-  const current = fromDbVersion - status.startDbVersion;
+  const current = fromDbVersion - status.startDbVersion + 1;
   const total = status.targetDbVersion - status.startDbVersion;
   return {
     percentage: (current / total) * 100,

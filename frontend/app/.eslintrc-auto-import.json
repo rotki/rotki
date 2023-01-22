@@ -244,6 +244,7 @@
     "useMediaQuery": true,
     "useMemoize": true,
     "useMemory": true,
+    "useMessageHandling": true,
     "useMin": true,
     "useModules": true,
     "useMounted": true,

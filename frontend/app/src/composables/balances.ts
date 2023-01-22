@@ -5,7 +5,6 @@ import { useAssetIconApi } from '@/services/assets/icon-api';
 import { type TradeLocationData, useTradeLocations } from '@/types/trades';
 import { assert } from '@/utils/assertions';
 import { isBlockchain } from '@/types/blockchain/chains';
-import { useSupportedChains } from '@/composables/info/chains';
 
 export const useLocationInfo = () => {
   const { tradeLocations } = useTradeLocations();

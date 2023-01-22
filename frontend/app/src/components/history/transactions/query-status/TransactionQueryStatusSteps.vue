@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { toSentenceCase } from '@/utils/text';
-import { type EthereumTransactionQueryData } from '@/types/websocket-messages';
+import { type EvmTransactionQueryData } from '@/types/websocket-messages';
 
-defineProps<{ item: EthereumTransactionQueryData }>();
+defineProps<{ item: EvmTransactionQueryData }>();
 
 const { tc } = useI18n();
 
@@ -20,17 +20,11 @@ const steps = computed(() => [
 
 const { getStatusData } = useTransactionQueryStatus();
 
-const isStepCompleted = (
-  item: EthereumTransactionQueryData,
-  stepIndex: number
-) => {
+const isStepCompleted = (item: EvmTransactionQueryData, stepIndex: number) => {
   return getStatusData(item).index > stepIndex + 1;
 };
 
-const isStepInProgress = (
-  item: EthereumTransactionQueryData,
-  stepIndex: number
-) => {
+const isStepInProgress = (item: EvmTransactionQueryData, stepIndex: number) => {
   return getStatusData(item).index === stepIndex + 1;
 };
 

@@ -245,6 +245,7 @@ declare global {
   const useMediaQuery: typeof import('@vueuse/core')['useMediaQuery']
   const useMemoize: typeof import('@vueuse/core')['useMemoize']
   const useMemory: typeof import('@vueuse/core')['useMemory']
+  const useMessageHandling: typeof import('./composables/message-handling')['useMessageHandling']
   const useMin: typeof import('@vueuse/math')['useMin']
   const useModules: typeof import('./composables/session/modules')['useModules']
   const useMounted: typeof import('@vueuse/core')['useMounted']
@@ -609,6 +610,7 @@ declare module 'vue' {
     readonly useMediaQuery: UnwrapRef<typeof import('@vueuse/core')['useMediaQuery']>
     readonly useMemoize: UnwrapRef<typeof import('@vueuse/core')['useMemoize']>
     readonly useMemory: UnwrapRef<typeof import('@vueuse/core')['useMemory']>
+    readonly useMessageHandling: UnwrapRef<typeof import('./composables/message-handling')['useMessageHandling']>
     readonly useMin: UnwrapRef<typeof import('@vueuse/math')['useMin']>
     readonly useModules: UnwrapRef<typeof import('./composables/session/modules')['useModules']>
     readonly useMounted: UnwrapRef<typeof import('@vueuse/core')['useMounted']>
