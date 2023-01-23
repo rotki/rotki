@@ -15,7 +15,12 @@ from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import DBEqualsFilter, DBIgnoreValuesFilter, HistoryEventFilterQuery
+from rotkehlchen.db.filtering import (
+    DBEqualsFilter,
+    DBIgnoreValuesFilter,
+    EvmTransactionsFilterQuery,
+    HistoryEventFilterQuery,
+)
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -32,8 +37,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.types import (
+    EVM_CHAINS_WITH_TRANSACTIONS,
     SUPPORTED_BITCOIN_CHAINS,
-    ChainID,
     ChecksumEvmAddress,
     ExchangeLocationID,
     GeneralCacheType,
@@ -54,7 +59,7 @@ CRYPTOCOMPARE_QUERY_AFTER_SECS = 86400  # a day
 DEFAULT_MAX_TASKS_NUM = 2
 CRYPTOCOMPARE_HISTOHOUR_FREQUENCY = 240  # at least 4 mins apart
 XPUB_DERIVATION_FREQUENCY = 3600  # every hour
-ETH_TX_QUERY_FREQUENCY = 3600  # every hour
+EVM_TX_QUERY_FREQUENCY = 3600  # every hour
 EXCHANGE_QUERY_FREQUENCY = 3600  # every hour
 PREMIUM_STATUS_CHECK = 3600  # every hour
 TX_RECEIPTS_QUERY_LIMIT = 500
@@ -98,7 +103,7 @@ class TaskManager():
         self.cryptocompare_queries: set[CCHistoQuery] = set()
         self.chains_aggregator = chains_aggregator
         self.last_xpub_derivation_ts = 0
-        self.last_eth_tx_query_ts: DefaultDict[ChecksumEvmAddress, int] = defaultdict(int)
+        self.last_evm_tx_query_ts: DefaultDict[tuple[ChecksumEvmAddress, SupportedBlockchain], int] = defaultdict(int)  # noqa: E501
         self.last_exchange_query_ts: DefaultDict[ExchangeLocationID, int] = defaultdict(int)
         self.base_entries_ignore_set: set[str] = set()
         self.prepared_cryptocompare_query = False
@@ -122,9 +127,9 @@ class TaskManager():
         self.potential_tasks: list[Callable[[], Optional[list[gevent.Greenlet]]]] = [
             self._maybe_schedule_cryptocompare_query,
             self._maybe_schedule_xpub_derivation,
-            self._maybe_query_ethereum_transactions,
+            self._maybe_query_evm_transactions,
             self._maybe_schedule_exchange_history_query,
-            self._maybe_schedule_ethereum_txreceipts,
+            self._maybe_schedule_evm_txreceipts,
             self._maybe_query_missing_prices,
             self._maybe_decode_evm_transactions,
             self._maybe_check_premium_status,
@@ -269,61 +274,74 @@ class TaskManager():
             ))
         return greenlets
 
-    def _maybe_query_ethereum_transactions(self) -> Optional[list[gevent.Greenlet]]:
-        """Schedules the ethereum transaction query task if enough time has passed"""
-        with self.database.conn.read_ctx() as cursor:
-            accounts = self.database.get_blockchain_accounts(cursor).eth
-            if len(accounts) == 0:
-                return None
+    def _maybe_query_evm_transactions(self) -> Optional[list[gevent.Greenlet]]:
+        """Schedules the evm transaction query task if enough time has passed"""
+        shuffled_chains = list(EVM_CHAINS_WITH_TRANSACTIONS)
+        random.shuffle(shuffled_chains)
+        for blockchain in shuffled_chains:
+            with self.database.conn.read_ctx() as cursor:
+                accounts = self.database.get_blockchain_accounts(cursor).get(blockchain)
+                if len(accounts) == 0:
+                    continue
 
-            now = ts_now()
-            dbevmtx = DBEvmTx(self.database)
-            queriable_accounts = []
-            for account in accounts:
-                _, end_ts = dbevmtx.get_queried_range(cursor, account, SupportedBlockchain.ETHEREUM)  # noqa: E501
-                if now - max(self.last_eth_tx_query_ts[account], end_ts) > ETH_TX_QUERY_FREQUENCY:
-                    queriable_accounts.append(account)
+                now = ts_now()
+                dbevmtx = DBEvmTx(self.database)
+                queriable_accounts: list[ChecksumEvmAddress] = []
+                for account in accounts:
+                    _, end_ts = dbevmtx.get_queried_range(cursor, account, blockchain)
+                    if now - max(self.last_evm_tx_query_ts[(account, blockchain)], end_ts) > EVM_TX_QUERY_FREQUENCY:  # noqa: E501
+                        queriable_accounts.append(account)
 
-        if len(queriable_accounts) == 0:
-            return None
+            if len(queriable_accounts) == 0:
+                continue
 
-        ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
-        address = random.choice(queriable_accounts)
-        task_name = f'Query ethereum transactions for {address}'
-        log.debug(f'Scheduling task to {task_name}')
-        self.last_eth_tx_query_ts[address] = now
-        return [self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name=task_name,
-            exception_is_error=True,
-            method=ethereum.transactions.single_address_query_transactions,
-            address=address,
-            start_ts=0,
-            end_ts=now,
-        )]
+            evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
+            address = random.choice(queriable_accounts)
+            task_name = f'Query {str(blockchain)} transactions for {address}'
+            log.debug(f'Scheduling task to {task_name}')
+            self.last_evm_tx_query_ts[(address, blockchain)] = now
+            # Since this task is heavy we spawn it only for one chain at a time.
+            return [self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name=task_name,
+                exception_is_error=True,
+                method=evm_manager.transactions.single_address_query_transactions,
+                address=address,
+                start_ts=0,
+                end_ts=now,
+            )]
+        return None
 
-    def _maybe_schedule_ethereum_txreceipts(self) -> Optional[list[gevent.Greenlet]]:
-        """Schedules the ethereum transaction receipts query task
+    def _maybe_schedule_evm_txreceipts(self) -> Optional[list[gevent.Greenlet]]:
+        """Schedules the evm transaction receipts query task
 
         The DB check happens first here to see if scheduling would even be needed.
         But the DB query will happen again inside the query task while having the
         lock acquired.
         """
         dbevmtx = DBEvmTx(self.database)
-        hash_results = dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=TX_RECEIPTS_QUERY_LIMIT)  # noqa: E501
-        if len(hash_results) == 0:
-            return None
+        shuffled_chains = list(EVM_CHAINS_WITH_TRANSACTIONS)
+        random.shuffle(shuffled_chains)
+        for blockchain in shuffled_chains:
+            hash_results = dbevmtx.get_transaction_hashes_no_receipt(
+                tx_filter_query=EvmTransactionsFilterQuery.make(chain_id=blockchain.to_chain_id()),  # type: ignore[arg-type]  # noqa: E501
+                limit=TX_RECEIPTS_QUERY_LIMIT,
+            )
+            if len(hash_results) == 0:
+                return None
 
-        ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
-        task_name = f'Query {len(hash_results)} ethereum transactions receipts'
-        log.debug(f'Scheduling task to {task_name}')
-        return [self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name=task_name,
-            exception_is_error=True,
-            method=ethereum.transactions.get_receipts_for_transactions_missing_them,
-            limit=TX_RECEIPTS_QUERY_LIMIT,
-        )]
+            evm_inquirer = self.chains_aggregator.get_chain_manager(blockchain)
+            task_name = f'Query {len(hash_results)} {str(blockchain)} transactions receipts'
+            log.debug(f'Scheduling task to {task_name}')
+            # Since this task is heavy we spawn it only for one chain at a time.
+            return [self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name=task_name,
+                exception_is_error=True,
+                method=evm_inquirer.transactions.get_receipts_for_transactions_missing_them,
+                limit=TX_RECEIPTS_QUERY_LIMIT,
+            )]
+        return None
 
     def _maybe_schedule_exchange_history_query(self) -> Optional[list[gevent.Greenlet]]:
         """Schedules the exchange history query task if enough time has passed"""
@@ -437,23 +455,28 @@ class TaskManager():
         lock acquired.
         """
         dbevmtx = DBEvmTx(self.database)
-        number_of_tx_to_decode = dbevmtx.count_hashes_not_decoded(
-            addresses=None,
-            chain_id=ChainID.ETHEREUM,
-        )
-        if number_of_tx_to_decode == 0:
-            return None
+        shuffled_chains = list(EVM_CHAINS_WITH_TRANSACTIONS)
+        random.shuffle(shuffled_chains)
+        for blockchain in shuffled_chains:
+            number_of_tx_to_decode = dbevmtx.count_hashes_not_decoded(
+                addresses=None,
+                chain_id=blockchain.to_chain_id(),
+            )
+            if number_of_tx_to_decode == 0:
+                return None
 
-        ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
-        task_name = f'decode {number_of_tx_to_decode} evm trasactions'
-        log.debug(f'Scheduling periodic task to {task_name}')
-        return [self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name=task_name,
-            exception_is_error=True,
-            method=ethereum.transactions_decoder.get_and_decode_undecoded_transactions,
-            limit=TX_DECODING_LIMIT,
-        )]
+            evm_inquirer = self.chains_aggregator.get_chain_manager(blockchain)
+            task_name = f'decode {number_of_tx_to_decode} {str(blockchain)} trasactions'
+            log.debug(f'Scheduling periodic task to {task_name}')
+            # Since this task is heavy we spawn it only for one chain at a time.
+            return [self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name=task_name,
+                exception_is_error=True,
+                method=evm_inquirer.transactions_decoder.get_and_decode_undecoded_transactions,
+                limit=TX_DECODING_LIMIT,
+            )]
+        return None
 
     def _maybe_check_premium_status(self) -> None:
         """

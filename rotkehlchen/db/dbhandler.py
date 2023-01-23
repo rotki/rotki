@@ -110,6 +110,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import deserialize_hex_color_code, deserialize_timestamp
 from rotkehlchen.types import (
+    EVM_CHAINS_WITH_TRANSACTIONS,
+    SUPPORTED_EVM_CHAINS,
     ApiKey,
     ApiSecret,
     BTCAddress,
@@ -1171,9 +1173,9 @@ class DBHandler:
         # Needs to happen before the address is removed since removing the address
         # will also remove evmtx_address_mappings, thus making it impossible
         # to figure out which transactions are touched by this address
-        if blockchain == SupportedBlockchain.ETHEREUM:
+        if blockchain in EVM_CHAINS_WITH_TRANSACTIONS:
             for address in accounts:
-                self.delete_data_for_ethereum_address(write_cursor, address)  # type: ignore
+                self.delete_data_for_evm_address(write_cursor, address, blockchain)  # type: ignore
 
         write_cursor.executemany(
             'DELETE FROM tag_mappings WHERE '
@@ -2027,12 +2029,13 @@ class DBHandler:
         cursor.execute(cursorstr)
         return cursor.fetchone()[0]
 
-    def delete_data_for_ethereum_address(self, write_cursor: 'DBCursor', address: ChecksumEvmAddress) -> None:  # noqa: E501
-        """Deletes all ethereum related data from the DB for a single ethereum address"""
-        other_eth_accounts = self.get_blockchain_accounts(write_cursor).eth
-        if address in other_eth_accounts:
-            other_eth_accounts.remove(address)
-
+    def delete_data_for_evm_address(
+            self,
+            write_cursor: 'DBCursor',
+            address: ChecksumEvmAddress,
+            blockchain: SUPPORTED_EVM_CHAINS,
+    ) -> None:
+        """Deletes all evm related data from the DB for a single evm address"""
         write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'aave_events_{address}',))  # noqa: E501
         write_cursor.execute(
             'DELETE FROM used_query_ranges WHERE name = ?',
@@ -2058,7 +2061,7 @@ class DBHandler:
         loopring.remove_accountid_mapping(write_cursor, address)
 
         dbtx = DBEvmTx(self)
-        dbtx.delete_transactions(write_cursor=write_cursor, address=address, chain=SupportedBlockchain.ETHEREUM)  # noqa: E501
+        dbtx.delete_transactions(write_cursor=write_cursor, address=address, chain=blockchain)  # noqa: E501
         write_cursor.execute('DELETE FROM eth2_deposits WHERE from_address=?;', (address,))
 
     def add_trades(self, write_cursor: 'DBCursor', trades: list[Trade]) -> None:

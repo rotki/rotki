@@ -68,6 +68,8 @@ from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_cre
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.types import (
+    EVM_CHAINS_WITH_TRANSACTIONS,
+    EVM_CHAINS_WITH_TRANSACTIONS_TYPE,
     SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_EVM_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
@@ -696,13 +698,14 @@ class Rotkehlchen():
             blockchain=blockchain,
             accounts=accounts,
         )
-        eth_addresses: list[ChecksumEvmAddress] = cast(list[ChecksumEvmAddress], accounts) if blockchain == SupportedBlockchain.ETHEREUM else []  # noqa: E501
         with contextlib.ExitStack() as stack:
-            if blockchain == SupportedBlockchain.ETHEREUM:
-                ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
-                stack.enter_context(ethereum.transactions.wait_until_no_query_for(eth_addresses))
-                stack.enter_context(ethereum.transactions.missing_receipts_lock)
-                stack.enter_context(ethereum.transactions_decoder.undecoded_tx_query_lock)
+            if blockchain in EVM_CHAINS_WITH_TRANSACTIONS:
+                blockchain = cast(EVM_CHAINS_WITH_TRANSACTIONS_TYPE, blockchain)  # by default mypy doesn't narrow the type  # noqa: E501
+                evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
+                evm_addresses: list[ChecksumEvmAddress] = cast(list[ChecksumEvmAddress], accounts)
+                stack.enter_context(evm_manager.transactions.wait_until_no_query_for(evm_addresses))  # noqa: E501
+                stack.enter_context(evm_manager.transactions.missing_receipts_lock)
+                stack.enter_context(evm_manager.transactions_decoder.undecoded_tx_query_lock)
             write_cursor = stack.enter_context(self.data.db.user_write())
             self.data.db.remove_single_blockchain_accounts(write_cursor, blockchain, accounts)
 
