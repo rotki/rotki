@@ -18,7 +18,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, ExchangeManager
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, Location, SupportedBlockchain, Timestamp
+from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date
 
@@ -33,15 +33,17 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 # Number of steps excluding the connected exchanges. Current query steps:
-# eth transactions
-# eth receipts
-# eth tx decoding
+# for chain in EVM_CHAINS_WITH_TRANSACTIONS:
+#    chain.transactions
+#    chain.receipts
+#    chain.tx decoding
+#
 # reading from the db trades, asset movements, margin positions
 # ledger actions
 # eth2
 # base history entries
 # Please, update this number each time a history query step is either added or removed
-NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 7
+NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 4 + 3 * len(EVM_CHAINS_WITH_TRANSACTIONS)
 
 
 class EventsHistorian:
@@ -355,34 +357,35 @@ class EventsHistorian:
         step = self._increase_progress(step, total_steps)
 
         self.processing_state_name = 'Querying ethereum transactions history'
-        ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
-        tx_filter_query = EvmTransactionsFilterQuery.make(
-            limit=None,
-            offset=None,
-            accounts=None,
-            # We need to have history of transactions since before the range
-            from_ts=Timestamp(0),
-            to_ts=end_ts,
-            chain_id=ChainID.ETHEREUM,
-        )
-        try:
-            ethereum.transactions.query_chain(filter_query=tx_filter_query)
-        except RemoteError as e:
-            msg = str(e)
-            self.msg_aggregator.add_error(
-                f'There was an error when querying etherscan for ethereum transactions: {msg}'
-                f'The final history result will not include ethereum transactions',
+        for blockchain in EVM_CHAINS_WITH_TRANSACTIONS:
+            str_blockchain = str(blockchain)
+            evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
+            tx_filter_query = EvmTransactionsFilterQuery.make(
+                limit=None,
+                offset=None,
+                # We need to have history of transactions since before the range
+                from_ts=Timestamp(0),
+                to_ts=end_ts,
+                chain_id=blockchain.to_chain_id(),  # type: ignore[arg-type]
             )
-            empty_or_error += '\n' + msg
-        step = self._increase_progress(step, total_steps)
+            try:
+                evm_manager.transactions.query_chain(filter_query=tx_filter_query)
+            except RemoteError as e:
+                msg = str(e)
+                self.msg_aggregator.add_error(
+                    f'There was an error when querying {str_blockchain} etherscan for transactions: {msg}'  # noqa: E501
+                    f'The final history result will not include {str_blockchain} transactions',
+                )
+                empty_or_error += '\n' + msg
+            step = self._increase_progress(step, total_steps)
 
-        self.processing_state_name = 'Querying ethereum transaction receipts'
-        ethereum.transactions.get_receipts_for_transactions_missing_them()
-        step = self._increase_progress(step, total_steps)
+            self.processing_state_name = f'Querying {str_blockchain} transaction receipts'
+            evm_manager.transactions.get_receipts_for_transactions_missing_them()
+            step = self._increase_progress(step, total_steps)
 
-        self.processing_state_name = 'Decoding raw transactions'
-        ethereum.transactions_decoder.get_and_decode_undecoded_transactions(limit=None)
-        step = self._increase_progress(step, total_steps)
+            self.processing_state_name = f'Decoding {str_blockchain} raw transactions'
+            evm_manager.transactions_decoder.get_and_decode_undecoded_transactions(limit=None)
+            step = self._increase_progress(step, total_steps)
 
         # include all ledger actions
         self.processing_state_name = 'Querying ledger actions history'

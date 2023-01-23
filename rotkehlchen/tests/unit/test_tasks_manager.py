@@ -12,6 +12,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
 from rotkehlchen.tests.utils.ethereum import setup_ethereum_transactions_test
+from rotkehlchen.tests.utils.mock import mock_evm_chains_with_transactions
 from rotkehlchen.tests.utils.premium import VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET
 from rotkehlchen.types import ChainID, Location, SupportedBlockchain
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -72,7 +73,7 @@ def fixture_task_manager(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
-    task_manager.potential_tasks = [task_manager._maybe_query_ethereum_transactions]
+    task_manager.potential_tasks = [task_manager._maybe_query_evm_transactions]
     now = ts_now()
 
     def tx_query_mock(address, start_ts, end_ts):
@@ -192,7 +193,7 @@ def test_maybe_schedule_ethereum_txreceipts(
         database,
         one_receipt_in_db,
 ):
-    task_manager.potential_tasks = [task_manager._maybe_schedule_ethereum_txreceipts]  # pylint: disable=protected-member  # noqa: E501
+    task_manager.potential_tasks = [task_manager._maybe_schedule_evm_txreceipts]  # pylint: disable=protected-member  # noqa: E501
     _, receipts = setup_ethereum_transactions_test(
         database=database,
         transaction_already_queried=True,
@@ -206,7 +207,7 @@ def test_maybe_schedule_ethereum_txreceipts(
     receipt_get_patch = patch.object(ethereum_manager.node_inquirer, 'get_transaction_receipt', wraps=ethereum_manager.node_inquirer.get_transaction_receipt)  # pylint: disable=protected-member  # noqa: E501
     queried_receipts = set()
     try:
-        with gevent.Timeout(timeout), receipt_get_patch as receipt_task_mock:
+        with gevent.Timeout(timeout), receipt_get_patch as receipt_task_mock, mock_evm_chains_with_transactions():  # noqa: E501
             task_manager.schedule()
             with database.conn.read_ctx() as cursor:
                 while True:

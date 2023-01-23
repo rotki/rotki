@@ -9,6 +9,7 @@ import requests
 from hexbytes import HexBytes
 
 from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR
+from rotkehlchen.types import SupportedBlockchain
 
 original_requests_get = requests.get
 MOCK_WEB3_LAST_BLOCK_INT = 16210873
@@ -322,4 +323,11 @@ def mock_proxies(mocked_proxies):
     return patch(
         'rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_accounts_having_proxy',
         return_value=mocked_proxies,
+    )
+
+
+def mock_evm_chains_with_transactions():
+    return patch(
+        'rotkehlchen.tasks.manager.EVM_CHAINS_WITH_TRANSACTIONS',
+        new=(SupportedBlockchain.ETHEREUM,),
     )

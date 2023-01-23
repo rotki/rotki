@@ -1,3 +1,4 @@
+import typing
 from enum import Enum, auto
 from typing import (
     Any,
@@ -460,6 +461,13 @@ class SupportedBlockchain(SerializableEnumValueMixin2):
     def from_chain_id(cls, chain: ChainID) -> 'SupportedBlockchain':
         return CHAINID_TO_SUPPORTED_BLOCKCHAIN[chain]
 
+
+EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
+    SupportedBlockchain.ETHEREUM,
+    SupportedBlockchain.OPTIMISM,
+]
+
+EVM_CHAINS_WITH_TRANSACTIONS: tuple[EVM_CHAINS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAINS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
 
 SUPPORTED_EVM_CHAINS = Literal[
     SupportedBlockchain.ETHEREUM,

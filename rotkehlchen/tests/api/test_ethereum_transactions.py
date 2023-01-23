@@ -45,7 +45,7 @@ from rotkehlchen.tests.utils.factories import (
     make_ethereum_transaction,
     make_evm_address,
 )
-from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.tests.utils.mock import MockResponse, mock_evm_chains_with_transactions
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import (
     ChainID,
@@ -1023,16 +1023,17 @@ def test_query_transactions_check_decoded_events(
     end_ts = Timestamp(1642803566)  # time of test writing
     dbevents = DBHistoryEvents(rotki.data.db)
 
-    def query_transactions(rotki) -> None:
+    def query_transactions(rotki):
         rotki.chains_aggregator.ethereum.transactions.single_address_query_transactions(
             address=ethereum_accounts[0],
             start_ts=start_ts,
             end_ts=end_ts,
         )
-        rotki.task_manager._maybe_schedule_ethereum_txreceipts()
-        gevent.joinall(rotki.greenlet_manager.greenlets)
-        rotki.task_manager._maybe_decode_evm_transactions()
-        gevent.joinall(rotki.greenlet_manager.greenlets)
+        with mock_evm_chains_with_transactions():
+            rotki.task_manager._maybe_schedule_evm_txreceipts()
+            gevent.joinall(rotki.greenlet_manager.greenlets)
+            rotki.task_manager._maybe_decode_evm_transactions()
+            gevent.joinall(rotki.greenlet_manager.greenlets)
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
