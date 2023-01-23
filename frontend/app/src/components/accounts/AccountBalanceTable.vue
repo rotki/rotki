@@ -192,6 +192,7 @@ const visibleBalances = computed<BlockchainAccountWithBalance[]>(() => {
       numOfDetectedTokens: detected.total
     };
   });
+
   const selectedTags = get(visibleTags);
   if (selectedTags.length === 0) {
     return withL2(balances);

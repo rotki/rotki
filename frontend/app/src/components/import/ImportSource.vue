@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
+import { helpers, requiredIf } from '@vuelidate/validators';
 import { type PropType } from 'vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
@@ -39,11 +39,12 @@ const rules = {
   dateInputFormat: {
     required: helpers.withMessage(
       t('general_settings.date_display.validation.empty').toString(),
-      required
+      requiredIf(refIsTruthy(dateInputFormat))
     ),
     validDate: helpers.withMessage(
       t('general_settings.date_display.validation.invalid').toString(),
-      (v: string): boolean => displayDateFormatter.containsValidDirectives(v)
+      (v: string | null): boolean =>
+        v === null || displayDateFormatter.containsValidDirectives(v)
     )
   }
 };

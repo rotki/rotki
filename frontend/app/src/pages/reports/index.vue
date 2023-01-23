@@ -220,7 +220,7 @@ const progress = computed(() => reportsStore.progress);
             />
           </div>
           <div class="mt-2 d-flex justify-end">
-            <v-btn class="mr-4" @click="importDataDialog = false">
+            <v-btn class="mr-4" depressed @click="importDataDialog = false">
               {{ tc('common.actions.cancel') }}
             </v-btn>
             <v-btn

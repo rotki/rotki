@@ -22,28 +22,30 @@ import {
   type TransactionEventRequestPayload,
   type TransactionRequestPayload
 } from '@/types/history/tx';
+import { nonNullProperties } from '@/utils/data';
 
 export const useTransactionsApi = () => {
   const internalEthTransactions = async <T>(
     payload: TransactionRequestPayload,
     asyncQuery: boolean
   ): Promise<T> => {
-    let url = `/blockchains/evm/transactions`;
-    const { address, ...data } = payload;
-    if (address) {
-      url += `/${address}`;
-    }
-    const response = await api.instance.get<ActionResult<T>>(url, {
-      params: axiosSnakeCaseTransformer({
-        asyncQuery,
-        ...data,
-        orderByAttributes:
-          payload.orderByAttributes?.map(item => getUpdatedKey(item, false)) ??
-          []
-      }),
-      paramsSerializer,
-      validateStatus: validWithParamsSessionAndExternalService
-    });
+    const response = await api.instance.post<ActionResult<T>>(
+      `/blockchains/evm/transactions`,
+      axiosSnakeCaseTransformer(
+        nonNullProperties({
+          asyncQuery,
+          ...payload,
+          orderByAttributes:
+            payload.orderByAttributes?.map(item =>
+              getUpdatedKey(item, false)
+            ) ?? []
+        })
+      ),
+      {
+        paramsSerializer,
+        validateStatus: validWithParamsSessionAndExternalService
+      }
+    );
 
     return handleResponse(response);
   };
@@ -78,7 +80,7 @@ export const useTransactionsApi = () => {
   const fetchEthTransactionEvents = async (
     payload: TransactionEventRequestPayload
   ): Promise<PendingTask> => {
-    const response = await api.instance.post<ActionResult<PendingTask>>(
+    const response = await api.instance.put<ActionResult<PendingTask>>(
       'blockchains/evm/transactions',
       axiosSnakeCaseTransformer({
         asyncQuery: true,

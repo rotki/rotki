@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { EvmChainAddress } from '@/types/history/tx';
 
 export const MESSAGE_WARNING = 'warning';
 const MESSAGE_ERROR = 'error';
@@ -26,11 +27,6 @@ export const EvmTransactionsQueryStatus = {
 
 export type EvmTransactionsQueryStatus =
   typeof EvmTransactionsQueryStatus[keyof typeof EvmTransactionsQueryStatus];
-
-const EvmChainAddress = z.object({
-  address: z.string(),
-  evmChain: z.string()
-});
 
 export const EvmTransactionQueryData = z
   .object({

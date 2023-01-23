@@ -66,7 +66,7 @@ export interface TransactionRequestPayload
   extends PaginationRequestPayload<EthTransaction> {
   readonly fromTimestamp?: string | number;
   readonly toTimestamp?: string | number;
-  readonly address?: string;
+  readonly accounts?: EvmChainAddress[] | null;
   readonly asset?: string;
   readonly protocols?: string | string[];
   readonly eventTypes?: string | string[];
@@ -82,6 +82,13 @@ export interface AddressesAndEvmChainPayload {
   readonly addresses?: string[] | null;
   readonly evmChain: string;
 }
+
+export const EvmChainAddress = z.object({
+  address: z.string(),
+  evmChain: z.string()
+});
+
+export type EvmChainAddress = z.infer<typeof EvmChainAddress>;
 
 export interface TransactionEventRequestPayload {
   readonly data: TransactionHashAndEvmChainPayload[];

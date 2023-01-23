@@ -241,7 +241,7 @@ defineExpose({ removeFile });
     border-radius: 4px;
 
     &--active {
-      background-color: #f9f9f9;
+      background-color: var(--v-rotki-light-grey-darken1);
     }
   }
 }
@@ -250,7 +250,7 @@ defineExpose({ removeFile });
   &--dark {
     .file-upload {
       &__drop {
-        border: thin solid rgba(255, 255, 255, 0.12);
+        border-color: var(--v-rotki-light-grey-lighten2);
       }
     }
   }

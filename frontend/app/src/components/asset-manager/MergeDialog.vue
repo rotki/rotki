@@ -113,15 +113,15 @@ const v$ = useVuelidate(
       <div v-if="done">{{ t('merge_dialog.done') }}</div>
 
       <v-form v-else :value="!v$.$invalid">
-        <v-text-field
+        <asset-select
           v-model="source"
-          :label="t('merge_dialog.source.label')"
-          :error-messages="v$.source.$errors.map(e => e.$message)"
           outlined
-          :disabled="pending"
-          persistent-hint
+          :error-messages="v$.source.$errors.map(e => e.$message)"
+          :label="t('merge_dialog.source.label')"
           :hint="t('merge_dialog.source_hint')"
-          @focus="clearErrors()"
+          persistent-hint
+          :disabled="pending"
+          @focus="clearErrors"
         />
         <v-row align="center" justify="center" class="my-4">
           <v-col cols="auto">
@@ -134,6 +134,7 @@ const v$ = useVuelidate(
           :error-messages="v$.target.$errors.map(e => e.$message)"
           :label="tc('merge_dialog.target.label')"
           :disabled="pending"
+          @focus="clearErrors"
         />
       </v-form>
     </card>

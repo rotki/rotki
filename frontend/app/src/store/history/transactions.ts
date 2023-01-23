@@ -16,6 +16,7 @@ import {
   type EthTransaction,
   EthTransactionCollectionResponse,
   type EthTransactionEntry,
+  type EvmChainAddress,
   type NewEthTransactionEvent,
   type TransactionHashAndEvmChainPayload,
   type TransactionRequestPayload
@@ -43,9 +44,7 @@ export const useTransactions = defineStore('history/transactions', () => {
   const transactionsPayload: Ref<Partial<TransactionRequestPayload>> = ref(
     defaultHistoricPayloadState<EthTransaction>()
   );
-  const fetchedTxAccounts: Ref<{ address: string; evmChain: string }[]> = ref(
-    []
-  );
+  const fetchedTxAccounts: Ref<EvmChainAddress[]> = ref([]);
 
   const decodedTxEvents: Ref<string[]> = ref([]);
 
@@ -108,15 +107,16 @@ export const useTransactions = defineStore('history/transactions', () => {
       }
 
       const { taskId } = await fetchEthTransactionsTask(payload);
-      const address = parameters?.address ?? '';
+      const accounts = parameters?.accounts;
       const taskMeta = {
         title: t('actions.transactions.task.title').toString(),
-        description: address
-          ? t('actions.transactions.task.description', {
-              address
-            }).toString()
-          : undefined,
-        address
+        description:
+          accounts && accounts.length > 0
+            ? t('actions.transactions.task.description', {
+                address: accounts[0].address,
+                chain: accounts[0].evmChain
+              }).toString()
+            : undefined
       };
 
       const { result } = await awaitTask<
@@ -136,7 +136,7 @@ export const useTransactions = defineStore('history/transactions', () => {
 
     try {
       const firstLoad = isFirstLoad();
-      const accountsList = get(accounts)
+      const accountsList: EvmChainAddress[] = get(accounts)
         .filter(({ chain }) => supportsTransactions(chain))
         .map(({ address, chain }) => ({
           address,
@@ -161,16 +161,19 @@ export const useTransactions = defineStore('history/transactions', () => {
         resetQueryStatus();
         set(fetchedTxAccounts, accountsList);
         const refreshAddressTxs = accountsList.map(account =>
-          fetchTransactionsHandler(false, account).catch(error => {
-            notify({
-              title: t('actions.transactions.error.title').toString(),
-              message: t('actions.transactions.error.description', {
-                error,
-                address: account.address
-              }).toString(),
-              display: true
-            });
-          })
+          fetchTransactionsHandler(false, { accounts: [account] }).catch(
+            error => {
+              notify({
+                title: t('actions.transactions.error.title').toString(),
+                message: t('actions.transactions.error.description', {
+                  error,
+                  address: account.address,
+                  chain: account.evmChain
+                }).toString(),
+                display: true
+              });
+            }
+          )
         );
         await Promise.all(refreshAddressTxs);
         await checkTransactionsMissingEvents();

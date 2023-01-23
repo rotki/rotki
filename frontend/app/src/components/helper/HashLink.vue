@@ -117,7 +117,7 @@ const { getBlockie } = useBlockie();
 <template>
   <div class="d-flex flex-row shrink align-center">
     <span>
-      <v-avatar v-if="showIcon && !tx" size="21" class="mr-2">
+      <v-avatar v-if="showIcon && !tx" size="22" class="mr-2">
         <v-img :src="getBlockie(displayText)" />
       </v-avatar>
     </span>
