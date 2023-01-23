@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 import requests
@@ -33,15 +33,23 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 
-def entry_to_input_dict(entry: HistoryBaseEntry, include_identifier: bool) -> dict[str, Any]:
+def entry_to_input_dict(
+        entry: HistoryBaseEntry,
+        include_identifier: bool,
+        chain_id: Optional[ChainID] = None,
+) -> dict[str, Any]:
     serialized = entry.serialize_without_extra_data()
     if include_identifier:
         assert entry.identifier is not None
         serialized['identifier'] = entry.identifier
+    else:
+        serialized.pop('identifier')  # there is `identifier`: `None` which we have to remove
+    if chain_id is not None:
+        serialized['evm_chain'] = str(chain_id)
     return serialized
 
 
-def _add_entries(server) -> list[HistoryBaseEntry]:
+def _add_entries(server, chain_id: ChainID) -> list[HistoryBaseEntry]:
     entries = [HistoryBaseEntry(
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
         sequence_index=162,
@@ -105,7 +113,7 @@ def _add_entries(server) -> list[HistoryBaseEntry]:
     )]
 
     for entry in entries:
-        json_data = entry_to_input_dict(entry, include_identifier=False)
+        json_data = entry_to_input_dict(entry, include_identifier=False, chain_id=chain_id)
         response = requests.put(
             api_url_for(server, 'historybaseentryresource'),
             json=json_data,
@@ -118,9 +126,10 @@ def _add_entries(server) -> list[HistoryBaseEntry]:
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_edit_delete_entries(rotkehlchen_api_server):
+@pytest.mark.parametrize('chain_id', [ChainID.ETHEREUM, ChainID.OPTIMISM])
+def test_add_edit_delete_entries(rotkehlchen_api_server, chain_id):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    entries = _add_entries(rotkehlchen_api_server)
+    entries = _add_entries(rotkehlchen_api_server, chain_id)
     db = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
         saved_events = db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
@@ -157,7 +166,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
     # test adding event with  sequence index same as an existing one fails
     entry.sequence_index = 3
     entry.timestamp = TimestampMS(1649924575000)
-    json_data = entry_to_input_dict(entry, include_identifier=True)
+    json_data = entry_to_input_dict(entry, include_identifier=False, chain_id=chain_id)
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
         json=json_data,
@@ -230,6 +239,14 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
         )
         saved_events = db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
         assert saved_events == [entries[0], entries[3], entry]
+
+        chain_ids_in_db = [
+            entry[1]
+            for entry in cursor.execute('select name, value from history_events_mappings')
+            if entry[0] == 'chain_id'
+        ]
+        assert len(chain_ids_in_db) == 3
+        assert all([chain_id_entry == chain_id.serialize() for chain_id_entry in chain_ids_in_db])
 
 
 def test_event_with_details(rotkehlchen_api_server: 'APIServer'):

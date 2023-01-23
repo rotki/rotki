@@ -570,7 +570,6 @@ class StakingQuerySchema(
 
 
 class HistoryBaseEntrySchema(Schema):
-    identifier = fields.Integer(load_default=None, required=False)
     event_identifier = fields.String(required=True)
     sequence_index = fields.Integer(required=True)
     # Timestamp coming in from the API is in seconds, in contrast to what we save in the struct
@@ -589,32 +588,42 @@ class HistoryBaseEntrySchema(Schema):
     )
     counterparty = fields.String(required=False)
 
-    def __init__(self, identifier_required: bool):
-        super().__init__()
-        self.identifier_required = identifier_required
-
-    @validates_schema
-    def validate_history_entry_schema(
+    def make_history_base_entry(  # pylint: disable=no-self-use
             self,
             data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        if self.identifier_required is True and data['identifier'] is None:
-            raise ValidationError('History event identifier should be given')
-        try:
-            data['event_identifier'] = HistoryBaseEntry.deserialize_event_identifier(data['event_identifier'])  # noqa: E501
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
+    ) -> HistoryBaseEntry:
+        if data['event_subtype'] is None:
+            data['event_subtype'] = HistoryEventSubType.NONE
+        data['event_identifier'] = HistoryBaseEntry.deserialize_event_identifier(data['event_identifier'])  # noqa: E501
+        return HistoryBaseEntry(**data)
+
+
+class AddHistoryBaseEntrySchema(HistoryBaseEntrySchema):
+    evm_chain = EvmChainNameField(required=True)
 
     @post_load
-    def make_history_base_entry(  # pylint: disable=no-self-use
+    def make_history_base_entry_and_chain_id(  # pylint: disable=no-self-use
             self,
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        if data['event_subtype'] is None:
-            data['event_subtype'] = HistoryEventSubType.NONE
-        return {'event': HistoryBaseEntry(**data)}
+        chain_id = data.pop('evm_chain')
+        return {
+            'event': super().make_history_base_entry(data),
+            'chain_id': chain_id,
+        }
+
+
+class EditHistoryBaseEntrySchema(HistoryBaseEntrySchema):
+    identifier = fields.Integer(required=True)
+
+    @post_load
+    def make_history_base_entry_with_identifier(  # pylint: disable=no-self-use
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        return {'event': super().make_history_base_entry(data)}
 
 
 class AssetMovementsQuerySchema(

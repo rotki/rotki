@@ -5001,7 +5001,7 @@ Dealing with BaseHistoryEntry events
 
 .. http:put:: /api/(version)/history/events
 
-   Doing a PUT on this endpoint can add a new history event base entry to rotki. The unique identifier for the entry is returned as success.
+   Doing a PUT on this endpoint can add a new history event base entry to rotki. For each entry evm chain also has to be specified. The unique identifier for the entry is returned as success.
 
    **Example Request**:
 
@@ -5022,13 +5022,15 @@ Dealing with BaseHistoryEntry events
           "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
           "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
           "event_subtype": "approve",
-          "counterparty": "0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE"
+          "counterparty": "0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
+          "evm_chain": "optimism"
       }
 
    .. _history_base_entry_schema_section:
 
    :reqjson string event_identifier: This is an identifier that could be common between multiple history base entries so that entries identifying a single event can be grouped. For ethereum transactions for example it's the transaction hash.
    :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
+   :reqjson string evm_chain: The name of the evm chain for which to add the event. ``"ethereum"``, ``"optimism"`` etc.
    :reqjson int timestamp: The timestamp of the entry
    :reqjson string location: The location of the entry
    :reqjson string event_type: The main event type of the entry. Possible event types can be seen in HistoryEventType enum.
