@@ -90,6 +90,7 @@ export const useAccountDetails = (
     address: MaybeRef<string>
   ): ComputedRef<AssetBalance[]> =>
     computed(() => {
+      if (get(blockchain) !== Blockchain.ETH) return [];
       const ownedAssets = getLoopringAssetBalances(address);
       return toSortedAssetBalanceArray(get(ownedAssets), asset =>
         get(isAssetIgnored(asset))
