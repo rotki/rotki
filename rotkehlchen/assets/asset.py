@@ -75,15 +75,17 @@ class Asset:
     def serialize(self) -> str:
         return self.identifier
 
-    def check_existence(self) -> 'Asset':
+    def check_existence(self, query_packaged_db: bool = True) -> 'Asset':
         """
         If this asset exists, returns the instance. If it doesn't, throws an error.
+        When the `query_packaged_db` is set to True and the checked asset is in the list
+        of constant asset we try to copy it from the packaged global db.
         May raise:
         - UnknownAsset
         """
         # We don't need asset type, but using `get_asset_type` since it has all the functionality
         # that we need here
-        AssetResolver().get_asset_type(self.identifier)
+        AssetResolver().get_asset_type(self.identifier, query_packaged_db=query_packaged_db)
         return self
 
     def is_nft(self) -> bool:

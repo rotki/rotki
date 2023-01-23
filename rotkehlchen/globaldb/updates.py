@@ -61,28 +61,28 @@ def _replace_assets_from_db(
         connection: 'DBConnection',
         sourcedb_path: Path,
 ) -> None:
-    cursor = connection.cursor()
-    cursor.executescript(f"""
-    ATTACH DATABASE "{sourcedb_path}" AS other_db;
-    PRAGMA foreign_keys = OFF;
-    DELETE FROM assets;
-    DELETE FROM evm_tokens;
-    DELETE FROM underlying_tokens_list;
-    DELETE FROM common_asset_details;
-    DELETE FROM asset_collections;
-    DELETE FROM multiasset_mappings;
-    INSERT INTO assets SELECT * FROM other_db.assets;
-    INSERT INTO evm_tokens SELECT * FROM other_db.evm_tokens;
-    INSERT INTO underlying_tokens_list SELECT * FROM other_db.underlying_tokens_list;
-    INSERT INTO common_asset_details SELECT * FROM other_db.common_asset_details;
-    INSERT INTO asset_collections SELECT * FROM other_db.asset_collections;
-    INSERT INTO multiasset_mappings SELECT * FROM other_db.multiasset_mappings;
-    INSERT OR REPLACE INTO settings(name, value) VALUES("{ASSETS_VERSION_KEY}",
-    (SELECT value FROM other_db.settings WHERE name="{ASSETS_VERSION_KEY}")
-    );
-    PRAGMA foreign_keys = ON;
-    DETACH DATABASE "other_db";
-    """)
+    with connection.write_ctx() as cursor:
+        cursor.executescript(f"""
+        ATTACH DATABASE "{sourcedb_path}" AS other_db;
+        PRAGMA foreign_keys = OFF;
+        DELETE FROM assets;
+        DELETE FROM evm_tokens;
+        DELETE FROM underlying_tokens_list;
+        DELETE FROM common_asset_details;
+        DELETE FROM asset_collections;
+        DELETE FROM multiasset_mappings;
+        INSERT INTO assets SELECT * FROM other_db.assets;
+        INSERT INTO evm_tokens SELECT * FROM other_db.evm_tokens;
+        INSERT INTO underlying_tokens_list SELECT * FROM other_db.underlying_tokens_list;
+        INSERT INTO common_asset_details SELECT * FROM other_db.common_asset_details;
+        INSERT INTO asset_collections SELECT * FROM other_db.asset_collections;
+        INSERT INTO multiasset_mappings SELECT * FROM other_db.multiasset_mappings;
+        INSERT OR REPLACE INTO settings(name, value) VALUES("{ASSETS_VERSION_KEY}",
+        (SELECT value FROM other_db.settings WHERE name="{ASSETS_VERSION_KEY}")
+        );
+        PRAGMA foreign_keys = ON;
+        DETACH DATABASE "other_db";
+        """)
 
 
 def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) -> None:
@@ -99,20 +99,18 @@ def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) 
     AssetResolver().clean_memory_cache(local_asset.identifier.lower())
 
 
-def _query_file_or_rollback(url: str, connection: 'DBConnection') -> str:
+def _query_file(url: str) -> str:
     """
-    Query the given url or rollback the connection if it was not possible to download it.
+    Query the given url
     May raise:
     - RemoteError if it was not possible to query GitHub
     """
     try:
         response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
     except requests.exceptions.RequestException as e:
-        connection.rollback()
         raise RemoteError(f'Failed to query Github for {url} during assets update: {str(e)}') from e  # noqa: E501
 
     if response.status_code != 200:
-        connection.rollback()
         raise RemoteError(
             f'Github query for {url} failed with status code '
             f'{response.status_code} and text: {response.text}',
@@ -138,7 +136,7 @@ class AssetsUpdater():
     def __init__(self, msg_aggregator: MessagesAggregator) -> None:
         self.msg_aggregator = msg_aggregator
         self.local_assets_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)
-        self.last_remote_checked_version = None
+        self.last_remote_checked_version = -1  # integer value that represents no update
         self.conflicts: list[tuple[AssetData, AssetData]] = []
         self.assets_re = re.compile(r'.*INSERT +INTO +assets\( *identifier *, *name *, *type *\) +VALUES\(([^\)]*?),([^\)]*?),([^\)]*?)\).*?')  # noqa: E501
         self.ethereum_tokens_re = re.compile(r'.*INSERT +INTO +evm_tokens\( *identifier *, *token_kind *, *chain *, *address *, *decimals *, *protocol *\) +VALUES\(([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?)\).*')  # noqa: E501
@@ -445,7 +443,8 @@ class AssetsUpdater():
         """
         local_asset: Optional[Asset] = None
         with suppress(UnknownAsset):
-            local_asset = Asset(remote_asset_data.identifier).check_existence()
+            # we avoid querying the packaged db to prevent the copy of constant assets
+            local_asset = Asset(remote_asset_data.identifier).check_existence(query_packaged_db=False)  # noqa: E501
 
         try:
             with connection.savepoint_ctx() as cursor:
@@ -593,7 +592,7 @@ class AssetsUpdater():
         May raise:
             - RemoteError if there is a problem querying Github
         """
-        if self.last_remote_checked_version is None:
+        if self.last_remote_checked_version == -1:
             self.check_for_updates()
 
         self.conflicts = []  # reset the stored conflicts
@@ -602,51 +601,114 @@ class AssetsUpdater():
         data_directory = GlobalDBHandler()._data_directory
         assert data_directory is not None, 'data directory should be initialized at this point'
         global_db_path = data_directory / 'global_data' / 'global.db'
+
+        # We retrieve first all the files required for the different updates that will be performed
+        updates = self._retrieve_update_files(
+            local_schema_version=local_schema_version,
+            infojson=infojson,
+            up_to_version=up_to_version,
+        )
+
         with TemporaryDirectory() as tmpdirname:
             tmpdir = Path(tmpdirname)
-            connection, _ = initialize_globaldb(
+            temp_db_name = 'temp.db'
+            temp_db_connection, _ = initialize_globaldb(
                 global_dir=tmpdir,
-                db_filename='temp.db',
+                db_filename=temp_db_name,
                 sql_vm_instructions_cb=GlobalDBHandler().conn.sql_vm_instructions_cb,
             )
-            with GlobalDBHandler().conn.critical_section():
-                # make sure global DB is not accessed anywhere else
-                _replace_assets_from_db(connection, global_db_path)
-            self._perform_update(
-                connection=connection,
-                assets_conflicts=conflicts,
-                local_schema_version=local_schema_version,
-                infojson=infojson,
-                up_to_version=up_to_version,
-            )
-            if len(self.conflicts) != 0:
-                # close the temporary DB and return the conflicts
-                connection.close()
-                return [
-                    {'identifier': x[0].identifier, 'local': x[0].serialize(), 'remote': x[1].serialize()}  # noqa: E501
-                    for x in self.conflicts
-                ]
 
-            # otherwise we are sure the DB will work without conflicts so let's
-            # now move the data to the actual global DB
-            connection.close()
-            connection = GlobalDBHandler().conn
-            with connection.critical_section():  # assure global DB is not accessed anywhere else
-                _replace_assets_from_db(connection, tmpdir / 'temp.db')
+            # use a critical section to avoid modifications in the globaldb during the update
+            # process since we ignore any possible change in the user globaldb once we started
+            # the update.
+            with GlobalDBHandler().conn.critical_section():
+                log.info('Starting assets update. Copying content from the user globaldb')
+                _replace_assets_from_db(temp_db_connection, global_db_path)
+                self._perform_update(
+                    connection=temp_db_connection,
+                    assets_conflicts=conflicts,
+                    up_to_version=up_to_version,
+                    updates=updates,
+                )
+
+                temp_db_connection.close()
+                if len(self.conflicts) != 0:
+                    return [
+                        {'identifier': x[0].identifier, 'local': x[0].serialize(), 'remote': x[1].serialize()}  # noqa: E501
+                        for x in self.conflicts
+                    ]
+
+                # otherwise we are sure the DB will work without conflicts so let's
+                # now move the data to the actual global DB
+                log.info('Finishing assets update. Replacing users globaldb with the updated information')  # noqa: E501
+                _replace_assets_from_db(GlobalDBHandler().conn, tmpdir / temp_db_name)
+
             return None
 
     def _perform_update(
             self,
             connection: 'DBConnection',
             assets_conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
+            up_to_version: Optional[int],
+            updates: dict[int, dict[str, str]],
+    ) -> None:
+        """
+        Apply to the db the different sql updates from the `updates` argument
+        """
+        target_version = min(up_to_version, self.last_remote_checked_version) if up_to_version else self.last_remote_checked_version   # noqa: E501
+        for version in range(self.local_assets_version + 1, target_version + 1):
+            log.info(f'Applying assets update from {version}')
+            if version not in updates:
+                continue
+
+            self._apply_single_version_update(
+                connection=connection,
+                version=version,
+                text=updates[version]['assets_file'],
+                assets_conflicts=assets_conflicts,
+                update_file_type=UpdateFileType.ASSETS,
+            )
+
+            if version >= FIRST_VERSION_WITH_COLLECTIONS:
+                self._apply_single_version_update(
+                    connection=connection,
+                    version=version,
+                    text=updates[version]['asset_collections_file'],
+                    assets_conflicts=None,
+                    update_file_type=UpdateFileType.ASSET_COLLECTIONS,
+                )
+                self._apply_single_version_update(
+                    connection=connection,
+                    version=version,
+                    text=updates[version]['asset_collections_mappings_file'],
+                    assets_conflicts=None,
+                    update_file_type=UpdateFileType.ASSET_COLLECTIONS_MAPPINGS,
+                )
+
+        if self.conflicts == []:
+            connection.commit()
+            return
+
+        # In this case we have conflicts. Everything should also be rolled back
+        connection.rollback()
+
+    def _retrieve_update_files(
+            self,
             local_schema_version: int,
             infojson: dict[str, Any],
             up_to_version: Optional[int],
-    ) -> None:
-        version = self.local_assets_version + 1
-        target_version = min(up_to_version, self.last_remote_checked_version) if up_to_version else self.last_remote_checked_version   # type: ignore # noqa: E501
+    ) -> dict[int, dict[str, str]]:
+        """
+        Query the assets update repository to retrieve the pending updates before trying to
+        apply them. It returns a dict that maps each version to their update files.
+
+        May raise:
+        - RemoteError if there is a problem querying github
+        """
+        updates = {}
+        target_version = min(up_to_version, self.last_remote_checked_version) if up_to_version else self.last_remote_checked_version   # noqa: E501
         # type ignore since due to check_for_updates we know last_remote_checked_version exists
-        while version <= target_version:
+        for version in range(self.local_assets_version + 1, target_version + 1):
             try:
                 min_schema_version = infojson['updates'][str(version)]['min_schema_version']
                 max_schema_version = infojson['updates'][str(version)]['max_schema_version']
@@ -665,65 +727,31 @@ class AssetsUpdater():
                         f'You will have to follow an alternative method to '
                         f'obtain the assets of this update. Easiest would be to reset global DB.',
                     )
-                    connection.execute(
-                        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                        (ASSETS_VERSION_KEY, str(version)),
-                    )
-                    version += 1
                     continue
             except KeyError as e:
                 log.error(
                     f'Remote info.json for version {version} did not contain '
                     f'key "{str(e)}". Skipping update.',
                 )
-                version += 1
                 continue
 
             assets_url = ASSETS_UPDATES_URL.format(branch=self.branch, version=version)
             asset_collections_url = ASSET_COLLECTIONS_UPDATES_URL.format(branch=self.branch, version=version)  # noqa: E501
             asset_collections_mappings_url = ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL.format(branch=self.branch, version=version)  # noqa: E501
 
-            assets_file = _query_file_or_rollback(
-                url=assets_url,
-                connection=connection,
-            )
-            self._apply_single_version_update(
-                connection=connection,
-                version=version,
-                text=assets_file,
-                assets_conflicts=assets_conflicts,
-                update_file_type=UpdateFileType.ASSETS,
-            )
-
+            assets_file = _query_file(url=assets_url)
             if version >= FIRST_VERSION_WITH_COLLECTIONS:
-                asset_collections_file = _query_file_or_rollback(
-                    url=asset_collections_url,
-                    connection=connection,
-                )
-                asset_collections_mappings_file = _query_file_or_rollback(
-                    url=asset_collections_mappings_url,
-                    connection=connection,
-                )
-                self._apply_single_version_update(
-                    connection=connection,
-                    version=version,
-                    text=asset_collections_file,
-                    assets_conflicts=None,
-                    update_file_type=UpdateFileType.ASSET_COLLECTIONS,
-                )
-                self._apply_single_version_update(
-                    connection=connection,
-                    version=version,
-                    text=asset_collections_mappings_file,
-                    assets_conflicts=None,
-                    update_file_type=UpdateFileType.ASSET_COLLECTIONS_MAPPINGS,
-                )
+                asset_collections_file = _query_file(url=asset_collections_url)
+                asset_collections_mappings_file = _query_file(url=asset_collections_mappings_url)
+            else:
+                asset_collections_file, asset_collections_mappings_file = '', ''
+
+            updates[version] = {
+                'assets_file': assets_file,
+                'asset_collections_file': asset_collections_file,
+                'asset_collections_mappings_file': asset_collections_mappings_file,
+            }
 
             version += 1
 
-        if self.conflicts == []:
-            connection.commit()
-            return
-
-        # In this case we have conflicts. Everything should also be rolled back
-        connection.rollback()
+        return updates
