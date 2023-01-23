@@ -1016,16 +1016,16 @@ class RestAPI():
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def add_history_event(self, event: HistoryBaseEntry) -> Response:
+    def add_history_event(self, event: HistoryBaseEntry, chain_id: ChainID) -> Response:
         db = DBHistoryEvents(self.rotkehlchen.data.db)
         with self.rotkehlchen.data.db.user_write() as cursor:
             try:
                 identifier = db.add_history_event(
-                    cursor,
-                    event,
+                    write_cursor=cursor,
+                    event=event,
                     mapping_values={
                         HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED,
-                        HISTORY_MAPPING_KEY_CHAINID: ChainID.ETHEREUM.serialize_for_db(),
+                        HISTORY_MAPPING_KEY_CHAINID: chain_id.serialize_for_db(),
                     },
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
@@ -3366,13 +3366,16 @@ class RestAPI():
                 entries_result = []
 
             result: Optional[dict[str, Any]] = None
+            kwargs = {}
+            if filter_query.chain_id is not None:
+                kwargs['chain_id'] = filter_query.chain_id.serialize_for_db()
             result = {
                 'entries': entries_result,
                 'entries_found': total_filter_count,
                 'entries_total': self.rotkehlchen.data.db.get_entries_count(
                     cursor=cursor,
                     entries_table='evm_transactions',
-                    chain_id=ChainID.ETHEREUM.serialize_for_db(),
+                    **kwargs,  # type: ignore[arg-type]
                 ),
                 'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,
             }

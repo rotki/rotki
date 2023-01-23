@@ -185,12 +185,9 @@ class HistoryBaseEntry(AccountingEventMixin):
 
     @classmethod
     def deserialize_event_identifier(cls, val: str) -> bytes:
-        """Takes any arbitrary string and turns it into a bytes event_identifier.
-
-        May raise:
-        - DeserializationError if value is not valid transaction hash.
-        """
+        """Takes any arbitrary string and turns it into a bytes event_identifier."""
         if is_valid_ethereum_tx_hash(val):
+            # `is_valid_ethereum_tx_hash` makes sure that it is a hex string, so no errors raised here  # noqa: E501
             return hexstring_to_bytes(val)
         return val.encode()
 

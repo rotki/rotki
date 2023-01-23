@@ -1193,7 +1193,7 @@ def test_query_transactions_check_decoded_events(
     })
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
-        json={key: value for key, value in tx4_events[0]['entry'].items() if key != 'extra_data'},
+        json={key: value for key, value in tx4_events[0]['entry'].items() if key != 'extra_data'} | {'evm_chain': 'ethereum'},  # noqa: E501
     )
     result = assert_proper_response_with_result(response)
     tx4_events[0]['entry']['identifier'] = result['identifier']
