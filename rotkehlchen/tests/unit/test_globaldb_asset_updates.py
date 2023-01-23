@@ -1,4 +1,6 @@
+import json
 from typing import Optional
+from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.types import AssetData, AssetType
@@ -6,13 +8,51 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.globaldb.updates import AssetsUpdater, UpdateFileType
+from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY, AssetsUpdater, UpdateFileType
+from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
+
+
+VALID_ASSET_MAPPINGS = """INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "ETH");
+    *
+    INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84");
+    *
+"""  # noqa: E501
+VALID_ASSET_COLLECTIONS = """INSERT INTO asset_collections(id, name, symbol) VALUES (99999999, "My custom ETH", "ETHS")
+    *
+"""  # noqa: E501
+VALID_ASSETS = """INSERT INTO assets(identifier, name, type) VALUES("MYBONK", "Bonk", "Y"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("MYBONK", "BONK", "bonk", "BONK", NULL, 1672279200, NULL);
+    *
+"""  # noqa: E501
 
 
 @pytest.fixture(name='assets_updater')
 def fixture_assets_updater(messages_aggregator):
     return AssetsUpdater(messages_aggregator)
+
+
+def mock_github_assets_response(url, timeout):  # pylint: disable=unused-argument
+    """Mock response from github for assets updates"""
+    if 'mappings' in url:
+        return MockResponse(200, VALID_ASSET_MAPPINGS)
+    if 'collections' in url:
+        return MockResponse(200, VALID_ASSET_COLLECTIONS)
+    if 'info' in url:
+        local_schema = GlobalDBHandler().get_schema_version()
+        data = json.dumps(
+            {
+                'updates': {
+                    '998': {'min_schema_version': local_schema - 1, 'max_schema_version': local_schema - 1, 'changes': 1},  # noqa: E501
+                    '999': {'min_schema_version': local_schema, 'max_schema_version': local_schema, 'changes': 1},  # noqa: E501
+                },
+                'latest': 999,
+            },
+        )
+        return MockResponse(200, data)
+    if 'updates' in url:
+        return MockResponse(200, VALID_ASSETS)
+
+    raise AssertionError(f'Unknown url {url}')
 
 
 @pytest.mark.parametrize('text,expected_data,error_msg', [
@@ -348,41 +388,6 @@ INSERT INTO assets(identifier, name, type) VALUES("NEW-ASSET-2", "name4", "B"); 
     assert connection.execute('SELECT symbol FROM common_asset_details WHERE identifier="NEW-ASSET-2"').fetchone()[0] == 'symbol4'  # noqa: E501
 
 
-def test_updates_assets_collections(assets_updater: AssetsUpdater) -> None:
-    """
-    Check that assets collections can be created and edited correctly
-    """
-    update_text_asset_collections = """INSERT INTO asset_collections(id, name, symbol) VALUES (99999999, "My custom ETH", "ETHS")
-    *
-    """  # noqa: E501
-    update_text_mappings = """INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "ETH");
-    *
-    INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84");
-    *
-    """  # noqa: E501
-
-    connection = GlobalDBHandler().conn
-    assets_updater._apply_single_version_update(
-        connection=connection,
-        version=999,  # doesn't matter
-        text=update_text_asset_collections,
-        assets_conflicts={},
-        update_file_type=UpdateFileType.ASSET_COLLECTIONS,
-    )
-    assets_updater._apply_single_version_update(
-        connection=connection,
-        version=999,  # doesn't matter
-        text=update_text_mappings,
-        assets_conflicts={},
-        update_file_type=UpdateFileType.ASSET_COLLECTIONS_MAPPINGS,
-    )
-    with connection.read_ctx() as cursor:
-        cursor.execute('SELECT * FROM asset_collections WHERE id = 99999999')
-        assert cursor.fetchall() == [(99999999, 'My custom ETH', 'ETHS')]
-        cursor.execute('SELECT * FROM multiasset_mappings WHERE collection_id = 99999999')
-        assert cursor.fetchall() == [(99999999, 'ETH'), (99999999, 'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')]  # noqa: E501
-
-
 def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
     """
     Check that assets collections can be created and edited correctly.
@@ -439,4 +444,30 @@ def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
         'Skipping entry during assets collection update to v999 due to a deserialization error. At asset DB update could not parse asset collection data out of INSERT INTO asset_collections(id, name) VALUES (99999999, "My custom ETH")',  # noqa: E501
         'Tried to add unknown asset ETH99999 to collection of assets. Skipping',
         'Skipping entry during assets collection multimapping update to v999 due to a deserialization error. Tried to add asset to collection with id 99999999 but it does not exist',  # noqa: E501
+    ]
+
+
+def test_asset_update(assets_updater: AssetsUpdater):
+    """
+    Check that globaldb updates work properly when getting information from github
+    and assets collections are applied correctly in the process
+    """
+    # consume warnings from other tests
+    assets_updater.msg_aggregator.consume_warnings()
+    # set a high version of the globaldb to avoid conflicts with future changes
+    GlobalDBHandler().add_setting_value(ASSETS_VERSION_KEY, 997)
+    with patch('requests.get', wraps=mock_github_assets_response):
+        assets_updater.perform_update(up_to_version=999, conflicts={})
+
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        cursor.execute('SELECT * FROM asset_collections WHERE id = 99999999')
+        assert cursor.fetchall() == [(99999999, 'My custom ETH', 'ETHS')]
+        cursor.execute('SELECT * FROM multiasset_mappings WHERE collection_id = 99999999')
+        assert cursor.fetchall() == [(99999999, 'ETH'), (99999999, 'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')]  # noqa: E501
+
+    # check that we skip versions with wrong schema and that all the versions
+    # required are corretly queried.
+    warnings = assets_updater.msg_aggregator.consume_warnings()
+    assert warnings == [
+        'Skipping assets update 998 since it requires a min schema of 3 and max schema of 3 while the local DB schema version is 4. You will have to follow an alternative method to obtain the assets of this update. Easiest would be to reset global DB.',  # noqa: E501
     ]

@@ -88,7 +88,7 @@ class AssetResolver():
         return asset
 
     @staticmethod
-    def get_asset_type(identifier: str) -> AssetType:
+    def get_asset_type(identifier: str, query_packaged_db: bool = True) -> AssetType:
         # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
         # Couldn't find a reorg that solves this cyclic import
         from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
@@ -102,7 +102,7 @@ class AssetResolver():
         try:
             asset_type = GlobalDBHandler().get_asset_type(identifier)
         except UnknownAsset:
-            if identifier not in CONSTANT_ASSETS:
+            if identifier not in CONSTANT_ASSETS or query_packaged_db is False:
                 raise
 
             log.debug(f'Attempt to get asset_type for {identifier} using the packaged database')
