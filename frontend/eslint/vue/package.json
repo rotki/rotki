@@ -20,14 +20,14 @@
   },
   "dependencies": {
     "@rotki/eslint-config-ts": "workspace:*",
-    "eslint-define-config": "1.13.0",
-    "eslint-plugin-vue": "9.8.0",
+    "eslint-define-config": "1.14.0",
+    "eslint-plugin-vue": "9.9.0",
     "eslint-plugin-vuetify": "1.1.0",
-    "local-pkg": "0.4.2"
+    "local-pkg": "0.4.3"
   },
   "devDependencies": {
-    "eslint": "8.31.0",
+    "eslint": "8.32.0",
     "vue": "2.7.14",
-    "vuetify": "2.6.13"
+    "vuetify": "2.6.14"
   }
 }
