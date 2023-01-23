@@ -153,6 +153,13 @@ const updatePayloadHandler = async () => {
   await updateRequestPayload(payload);
 };
 
+const setPage = (page: number) => {
+  const optionsVal = get(options);
+  if (optionsVal) {
+    updatePaginationHandler({ ...optionsVal, page });
+  }
+};
+
 onMounted(async () => {
   await updatePayloadHandler();
 });
@@ -198,7 +205,7 @@ onMounted(async () => {
       />
     </template>
 
-    <collection-handler :collection="balances">
+    <collection-handler :collection="balances" @set-page="setPage">
       <template #default="{ data, itemLength }">
         <data-table
           :headers="tableHeaders"

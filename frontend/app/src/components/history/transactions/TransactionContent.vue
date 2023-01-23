@@ -323,17 +323,24 @@ watch(filters, async (filter, oldValue) => {
   if (filter === oldValue) {
     return;
   }
-
   let newOptions = null;
-  if (get(options)) {
+  const optionsVal = get(options);
+  if (optionsVal) {
     newOptions = {
-      ...get(options)!,
+      ...optionsVal,
       page: 1
     };
   }
 
   await updatePaginationHandler(newOptions);
 });
+
+const setPage = (page: number) => {
+  const optionsVal = get(options);
+  if (optionsVal) {
+    updatePaginationHandler({ ...optionsVal, page });
+  }
+};
 
 watch(usedAccount, async () => {
   let newOptions = null;
@@ -461,7 +468,7 @@ const txChains = useArrayMap(txEvmChains, x => x.id);
         </v-row>
       </template>
 
-      <collection-handler :collection="transactions">
+      <collection-handler :collection="transactions" @set-page="setPage">
         <template #default="{ itemLength, showUpgradeRow, limit, total }">
           <data-table
             :expanded="data"

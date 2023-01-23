@@ -83,7 +83,9 @@ const css = useCssModule();
               </v-icon>
             </div>
 
-            <evm-chain-icon :chain="item.evmChain" size="20px" />
+            <adaptive-wrapper>
+              <evm-chain-icon :chain="item.evmChain" size="20px" />
+            </adaptive-wrapper>
 
             <transaction-query-status-line :item="item" class="ms-2" />
           </div>

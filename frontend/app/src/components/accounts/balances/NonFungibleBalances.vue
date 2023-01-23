@@ -232,15 +232,23 @@ watch(ignoredAssetsHandling, async (filters, oldValue) => {
     return;
   }
   let newOptions = null;
-  if (get(options)) {
+  const optionsVal = get(options);
+  if (optionsVal) {
     newOptions = {
-      ...get(options)!,
+      ...optionsVal,
       page: 1
     };
   }
 
   await updatePaginationHandler(newOptions);
 });
+
+const setPage = (page: number) => {
+  const optionsVal = get(options);
+  if (optionsVal) {
+    updatePaginationHandler({ ...optionsVal, page });
+  }
+};
 
 onMounted(async () => {
   await updatePayloadHandler();
@@ -287,7 +295,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
       />
     </template>
 
-    <collection-handler :collection="balances">
+    <collection-handler :collection="balances" @set-page="setPage">
       <template #default="{ data, itemLength, totalUsdValue }">
         <data-table
           v-model="selected"
