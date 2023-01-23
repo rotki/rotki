@@ -17,6 +17,7 @@ Changelog
 * :feature:`784` Add support for OKX exchange
 * :feature:`-` Swaps made via uniswap v3 auto routers (both v1 and v2) will now be decoded correctly.
 * :feature:`3231` Optimism is now supported. Optimism balances will be shown and optimism transactions will be decoded.
+* :feature:`1756` Uniswap and sushiswap pool join/exit events are now properly decoded and taken into account during PnL report.
 
 * :release:`1.26.3 <2022-12-30>`
 * :bug:`5315` Fix issue where balance is not fully refreshed after detect tokens button pressed.
