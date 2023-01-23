@@ -331,10 +331,10 @@ class HIFOCostBasisMethod(BaseCostBasisMethod):
     """
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
         """
-        Adds an acquisition to the `_acquisitions_heap` using the negated amount
+        Adds an acquisition to the `_acquisitions_heap` using the negated rate
         of the acquisition to achieve the HIFO order.
         """
-        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeapElement(-acquisition.amount, acquisition))  # noqa: E501
+        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeapElement(-acquisition.rate, acquisition))  # noqa: E501
 
 
 class AverageCostBasisMethod(BaseCostBasisMethod):

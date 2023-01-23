@@ -592,20 +592,20 @@ def test_accounting_simple_hifo_order(accountant):
     cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.HIFO))
     asset_events = cost_basis.get_events(asset)
     event1 = AssetAcquisitionEvent(
-        amount=ONE,
+        amount=FVal(2),
         timestamp=1,
         rate=ONE,
         index=1,
     )
     event2 = AssetAcquisitionEvent(
-        amount=FVal('2.0000'),
+        amount=ONE,
         timestamp=2,
-        rate=ONE,
+        rate=FVal(1.5),
         index=2,
     )
     asset_events.acquisitions_manager.add_acquisition(event1)
     asset_events.acquisitions_manager.add_acquisition(event2)
-    assert cost_basis.reduce_asset_amount(asset, ONE, 0) is True
+    assert cost_basis.reduce_asset_amount(asset, FVal(0.5), 0) is True
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
     assert len(acquisitions) == 2 and acquisitions[0] == event2 and acquisitions[1] == event1
 
@@ -619,7 +619,7 @@ def test_accounting_hifo_order(accountant):
     event3 = AssetAcquisitionEvent(
         amount=FVal(2),
         timestamp=1,
-        rate=ONE,
+        rate=FVal(3),
         index=1,
     )
     event4 = AssetAcquisitionEvent(
@@ -631,7 +631,7 @@ def test_accounting_hifo_order(accountant):
     asset_events.acquisitions_manager.add_acquisition(event3)
     asset_events.acquisitions_manager.add_acquisition(event4)
     assert asset_events.acquisitions_manager.calculate_spend_cost_basis(
-        spending_amount=3,
+        spending_amount=1,
         spending_asset=asset,
         timestamp=1,
         missing_acquisitions=cost_basis.missing_acquisitions,
@@ -641,17 +641,17 @@ def test_accounting_hifo_order(accountant):
         average_cost_basis=None,
     ).is_complete is True
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
-    assert acquisitions[0].remaining_amount == FVal(2) and acquisitions[1] == event3
+    assert acquisitions[0].remaining_amount == ONE and acquisitions[1] == event4
     # check that adding a new event after processing the previous one is added properly
     event5 = AssetAcquisitionEvent(
         amount=ONE,
         timestamp=1,
-        rate=ONE,
+        rate=FVal(2),
         index=1,
     )
     asset_events.acquisitions_manager.add_acquisition(event5)
     assert asset_events.acquisitions_manager.calculate_spend_cost_basis(
-        spending_amount=4,
+        spending_amount=6,
         spending_asset=asset,
         timestamp=2,
         missing_acquisitions=cost_basis.missing_acquisitions,
@@ -661,7 +661,7 @@ def test_accounting_hifo_order(accountant):
         average_cost_basis=None,
     ).is_complete is True
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
-    assert len(acquisitions) == 1 and acquisitions[0].amount == ONE and acquisitions[0].remaining_amount == ONE  # noqa: E501
+    assert len(acquisitions) == 1 and acquisitions[0].amount == FVal(5) and acquisitions[0].remaining_amount == ONE  # noqa: E501
     # check that using all remaining events uses up all acquisitions
     event6 = AssetAcquisitionEvent(
         amount=ONE,
