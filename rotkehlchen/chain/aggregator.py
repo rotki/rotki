@@ -116,7 +116,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _module_name_to_class(module_name: ModuleName) -> EthereumModule:
+def _module_name_to_class(module_name: ModuleName) -> type[EthereumModule]:
     class_name = ''.join(word.title() for word in module_name.split('_'))
     try:
         ethereum_modules_module = import_module('rotkehlchen.chain.ethereum.modules')
@@ -295,9 +295,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if module_name == 'eth2':
             kwargs['beaconchain'] = self.beaconchain
         klass = _module_name_to_class(module_name)
-        # TODO: figure out the type here: class EthereumModule not callable.
         try:
-            instance = klass(  # type: ignore
+            instance = klass(
                 ethereum_inquirer=self.ethereum.node_inquirer,
                 database=self.database,
                 premium=self.premium,
