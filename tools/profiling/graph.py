@@ -57,8 +57,6 @@ def plot_date_axis(axes):
     date_fmt = dates.DateFormatter('%d/%b')
     hour_fmt = dates.DateFormatter('%H:%M')
 
-    # TODO: set xaxis minor interval dynamically
-
     axes.xaxis.set_major_locator(dates.DayLocator(interval=1))
     axes.xaxis.set_major_formatter(date_fmt)
     # less than 5 days and interval of 3 is okay

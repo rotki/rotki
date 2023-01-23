@@ -74,7 +74,16 @@ class RotkiNotifier():
             failure_callback_args: Optional[dict[str, Any]] = None,
     ) -> None:
         message_data = {'type': str(message_type), 'data': to_send_data}
-        message = json.dumps(message_data)  # TODO: Check for dumps error
+        try:
+            message = json.dumps(message_data)
+        except TypeError as e:
+            log.error(f'Failed to broadcast websocket {message_type} message due to {str(e)}')
+            if failure_callback is not None:
+                failure_callback_args = {} if failure_callback_args is None else failure_callback_args  # noqa: E501
+                failure_callback(**failure_callback_args)
+
+            return  # get out of the broadcast
+
         to_remove_indices = set()
         spawned_one_broadcast = False
         for idx, websocket in enumerate(self.subscribers):

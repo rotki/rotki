@@ -94,8 +94,9 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
             database: 'DBHandler',
             premium: Optional['Premium'],
             msg_aggregator: MessagesAggregator,
-    ) -> None:
-        super().__init__()
+    ) -> None:  # avoiding super() since cant't call abstract class's __init__
+        CacheableMixIn.__init__(self)
+        LockableQueryMixIn.__init__(self)
         self.msg_aggregator = msg_aggregator
         self.db = database
         self.ethereum = ethereum_inquirer

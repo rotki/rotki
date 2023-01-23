@@ -2360,7 +2360,6 @@ class DBHandler:
         - Trades the user made
         - Manual balances
         """
-        # TODO: Perhaps also add amm swaps here
         # but think on the performance. This is a synchronous api call so if
         # it starts taking too much time the calling logic needs to change
         results = set()

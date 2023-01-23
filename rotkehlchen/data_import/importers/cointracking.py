@@ -2,8 +2,8 @@ import csv
 from itertools import count
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-from rotkehlchen.assets.asset import AssetWithOracles
 
+from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
@@ -51,7 +51,6 @@ def exchange_row_to_location(entry: str) -> Location:
         return Location.COINBASE
     if entry in ('CoinbasePro', 'GDAX'):
         return Location.COINBASEPRO
-    # TODO: Check if this is the correct string for Gemini from cointracking
     if entry == 'Gemini':
         return Location.GEMINI
     if entry == 'Bitstamp':
