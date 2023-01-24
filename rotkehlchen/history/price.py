@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_KFEE, A_USD
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
@@ -179,7 +179,7 @@ class PriceHistorian():
             timestamp=timestamp,
         )
         if from_asset == to_asset:
-            return Price(FVal('1'))
+            return Price(ONE)
 
         special_asset_price = PriceHistorian().get_price_for_special_asset(
             from_asset=from_asset,
@@ -193,7 +193,7 @@ class PriceHistorian():
         # and then via any price oracle that has fiat to fiat.
         with suppress(UnknownAsset, WrongAssetType):
             from_asset = from_asset.resolve_to_fiat_asset()
-            to_asset = from_asset.resolve_to_fiat_asset()
+            to_asset = to_asset.resolve_to_fiat_asset()
             price = Inquirer().query_historical_fiat_exchange_rates(
                 from_fiat_currency=from_asset,
                 to_fiat_currency=to_asset,

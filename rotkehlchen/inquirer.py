@@ -956,12 +956,13 @@ class Inquirer():
             return None
 
         # Since xratecoms has daily rates let's save at timestamp of UTC day start
+        timestamp = timestamp_to_daystart_timestamp(timestamp)
         for asset, asset_price in prices_map.items():
             GlobalDBHandler().add_historical_prices(entries=[HistoricalPrice(
                 from_asset=from_fiat_currency,
                 to_asset=asset,
                 source=HistoricalPriceOracle.XRATESCOM,
-                timestamp=timestamp_to_daystart_timestamp(timestamp),
+                timestamp=timestamp,
                 price=asset_price,
             )])
             if asset == to_fiat_currency:
