@@ -11,12 +11,13 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USDC
 from rotkehlchen.db.filtering import LedgerActionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.tests.utils.accounting import accounting_history_process, check_pnls_and_csv
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import Location
+from rotkehlchen.types import Location, TradeType
 
 
 def test_query_ledger_actions(events_historian, function_scope_messages_aggregator):
@@ -160,5 +161,53 @@ def test_pnl_processing_with_eth2_staking_setting(accountant, db_settings):
     else:
         expected_pnls = PnlTotals({  # 22.484 - 2.2484 + 0.09941500679 + 0.22035944359
             AccountingEventType.STAKING: PNL(taxable=FVal('20.55537445038'), free=ZERO),
+        })
+    check_pnls_and_csv(accountant, expected_pnls, None)
+
+
+@pytest.mark.parametrize('db_settings', [
+    {'eth_staking_taxable_after_withdrawal_enabled': False},
+    {'eth_staking_taxable_after_withdrawal_enabled': True},
+])
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_eth2_staking_counts_in_eth_sales(accountant, db_settings):
+    """Check that ETH staking rewards are taken into consideration during accounting."""
+    history = [
+        ValidatorDailyStats(
+            validator_index=1,
+            timestamp=1607727600,  # ETH price: 449.68 ETH/EUR
+            start_amount=FVal('32'),
+            end_amount=FVal('33'),
+            pnl=FVal('1'),  # 1 * 449.68 = 449.68
+        ), ValidatorDailyStats(
+            validator_index=1,
+            timestamp=1607814000,  # ETH price: 469.82 ETH/EUR
+            start_amount=FVal('33'),
+            end_amount=FVal('33.05'),
+            pnl=FVal('0.05'),
+        ), Trade(
+            timestamp=1625001464000,
+            location=Location.EXTERNAL,
+            base_asset=A_ETH,
+            quote_asset=A_USDC,
+            trade_type=TradeType.SELL,
+            amount=FVal(0.05),
+            rate=FVal(1837.31),  # -0.05*1837.31 = -91.8655
+        ),
+    ]
+    accounting_history_process(
+        accountant,
+        start_ts=1606727600,
+        end_ts=1607814005,
+        history_list=history,
+    )
+    no_message_errors(accountant.msg_aggregator)
+    if db_settings['eth_staking_taxable_after_withdrawal_enabled'] is True:
+        expected_pnls = PnlTotals({
+            AccountingEventType.STAKING: PNL(taxable=ZERO, free=ZERO),
+        })
+    else:
+        expected_pnls = PnlTotals({
+            AccountingEventType.STAKING: PNL(taxable=FVal(473.1710), free=ZERO),
         })
     check_pnls_and_csv(accountant, expected_pnls, None)

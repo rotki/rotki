@@ -9,6 +9,7 @@ Changelog
 * :feature:`5001` The PnL report can now be generated with the Highest-In First Out (HIFO) accounting method.
 * :feature:`1793` The PnL report can now be generated with the average cost basis accounting method.
 * :feature:`5148` Users will now see tokens detected for accounts having a DSProxy
+* :bug:`5455` ETH2 staking rewards are now taken into consideration during accounting.
 * :bug:`4332` Price oracles are now temporarily penalized after repeated failures.
 * :bug:`-` Fixed an edge case where users would be swamped with "This socket is already used by another greenlet" errors during websocket communication between backend and frontend.
 * :bug:`-` Transfers of ether between tracked accounts will now have a correct label in the UI.

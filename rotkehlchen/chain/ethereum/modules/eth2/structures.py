@@ -293,7 +293,7 @@ class ValidatorDailyStats(AccountingEventMixin):
             notes='ETH2 staking daily PnL',
             location=Location.BLOCKCHAIN,
             timestamp=self.timestamp,
-            asset=A_ETH2,
+            asset=A_ETH,
             amount=amount,
             taxable=True,
         )
