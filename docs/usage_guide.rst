@@ -236,8 +236,8 @@ Amount Rounding
 
 This setting modifies the rounding mechanism choosing from ``Round up``, ``Round down`` and ``Half even`` (rounds to the nearest value). It can be individually modified how amounts and values are rounded.
 
-RPC nodes
-^^^^^^^^^
+RPC node setting
+^^^^^^^^^^^^^^^^
 
 This setting allows you to modify the nodes that will be queried to interact with the blockchains. We provide a list of public nodes but sometimes they are not available or are overloaded. You can see either a green or a red icon near each node that shows its connection status. This is why it is a good idea to have more nodes just in case and to have the possibility to customize the priority with which they are queried.
 When making queries we always give preference to your own nodes if you have any and then add a small list of randomly selected open nodes in case they are needed. If you don't have your own node then the open nodes are always selected. The weight of the node sets the probability
@@ -294,6 +294,11 @@ Animations effect
 ^^^^^^^^^^^^^^^^^
 
 It is possible to reduce the animation effect in different parts of the app to improve the performance if needed. This will affect the quality of the animations but the user will get a better usage of the resources.
+
+Alias name for addresses
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, rotki will use an alias name for blockchain addresses if one can be found. You can choose to disable this feature. The alias name is obtained from ``ENS``, ``addressbook``, or ``blockchain account label`` and you also can change the order of resolution of that name.
 
 Data scrambling
 ^^^^^^^^^^^^^^^
@@ -404,7 +409,7 @@ The method that should be used during the profit and loss execution to calculate
 Ledger action settings
 -----------------------
 
-.. image:: images/sc_accountingledgeraction_settings.png
+.. image:: images/sc_accounting_ledger_action_settings.png
    :alt: Customizing the accounting ledger action settings
    :align: center
 
@@ -414,7 +419,7 @@ Here you can choose which types of historical actions should be considered taxab
 CSV Export settings
 --------------------
 
-.. image:: images/sc_accountingcsvexport_settings.png
+.. image:: images/sc_accounting_csv_export_settings.png
    :alt: Customizing the CSV export settings
    :align: center
 
