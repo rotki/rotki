@@ -182,6 +182,6 @@ def _evaluate_input(other: Any) -> Union[Decimal, int]:
     if isinstance(other, FVal):
         return other.num
     if not isinstance(other, int):
-        raise NotImplementedError('Expected either FVal or int.')
+        raise NotImplementedError(f'Expected either FVal or int. Got {type(other)}: {other}')
     # else
     return other

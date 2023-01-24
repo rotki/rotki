@@ -824,8 +824,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             )
         except BadFunctionCallOutput as e:
             log.error(
-                'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
-                'exception: {}'.format(str(e)),
+                f'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
+                f'exception: {str(e)}',
             )
             raise EthSyncError(
                 f'Tried to use the {manager.node_inquirer.blockchain.value} chain of the provided '
