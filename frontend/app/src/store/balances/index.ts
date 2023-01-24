@@ -3,7 +3,6 @@ import { useBalancesApi } from '@/services/balances';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useManualBalancesStore } from '@/store/balances/manual';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { type AllBalancePayload } from '@/store/balances/types';
 import { useBlockchainStore } from '@/store/blockchain';
@@ -25,7 +24,6 @@ export const useBalancesStore = defineStore('balances', () => {
   const { updatePrices: updateExchangePrices, fetchConnectedExchangeBalances } =
     useExchangeBalancesStore();
   const { refreshAccounts } = useBlockchainStore();
-  const { fetchNonFungibleBalances } = useNonFungibleBalancesStore();
   const { assets } = useAggregatedBalancesStore();
   const { queryBalancesAsync } = useBalancesApi();
   const priceStore = useBalancePricesStore();
@@ -114,8 +112,7 @@ export const useBalancesStore = defineStore('balances', () => {
     await Promise.allSettled([
       fetchManualBalances(),
       refreshAccounts(),
-      fetchConnectedExchangeBalances(),
-      fetchNonFungibleBalances()
+      fetchConnectedExchangeBalances()
     ]);
   };
 
