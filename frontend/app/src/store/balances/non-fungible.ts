@@ -120,7 +120,7 @@ export const useNonFungibleBalancesStore = defineStore(
 
       try {
         const firstLoad = isFirstLoad();
-        const onlyCache = !refresh;
+        const onlyCache = !(refresh || firstLoad);
         if ((get(isTaskRunning(taskType)) || loading()) && !onlyCache) {
           return;
         }
