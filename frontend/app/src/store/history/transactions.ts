@@ -58,7 +58,9 @@ export const useTransactions = defineStore('history/transactions', () => {
     fetchEthTransactionsTask,
     deleteTransactionEvent: deleteTransactionEventCaller,
     fetchEthTransactionEvents,
-    reDecodeMissingTransactionEvents
+    reDecodeMissingTransactionEvents,
+    addTransactionEvent: addTransactionEventCaller,
+    editTransactionEvent: editTransactionEventCaller
   } = useTransactionsApi();
   const { awaitTask, isTaskRunning } = useTasks();
 
@@ -204,7 +206,7 @@ export const useTransactions = defineStore('history/transactions', () => {
     let success = false;
     let message = '';
     try {
-      await addTransactionEvent(event);
+      await addTransactionEventCaller(event);
       success = true;
     } catch (e: any) {
       message = e.message;
@@ -221,7 +223,7 @@ export const useTransactions = defineStore('history/transactions', () => {
     let success = false;
     let message = '';
     try {
-      await editTransactionEvent(event);
+      await editTransactionEventCaller(event);
       success = true;
     } catch (e: any) {
       message = e.message;
