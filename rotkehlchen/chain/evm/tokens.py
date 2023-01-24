@@ -104,6 +104,17 @@ class EvmTokens(metaclass=ABCMeta):
         self.db = database
         self.evm_inquirer = evm_inquirer
 
+    def _get_chunk_size_call_order(self) -> tuple[int, list[WeightedNode]]:
+        if self.evm_inquirer.connected_to_any_web3():
+            chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
+            # skipping etherscan because chunk size is too big for etherscan
+            call_order = self.evm_inquirer.default_call_order(skip_etherscan=True)
+        else:
+            chunk_size = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT
+            call_order = [self.evm_inquirer.etherscan_node]
+
+        return chunk_size, call_order
+
     def _get_token_balances(
             self,
             address: ChecksumEvmAddress,
@@ -287,13 +298,7 @@ class EvmTokens(metaclass=ABCMeta):
         - BadFunctionCallOutput if a local node is used and the contract for the
           token has no code. That means the chain is not synced
         """
-        if self.evm_inquirer.connected_to_any_web3():
-            chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
-            # skipping etherscan because chunk size is too big for etherscan
-            call_order = self.evm_inquirer.default_call_order(skip_etherscan=True)
-        else:
-            chunk_size = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT
-            call_order = [self.evm_inquirer.etherscan_node]
+        chunk_size, call_order = self._get_chunk_size_call_order()
         for address in addresses:
             token_balances = self._query_chunks(
                 address=address,
@@ -326,14 +331,7 @@ class EvmTokens(metaclass=ABCMeta):
         addresses_to_balances: dict[ChecksumEvmAddress, dict[EvmToken, FVal]] = {}
         all_tokens = set()
         addresses_to_tokens: dict[ChecksumEvmAddress, list[EvmToken]] = {}
-
-        if self.evm_inquirer.connected_to_any_web3():
-            chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
-            # skipping etherscan because chunk size is too big for etherscan
-            call_order = self.evm_inquirer.default_call_order(skip_etherscan=True)
-        else:
-            chunk_size = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT
-            call_order = [self.evm_inquirer.etherscan_node]
+        chunk_size, call_order = self._get_chunk_size_call_order()
 
         with self.db.conn.read_ctx() as cursor:
             for address in addresses:
