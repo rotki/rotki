@@ -15,6 +15,7 @@ from typing import (
     DefaultDict,
     Iterable,
     Iterator,
+    Literal,
     TypeVar,
     Union,
     overload,
@@ -273,7 +274,11 @@ def hexstr_to_int(value: str) -> int:
     return int_value
 
 
-def hex_or_bytes_to_int(value: Union[bytes, str], signed: bool = False) -> int:
+def hex_or_bytes_to_int(
+        value: Union[bytes, str],
+        signed: bool = False,
+        byteorder: Literal['little', 'big'] = 'big',
+) -> int:
     """Turns a bytes/HexBytes or a hexstring into an int
 
     May raise:
@@ -281,7 +286,7 @@ def hex_or_bytes_to_int(value: Union[bytes, str], signed: bool = False) -> int:
     type is given.
     """
     if isinstance(value, bytes):
-        int_value = int.from_bytes(value, byteorder='big', signed=signed)
+        int_value = int.from_bytes(value, byteorder=byteorder, signed=signed)
     elif isinstance(value, str):
         int_value = hexstr_to_int(value)
     else:

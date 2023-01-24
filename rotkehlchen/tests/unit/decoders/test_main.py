@@ -26,6 +26,7 @@ def test_decoders_initialization(ethereum_transaction_decoder):
         'Curve',
         'Dxdaomesa',
         'Ens',
+        'Eth2',
         'Gitcoin',
         'Kyber',
         'Liquity',
@@ -86,6 +87,7 @@ def test_decoders_initialization(ethereum_transaction_decoder):
         'balancer-v1',
         'balancer-v2',
         'optimism',
+        'eth2',
     }
 
 
