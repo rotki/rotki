@@ -410,6 +410,7 @@ const showDeleteConfirmation = () => {
           <v-col cols="12" md="6">
             <div class="pb-md-8">
               <table-filter
+                :matches="filters"
                 :matchers="matchers"
                 @update:matches="updateFilter($event)"
               />

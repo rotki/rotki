@@ -219,6 +219,7 @@ const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS;
         <v-col cols="12" sm="6">
           <div class="pb-sm-8">
             <table-filter
+              :matches="filters"
               :matchers="matchers"
               @update:matches="updateFilter($event)"
             />

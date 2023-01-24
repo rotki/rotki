@@ -2,6 +2,7 @@
 import { type Account, type GeneralAccount } from '@rotki/common/lib/account';
 import { type ComputedRef, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
+import { type BlockchainSelection } from '@rotki/common/lib/blockchain';
 import {
   type HistoryEventType,
   type TransactionEventProtocol
@@ -264,12 +265,14 @@ const saveData = async (
 const options: Ref<PaginationOptions | null> = ref(null);
 const accounts: Ref<GeneralAccount[]> = ref([]);
 
-const usedAccounts: ComputedRef<Account[]> = computed(() => {
-  if (get(useExternalAccountFilter)) {
-    return get(externalAccountFilter);
+const usedAccounts: ComputedRef<Account<BlockchainSelection>[]> = computed(
+  () => {
+    if (get(useExternalAccountFilter)) {
+      return get(externalAccountFilter);
+    }
+    return get(accounts);
   }
-  return get(accounts);
-});
+);
 
 const updatePayloadHandler = async () => {
   let paginationOptions = {};
@@ -286,14 +289,24 @@ const updatePayloadHandler = async () => {
     };
   }
 
-  let filterAccounts: EvmChainAddress[] = [];
+  const filterAccounts: EvmChainAddress[] = [];
   const usedAccountsVal = get(usedAccounts);
   if (usedAccountsVal.length > 0) {
-    filterAccounts = usedAccountsVal.map(account => {
-      return {
-        address: account.address,
-        evmChain: getEvmChainName(account.chain)!
-      };
+    usedAccountsVal.forEach(account => {
+      if (account.chain === 'ALL') {
+        const chains = get(txEvmChains);
+        chains.forEach(chain => {
+          filterAccounts.push({
+            address: account.address,
+            evmChain: chain.evmChainName
+          });
+        });
+      } else {
+        filterAccounts.push({
+          address: account.address,
+          evmChain: getEvmChainName(account.chain)!
+        });
+      }
     });
   }
 
@@ -326,6 +339,14 @@ watch(filters, async (filter, oldValue) => {
   if (filter === oldValue) {
     return;
   }
+
+  // Because the evmChain filter and the account filter can't be active
+  // at the same time we clear the account filter when the evmChain filter
+  // is set.
+  if (filter.evmChain) {
+    set(accounts, []);
+  }
+
   let newOptions = null;
   const optionsVal = get(options);
   if (optionsVal) {
@@ -345,7 +366,13 @@ const setPage = (page: number) => {
   }
 };
 
-watch(usedAccounts, async () => {
+watch(usedAccounts, async accounts => {
+  if (accounts.length > 0) {
+    const updatedFilter = { ...get(filters) };
+    delete updatedFilter.evmChain;
+    updateFilter(updatedFilter);
+  }
+
   let newOptions = null;
   if (get(options)) {
     newOptions = {
@@ -455,6 +482,7 @@ const txChains = useArrayMap(txEvmChains, x => x.id);
                     :label="tc('transactions.filter.account')"
                     outlined
                     no-padding
+                    multichain
                     flat
                   />
                 </div>
@@ -464,6 +492,7 @@ const txChains = useArrayMap(txEvmChains, x => x.id);
           <v-col cols="12" md="5">
             <div>
               <table-filter
+                :matches="filters"
                 :matchers="matchers"
                 @update:matches="updateFilter($event)"
               />
@@ -489,7 +518,7 @@ const txChains = useArrayMap(txEvmChains, x => x.id);
             <template #item.ignoredInAccounting="{ item, isMobile }">
               <div v-if="item.ignoredInAccounting" class="pl-4">
                 <badge-display v-if="isMobile" color="grey">
-                  <v-icon small> mdi-eye-off </v-icon>
+                  <v-icon small> mdi-eye-off</v-icon>
                   <span class="ml-2">
                     {{ tc('common.ignored_in_accounting') }}
                   </span>
@@ -497,7 +526,7 @@ const txChains = useArrayMap(txEvmChains, x => x.id);
                 <v-tooltip v-else bottom>
                   <template #activator="{ on }">
                     <badge-display color="grey" v-on="on">
-                      <v-icon small> mdi-eye-off </v-icon>
+                      <v-icon small> mdi-eye-off</v-icon>
                     </badge-display>
                   </template>
                   <span>
@@ -575,7 +604,7 @@ const txChains = useArrayMap(txEvmChains, x => x.id);
                         <v-icon v-if="item.ignoredInAccounting">
                           mdi-eye
                         </v-icon>
-                        <v-icon v-else> mdi-eye-off </v-icon>
+                        <v-icon v-else> mdi-eye-off</v-icon>
                       </v-list-item-icon>
                       <v-list-item-content>
                         {{

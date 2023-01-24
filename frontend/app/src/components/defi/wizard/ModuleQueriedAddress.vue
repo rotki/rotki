@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import {
+  Blockchain,
+  type BlockchainSelection
+} from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
@@ -28,7 +31,7 @@ const setSelectedAccounts = (addresses: string[]): void => {
   set(selectedAccounts, selected);
 };
 
-const added = async (accounts: GeneralAccount | GeneralAccount[] | null) => {
+const added = async (accounts: GeneralAccount<BlockchainSelection>[]) => {
   if (!Array.isArray(accounts)) {
     return;
   }

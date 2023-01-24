@@ -9,6 +9,8 @@ export enum Blockchain {
   OPTIMISM = 'OPTIMISM'
 }
 
+export type BlockchainSelection = Blockchain | 'ALL';
+
 export enum DefiProtocol {
   YEARN_VAULTS = 'yearn_vaults',
   YEARN_VAULTS_V2 = 'yearn_vaults_v2',
