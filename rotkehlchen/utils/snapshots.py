@@ -140,7 +140,7 @@ def get_main_currency_price(
     main_currency = db.get_setting(cursor, name='main_currency')
     main_currency_price = None
     try:
-        main_currency_price = PriceHistorian.query_historical_price(
+        main_currency_price = PriceHistorian().query_historical_price(
             from_asset=A_USD,
             to_asset=main_currency,
             timestamp=timestamp,

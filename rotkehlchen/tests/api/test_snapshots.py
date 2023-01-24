@@ -6,10 +6,12 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
+import pytest
 import requests
 
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.constants.assets import A_AVAX, A_BTC, A_ETH, A_EUR, A_USD
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.snapshots import (
     BALANCES_FILENAME,
@@ -344,6 +346,7 @@ def assert_csv_export_response(
         assert count == 3
 
 
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
@@ -401,6 +404,7 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
         )
 
 
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_export_snapshot_unknown_asset(rotkehlchen_api_server, tmpdir_factory):
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
@@ -430,6 +434,7 @@ def test_export_snapshot_unknown_asset(rotkehlchen_api_server, tmpdir_factory):
         assert 'Failed to include balance for asset YABIRXROTKI.' in errors[0]
 
 
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_download_snapshot(rotkehlchen_api_server):
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
@@ -460,6 +465,7 @@ def test_download_snapshot(rotkehlchen_api_server):
         )
 
 
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
@@ -590,6 +596,7 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
     )
 
 
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_delete_snapshot(rotkehlchen_api_server):
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
