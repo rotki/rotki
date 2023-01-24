@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import TYPE_CHECKING, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -18,6 +19,10 @@ from rotkehlchen.history.types import (
 )
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.types import Price, Timestamp
+
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import FiatAsset
+    from rotkehlchen.inquirer import Inquirer
 
 
 @pytest.fixture(name='fake_price_historian')
@@ -70,25 +75,44 @@ def test_set_oracles_custom_order(fake_price_historian):
     assert price_historian._oracle_instances == [price_historian._coingecko]
 
 
-def test_fiat_to_fiat(fake_price_historian):
+def test_fiat_to_fiat(
+        fake_price_historian: PriceHistorian,
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
     """Test the price is returned via exchangerates API when requesting the
     historical price from fiat to fiat.
     """
     price_historian = fake_price_historian
-
+    call_count = 0
     expected_price = Price(FVal('1.25'))
-    mock_inquirer = MagicMock()
-    mock_inquirer.query_historical_fiat_exchange_rates.return_value = expected_price
+    query_timestamp = Timestamp(1611595466)
 
-    with patch('rotkehlchen.history.price.Inquirer', return_value=mock_inquirer):
+    def mock_price_query(
+            _cls,
+            from_fiat_currency: 'FiatAsset',
+            to_fiat_currency: 'FiatAsset',
+            timestamp: Timestamp,
+    ) -> Optional[Price]:
+        """
+        Mock query for price checking that the assets are the expected and so is
+        the timestamp queried.
+        """
+        nonlocal query_timestamp, expected_price, call_count
+        call_count += 1
+        assert from_fiat_currency == A_USD
+        assert to_fiat_currency == A_GBP
+        assert timestamp == query_timestamp
+        return expected_price
+
+    with patch('rotkehlchen.history.price.Inquirer.query_historical_fiat_exchange_rates', mock_price_query):  # noqa: E501
         price = price_historian.query_historical_price(
             from_asset=A_USD,
             to_asset=A_GBP,
-            timestamp=Timestamp(1611595466),
+            timestamp=query_timestamp,
         )
 
     assert price == expected_price
-    assert mock_inquirer.query_historical_fiat_exchange_rates.call_count == 1
+    assert call_count == 1
 
 
 def test_token_to_fiat_all_can_query_history_no_price_found_exception(fake_price_historian):

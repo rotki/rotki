@@ -3673,7 +3673,7 @@ class RestAPI():
             f'{", ".join(f"{asset.identifier} at {ts}" for asset, ts in assets_timestamp)}',
             assets_timestamp=assets_timestamp,
         )
-        assets_price: DefaultDict[Asset, DefaultDict] = defaultdict(lambda: defaultdict(int))
+        assets_price: DefaultDict[Asset, DefaultDict] = defaultdict(lambda: defaultdict(lambda: Price(ZERO)))  # noqa: E501
         for asset, timestamp in assets_timestamp:
             try:
                 price = PriceHistorian().query_historical_price(
