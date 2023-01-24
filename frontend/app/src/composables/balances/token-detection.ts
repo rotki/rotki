@@ -52,10 +52,14 @@ export const useTokenDetection = (
 
   const detectTokensOfAllAddresses = async () => {
     const blockchain = get(chain);
+    let addresses: string[] = [];
     if (blockchain === Blockchain.OPTIMISM) {
-      await detectTokens(get(optimismAddresses));
+      addresses = get(optimismAddresses);
     } else if (blockchain === Blockchain.ETH) {
-      await detectTokens(get(ethAddresses));
+      addresses = get(ethAddresses);
+    }
+    if (addresses.length > 0) {
+      await detectTokens(addresses);
     }
   };
 

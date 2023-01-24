@@ -1425,13 +1425,11 @@
   "dashboard": {
     "blockchain_balances": {
       "add": "Add blockchain address",
-      "title": "blockchain",
-      "tooltip": "Aggregate value of all configured addresses in each blockchain."
+      "title": "blockchain"
     },
     "exchange_balances": {
       "add": "Add an exchange",
-      "title": "exchange",
-      "tooltip": "Aggregate value of all balances in each configured exchange."
+      "title": "exchange"
     },
     "liabilities": {
       "title": "Liabilities"
@@ -1443,8 +1441,7 @@
     "manual_balances": {
       "add": "Add a manual balance",
       "card_tooltip": "Aggregate value of manual balances entered. Fiat balances are aggregated in the banks entry.",
-      "title": "manual",
-      "tooltip": "Aggregate value of manual balances entered"
+      "title": "manual"
     },
     "snapshot": {
       "delete": {
@@ -1753,30 +1750,30 @@
     },
     "add_button": "Add Node",
     "add_dialog": {
-      "title": "Add an Ethereum RPC Node"
+      "title": "Add an {chain} RPC Node"
     },
     "add_error": {
-      "title": "Adding Ethereum RPC Node"
+      "title": "Adding {chain} RPC Node"
     },
     "confirm": {
-      "message": "Are you sure you want to delete the RPC node '{node}' ({endpoint})?",
-      "title": "Delete Ethereum RPC Node"
+      "message": "Are you sure you want to delete the RPC node '{node}' ({endpoint}) for {chain}?",
+      "title": "Delete {chain} RPC Node"
     },
     "connected": {
       "false": "Not connected",
       "true": "Connected"
     },
     "delete_error": {
-      "title": "Deleting Ethereum RPC Node"
+      "title": "Deleting {chain} RPC Node"
     },
     "delete_tooltip": "Delete the selected RPC Node",
     "edit_error": {
-      "title": "Editing Ethereum RPC Node"
+      "title": "Editing {chain} RPC Node"
     },
     "edit_tooltip": "Edit the selected RPC Node",
-    "etherscan": "Etherescan API used by rotki",
+    "etherscan": "Etherscan API used by rotki",
     "loading_error": {
-      "title": "Loading Ethereum RPC Nodes"
+      "title": "Loading {chain} RPC Nodes"
     },
     "private_node": "This is a private node added by the user",
     "private_node_hint": "Private nodes take priority over public nodes",

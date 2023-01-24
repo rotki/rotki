@@ -38,6 +38,8 @@ const massIgnore = (ignored: boolean) => {
 };
 
 const { tc } = useI18n();
+
+const css = useCssModule();
 </script>
 
 <template>
@@ -61,15 +63,17 @@ const { tc } = useI18n();
         </template>
         <v-list>
           <v-list-item
-            class="filter-heading font-weight-bold text-uppercase py-2"
+            :class="css['filter-heading']"
+            class="font-weight-bold text-uppercase py-2"
           >
             {{ tc('asset_table.filter_by_ignored_status') }}
           </v-list-item>
-          <v-list-item>
+          <v-list-item class="pb-2">
             <v-radio-group
               :value="ignoredAssetsHandling"
               class="mt-0"
               data-cy="asset-filter-ignored"
+              hide-details
               @change="updateIgnoredAssetsHandling"
             >
               <v-radio value="none" :label="tc('asset_table.show_all')" />
@@ -88,3 +92,10 @@ const { tc } = useI18n();
     </v-col>
   </v-row>
 </template>
+
+<style module lang="scss">
+.filter-heading {
+  font-size: 0.875rem;
+  min-height: auto;
+}
+</style>

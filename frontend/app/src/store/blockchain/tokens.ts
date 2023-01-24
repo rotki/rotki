@@ -26,6 +26,7 @@ const noTokens = (): EthDetectedTokensInfo => ({
 export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const ethTokens: Ref<EvmTokensRecord> = ref({});
   const optimismTokens: Ref<EvmTokensRecord> = ref({});
+  const shouldRefreshBalances: Ref<boolean> = ref(true);
 
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { tc } = useI18n();
@@ -144,15 +145,16 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const { fetchBlockchainBalances } = useBlockchainBalancesStore();
 
   watch(isEthDetecting, async (isDetecting, wasDetecting) => {
-    if (wasDetecting && !isDetecting) {
+    if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
       await fetchBlockchainBalances({
         blockchain: Blockchain.ETH,
         ignoreCache: true
       });
     }
   });
+
   watch(isOptimismDetecting, async (isDetecting, wasDetecting) => {
-    if (wasDetecting && !isDetecting) {
+    if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
       await fetchBlockchainBalances({
         blockchain: Blockchain.OPTIMISM,
         ignoreCache: true
@@ -161,6 +163,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   });
 
   return {
+    shouldRefreshBalances,
     fetchDetected,
     fetchDetectedTokens,
     getEthDetectedTokensInfo
