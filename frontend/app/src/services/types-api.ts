@@ -37,11 +37,20 @@ const BackendVersion = z.object({
   downloadUrl: z.string().nullish()
 });
 
+const DefaultBackendArguments = z.object({
+  maxLogfilesNum: z.number(),
+  maxSizeInMbAllLogs: z.number(),
+  sqliteInstructions: z.number()
+});
+
+export type DefaultBackendArguments = z.infer<typeof DefaultBackendArguments>;
+
 export const BackendInfo = z.object({
   acceptDockerRisk: z.boolean(),
   logLevel: ActiveLogLevel,
   version: BackendVersion,
-  dataDirectory: z.string()
+  dataDirectory: z.string(),
+  backendDefaultArguments: DefaultBackendArguments
 });
 
 export type BackendInfo = z.infer<typeof BackendInfo>;
