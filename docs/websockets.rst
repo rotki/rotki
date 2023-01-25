@@ -111,3 +111,16 @@ At the user DB migrations when a new evm chain is introduced rotki will do a mig
 	    "address": "0xFeebabE6b0418eC13b30aAdF129F5DcDd4f70CeA"
 	}]
     }
+
+
+EVM Token Detection
+=======================
+
+While we are processing EVM transactions new tokens may be detected and added to the Database. Some of them can be spam tokens. Using this message we can let the frontend know which tokens are detected. Then they can in turn allow the user to see an aggregated list of all detected tokens and using that list, easily mark spam assets if any.
+
+::
+
+    {
+        "type": "new_evm_token_detected",
+        "data": [{"token_identifier": "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C"}]
+    }
