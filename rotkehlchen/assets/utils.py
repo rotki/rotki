@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Optional
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
@@ -201,6 +202,10 @@ def get_or_create_evm_token(
                 # newly queried data
                 GlobalDBHandler().edit_evm_token(ethereum_token)
             else:
+                userdb.msg_aggregator.add_message(  # inform frontend new token detected
+                    message_type=WSMessageType.NEW_EVM_TOKEN_DETECTED,
+                    data={'token_identifier': identifier},
+                )
                 # This can but should not raise InputError since it should not already exist.
                 add_ethereum_token_to_db(token_data=ethereum_token)
 
