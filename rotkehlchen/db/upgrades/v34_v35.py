@@ -464,6 +464,6 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
 
     # needs to be out of the write context as it also tries to open one underneath
-    update_spam_assets(db=db, make_remote_query=False)
+    update_spam_assets(db=db)
     progress_handler.new_step()
     log.debug('Finished userdb v34->v35 upgrade')

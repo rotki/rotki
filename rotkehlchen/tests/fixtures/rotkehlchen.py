@@ -33,11 +33,7 @@ from rotkehlchen.tests.utils.evm import maybe_mock_evm_inquirer
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
-from rotkehlchen.tests.utils.mock import (
-    mock_proxies,
-    patch_avalanche_request,
-    patch_requests_for_cryptoscamdb,
-)
+from rotkehlchen.tests.utils.mock import mock_proxies, patch_avalanche_request
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
 from rotkehlchen.types import AVAILABLE_MODULES_MAP, Location
 
@@ -189,7 +185,6 @@ def initialize_mock_rotkehlchen_instance(
     # does not run during tests
     size_patch = patch('rotkehlchen.rotkehlchen.ICONS_BATCH_SIZE', new=0)
     sleep_patch = patch('rotkehlchen.rotkehlchen.ICONS_QUERY_SLEEP', new=999999)
-    requests_patch = patch('requests.get', wraps=patch_requests_for_cryptoscamdb)
 
     create_new = True
     if use_custom_database is not None:
@@ -213,8 +208,6 @@ def initialize_mock_rotkehlchen_instance(
                 side_effect=lambda *args: None,
             )
             stack.enter_context(migrations_patch)
-        else:  # at least mock cryptoscamdb calls as they are useless in tests
-            stack.enter_context(requests_patch)
 
         if perform_upgrades_at_unlock is False:
             upgrades_patch = patch.object(
