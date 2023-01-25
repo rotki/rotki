@@ -244,13 +244,13 @@ When making queries we always give preference to your own nodes if you have any 
 of picking it and is represented by a percentage. From that list it is also possible to mark them as active or inactive by using the toggle button.
 
 .. image:: images/rotki_nodes_management.png
-   :alt: Customizing the app's connection to ethereum nodes
+   :alt: Customizing the app's connection to evm nodes
    :align: center
 
 In this menu you can also edit, delete or add more nodes.
 
 .. image:: images/rotki_nodes_management_edition.png
-   :alt: Editing an ethereum node
+   :alt: Editing an evm node
    :align: center
 
 The slider lets you modify the weight of the node and you can also manually input a value. The owned parameter gives priority to the selected node over the rest of not owned nodes. You can also mark the node as not active in this screen to completely ignore it in the selection process.
@@ -367,10 +367,10 @@ Crypto to crypto trades
 
 Specify whether crypto to crypto trades are taxable and should be taken into account. If yes then each crypto to crypto trade also creates a "virtual" trade that sells or buys the crypto asset for fiat and then sells or buys the fiat for the other crypto asset.
 
-Ethereum gas costs
+EVM gas costs
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Specify whether ethereum transaction gas costs should be counted as loss. If this is set then all ETH spent on gas will be deducted from your profits and count as an expense.
+Specify whether EVM transaction gas costs should be counted as loss. If this is set then all ETH spent on gas will be deducted from your profits and count as an expense.
 
 Tax free period
 ^^^^^^^^^^^^^^^^^^^^
@@ -600,7 +600,7 @@ Adding an exchange
 
 You can integrate many different exchanges with rotki. Currently supported exchanges are:
 Kraken, Poloniex, Bittrex, Bitmex, Bitfinex, Binance, Binance US, bitcoin.de, Coinbase,
-Coinbase Pro, Gemini, Iconomi, Bitstamp, KuCoin, FTX, FTX US, Independent Reserve.
+Coinbase Pro, Gemini, Iconomi, Bitstamp, KuCoin, FTX, FTX US, Independent Reserve, OKX.
 
 To do so you have to go to your exchange and create an API key (see the section :ref:`api-key-permissions`).
 
@@ -782,7 +782,7 @@ A sample generic events template can be found below
 
 Supported Locations
 --------------------
-A list of supported locations in Rotki are ``"external"``, ``"kraken"``, ``"poloniex"``, ``"bittrex"``, ``"binance"``, ``"bitmex"``, ``"coinbase"``, ``"banks"``, ``"blockchain"``, ``"coinbasepro"``, ``"gemini"``, ``"equities"``, ``"realestate"``, ``"commodities"``, ``"cryptocom"``, ``"uniswap"``, ``"bitstamp"``, ``"binanceus"``, ``"bitfinex"``, ``"bitcoinde"``, ``"iconomi"``, ``"kucoin"``, ``"balancer"``, ``"loopring"``, ``"ftx"``, ``"nexo"``, ``"blockfi"``, ``"independentreserve"``, ``"gitcoin"``, ``"sushiswap"``, ``"shapeshift"``, ``"uphold"``, ``"bitpanda"``, ``"bisq"`` and ``"ftxus"``.
+A list of supported locations in Rotki are ``"external"``, ``"kraken"``, ``"poloniex"``, ``"bittrex"``, ``"binance"``, ``"bitmex"``, ``"coinbase"``, ``"banks"``, ``"blockchain"``, ``"coinbasepro"``, ``"gemini"``, ``"equities"``, ``"realestate"``, ``"commodities"``, ``"cryptocom"``, ``"uniswap"``, ``"bitstamp"``, ``"binanceus"``, ``"bitfinex"``, ``"bitcoinde"``, ``"iconomi"``, ``"kucoin"``, ``"balancer"``, ``"loopring"``, ``"ftx"``, ``"nexo"``, ``"blockfi"``, ``"independentreserve"``, ``"gitcoin"``, ``"sushiswap"``, ``"shapeshift"``, ``"uphold"``, ``"bitpanda"``, ``"bisq"``, ``"ftxus"`` and ``"okx"``.
 
 **NOTE**: In the columns where an asset is expected you will need to use the identifier that such asset has in rotki otherwise the row won't be read.
 **NOTE**: If at any point, you're confused as regards the csv format, feel free to send us a message on `Discord <https://discord.gg/aGCxHG7>`_.
@@ -817,7 +817,10 @@ Adding and Removing Blockchain Accounts
 
 rotki allows to track balances of blockchain accounts.
 
-To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account (for now only Bitcoin, Bitcoin Cash, Ethereum, Kusama, Polkadot and Avalanche chains are supported). Then type or paste the address in the "Account" textbox and press the "Save" Button. Note that you can add multiple accounts if you click the "Add multiple addresses" checkbox and provide a comma separated list of addresses.
+To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account (for now only Bitcoin, Bitcoin Cash, Ethereum, Optimism, Kusama, Polkadot and Avalanche chains are supported). Then type or paste the address in the "Account" textbox and press the "Save" Button. Note that you can add multiple accounts if you click the "Add multiple addresses" checkbox and provide a comma separated list of addresses.
+
+If the selected chain is an EVM chain you will see "Add to all supported EVM chains" checkbox. It is checked by default and it means that rotki will try to add the address for all EVM chains. If the address is a contract in Ethereum mainnet it will only be added to Ethereum. Otherwise for each chain rotki will check whether the address had any activity there and will add only if it has at least one transaction. If you uncheck the checkbox, then the address will only be added to the selected chain.
+
 When scrolling through the page the "+" will automatically switch the pre-selected chain based on the context. For example
 if the table displaying the screen center is the BTC table then BTC will be pre-selected when pressing "+".
 
@@ -831,7 +834,7 @@ To stop tracking one or more accounts you can check the corresponding box in the
    :alt: Delete a blockchain account
    :align: center
 
-If an ethereum account also contains tracked tokens you can click on the arrow under "Actions" in order to expand its view and show the balance breakdown for the account over all assets it holds.
+If an EVM account also contains tracked tokens you can click on the arrow under "Actions" in order to expand its view and show the balance breakdown for the account over all assets it holds.
 
 For Bitcoin/Bitcoin Cash you can add addresses manually or let rotki discover them using an xpub. From this key rotki can generate your addresses and query the Bitcoin/Bitcoin Cash blockchain for each one of them until it finds unused addresses.
 There are also different types of xpubs. P2PKH xpubs generate addresses that have "1" as a prefix, P2SH_P2WPKH xpubs generate addresses that start with a "3" and WPKH xpubs generate addresses that start with "bc1". You will need to know what type of xpub your bitcoin wallet generates in order to choose the correct type at the dropdown menu. If your wallet generates an xpub prefixed with ``ypub`` or an xpub prefix with ``zpub`` rotki can deduce the type for you automatically.
@@ -847,7 +850,7 @@ An xpub does not allow spending your coins but provides information about your w
 ENS names resolution
 =====================
 
-rotki automatically resolves ens name for each of your ethereum accounts. If there is a primary ens name specified for an account, this name will be shown instead of raw blockchain address across the app. You can find the blockchain address by hovering the mouse over the ens name.
+rotki automatically resolves ens name for each of your evm accounts. If there is a primary ens name specified for an account, this name will be shown instead of a raw blockchain address across the app. You can find the blockchain address by hovering the mouse over the ens name.
 
 .. image:: images/ens_resolution.png
    :alt: Example of resolving an ens name
@@ -856,7 +859,7 @@ rotki automatically resolves ens name for each of your ethereum accounts. If the
 Token detection
 ===============
 
-For every ethereum address it is possible to trigger the process of detecting tokens by clicking in the refresh arrow for that address. In addition it is possible to trigger the detection process for all the addresses by clicking on ``RE-DETECT TOKENS``.
+For every evm address it is possible to trigger the process of detecting tokens by clicking in the refresh arrow for that address. In addition it is possible to trigger the detection process for all the addresses by clicking on ``RE-DETECT TOKENS``.
 
 .. image:: images/tokens_detection.png
    :alt: Detecting tokens
@@ -866,7 +869,7 @@ For every ethereum address it is possible to trigger the process of detecting to
 EVM Transactions
 =====================
 
-rotki is capable of getting and decoding (understand what is happening) your EVM transactions. When you visit the ``EVM Transactions`` section the process to obtain all the information will start. You will be able to check the status in an informative breakdown per address. Free users are limited to the 100 latest transactions.
+rotki is capable of getting and decoding (understand what is happening) your EVM (Ethereum Virtual Machine) transactions. Currently transactions are queried and decoded for Ethereum and Optimism. When you visit the ``EVM Transactions`` section the process to obtain all the information will start. You will be able to check the status in an informative breakdown per address. Free users are limited to the 100 latest transactions.
 
 .. image:: images/eth_tx_query_process.png
    :alt: EVM transactions query status breakdown
@@ -894,7 +897,7 @@ Here the non obvious fields are:
 
 - ``Event Type``: We have created a categorization of all the actions in a set of major event types. This field will describe the action category.
 - ``Event Subtype``: Inside an event type you can perform different actions. This subtype will let you describe exactly what is happening in the event.
-- ``Sequence Index``: Is an internal index that sets the order in which events happened in the transactions. This allows knowing how events are sorted and should be taken into account. By default it corresponds to the event log index in the ethereum blockchain with a few exceptions.
+- ``Sequence Index``: Is an internal index that sets the order in which events happened in the transactions. This allows knowing how events are sorted and should be taken into account. By default it corresponds to the event log index in the blockchain with a few exceptions.
 - ``Location Label``: This is the address related to the event, for example if you are receiving one asset in a transfer or calling a contract will match with your address.
 - ``Counterparty``: This is the other part of the transaction, the address you are interacting with. Can be a protocol identifier if the transaction is decoded as part of a protocol.
 
@@ -1740,20 +1743,20 @@ To pin a note to the top, click on the button labelled as **2** in the screensho
    :align: center
 
 
-Ethereum Address Book
+Evm Address Book
 ******************************
 
-Rotki now provides an addressbook for the Ethereum blockchain. This replaces addresses with names provided by the user across the application. Addressbook is split into two different kinds:
+Rotki provides an addressbook for EVM blockchains. This replaces addresses with names provided by the user across the application. You can click on "Save this name for all chains" to use the name for the provided address on all chains where that address appears. Addressbook is split into two different kinds:
 
 1. **Global Addressbook**: It replaces addresses with the names provided across the entire application irrespective of user logged in.
 2. **Private Addressbook**: It replaces addresses with the names provided for the user currently logged in. It takes precedence over names found in the global addressbook.
 
-.. image:: images/add_eth_address_book.png
-   :alt: Adding entry to ETH address book.
+.. image:: images/add_evm_address_book.png
+   :alt: Adding entry to EVM address book.
    :align: center
 
-.. image:: images/display_eth_address_book_behaviour.png
-   :alt: Displaying behaviour of an ETH address book
+.. image:: images/display_evm_address_book_behaviour.png
+   :alt: Displaying behaviour of an EVM address book
    :align: center
 
 **NOTE:** The address resolution order can be configured in the general user settings. The default order is: Private Address Book -> Blockchain Account Labels -> Global Address Book -> Ethereum Tokens -> Hardcoded Mappings -> ENS names.
