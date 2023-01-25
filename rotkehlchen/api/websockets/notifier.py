@@ -73,6 +73,11 @@ class RotkiNotifier():
             failure_callback: Optional[Callable] = None,
             failure_callback_args: Optional[dict[str, Any]] = None,
     ) -> None:
+        """Broadcasts a websocket message
+
+        A callback to run on message success and a callback to run on message
+        failure can be optionally provided.
+        """
         message_data = {'type': str(message_type), 'data': to_send_data}
         try:
             message = json.dumps(message_data)
@@ -91,11 +96,7 @@ class RotkiNotifier():
                 to_remove_indices.add(idx)
                 continue
 
-            self.greenlet_manager.spawn_and_track(
-                after_seconds=None,
-                task_name=f'Websocket send for {str(message_type)}',
-                exception_is_error=True,
-                method=_ws_send_impl,
+            _ws_send_impl(
                 websocket=websocket,
                 lock=self.locks[websocket],
                 to_send_msg=message,
