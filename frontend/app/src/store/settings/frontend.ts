@@ -12,6 +12,7 @@ import { type ActionStatus } from '@/store/types';
 import { type CurrencyLocation } from '@/types/currency-location';
 import { type DateFormat } from '@/types/date-format';
 import {
+  type BlockchainRefreshButtonBehaviour,
   type DashboardTablesVisibleColumns,
   type ExplorersSettings,
   FrontendSettings,
@@ -100,6 +101,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const enableAliasNames: ComputedRef<boolean> = computed(
     () => settings.enableAliasNames
   );
+  const blockchainRefreshButtonBehaviour: ComputedRef<BlockchainRefreshButtonBehaviour> =
+    computed(() => settings.blockchainRefreshButtonBehaviour);
 
   const api = useSettingsApi();
 
@@ -185,6 +188,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     dateInputFormat,
     versionUpdateCheckFrequency,
     enableAliasNames,
+    blockchainRefreshButtonBehaviour,
     updateSetting,
     update
   };

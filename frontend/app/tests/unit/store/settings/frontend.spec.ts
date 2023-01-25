@@ -13,6 +13,7 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
 import {
+  BlockchainRefreshButtonBehaviour,
   DashboardTableType,
   type FrontendSettings,
   Quarter,
@@ -82,7 +83,9 @@ describe('settings:frontend', () => {
             dateInputFormat: DateFormat.DateMonthYearHourMinuteSecond,
             versionUpdateCheckFrequency:
               Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
-            enableAliasNames: true
+            enableAliasNames: true,
+            blockchainRefreshButtonBehaviour:
+              BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES
           })
         )
       })
@@ -220,5 +223,8 @@ describe('settings:frontend', () => {
     );
     expect(store.versionUpdateCheckFrequency).toBe(24);
     expect(store.enableAliasNames).toBe(true);
+    expect(store.blockchainRefreshButtonBehaviour).toBe(
+      BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES
+    );
   });
 });

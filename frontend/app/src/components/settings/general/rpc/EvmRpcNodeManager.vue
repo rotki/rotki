@@ -46,7 +46,9 @@ async function loadNodes(): Promise<void> {
     set(nodes, await api.fetchEvmNodes());
   } catch (e: any) {
     notify({
-      title: tc('evm_rpc_node_manager.loading_error.title'),
+      title: tc('evm_rpc_node_manager.loading_error.title', 0, {
+        chain: get(chain)
+      }),
       message: e.message
     });
   }
@@ -68,9 +70,10 @@ const save = async () => {
     }
     await loadNodes();
   } catch (e: any) {
+    const chainProp = get(chain);
     const errorTitle = editing
-      ? tc('evm_rpc_node_manager.edit_error.title')
-      : tc('evm_rpc_node_manager.add_error.title');
+      ? tc('evm_rpc_node_manager.edit_error.title', 0, { chain: chainProp })
+      : tc('evm_rpc_node_manager.add_error.title', 0, { chain: chainProp });
 
     if (e instanceof ApiValidationError) {
       const messages = e.errors;
@@ -122,7 +125,9 @@ const deleteNode = async (node: EvmRpcNode) => {
     await loadNodes();
   } catch (e: any) {
     setMessage({
-      title: tc('evm_rpc_node_manager.delete_error.title'),
+      title: tc('evm_rpc_node_manager.delete_error.title', 0, {
+        chain: get(chain)
+      }),
       description: e.message,
       success: false
     });
@@ -159,12 +164,14 @@ const isNodeConnected = (item: EvmRpcNode): boolean => {
 const { show } = useConfirmStore();
 
 const showDeleteConfirmation = (item: EvmRpcNode) => {
+  const chainProp = get(chain);
   show(
     {
-      title: tc('evm_rpc_node_manager.confirm.title'),
+      title: tc('evm_rpc_node_manager.confirm.title', 0, { chain: chainProp }),
       message: tc('evm_rpc_node_manager.confirm.message', 0, {
         node: item.name,
-        endpoint: item.endpoint
+        endpoint: item.endpoint,
+        chain: chainProp
       })
     },
     () => deleteNode(item)
@@ -272,7 +279,7 @@ const css = useCssModule();
       </v-list>
       <big-dialog
         :display="showForm"
-        :title="tc('evm_rpc_node_manager.add_dialog.title')"
+        :title="tc('evm_rpc_node_manager.add_dialog.title', 0, { chain })"
         :primary-action="tc('common.actions.save')"
         :secondary-action="tc('common.actions.cancel')"
         :action-disabled="!valid || loading"

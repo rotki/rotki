@@ -5,6 +5,7 @@ import { useManualBalancesStore } from '@/store/balances/manual';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
+import { Routes } from '@/router/routes';
 
 const PriceRefresh = defineAsyncComponent(
   () => import('@/components/helper/PriceRefresh.vue')
@@ -16,7 +17,11 @@ const OverallBalances = defineAsyncComponent(
   () => import('@/components/dashboard/OverallBalances.vue')
 );
 const SummaryCard = defineAsyncComponent(
-  () => import('@/components/dashboard/SummaryCard.vue')
+  () => import('@/components/dashboard/summary-card/SummaryCard.vue')
+);
+const BlockchainBalanceRefreshBehaviourMenu = defineAsyncComponent(
+  () =>
+    import('@/components/dashboard/BlockchainBalanceRefreshBehaviourMenu.vue')
 );
 const ExchangeBox = defineAsyncComponent(
   () => import('@/components/dashboard/ExchangeBox.vue')
@@ -51,6 +56,8 @@ const { exchanges } = storeToRefs(exchangeStore);
 
 const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
+const isTokenDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS);
+
 const isBlockchainLoading = computed<boolean>(() => {
   return get(isQueryingBlockchain) || get(isLoopringLoading);
 });
@@ -84,19 +91,16 @@ const { refreshBalance } = useRefresh();
             :name="t('dashboard.exchange_balances.title')"
             can-refresh
             :is-loading="isExchangeLoading"
-            navigates-to="/accounts-balances/exchange-balances/"
+            :navigates-to="Routes.ACCOUNTS_BALANCES_EXCHANGE"
             @refresh="refreshBalance($event)"
           >
-            <div slot="tooltip">
-              {{ t('dashboard.exchange_balances.tooltip') }}
-            </div>
             <div v-if="exchanges.length === 0">
               <v-card-actions class="px-4">
                 <v-btn
                   text
                   block
                   color="primary"
-                  to="/settings/api-keys/exchanges?add=true"
+                  :to="`${Routes.API_KEYS_EXCHANGES}?add=true`"
                   class="py-8"
                 >
                   <div class="d-flex flex-column align-center">
@@ -121,21 +125,21 @@ const { refreshBalance } = useRefresh();
         <v-col cols="12" md="4" lg="4">
           <summary-card
             :name="tc('dashboard.blockchain_balances.title')"
-            :is-loading="isBlockchainLoading"
+            :is-loading="isBlockchainLoading || isTokenDetecting"
             can-refresh
-            navigates-to="/accounts-balances/"
+            :navigates-to="Routes.ACCOUNTS_BALANCES"
             @refresh="refreshBalance($event)"
           >
-            <div slot="tooltip">
-              {{ tc('dashboard.blockchain_balances.tooltip') }}
-            </div>
+            <template #refreshMenu>
+              <blockchain-balance-refresh-behaviour-menu />
+            </template>
             <div v-if="blockchainTotals.length === 0">
               <v-card-actions class="px-4">
                 <v-btn
                   text
                   block
                   color="primary"
-                  to="/accounts-balances/?add=true"
+                  :to="`${Routes.ACCOUNTS_BALANCES}?add=true`"
                   class="py-8"
                 >
                   <div class="d-flex flex-column align-center">
@@ -162,19 +166,16 @@ const { refreshBalance } = useRefresh();
             :tooltip="tc('dashboard.manual_balances.card_tooltip')"
             :is-loading="isManualBalancesLoading"
             can-refresh
-            navigates-to="/accounts-balances/manual-balances/"
+            :navigates-to="Routes.ACCOUNTS_BALANCES_MANUAL"
             @refresh="fetchManualBalances"
           >
-            <div slot="tooltip">
-              {{ t('dashboard.manual_balances.tooltip') }}
-            </div>
             <div v-if="manualBalanceByLocation.length === 0">
               <v-card-actions class="px-4">
                 <v-btn
                   text
                   block
                   color="primary"
-                  to="/accounts-balances/manual-balances/?add=true"
+                  :to="`${Routes.ACCOUNTS_BALANCES_MANUAL}?add=true`"
                   class="py-8"
                 >
                   <div class="d-flex flex-column align-center">

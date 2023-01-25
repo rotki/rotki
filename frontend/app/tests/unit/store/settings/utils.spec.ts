@@ -12,6 +12,7 @@ import {
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
+  BlockchainRefreshButtonBehaviour,
   FrontendSettings,
   Quarter,
   SupportedLanguage
@@ -59,7 +60,9 @@ describe('settings:utils', () => {
       graphZeroBased: false,
       showGraphRangeSelector: true,
       nftsInNetValue: true,
-      enableAliasNames: true
+      enableAliasNames: true,
+      blockchainRefreshButtonBehaviour:
+        BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES
     });
   });
 });

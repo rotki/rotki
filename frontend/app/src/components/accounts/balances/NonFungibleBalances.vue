@@ -385,9 +385,4 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
     }
   }
 }
-
-.filter-heading {
-  font-size: 0.875rem;
-  min-height: auto;
-}
 </style>

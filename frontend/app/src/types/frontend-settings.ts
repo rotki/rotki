@@ -119,6 +119,15 @@ export enum SupportedLanguage {
 
 const SupportedLanguageEnum = z.nativeEnum(SupportedLanguage);
 
+export enum BlockchainRefreshButtonBehaviour {
+  ONLY_REFRESH_BALANCES = 'ONLY_REFRESH_BALANCES',
+  REDETECT_TOKENS = 'REDETECT_TOKENS'
+}
+
+const BlockchainRefreshButtonBehaviourEnum = z.nativeEnum(
+  BlockchainRefreshButtonBehaviour
+);
+
 export const FrontendSettings = z.object({
   defiSetupDone: z.boolean().default(false),
   language: SupportedLanguageEnum.default(SupportedLanguage.EN),
@@ -176,7 +185,11 @@ export const FrontendSettings = z.object({
       Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY
     )
   ),
-  enableAliasNames: z.boolean().default(true)
+  enableAliasNames: z.boolean().default(true),
+  blockchainRefreshButtonBehaviour:
+    BlockchainRefreshButtonBehaviourEnum.default(
+      BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES
+    )
 });
 
 export type FrontendSettings = z.infer<typeof FrontendSettings>;
