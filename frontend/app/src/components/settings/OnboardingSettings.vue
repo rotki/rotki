@@ -13,30 +13,14 @@ import { type BackendOptions } from '@/electron-main/ipc';
 import { useSettingsApi } from '@/services/settings/settings-api';
 import {
   type BackendConfiguration,
-  type NumericBackendArgument
+  type DefaultBackendArguments
 } from '@/services/types-api';
 import { useMainStore } from '@/store/main';
-import { type Properties, type Writeable } from '@/types';
+import { type Writeable } from '@/types';
 import { LogLevel } from '@/utils/log-level';
 import { useConfirmStore } from '@/store/confirm';
-
-interface Args {
-  value: string;
-  arg: NumericBackendArgument;
-  options: Writeable<Partial<BackendOptions>>;
-  key: Properties<BackendOptions, number>;
-}
-
-const updateArgument = (args: Args) => {
-  if (args.value !== args.arg.value.toString()) {
-    const numeric = Number.parseInt(args.value);
-    if (isFinite(numeric) && !isNaN(numeric)) {
-      args.options[args.key] = numeric;
-    } else {
-      delete args.options[args.key];
-    }
-  }
-};
+import { api } from '@/services/rotkehlchen-api';
+import SettingResetButton from '@/components/settings/SettingResetButton.vue';
 
 const emit = defineEmits<{
   (e: 'dismiss'): void;
@@ -47,17 +31,26 @@ const { dataDirectory } = storeToRefs(useMainStore());
 const userDataDirectory: Ref<string> = ref('');
 const userLogDirectory: Ref<string> = ref('');
 const logFromOtherModules: Ref<boolean> = ref(false);
-const maxLogSize: Ref<string> = ref('');
-const sqliteInstructions: Ref<string> = ref('');
-const maxLogFiles: Ref<string> = ref('');
+const maxLogSize: Ref<number> = ref(0);
+const sqliteInstructions: Ref<number> = ref(0);
+const maxLogFiles: Ref<number> = ref(0);
 const formValid: Ref<boolean> = ref(false);
 
-const api = useSettingsApi();
+const { backendSettings } = useSettingsApi();
 
 const selecting: Ref<boolean> = ref(false);
 const confirmReset: Ref<boolean> = ref(false);
-const configuration = asyncComputed<BackendConfiguration>(() =>
-  api.backendSettings()
+const configuration: Ref<BackendConfiguration> = asyncComputed(() =>
+  backendSettings()
+);
+
+const defaultArguments: Ref<DefaultBackendArguments> = asyncComputed(
+  () => api.info().then(info => info.backendDefaultArguments),
+  {
+    maxLogfilesNum: 0,
+    maxSizeInMbAllLogs: 0,
+    sqliteInstructions: 0
+  }
 );
 
 const { tc } = useI18n();
@@ -65,21 +58,29 @@ const { tc } = useI18n();
 const loaded = async () => {
   const config = get(configuration);
   const opts = get(options);
+  const defaults = get(defaultArguments);
+
   set(userDataDirectory, opts.dataDirectory ?? get(dataDirectory));
   set(userLogDirectory, opts.logDirectory ?? get(defaultLogDirectory));
   set(logLevel, opts.loglevel ?? get(defaultLogLevel));
   set(logFromOtherModules, opts.logFromOtherModules ?? false);
   set(
     maxLogFiles,
-    (opts.maxLogfilesNum ?? config.maxLogfilesNum.value).toString()
+    opts.maxLogfilesNum ??
+      config.maxLogfilesNum.value ??
+      defaults.maxLogfilesNum
   );
   set(
     maxLogSize,
-    (opts.maxSizeInMbAllLogs ?? config.maxSizeInMbAllLogs.value).toString()
+    opts.maxSizeInMbAllLogs ??
+      config.maxSizeInMbAllLogs.value ??
+      defaults.maxSizeInMbAllLogs
   );
   set(
     sqliteInstructions,
-    (opts.sqliteInstructions ?? config.sqliteInstructions.value).toString()
+    opts.sqliteInstructions ??
+      config.sqliteInstructions.value ??
+      defaults.sqliteInstructions
   );
 };
 
@@ -92,6 +93,32 @@ const {
   defaultLogDirectory,
   options
 } = useBackendManagement(loaded);
+
+const isMaxLogFilesDefault = computed(() => {
+  const defaults = get(defaultArguments);
+  return defaults.maxLogfilesNum === get(maxLogFiles);
+});
+
+const isMaxSizeDefault = computed(() => {
+  const defaults = get(defaultArguments);
+  return defaults.maxSizeInMbAllLogs === get(maxLogSize);
+});
+
+const isSqliteInstructionsDefaults = computed(() => {
+  const defaults = get(defaultArguments);
+  return defaults.sqliteInstructions === get(sqliteInstructions);
+});
+
+const resetDefaultArguments = (field: 'files' | 'size' | 'instructions') => {
+  const defaults = get(defaultArguments);
+  if (field === 'files') {
+    set(maxLogFiles, defaults.maxLogfilesNum);
+  } else if (field === 'size') {
+    set(maxLogSize, defaults.maxSizeInMbAllLogs);
+  } else if (field === 'instructions') {
+    set(sqliteInstructions, defaults.sqliteInstructions);
+  }
+};
 
 const newUserOptions = computed(() => {
   const options: Writeable<Partial<BackendOptions>> = {};
@@ -116,26 +143,25 @@ const newUserOptions = computed(() => {
     options.dataDirectory = userData;
   }
 
-  const config = get(configuration);
-  if (config) {
-    updateArgument({
-      value: get(maxLogFiles),
-      arg: config.maxLogfilesNum,
-      options,
-      key: 'maxLogfilesNum'
-    });
-    updateArgument({
-      value: get(maxLogSize),
-      arg: config.maxSizeInMbAllLogs,
-      options,
-      key: 'maxSizeInMbAllLogs'
-    });
-    updateArgument({
-      value: get(sqliteInstructions),
-      arg: config.sqliteInstructions,
-      options,
-      key: 'sqliteInstructions'
-    });
+  if (isDefined(defaultArguments)) {
+    const defaults = get(defaultArguments);
+    if (defaults.maxLogfilesNum !== get(maxLogFiles)) {
+      options.maxLogfilesNum = get(maxLogFiles);
+    } else {
+      delete options.maxLogfilesNum;
+    }
+
+    if (defaults.maxSizeInMbAllLogs !== get(maxLogSize)) {
+      options.maxSizeInMbAllLogs = get(maxLogSize);
+    } else {
+      delete options.maxSizeInMbAllLogs;
+    }
+
+    if (defaults.sqliteInstructions !== get(sqliteInstructions)) {
+      options.sqliteInstructions = get(sqliteInstructions);
+    } else {
+      delete options.sqliteInstructions;
+    }
   }
 
   return options;
@@ -200,8 +226,6 @@ const icon = (level: LogLevel): string => {
   }
   throw new Error(`Invalid option: ${level}`);
 };
-
-const isDefault = (prop?: NumericBackendArgument) => prop?.isDefault;
 
 const reset = async function () {
   set(confirmReset, false);
@@ -268,6 +292,20 @@ const showResetConfirmation = () => {
     reset
   );
 };
+
+watch(defaultArguments, args => {
+  if (!get(maxLogSize) && args.maxSizeInMbAllLogs) {
+    set(maxLogSize, args.maxSizeInMbAllLogs);
+  }
+
+  if (!get(maxLogFiles) && args.maxLogfilesNum) {
+    set(maxLogFiles, args.maxLogfilesNum);
+  }
+
+  if (!get(sqliteInstructions) && args.sqliteInstructions) {
+    set(sqliteInstructions, args.sqliteInstructions);
+  }
+});
 </script>
 
 <template>
@@ -374,7 +412,7 @@ const showResetConfirmation = () => {
           </v-expansion-panel-header>
           <v-expansion-panel-content>
             <v-text-field
-              v-model="maxLogSize"
+              v-model.number="maxLogSize"
               outlined
               :hint="
                 !!fileConfig.maxSizeInMbAllLogs
@@ -384,13 +422,19 @@ const showResetConfirmation = () => {
               :label="tc('backend_settings.max_log_size.label')"
               :disabled="fileConfig.maxSizeInMbAllLogs"
               :persistent-hint="!!fileConfig.maxSizeInMbAllLogs"
-              :clearable="!isDefault(configuration?.maxSizeInMbAllLogs)"
-              :loading="!configuration"
+              :loading="!configuration || !defaultArguments"
               :error-messages="v$.maxLogSize.$errors.map(e => e.$message)"
               type="number"
-            />
+            >
+              <template #append>
+                <setting-reset-button
+                  v-if="!isMaxSizeDefault"
+                  @click="resetDefaultArguments('size')"
+                />
+              </template>
+            </v-text-field>
             <v-text-field
-              v-model="maxLogFiles"
+              v-model.number="maxLogFiles"
               outlined
               :hint="tc('backend_settings.max_log_files.hint')"
               :label="
@@ -400,14 +444,20 @@ const showResetConfirmation = () => {
               "
               :disabled="fileConfig.maxLogfilesNum"
               :persistent-hint="!!fileConfig.maxLogfilesNum"
-              :clearable="!isDefault(configuration?.maxLogfilesNum)"
-              :loading="!configuration"
+              :loading="!configuration || !defaultArguments"
               :error-messages="v$.maxLogFiles.$errors.map(e => e.$message)"
               type="number"
-            />
+            >
+              <template #append>
+                <setting-reset-button
+                  v-if="!isMaxLogFilesDefault"
+                  @click="resetDefaultArguments('files')"
+                />
+              </template>
+            </v-text-field>
 
             <v-text-field
-              v-model="sqliteInstructions"
+              v-model.number="sqliteInstructions"
               outlined
               :hint="
                 !!fileConfig.sqliteInstructions
@@ -417,13 +467,19 @@ const showResetConfirmation = () => {
               :label="tc('backend_settings.sqlite_instructions.label')"
               :disabled="fileConfig.sqliteInstructions"
               :persistent-hint="!!fileConfig.sqliteInstructions"
-              :clearable="!isDefault(configuration?.sqliteInstructions)"
-              :loading="!configuration"
+              :loading="!configuration || !defaultArguments"
               :error-messages="
                 v$.sqliteInstructions.$errors.map(e => e.$message)
               "
               type="number"
-            />
+            >
+              <template #append>
+                <setting-reset-button
+                  v-if="!isSqliteInstructionsDefaults"
+                  @click="resetDefaultArguments('instructions')"
+                />
+              </template>
+            </v-text-field>
 
             <v-checkbox
               v-model="logFromOtherModules"
