@@ -11,7 +11,11 @@ from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
-from rotkehlchen.tests.utils.ethereum import setup_ethereum_transactions_test
+from rotkehlchen.tests.utils.ethereum import (
+    TEST_ADDR1,
+    TEST_ADDR2,
+    setup_ethereum_transactions_test,
+)
 from rotkehlchen.tests.utils.mock import mock_evm_chains_with_transactions
 from rotkehlchen.tests.utils.premium import VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET
 from rotkehlchen.types import ChainID, Location, SupportedBlockchain
@@ -186,6 +190,7 @@ def test_maybe_schedule_exchange_query_ignore_exchanges(
 
 
 @pytest.mark.parametrize('one_receipt_in_db', [True, False])
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
 def test_maybe_schedule_ethereum_txreceipts(
         task_manager,
         ethereum_manager,

@@ -54,3 +54,6 @@ test-assets:
 
 create-cassettes:
 	RECORD_CASSETTES=true && python pytestgeventwrapper.py -m vcr rotkehlchen/tests
+
+create-cassette:
+	RECORD_CASSETTES=true && python pytestgeventwrapper.py -m vcr $(TEST)

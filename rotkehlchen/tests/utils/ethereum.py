@@ -70,6 +70,7 @@ ETHERSCAN_AND_INFURA_AND_ALCHEMY: tuple[str, list[tuple]] = ('ethereum_manager_c
     ),
 ])
 TEST_ADDR1 = string_to_evm_address('0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea')
+TEST_ADDR2 = string_to_evm_address('0x442068F934BE670aDAb81242C87144a851d56d16')
 TEST_ADDR3 = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
 
 
@@ -161,18 +162,9 @@ def setup_ethereum_transactions_test(
         one_receipt_in_db: bool = False,
         second_receipt_in_db: bool = False,
 ) -> tuple[list[EvmTransaction], list[EvmTxReceipt]]:
+    """This setup assummes that TEST_ADDR1 and TEST_ADDR2 are already present in the db"""
     dbevmtx = DBEvmTx(database)
     tx_hash1 = deserialize_evm_tx_hash('0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda')  # noqa: E501
-    addr2 = string_to_evm_address('0x442068F934BE670aDAb81242C87144a851d56d16')
-    with database.user_write() as cursor:
-        database.add_blockchain_accounts(
-            cursor,
-            account_data=[
-                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=TEST_ADDR1),
-                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=addr2),
-            ],
-        )
-
     transaction1 = EvmTransaction(
         tx_hash=tx_hash1,
         chain_id=ChainID.ETHEREUM,
@@ -193,7 +185,7 @@ def setup_ethereum_transactions_test(
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1631013757),
         block_number=13178342,
-        from_address=addr2,
+        from_address=TEST_ADDR2,
         to_address=string_to_evm_address('0xEaDD9B69F96140283F9fF75DA5FD33bcF54E6296'),
         value=0,
         gas=77373,
@@ -206,7 +198,7 @@ def setup_ethereum_transactions_test(
     if transaction_already_queried is True:
         with database.user_write() as cursor:
             dbevmtx.add_evm_transactions(cursor, evm_transactions=[transaction1], relevant_address=TEST_ADDR1)  # noqa: E501
-            dbevmtx.add_evm_transactions(cursor, evm_transactions=[transaction2], relevant_address=addr2)  # noqa: E501
+            dbevmtx.add_evm_transactions(cursor, evm_transactions=[transaction2], relevant_address=TEST_ADDR2)  # noqa: E501
             result = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM), True)  # noqa: E501
         assert result == transactions
 
