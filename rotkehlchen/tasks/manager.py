@@ -107,7 +107,7 @@ class TaskManager():
         self.last_exchange_query_ts: DefaultDict[ExchangeLocationID, int] = defaultdict(int)
         self.base_entries_ignore_set: set[str] = set()
         self.prepared_cryptocompare_query = False
-        self.running_greenlets: dict[Callable, gevent.Greenlet] = {}
+        self.running_greenlets: dict[Callable, list[gevent.Greenlet]] = {}
         self.greenlet_manager.spawn_and_track(  # Needs to run in greenlet, is slow
             after_seconds=None,
             task_name='Prepare cryptocompare queries',
