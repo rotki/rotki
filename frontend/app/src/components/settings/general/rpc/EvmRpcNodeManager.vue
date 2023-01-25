@@ -38,7 +38,9 @@ const { notify } = useNotificationsStore();
 const { setMessage } = useMessageStore();
 const { tc } = useI18n();
 
-const { connectedEthNodes } = storeToRefs(usePeriodicStore());
+const { connectedEthNodes, connectedOptimismNodes } = storeToRefs(
+  usePeriodicStore()
+);
 const api = useEvmNodesApi(get(chain));
 
 async function loadNodes(): Promise<void> {
@@ -155,10 +157,20 @@ const onActiveChange = async (active: boolean, node: EvmRpcNode) => {
   }
 };
 
-const isEtherscan = (item: EvmRpcNode) => item.name === 'etherscan';
+const isEtherscan = (item: EvmRpcNode) => {
+  const chainProp = get(chain);
+  return (
+    (chainProp === Blockchain.ETH && item.name === 'etherscan') ||
+    (chainProp === Blockchain.OPTIMISM && item.name === 'optimism etherscan')
+  );
+};
 
 const isNodeConnected = (item: EvmRpcNode): boolean => {
-  return get(connectedEthNodes).includes(item.name) || isEtherscan(item);
+  const nodes =
+    get(chain) === Blockchain.ETH
+      ? get(connectedEthNodes)
+      : get(connectedOptimismNodes);
+  return nodes.includes(item.name) || isEtherscan(item);
 };
 
 const { show } = useConfirmStore();

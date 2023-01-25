@@ -73,8 +73,8 @@ const {
   { immediate: false }
 );
 
-const onSearchTermChange = (term: string) => {
-  set(pendingSearch, term);
+const onSearchTermChange = (term: string | null) => {
+  set(pendingSearch, term || '');
   if (get(isTimeoutPending)) {
     stop();
   }

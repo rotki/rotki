@@ -238,7 +238,8 @@ const save = async (): Promise<boolean> => {
     },
     locationLabel: get(locationLabel) ? get(locationLabel) : undefined,
     notes: get(notes) ? get(notes) : undefined,
-    counterparty: get(counterparty) ? get(counterparty) : undefined
+    counterparty: get(counterparty) ? get(counterparty) : undefined,
+    evmChain: get(transaction)?.evmChain
   };
 
   const save = get(saveData);

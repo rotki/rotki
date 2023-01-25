@@ -8,7 +8,7 @@ import {
   validWithSessionAndExternalService
 } from '@/services/utils';
 import { type ManualBalance, ManualBalances } from '@/types/manual-balances';
-import { nonNullProperties } from '@/utils/data';
+import { nonEmptyProperties } from '@/utils/data';
 
 export const useManualBalancesApi = () => {
   const queryManualBalances = async (): Promise<PendingTask> => {
@@ -28,7 +28,7 @@ export const useManualBalancesApi = () => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       'balances/manual',
       axiosSnakeCaseTransformer(
-        nonNullProperties({ balances, asyncQuery: true })
+        nonEmptyProperties({ balances, asyncQuery: true })
       ),
       {
         validateStatus: validWithParamsSessionAndExternalService
@@ -43,7 +43,7 @@ export const useManualBalancesApi = () => {
     const response = await api.instance.patch<ActionResult<PendingTask>>(
       'balances/manual',
       axiosSnakeCaseTransformer(
-        nonNullProperties({ balances, asyncQuery: true })
+        nonEmptyProperties({ balances, asyncQuery: true })
       ),
       {
         validateStatus: validWithParamsSessionAndExternalService

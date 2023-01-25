@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import { nonNullProperties } from '@/utils/data';
+import { nonEmptyProperties } from '@/utils/data';
 import { bigNumberify } from '@/utils/bignumbers';
 
 describe('utils/data', () => {
@@ -10,7 +10,7 @@ describe('utils/data', () => {
       c: '442'
     };
 
-    expect(nonNullProperties(object)).toStrictEqual({
+    expect(nonEmptyProperties(object)).toStrictEqual({
       a: 1,
       c: '442'
     });
@@ -22,14 +22,14 @@ describe('utils/data', () => {
       b: 2
     };
 
-    expect(nonNullProperties(a)).toStrictEqual({
+    expect(nonEmptyProperties(a)).toStrictEqual({
       b: 2
     });
   });
 
   test('returns partial in nested setup', () => {
     expect(
-      nonNullProperties({
+      nonEmptyProperties({
         a: {
           b: [],
           c: null,
@@ -41,7 +41,7 @@ describe('utils/data', () => {
 
   test('properly handles arrays', () => {
     expect(
-      nonNullProperties({
+      nonEmptyProperties({
         a: {
           b: [],
           c: null,
@@ -54,7 +54,7 @@ describe('utils/data', () => {
   test('do not transform BigNumber', () => {
     const number = bigNumberify(10);
     expect(
-      nonNullProperties({
+      nonEmptyProperties({
         a: {
           number
         }

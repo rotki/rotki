@@ -17,6 +17,7 @@ import {
   validWithoutSessionStatus
 } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
+import { nonEmptyProperties } from '@/utils/data';
 
 export const useAssetPricesApi = () => {
   const fetchHistoricalPrices = async (
@@ -25,7 +26,9 @@ export const useAssetPricesApi = () => {
     const response = await api.instance.get<ActionResult<HistoricalPrice[]>>(
       '/assets/prices/historical',
       {
-        params: axiosSnakeCaseTransformer(payload),
+        params: payload
+          ? axiosSnakeCaseTransformer(nonEmptyProperties(payload, true))
+          : null,
         validateStatus: validWithoutSessionStatus
       }
     );

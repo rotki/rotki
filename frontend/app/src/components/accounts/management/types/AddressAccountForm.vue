@@ -10,7 +10,10 @@ import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
-import { type BlockchainAccountWithBalance } from '@/store/balances/types';
+import {
+  type BlockchainAccountPayload,
+  type BlockchainAccountWithBalance
+} from '@/store/balances/types';
 
 const props = defineProps<{ blockchain: Blockchain }>();
 
@@ -27,7 +30,7 @@ const errorMessages = ref<Record<string, string[]>>({});
 const { addAccounts, addEvmAccounts, fetchAccounts } = useBlockchainStore();
 const { editAccount } = useBlockchainAccountsStore();
 const { setMessage } = useMessageStore();
-const { fetchEnsNames } = useAddressesNamesStore();
+const { fetchAddressesNames } = useAddressesNamesStore();
 const { isEvm } = useSupportedChains();
 const { valid, setSave, accountToEdit } = useAccountDialog();
 const { pending, loading } = useAccountLoading();
@@ -52,15 +55,16 @@ const save = async () => {
     const entries = get(addresses);
     if (edit) {
       const address = entries[0];
-      await editAccount({
+      const payload: BlockchainAccountPayload = {
         blockchain: chain,
         address,
         label: get(label),
         tags: get(tags)
-      });
+      };
+      await editAccount(payload);
 
       if (isEth) {
-        await fetchEnsNames([address], true);
+        await fetchAddressesNames([address], chain);
       }
       startPromise(fetchAccounts(chain));
     } else {

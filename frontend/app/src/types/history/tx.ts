@@ -36,7 +36,8 @@ export type EthTransactionEvent = z.infer<typeof EthTransactionEvent>;
 export type NewEthTransactionEvent = Omit<
   EthTransactionEvent,
   'identifier' | 'ignoredInAccounting' | 'customized'
->;
+> & { evmChain?: string };
+
 export const EthTransactionEventWithMeta = z.object({
   customized: z.boolean(),
   entry: EthTransactionEvent,

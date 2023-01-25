@@ -22,7 +22,7 @@ import {
   type TransactionEventRequestPayload,
   type TransactionRequestPayload
 } from '@/types/history/tx';
-import { nonNullProperties } from '@/utils/data';
+import { nonEmptyProperties } from '@/utils/data';
 
 export const useTransactionsApi = () => {
   const internalEthTransactions = async <T>(
@@ -32,7 +32,7 @@ export const useTransactionsApi = () => {
     const response = await api.instance.post<ActionResult<T>>(
       `/blockchains/evm/transactions`,
       axiosSnakeCaseTransformer(
-        nonNullProperties({
+        nonEmptyProperties({
           asyncQuery,
           ...payload,
           orderByAttributes:

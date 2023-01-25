@@ -27,7 +27,7 @@ import { type BtcChains } from '@/types/blockchain/chains';
 import { assert } from '@/utils/assertions';
 import { type Eth2Validator } from '@/types/balances';
 import { EvmAccountsResult } from '@/types/api/accounts';
-import { nonNullProperties } from '@/utils/data';
+import { nonEmptyProperties } from '@/utils/data';
 
 const performAsyncQuery = async (
   url: string,
@@ -95,7 +95,7 @@ export const useBlockchainAccountsApi = () => {
             }
           ]
         };
-    return performAsyncQuery(url, nonNullProperties(payload));
+    return performAsyncQuery(url, nonEmptyProperties(payload));
   };
 
   const removeBlockchainAccount = async (
@@ -139,7 +139,7 @@ export const useBlockchainAccountsApi = () => {
 
     const response = await api.instance.patch<ActionResult<BtcAccountData>>(
       url,
-      axiosSnakeCaseTransformer(nonNullProperties(data)),
+      axiosSnakeCaseTransformer(nonEmptyProperties(data)),
       {
         validateStatus: validWithParamsSessionAndExternalService
       }
@@ -160,7 +160,7 @@ export const useBlockchainAccountsApi = () => {
       ActionResult<GeneralAccountData[]>
     >(
       `/blockchains/${blockchain}/accounts`,
-      nonNullProperties(payloadToData(payload)),
+      nonEmptyProperties(payloadToData(payload)),
       {
         validateStatus: validWithParamsSessionAndExternalService
       }
@@ -274,7 +274,7 @@ export const useBlockchainAccountsApi = () => {
   ): Promise<EvmAccountsResult> => {
     const response = await api.instance.put<ActionResult<EvmAccountsResult>>(
       '/blockchains/evm/accounts',
-      nonNullProperties(payloadToData(payload)),
+      nonEmptyProperties(payloadToData(payload)),
       {
         validateStatus: validWithSessionAndExternalService
       }
