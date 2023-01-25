@@ -15,7 +15,10 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     Eth2Validator,
     ValidatorDailyStats,
 )
-from rotkehlchen.chain.ethereum.modules.eth2.utils import scrape_validator_daily_stats
+from rotkehlchen.chain.ethereum.modules.eth2.utils import (
+    DAY_AFTER_ETH2_GENESIS,
+    scrape_validator_daily_stats,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
@@ -916,7 +919,7 @@ def test_validator_daily_stats_with_genesis_event(
     assert stats == [
         ValidatorDailyStats(
             validator_index=999,
-            timestamp=Timestamp(1606780800),
+            timestamp=DAY_AFTER_ETH2_GENESIS,
             start_amount=FVal('0'),
             end_amount=FVal('32.01201'),
             pnl=FVal('0.01201'),
