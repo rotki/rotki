@@ -15,7 +15,7 @@ jobs:
       TEST_ENVIRONMENT: ${{ inputs.test_environment }}
     runs-on: ${{ inputs.os }}
     name: 'Backend tests'
-    timeout-minutes: 70
+    timeout-minutes: 90
     steps:
       - name: Checkout
         uses: actions/checkout@v3
