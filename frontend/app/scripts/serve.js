@@ -13,7 +13,7 @@ parser.add_argument('--web', { action: 'store_true' });
 parser.add_argument('--remote-debugging-port', { type: 'int' });
 parser.add_argument('--mode', { help: 'mode docker', default: 'development' });
 parser.add_argument('--port', {
-  help: 'listeing port',
+  help: 'listening port',
   default: 8080,
   type: 'int'
 });
@@ -40,6 +40,9 @@ const getWatcher = ({ name, configFile, writeBundle }) => {
   });
 };
 
+/** @type {ChildProcessWithoutNullStreams[]} */
+let childProcesses = [];
+
 /**
  * Start or restart App when source files are changed
  * @param {{config: {server: import('vite').ResolvedServerOptions}}} ResolvedServerOptions
@@ -64,6 +67,7 @@ const setupMainPackageWatcher = ({ config: { server } }) => {
     configFile: 'vite.config.main.ts',
     writeBundle() {
       if (spawnProcess) {
+        childProcesses = childProcesses.filter(p => p !== spawnProcess);
         spawnProcess.off('exit', process.exit);
         spawnProcess.kill('SIGINT');
         spawnProcess = null;
@@ -75,6 +79,7 @@ const setupMainPackageWatcher = ({ config: { server } }) => {
       }
 
       spawnProcess = spawn(String(electron), args);
+      childProcesses.push(spawnProcess);
 
       spawnProcess.stdout.on(
         'data',
@@ -128,6 +133,15 @@ const setupPreloadPackageWatcher = ({ ws }) =>
       await setupPreloadPackageWatcher(viteDevServer);
       await setupMainPackageWatcher(viteDevServer);
     }
+
+    process.on('SIGINT', () => {
+      viteDevServer.close();
+      childProcesses.forEach(p => {
+        console.info(`terminating child process ${p.pid}`);
+        p.kill();
+      });
+      process.exit();
+    });
   } catch (e) {
     console.error(e);
     process.exit(1);
