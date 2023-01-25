@@ -1117,7 +1117,8 @@ class DBHandler:
         # Delete the current tag mappings for all affected accounts
         write_cursor.executemany(
             'DELETE FROM tag_mappings WHERE '
-            'object_reference = ?;', [(f'{x.chain}{x.address}',) for x in account_data],
+            # Using chain.value since it has to match the key generated in `_prepare_tag_mappings`.
+            'object_reference = ?;', [(f'{x.chain.value}{x.address}',) for x in account_data],
         )
 
         # Update the blockchain account labels in the DB

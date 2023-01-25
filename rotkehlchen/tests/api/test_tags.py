@@ -3,7 +3,12 @@ from http import HTTPStatus
 import pytest
 import requests
 
-from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_error_response,
+    assert_proper_response,
+    assert_proper_response_with_result,
+)
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import SupportedBlockchain
@@ -678,3 +683,69 @@ def test_delete_utilized_tag(rotkehlchen_api_server):
     assert len(query) == 1
     assert query[0][0] == f'{SupportedBlockchain.BITCOIN.value}{UNIT_BTC_ADDRESS1}'
     assert query[0][1] == 'public'
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_delete_all_tags(rotkehlchen_api_server):
+    """Tests that trying to delete all remaining tags of a blockchain account works."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    # Add a tag
+    with rotki.data.db.user_write() as cursor:
+        rotki.data.db.add_tag(
+            write_cursor=cursor,
+            name='public',
+            description='My public accounts',
+            background_color='ffffff',
+            foreground_color='000000',
+        )
+    # Add an account with a tag
+    btc_balances = ['10000']
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=None,
+        btc_accounts=[UNIT_BTC_ADDRESS1],
+        eth_balances=None,
+        token_balances=None,
+        btc_balances=btc_balances,
+    )
+    with setup.bitcoin_patch:
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'blockchainsaccountsresource',
+                blockchain='BTC',
+            ), json={
+                'accounts': [{
+                    'address': UNIT_BTC_ADDRESS1,
+                    'label': 'my btc miner',
+                    'tags': ['public'],
+                }],
+            },
+        )
+    assert_proper_response(response)
+    # Now delete the tag from the account
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'blockchainsaccountsresource',
+            blockchain='BTC',
+        ), json={
+            'accounts': [{
+                'address': UNIT_BTC_ADDRESS1,
+                'label': 'my btc miner',
+            }],
+        },
+    )
+    assert_proper_response(response)
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'blockchainsaccountsresource',
+            blockchain='BTC',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['standalone'][0]['tags'] is None  # Should have been deleted
+    with rotki.data.db.conn.read_ctx() as cursor:
+        # Also check that the tag mapping is gone from the db
+        assert len(cursor.execute('SELECT * FROM tag_mappings;').fetchall()) == 0
