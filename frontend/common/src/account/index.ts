@@ -6,13 +6,15 @@ export interface AccountData {
   readonly tags: string[];
 }
 
-export interface Account {
-  readonly chain: Blockchain;
+export interface Account<T = Blockchain> {
+  readonly chain: T;
   readonly address: string;
 }
 
-export interface DefiAccount extends Account {
+export interface DefiAccount<T = Blockchain> extends Account<T> {
   readonly protocols: DefiProtocol[];
 }
 
-export interface GeneralAccount extends AccountData, Account {}
+export interface GeneralAccount<T = Blockchain>
+  extends AccountData,
+    Account<T> {}

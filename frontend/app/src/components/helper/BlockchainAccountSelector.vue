@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
-import { type Blockchain } from '@rotki/common/lib/blockchain';
+import {
+  Blockchain,
+  type BlockchainSelection
+} from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
+
+type AccountWithChain = GeneralAccount<BlockchainSelection>;
 
 const props = withDefaults(
   defineProps<{
@@ -14,12 +19,13 @@ const props = withDefaults(
     loading?: boolean;
     usableAddresses?: string[];
     multiple?: boolean;
-    value: GeneralAccount[];
+    value: AccountWithChain[];
     chains: Blockchain[];
     outlined?: boolean;
     dense?: boolean;
     noPadding?: boolean;
     hideOnEmptyUsable?: boolean;
+    multichain?: boolean;
   }>(),
   {
     label: '',
@@ -31,16 +37,23 @@ const props = withDefaults(
     outlined: false,
     dense: false,
     noPadding: false,
-    hideOnEmptyUsable: false
+    hideOnEmptyUsable: false,
+    multichain: false
   }
 );
 
 const emit = defineEmits<{
-  (e: 'input', value: GeneralAccount[]): void;
+  (e: 'input', value: AccountWithChain[]): void;
 }>();
 
-const { chains, value, usableAddresses, hideOnEmptyUsable, multiple } =
-  toRefs(props);
+const {
+  chains,
+  value,
+  usableAddresses,
+  hideOnEmptyUsable,
+  multiple,
+  multichain
+} = toRefs(props);
 
 const search = ref('');
 const { t } = useI18n();
@@ -61,15 +74,38 @@ const internalValue = computed(() => {
   }
 });
 
-const selectableAccounts: ComputedRef<GeneralAccount[]> = computed(() => {
+const selectableAccounts: ComputedRef<AccountWithChain[]> = computed(() => {
   const filteredChains = get(chains);
-  const blockchainAccounts = get(accounts);
+  const blockchainAccounts: AccountWithChain[] = get(accounts);
+  if (get(multichain)) {
+    const entries: Record<string, number> = {};
+    blockchainAccounts.forEach(account => {
+      if (entries[account.address]) {
+        entries[account.address] += 1;
+      } else {
+        entries[account.address] = 1;
+      }
+    });
+
+    for (const address in entries) {
+      const count = entries[address];
+      if (count > 1) {
+        blockchainAccounts.push({
+          address,
+          label: '',
+          tags: [],
+          chain: 'ALL'
+        });
+      }
+    }
+  }
+
   if (filteredChains.length === 0) {
     return blockchainAccounts;
   }
 
-  return blockchainAccounts.filter(({ chain }) =>
-    filteredChains.includes(chain)
+  return blockchainAccounts.filter(
+    ({ chain }) => chain === 'ALL' || filteredChains.includes(chain)
   );
 });
 
@@ -82,7 +118,7 @@ const hintText = computed(() => {
   return selection ? '1' : all;
 });
 
-const displayedAccounts: ComputedRef<GeneralAccount[]> = computed(() => {
+const displayedAccounts: ComputedRef<AccountWithChain[]> = computed(() => {
   const addresses = get(usableAddresses);
   const accounts = get(selectableAccounts);
   if (addresses.length > 0) {
@@ -93,9 +129,10 @@ const displayedAccounts: ComputedRef<GeneralAccount[]> = computed(() => {
 
 const { addressNameSelector } = useAddressesNamesStore();
 
-const filter = (item: GeneralAccount, queryText: string) => {
+const filter = (item: AccountWithChain, queryText: string) => {
+  const chain = item.chain === 'ALL' ? Blockchain.ETH : item.chain;
   const text = (
-    get(addressNameSelector(item.address, item.chain)) ?? ''
+    get(addressNameSelector(item.address, chain)) ?? ''
   ).toLowerCase();
   const address = item.address.toLocaleLowerCase();
   const query = queryText.toLocaleLowerCase();
@@ -111,17 +148,40 @@ const filter = (item: GeneralAccount, queryText: string) => {
   return labelMatches || tagMatches || addressMatches;
 };
 
-const input = (value: null | GeneralAccount | GeneralAccount[]) => {
-  if (Array.isArray(value)) {
-    emit('input', value);
-  } else {
-    emit('input', value ? [value] : []);
+function filterOutElements(
+  lastElement: GeneralAccount<BlockchainSelection>,
+  nextValue: AccountWithChain[]
+): AccountWithChain[] {
+  if (lastElement.chain === 'ALL') {
+    return nextValue.filter(
+      x => x.address !== lastElement.address || x.chain === 'ALL'
+    );
   }
+  return nextValue.filter(
+    x => x.address !== lastElement.address || x.chain !== 'ALL'
+  );
+}
+
+const input = (nextValue: null | AccountWithChain | AccountWithChain[]) => {
+  const previousValue = get(value);
+  let result: AccountWithChain[];
+  if (Array.isArray(nextValue)) {
+    const lastElement = nextValue[nextValue.length - 1];
+    if (lastElement && nextValue.length > previousValue.length) {
+      result = filterOutElements(lastElement, nextValue);
+    } else {
+      result = nextValue;
+    }
+  } else {
+    result = nextValue ? [nextValue] : [];
+  }
+
+  emit('input', result);
 };
 
 const { dark } = useTheme();
 
-const getItemKey = (item: GeneralAccount) => item.address + item.chain;
+const getItemKey = (item: AccountWithChain) => item.address + item.chain;
 </script>
 
 <template>

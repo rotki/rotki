@@ -131,7 +131,11 @@ watch(options, options => updatePagination(options));
     <template #actions>
       <v-row>
         <v-col cols="12" offset-md="6" md="6">
-          <table-filter :matchers="matchers" @update:matches="updateFilter" />
+          <table-filter
+            :matches="filters"
+            :matchers="matchers"
+            @update:matches="updateFilter"
+          />
         </v-col>
       </v-row>
     </template>

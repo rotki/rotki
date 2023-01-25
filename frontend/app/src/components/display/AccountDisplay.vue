@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { type Account } from '@rotki/common/lib/account';
+import {
+  Blockchain,
+  type BlockchainSelection
+} from '@rotki/common/lib/blockchain';
 import { truncateAddress } from '@/filters';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -11,7 +15,7 @@ const AssetIcon = defineAsyncComponent(
 
 const props = withDefaults(
   defineProps<{
-    account: Account;
+    account: Account<BlockchainSelection>;
     useAliasName?: boolean;
     truncate?: boolean;
   }>(),
@@ -38,7 +42,8 @@ const address = computed<string>(() => {
 const aliasName = computed<string | null>(() => {
   if (!get(scrambleData) && get(useAliasName)) {
     const { address, chain } = get(account);
-    return get(addressNameSelector(address, chain));
+    const chainId = chain === 'ALL' ? Blockchain.ETH : chain;
+    return get(addressNameSelector(address, chainId));
   }
 
   return null;
@@ -55,7 +60,7 @@ const { getBlockie } = useBlockie();
         <v-col cols="auto" class="pr-2">
           <v-avatar left size="28px" class="mr-0">
             <asset-icon
-              v-if="account.chain"
+              v-if="account.chain && account.chain !== 'ALL'"
               size="24px"
               :identifier="account.chain"
               :show-chain="false"

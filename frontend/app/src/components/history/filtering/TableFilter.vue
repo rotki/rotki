@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type AssetInfo } from '@rotki/common/lib/data';
-import { type PropType } from 'vue';
 import NoFilterAvailable from '@/components/history/filtering/NoFilterAvailable.vue';
 import SuggestedItem from '@/components/history/filtering/SuggestedItem.vue';
 import {
@@ -12,20 +11,20 @@ import { assert } from '@/utils/assertions';
 import { logger } from '@/utils/logging';
 import { splitSearch } from '@/utils/search';
 
-const props = defineProps({
-  matchers: {
-    required: true,
-    type: Array as PropType<SearchMatcher<any, any>[]>
-  }
-});
+const props = defineProps<{
+  /**
+   * This provides no real two-way binding. It is only used for the removal
+   * of keys programmatically.
+   */
+  matches: MatchedKeyword<any>;
+  matchers: SearchMatcher<any, any>[];
+}>();
 
-const emit = defineEmits({
-  'update:matches': function (matches: MatchedKeyword<any>) {
-    return !!matches;
-  }
-});
+const emit = defineEmits<{
+  (e: 'update:matches', matches: MatchedKeyword<any>): void;
+}>();
 
-const { matchers } = toRefs(props);
+const { matchers, matches } = toRefs(props);
 
 const input = ref();
 const selection = ref<Suggestion[]>([]);
@@ -46,10 +45,6 @@ const searchSuggestion = computed(() => {
 });
 
 const usedKeys = computed(() => get(selection).map(entry => entry.key));
-
-const onSelectionUpdate = (pairs: Suggestion[]) => {
-  updateMatches(pairs);
-};
 
 const removeSelection = (suggestion: Suggestion) => {
   updateMatches(get(selection).filter(sel => sel !== suggestion));
@@ -226,6 +221,17 @@ const selectItem = (suggestion: Suggestion) => {
     set(search, getSuggestionText(suggestion));
   });
 };
+
+watch(matches, matches => {
+  set(
+    selection,
+    get(selection).filter(s => {
+      const key = s.key;
+      const matcher = get(matchers).find(x => x.key === key);
+      return matcher && matches[matcher.keyValue];
+    })
+  );
+});
 </script>
 
 <template>
@@ -242,7 +248,7 @@ const selectItem = (suggestion: Suggestion) => {
     hide-details
     prepend-inner-icon="mdi-filter-variant"
     :search-input.sync="search"
-    @input="onSelectionUpdate($event)"
+    @input="updateMatches($event)"
     @keydown.enter="applySuggestion"
     @keydown.up.prevent
     @keydown.up="moveSuggestion(true)"
