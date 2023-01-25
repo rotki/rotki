@@ -4,9 +4,15 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.base import LIQUITY_STAKING_DETAILS
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.chain.ethereum.modules.eth2.utils import (
+    DAY_AFTER_ETH2_GENESIS,
+    INITIAL_ETH_DEPOSIT,
+)
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.settings import DEFAULT_ACTIVE_MODULES
 from rotkehlchen.db.utils import table_exists
+from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -585,6 +591,31 @@ def _remove_old_tables(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _remove_old_tables')
 
 
+def _fix_eth2_pnl_genesis(write_cursor: 'DBCursor') -> None:
+    """
+    To avoid querying beaconchain for all the stats since genesis manually update
+    the entries that have a wrong pnl in the database for eth2 daily staking details in the
+    genesis date.
+    """
+    fixed_values = []
+    write_cursor.execute(
+        'SELECT validator_index, pnl FROM eth2_daily_staking_details WHERE timestamp=?',
+        (DAY_AFTER_ETH2_GENESIS,),
+    )
+
+    for (validator_index, pnl_str) in write_cursor:
+        pnl = FVal(pnl_str)
+        if pnl > ONE:
+            pnl -= INITIAL_ETH_DEPOSIT
+            fixed_values.append((str(pnl), validator_index, DAY_AFTER_ETH2_GENESIS))
+
+    if len(fixed_values) != 0:
+        write_cursor.executemany(
+            'UPDATE eth2_daily_staking_details SET pnl=? WHERE validator_index=? AND timestamp=?',
+            fixed_values,
+        )
+
+
 def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v35 to v36
 
@@ -598,7 +629,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - rename web3_nodes to rpc_nodes
     """
     log.debug('Entered userdb v35->v36 upgrade')
-    progress_handler.set_total_steps(12)
+    progress_handler.set_total_steps(13)
     with db.user_write() as write_cursor:
         _remove_adex(write_cursor)
         progress_handler.new_step()
@@ -623,6 +654,8 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _upgrade_liquity_staking_events(write_cursor, db.conn)
         progress_handler.new_step()
         _remove_old_tables(write_cursor)
+        progress_handler.new_step()
+        _fix_eth2_pnl_genesis(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finished userdb v35->v36 upgrade')

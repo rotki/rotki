@@ -1103,6 +1103,12 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         ('{"staked_amount": "0", "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"}',),  # noqa: E501
         (None,),
     ]
+    cursor.execute('SELECT validator_index, pnl FROM eth2_daily_staking_details')
+    assert cursor.fetchall() == [
+        (999, '32.01201'),
+        (120000, '0'),
+        (1000, '32.01455'),
+    ]
 
     db_v35.logout()
     # Execute upgrade
@@ -1280,6 +1286,14 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         (None,),
         ('{"liquity_staking": {"staked_amount": "0", "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"}}',),  # noqa: E501
         (None,),
+    ]
+
+    # check that pnl for validators has been corrected on genesis
+    cursor.execute('SELECT validator_index, pnl FROM eth2_daily_staking_details')
+    assert cursor.fetchall() == [
+        (999, '0.01201'),
+        (120000, '0'),
+        (1000, '0.01455'),
     ]
 
 
