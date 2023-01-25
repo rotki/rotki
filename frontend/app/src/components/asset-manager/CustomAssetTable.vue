@@ -113,6 +113,7 @@ watch([options, filters] as const, ([options, filters]) => {
         <v-col class="d-none d-md-block" />
         <v-col cols="12" md="6" class="pb-md-8">
           <table-filter
+            :matches="filters"
             :matchers="matchers"
             data-cy="asset_table_filter"
             @update:matches="updateFilter"

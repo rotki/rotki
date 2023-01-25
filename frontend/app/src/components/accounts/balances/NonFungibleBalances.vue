@@ -28,13 +28,7 @@ import { assert } from '@/utils/assertions';
 import { uniqueStrings } from '@/utils/data';
 import { useAssetPricesApi } from '@/services/assets/prices';
 import { useConfirmStore } from '@/store/confirm';
-
-interface PaginationOptions {
-  page: number;
-  itemsPerPage: number;
-  sortBy: (keyof NonFungibleBalance)[];
-  sortDesc: boolean[];
-}
+import { type TablePagination } from '@/types/pagination';
 
 defineProps({
   modules: {
@@ -47,7 +41,7 @@ const balancesStore = useNonFungibleBalancesStore();
 const { fetchNonFungibleBalances: fetch, updateRequestPayload } = balancesStore;
 const { balances } = storeToRefs(balancesStore);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const options: Ref<PaginationOptions | null> = ref(null);
+const options: Ref<TablePagination<NonFungibleBalance> | null> = ref(null);
 
 const { tc } = useI18n();
 const { notify } = useNotificationsStore();
@@ -221,7 +215,7 @@ const updatePayloadHandler = async () => {
 };
 
 const updatePaginationHandler = async (
-  newOptions: PaginationOptions | null
+  newOptions: TablePagination<NonFungibleBalance> | null
 ) => {
   set(options, newOptions);
   await updatePayloadHandler();

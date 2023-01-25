@@ -17,15 +17,13 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
 import { CURRENCY_USD } from '@/types/currencies';
 
-type AssetLocations = (AssetBreakdown & {
-  readonly account: GeneralAccount | undefined;
-} & {
+interface AssetLocation extends AssetBreakdown {
+  readonly account?: GeneralAccount;
   readonly label: string;
-})[];
+}
+type AssetLocations = AssetLocation[];
 
-const props = defineProps({
-  identifier: { required: true, type: String }
-});
+const props = defineProps<{ identifier: string }>();
 
 const { identifier } = toRefs(props);
 
@@ -135,7 +133,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 </script>
 
 <template>
-  <card>
+  <card outlined-body>
     <template #title>
       {{ t('asset_locations.title') }}
     </template>

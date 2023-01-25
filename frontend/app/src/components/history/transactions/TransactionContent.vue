@@ -27,13 +27,7 @@ import { useConfirmStore } from '@/store/confirm';
 import { IgnoreActionType } from '@/types/history/ignored';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-
-interface PaginationOptions {
-  page: number;
-  itemsPerPage: number;
-  sortBy: (keyof EthTransaction)[];
-  sortDesc: boolean[];
-}
+import { type TablePagination } from '@/types/pagination';
 
 const Fragment = defineAsyncComponent(
   () => import('@/components/helper/Fragment')
@@ -262,7 +256,7 @@ const saveData = async (
   return await addTransactionEvent(event as NewEthTransactionEvent);
 };
 
-const options: Ref<PaginationOptions | null> = ref(null);
+const options: Ref<TablePagination<EthTransaction> | null> = ref(null);
 const accounts: Ref<GeneralAccount[]> = ref([]);
 
 const usedAccounts: ComputedRef<Account<BlockchainSelection>[]> = computed(
@@ -326,7 +320,7 @@ const updatePayloadHandler = async () => {
 };
 
 const updatePaginationHandler = async (
-  newOptions: PaginationOptions | null
+  newOptions: TablePagination<EthTransaction> | null
 ) => {
   set(options, newOptions);
   await updatePayloadHandler();

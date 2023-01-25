@@ -22,13 +22,7 @@ import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
 import { calculatePercentage } from '@/utils/calculation';
 import { getCollectionData } from '@/utils/collection';
-
-interface PaginationOptions {
-  page: number;
-  itemsPerPage: number;
-  sortBy: (keyof NonFungibleBalance)[];
-  sortDesc: boolean[];
-}
+import { type TablePagination } from '@/types/pagination';
 
 const nonFungibleRoute = Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE;
 
@@ -119,10 +113,10 @@ const refresh = async () => {
 const { dashboardTablesVisibleColumns } = storeToRefs(
   useFrontendSettingsStore()
 );
-const options: Ref<PaginationOptions | null> = ref(null);
+const options: Ref<TablePagination<NonFungibleBalance> | null> = ref(null);
 
 const updatePaginationHandler = async (
-  newOptions: PaginationOptions | null
+  newOptions: TablePagination<NonFungibleBalance> | null
 ) => {
   set(options, newOptions);
   await updatePayloadHandler();
