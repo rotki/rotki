@@ -75,14 +75,6 @@ class MockWeb3():
         return namedtuple('Version', ['version'])(version=1)
 
 
-def patch_requests_for_cryptoscamdb(url, *args, **kwargs):
-    if url == 'https://api.cryptoscamdb.org/v1/addresses':
-        return MockResponse(200, '{"success": true, "result":{}}')
-
-    # else
-    return original_requests_get(url, *args, **kwargs)
-
-
 def patch_web3_request(given_web3, test_specific_mock_data):
     """Patches all requests going to web3 through the given provider
 

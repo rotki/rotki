@@ -173,7 +173,7 @@ def test_failed_migration(rotkehlchen_api_server):
 def test_migration_3(rotkehlchen_api_server):
     """
     Test that the third data migration for rotki works. This migration removes icons of assets
-    that are not valid images and update the list of ignored assets using cryptoscamdb.
+    that are not valid images and update the list of ignored assets.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     icon_manager = rotki.icon_manager

@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 import filetype
 
 from rotkehlchen.assets.spam_assets import update_spam_assets
-from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -32,12 +31,8 @@ def _validate_asset_icons(icon_manager: 'IconManager') -> None:
 def data_migration_3(rotki: 'Rotkehlchen') -> None:
     """
     Migration created in 1.24
-    - Update the list of ignored assets with tokens from cryptoscamdb.
+    - Update the list of spam assets
     - Delete malformed assets icons.
     """
-    try:
-        update_spam_assets(db=rotki.data.db, make_remote_query=True)
-    except RemoteError as e:
-        log.error(f'Failed to update the list of ignored assets during db migration. {str(e)}')
-
+    update_spam_assets(db=rotki.data.db)
     _validate_asset_icons(rotki.icon_manager)
