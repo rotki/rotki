@@ -298,7 +298,7 @@ export const getBlockchainBreakdown = (
   for (const address in balances) {
     const balance = balances[address];
     const assetBalance = balance.assets[asset];
-    if (!assetBalance || assetBalance.usdValue.isZero()) {
+    if (!assetBalance) {
       continue;
     }
     const tags = getTags(accounts, address);

@@ -278,6 +278,7 @@ const css = useCssModule();
         </v-col>
         <v-col cols="12" md="4" class="pb-md-8">
           <table-filter
+            :matches="filters"
             :matchers="matchers"
             data-cy="asset_table_filter"
             @update:matches="updateFilter"

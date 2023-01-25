@@ -25,13 +25,7 @@ import { type TradeLocation } from '@/types/history/trade-location';
 import { Section } from '@/types/status';
 import { type TradeEntry } from '@/types/history/trades';
 import { IgnoreActionType } from '@/types/history/ignored';
-
-interface PaginationOptions {
-  page: number;
-  itemsPerPage: number;
-  sortBy: (keyof AssetMovement)[];
-  sortDesc: boolean[];
-}
+import { type TablePagination } from '@/types/pagination';
 
 const props = defineProps({
   locationOverview: {
@@ -49,7 +43,7 @@ const { locationOverview } = toRefs(props);
 
 const selected: Ref<AssetMovementEntry[]> = ref([]);
 const expanded: Ref<TradeEntry[]> = ref([]);
-const options: Ref<PaginationOptions | null> = ref(null);
+const options: Ref<TablePagination<AssetMovement> | null> = ref(null);
 
 const { tc } = useI18n();
 
@@ -151,7 +145,7 @@ const updatePayloadHandler = async () => {
 };
 
 const updatePaginationHandler = async (
-  newOptions: PaginationOptions | null
+  newOptions: TablePagination<AssetMovement> | null
 ) => {
   set(options, newOptions);
   await updatePayloadHandler();

@@ -30,13 +30,7 @@ import {
 import { Section } from '@/types/status';
 import { useConfirmStore } from '@/store/confirm';
 import { IgnoreActionType } from '@/types/history/ignored';
-
-interface PaginationOptions {
-  page: number;
-  itemsPerPage: number;
-  sortBy: (keyof Trade)[];
-  sortDesc: boolean[];
-}
+import { type TablePagination } from '@/types/pagination';
 
 const props = defineProps({
   locationOverview: {
@@ -51,7 +45,7 @@ const emit = defineEmits(['fetch']);
 const { locationOverview } = toRefs(props);
 
 const selected: Ref<TradeEntry[]> = ref([]);
-const options: Ref<PaginationOptions | null> = ref(null);
+const options: Ref<TablePagination<Trade> | null> = ref(null);
 const dialogTitle: Ref<string> = ref('');
 const dialogSubtitle: Ref<string> = ref('');
 const openDialog: Ref<boolean> = ref(false);
@@ -285,7 +279,7 @@ const updatePayloadHandler = async () => {
 };
 
 const updatePaginationHandler = async (
-  newOptions: PaginationOptions | null
+  newOptions: TablePagination<Trade> | null
 ) => {
   set(options, newOptions);
   await updatePayloadHandler();
