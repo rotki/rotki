@@ -16,6 +16,8 @@ class WSMessageType(Enum):
     LOGIN_STATUS = auto()
     # Used for evm address migration after new chain integration
     EVM_ADDRESS_MIGRATION = auto()
+    # Used for when a new token is found and saved via processing evm transactions
+    NEW_EVM_TOKEN_DETECTED = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member
