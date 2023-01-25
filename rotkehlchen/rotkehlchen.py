@@ -7,6 +7,7 @@ import os
 import time
 from collections import defaultdict
 from pathlib import Path
+from types import MethodType
 from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union, cast, overload
 
 import gevent
@@ -169,6 +170,36 @@ class Rotkehlchen():
         self.task_manager: Optional[TaskManager] = None
         self.shutdown_event = gevent.event.Event()
         self.migration_manager = DataMigrationManager(self)
+
+    def maybe_kill_running_tx_query_tasks(
+            self,
+            blockchain: SupportedBlockchain,
+            addresses: list[ChecksumEvmAddress],
+    ) -> None:
+        """Checks for running greenlets related to transactions query for the given
+        addresses and kills them if they exist"""
+        assert self.task_manager is not None, 'task manager should have been initialized at this point'  # noqa: E501
+
+        for address in addresses:
+            account_tuple = (address, blockchain.to_chain_id())
+            for greenlet in self.api_task_greenlets:
+                is_evm_tx_greenlet = (
+                    len(greenlet.args) >= 1 and
+                    isinstance(greenlet.args[0], MethodType) and
+                    greenlet.args[0].__func__.__qualname__ == 'RestAPI._get_evm_transactions'
+                )
+                if (
+                        is_evm_tx_greenlet and
+                        greenlet.kwargs['only_cache'] is False and
+                        account_tuple in greenlet.kwargs['filter_query'].accounts
+                ):
+
+                    greenlet.kill()
+
+            tx_query_task_greenlets = self.task_manager.running_greenlets.get(self.task_manager._maybe_query_evm_transactions, [])  # noqa: E501
+            for greenlet in tx_query_task_greenlets:
+                if greenlet.kwargs['address'] in addresses:
+                    greenlet.kill()
 
     def reset_after_failed_account_creation_or_login(self) -> None:
         """If the account creation or login failed make sure that the rotki instance is clear
@@ -703,6 +734,7 @@ class Rotkehlchen():
                 blockchain = cast(EVM_CHAINS_WITH_TRANSACTIONS_TYPE, blockchain)  # by default mypy doesn't narrow the type  # noqa: E501
                 evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
                 evm_addresses: list[ChecksumEvmAddress] = cast(list[ChecksumEvmAddress], accounts)
+                self.maybe_kill_running_tx_query_tasks(blockchain, evm_addresses)
                 stack.enter_context(evm_manager.transactions.wait_until_no_query_for(evm_addresses))  # noqa: E501
                 stack.enter_context(evm_manager.transactions.missing_receipts_lock)
                 stack.enter_context(evm_manager.transactions_decoder.undecoded_tx_query_lock)
