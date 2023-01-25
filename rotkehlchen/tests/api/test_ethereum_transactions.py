@@ -35,6 +35,7 @@ from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.constants import TXHASH_HEX_TO_BYTES
 from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR1,
+    TEST_ADDR2,
     TEST_ADDR3,
     extended_transactions_setup_test,
     setup_ethereum_transactions_test,
@@ -1505,6 +1506,7 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer'):
     assert result['entries'][0]['decoded_events'][0]['entry']['balance']['amount'] == '0'
 
 
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
 def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that decoding all pending transactions works fine"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -1554,6 +1556,7 @@ def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> N
     assert outcome['result']['decoded_tx_number'] == {}
 
 
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
 def test_decoding_missing_transactions_by_address(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that decoding all pending transactions works fine when a filter by address is set"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen

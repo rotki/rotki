@@ -1,23 +1,31 @@
+from typing import TYPE_CHECKING
+
 import pytest
 from flaky import flaky
 
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.tests.utils.ethereum import (
-    ETHERSCAN_AND_INFURA_PARAMS,
+    TEST_ADDR1,
+    TEST_ADDR2,
     setup_ethereum_transactions_test,
 )
 
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
+    from rotkehlchen.db.dbhandler import DBHandler
+
 
 @flaky(max_runs=3, min_passes=1)  # failed in a flaky way sometimes in the CI due to etherscan
-@pytest.mark.parametrize(*ETHERSCAN_AND_INFURA_PARAMS)
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
 @pytest.mark.parametrize('transaction_already_queried', [True, False])
+@pytest.mark.freeze_time('2023-01-24 22:45:45 GMT')
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_transaction_receipt(
-        database,
-        eth_transactions,
-        call_order,  # pylint: disable=unused-argument
-        transaction_already_queried,
-):
+        database: 'DBHandler',
+        eth_transactions: 'EthereumTransactions',
+        transaction_already_queried: bool,
+) -> None:
     """Test that getting a transaction receipt from the network and saving it in the DB works"""
     transactions, receipts = setup_ethereum_transactions_test(
         database=database,
