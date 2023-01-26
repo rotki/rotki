@@ -237,7 +237,7 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 401: Provided password is wrong for the user or some other authentication error.
    :statuscode 409: Another user is already logged in. User does not exist. There was a fatal error during the upgrade of the DB. Permission error while trying to access the directory where rotki saves data.
    :statuscode 500: Generic internal rotki error
-   :statuscode 542: Internal rotki error relating to the Database. Check message for more details.
+   :statuscode 542: Internal rotki error relating to the database. Check message for more details.
 
 .. http:patch:: /api/(version)/users/(username)
 
@@ -5906,13 +5906,15 @@ Querying periodic data
           "result": {
               "last_balance_save": 1572345881,
               "connected_eth_nodes": ["nodeX", "nodeY"],
+              "connected_optimism_nodes": ["nodeW", "nodeZ"],
               "last_data_upload_ts": 0
           }
           "message": ""
       }
 
    :resjson int last_balance_save: The last time (unix timestamp) at which balances were saved in the database.
-   :resjson list connected_eth_nodes: A list of nodes that we are connected to.
+   :resjson list connected_eth_nodes: A list of ethereum nodes that we are connected to.
+   :resjson list connected_optimism_nodes: A list of optimism nodes that we are connected to.
    :statuscode 200: Data were queried successfully.
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.
