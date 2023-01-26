@@ -14,9 +14,10 @@ from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.curve.pools_cache import (
-    clear_curve_pools_cache,
-    update_curve_metapools_cache,
-    update_curve_registry_pools_cache,
+    ensure_curve_tokens_existence,
+    query_curve_meta_pools,
+    query_curve_registry_pools,
+    save_curve_pools_to_cache,
 )
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import WEB3_LOGQUERY_BLOCK_RANGE, EvmNodeInquirer
@@ -251,19 +252,11 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
             return False
 
         curve_address_provider = self.contracts.contract('CURVE_ADDRESS_PROVIDER')
-        # Using savepoint to not end up having partially populated cache
-        with GlobalDBHandler().conn.savepoint_ctx() as savepoint_cursor:
-            # Delete current cache. Need to do this in case curve removes some pools
-            clear_curve_pools_cache(write_cursor=savepoint_cursor)
-            # query values and update the cache
-            update_curve_registry_pools_cache(
-                ethereum=self,
-                curve_address_provider=curve_address_provider,
-            )
-            update_curve_metapools_cache(
-                ethereum=self,
-                curve_address_provider=curve_address_provider,
-            )
+        pools = query_curve_registry_pools(ethereum=self, curve_address_provider=curve_address_provider)  # noqa: E501
+        pools.update(query_curve_meta_pools(ethereum=self, curve_address_provider=curve_address_provider))  # noqa: E501
+        ensure_curve_tokens_existence(ethereum_inquirer=self, pools_mapping=pools)
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            save_curve_pools_to_cache(write_cursor=write_cursor, pools_mapping=pools)
 
         return True
 
