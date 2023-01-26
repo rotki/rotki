@@ -71,7 +71,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 });
 </script>
 <template>
-  <div>
+  <v-sheet outlined>
     <data-table
       :headers="tableHeaders"
       :items="breakdowns"
@@ -96,5 +96,5 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
         />
       </template>
     </data-table>
-  </div>
+  </v-sheet>
 </template>
