@@ -27,6 +27,7 @@ from rotkehlchen.tests.utils.database import (
     maybe_include_etherscan_key,
     mock_db_schema_sanity_check,
 )
+from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.evm import maybe_mock_evm_inquirer
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
@@ -404,6 +405,8 @@ def fixture_rotkehlchen_api_server(
 
             if mocked_proxies is not None:
                 stack.enter_context(mock_proxies(mocked_proxies))
+
+            stack.enter_context(patch_decoder_reload_data())
 
         yield api_server
 

@@ -24,6 +24,7 @@ from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.covalent import Covalent
 from rotkehlchen.premium.premium import Premium
+from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.evm import maybe_mock_evm_inquirer
 from rotkehlchen.tests.utils.factories import make_evm_address
@@ -234,11 +235,12 @@ def fixture_ethereum_transaction_decoder(
         ethereum_inquirer,
         eth_transactions,
 ):
-    return EthereumTransactionDecoder(
-        database=database,
-        ethereum_inquirer=ethereum_inquirer,
-        transactions=eth_transactions,
-    )
+    with patch_decoder_reload_data():
+        yield EthereumTransactionDecoder(
+            database=database,
+            ethereum_inquirer=ethereum_inquirer,
+            transactions=eth_transactions,
+        )
 
 
 @pytest.fixture(name='eth_transactions')
@@ -301,11 +303,12 @@ def fixture_optimism_transaction_decoder(
         optimism_inquirer,
         optimism_transactions,
 ):
-    return OptimismTransactionDecoder(
-        database=database,
-        optimism_inquirer=optimism_inquirer,
-        transactions=optimism_transactions,
-    )
+    with patch_decoder_reload_data():
+        yield OptimismTransactionDecoder(
+            database=database,
+            optimism_inquirer=optimism_inquirer,
+            transactions=optimism_transactions,
+        )
 
 
 @pytest.fixture(name='ksm_rpc_endpoint')
