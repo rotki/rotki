@@ -48,10 +48,14 @@ const terminateSubprocesses = () => {
     }
     const name = pids[subprocess.pid] ?? '';
     logger.info(`terminating process: ${name} (${subprocess.pid})`);
-    subprocess.kill('SIGTERM');
+    subprocess.kill();
   }
 };
-process.on('beforeExit', terminateSubprocesses);
+
+process.on('SIGINT', () => {
+  terminateSubprocesses();
+  process.exit();
+});
 
 if (startDevProxy) {
   logger.info('Starting dev-proxy');

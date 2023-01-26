@@ -15,7 +15,7 @@ const isDevelopment = checkIfDevelopment();
 let trayManager: Nullable<TrayManager> = null;
 let forceQuit = false;
 
-const onActivate = async () => {
+const onActivate = async (): Promise<void> => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (win === null) {
@@ -28,7 +28,7 @@ const onActivate = async () => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-const onReady = async () => {
+const onReady = async (): Promise<void> => {
   if (isDevelopment) {
     // Install Vue Devtools
     try {
@@ -57,7 +57,7 @@ const onReady = async () => {
   await createWindow();
   trayManager.listen();
 
-  getWindow().webContents.on('context-menu', (event, props) => {
+  getWindow().webContents.on('context-menu', (event, props): void => {
     const menu = new Menu();
     if (props.editFlags.canCut) {
       menu.append(new MenuItem({ label: 'Cut', role: 'cut' }));
@@ -80,7 +80,7 @@ const lock = app.requestSingleInstanceLock();
 if (!lock) {
   app.quit();
 } else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (): void => {
     try {
       if (!win) {
         return;
@@ -97,7 +97,7 @@ if (!lock) {
   });
 
   // Quit when all windows are closed.
-  app.on('window-all-closed', () => {
+  app.on('window-all-closed', (): void => {
     if (process.platform !== 'darwin') {
       app.quit();
     }
@@ -108,12 +108,12 @@ if (!lock) {
     e.preventDefault();
     await closeApp();
   });
-  app.on('before-quit', () => {
+  app.on('before-quit', (): void => {
     forceQuit = true;
   });
 }
 
-const ensureSafeUpdateRestart = () => {
+const ensureSafeUpdateRestart = (): void => {
   win?.removeAllListeners('close');
   win?.removeAllListeners('closed');
   app.removeAllListeners('close');
@@ -123,7 +123,7 @@ const ensureSafeUpdateRestart = () => {
 };
 
 const menuActions = {
-  displayTray: (display: boolean) => {
+  displayTray: (display: boolean): void => {
     const applicationMenu = Menu.getApplicationMenu();
     if (applicationMenu) {
       const menuItem = applicationMenu.getMenuItemById('MINIMIZE_TO_TRAY');
@@ -153,7 +153,7 @@ protocol.registerSchemesAsPrivileged([
   }
 ]);
 
-async function createWindow() {
+async function createWindow(): Promise<BrowserWindow> {
   // set default window Width and Height in case not specific
   const mainWindowState = windowStateKeeper({
     defaultWidth: 1200,
@@ -220,7 +220,7 @@ async function createWindow() {
   return win;
 }
 
-async function closeApp() {
+async function closeApp(): Promise<void> {
   trayManager?.destroy();
   try {
     await pyHandler.exitPyProc();
@@ -235,20 +235,5 @@ async function closeApp() {
         console.error(e);
       }
     }
-  }
-}
-
-// Exit cleanly on request from parent process in development mode.
-if (isDevelopment) {
-  if (process.platform === 'win32') {
-    process.on('message', data => {
-      if (data === 'graceful-exit') {
-        app.quit();
-      }
-    });
-  } else {
-    process.on('SIGTERM', () => {
-      app.quit();
-    });
   }
 }
