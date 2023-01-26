@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Mapping
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
 
 from rotkehlchen.types import ChecksumEvmAddress
 
@@ -64,12 +64,6 @@ class DecoderInterface(metaclass=ABCMeta):
         """
         return []
 
-    def reload(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]]:  # pylint: disable=no-self-use  # noqa: E501
-        """Subclasses may implement this to be able to reload some of the decoder's properties
-        Returns only new mappings of addresses to decode functions
-        """
-        return {}
-
     def notify_user(self, event: 'HistoryBaseEntry', counterparty: str) -> None:
         """
         Notify the user about a problem during the decoding of ethereum transactions. At the
@@ -81,3 +75,13 @@ class DecoderInterface(metaclass=ABCMeta):
             f'Make sure that it has all the required properties (name, symbol and decimals) and '
             f'try to decode the event again {event.event_identifier.hex()}.',
         )
+
+
+class ReloadableDecoderMixin(metaclass=ABCMeta):
+
+    @abstractmethod
+    def reload_data(self) -> Optional[Mapping[ChecksumEvmAddress, tuple[Any, ...]]]:  # pylint: disable=no-self-use  # noqa: E501
+        """Subclasses may implement this to be able to reload some of the decoder's properties
+        Returns only new mappings of addresses to decode functions
+        """
+        ...

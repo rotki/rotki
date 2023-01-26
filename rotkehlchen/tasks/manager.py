@@ -567,13 +567,11 @@ class TaskManager():
         if should_update_protocol_cache(GeneralCacheType.CURVE_LP_TOKENS) is False:
             return None
 
-        ethereum = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
         return [self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name='Update curve pools cache',
             exception_is_error=True,
             method=self.update_curve_pools_cache,
-            tx_decoder=ethereum.transactions_decoder,
         )]
 
     def _maybe_update_yearn_vaults(self) -> Optional[list[gevent.Greenlet]]:

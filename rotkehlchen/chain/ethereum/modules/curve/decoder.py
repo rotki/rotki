@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class CurveDecoder(DecoderInterface):
+class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     def __init__(
             self,
@@ -51,6 +51,7 @@ class CurveDecoder(DecoderInterface):
             msg_aggregator=msg_aggregator,
         )
         self.curve_pools = read_curve_pools()
+        self.ethereum = ethereum_inquirer
 
     def _decode_curve_remove_events(
             self,
@@ -185,19 +186,19 @@ class CurveDecoder(DecoderInterface):
             REMOVE_LIQUIDITY_4_ASSETS,
         ):
             user_address = hex_or_bytes_to_address(tx_log.topics[1])
-            self._decode_curve_remove_events(
+            return self._decode_curve_remove_events(
                 tx_log=tx_log,
                 transaction=transaction,
                 decoded_events=decoded_events,
                 user_address=user_address,
             )
-        elif tx_log.topics[0] in (
+        if tx_log.topics[0] in (
             ADD_LIQUIDITY,
             ADD_LIQUIDITY_2_ASSETS,
             ADD_LIQUIDITY_4_ASSETS,
         ):
             user_address = hex_or_bytes_to_address(tx_log.topics[1])
-            self._decode_curve_deposit_events(
+            return self._decode_curve_deposit_events(
                 tx_log=tx_log,
                 decoded_events=decoded_events,
                 user_address=user_address,
@@ -251,12 +252,22 @@ class CurveDecoder(DecoderInterface):
     def counterparties(self) -> list[str]:
         return [CPT_CURVE]
 
-    def reload(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]]:
+    def reload_data(self) -> Optional[Mapping[ChecksumEvmAddress, tuple[Any, ...]]]:
+        """Make sure curve pools are recently queried from the chain, saved in the DB
+        and loaded to the decoder's memory.
+
+        If a query happens and any new mappings are generated they are returned,
+        otherwise `None` is returned.
+        """
+        self.ethereum.assure_curve_protocol_cache_is_queried()
         new_curve_pools = read_curve_pools()
         curve_pools_diff = new_curve_pools - self.curve_pools
+        if curve_pools_diff == set():
+            return None
+
         new_mapping: Mapping[ChecksumEvmAddress, tuple[Callable]] = {
             pool_addr: (self._decode_curve_events,)
             for pool_addr in curve_pools_diff
         }
-        self.curve_pools = new_curve_pools  # update self pools
-        return new_mapping  # return new mappings to add them to EVMTransactionDecoder
+        self.curve_pools = new_curve_pools
+        return new_mapping

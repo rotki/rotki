@@ -52,7 +52,7 @@ def _populate_curve_pools(evm_tx_decoder):
             )
 
     curve_decoder = evm_tx_decoder.decoders['Curve']
-    new_mappings = curve_decoder.reload()
+    new_mappings = curve_decoder.reload_data()
     evm_tx_decoder.rules.address_mappings.update(new_mappings)
 
 
