@@ -771,8 +771,7 @@ class Inquirer():
         Returns the price of 1 LP token from the pool
         """
         ethereum = self.get_ethereum_manager()
-        # Make sure that the curve cache is queried
-        ethereum.curve_protocol_cache_is_queried(tx_decoder=None)
+        ethereum.assure_curve_cache_is_queried_and_decoder_updated()
 
         pool_addresses_in_cache = GlobalDBHandler().get_general_cache_values(
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token.evm_address],

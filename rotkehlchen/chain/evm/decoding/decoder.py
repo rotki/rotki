@@ -14,6 +14,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
@@ -209,12 +210,17 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
 
         return results
 
-    def reload_from_db(self, cursor: 'DBCursor') -> None:
-        """Reload all related settings from DB so that decoding happens with latest"""
+    def reload_data(self, cursor: 'DBCursor') -> None:
+        """Reload all related settings from DB and data that any decoder may require from the chain
+        so that decoding happens with latest data"""
         self.base.refresh_tracked_accounts(cursor)
         for _, decoder in self.decoders.items():
             if isinstance(decoder, CustomizableDateMixin):
                 decoder.reload_settings(cursor)
+            if isinstance(decoder, ReloadableDecoderMixin):
+                new_mappings = decoder.reload_data()
+                if new_mappings is not None:
+                    self.rules.address_mappings.update(new_mappings)
 
     def try_all_rules(
             self,
@@ -373,7 +379,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         """
         events = []
         with self.database.conn.read_ctx() as cursor:
-            self.reload_from_db(cursor)
+            self.reload_data(cursor)
             # If no transaction hashes are passed, decode all transactions.
             if tx_hashes is None:
                 tx_hashes = []
