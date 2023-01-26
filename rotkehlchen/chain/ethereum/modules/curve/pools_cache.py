@@ -33,30 +33,6 @@ CURVE_POOLS_MAPPING_TYPE = dict[
 ]
 
 
-def clear_curve_pools_cache(write_cursor: DBCursor) -> None:
-    """Clears all curve pools related cache entries in the globaldb.
-    Doesn't raise anything unless cache entries were inserted incorrectly."""
-    curve_lp_tokens = GlobalDBHandler().get_general_cache_values(
-        key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
-    )
-    for lp_token in curve_lp_tokens:
-        pool_addr = GlobalDBHandler().get_general_cache_values(
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token],
-        )[0]
-        GlobalDBHandler().delete_general_cache(
-            write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_addr],
-        )
-        GlobalDBHandler().delete_general_cache(
-            write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token],
-        )
-    GlobalDBHandler().delete_general_cache(
-        write_cursor=write_cursor,
-        key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
-    )
-
-
 def read_curve_pools() -> set[ChecksumEvmAddress]:
     """Reads globaldb cache and returns a set of all known curve pools' addresses.
     Doesn't raise anything unless cache entries were inserted incorrectly."""
@@ -77,7 +53,12 @@ def ensure_curve_tokens_existence(
         pools_mapping: CURVE_POOLS_MAPPING_TYPE,
 ) -> None:
     """This function receives data about curve pools and ensures that lp tokens and pool coins
-    exist in rotki's database."""
+    exist in rotki's database.
+
+    May raise:
+    - NotERC20Conformant if failed to query info while calling get_or_create_evm_token
+
+    """
     for lp_token_address, pool_info in pools_mapping.items():
         _, coins, underlying_coins = pool_info
         # ensure lp token exists in the globaldb
@@ -106,7 +87,7 @@ def ensure_curve_tokens_existence(
                 )
         else:
             # Otherwise, coins and underlying coins lists represent a
-            # mapping coin - underlying coin (each coin always has one underlying coin).
+            # mapping of coin -> underlying coin (each coin always has one underlying coin).
             for token_address, underlying_token_address in zip(coins, underlying_coins):
                 if token_address == ETH_SPECIAL_ADDRESS:
                     continue
@@ -137,6 +118,27 @@ def save_curve_pools_to_cache(
 ) -> None:
     """Receives data about curve pools and saves lp tokens, pool addresses and
     pool coins in cache."""
+    # First, clear all curve pools related cache entries in the global DB
+    curve_lp_tokens = GlobalDBHandler().get_general_cache_values(
+        key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+    )
+    for lp_token in curve_lp_tokens:
+        pool_addr = GlobalDBHandler().get_general_cache_values(
+            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token],
+        )[0]
+        GlobalDBHandler().delete_general_cache(
+            write_cursor=write_cursor,
+            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_addr],
+        )
+        GlobalDBHandler().delete_general_cache(
+            write_cursor=write_cursor,
+            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token],
+        )
+    GlobalDBHandler().delete_general_cache(
+        write_cursor=write_cursor,
+        key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+    )
+    # Then, read the new pool mappings and save them in the global DB cache
     GlobalDBHandler().set_general_cache_values(
         write_cursor=write_cursor,
         key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
@@ -156,14 +158,13 @@ def save_curve_pools_to_cache(
         )
 
 
-def update_curve_registry_pools_cache(
+def query_curve_registry_pools(
         ethereum: 'EthereumInquirer',
         curve_address_provider: EvmContract,
-) -> None:
-    """Query pools from curve registry and update the DB cache.
+) -> CURVE_POOLS_MAPPING_TYPE:
+    """Query pools from curve registry and return their mappings
     May raise:
     - RemoteError if failed to query etherscan or node
-    - NotERC20Conformant if failed to query info while calling get_or_create_evm_token
     """
     curve_address_provider = ethereum.contracts.contract('CURVE_ADDRESS_PROVIDER')
     get_registry_result = curve_address_provider.call(
@@ -230,16 +231,14 @@ def update_curve_registry_pools_cache(
 
         pools_mapping[decoded_lp_token] = (pool_addr, pool_coins, pool_underlying_coins)
 
-    ensure_curve_tokens_existence(ethereum_inquirer=ethereum, pools_mapping=pools_mapping)  # noqa: E501
-    with GlobalDBHandler().conn.savepoint_ctx() as savepoint_cursor:
-        save_curve_pools_to_cache(write_cursor=savepoint_cursor, pools_mapping=pools_mapping)
+    return pools_mapping
 
 
-def update_curve_metapools_cache(
+def query_curve_meta_pools(
         ethereum: 'EthereumInquirer',
         curve_address_provider: EvmContract,
-) -> None:
-    """Query pools from curve metapool factory and updates the DB.
+) -> CURVE_POOLS_MAPPING_TYPE:
+    """Query pools from curve metapool factory and return their mapping
     May raise:
     - RemoteError if failed to query etherscan or node
     - NotERC20Conformant if failed to query info while calling get_or_create_evm_token
@@ -291,6 +290,4 @@ def update_curve_metapools_cache(
         # for metapools pool addr is the lp token as well
         pools_mapping[pool_addr] = (pool_addr, pool_coins, None)
 
-    ensure_curve_tokens_existence(ethereum_inquirer=ethereum, pools_mapping=pools_mapping)
-    with GlobalDBHandler().conn.savepoint_ctx() as savepoint_cursor:
-        save_curve_pools_to_cache(write_cursor=savepoint_cursor, pools_mapping=pools_mapping)
+    return pools_mapping
