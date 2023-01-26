@@ -1,4 +1,8 @@
-import { type Notification, Severity } from '@rotki/common/lib/messages';
+import {
+  type Notification,
+  NotificationGroup,
+  Severity
+} from '@rotki/common/lib/messages';
 import { useTxQueryStatusStore } from '@/store/history/query-status';
 import { useSessionAuthStore } from '@/store/session/auth';
 import {
@@ -6,6 +10,7 @@ import {
   type EvmTransactionQueryData,
   MESSAGE_WARNING,
   type MigratedAddresses,
+  type NewDetectedToken,
   type PremiumStatusUpdateData,
   SocketMessageType,
   WebsocketMessage
@@ -14,13 +19,20 @@ import { startPromise } from '@/utils';
 import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
 import { logger } from '@/utils/logging';
 import { useNotificationsStore } from '@/store/notifications';
+import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
+import { Routes } from '@/router/routes';
+import router from '@/router';
 
 export const useMessageHandling = () => {
   const { setQueryStatus } = useTxQueryStatusStore();
   const { handleLoginStatus } = useSessionAuthStore();
-  const { notify } = useNotificationsStore();
+  const notificationsStore = useNotificationsStore();
+  const { data: notifications } = storeToRefs(notificationsStore);
+  const { notify } = notificationsStore;
+  const { addNewDetectedToken } = useNewlyDetectedTokens();
   const { txEvmChains, getChain } = useSupportedChains();
   const { tc } = useI18n();
+
   const handleSnapshotError = (data: BalanceSnapshotError): Notification => {
     return {
       title: tc('notification_messages.snapshot_failed.title'),
@@ -123,6 +135,37 @@ export const useMessageHandling = () => {
     return notifications;
   };
 
+  const handleNewTokenDetectedMessage = (
+    data: NewDetectedToken
+  ): Notification => {
+    const notification = get(notifications).find(
+      ({ group }) => group === NotificationGroup.NEW_DETECTED_TOKENS
+    );
+
+    addNewDetectedToken(data.tokenIdentifier);
+
+    const count = (notification?.groupCount || 0) + 1;
+
+    return {
+      title: tc('notification_messages.new_detected_token.title'),
+      message: !notification
+        ? tc('notification_messages.new_detected_token.message', 0, {
+            identifier: data.tokenIdentifier
+          })
+        : tc('notification_messages.new_detected_token.multiple_message', 0, {
+            count
+          }),
+      display: true,
+      severity: Severity.INFO,
+      action: {
+        label: tc('notification_messages.new_detected_token.action'),
+        action: () => router.push(Routes.ASSET_MANAGER_NEWLY_DETECTED)
+      },
+      group: NotificationGroup.NEW_DETECTED_TOKENS,
+      groupCount: count
+    };
+  };
+
   const handleMessage = async (data: string): Promise<void> => {
     const message: WebsocketMessage = WebsocketMessage.parse(
       axiosCamelCaseTransformer(JSON.parse(data))
@@ -148,6 +191,8 @@ export const useMessageHandling = () => {
       handleLoginStatus(message.data);
     } else if (type === SocketMessageType.EVM_ADDRESS_MIGRATION) {
       notifications.push(...handleMigratedAccounts(message.data));
+    } else if (type === SocketMessageType.NEW_EVM_TOKEN_DETECTED) {
+      notifications.push(handleNewTokenDetectedMessage(message.data));
     } else {
       logger.warn(`Unsupported socket message received: ${data}`);
     }

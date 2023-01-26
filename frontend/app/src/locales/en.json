@@ -1015,6 +1015,13 @@
     "managed": {
       "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts"
     },
+    "newly_detected": {
+      "ignore_selected": "Ignore selected tokens",
+      "remove_from_list": "Remove selected tokens from list",
+      "select_deselect_all_tokens": "Select/deselect all tokens",
+      "subtitle": "Clear the list of newly detected tokens, or set them ignored if you think they are spam assets",
+      "title": "Newly detected tokens"
+    },
     "notes": "Notes",
     "only_show_ignored": "Only show ignored assets",
     "only_show_owned": "Only show owned assets",
@@ -1444,7 +1451,7 @@
   },
   "currency_drop_down": {
     "hint": "Select as the main currency",
-    "profit_currency": "Profit Currency"
+    "profit_currency": "Profit Currency ({currency})"
   },
   "dashboard": {
     "blockchain_balances": {
@@ -2875,7 +2882,8 @@
     "manage_assets": "Manage Assets",
     "manage_assets_sub": {
       "custom_assets": "Custom Assets",
-      "managed_assets": "Managed Assets"
+      "managed_assets": "Managed Assets",
+      "newly_detected": "Newly Detected Tokens"
     },
     "manage_address_book": "Manage Address Book",
     "manage_prices": "Manage Prices",
@@ -3013,6 +3021,12 @@
         "network_problem_message": "We couldn't verify your premium subscription due to network problems.",
         "title": "Premium features deactivated"
       }
+    },
+    "new_detected_token": {
+      "action": "See more",
+      "title": "New Token(s) Detected",
+      "message": "New token with identifier {identifier} is detected from EVM transactions.",
+      "multiple_message": "{count} new tokens is detected from EVM transactions."
     },
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",

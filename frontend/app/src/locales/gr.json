@@ -1420,7 +1420,7 @@
   },
   "currency_drop_down": {
     "hint": "Select as the main currency",
-    "profit_currency": "Profit Currency"
+    "profit_currency": "Profit Currency ({currency})"
   },
   "dashboard": {
     "blockchain_balances": {
@@ -2971,6 +2971,12 @@
         "network_problem_message": "We couldn't verify your premium subscription due to network problems.",
         "title": "Premium features deactivated"
       }
+    },
+    "new_detected_token": {
+      "action": "See more",
+      "title": "New Token(s) Detected",
+      "message": "New token with identifier {identifier} is detected from EVM transactions.",
+      "multiple_message": "{count} new tokens is detected from EVM transactions."
     },
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",

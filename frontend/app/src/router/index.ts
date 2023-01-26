@@ -280,6 +280,12 @@ const routes = setupLayouts([
         component: async () =>
           import('../pages/asset-manager/custom/index.vue'),
         props: (route: Route) => ({ identifier: route.query.id ?? null })
+      },
+      {
+        path: Routes.ASSET_MANAGER_NEWLY_DETECTED,
+        name: 'asset-manager-newly-detected',
+        component: async () =>
+          import('../pages/asset-manager/newly-detected/index.vue')
       }
     ]
   },

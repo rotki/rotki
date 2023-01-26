@@ -8,7 +8,11 @@ const { appRoutes } = useAppRoutes();
 
 const tabs: ComputedRef<TabContent[]> = computed(() => {
   const Routes = get(appRoutes);
-  return [Routes.ASSET_MANAGER_MANAGED, Routes.ASSET_MANAGER_CUSTOM];
+  return [
+    Routes.ASSET_MANAGER_MANAGED,
+    Routes.ASSET_MANAGER_CUSTOM,
+    Routes.ASSET_MANAGER_NEWLY_DETECTED
+  ];
 });
 </script>
 

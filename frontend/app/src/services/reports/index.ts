@@ -56,7 +56,7 @@ export const useReportsApi = () => {
       });
 
       if (response.status === 200) {
-        const url = window.URL.createObjectURL(response.data);
+        const url = window.URL.createObjectURL(response.request.response);
         downloadFileByUrl(url, 'reports.zip');
         return { success: true };
       }

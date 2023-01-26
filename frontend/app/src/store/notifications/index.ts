@@ -17,7 +17,16 @@ const notificationDefaults = (): NotificationPayload => ({
 
 const createNotification = (
   id = 0,
-  { display, duration, message, severity, title }: NotificationPayload = {
+  {
+    display,
+    duration,
+    message,
+    severity,
+    title,
+    action,
+    group,
+    groupCount
+  }: NotificationPayload = {
     title: '',
     message: '',
     severity: Severity.INFO
@@ -29,7 +38,10 @@ const createNotification = (
   display: display ?? false,
   duration: duration ?? 5000,
   id,
-  date: new Date()
+  date: new Date(),
+  action,
+  group,
+  groupCount
 });
 
 export const emptyNotification = (): NotificationData => createNotification();
@@ -79,14 +91,35 @@ export const useNotificationsStore = defineStore('notifications', () => {
   }
 
   const notify = (
-    data: SemiPartial<NotificationPayload, 'title' | 'message'>
+    newData: SemiPartial<NotificationPayload, 'title' | 'message'>
   ): void => {
-    update([
-      createNotification(
-        get(nextId),
-        Object.assign(notificationDefaults(), data)
-      )
-    ]);
+    const groupToFind = newData.group;
+    const dataList = [...get(data)];
+
+    const notificationIndex = groupToFind
+      ? dataList.findIndex(({ group }) => group === groupToFind)
+      : -1;
+
+    if (notificationIndex === -1) {
+      update([
+        createNotification(
+          get(nextId),
+          Object.assign(notificationDefaults(), newData)
+        )
+      ]);
+    } else {
+      const notification = dataList[notificationIndex];
+      const newNotification = {
+        ...notification,
+        date: new Date(),
+        message: newData.message,
+        groupCount: newData.groupCount,
+        display: newData.display ?? false
+      };
+      dataList.splice(notificationIndex, 1);
+      dataList.unshift(newNotification);
+      set(data, dataList);
+    }
   };
 
   const displayed = (ids: number[]): void => {

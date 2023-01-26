@@ -50,7 +50,7 @@ const showConfirmation = () => {
 };
 
 const notifications = computed(() => {
-  return orderBy(data.value, 'id', 'desc');
+  return orderBy(data.value, 'date', 'desc');
 });
 
 const { isMobile } = useTheme();

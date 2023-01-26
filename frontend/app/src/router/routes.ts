@@ -33,6 +33,7 @@ enum RouteNames {
   ASSET_MANAGER = 'ASSET_MANAGER',
   ASSET_MANAGER_MANAGED = 'ASSET_MANAGER_MANAGED',
   ASSET_MANAGER_CUSTOM = 'ASSET_MANAGER_CUSTOM',
+  ASSET_MANAGER_NEWLY_DETECTED = 'ASSET_MANAGER_NEWLY_DETECTED',
   PRICE_MANAGER = 'PRICE_MANAGER',
   PRICE_MANAGER_LATEST = 'PRICE_MANAGER_LATEST',
   PRICE_MANAGER_HISTORIC = 'PRICE_MANAGER_HISTORIC',
@@ -90,6 +91,7 @@ export const Routes: AppRouteMap<string> = {
   ASSET_MANAGER: '/asset-manager',
   ASSET_MANAGER_MANAGED: '/asset-manager/managed',
   ASSET_MANAGER_CUSTOM: '/asset-manager/custom',
+  ASSET_MANAGER_NEWLY_DETECTED: '/asset-manager/newly-added',
   PRICE_MANAGER: '/price-manager',
   PRICE_MANAGER_LATEST: '/price-manager/latest',
   PRICE_MANAGER_HISTORIC: '/price-manager/historic',
@@ -260,6 +262,11 @@ export const useAppRoutes = createSharedComposable(() => {
       route: Routes.ASSET_MANAGER_CUSTOM,
       icon: 'mdi-database-edit',
       text: tc('navigation_menu.manage_assets_sub.custom_assets')
+    },
+    ASSET_MANAGER_NEWLY_DETECTED: {
+      route: Routes.ASSET_MANAGER_NEWLY_DETECTED,
+      icon: 'mdi-database-edit',
+      text: tc('navigation_menu.manage_assets_sub.newly_detected')
     },
     PRICE_MANAGER: {
       route: Routes.PRICE_MANAGER,

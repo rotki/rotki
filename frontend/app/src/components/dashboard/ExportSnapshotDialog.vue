@@ -39,8 +39,7 @@ const formattedSelectedBalance = computed<BigNumber | null>(() => {
 const downloadSnapshot = async () => {
   const resp = await snapshotApi.downloadSnapshot(get(timestamp));
 
-  const blob = new Blob([resp.data], { type: 'application/zip' });
-  const url = window.URL.createObjectURL(blob);
+  const url = window.URL.createObjectURL(resp.request.response);
 
   const date = dayjs(get(timestamp) * 1000).format('YYYYDDMMHHmmss');
   const fileName = `${date}-snapshot.zip`;

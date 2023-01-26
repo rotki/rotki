@@ -6,16 +6,28 @@ export enum Severity {
   INFO = 'info'
 }
 
+export enum NotificationGroup {
+  NEW_DETECTED_TOKENS = 'NEW_DETECTED_TOKENS'
+}
+
 export interface Message {
   readonly title: string;
   readonly description: string;
   readonly success: boolean;
 }
 
+export interface NotificationAction {
+  readonly label: string;
+  readonly action: () => void;
+}
+
 interface NotificationBase {
   readonly title: string;
   readonly message: string;
   readonly severity: Severity;
+  readonly action?: NotificationAction;
+  readonly group?: NotificationGroup;
+  readonly groupCount?: number;
 }
 
 export interface NotificationPayload extends NotificationBase {

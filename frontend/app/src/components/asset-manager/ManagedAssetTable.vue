@@ -115,13 +115,9 @@ const getAsset = (item: SupportedAsset) => {
 const { setMessage } = useMessageStore();
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
 
-const isIgnored = (identifier: string) => {
-  return isAssetIgnored(identifier);
-};
-
 const toggleIgnoreAsset = async (identifier: string) => {
   let success = false;
-  if (get(isIgnored(identifier))) {
+  if (get(isAssetIgnored(identifier))) {
     const response = await unignoreAsset(identifier);
     success = response.success;
   } else {
@@ -137,7 +133,7 @@ const toggleIgnoreAsset = async (identifier: string) => {
 const massIgnore = async (ignored: boolean) => {
   const ids = get(selected)
     .filter(item => {
-      const isItemIgnored = get(isIgnored(item.identifier));
+      const isItemIgnored = get(isAssetIgnored(item.identifier));
       return ignored ? !isItemIgnored : isItemIgnored;
     })
     .map(item => item.identifier)
@@ -325,7 +321,7 @@ const css = useCssModule();
       <template #item.ignored="{ item }">
         <div class="d-flex justify-center">
           <v-switch
-            :input-value="isIgnored(item.identifier)"
+            :input-value="isAssetIgnored(item.identifier)"
             @change="toggleIgnoreAsset(item.identifier)"
           />
         </div>
