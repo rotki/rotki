@@ -22,6 +22,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
@@ -388,4 +389,6 @@ def get_decoded_events_of_transaction(
         raise AssertionError('Unsupported chainID at tests')
 
     transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
-    return decoder.decode_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash]), decoder
+    with patch_decoder_reload_data():
+        result = decoder.decode_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])
+    return result, decoder
