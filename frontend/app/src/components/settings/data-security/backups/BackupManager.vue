@@ -38,13 +38,11 @@ const setupBackupInfo = () => {
     const { filepath } = info.userdb.info;
 
     let index = filepath.lastIndexOf('/');
-    let separatorLength = 1;
     if (index === -1) {
       index = filepath.lastIndexOf('\\');
-      separatorLength = 2;
     }
 
-    return filepath.slice(0, Math.max(0, index + separatorLength));
+    return filepath.slice(0, index + 1);
   });
 
   const userDb = computed(() => {

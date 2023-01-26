@@ -10,6 +10,7 @@ Changelog
 * :feature:`1793` The PnL report can now be generated with the average cost basis accounting method.
 * :feature:`5148` Users will now see tokens detected for accounts having a DSProxy
 * :bug:`4332` Price oracles are now temporarily penalized after repeated failures.
+* :bug:`5402` Fix issue where the wrong filepath is used when deleting user DB backup in Windows.
 * :bug:`-` Fixed an edge case where users would be swamped with "This socket is already used by another greenlet" errors during websocket communication between backend and frontend.
 * :bug:`-` Transfers of ether between tracked accounts will now have a correct label in the UI.
 * :bug:`-` Trades involving delisted bitfinex pairs will now be properly read by rotki.
