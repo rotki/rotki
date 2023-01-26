@@ -332,8 +332,9 @@ export const useDefiSupportedProtocolsStore = defineStore(
                 ) === index
             )
             .forEach(({ address, asset }) => {
+              const symbol = get(assetInfo(asset))?.symbol ?? asset;
               loans.push({
-                identifier: `${asset} - ${truncateAddress(address, 6)}`,
+                identifier: `${symbol} - ${truncateAddress(address, 6)}`,
                 protocol: DefiProtocol.COMPOUND,
                 owner: address,
                 asset
