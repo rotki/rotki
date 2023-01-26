@@ -30,7 +30,10 @@ export const uniqueObjects = <T>(
  * or empty array properties.
  * @param object any object
  */
-export const nonNullProperties = <T extends object>(object: T): Partial<T> => {
+export const nonEmptyProperties = <T extends object>(
+  object: T,
+  removeEmptyString = false
+): Partial<T> => {
   const partial: Partial<T> = {};
   const keys = Object.keys(object);
   if (object instanceof BigNumber) {
@@ -39,6 +42,9 @@ export const nonNullProperties = <T extends object>(object: T): Partial<T> => {
   for (const obKey of keys) {
     const key = obKey as keyof T;
     const val = object[key];
+    if (removeEmptyString && val === '') {
+      continue;
+    }
     if (val === null) {
       continue;
     }
@@ -48,12 +54,12 @@ export const nonNullProperties = <T extends object>(object: T): Partial<T> => {
       }
       partial[key] = val.map(v => {
         if (typeof v === 'object') {
-          return nonNullProperties(v);
+          return nonEmptyProperties(v);
         }
         return v;
       }) as T[keyof T];
     } else if (typeof val === 'object') {
-      partial[key] = nonNullProperties(val) as T[keyof T];
+      partial[key] = nonEmptyProperties(val) as T[keyof T];
     } else {
       partial[key] = val;
     }

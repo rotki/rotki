@@ -14,7 +14,7 @@ import {
   Exchanges,
   type SupportedExchange
 } from '@/types/exchanges';
-import { nonNullProperties } from '@/utils/data';
+import { nonEmptyProperties } from '@/utils/data';
 
 export const useExchangeApi = () => {
   const queryRemoveExchange = async ({
@@ -62,7 +62,7 @@ export const useExchangeApi = () => {
     if (!edit) {
       response = await api.instance.put<ActionResult<boolean>>(
         '/exchanges',
-        axiosSnakeCaseTransformer(nonNullProperties(payload)),
+        axiosSnakeCaseTransformer(nonEmptyProperties(payload)),
         {
           validateStatus: validStatus
         }
@@ -70,7 +70,7 @@ export const useExchangeApi = () => {
     } else {
       response = await api.instance.patch<ActionResult<boolean>>(
         '/exchanges',
-        axiosSnakeCaseTransformer(nonNullProperties(payload)),
+        axiosSnakeCaseTransformer(nonEmptyProperties(payload)),
         {
           validateStatus: validStatus
         }

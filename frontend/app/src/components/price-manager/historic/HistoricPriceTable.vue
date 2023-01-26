@@ -8,7 +8,6 @@ import {
   type ManualPricePayload
 } from '@/services/assets/types';
 import { useNotificationsStore } from '@/store/notifications';
-import { nonNullProperties } from '@/utils/data';
 import { useAssetPricesApi } from '@/services/assets/prices';
 import { useConfirmStore } from '@/store/confirm';
 
@@ -109,15 +108,19 @@ const refresh = async () => {
   await fetchPrices(get(filter));
 };
 
-watch(filter, async payload => {
-  await fetchPrices(nonNullProperties(payload));
-});
+watch(
+  filter,
+  async () => {
+    await refresh();
+  },
+  { deep: true }
+);
 
 watch(refreshing, async refreshing => {
   if (!refreshing) {
     return;
   }
-  await fetchPrices();
+  await refresh();
   emit('refreshed');
 });
 
