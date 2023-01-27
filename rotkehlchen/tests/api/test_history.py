@@ -34,7 +34,8 @@ from rotkehlchen.tests.utils.history import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
-from rotkehlchen.types import AssetAmount, Fee, Location, Price, TradeType
+from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TradeType
+from rotkehlchen.utils.misc import ts_now
 
 
 @pytest.mark.parametrize(
@@ -315,6 +316,26 @@ def test_query_pnl_report_events_pagination_filtering(
             assert x['timestamp'] <= events[idx + 1]['timestamp']
         else:
             assert x['timestamp'] >= events[idx + 1]['timestamp']
+
+
+@pytest.mark.parametrize('ethereum_accounts', [])
+def test_history_debug_export(rotkehlchen_api_server):
+    """Check that the format of the data exported matches the expected type."""
+    expected_keys = ('events', 'settings', 'ignored_events_ids', 'pnl_settings')
+    now = ts_now()
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyprocessingdebugresource',
+        ),
+        json={
+            'from_timestamp': Timestamp(0),
+            'to_timestamp': now,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert result.keys() == expected_keys
+    assert result['pnl_settings'] == {'from_timestamp': Timestamp(0), 'to_timestamp': now}
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
