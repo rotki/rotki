@@ -1,52 +1,46 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { type ComputedRef, type PropType, type Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useSessionStore } from '@/store/session';
 import { type SyncConflict } from '@/store/session/types';
-import { type LoginCredentials, type SyncApproval } from '@/types/login';
+import {
+  type CurrentDbUpgradeProgress,
+  type LoginCredentials,
+  type SyncApproval
+} from '@/types/login';
 import { type LoginStatusData } from '@/types/websocket-messages';
 import {
   deleteBackendUrl,
   getBackendUrl,
   saveBackendUrl
 } from '@/utils/account-management';
-
-interface Progress {
-  percentage: number;
-  currentStep: number;
-  totalSteps: number;
-  currentVersion: number;
-  fromVersion: number;
-  toVersion: number;
-}
+import DbUpgradeProgress from '@/components/account-management/DbUpgradeProgress.vue';
 
 const KEY_REMEMBER_USERNAME = 'rotki.remember_username';
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
 const KEY_USERNAME = 'rotki.username';
 
-const props = defineProps({
-  loading: { required: true, type: Boolean },
-  syncConflict: { required: true, type: Object as PropType<SyncConflict> },
-  errors: {
-    required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
-  },
-  loginStatus: {
-    required: false,
-    type: Object as PropType<LoginStatusData | null>,
-    default: null
+const props = withDefaults(
+  defineProps<{
+    loading: boolean;
+    syncConflict: SyncConflict;
+    errors?: string[];
+    loginStatus?: LoginStatusData | null;
+  }>(),
+  {
+    errors: () => [],
+    loginStatus: null
   }
-});
+);
 
-const emit = defineEmits([
-  'backend-changed',
-  'login',
-  'new-account',
-  'touched'
-]);
+const emit = defineEmits<{
+  (e: 'touched'): void;
+  (e: 'new-account'): void;
+  (e: 'login', credentials: LoginCredentials): void;
+  (e: 'backend-changed', url: string | null): void;
+}>();
 
 const { syncConflict, errors, loginStatus } = toRefs(props);
 
@@ -73,23 +67,26 @@ const savedRememberUsername = useLocalStorage(KEY_REMEMBER_USERNAME, null);
 const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
 const savedUsername = useLocalStorage(KEY_USERNAME, '');
 
-const primaryProgress: ComputedRef<Progress | null> = computed(() => {
-  const status = get(loginStatus);
-  if (!status) {
-    return null;
+const primaryProgress: ComputedRef<CurrentDbUpgradeProgress | null> = computed(
+  () => {
+    const status = get(loginStatus);
+    if (!status) {
+      return null;
+    }
+    const { currentStep, fromDbVersion, totalSteps } = status.currentUpgrade;
+    const current = fromDbVersion - status.startDbVersion + 1;
+    const total = status.targetDbVersion - status.startDbVersion;
+    return {
+      percentage: (currentStep / totalSteps) * 100,
+      totalPercentage: (current / total) * 100,
+      currentVersion: fromDbVersion + 1,
+      fromVersion: status.startDbVersion,
+      toVersion: status.targetDbVersion,
+      currentStep: totalSteps > 0 ? currentStep : 1,
+      totalSteps: totalSteps > 0 ? totalSteps : 1
+    };
   }
-  const { currentStep, fromDbVersion, totalSteps } = status.currentUpgrade;
-  const current = fromDbVersion - status.startDbVersion + 1;
-  const total = status.targetDbVersion - status.startDbVersion;
-  return {
-    percentage: (current / total) * 100,
-    currentVersion: fromDbVersion,
-    fromVersion: status.startDbVersion,
-    toVersion: status.targetDbVersion,
-    currentStep: totalSteps > 0 ? currentStep : 1,
-    totalSteps: totalSteps > 0 ? totalSteps : 1
-  };
-});
+);
 
 const { tc } = useI18n();
 
@@ -509,28 +506,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
         </v-form>
       </v-card-text>
       <v-card-actions class="login__actions d-block">
-        <v-alert v-if="primaryProgress" type="warning" text>
-          <template #prepend>
-            <div class="mr-4">
-              <v-progress-circular
-                rounded
-                :value="primaryProgress.percentage"
-                size="40"
-                width="3"
-                color="warning"
-              />
-            </div>
-          </template>
-          <div>
-            <div>
-              {{ tc('login.upgrading_db.warning', 0, primaryProgress) }}
-            </div>
-            <v-divider class="my-2" />
-            <div>
-              {{ tc('login.upgrading_db.current', 0, primaryProgress) }}
-            </div>
-          </div>
-        </v-alert>
+        <db-upgrade-progress :progress="primaryProgress" />
         <span>
           <v-btn
             class="login__button__sign-in"
