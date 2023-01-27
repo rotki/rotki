@@ -5,7 +5,7 @@ from web3 import Web3
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.constants import AMM_ASSETS_SYMBOLS
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -19,7 +19,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction, EVMTxHash
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -60,6 +60,7 @@ def decode_uniswap_v2_like_swap(
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         evm_inquirer=ethereum_inquirer,
+        seen=TokenSeenAt(tx_hash=transaction.tx_hash),
     )
 
     if pool_token.symbol in exclude_amms.values():
@@ -157,6 +158,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
         ethereum_inquirer: 'EthereumInquirer',
         factory_address: ChecksumEvmAddress,
         init_code_hash: str,
+        tx_hash: EVMTxHash,
 ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
     """
     This is a common logic for Uniswap V2 like AMMs e.g Sushiswap.
@@ -194,6 +196,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 chain_id=ChainID.ETHEREUM,
                 token_kind=EvmTokenKind.ERC20,
                 evm_inquirer=ethereum_inquirer,
+                seen=TokenSeenAt(tx_hash=tx_hash),
             )
             token0 = resolved_eth if token0 == A_WETH else token0
         elif other_log.topics[0] == ERC20_OR_ERC721_TRANSFER and hex_or_bytes_to_int(other_log.data[:32]) == amount1_raw:  # noqa: E501
@@ -203,6 +206,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 chain_id=ChainID.ETHEREUM,
                 token_kind=EvmTokenKind.ERC20,
                 evm_inquirer=ethereum_inquirer,
+                seen=TokenSeenAt(tx_hash=tx_hash),
             )
             token1 = resolved_eth if token1 == A_WETH else token1
 

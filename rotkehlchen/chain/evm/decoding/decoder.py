@@ -12,7 +12,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
@@ -664,6 +664,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     chain_id=self.evm_inquirer.chain_id,
                     token_kind=token_kind,
                     evm_inquirer=self.evm_inquirer,
+                    seen=TokenSeenAt(tx_hash=transaction.tx_hash),
                 )
             except NotERC20Conformant:
                 return None, []  # ignore non-ERC20 transfers for now

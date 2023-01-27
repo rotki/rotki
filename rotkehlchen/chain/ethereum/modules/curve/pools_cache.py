@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional
 from eth_utils import to_checksum_address
 
 from rotkehlchen.assets.asset import UnderlyingToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -68,6 +68,7 @@ def ensure_curve_tokens_existence(
             chain_id=ChainID.ETHEREUM,
             evm_inquirer=ethereum_inquirer,
             protocol=CURVE_POOL_PROTOCOL,
+            seen=TokenSeenAt(description='Querying curve pools'),
         )
 
         # Ensure pool coins exist in the globaldb.
@@ -84,6 +85,7 @@ def ensure_curve_tokens_existence(
                     evm_address=token_address,
                     chain_id=ChainID.ETHEREUM,
                     evm_inquirer=ethereum_inquirer,
+                    seen=TokenSeenAt(description='Querying curve pools'),
                 )
         else:
             # Otherwise, coins and underlying coins lists represent a
@@ -97,6 +99,7 @@ def ensure_curve_tokens_existence(
                     evm_address=underlying_token_address,
                     chain_id=ChainID.ETHEREUM,
                     evm_inquirer=ethereum_inquirer,
+                    seen=TokenSeenAt(description='Querying curve pools'),
                 )
                 # and ensure token exists
                 get_or_create_evm_token(
@@ -109,6 +112,7 @@ def ensure_curve_tokens_existence(
                         token_kind=EvmTokenKind.ERC20,
                         weight=ONE,
                     )],
+                    seen=TokenSeenAt(description='Querying curve pools'),
                 )
 
 

@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, UnderlyingToken
@@ -12,7 +12,7 @@ from rotkehlchen.errors.misc import NotERC20Conformant
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EVMTxHash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -115,6 +115,11 @@ def _edit_token_and_clean_cache(
         GlobalDBHandler().edit_evm_token(ethereum_token)
 
 
+class TokenSeenAt(NamedTuple):
+    tx_hash: Optional[EVMTxHash] = None
+    description: Optional[str] = None
+
+
 def get_or_create_evm_token(
         userdb: 'DBHandler',
         evm_address: ChecksumEvmAddress,
@@ -126,6 +131,7 @@ def get_or_create_evm_token(
         protocol: Optional[str] = None,
         underlying_tokens: Optional[list[UnderlyingToken]] = None,
         evm_inquirer: Optional['EvmNodeInquirer'] = None,
+        seen: Optional[TokenSeenAt] = None,
 ) -> EvmToken:
     """Given a token address return the <EvmToken>
 
@@ -133,6 +139,9 @@ def get_or_create_evm_token(
 
     If an ethereum_manager instance is passed then in the case that the token is not
     in the global DB it will be added and an attempt to get metadata will be made.
+
+    Optionally the caller can provide a transaction hash of where the token was seen.
+    This is used in the websocket message to provide information to the frontend.
 
     Note: if the token already exists but the other arguments don't match the
     existing token will still be silently returned
@@ -202,9 +211,16 @@ def get_or_create_evm_token(
                 # newly queried data
                 GlobalDBHandler().edit_evm_token(ethereum_token)
             else:
-                userdb.msg_aggregator.add_message(  # inform frontend new token detected
+                # inform frontend new token detected
+                data = {'token_identifier': identifier}
+                if seen is not None:
+                    if seen.tx_hash is not None:
+                        data['seen_tx_hash'] = '0x' + seen.tx_hash.hex()
+                    else:  # description should have been given
+                        data['seen_description'] = seen.description  # type: ignore
+                userdb.msg_aggregator.add_message(
                     message_type=WSMessageType.NEW_EVM_TOKEN_DETECTED,
-                    data={'token_identifier': identifier},
+                    data=data,
                 )
                 # This can but should not raise InputError since it should not already exist.
                 add_ethereum_token_to_db(token_data=ethereum_token)
