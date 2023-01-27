@@ -12,8 +12,23 @@ rotki is an open source portfolio tracking, analytics, accounting, and tax repor
 [![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/rotki/rotki/badge)](https://www.gitpoap.io/gh/rotki/rotki)
 [![Github All Releases](https://img.shields.io/github/downloads/rotki/rotki/total.svg)](https://GitHub.com/rotki/rotki/releases/)
 
-[![Twitter Follow](https://img.shields.io/twitter/follow/rotkiapp.svg?style=social)](https://twitter.com/rotkiapp)
+[![Twitter Follow](https://img.shields.io/badge/follow-%40rotkiapp-1DA1F2?logo=twitter&style=social)](https://twitter.com/rotkiapp)
 [![Discord](https://img.shields.io/discord/657906918408585217.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/aGCxHG7)
+
+## Features at a glance
+
+:balance_scale: Shows overview of your balances across multiple platforms, blockchain, exchanges and protocols.
+
+:chart_with_upwards_trend: Graphs analyzing your historical activity and showing insights into your portfolio.
+
+:microscope: Decoding EVM (Ethereum, Optimism and more) transactions in human readable format and displaying them.
+
+:card_index_dividers: Pull, store and analyze history from activities of all supported platforms. Ability to browse and filter through all of them.
+
+:toolbox: Higly customizable. UI look, main currency, language, accounting settings, editing balances, editing history. rotki is made with customization in mind.
+
+:receipt: Perform accounting analysis for PnL over any period of time using customized accounting settings over all recorded activities and generate PnL report.
+
 
 ## Documentation
 
@@ -53,11 +68,11 @@ If you are interested to work in the project full-time or part-time we are alway
 
 #### Purchase a premium subscription
 
-The best way to contribute financially and all the while help with the development of the project is to [purchase](https://rotki.com/products/) a premium subscription. We accept both crypto and fiat currencies!
+The best way to contribute financially and all the while help with the development of the project is to [purchase](https://rotki.com/products/) a premium subscription. We accept credit cards, paypal and crypto.
 
 #### GitHub sponsor
 
-You can [sponsor us through GitHub](https://github.com/sponsors/rotki/), and get some nice badges in return.
+You can [sponsor us through GitHub](https://github.com/sponsors/rotki/), and get recongition as a sponsor in your Github profile.
 
 #### Donations
 
@@ -65,7 +80,3 @@ For people who don't want to purchase a subscription but would still like to sup
 
 - Send **BTC donations** to: 1PfvkW8MC7Ns2y8zn6CE2P2t5f19KF8XiW
 - Send **ETH donations** to: `rotki.eth` (0x9531c059098e3d194ff87febb587ab07b30b1306)
-
-#### Gitcoin Grant
-
-You can also support us via a [Gitcoin grant](https://gitcoin.co/grants/149/rotki), and receive kudos and other NFTs in the Gitcoin platform.
