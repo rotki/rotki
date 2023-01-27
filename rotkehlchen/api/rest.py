@@ -1788,7 +1788,7 @@ class RestAPI():
             'events': [entry.serialize_for_debug_import() for entry in events],
             'settings': settings.serialize(),
             'ignored_events_ids': {k.serialize(): v for k, v in ignored_ids.items()},
-            'pnl_setting': {
+            'pnl_settings': {
                 'from_timestamp': int(from_timestamp),
                 'to_timestamp': int(to_timestamp),
             },
