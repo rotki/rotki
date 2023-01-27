@@ -31,7 +31,7 @@ const headers = computed<DataTableHeader[]>(() => [
     width: '200'
   },
   {
-    text: tc('tag_manager.headers.description'),
+    text: tc('common.description'),
     value: 'description'
   },
   {

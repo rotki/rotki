@@ -64,7 +64,7 @@ const headers: DataTableHeader[] = [
     sortable: false
   },
   {
-    text: tc('transactions.events.headers.description'),
+    text: tc('common.description'),
     value: 'description',
     sortable: false,
     cellClass: css['row__description']

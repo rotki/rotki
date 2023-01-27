@@ -1299,6 +1299,7 @@
     "category": "Category",
     "datetime": "Date/Time",
     "deposits": "Deposits",
+    "description": "Description",
     "details": "Details",
     "event": "Event",
     "events": "Events",
@@ -3583,7 +3584,6 @@
   "tag_creator": {
     "labels": {
       "background": "Background",
-      "description": "Description",
       "foreground": "Foreground"
     },
     "refresh_tooltip": "Creates a random color combination",
@@ -3600,8 +3600,7 @@
       "title": "Confirm tag deletion"
     },
     "headers": {
-      "actions": "Actions",
-      "description": "Description"
+      "actions": "Actions"
     },
     "my_tags": "My Tags",
     "subtitle": "Create new tags or modify existing",
@@ -3734,9 +3733,6 @@
         "transaction_event_type": {
           "label": "Transaction Event Type"
         }
-      },
-      "headers": {
-        "description": "Description"
       },
       "history_event_subtype": {
         "airdrop": "Airdrop",

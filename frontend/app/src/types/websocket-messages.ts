@@ -61,7 +61,9 @@ export const MigratedAddresses = z.array(EvmChainAddress);
 export type MigratedAddresses = z.infer<typeof MigratedAddresses>;
 
 export const NewDetectedToken = z.object({
-  tokenIdentifier: z.string()
+  tokenIdentifier: z.string(),
+  seenTxHash: z.string().nullish(),
+  seenDescription: z.string().nullish()
 });
 
 export type NewDetectedToken = z.infer<typeof NewDetectedToken>;

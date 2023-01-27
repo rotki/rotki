@@ -107,7 +107,7 @@ const randomize = () => {
               outlined
               class="tag_creator__description"
               :value="tag.description"
-              :label="t('tag_creator.labels.description')"
+              :label="t('common.description')"
               @input="changed({ description: $event })"
             />
           </v-col>

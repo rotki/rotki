@@ -1016,11 +1016,12 @@
       "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts"
     },
     "newly_detected": {
+      "accept_selected": "Accept selected tokens",
       "ignore_selected": "Ignore selected tokens",
-      "remove_from_list": "Remove selected tokens from list",
       "select_deselect_all_tokens": "Select/deselect all tokens",
-      "subtitle": "Clear the list of newly detected tokens, or set them ignored if you think they are spam assets",
-      "title": "Newly detected tokens"
+      "subtitle": "Inspect the list of newly detected tokens and add any spam assets to the ignored tokens list",
+      "title": "Newly detected tokens",
+      "tx_origin": "Tx origin"
     },
     "notes": "Notes",
     "only_show_ignored": "Only show ignored assets",
@@ -1288,6 +1289,7 @@
   "common": {
     "account": "Account",
     "actions": {
+      "accept": "Accept",
       "back": "Back",
       "cancel": "Cancel",
       "clear_selection": "Clear Selection",
@@ -1327,6 +1329,7 @@
     "category": "Category",
     "datetime": "Date/Time",
     "deposits": "Deposits",
+    "description": "Description",
     "details": "Details",
     "event": "Event",
     "events": "Events",
@@ -3673,7 +3676,6 @@
   "tag_creator": {
     "labels": {
       "background": "Background",
-      "description": "Description",
       "foreground": "Foreground"
     },
     "refresh_tooltip": "Creates a random color combination",
@@ -3690,8 +3692,7 @@
       "title": "Confirm tag deletion"
     },
     "headers": {
-      "actions": "Actions",
-      "description": "Description"
+      "actions": "Actions"
     },
     "my_tags": "My Tags",
     "subtitle": "Create new tags or modify existing",
@@ -3824,9 +3825,6 @@
         "transaction_event_type": {
           "label": "Transaction Event Type"
         }
-      },
-      "headers": {
-        "description": "Description"
       },
       "history_event_subtype": {
         "airdrop": "Airdrop",
