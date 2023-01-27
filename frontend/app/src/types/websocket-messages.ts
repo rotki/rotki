@@ -79,6 +79,11 @@ export const SocketMessageType = {
 export type SocketMessageType =
   typeof SocketMessageType[keyof typeof SocketMessageType];
 
+const UnknownWebsocketMessage = z.object({
+  type: z.string(),
+  data: z.any()
+});
+
 const LegacyWebsocketMessage = z.object({
   type: z.literal(SocketMessageType.LEGACY),
   data: LegacyMessageData
@@ -114,9 +119,10 @@ const NewEvmTokenDetectedMessage = z.object({
   data: NewDetectedToken
 });
 
-export const WebsocketMessage = LegacyWebsocketMessage.or(
-  BalancesSnapshotErrorMessage
+export const WebsocketMessage = UnknownWebsocketMessage.or(
+  LegacyWebsocketMessage
 )
+  .or(BalancesSnapshotErrorMessage)
   .or(EvmTransactionStatusMessage)
   .or(PremiumStatusUpdateMessage)
   .or(LoginStatusMessage)

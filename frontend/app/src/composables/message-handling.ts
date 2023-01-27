@@ -191,7 +191,7 @@ export const useMessageHandling = () => {
     } else if (type === SocketMessageType.NEW_EVM_TOKEN_DETECTED) {
       notifications.push(handleNewTokenDetectedMessage(message.data));
     } else {
-      logger.warn(`Unsupported socket message received: ${data}`);
+      logger.warn(`Unsupported socket message received: '${type}'`);
     }
 
     notifications.forEach(notify);
