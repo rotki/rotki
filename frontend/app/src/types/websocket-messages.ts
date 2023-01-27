@@ -60,13 +60,20 @@ export const MigratedAddresses = z.array(EvmChainAddress);
 
 export type MigratedAddresses = z.infer<typeof MigratedAddresses>;
 
+export const NewDetectedToken = z.object({
+  tokenIdentifier: z.string()
+});
+
+export type NewDetectedToken = z.infer<typeof NewDetectedToken>;
+
 export const SocketMessageType = {
   LEGACY: 'legacy',
   BALANCES_SNAPSHOT_ERROR: 'balance_snapshot_error',
   EVM_TRANSACTION_STATUS: 'evm_transaction_status',
   PREMIUM_STATUS_UPDATE: 'premium_status_update',
   LOGIN_STATUS: 'login_status',
-  EVM_ADDRESS_MIGRATION: 'evm_address_migration'
+  EVM_ADDRESS_MIGRATION: 'evm_address_migration',
+  NEW_EVM_TOKEN_DETECTED: 'new_evm_token_detected'
 } as const;
 
 export type SocketMessageType =
@@ -102,12 +109,18 @@ const MigratedAccountsMessage = z.object({
   data: MigratedAddresses
 });
 
+const NewEvmTokenDetectedMessage = z.object({
+  type: z.literal(SocketMessageType.NEW_EVM_TOKEN_DETECTED),
+  data: NewDetectedToken
+});
+
 export const WebsocketMessage = LegacyWebsocketMessage.or(
   BalancesSnapshotErrorMessage
 )
   .or(EvmTransactionStatusMessage)
   .or(PremiumStatusUpdateMessage)
   .or(LoginStatusMessage)
-  .or(MigratedAccountsMessage);
+  .or(MigratedAccountsMessage)
+  .or(NewEvmTokenDetectedMessage);
 
 export type WebsocketMessage = z.infer<typeof WebsocketMessage>;

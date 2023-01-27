@@ -53,6 +53,11 @@ const copy = async () => {
 };
 
 const { fontStyle } = useTheme();
+
+const action = async (notification: NotificationData) => {
+  const action = notification.action?.action;
+  action?.();
+};
 </script>
 
 <template>
@@ -67,9 +72,20 @@ const { fontStyle } = useTheme();
         <v-list-item-title class="mt-2">
           {{ notification.title }}
         </v-list-item-title>
-        <span class="mt-1" :style="fontStyle" :class="$style.message">
-          {{ notification.message }}
-        </span>
+        <div class="mt-1" :style="fontStyle" :class="$style.message">
+          <div>{{ notification.message }}</div>
+
+          <v-btn
+            v-if="notification.action"
+            depressed
+            color="primary"
+            small
+            class="mt-2"
+            @click="action(notification)"
+          >
+            {{ notification.action.label }}
+          </v-btn>
+        </div>
         <span class="text-caption text--secondary">
           {{ date }}
         </span>

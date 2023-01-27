@@ -61,7 +61,7 @@ export const useSnapshotApi = () => {
     return api.instance.get<any>(`/snapshots/${timestamp}`, {
       params: axiosSnakeCaseTransformer({ action: 'download' }),
       validateStatus: validWithoutSessionStatus,
-      responseType: 'arraybuffer'
+      responseType: 'blob'
     });
   };
 

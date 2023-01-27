@@ -73,7 +73,11 @@ const calculateFontSize = (symbol: string) => {
     >
       <template #activator="{ on }">
         <menu-tooltip-button
-          :tooltip="tc('currency_drop_down.profit_currency')"
+          :tooltip="
+            tc('currency_drop_down.profit_currency', 0, {
+              currency: currency.tickerSymbol
+            })
+          "
           class-name="secondary--text text--lighten-4"
           :on-menu="on"
         >

@@ -40,3 +40,13 @@ export interface UnlockPayload {
   username: string;
   fetchData?: boolean;
 }
+
+export interface CurrentDbUpgradeProgress {
+  percentage: number;
+  totalPercentage: number;
+  currentStep: number;
+  totalSteps: number;
+  currentVersion: number;
+  fromVersion: number;
+  toVersion: number;
+}

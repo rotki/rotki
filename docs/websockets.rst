@@ -122,5 +122,5 @@ While we are processing EVM transactions new tokens may be detected and added to
 
     {
         "type": "new_evm_token_detected",
-        "data": [{"token_identifier": "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C"}]
+        "data": {"token_identifier": "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C"}
     }

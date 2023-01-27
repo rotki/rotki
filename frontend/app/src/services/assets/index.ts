@@ -11,6 +11,7 @@ import { type ConflictResolution } from '@/services/assets/types';
 import { type ActionStatus } from '@/store/types';
 import { assert } from '@/utils/assertions';
 import { api } from '@/services/rotkehlchen-api';
+import { downloadFileByUrl } from '@/utils/download';
 
 export const useAssetsApi = () => {
   const checkForAssetUpdate = async (): Promise<PendingTask> => {
@@ -117,14 +118,8 @@ export const useAssetsApi = () => {
           }
         );
         if (response.status === 200) {
-          const url = window.URL.createObjectURL(response.data);
-          const link = document.createElement('a');
-          link.id = 'custom-assets-link';
-          link.href = url;
-          link.setAttribute('download', 'assets.zip');
-          document.body.append(link);
-          link.click();
-          link.remove();
+          const url = window.URL.createObjectURL(response.request.response);
+          downloadFileByUrl(url, 'assets.zip');
           return { success: true };
         }
         const body = await (response.data as Blob).text();
