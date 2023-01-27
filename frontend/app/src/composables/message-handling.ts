@@ -142,7 +142,7 @@ export const useMessageHandling = () => {
       ({ group }) => group === NotificationGroup.NEW_DETECTED_TOKENS
     );
 
-    addNewDetectedToken(data.tokenIdentifier);
+    addNewDetectedToken(data);
 
     const count = (notification?.groupCount || 0) + 1;
 

@@ -1,22 +1,33 @@
 <script setup lang="ts">
 import { type DataTableHeader } from 'vuetify';
 import { type ComputedRef, type Ref } from 'vue';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
 import { type NewDetectedToken } from '@/types/websocket-messages';
 import { useMessageStore } from '@/store/message';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { uniqueStrings } from '@/utils/data';
 import { getAddressFromEvmIdentifier } from '@/utils/assets';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
 
 const { tc } = useI18n();
 
 const { tokens, removeNewDetectedTokens } = useNewlyDetectedTokens();
+const { cache } = storeToRefs(useAssetCacheStore());
+
+const { getChain } = useSupportedChains();
 
 const mappedTokens: ComputedRef<NewDetectedToken[]> = computed(() => {
-  return get(tokens).map(tokenIdentifier => ({
-    tokenIdentifier,
-    address: getAddressFromEvmIdentifier(tokenIdentifier)
-  }));
+  return get(tokens).map(data => {
+    const evmChain = get(cache)[data.tokenIdentifier]?.evmChain;
+
+    return {
+      ...data,
+      address: getAddressFromEvmIdentifier(data.tokenIdentifier),
+      evmChain: evmChain ? getChain(evmChain) : Blockchain.ETH
+    };
+  });
 });
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
@@ -27,6 +38,23 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   {
     text: tc('common.address'),
     value: 'address'
+  },
+  {
+    text: `${tc('common.description')}/${tc(
+      'asset_table.newly_detected.tx_origin'
+    )}`,
+    value: 'description'
+  },
+  {
+    text: tc('common.actions.accept'),
+    value: 'accept',
+    sortable: false,
+    width: 0
+  },
+  {
+    text: tc('ignore_buttons.ignore'),
+    value: 'ignore',
+    sortable: false
   }
 ]);
 
@@ -43,9 +71,9 @@ const selectDeselectAllTokens = () => {
   }
 };
 
-const removeTokens = () => {
+const removeTokens = (identifiers?: string[]) => {
   removeNewDetectedTokens(
-    get(selected).map(({ tokenIdentifier }) => tokenIdentifier)
+    identifiers || get(selected).map(({ tokenIdentifier }) => tokenIdentifier)
   );
 
   set(selected, []);
@@ -54,13 +82,15 @@ const removeTokens = () => {
 const { setMessage } = useMessageStore();
 const { isAssetIgnored, ignoreAsset } = useIgnoredAssetsStore();
 
-const ignoreTokens = async () => {
-  const ids = get(selected)
-    .filter(item => {
-      return !get(isAssetIgnored(item.tokenIdentifier));
-    })
-    .map(({ tokenIdentifier }) => tokenIdentifier)
-    .filter(uniqueStrings);
+const ignoreTokens = async (identifiers?: string[]) => {
+  const ids =
+    identifiers ||
+    get(selected)
+      .filter(item => {
+        return !get(isAssetIgnored(item.tokenIdentifier));
+      })
+      .map(({ tokenIdentifier }) => tokenIdentifier)
+      .filter(uniqueStrings);
 
   if (ids.length === 0) {
     setMessage({
@@ -74,7 +104,7 @@ const ignoreTokens = async () => {
   const status = await ignoreAsset(ids);
 
   if (status.success) {
-    removeTokens();
+    removeTokens(ids);
   }
 };
 </script>
@@ -116,16 +146,16 @@ const ignoreTokens = async () => {
             <v-btn
               fab
               outlined
-              color="primary"
+              color="green"
               class="mr-4"
               :disabled="selected.length === 0"
-              @click="removeTokens"
+              @click="() => removeTokens()"
               v-on="on"
             >
-              <v-icon> mdi-playlist-remove </v-icon>
+              <v-icon> mdi-check </v-icon>
             </v-btn>
           </template>
-          <span>{{ tc('asset_table.newly_detected.remove_from_list') }}</span>
+          <span>{{ tc('asset_table.newly_detected.accept_selected') }}</span>
         </v-tooltip>
 
         <v-tooltip bottom>
@@ -135,7 +165,7 @@ const ignoreTokens = async () => {
               fab
               outlined
               :disabled="selected.length === 0"
-              @click="ignoreTokens"
+              @click="() => ignoreTokens()"
               v-on="on"
             >
               <v-icon>mdi-eye-off</v-icon>
@@ -160,7 +190,29 @@ const ignoreTokens = async () => {
       </template>
 
       <template #item.address="{ item }">
-        <hash-link :text="item.address" no-link />
+        <hash-link :text="item.address" :chain="item.evmChain" />
+      </template>
+
+      <template #item.description="{ item }">
+        <div v-if="item.seenDescription">
+          {{ item.seenDescription }}
+        </div>
+
+        <div v-if="item.seenTxHash">
+          <hash-link tx :text="item.seenTxHash" :chain="item.evmChain" />
+        </div>
+      </template>
+
+      <template #item.accept="{ item }">
+        <v-btn icon color="green" @click="removeTokens([item.tokenIdentifier])">
+          <v-icon> mdi-check </v-icon>
+        </v-btn>
+      </template>
+
+      <template #item.ignore="{ item }">
+        <v-btn icon color="red" @click="ignoreTokens([item.tokenIdentifier])">
+          <v-icon> mdi-eye-off </v-icon>
+        </v-btn>
       </template>
     </data-table>
   </card>
