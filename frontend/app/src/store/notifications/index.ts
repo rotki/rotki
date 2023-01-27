@@ -4,6 +4,8 @@ import {
   type NotificationPayload,
   Severity
 } from '@rotki/common/lib/messages';
+import { useSessionStorage } from '@vueuse/core';
+import { type Ref } from 'vue';
 import { useSessionApi } from '@/services/session';
 import { backoff } from '@/utils/backoff';
 import { uniqueStrings } from '@/utils/data';
@@ -51,6 +53,10 @@ export const useNotificationsStore = defineStore('notifications', () => {
   const { tc } = useI18n();
   const { consumeMessages } = useSessionApi();
   const { handlePollingMessage } = useMessageHandling();
+  const lastDisplay: Ref<Record<string, number>> = useSessionStorage(
+    'rotki.notification.last_display',
+    {}
+  );
   let isRunning = false;
 
   const count = computed(() => get(data).length);
@@ -101,22 +107,41 @@ export const useNotificationsStore = defineStore('notifications', () => {
       : -1;
 
     if (notificationIndex === -1) {
-      update([
-        createNotification(
-          get(nextId),
-          Object.assign(notificationDefaults(), newData)
-        )
-      ]);
+      const notification = createNotification(
+        get(nextId),
+        Object.assign(notificationDefaults(), newData)
+      );
+      update([notification]);
+      if (groupToFind && notification.display) {
+        set(lastDisplay, {
+          ...get(lastDisplay),
+          [groupToFind]: notification.date.getTime()
+        });
+      }
     } else {
       const notification = dataList[notificationIndex];
-      const newNotification = {
+      let date = new Date();
+      let display = newData.display ?? false;
+
+      const currentTime = date.getTime();
+      const group = groupToFind ?? '';
+      const lastTime = get(lastDisplay)[group] ?? 0;
+
+      if (currentTime - lastTime < 60_000) {
+        date = notification.date;
+        display = false;
+      } else {
+        set(lastDisplay, { ...get(lastDisplay), [group]: currentTime });
+      }
+      const newNotification: NotificationData = {
         ...notification,
-        date: new Date(),
+        date,
         title: newData.title,
         message: newData.message,
         groupCount: newData.groupCount,
-        display: newData.display ?? false
+        display
       };
+
       dataList.splice(notificationIndex, 1);
       dataList.unshift(newNotification);
       set(data, dataList);
