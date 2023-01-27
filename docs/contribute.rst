@@ -423,9 +423,54 @@ There is a nice way to run tests by disallowing network calls. This can help us 
 You can add ``--disable-socket`` to any pytest call and it will fail immediately for any network calls. You will probably need to also add ``--allow-hosts=127.0.0.1`` if the tests makes local network calls to the rotki api. This way you can discover all network calls and mock them.
 
 Mocking should happen with one of the following ways
-1. Using common fixtures for data mocking as started and shown `here <https://github.com/rotki/rotki/pull/5269`__. Read the PR description to get an idea.
+1. Using common fixtures for data mocking as started and shown `here <https://github.com/rotki/rotki/pull/5269`__ . Read the PR description to get an idea.
 2. Using test specific mocking.
 3. For repeatable calls that would always return the same response from the network use the vcr.py approach.
+
+From 1.27.0 we have introduced VCR to mock network queries in some tests trying to improve the speed of the test suite. VCR works by generating a `yaml` file that records information about all the requests made. Then for every request that happens in the test VCR tries to match it to one of the recorded ones. We already have some pre-recorded cassettes (the name used by VCR for those yaml files) and they are available at `github <https://github.com/rotki/test-caching>`__.
+In a fresh run this repo will be cloned and then the cassettes will be replayed. This happens in the path set by the ``vcr_cassette_dir`` fixture that also sets the directory where the cassettes are located.
+
+Locally cassettes are only read and never written to prevent unexpected behaviour during testing. To record a new test we provide a make rule that allows it called ``create-cassette``.
+
+First we need to mark the test as a VCR test with the pytest directive
+
+::
+
+    @pytest.mark.vcr
+
+For the tests that make requests with parameters depending on time, blocknumber or anything else that can vary between runs it would also be needed to mock them during the test execution. For mocking time we use freezegun:
+
+::
+
+    @pytest.mark.freeze_time('2023-01-24 22:45:45 GMT')
+
+You can change the time here to match the one at which you are writing the test. Finally to execute the test and record it
+
+::
+
+    RECORD_CASSETTES=true python pytestgeventwrapper.py -m vcr TEST_PATH
+
+here we are setting the ``RECORD_CASSETTES`` to change the configuration of VCR to allow writing to files and with ``-m vcr`` we only run a test if it has the vcr mark.
+
+This rule can be executed with
+
+::
+
+    make create-cassette TEST_PATH
+
+When executing tests mocked with VCR after making changes to the code it is possible for you to see the following error:
+
+::
+
+    vcr.errors.CannotOverwriteExistingCassetteException: Can't overwrite existing cassette
+
+
+This is telling you that a new request not recorded in the cassette happened and needs to be added. To solve this you need to use the ``RECORD_CASSETTES`` approach and update the yaml file if it was intentional or if no new requests are supposed to be made, investigate and figure out what is happening.
+
+After recording a cassette or updating an old one you need to sync it with the repo. By default they are cloned and recorded in the ``test-caching`` folder at the ``develop_data`` folder under the default path for `rotki's data <https://rotki.readthedocs.io/en/stable/usage_guide.html#rotki-data-directory>`__ . Create a new pull request with the changes and after merging it the other developers of the application will pull it automatically.
+
+If you are having issues because the cassettes got modified unintentionally you can restore the cassettes in the ``test-caching`` folder using ``git restore`` or delete the folder to force a new clone.
+
 
 Alternative Linting and Static Analysis Tools
 ----------------------------------------------
