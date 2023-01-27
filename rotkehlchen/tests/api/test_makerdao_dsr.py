@@ -677,7 +677,7 @@ def test_query_historical_dsr_with_a_zero_withdrawal(
     assert len(errors) == 0
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xf753beFE986e8Be8EBE7598C9d2b6297D9DD6662']])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])

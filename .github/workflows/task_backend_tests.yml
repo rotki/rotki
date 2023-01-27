@@ -16,6 +16,9 @@ jobs:
     runs-on: ${{ inputs.os }}
     name: 'Backend tests'
     timeout-minutes: 90
+    strategy:
+      matrix:
+        test-group: [api, others]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -73,6 +76,7 @@ jobs:
         env:
           PYTEST_ARGS: '--durations=150'
           FORCE_COLOR: 1
+          MATIX_JOB: ${{ matrix.test-group }}
         run: |
           if [ "${{ runner.os }}" == 'macOS' ];
           then
@@ -80,8 +84,16 @@ jobs:
           else
             COVERAGE_ARGS='--cov=./'
           fi          
+
           export CASSETTES_DIR=$HOME/work/rotki/rotki/test-caching
-          python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS rotkehlchen/tests
+
+          if [ "${{ matrix.test-group }}" == 'api' ]
+          then
+            python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS rotkehlchen/tests/api
+          else
+            python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS --ignore=rotkehlchen/tests/api rotkehlchen/tests/
+          fi
+          
           python pytestgeventwrapper.py --dead-fixtures
         shell: bash
       - name: Upload coverage
