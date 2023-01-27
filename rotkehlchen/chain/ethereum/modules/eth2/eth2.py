@@ -132,11 +132,12 @@ class Eth2(EthereumModule):
         result_deposits.sort(key=lambda deposit: (deposit.timestamp, deposit.tx_index))
         return result_deposits
 
-    def fetch_eth1_validator_data(
+    def fetch_and_update_eth1_validator_data(
             self,
             addresses: list[ChecksumEvmAddress],
     ) -> list[ValidatorID]:
-        """Query all eth1 addresses for their validators and get all corresponding deposits.
+        """Query all eth1 addresses for their validators and any newly detected validators
+        are added to the DB.
 
         Returns the list of all tracked validators. It's ValidatorID  since
         for validators that are in the deposit queue we don't get a finalized validator index yet.
@@ -147,39 +148,35 @@ class Eth2(EthereumModule):
         - RemoteError
         """
         dbeth2 = DBEth2(self.database)
-        all_validators = []
-        pubkeys = set()
+        with self.database.conn.read_ctx() as cursor:
+            all_validators_ids = [
+                ValidatorID(
+                    index=eth2_validator.index,
+                    public_key=eth2_validator.public_key,
+                    ownership_proportion=eth2_validator.ownership_proportion,
+                )
+                for eth2_validator in dbeth2.get_validators(cursor)
+            ]
+
+        new_validators = []
+        tracked_pubkeys = {validator_id.public_key for validator_id in all_validators_ids}
         for address in addresses:
             validators = self.beaconchain.get_eth1_address_validators(address)
             if len(validators) == 0:
                 continue
 
-            pubkeys.update([x.public_key for x in validators])
-            all_validators.extend(validators)
-            # if we already have any of those validators in the DB, no need to query deposits
-            with self.database.conn.read_ctx() as cursor:
-                tracked_validators = dbeth2.get_validators(cursor)
-            tracked_pubkeys = [x.public_key for x in tracked_validators]
-            new_validators = [
-                Eth2Validator(index=x.index, public_key=x.public_key, ownership_proportion=ONE)
-                for x in validators if x.public_key not in tracked_pubkeys and x.index is not None  # noqa: E501
-            ]
-            with self.database.user_write() as write_cursor:
-                dbeth2.add_validators(write_cursor, new_validators)
-            self.beaconchain.get_validator_deposits([x.public_key for x in new_validators])
+            new_validator_ids = [x for x in validators if x.public_key not in tracked_pubkeys]
+            new_validators.extend([
+                Eth2Validator(index=validator_id.index, public_key=validator_id.public_key, ownership_proportion=ONE)  # noqa: E501
+                for validator_id in new_validator_ids if validator_id.index is not None
+            ])
+            tracked_pubkeys.update([x.public_key for x in new_validator_ids])
+            all_validators_ids.extend(new_validator_ids)
 
-        with self.database.conn.read_ctx() as cursor:
-            for x in dbeth2.get_validators(cursor):
-                if x.public_key not in pubkeys:
-                    all_validators.append(
-                        ValidatorID(
-                            index=x.index,
-                            public_key=x.public_key,
-                            ownership_proportion=x.ownership_proportion,
-                        ),
-                    )
+        with self.database.user_write() as write_cursor:
+            dbeth2.add_validators(write_cursor, new_validators)
 
-        return all_validators
+        return all_validators_ids
 
     def get_balances(
             self,
@@ -199,7 +196,7 @@ class Eth2(EthereumModule):
         balance_mapping: dict[Eth2PubKey, Balance] = defaultdict(Balance)
         validators: Union[list[ValidatorID], list[Eth2Validator]]
         if fetch_validators_for_eth1:
-            validators = self.fetch_eth1_validator_data(addresses)
+            validators = self.fetch_and_update_eth1_validator_data(addresses)
         else:
             with self.database.conn.read_ctx() as cursor:
                 validators = dbeth2.get_validators(cursor)
@@ -474,7 +471,7 @@ class Eth2(EthereumModule):
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:
         """Just add validators to DB."""
         try:
-            self.fetch_eth1_validator_data([address])
+            self.fetch_and_update_eth1_validator_data([address])
         except RemoteError as e:
             self.msg_aggregator.add_error(
                 f'Did not manage to query beaconcha.in api for address {address} due to {str(e)}.'

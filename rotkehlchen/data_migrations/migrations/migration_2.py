@@ -18,7 +18,7 @@ def _do_query_validator_data(rotki: 'Rotkehlchen') -> None:
 
     with lock:
         addresses = rotki.chains_aggregator.queried_addresses_for_module('eth2')
-        eth2.fetch_eth1_validator_data(addresses)
+        eth2.fetch_and_update_eth1_validator_data(addresses)
 
 
 def data_migration_2(rotki: 'Rotkehlchen') -> None:

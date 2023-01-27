@@ -9,7 +9,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.modules.eth2.eth2 import REQUEST_DELTA_TS
+from rotkehlchen.chain.ethereum.modules.eth2.eth2 import REQUEST_DELTA_TS, Eth2
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     Eth2Deposit,
     Eth2Validator,
@@ -28,7 +28,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import Eth2PubKey, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -940,3 +940,45 @@ def test_validator_daily_stats_with_genesis_event(
             ownership_percentage=ONE,
         ),
     ]
+
+
+@pytest.mark.parametrize('eth2_mock_data', [{
+    'eth1': {
+        ADDR1: [
+            ('0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b', True, 9),  # noqa: E501
+        ],
+        ADDR2: [
+            ('0xb80777b022a115579f22674883996d0a904e51afaf0ddef4e577c7bc72ec4e14fc7714b8c58fb77ceb7b5162809d1475', True, 1647),  # noqa: E501
+            ('0x946ec21927a99d0c86cd63a0fd37cc378f869aae83098fac68d41e3fb58326ce2e9f81f1d116d14d1c0bd50cb61f0e35', True, 997),  # noqa: E501
+        ],
+    },
+}])
+def test_ownership_proportion(eth2: 'Eth2', database):
+    """
+    Test that the ownership proportion is correct when querying validators. If proportion is
+    customized then the custom value should be used. Otherwise the proportion should be ONE.
+    """
+    dbeth2 = DBEth2(database)
+    with database.user_write() as cursor:
+        dbeth2.add_validators(cursor, [
+            Eth2Validator(
+                index=9,
+                public_key=Eth2PubKey('0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b'),  # noqa: E501
+                ownership_proportion=FVal(0.5),
+            ),
+            Eth2Validator(
+                index=1647,
+                public_key=Eth2PubKey('0xb80777b022a115579f22674883996d0a904e51afaf0ddef4e577c7bc72ec4e14fc7714b8c58fb77ceb7b5162809d1475'),  # noqa: E501
+                ownership_proportion=FVal(0.7),
+            ),
+            Eth2Validator(  # This validator is tracked but not owned by any of the addresses
+                index=1757,
+                public_key=Eth2PubKey('0xac3d4d453d58c6e6fd5186d8f231eb00ff5a753da3669c208157419055c7c562b7e317654d8c67783c656a956927209d'),  # noqa: E501
+                ownership_proportion=FVal(0.9),
+            ),
+        ])
+    result = eth2.fetch_and_update_eth1_validator_data(addresses=[ADDR1, ADDR2])
+    assert result[0].index == 9 and result[0].ownership_proportion == FVal(0.5), 'Proportion from the DB should be used'  # noqa: E501
+    assert result[1].index == 1647 and result[1].ownership_proportion == FVal(0.7), 'Proportion from the DB should be used'  # noqa: E501
+    assert result[2].index == 1757 and result[2].ownership_proportion == FVal(0.9), 'Proportion from the DB should be used'  # noqa: E501
+    assert result[3].index == 997 and result[3].ownership_proportion == ONE, 'Since this validator is new, the proportion should be ONE'  # noqa: E501
