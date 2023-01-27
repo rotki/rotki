@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 import re
 import sys
@@ -16,7 +17,7 @@ import pytest
 
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.logging import TRACE, add_logging_level, configure_logging
+from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging
 from rotkehlchen.tests.utils.args import default_args
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -24,6 +25,9 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 if TYPE_CHECKING:
     from vcr import VCR
 
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 TESTS_ROOT_DIR = Path(__file__).parent
 
@@ -226,7 +230,19 @@ def vcr_cassette_dir(request: pytest.FixtureRequest) -> str:
     if 'CI' in os.environ:
         base_dir = Path(os.environ['CASSETTES_DIR']) / 'cassettes'
     else:
-        base_dir = default_data_directory().parent / 'cassettes'
+        tests_caching_dir = default_data_directory().parent / 'test-caching'
+        base_dir = tests_caching_dir / 'cassettes'
+
+        # verify that the cassettes are present locally and up to date
+        if (tests_caching_dir / '.git').exists() is False:
+            cmd = f'git clone https://github.com/rotki/test-caching.git {tests_caching_dir}'
+            log.debug(f'Cloning test caching repo to {tests_caching_dir}')
+            # wait until the command finishes
+            os.popen(cmd).read()
+            log.debug('VCR setup completed')
+        else:
+            log.debug('Pulling information for VCR cassettes')
+            os.popen(f'cd {tests_caching_dir} && git pull').read()
 
     cassette_dir = get_cassette_dir(request)
     return str(base_dir / cassette_dir)
