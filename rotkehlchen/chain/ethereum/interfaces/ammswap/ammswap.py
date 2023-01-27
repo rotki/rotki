@@ -17,7 +17,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.graph import (
     GRAPH_QUERY_LIMIT,
     GRAPH_QUERY_SKIP_LIMIT,
@@ -299,6 +299,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     chain_id=ChainID.ETHEREUM,
                     name=token0_['name'],
                     decimals=token0_['decimals'],
+                    seen=TokenSeenAt(tx_hash=tx_hash_deserialized),
                 )
                 token1 = get_or_create_evm_token(
                     userdb=self.database,
@@ -307,6 +308,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     chain_id=ChainID.ETHEREUM,
                     name=token1_['name'],
                     decimals=int(token1_['decimals']),
+                    seen=TokenSeenAt(tx_hash=tx_hash_deserialized),
                 )
                 lp_event = LiquidityPoolEvent(
                     tx_hash=tx_hash_deserialized,
@@ -524,6 +526,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                         chain_id=ChainID.ETHEREUM,
                         name=token['name'],
                         decimals=int(token['decimals']),
+                        seen=TokenSeenAt(description=f'Querying {self.location} balances'),
                     )
                     if asset.has_oracle():
                         known_tokens.add(asset)
@@ -594,6 +597,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     protocol=protocol,
                     name=name,
                     symbol=symbol,
+                    seen=TokenSeenAt(description=f'Querying {protocol} balances'),
                 )
 
     @abc.abstractmethod

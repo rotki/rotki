@@ -126,6 +126,7 @@ class Uniswapv2Decoder(DecoderInterface):
                 database=self.database,
                 factory_address=UNISWAP_V2_FACTORY,
                 init_code_hash=UNISWAP_V2_INIT_CODE_HASH,
+                tx_hash=transaction.tx_hash,
             )
         if tx_log.topics[0] == BURN_SIGNATURE:
             return decode_uniswap_like_deposit_and_withdrawals(
@@ -138,6 +139,7 @@ class Uniswapv2Decoder(DecoderInterface):
                 database=self.database,
                 factory_address=UNISWAP_V2_FACTORY,
                 init_code_hash=UNISWAP_V2_INIT_CODE_HASH,
+                tx_hash=transaction.tx_hash,
             )
         return None, []
 

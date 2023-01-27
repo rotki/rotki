@@ -5,7 +5,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.uniswap.utils import decode_basic_uniswap_info
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -430,6 +430,7 @@ class Uniswapv3Decoder(DecoderInterface):
                 chain_id=ChainID.ETHEREUM,
                 token_kind=EvmTokenKind.ERC20,
                 evm_inquirer=self.ethereum_inquirer,
+                seen=TokenSeenAt(tx_hash=transaction.tx_hash),
             )
             token_with_data = self.eth if token_with_data == A_WETH else token_with_data
             resolved_assets_and_amounts.append(CryptoAssetAmount(

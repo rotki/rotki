@@ -85,6 +85,7 @@ class SushiswapDecoder(DecoderInterface):
                 database=self.ethereum.database,
                 factory_address=SUSHISWAP_V2_FACTORY,
                 init_code_hash=SUSHISWAP_V2_INIT_CODE_HASH,
+                tx_hash=transaction.tx_hash,
             )
         if tx_log.topics[0] == BURN_SIGNATURE:
             return decode_uniswap_like_deposit_and_withdrawals(
@@ -97,6 +98,7 @@ class SushiswapDecoder(DecoderInterface):
                 database=self.ethereum.database,
                 factory_address=SUSHISWAP_V2_FACTORY,
                 init_code_hash=SUSHISWAP_V2_INIT_CODE_HASH,
+                tx_hash=transaction.tx_hash,
             )
         return None, []
 

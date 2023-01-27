@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import requests
 
 from rotkehlchen.assets.asset import UnderlyingToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.errors.misc import RemoteError
@@ -90,6 +90,7 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
                 decimals=vault['token']['decimals'],
                 name=vault['token']['name'],
                 symbol=vault['token']['symbol'],
+                seen=TokenSeenAt(description=f'Querying {vault_type} balances'),
             )
             vault_token = get_or_create_evm_token(
                 userdb=db,
@@ -104,6 +105,7 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
                     token_kind=EvmTokenKind.ERC20,
                     weight=ONE,
                 )],
+                seen=TokenSeenAt(description=f'Querying {vault_type} balances'),
             )
         except KeyError as e:
             log.error(
