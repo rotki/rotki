@@ -112,6 +112,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
       const newNotification = {
         ...notification,
         date: new Date(),
+        title: newData.title,
         message: newData.message,
         groupCount: newData.groupCount,
         display: newData.display ?? false

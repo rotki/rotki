@@ -114,6 +114,7 @@ const getAsset = (item: SupportedAsset) => {
 
 const { setMessage } = useMessageStore();
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
+const { getChain } = useSupportedChains();
 
 const toggleIgnoreAsset = async (identifier: string) => {
   let success = false;
@@ -309,7 +310,11 @@ const css = useCssModule();
         />
       </template>
       <template #item.address="{ item }">
-        <hash-link v-if="item.address" :text="item.address" />
+        <hash-link
+          v-if="item.address"
+          :text="item.address"
+          :chain="getChain(item.evmChain)"
+        />
       </template>
       <template #item.started="{ item }">
         <date-display v-if="item.started" :timestamp="item.started" />

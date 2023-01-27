@@ -160,7 +160,7 @@ const ignoreTokens = async () => {
       </template>
 
       <template #item.address="{ item }">
-        <hash-link :text="item.address" />
+        <hash-link :text="item.address" no-link />
       </template>
     </data-table>
   </card>

@@ -2952,9 +2952,8 @@
     },
     "new_detected_token": {
       "action": "See more",
-      "title": "New Token(s) Detected",
-      "message": "New token with identifier {identifier} is detected from EVM transactions.",
-      "multiple_message": "{count} new tokens is detected from EVM transactions."
+      "title": "New Token Detected|New Tokens Detected",
+      "message": "New token with identifier {identifier} is detected from EVM transactions.|{count} new tokens are detected from EVM transactions."
     },
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",

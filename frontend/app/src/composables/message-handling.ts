@@ -147,14 +147,11 @@ export const useMessageHandling = () => {
     const count = (notification?.groupCount || 0) + 1;
 
     return {
-      title: tc('notification_messages.new_detected_token.title'),
-      message: !notification
-        ? tc('notification_messages.new_detected_token.message', 0, {
-            identifier: data.tokenIdentifier
-          })
-        : tc('notification_messages.new_detected_token.multiple_message', 0, {
-            count
-          }),
+      title: tc('notification_messages.new_detected_token.title', count),
+      message: tc('notification_messages.new_detected_token.message', count, {
+        identifier: data.tokenIdentifier,
+        count
+      }),
       display: true,
       severity: Severity.INFO,
       action: {
