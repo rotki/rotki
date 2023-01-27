@@ -7,6 +7,7 @@ import {
 import { setLastLogin } from '@/utils/account-management';
 import { useWebsocketStore } from '@/store/websocket';
 import { useMainStore } from '@/store/main';
+import { useNotificationsStore } from '@/store/notifications';
 
 export const useAccountManagement = () => {
   const loading = ref(false);
@@ -21,10 +22,12 @@ export const useAccountManagement = () => {
   const authStore = useSessionAuthStore();
   const { logged } = storeToRefs(authStore);
   const { updateLoginStatus } = authStore;
+  const { restorePending, initPending } = useNotificationsStore();
 
   const createNewAccount = async (payload: CreateAccountPayload) => {
     set(loading, true);
     set(error, '');
+    initPending(payload.credentials.username);
     await connect();
     const result = await createAccount(payload);
     set(loading, false);
@@ -45,6 +48,7 @@ export const useAccountManagement = () => {
     syncApproval
   }: LoginCredentials) => {
     set(loading, true);
+    initPending(username);
     await connect();
     const result = await login({
       username,
@@ -58,6 +62,7 @@ export const useAccountManagement = () => {
     set(loading, false);
     updateLoginStatus();
     if (get(logged)) {
+      restorePending();
       setLastLogin(username);
       showGetPremiumButton();
       await showPremiumDialog();

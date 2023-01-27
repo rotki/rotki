@@ -1,5 +1,6 @@
 import {
   type Notification,
+  NotificationCategory,
   NotificationGroup,
   Severity
 } from '@rotki/common/lib/messages';
@@ -127,7 +128,9 @@ export const useMessageHandling = () => {
           }
         ),
         severity: Severity.INFO,
-        display: true
+        display: true,
+        category: NotificationCategory.ADDRESS_MIGRATION,
+        duration: -1
       });
     }
 

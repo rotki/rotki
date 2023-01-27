@@ -1,5 +1,6 @@
 import { type SemiPartial } from '@rotki/common';
 import {
+  NotificationCategory,
   type NotificationData,
   type NotificationPayload,
   Severity
@@ -9,12 +10,14 @@ import { type Ref } from 'vue';
 import { useSessionApi } from '@/services/session';
 import { backoff } from '@/utils/backoff';
 import { uniqueStrings } from '@/utils/data';
+import { assert } from '@/utils/assertions';
 
 const notificationDefaults = (): NotificationPayload => ({
   title: '',
   message: '',
   severity: Severity.ERROR,
-  display: false
+  display: false,
+  category: NotificationCategory.DEFAULT
 });
 
 const createNotification = (
@@ -26,12 +29,14 @@ const createNotification = (
     severity,
     title,
     action,
+    category,
     group,
     groupCount
   }: NotificationPayload = {
     title: '',
     message: '',
-    severity: Severity.INFO
+    severity: Severity.INFO,
+    category: NotificationCategory.DEFAULT
   }
 ): NotificationData => ({
   title,
@@ -41,12 +46,17 @@ const createNotification = (
   duration: duration ?? 5000,
   id,
   date: new Date(),
+  category,
   action,
   group,
   groupCount
 });
 
 export const emptyNotification = (): NotificationData => createNotification();
+
+const createPending = (username: string): Ref<NotificationData[]> => {
+  return useSessionStorage(`rotki.notification.pending.${username}`, []);
+};
 
 export const useNotificationsStore = defineStore('notifications', () => {
   const data = ref<NotificationData[]>([]);
@@ -57,6 +67,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     'rotki.notification.last_display',
     {}
   );
+  let pending: Ref<NotificationData[] | null> = ref(null);
   let isRunning = false;
 
   const count = computed(() => get(data).length);
@@ -118,6 +129,12 @@ export const useNotificationsStore = defineStore('notifications', () => {
           [groupToFind]: notification.date.getTime()
         });
       }
+
+      if (notification.category === NotificationCategory.ADDRESS_MIGRATION) {
+        const notifications = get(pending);
+        assert(notifications);
+        set(pending, [...notifications, notification]);
+      }
     } else {
       const notification = dataList[notificationIndex];
       let date = new Date();
@@ -148,6 +165,18 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }
   };
 
+  function removeFromPending(ids: number[]): void {
+    const notifications = get(pending);
+    assert(notifications);
+    const newPending: NotificationData[] = [];
+    notifications.forEach(n => {
+      if (!ids.includes(n.id)) {
+        newPending.push(n);
+      }
+    });
+    set(pending, newPending);
+  }
+
   const displayed = (ids: number[]): void => {
     if (ids.length <= 0) {
       return;
@@ -162,6 +191,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
       notifications[index] = { ...notifications[index], display: false };
     }
     setNotifications(notifications);
+    removeFromPending(ids);
   };
 
   const consume = async (): Promise<void> => {
@@ -195,6 +225,18 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }
   };
 
+  const restorePending = () => {
+    const notifications = get(pending);
+    assert(notifications);
+    if (notifications.length > 0) {
+      set(data, [...get(data), ...notifications]);
+    }
+  };
+
+  const initPending = (username: string) => {
+    pending = createPending(username);
+  };
+
   return {
     data,
     count,
@@ -203,6 +245,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
     notify,
     displayed,
     remove,
-    consume
+    consume,
+    initPending,
+    restorePending
   };
 });

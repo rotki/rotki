@@ -10,6 +10,14 @@ export enum NotificationGroup {
   NEW_DETECTED_TOKENS = 'NEW_DETECTED_TOKENS'
 }
 
+export const NotificationCategory = {
+  DEFAULT: 'default',
+  ADDRESS_MIGRATION: 'address_migration'
+} as const;
+
+export type NotificationCategory =
+  typeof NotificationCategory[keyof typeof NotificationCategory];
+
 export interface Message {
   readonly title: string;
   readonly description: string;
@@ -25,6 +33,7 @@ interface NotificationBase {
   readonly title: string;
   readonly message: string;
   readonly severity: Severity;
+  readonly category: NotificationCategory;
   readonly action?: NotificationAction;
   readonly group?: NotificationGroup;
   readonly groupCount?: number;

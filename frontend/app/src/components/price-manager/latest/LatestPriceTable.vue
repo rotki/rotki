@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { type NotificationPayload, Severity } from '@rotki/common/lib/messages';
+import {
+  NotificationCategory,
+  type NotificationPayload,
+  Severity
+} from '@rotki/common/lib/messages';
 import { type ComputedRef, type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
@@ -88,7 +92,8 @@ const deletePrice = async (item: ManualPrice) => {
         message: e.message
       }),
       display: true,
-      severity: Severity.ERROR
+      severity: Severity.ERROR,
+      category: NotificationCategory.DEFAULT
     };
     notify(notification);
   }
@@ -105,7 +110,8 @@ const getLatestPrices = async () => {
         message: e.message
       }),
       display: true,
-      severity: Severity.ERROR
+      severity: Severity.ERROR,
+      category: NotificationCategory.DEFAULT
     };
     notify(notification);
   } finally {
