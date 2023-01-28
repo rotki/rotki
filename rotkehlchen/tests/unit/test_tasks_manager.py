@@ -69,6 +69,7 @@ def fixture_task_manager(
         deactivate_premium=lambda: None,
         query_balances=lambda: None,
         update_curve_pools_cache=lambda: None,
+        update_fraxlend_pairs_cache=lambda: None,
         activate_premium=lambda _: None,
         msg_aggregator=messages_aggregator,
     )

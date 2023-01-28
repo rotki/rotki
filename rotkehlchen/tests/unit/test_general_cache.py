@@ -2,6 +2,7 @@ import datetime
 from contextlib import suppress
 from unittest.mock import patch
 
+from eth_utils import to_checksum_address
 from freezegun import freeze_time
 
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
@@ -126,3 +127,44 @@ def test_curve_pools_cache(rotkehlchen_instance):
     assert 'key123' not in GlobalDBHandler().get_general_cache_values(key_parts=[GeneralCacheType.CURVE_LP_TOKENS])  # noqa: E501
     assert len(GlobalDBHandler().get_general_cache_values(key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, 'abc'])) == 0  # noqa: E501
     assert len(GlobalDBHandler().get_general_cache_values(key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, 'pool-address-1'])) == 0  # noqa: E501
+
+
+def test_fraxlend_pairs_cache(rotkehlchen_instance):
+    """Test fraxlend pairs fetching mechanism"""
+    # Set initial cache data to check that it is gone after the cache update
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        GlobalDBHandler().set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=[GeneralCacheType.FRAXLEND_PAIRS],
+            values=['pair-address-1'],
+        )
+
+    # Delete one of the tokens to check that it is created during the update
+    with suppress(InputError):
+        GlobalDBHandler().delete_evm_token(  # token may not exist but we don't care
+            address=to_checksum_address('0x853d955aCEf822Db058eb8505911ED77F175b99e'),
+            chain_id=ChainID.ETHEREUM,
+        )
+
+    # check that it was deleted successfully
+    token = GlobalDBHandler().get_evm_token(
+        address=to_checksum_address('0x853d955aCEf822Db058eb8505911ED77F175b99e'),
+        chain_id=ChainID.ETHEREUM,
+    )
+    assert token is None
+
+    future_timestamp = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=WEEK_IN_SECONDS)  # noqa: E501
+    with freeze_time(future_timestamp):
+        rotkehlchen_instance.chains_aggregator.ethereum.assure_fraxlend_cache_is_queried_and_decoder_updated()  # noqa: E501
+
+    # Check that the token was created
+    token = GlobalDBHandler().get_evm_token(
+        address=to_checksum_address('0x853d955aCEf822Db058eb8505911ED77F175b99e'),
+        chain_id=ChainID.ETHEREUM,
+    )
+    assert token.name == 'Frax'
+    assert token.symbol == 'FRAX'
+    assert token.decimals == 18
+
+    # Check that initially set values are gone
+    assert 'pair-address-1' not in GlobalDBHandler().get_general_cache_values(key_parts=[GeneralCacheType.FRAXLEND_PAIRS])  # noqa: E501

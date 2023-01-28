@@ -77,3 +77,27 @@ class EthereumManager(EvmManager):
         new_mappings = curve_decoder.reload_data()  # type: ignore  # we know type here
         if new_mappings:
             self.transactions_decoder.rules.address_mappings.update(new_mappings)
+
+    def assure_fraxlend_cache_is_queried_and_decoder_updated(self) -> None:
+        """
+        Make sure that information that needs to be queried is queried and if not query it.
+
+        1. Deletes all previous cache values
+        2. Queries information about fraxlend pairs' addresses
+        3. Saves queried information in the cache in globaldb
+
+        Also updates the frax decoder
+        """
+        if self.node_inquirer.assure_fraxlend_pairs_cache_is_queried() is False:
+            return
+
+        try:
+            frax_decoder = self.transactions_decoder.decoders['Frax']
+        except KeyError as e:
+            raise InputError(
+                'Expected to find Frax decoder but it was not loaded. '
+                'Please open an issue on github.com/rotki/rotki/issues if you saw this.',
+            ) from e
+        new_mappings = frax_decoder.reload_data()  # type: ignore  # we know type here
+        if new_mappings:
+            self.transactions_decoder.rules.address_mappings.update(new_mappings)

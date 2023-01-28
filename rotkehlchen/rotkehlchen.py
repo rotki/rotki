@@ -416,6 +416,7 @@ class Rotkehlchen():
             activate_premium=self.activate_premium_status,
             query_balances=self.query_balances,
             update_curve_pools_cache=self.chains_aggregator.ethereum.assure_curve_cache_is_queried_and_decoder_updated,  # noqa: E501
+            update_fraxlend_pairs_cache=self.chains_aggregator.ethereum.assure_fraxlend_cache_is_queried_and_decoder_updated,  # noqa: E501
             msg_aggregator=self.msg_aggregator,
         )
 

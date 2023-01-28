@@ -92,6 +92,7 @@ class TaskManager():
             activate_premium: Callable[[Premium], None],
             query_balances: Callable,
             update_curve_pools_cache: Callable,
+            update_fraxlend_pairs_cache: Callable,
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self.max_tasks_num = max_tasks_num
@@ -118,6 +119,7 @@ class TaskManager():
         self.activate_premium = activate_premium
         self.query_balances = query_balances
         self.update_curve_pools_cache = update_curve_pools_cache
+        self.update_fraxlend_pairs_cache = update_fraxlend_pairs_cache
         self.query_yearn_vaults = query_yearn_vaults
         self.last_premium_status_check = ts_now()
         self.msg_aggregator = msg_aggregator
@@ -585,6 +587,19 @@ class TaskManager():
             )]
 
         return None
+
+    def _maybe_update_fraxlend_pairs(self) -> Optional[list[gevent.Greenlet]]:
+        """Function that schedules fraxlend pairs update task if either there is no cache
+        yet or this cache has expired (i.e. it's been more than a week since last update)."""
+        if should_update_protocol_cache(GeneralCacheType.FRAXLEND_PAIRS) is False:
+            return None
+
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Update fraxlend pairs cache',
+            exception_is_error=True,
+            method=self.update_fraxlend_pairs_cache,
+        )]
 
     def _schedule(self) -> None:
         """Schedules background tasks"""

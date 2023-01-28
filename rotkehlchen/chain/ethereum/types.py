@@ -97,6 +97,7 @@ if TYPE_CHECKING:
         'YEARN_WETH_VAULT',
         'YEARN_YCRV_VAULT',
         'YEARN_YFI_VAULT',
+        'FRAXLEND_PAIR_DEPLOYER',
     ]
     # This is a list of all ethereum abi that are guaranteed to be returned
     # by EthereumContracts as they are stored in the file/DB
@@ -116,4 +117,5 @@ if TYPE_CHECKING:
         'UNIV1_LP',
         'YEARN_VAULT_V2',
         'ZERION_ADAPTER',
+        'FRAXLEND_PAIR',
     ]

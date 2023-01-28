@@ -11,6 +11,7 @@ from rotkehlchen.utils.upgrades import UpgradeRecord
 from ..utils import GLOBAL_DB_VERSION, MIN_SUPPORTED_GLOBAL_DB_VERSION, globaldb_get_setting_value
 from .v2_v3 import migrate_to_v3
 from .v3_v4 import migrate_to_v4
+from .v4_v5 import migrate_to_v5
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -27,6 +28,10 @@ UPGRADES_LIST = [
     UpgradeRecord(
         from_version=3,
         function=migrate_to_v4,
+    ),
+    UpgradeRecord(
+        from_version=4,
+        function=migrate_to_v5,
     ),
 ]
 

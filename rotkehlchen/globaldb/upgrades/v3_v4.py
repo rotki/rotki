@@ -139,7 +139,7 @@ def _add_eth_abis_json(cursor: 'DBCursor') -> None:
     abi_entries_tuples = []
     for name, value in abi_entries.items():
         abi_entries_tuples.append((name, json.dumps(value, separators=(',', ':'))))
-    cursor.executemany('INSERT INTO contract_abi(name, value) VALUES(?, ?)', abi_entries_tuples)  # noqa: E501
+    cursor.executemany('INSERT OR REPLACE INTO contract_abi(name, value) VALUES(?, ?)', abi_entries_tuples)  # noqa: E501
 
     log.debug('Exit _add_eth_abis_json')
 
@@ -223,7 +223,7 @@ def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
             ds_registry_abi_id = abi_id
 
         cursor.execute(
-            'INSERT INTO contract_data(address, chain_id, name, abi, deployed_block) '
+            'INSERT OR REPLACE INTO contract_data(address, chain_id, name, abi, deployed_block) '
             'VALUES(?, ?, ?, ?, ?)',
             (items['address'], 1, contract_key, abi_id, items['deployed_block']),
         )

@@ -42,6 +42,11 @@ from rotkehlchen.utils.network import request_get_dict
 
 from .constants import ETH2_DEPOSIT_ADDRESS, ETHEREUM_ETHERSCAN_NODE_NAME, WeightedNode
 from .etherscan import EthereumEtherscan
+from .modules.frax.fraxlend_pairs_cache import (
+    ensure_fraxlend_tokens_existence,
+    query_fraxlend_pairs,
+    save_fraxlend_pairs_to_cache,
+)
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS, should_update_protocol_cache
 
 if TYPE_CHECKING:
@@ -257,6 +262,26 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
         ensure_curve_tokens_existence(ethereum_inquirer=self, pools_mapping=pools)
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             save_curve_pools_to_cache(write_cursor=write_cursor, pools_mapping=pools)
+
+        return True
+
+    @protect_with_lock()
+    def assure_fraxlend_pairs_cache_is_queried(self) -> bool:
+        """
+        Make sure that frax information that needs to be queried is queried and if not query it.
+        Returns true if the cache was modified or false otherwise.
+
+        1. Deletes all previous cache values
+        2. Queries information about fraxlend pairs' addresses
+        3. Saves queried information in the cache in globaldb
+        """
+        if should_update_protocol_cache(GeneralCacheType.FRAXLEND_PAIRS) is False:
+            return False
+
+        pairs = query_fraxlend_pairs(self)
+        ensure_fraxlend_tokens_existence(ethereum_inquirer=self, pairs=pairs)
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            save_fraxlend_pairs_to_cache(write_cursor=write_cursor, pairs=pairs)
 
         return True
 
