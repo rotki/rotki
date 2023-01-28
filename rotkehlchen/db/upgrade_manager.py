@@ -20,7 +20,7 @@ from rotkehlchen.db.upgrades.v34_v35 import upgrade_v34_to_v35
 from rotkehlchen.db.upgrades.v35_v36 import upgrade_v35_to_v36
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.interfaces import ProgressUpdater
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.upgrades import UpgradeRecord
 
@@ -77,60 +77,20 @@ UPGRADES_LIST = [
 ]
 
 
-class DBUpgradeProgressHandler():
+class DBUpgradeProgressHandler(ProgressUpdater):
     """Class to notify users through websockets about progress of upgrading the database."""
-    def __init__(
-            self,
-            messages_aggregator: 'MessagesAggregator',
-            target_db_version: int,
-    ) -> None:
-        self._messages_aggregator = messages_aggregator
-        self._target_db_version = target_db_version
-        self._start_db_version: Optional[int] = None
-        self._current_db_version: Optional[int] = None
-        self._current_upgrade_total_steps = 0
-        self._current_upgrade_current_step = 0
 
-    def new_upgrade(self, upgrade_from_version: int) -> None:
-        """
-        Should be called when a new upgrade starts but before `set_total_steps`.
-        Notifies users about the new upgrade.
-        """
-        if self._start_db_version is None:
-            self._start_db_version = upgrade_from_version
-
-        self._current_db_version = upgrade_from_version
-        self._current_upgrade_total_steps = 0
-        self._current_upgrade_current_step = 0
-        self._notify_frontend()
-
-    def set_total_steps(self, steps: int) -> None:
-        """
-        Should be called when new upgrade starts but after `new_upgrade` method.
-        Sets total steps that the new upgrade consists of.
-        """
-        self._current_upgrade_total_steps = steps
-
-    def new_step(self) -> None:
-        """
-        Should be called when currently running upgrade reaches a new step.
-        Informs users about the new step. Total number of calls to this method must be equal to
-        the total number of steps set via `set_total_steps`.
-        """
-        self._current_upgrade_current_step += 1
-        self._notify_frontend()
-
-    def _notify_frontend(self) -> None:
+    def _notify_frontend(self, step_name: Optional[str] = None) -> None:
         """Sends to the user through websockets all information about db upgrading progress."""
-        self._messages_aggregator.add_message(
-            message_type=WSMessageType.LOGIN_STATUS,
+        self.messages_aggregator.add_message(
+            message_type=WSMessageType.DB_UPGRADE_STATUS,
             data={
-                'start_db_version': self._start_db_version,
-                'target_db_version': self._target_db_version,
+                'start_version': self.start_version,
+                'target_version': self.target_version,
                 'current_upgrade': {
-                    'from_db_version': self._current_db_version,
-                    'total_steps': self._current_upgrade_total_steps,
-                    'current_step': self._current_upgrade_current_step,
+                    'to_version': self.current_version,
+                    'total_steps': self.current_round_total_steps,
+                    'current_step': self.current_round_current_step,
                 },
             },
         )
@@ -176,7 +136,7 @@ class DBUpgradeManager():
 
         progress_handler = DBUpgradeProgressHandler(
             messages_aggregator=self.db.msg_aggregator,
-            target_db_version=ROTKEHLCHEN_DB_VERSION,
+            target_version=ROTKEHLCHEN_DB_VERSION,
         )
         for upgrade in UPGRADES_LIST:
             self._perform_single_upgrade(upgrade, progress_handler)
@@ -207,7 +167,7 @@ class DBUpgradeManager():
         if current_version != upgrade.from_version:
             return
         to_version = upgrade.from_version + 1
-        progress_handler.new_upgrade(upgrade_from_version=upgrade.from_version)
+        progress_handler.new_round(version=to_version)
 
         # First make a backup of the DB
         with TemporaryDirectory() as tmpdirname:

@@ -6,6 +6,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
+    from rotkehlchen.data_migrations.progress import MigrationProgressHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
@@ -32,7 +33,7 @@ def _maybe_add_llamanode(write_cursor: 'DBCursor') -> None:
     )
 
 
-def data_migration_7(rotki: 'Rotkehlchen') -> None:
+def data_migration_7(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument  # noqa: E501
     """
     - Add llamanode to the web3 nodes in 1.26.3
     """

@@ -1388,19 +1388,19 @@ def test_steps_counted_properly_in_upgrades(user_data_dir):
     )
     progress_handler = DBUpgradeProgressHandler(
         messages_aggregator=msessages_aggregator,
-        target_db_version=ROTKEHLCHEN_DB_VERSION,
+        target_version=ROTKEHLCHEN_DB_VERSION,
     )
     for upgrade in UPGRADES_LIST:
-        progress_handler.new_upgrade(upgrade_from_version=upgrade.from_version)
+        progress_handler.new_round(version=upgrade.from_version + 1)
         kwargs = upgrade.kwargs if upgrade.kwargs is not None else {}
         upgrade.function(db=last_db, progress_handler=progress_handler, **kwargs)
         # Make sure that there were some steps taken
-        assert progress_handler._current_upgrade_total_steps > 0
+        assert progress_handler.current_round_total_steps > 0
         # And that the number of total steps taken matches expected total steps
-        assert progress_handler._current_upgrade_current_step == progress_handler._current_upgrade_total_steps  # noqa: E501
+        assert progress_handler.current_round_current_step == progress_handler.current_round_total_steps  # noqa: E501
         # Check that the db version in progress handler is correct
-        assert progress_handler._current_db_version == upgrade.from_version
-        assert progress_handler._start_db_version == MIN_SUPPORTED_USER_DB_VERSION
+        assert progress_handler.current_version == upgrade.from_version + 1
+        assert progress_handler.start_version == MIN_SUPPORTED_USER_DB_VERSION + 1
 
 
 def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instructions_cb):

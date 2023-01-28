@@ -214,7 +214,7 @@ def deserialize_pool_share(
             chain_id=ChainID.ETHEREUM,
             name=token_name,
             decimals=token_decimals,
-            seen=TokenSeenAt(description='Balancer pools query'),
+            seen=TokenSeenAt(description='Querying balancer pools'),
         )
         if token_total_amount == ZERO:
             raise DeserializationError(f'Token {token.identifier} balance is zero.')
@@ -246,7 +246,7 @@ def deserialize_pool_share(
         protocol='balancer',
         decimals=18,  # All BPT tokens have 18 decimals
         underlying_tokens=pool_tokens,
-        seen=TokenSeenAt(description='Balancer pools query'),
+        seen=TokenSeenAt(description='Querying balancer pools'),
     )
     pool = BalancerPoolBalance(
         pool_token=balancer_pool_token,
