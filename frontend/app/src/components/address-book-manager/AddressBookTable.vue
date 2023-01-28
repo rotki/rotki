@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { type NotificationPayload, Severity } from '@rotki/common/lib/messages';
+import {
+  NotificationCategory,
+  type NotificationPayload,
+  Severity
+} from '@rotki/common/lib/messages';
 import { type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
@@ -36,6 +40,7 @@ const addressBookDeletion = (location: Ref<AddressBookLocation>) => {
           address,
           message: e.message
         }).toString(),
+        category: NotificationCategory.DEFAULT,
         display: true,
         severity: Severity.ERROR
       };
