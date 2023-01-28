@@ -8,6 +8,7 @@ from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
+    from rotkehlchen.data_migrations.progress import MigrationProgressHandler
     from rotkehlchen.rotkehlchen import IconManager, Rotkehlchen
 
 logger = logging.getLogger(__name__)
@@ -28,7 +29,7 @@ def _validate_asset_icons(icon_manager: 'IconManager') -> None:
                 icon_entry.unlink()
 
 
-def data_migration_3(rotki: 'Rotkehlchen') -> None:
+def data_migration_3(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument  # noqa: E501
     """
     Migration created in 1.24
     - Update the list of spam assets

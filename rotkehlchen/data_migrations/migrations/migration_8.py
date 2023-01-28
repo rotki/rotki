@@ -8,13 +8,14 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
+    from rotkehlchen.data_migrations.progress import MigrationProgressHandler
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def data_migration_8(rotki: 'Rotkehlchen') -> None:
+def data_migration_8(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:
     """
     - Introduced at optimism addition.
     This migration duplicates accounts if active at optimism or avalanche.
@@ -26,7 +27,11 @@ def data_migration_8(rotki: 'Rotkehlchen') -> None:
     # when we sync a remote database the migrations are executed but the chain_manager
     # has not been created yet
     if (chains_aggregator := getattr(rotki, 'chains_aggregator', None)) is not None:
-        filtered_result = chains_aggregator.filter_active_evm_addresses(accounts.eth)
+        progress_handler.set_total_steps(len(accounts.eth) + 1)
+        filtered_result = chains_aggregator.filter_active_evm_addresses(
+            accounts=accounts.eth,
+            progress_handler=progress_handler,
+        )
         to_add_accounts = []
         for chain, account in filtered_result:  # add them to chain aggregator
             if chain == SupportedBlockchain.ETHEREUM:
@@ -43,6 +48,7 @@ def data_migration_8(rotki: 'Rotkehlchen') -> None:
                 continue
             to_add_accounts.append((chain, account))
 
+        progress_handler.new_step('Potentially write migrated addresses to the DB')
         with rotki.data.db.user_write() as write_cursor:
             for chain, account in to_add_accounts:  # add them to the DB
                 rotki.data.db.add_blockchain_accounts(

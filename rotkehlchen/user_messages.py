@@ -12,11 +12,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-INFORMATIONAL_MESSAGE_TYPES = {
-    WSMessageType.EVM_TRANSACTION_STATUS,
-    WSMessageType.PREMIUM_STATUS_UPDATE,
-    WSMessageType.LOGIN_STATUS,
-}
+ERROR_MESSAGE_TYPES = {WSMessageType.LEGACY, WSMessageType.BALANCE_SNAPSHOT_ERROR}
 
 
 class MessagesAggregator():
@@ -89,9 +85,8 @@ class MessagesAggregator():
                 failure_callback=self._append_error,
                 failure_callback_args={'msg': fallback_msg},
             )
-        else:
-            # Avoid sending as error informational messages
-            if message_type not in INFORMATIONAL_MESSAGE_TYPES:
+        else:  # Fallback to polling for error messages
+            if message_type in ERROR_MESSAGE_TYPES:
                 self.errors.appendleft(fallback_msg)
 
     def consume_errors(self) -> list[str]:

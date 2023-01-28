@@ -20,7 +20,7 @@ class WebsocketReader():
             if msg not in ('', '{}'):
                 data = json.loads(msg)
                 self.messages.appendleft(data)
-            gevent.sleep(0.5)
+            gevent.sleep(0.2)
 
         # cleanup
         self.ws.close()

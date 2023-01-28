@@ -9,6 +9,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
+    from rotkehlchen.data_migrations.progress import MigrationProgressHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
@@ -61,7 +62,7 @@ def copy_ethereum_rpc_endpoint(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('DELETE FROM settings WHERE name="eth_rpc_endpoint"')
 
 
-def data_migration_4(rotki: 'Rotkehlchen') -> None:
+def data_migration_4(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument  # noqa: E501
     """
     - Add ethereum nodes to connect to the database in 1.25
     """

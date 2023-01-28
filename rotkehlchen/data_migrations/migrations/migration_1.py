@@ -8,6 +8,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
+    from rotkehlchen.data_migrations.progress import MigrationProgressHandler
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def data_migration_1(rotki: 'Rotkehlchen') -> None:
+def data_migration_1(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument  # noqa: E501
     """
     Purge data for exchanges where there is more than one instance. Also purge information
     from kraken as requested for https://github.com/rotki/rotki/pull/3755

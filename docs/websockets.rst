@@ -70,7 +70,7 @@ The messages sent by rotki when there is a snapshot balance error. There can be 
 - ``error``: A string with details of the error
 
 
-Login status
+DB Upgrade status
 =========================
 
 The messages sent by rotki when a user is logging in and a db upgrade is happening. The format is the following.
@@ -79,19 +79,50 @@ The messages sent by rotki when a user is logging in and a db upgrade is happeni
 ::
 
     {
-        "start_db_version": 26,
-        "target_db_version": 35,
-        "current_upgrade": {
-            "from_db_version": 30,
-            "total_steps": 8,
-            "current_step": 5
-        }
+        "type": "db_upgrade_status",
+	"data": {
+	    "start_version": 26,
+	    "target_version": 35,
+	    "current_upgrade": {
+		"to_version": 30,
+		"total_steps": 8,
+		"current_step": 5
+	    }
+	}
     }
 
 
-- ``start_db_version``: DB version that user's database had before any upgrades began. This is the version of the DB when rotki first starts.
-- ``current_upgrade``: Structure that holds information about currently running upgrade. Contains: `from_db_version` - version of the database that currently running upgrade is being applied to; `total_steps` - total number of steps that currently running upgrade consists of; `current_step` - step that the upgrade is at as of this websocket message. 
-- ``target_db_version``: The target version of the DB. When this is reached, the upgrade process will have finished.
+- ``start_version``: DB version that user's database had before any upgrades began. This is the version of the DB when rotki first starts.
+- ``current_upgrade``: Structure that holds information about currently running upgrade. Contains: ``to_version`` - version of the the database upgrade that is currently being applied; ``total_steps`` - total number of steps that currently running upgrade consists of; ``current_step`` - step that the upgrade is at as of this websocket message. 
+- ``target_version``: The target version of the DB. When this is reached, the upgrade process will have finished.
+
+
+Data migration status
+=========================
+
+The messages sent by rotki when a user is logging in and a db upgrade is happening. The format is the following.
+
+
+::
+
+    {
+        "type": "data_migration_status",
+        "data": {
+	    "start_version": 1,
+	    "target_version": 8,
+	    "current_migration": {
+		"version": 8,
+		"total_steps": 20,
+		"current_step": 3,
+		"description": "Checking 0xbd96cDCc6Ae1ffB73ace84E16601E1CF909D5749 EVM chain activity"
+	    }
+	}
+    }
+
+
+- ``start_version``: Last data migration version when the migration process started
+- ``current_migration``: Structure that holds information about currently running migration. Contains: ``version`` - The migration that is being applied; ``total_steps`` - total number of steps that currently running migration consists of; ``current_step`` - step that the migration is at as of this websocket message; ``description`` - An optional string (can be null) that explains what is the migration doing at this step.
+- ``target_version``: The target migration version. When this will have been reached and finished, the migrations will end.
 
 
 EVM Addresses Migrations

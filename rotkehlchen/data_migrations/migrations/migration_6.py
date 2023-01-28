@@ -9,6 +9,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
+    from rotkehlchen.data_migrations.progress import MigrationProgressHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
@@ -70,7 +71,7 @@ def update_nodes_in_database(write_cursor: 'DBCursor') -> None:
         )
 
 
-def data_migration_6(rotki: 'Rotkehlchen') -> None:
+def data_migration_6(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument  # noqa: E501
     """
     - Update ethereum rpc nodes nodes in 1.26.2
     """

@@ -89,7 +89,7 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.interfaces import EthereumModule
+from rotkehlchen.utils.interfaces import EthereumModule, ProgressUpdater
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
@@ -1292,11 +1292,14 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def filter_active_evm_addresses(
             self,
             accounts: list[ChecksumEvmAddress],
+            progress_handler: Optional['ProgressUpdater'] = None,
     ) -> list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]]:
         """
         Counting ethereum mainnet as the main chain we check if the account is a contract
         in mainnet. If not, for all supported evm chains we check if there is any
         transactions/activity for the account in the chain.
+
+        If progress_handler is given then provide updates to the frontend about the progress.
 
         Returns a list of tuples of the address and the chain it was active in
 
@@ -1305,6 +1308,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         """
         filtered_accounts = []
         for account in accounts:
+            if progress_handler is not None:
+                progress_handler.new_step(f'Checking {account} EVM chain activity')
             chains: list[SUPPORTED_EVM_CHAINS]
             if self.ethereum.node_inquirer.get_code(account) != '0x':
                 log.debug(f'Not adding {account} to all evm chains as it is a mainnet contract')

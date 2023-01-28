@@ -139,7 +139,7 @@ def test_failed_migration(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
 
-    def botched_migration(rotki) -> None:
+    def botched_migration(rotki, progress_handler) -> None:
         raise ValueError('ngmi')
 
     botched_list = [MigrationRecord(version=1, function=botched_migration)]
@@ -503,13 +503,34 @@ def test_migration_8(rotkehlchen_api_server, ethereum_accounts, websocket_connec
     assert set(accounts.optimism) == set(optimism_addresses)
     assert set(rotki.chains_aggregator.accounts.optimism) == set(optimism_addresses)
 
-    websocket_connection.wait_until_messages_num(num=1, timeout=10)
-    assert websocket_connection.messages_num() == 1
-    msg = websocket_connection.pop_message()
-    assert msg['type'] == 'evm_address_migration'
-    assert sorted(msg['data'], key=operator.itemgetter('evm_chain', 'address')) == sorted([
-        {'evm_chain': 'avalanche', 'address': ethereum_accounts[1]},
-        {'evm_chain': 'avalanche', 'address': ethereum_accounts[3]},
-        {'evm_chain': 'optimism', 'address': ethereum_accounts[2]},
-        {'evm_chain': 'optimism', 'address': ethereum_accounts[3]},
-    ], key=operator.itemgetter('evm_chain', 'address'))
+    def assert_progress_message(msg, step_num, description) -> None:
+        assert msg['type'] == 'data_migration_status'
+        assert msg['data']['start_version'] == 8
+        assert msg['data']['target_version'] == 8
+        migration = msg['data']['current_migration']
+        assert migration['version'] == 8
+        assert migration['total_steps'] == (5 if step_num != 0 else 0)
+        assert migration['current_step'] == step_num
+        if 1 <= step_num <= 4:
+            assert 'EVM chain activity' in migration['description']
+        else:
+            assert migration['description'] == description
+
+    websocket_connection.wait_until_messages_num(num=7, timeout=10)
+    assert websocket_connection.messages_num() == 7
+    for i in range(7):
+        msg = websocket_connection.pop_message()
+        if i >= 6:  # message for migrated address
+            assert msg['type'] == 'evm_address_migration'
+            assert sorted(msg['data'], key=operator.itemgetter('evm_chain', 'address')) == sorted([
+                {'evm_chain': 'avalanche', 'address': ethereum_accounts[1]},
+                {'evm_chain': 'avalanche', 'address': ethereum_accounts[3]},
+                {'evm_chain': 'optimism', 'address': ethereum_accounts[2]},
+                {'evm_chain': 'optimism', 'address': ethereum_accounts[3]},
+            ], key=operator.itemgetter('evm_chain', 'address'))
+        elif i >= 5:
+            assert_progress_message(msg, i, 'Potentially write migrated addresses to the DB')
+        elif i >= 1:
+            assert_progress_message(msg, i, None)
+        else:
+            assert_progress_message(msg, i, None)

@@ -13,11 +13,12 @@ class WSMessageType(Enum):
     BALANCE_SNAPSHOT_ERROR = auto()
     EVM_TRANSACTION_STATUS = auto()
     PREMIUM_STATUS_UPDATE = auto()
-    LOGIN_STATUS = auto()
+    DB_UPGRADE_STATUS = auto()
     # Used for evm address migration after new chain integration
     EVM_ADDRESS_MIGRATION = auto()
     # Used for when a new token is found and saved via processing evm transactions
     NEW_EVM_TOKEN_DETECTED = auto()
+    DATA_MIGRATION_STATUS = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member

@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional
+from typing import TYPE_CHECKING, Callable, NamedTuple
 
 from rotkehlchen.data_migrations.migrations.migration_1 import data_migration_1
 from rotkehlchen.data_migrations.migrations.migration_2 import data_migration_2
@@ -11,6 +11,8 @@ from rotkehlchen.data_migrations.migrations.migration_7 import data_migration_7
 from rotkehlchen.data_migrations.migrations.migration_8 import data_migration_8
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
+from .progress import MigrationProgressHandler
+
 if TYPE_CHECKING:
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
@@ -20,8 +22,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class MigrationRecord(NamedTuple):
     version: int
-    function: Callable[['Rotkehlchen'], None]
-    kwargs: Optional[dict[str, Any]] = None
+    function: Callable[['Rotkehlchen', MigrationProgressHandler], None]
 
 
 MIGRATION_LIST = [
@@ -46,6 +47,11 @@ class DataMigrationManager:
         with self.rotki.data.db.conn.read_ctx() as cursor:
             settings = self.rotki.data.db.get_settings(cursor)
         current_migration = settings.last_data_migration
+
+        self.progress_handler = MigrationProgressHandler(
+            messages_aggregator=self.rotki.msg_aggregator,
+            target_version=LAST_DATA_MIGRATION,
+        )
         for migration in MIGRATION_LIST:
             if current_migration < migration.version:
                 if self._perform_migration(migration) is False:
@@ -61,9 +67,9 @@ class DataMigrationManager:
 
     def _perform_migration(self, migration: MigrationRecord) -> bool:
         """Performs a single data migration and returns boolean for success/failure"""
+        self.progress_handler.new_round(version=migration.version)
         try:
-            kwargs = migration.kwargs if migration.kwargs is not None else {}
-            migration.function(self.rotki, **kwargs)
+            migration.function(self.rotki, self.progress_handler)
         except BaseException as e:
             error = f'Failed to run soft data migration to version {migration.version} due to {str(e)}'  # noqa: E501
             self.rotki.msg_aggregator.add_error(error)
