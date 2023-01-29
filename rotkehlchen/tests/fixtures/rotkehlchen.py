@@ -6,7 +6,7 @@ import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB
-from rotkehlchen.data_migrations.manager import LAST_DATA_MIGRATION, DataMigrationManager
+from rotkehlchen.data_migrations.manager import LAST_DATA_MIGRATION
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE
@@ -91,12 +91,6 @@ def fixture_cli_args(data_dir, ethrpc_endpoint, max_size_in_mb_all_logs):
     return default_args(data_dir=data_dir, ethrpc_endpoint=ethrpc_endpoint, max_size_in_mb_all_logs=max_size_in_mb_all_logs)  # noqa: E501
 
 
-@pytest.fixture(name='perform_migrations_at_unlock')
-def fixture_perform_migrations_at_unlock():
-    """Perform data migrations as normal during user unlock"""
-    return False
-
-
 @pytest.fixture(name='perform_upgrades_at_unlock')
 def fixture_perform_upgrades_at_unlock():
     """Perform user DB upgrades as normal during user unlock"""
@@ -142,7 +136,6 @@ def initialize_mock_rotkehlchen_instance(
         data_migration_version,
         use_custom_database,
         user_data_dir,
-        perform_migrations_at_unlock,
         perform_upgrades_at_unlock,
         new_db_unlock_actions,
         current_price_oracles_order,
@@ -207,14 +200,6 @@ def initialize_mock_rotkehlchen_instance(
         stack.enter_context(sleep_patch)
         if use_custom_database is not None:
             stack.enter_context(mock_db_schema_sanity_check())
-
-        if perform_migrations_at_unlock is False:
-            migrations_patch = patch.object(
-                DataMigrationManager,
-                'maybe_migrate_data',
-                side_effect=lambda *args: None,
-            )
-            stack.enter_context(migrations_patch)
 
         if new_db_unlock_actions is None:
             new_db_unlock_actions_patch = patch('rotkehlchen.rotkehlchen.Rotkehlchen._perform_new_db_actions', side_effect=lambda *args: None)  # noqa: E501
@@ -338,7 +323,6 @@ def fixture_rotkehlchen_api_server(
         data_migration_version,
         use_custom_database,
         user_data_dir,
-        perform_migrations_at_unlock,
         perform_upgrades_at_unlock,
         new_db_unlock_actions,
         current_price_oracles_order,
@@ -383,7 +367,6 @@ def fixture_rotkehlchen_api_server(
         data_migration_version=data_migration_version,
         use_custom_database=use_custom_database,
         user_data_dir=user_data_dir,
-        perform_migrations_at_unlock=perform_migrations_at_unlock,
         perform_upgrades_at_unlock=perform_upgrades_at_unlock,
         new_db_unlock_actions=new_db_unlock_actions,
         current_price_oracles_order=current_price_oracles_order,
@@ -446,7 +429,6 @@ def rotkehlchen_instance(
         data_migration_version,
         use_custom_database,
         user_data_dir,
-        perform_migrations_at_unlock,
         perform_upgrades_at_unlock,
         new_db_unlock_actions,
         current_price_oracles_order,
@@ -481,7 +463,6 @@ def rotkehlchen_instance(
         data_migration_version=data_migration_version,
         use_custom_database=use_custom_database,
         user_data_dir=user_data_dir,
-        perform_migrations_at_unlock=perform_migrations_at_unlock,
         perform_upgrades_at_unlock=perform_upgrades_at_unlock,
         new_db_unlock_actions=new_db_unlock_actions,
         current_price_oracles_order=current_price_oracles_order,
