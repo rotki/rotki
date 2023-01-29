@@ -1,7 +1,6 @@
 """Tool to pull an assets database from Github, and apply updates to it"""
 
 import argparse
-import os
 import shutil
 import sys
 from pathlib import Path
@@ -82,7 +81,7 @@ def get_remote_global_db(directory: Path, version: int, branch: str) -> Path:
 
 def main() -> None:
     args = parse_args()
-    target_directory = os.getcwd() if args.target_directory is None else args.target_directory
+    target_directory = Path.cwd() if args.target_directory is None else args.target_directory
     target_directory = Path(target_directory)
     if not target_directory.is_dir():
         print(f'Given directory {target_directory} not a valid directory')
