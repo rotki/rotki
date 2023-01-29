@@ -35,7 +35,7 @@ def _create_invalid_icon(icon_identifier: str, icons_dir: Path) -> Path:
 
 
 @pytest.mark.parametrize('use_custom_database', ['data_migration_v0.db'])
-@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('data_migration_version', [0])
 @pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 def test_migration_1(rotkehlchen_api_server):
@@ -132,8 +132,9 @@ def test_migration_1(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('use_custom_database', ['data_migration_v0.db'])
-@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('data_migration_version', [0])
 @pytest.mark.parametrize('perform_migrations_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 def test_failed_migration(rotkehlchen_api_server):
     """Test that a failed migration does not update DB setting and logs error"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -158,7 +159,7 @@ def test_failed_migration(rotkehlchen_api_server):
 
     with db.conn.read_ctx() as cursor:
         settings = db.get_settings(cursor)
-    assert settings.last_data_migration == 0, 'no upgrade should have happened'
+    assert settings.last_data_migration == 0, 'no migration should have happened'
     errors = rotki.msg_aggregator.consume_errors()
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(warnings) == 0
@@ -166,7 +167,7 @@ def test_failed_migration(rotkehlchen_api_server):
     assert errors[0] == 'Failed to run soft data migration to version 1 due to ngmi'
 
 
-@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('data_migration_version', [2])
 @pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -192,11 +193,10 @@ def test_migration_3(rotkehlchen_api_server):
     assert eth_iconpath.is_file() is False
 
 
-@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('data_migration_version', [3])
 @pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('perform_nodes_insertion', [False])
 def test_migration_4(rotkehlchen_api_server):
     """
     Test that the fourth data migration for rotki works. This migration adds the ethereum nodes
@@ -243,11 +243,10 @@ def test_migration_4(rotkehlchen_api_server):
         assert rpc_nodes[owned_index].node_info.endpoint == 'https://localhost:5222'
 
 
-@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('data_migration_version', [3])
 @pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('perform_nodes_insertion', [False])
 def test_migration_4_no_own_endpoint(rotkehlchen_api_server):
     """
     Test that the fourth data migration for rotki works when there is no custom node
@@ -273,11 +272,10 @@ def test_migration_4_no_own_endpoint(rotkehlchen_api_server):
         assert len(rpc_nodes) >= len(nodes)
 
 
-@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('data_migration_version', [4])
 @pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('perform_nodes_insertion', [False])
 def test_migration_5(rotkehlchen_api_server):
     """
     Test that the fifth data migration for rotki works.
@@ -356,11 +354,10 @@ def _write_nodes_and_migrate(
     return nodes_in_db
 
 
-@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('data_migration_version', [5])
 @pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('perform_nodes_insertion', [False])
+@pytest.mark.parametrize('new_db_unlock_actions', [None])
 def test_migration_6_default_rpc_nodes(rotkehlchen_api_server):
     """
     Test that the sixth data migration works when the user has not customized the nodes.
@@ -376,11 +373,10 @@ def test_migration_6_default_rpc_nodes(rotkehlchen_api_server):
     assert FVal(sum(FVal(node[3]) for node in nodes_in_db)) == ONE
 
 
-@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('data_migration_version', [5])
 @pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('perform_nodes_insertion', [False])
+@pytest.mark.parametrize('new_db_unlock_actions', [None])
 def test_migration_6_customized_rpc_nodes(rotkehlchen_api_server):
     """
     Test that the sixth data migration works when the user has customized the rpc nodes.
@@ -406,11 +402,10 @@ def test_migration_6_customized_rpc_nodes(rotkehlchen_api_server):
     assert set(nodes_in_db) == expected_nodes
 
 
-@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('data_migration_version', [5])
 @pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('perform_nodes_insertion', [False])
+@pytest.mark.parametrize('new_db_unlock_actions', [None])
 def test_migration_6_own_node(rotkehlchen_api_server):
     """
     Test that the sixth data migration works when user has no customized nodes but has
@@ -429,11 +424,9 @@ def test_migration_6_own_node(rotkehlchen_api_server):
     assert set(nodes_in_db) == expected_nodes
 
 
-@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('data_migration_version', [6])
 @pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('perform_nodes_insertion', [False])
 def test_migration_7_nodes(rotkehlchen_api_server: 'APIServer'):
     """
     Test that the seventh data migration works adding llamanode to the list of eth nodes.
@@ -464,10 +457,9 @@ def test_migration_7_nodes(rotkehlchen_api_server: 'APIServer'):
     assert llama_node_in_db is True
 
 
-@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('data_migration_version', [7])
 @pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address(), make_evm_address(), make_evm_address(), make_evm_address()]])  # noqa: E501
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_migration_8(rotkehlchen_api_server, ethereum_accounts, websocket_connection):

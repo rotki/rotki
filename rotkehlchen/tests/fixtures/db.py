@@ -10,7 +10,6 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
-from rotkehlchen.data_migrations.migrations.migration_4 import read_and_write_nodes_in_database
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
@@ -21,6 +20,7 @@ from rotkehlchen.tests.utils.database import (
     maybe_include_cryptocompare_key,
     maybe_include_etherscan_key,
     mock_db_schema_sanity_check,
+    perform_new_db_unlock_actions,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -173,7 +173,7 @@ def database(
         manually_tracked_balances,
         data_migration_version,
         use_custom_database,
-        perform_nodes_insertion,
+        new_db_unlock_actions,
         sql_vm_instructions_cb,
 ) -> Optional[DBHandler]:
     if not start_with_logged_in_user:
@@ -194,9 +194,8 @@ def database(
         use_custom_database=use_custom_database,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
     )
-    if perform_nodes_insertion:
-        with db_handler.user_write() as cursor:
-            read_and_write_nodes_in_database(write_cursor=cursor)
+    if new_db_unlock_actions is not None:
+        perform_new_db_unlock_actions(db=db_handler, new_db_unlock_actions=new_db_unlock_actions)
     return db_handler
 
 

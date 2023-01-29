@@ -5,6 +5,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
+from rotkehlchen.data_migrations.manager import LAST_DATA_MIGRATION
 from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
@@ -50,7 +51,7 @@ DEFAULT_TAXABLE_LEDGER_ACTIONS = [
 DEFAULT_PNL_CSV_WITH_FORMULAS = True
 DEFAULT_PNL_CSV_HAVE_SUMMARY = False
 DEFAULT_SSF_0GRAPH_MULTIPLIER = 0
-DEFAULT_LAST_DATA_MIGRATION = 0
+DEFAULT_LAST_DATA_MIGRATION = LAST_DATA_MIGRATION
 DEFAULT_COST_BASIS_METHOD = CostBasisMethod.FIFO
 DEFAULT_TREAT_ETH2_AS_ETH = False
 DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED = False

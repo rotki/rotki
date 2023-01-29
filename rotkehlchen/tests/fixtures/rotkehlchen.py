@@ -7,7 +7,6 @@ import pytest
 import rotkehlchen.tests.utils.exchanges as exchange_tests
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB
 from rotkehlchen.data_migrations.manager import LAST_DATA_MIGRATION, DataMigrationManager
-from rotkehlchen.data_migrations.migrations.migration_4 import read_and_write_nodes_in_database
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE
@@ -26,6 +25,7 @@ from rotkehlchen.tests.utils.database import (
     maybe_include_cryptocompare_key,
     maybe_include_etherscan_key,
     mock_db_schema_sanity_check,
+    perform_new_db_unlock_actions,
 )
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
@@ -103,9 +103,16 @@ def fixture_perform_upgrades_at_unlock():
     return True
 
 
-@pytest.fixture(name='perform_nodes_insertion')
-def fixture_perform_nodes_insertion():
-    return True
+@pytest.fixture(name='new_db_unlock_actions')
+def fixture_new_db_unlock_actions():
+    """Overwrite actions to perform at unlock of a fresh DB. None means overwrite with nothing.
+
+    Otherwise it's a sequence of actions to overwrite it with. Valid actions are:
+    ('rpc_nodes', 'spam_assets')
+
+    Default is just to write rpc nodes in the DB
+    """
+    return ('rpc_nodes',)
 
 
 def initialize_mock_rotkehlchen_instance(
@@ -137,7 +144,7 @@ def initialize_mock_rotkehlchen_instance(
         user_data_dir,
         perform_migrations_at_unlock,
         perform_upgrades_at_unlock,
-        perform_nodes_insertion,
+        new_db_unlock_actions,
         current_price_oracles_order,
         network_mocking,
 ):
@@ -209,6 +216,15 @@ def initialize_mock_rotkehlchen_instance(
             )
             stack.enter_context(migrations_patch)
 
+        if new_db_unlock_actions is None:
+            new_db_unlock_actions_patch = patch('rotkehlchen.rotkehlchen.Rotkehlchen._perform_new_db_actions', side_effect=lambda *args: None)  # noqa: E501
+        else:
+            def actions_after_unlock(self) -> None:
+                perform_new_db_unlock_actions(db=self.data.db, new_db_unlock_actions=new_db_unlock_actions)  # noqa: E501
+
+            new_db_unlock_actions_patch = patch('rotkehlchen.rotkehlchen.Rotkehlchen._perform_new_db_actions', side_effect=actions_after_unlock, autospec=True)  # noqa: E501
+        stack.enter_context(new_db_unlock_actions_patch)
+
         if perform_upgrades_at_unlock is False:
             upgrades_patch = patch.object(
                 DBUpgradeManager,
@@ -250,10 +266,6 @@ def initialize_mock_rotkehlchen_instance(
     # After unlocking when all objects are created we need to also include
     # customized fixtures that may have been set by the tests
     rotki.chains_aggregator.accounts = blockchain_accounts
-
-    if perform_nodes_insertion:
-        with rotki.data.db.user_write() as cursor:
-            read_and_write_nodes_in_database(write_cursor=cursor)
 
     maybe_mock_historical_price_queries(
         historian=PriceHistorian(),
@@ -328,7 +340,7 @@ def fixture_rotkehlchen_api_server(
         user_data_dir,
         perform_migrations_at_unlock,
         perform_upgrades_at_unlock,
-        perform_nodes_insertion,
+        new_db_unlock_actions,
         current_price_oracles_order,
         network_mocking,
         mock_other_web3,
@@ -373,7 +385,7 @@ def fixture_rotkehlchen_api_server(
         user_data_dir=user_data_dir,
         perform_migrations_at_unlock=perform_migrations_at_unlock,
         perform_upgrades_at_unlock=perform_upgrades_at_unlock,
-        perform_nodes_insertion=perform_nodes_insertion,
+        new_db_unlock_actions=new_db_unlock_actions,
         current_price_oracles_order=current_price_oracles_order,
         network_mocking=network_mocking,
     )
@@ -436,7 +448,7 @@ def rotkehlchen_instance(
         user_data_dir,
         perform_migrations_at_unlock,
         perform_upgrades_at_unlock,
-        perform_nodes_insertion,
+        new_db_unlock_actions,
         current_price_oracles_order,
         network_mocking,
 ):
@@ -471,7 +483,7 @@ def rotkehlchen_instance(
         user_data_dir=user_data_dir,
         perform_migrations_at_unlock=perform_migrations_at_unlock,
         perform_upgrades_at_unlock=perform_upgrades_at_unlock,
-        perform_nodes_insertion=perform_nodes_insertion,
+        new_db_unlock_actions=new_db_unlock_actions,
         current_price_oracles_order=current_price_oracles_order,
         network_mocking=network_mocking,
     )
