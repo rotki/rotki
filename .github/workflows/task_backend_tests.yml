@@ -17,6 +17,7 @@ jobs:
     name: 'Backend tests'
     timeout-minutes: 90
     strategy:
+      fail-fast: false
       matrix:
         test-group: [api, others]
     steps:
