@@ -1588,7 +1588,6 @@ class BTCXpubResource(BaseMethodView):
 class IgnoredAssetsResource(BaseMethodView):
 
     modify_schema = IgnoredAssetsSchema()
-    post_schema = AsyncQueryArgumentSchema()
 
     @require_loggedin_user()
     def get(self) -> Response:
@@ -1603,10 +1602,6 @@ class IgnoredAssetsResource(BaseMethodView):
     @use_kwargs(modify_schema, location='json')
     def delete(self, assets: list[Asset]) -> Response:
         return self.rest_api.remove_ignored_assets(assets=assets)
-
-    @use_kwargs(post_schema, location='json_and_query')
-    def post(self, async_query: bool) -> Response:
-        return self.rest_api.pull_spam_assets(async_query)
 
 
 class IgnoredActionsResource(BaseMethodView):
