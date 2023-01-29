@@ -98,7 +98,11 @@ class Opensea(ExternalServiceWithApiKey):
             return self.backup_key
 
         try:
-            response = requests.get('https://rotki.com/api/1/credentials', json={'name': 'opensea'})  # noqa: E501
+            response = requests.get(
+                url='https://rotki.com/api/1/credentials',
+                json={'name': 'opensea'},
+                timeout=DEFAULT_TIMEOUT_TUPLE,
+            )
         except requests.exceptions.RequestException as e:
             log.error(f'Could not connect to rotki server for fetching backup opensea key due to {str(e)}')  # noqa: E501
             return None

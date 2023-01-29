@@ -407,7 +407,7 @@ class MacPackaging:
         self.__environment = environment
         self.__default_keychain: Optional[str] = None
         self.__keychain = 'rotki-build.keychain'
-        self.__p12 = '/tmp/certificate.p12'
+        self.__p12 = '/tmp/certificate.p12'  # noqa: S108  # ask Kelsos if this canchange
 
     @staticmethod
     def unpack_wheels(

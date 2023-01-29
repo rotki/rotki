@@ -8,6 +8,7 @@ from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -38,7 +39,7 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
     - RemoteError
     """
     try:
-        response = requests.get(YEARN_OLD_API)
+        response = requests.get(YEARN_OLD_API, timeout=DEFAULT_TIMEOUT_TUPLE)
         data = response.json()
     except requests.exceptions.RequestException as e:
         raise RemoteError(f'Failed to obtain yearn vault information. {str(e)}') from e
