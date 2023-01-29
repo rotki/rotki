@@ -273,7 +273,7 @@ class Checksum:
 
 class Storage:
     def __init__(self) -> None:
-        self.working_directory = Path(os.getcwd())
+        self.working_directory = Path.cwd()
         self.dist_directory = self.working_directory / 'dist'
         self.build_directory = self.working_directory / 'build'
         self.wheel_directory = self.build_directory / 'wheels'
@@ -429,7 +429,7 @@ class MacPackaging:
                 logger.info(f'unpacking wheel {file}')
                 subprocess.call(f'wheel unpack {file}', shell=True)
 
-            os.unlink(file)
+            file.unlink()
 
     @staticmethod
     def macos_link_archs(source: Path, destination: Path) -> None:
@@ -671,7 +671,7 @@ class MacPackaging:
         archive_path = build_directory / miniupnpc_archive
 
         if archive_path.exists():
-            os.unlink(archive_path)
+            archive_path.unlink()
 
         if miniupnpc_directory.exists():
             shutil.rmtree(miniupnpc_directory)
