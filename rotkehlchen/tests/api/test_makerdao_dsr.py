@@ -220,7 +220,7 @@ def mock_etherscan_for_dsr(
                             events.append(account1_join1_event)
                         if from_block <= params.account1_join2_blocknumber <= to_block:
                             events.append(account1_join2_event)
-                    elif proxy2_contents in topic1:  # noqa: SIM102, E501  # https://github.com/charliermarsh/ruff/issues/2094
+                    elif proxy2_contents in topic1:
                         if from_block <= params.account2_join1_blocknumber <= to_block:
                             events.append(account2_join1_event)
                     else:
@@ -266,7 +266,7 @@ def mock_etherscan_for_dsr(
                             events.append(account1_join2_move_event)
                     elif proxy2_contents in topic1 and from_block <= params.account2_join1_blocknumber <= to_block:  # deposit from acc2  # noqa: E501
                         events.append(account2_join1_move_event)
-                elif topic0.startswith('0xef693bed'):  # exit  # noqa: SIM102, E501  # https://github.com/charliermarsh/ruff/issues/2094
+                elif topic0.startswith('0xef693bed'):  # exit
                     if from_block <= params.account1_exit1_blocknumber <= to_block:
                         events.append(account1_exit1_move_event)
                 else:
