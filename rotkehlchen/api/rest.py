@@ -56,7 +56,6 @@ from rotkehlchen.assets.asset import (
     FiatAsset,
 )
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import (
     ManuallyTrackedBalance,
@@ -4705,18 +4704,6 @@ class RestAPI():
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
-
-    def _pull_spam_assets(self) -> dict[str, Any]:
-        assets_updated = update_spam_assets(db=self.rotkehlchen.data.db)
-        return {'result': assets_updated, 'message': '', 'status_code': HTTPStatus.OK}
-
-    def pull_spam_assets(self, async_query: bool) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._pull_spam_assets,
-            )
-        response_result = self._pull_spam_assets()
-        return api_response(result=response_result, status_code=response_result['status_code'])
 
     def get_all_counterparties(self) -> Response:
         return api_response(

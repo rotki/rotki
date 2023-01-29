@@ -163,17 +163,6 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
         result = assert_proper_response_with_result(response)
         assert assets_after_deletion <= set(result)
 
-        # Mock fetching remote assets to be ignored
-        response = requests.post(
-            api_url_for(
-                rotkehlchen_api_server_with_exchanges,
-                'ignoredassetsresource',
-            ),
-        )
-        result = assert_proper_response_with_result(response)
-        assert result >= 1
-        assert len(rotki.data.db.get_ignored_assets(cursor)) > len(assets_after_deletion)
-
 
 @pytest.mark.parametrize('perform_migrations_at_unlock', [True])
 @pytest.mark.parametrize('method', ['put', 'delete'])
