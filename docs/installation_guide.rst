@@ -276,7 +276,7 @@ If you prefer to use docker compose, a docker-compose.yml template is provided b
 Using docker over a public network
 ----------------------------------
 
-Since rotki was designed to run over a public network it is :ref:`generally advised <docker warning>` to avoid
+Since rotki was not designed to run over a public network it is :ref:`generally advised <docker warning>` to avoid
 directly exposing your rotki instance over public network.
 
 If you still want to access rotki over a public network it is suggested to use at least a proxy with
