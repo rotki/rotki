@@ -288,15 +288,11 @@ class RestAPI():
             task_str = 'Main greenlet'
 
         log.error(
-            '{} dies with exception: {}.\n'
-            'Exception Name: {}\nException Info: {}\nTraceback:\n {}'
-            .format(
-                task_str,
-                greenlet.exception,
-                greenlet.exc_info[0],
-                greenlet.exc_info[1],
-                ''.join(traceback.format_tb(greenlet.exc_info[2])),
-            ))
+            f'{task_str} dies with exception: {greenlet.exception}.\n'
+            f'Exception Name: {greenlet.exc_info[0]}\n'
+            f'Exception Info: {greenlet.exc_info[1]}\n'
+            f'Traceback:\n {"".join(traceback.format_tb(greenlet.exc_info[2]))}',
+        )
         # also write an error for the task result if it's not the main greenlet
         if task_id is not None:
             result = {

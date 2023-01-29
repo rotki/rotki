@@ -508,9 +508,7 @@ class BinanceImporter(BaseExchangeImporter):
         log.debug(f'Skipped Binance non-trade rows {skipped_nontrade_rows}')
         log.debug(f'Total found Binance entries: {total_found}')
         log.debug(f'Total skipped Binance csv rows: {skipped_count}')
-        log.debug('Binance import stats: {}'.format(
-            [{type(entry_class).__name__: amount} for entry_class, amount in stats.items()],
-        ))
+        log.debug(f'Binance import stats: {[{type(entry_class).__name__: amount} for entry_class, amount in stats.items()]}')  # noqa: E501
         if skipped_count > 0:
             self.db.msg_aggregator.add_warning(
                 f'Skipped {skipped_count} rows during processing binance csv file. '

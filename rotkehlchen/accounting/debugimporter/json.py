@@ -68,7 +68,7 @@ class DebugHistoryImporter:
                     events.append(ValidatorDailyStats.deserialize(event))
         except (DeserializationError, KeyError, UnknownAsset) as e:
             error_msg = f'Error while adding events due to: {str(e)}'
-            log.error(error_msg, exc_info=True)
+            log.exception(error_msg)
             return False, error_msg, {}
 
         log.debug('Trying to add settings')
