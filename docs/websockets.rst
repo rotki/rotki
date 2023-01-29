@@ -80,20 +80,20 @@ The messages sent by rotki when a user is logging in and a db upgrade is happeni
 
     {
         "type": "db_upgrade_status",
-	"data": {
-	    "start_version": 26,
-	    "target_version": 35,
-	    "current_upgrade": {
-		"to_version": 30,
-		"total_steps": 8,
-		"current_step": 5
-	    }
-	}
+        "data": {
+            "start_version": 26,
+            "target_version": 35,
+            "current_upgrade": {
+                "to_version": 30,
+                "total_steps": 8,
+                "current_step": 5
+            }
+        }
     }
 
 
 - ``start_version``: DB version that user's database had before any upgrades began. This is the version of the DB when rotki first starts.
-- ``current_upgrade``: Structure that holds information about currently running upgrade. Contains: ``to_version`` - version of the the database upgrade that is currently being applied; ``total_steps`` - total number of steps that currently running upgrade consists of; ``current_step`` - step that the upgrade is at as of this websocket message. 
+- ``current_upgrade``: Structure that holds information about currently running upgrade. Contains: ``to_version`` - version of the the database upgrade that is currently being applied; ``total_steps`` - total number of steps that currently running upgrade consists of; ``current_step`` - step that the upgrade is at as of this websocket message.
 - ``target_version``: The target version of the DB. When this is reached, the upgrade process will have finished.
 
 
@@ -108,15 +108,15 @@ The messages sent by rotki when a user is logging in and a db upgrade is happeni
     {
         "type": "data_migration_status",
         "data": {
-	    "start_version": 1,
-	    "target_version": 8,
-	    "current_migration": {
-		"version": 8,
-		"total_steps": 20,
-		"current_step": 3,
-		"description": "Checking 0xbd96cDCc6Ae1ffB73ace84E16601E1CF909D5749 EVM chain activity"
-	    }
-	}
+            "start_version": 1,
+            "target_version": 8,
+            "current_migration": {
+                "version": 8,
+                "total_steps": 20,
+                "current_step": 3,
+                "description": "Checking 0xbd96cDCc6Ae1ffB73ace84E16601E1CF909D5749 EVM chain activity"
+            }
+        }
     }
 
 
@@ -135,12 +135,12 @@ At the user DB migrations when a new evm chain is introduced rotki will do a mig
     {
         "type": "evm_address_migration",
         "data": [{
-	    "evm_chain": "optimism",
-	    "address": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12"
-	}, {
-	    "evm_chain": "optimism",
-	    "address": "0xFeebabE6b0418eC13b30aAdF129F5DcDd4f70CeA"
-	}]
+            "evm_chain": "optimism",
+            "address": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12"
+        }, {
+            "evm_chain": "optimism",
+            "address": "0xFeebabE6b0418eC13b30aAdF129F5DcDd4f70CeA"
+        }]
     }
 
 

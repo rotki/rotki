@@ -17,6 +17,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, CryptoAsset
+from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.balances.manual import (
     account_for_manually_tracked_asset_balances,
     get_manually_tracked_balances,
@@ -30,6 +31,7 @@ from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
+from rotkehlchen.chain.evm.nodes import populate_rpc_nodes_in_database
 from rotkehlchen.chain.optimism.accountant import OptimismAccountingAggregator
 from rotkehlchen.chain.optimism.manager import OptimismManager
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
@@ -211,6 +213,12 @@ class Rotkehlchen():
         self.exchange_manager.delete_all_exchanges()
         self.data.logout()
 
+    def _perform_new_db_actions(self) -> None:
+        """Actions to perform at creation of a new DB"""
+        update_spam_assets(self.data.db)
+        with self.data.db.user_write() as write_cursor:
+            populate_rpc_nodes_in_database(write_cursor)
+
     def unlock_user(
             self,
             user: str,
@@ -255,6 +263,9 @@ class Rotkehlchen():
             exception_is_error=False,
             method=self.data.db.ensure_data_integrity,
         )
+        if create_new:
+            self._perform_new_db_actions()
+
         self.data_importer = CSVDataImporter(db=self.data.db)
         self.premium_sync_manager = PremiumSyncManager(
             migration_manager=self.migration_manager,
