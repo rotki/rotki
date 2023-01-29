@@ -651,8 +651,8 @@ class Kraken(ExchangeInterface):
                 # it is possible that kraken misbehaves and either does not
                 # send us enough results or thinks it has more than it really does
                 log.warning(
-                    'Missing {} results when querying kraken endpoint {}'.format(
-                        count - offset, endpoint),
+                    f'Missing {count - offset} results when querying kraken '
+                    f'endpoint {endpoint}',
                 )
                 with_errors = True
                 break

@@ -51,6 +51,7 @@ select = [
     # "D",  # pydocstule -- too many docstuff we don't use
     "N",
     "B",
+    "G",
     # "EM",  #  our exceptions use f strings everywhere. Very little upside to this and I don't think it's cleaner code
     "ISC",
     "ICN",
@@ -66,7 +67,6 @@ select = [
     "ERA",
     "PGH",
     "RUF",
-    "ICN",
     "RET",
     "SIM",
     # "TID",  # tidy-imports -- we use relative imports from parent in some cases. Maybe stop?
@@ -77,7 +77,8 @@ select = [
     "PLW",
     "PIE",
     "COM",
-    "DTZ"
+    "DTZ",
+    "EXE"
     # "RUF",  # ruff specific rules, we enable only those we need below
 ]
 extend-select = [
