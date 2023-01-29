@@ -80,12 +80,15 @@ select = [
     "DTZ",
     "EXE",
     "INP",
-    "PT"
+    "PT",
+    # "TCH",  # Should do it at some point. Too many hits and no autofix. When enabled fully, remove from extend-select
     # "RUF",  # ruff specific rules, we enable only those we need below
 ]
 extend-select = [
-    "Q002",  # Single quote docstring found but double quotes preferred
-    "Q003",  # Change outer quotes to avoid escaping inner quotes
+    "Q002",   # Single quote docstring found but double quotes preferred
+    "Q003",   # Change outer quotes to avoid escaping inner quotes
+    "TCH004", # Move import out of type-checking block. Used for more than type hinting.
+    "TCH005", # Found empty type-checking block
 ]
 ignore = [
     "E402",  # module level import at file top. https://www.flake8rules.com/rules/E402.html
