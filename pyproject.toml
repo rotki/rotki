@@ -78,7 +78,8 @@ select = [
     "PIE",
     "COM",
     "DTZ",
-    "EXE"
+    "EXE",
+    "INP"
     # "RUF",  # ruff specific rules, we enable only those we need below
 ]
 extend-select = [
@@ -137,13 +138,18 @@ target-version = "py39"
 
 [tool.ruff.per-file-ignores]
 
-"tools/*" = ["T201"]  # got prints in tools
+"tools/*" = [
+	  "T201",  # got prints in tools
+	  "INP001",  # no need for __init__ in tools
+]
 "rotkehlchen/__main__.py" = ["T201"]  # got prints in main
 "rotkehlchen/api/server.py" = ["T201"]  # got prints in server.py
 "rotkehlchen/args.py" = ["T201"]  # got prints in args.py
 "rotkehlchen/db/minimized_schema.py" = ["E501"]  # huge lines there
 "rotkehlchen/globaldb/minimized_schema.py" = ["E501"]  # huge lines there
 "rotkehlchen/tests/*" = ["S113"]  # tests have no timeout in requests
+"package.py" = ["INP001"]  # no need for __init__ here
+"setup.py" = ["INP001"]  # no need for __init__ here
 
 
 [tool.ruff.flake8-quotes]
