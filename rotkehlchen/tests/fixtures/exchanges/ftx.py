@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.tests.utils.exchanges import create_test_ftx
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def mock_ftx(
         database,
         inquirer,  # pylint: disable=unused-argument,

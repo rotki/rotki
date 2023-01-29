@@ -14,7 +14,7 @@ def fixture_bitpanda_api_secret():
     return make_api_secret()
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_bitpanda(
         database,
         inquirer,  # pylint: disable=unused-argument

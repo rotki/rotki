@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.tests.utils.exchanges import create_test_iconomi
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def function_scope_iconomi(
         inquirer,  # pylint: disable=unused-argument
         function_scope_messages_aggregator,

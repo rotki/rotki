@@ -11,7 +11,7 @@ from rotkehlchen.types import Location, deserialize_evm_tx_hash
 from rotkehlchen.utils.hexbytes import HexBytes
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [['0x648aA14e4424e0825A5cE739C8C68610e143FB79']])  # noqa: E501
 def test_makerdao_simple_transaction(
         database,

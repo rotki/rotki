@@ -62,7 +62,7 @@ def test_multiple_addresses_balances(mock_uniswap):
     assert exp_protocol_balance == protocol_balance
 
 
-@pytest.mark.parametrize('graph_query_limit, no_requests', [(2, 2), (3, 1)])
+@pytest.mark.parametrize(('graph_query_limit', 'no_requests'), [(2, 2), (3, 1)])
 def test_pagination(
         mock_uniswap,
         graph_query_limit,

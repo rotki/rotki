@@ -152,7 +152,7 @@ def test_no_logs_and_zero_eth(
     ]
 
 
-@pytest.mark.parametrize('ethereum_accounts,optimism_accounts,tether_address,chain', [
+@pytest.mark.parametrize(('ethereum_accounts', 'optimism_accounts', 'tether_address', 'chain'), [
     (['0x4bBa290826C253BD854121346c370a9886d1bC26', '0xED2f12B896d0C7BFf4050d3D8c4f95Bd61aAa12d'], [], '0xdAC17F958D2ee523a2206206994597C13D831ec7', ChainID.ETHEREUM),  # noqa: E501
     ([], ['0x4bBa290826C253BD854121346c370a9886d1bC26', '0xED2f12B896d0C7BFf4050d3D8c4f95Bd61aAa12d'], '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58', ChainID.OPTIMISM),  # noqa: E501
 ])
@@ -248,7 +248,7 @@ def test_simple_erc20_transfer(
     ]
 
 
-@pytest.mark.parametrize('ethereum_accounts,optimism_accounts,chain', [
+@pytest.mark.parametrize(('ethereum_accounts', 'optimism_accounts', 'chain'), [
     (['0x4bBa290826C253BD854121346c370a9886d1bC26', '0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC'], [], ChainID.ETHEREUM),  # noqa: E501
     ([], ['0x4bBa290826C253BD854121346c370a9886d1bC26', '0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC'], ChainID.OPTIMISM),  # noqa: E501
 ])
@@ -332,7 +332,7 @@ def test_eth_transfer(
     ]
 
 
-@pytest.mark.parametrize('ethereum_accounts,optimism_accounts,chain', [
+@pytest.mark.parametrize(('ethereum_accounts', 'optimism_accounts', 'chain'), [
     (['0x4bBa290826C253BD854121346c370a9886d1bC26'], [], ChainID.ETHEREUM),
     ([], ['0x4bBa290826C253BD854121346c370a9886d1bC26'], ChainID.OPTIMISM),
 ])

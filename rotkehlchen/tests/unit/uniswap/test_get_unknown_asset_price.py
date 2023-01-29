@@ -33,7 +33,7 @@ def test_unknown_asset_has_usd_price(mock_uniswap):
     assert asset_price == exp_asset_price
 
 
-@pytest.mark.parametrize('graph_query_limit, no_requests', [(2, 2), (3, 1)])
+@pytest.mark.parametrize(('graph_query_limit', 'no_requests'), [(2, 2), (3, 1)])
 def test_pagination(
         mock_uniswap,
         graph_query_limit,

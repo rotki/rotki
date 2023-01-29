@@ -25,7 +25,7 @@ def fixture_gemini_test_base_uri():
     return 'https://api.sandbox.gemini.com'
 
 
-@pytest.fixture
+@pytest.fixture()
 def sandbox_gemini(
         database,
         inquirer,  # pylint: disable=unused-argument

@@ -72,7 +72,6 @@ if sys.platform == 'darwin':
     @pytest.fixture(scope='session', autouse=True)
     def _tmpdir_short(request):
         """Shorten tmpdir paths"""
-        from pytest import TempdirFactory  # pylint: disable=import-outside-toplevel
 
         def getbasetemp(self):
             """ return base temporary directory. """
@@ -96,11 +95,11 @@ if sys.platform == 'darwin':
                 self.trace('new basetemp', t)
                 return t
 
-        TempdirFactory.getbasetemp = getbasetemp
+        pytest.TempdirFactory.getbasetemp = getbasetemp
         with suppress(AttributeError):
             delattr(request.config._tmpdirhandler, '_basetemp')
 
-    @pytest.fixture
+    @pytest.fixture()
     def tmpdir(request, tmpdir_factory):
         """Return a temporary directory path object
         which is unique to each test function invocation,
@@ -116,8 +115,8 @@ if sys.platform == 'darwin':
         return tmpdir_factory.mktemp(name, numbered=True)
 
 
-@pytest.fixture(autouse=True, scope='session')
-def profiler(request):
+@pytest.fixture(autouse=True, scope='session', name='profiler')
+def _fixture_profiler(request):
     profiler_instance = None
     stack_stream = None
 

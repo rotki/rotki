@@ -15,7 +15,7 @@ from rotkehlchen.tests.utils.substrate import (
 from rotkehlchen.types import SupportedBlockchain
 
 
-@pytest.mark.parametrize('value, is_valid', [
+@pytest.mark.parametrize(('value', 'is_valid'), [
     (SUBSTRATE_ACC1_KSM_ADDR, True),
     (SUBSTRATE_ACC2_KSM_ADDR, True),
     (SUBSTRATE_ACC1_PUBLIC_KEY, False),
@@ -28,7 +28,7 @@ def test_is_valid_substrate_address(value, is_valid):
     assert result is is_valid
 
 
-@pytest.mark.parametrize('public_key, address', [
+@pytest.mark.parametrize(('public_key', 'address'), [
     (SUBSTRATE_ACC1_PUBLIC_KEY, SUBSTRATE_ACC1_KSM_ADDR),
     (SUBSTRATE_ACC2_PUBLIC_KEY, SUBSTRATE_ACC2_KSM_ADDR),
 ])

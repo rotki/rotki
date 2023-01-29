@@ -66,7 +66,7 @@ def fixture_should_mock_price_queries():
     return True
 
 
-@pytest.fixture
+@pytest.fixture()
 def default_mock_price_value() -> Optional[FVal]:
     """Determines test behavior If a mock price is not found
 
@@ -78,7 +78,7 @@ def default_mock_price_value() -> Optional[FVal]:
     return None
 
 
-@pytest.fixture
+@pytest.fixture()
 def mocked_price_queries():
     return defaultdict(defaultdict)
 

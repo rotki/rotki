@@ -272,7 +272,7 @@ def test_convert_to_int():
     assert convert_to_int(b'4', accept_only_exact=False) == 4
 
 
-@pytest.mark.parametrize('address, salt, init_code, is_init_code_hashed, expected_contract_address', [  # noqa: E501
+@pytest.mark.parametrize(('address', 'salt', 'init_code', 'is_init_code_hashed', 'expected_contract_address'), [  # noqa: E501
     (
         '0x0000000000000000000000000000000000000000',
         '0x0000000000000000000000000000000000000000000000000000000000000000',

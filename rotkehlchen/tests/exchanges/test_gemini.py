@@ -76,6 +76,9 @@ def test_gemini_all_symbols_are_known(sandbox_gemini):
     for symbol in symbols:
         try:
             base, quote = gemini_symbol_to_base_quote(symbol)
+            assert base is not None
+            assert quote is not None
+
         except UnprocessableTradePair as e:
             test_warnings.warn(UserWarning(
                 f'UnprocessableTradePair in Gemini. {e}',
@@ -87,11 +90,8 @@ def test_gemini_all_symbols_are_known(sandbox_gemini):
             ))
             continue
         except UnsupportedAsset as e:
-            assert str(e).split(' ')[2] in UNSUPPORTED_GEMINI_ASSETS
+            assert str(e).split(' ')[2] in UNSUPPORTED_GEMINI_ASSETS  # noqa: PT017
             continue
-
-        assert base is not None
-        assert quote is not None
 
 
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')

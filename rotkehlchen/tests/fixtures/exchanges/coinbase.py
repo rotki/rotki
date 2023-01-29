@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.tests.utils.exchanges import create_test_coinbase
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def function_scope_coinbase(
         database,
         inquirer,  # pylint: disable=unused-argument,

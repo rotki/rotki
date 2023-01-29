@@ -145,7 +145,7 @@ def test_set_settings(rotkehlchen_api_server):
         assert result[setting] == value
 
 
-@pytest.mark.parametrize('rpc_setting, error_msg', [
+@pytest.mark.parametrize(('rpc_setting', 'error_msg'), [
     (
         'ksm_rpc_endpoint',
         'kusama failed to connect to own node at endpoint',

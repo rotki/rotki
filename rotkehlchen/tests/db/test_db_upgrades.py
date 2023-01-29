@@ -856,6 +856,15 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
         ]
         assert cursor.execute('SELECT * from evm_tx_mappings').fetchall() == expected_evm_tx_mappings  # noqa: E501
 
+        cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('BIFI',))
+        assert cursor.fetchone() == (1,)
+        # check that assets are updated correctly in the user db
+        cursor.execute(
+            'SELECT COUNT(*) from manually_tracked_balances WHERE asset=?',
+            ('BIFI',),
+        )
+        assert cursor.fetchone() == (1,)
+
     xpub1 = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
     xpub2 = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
 
@@ -870,17 +879,8 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
             ),
         )
     # it should fail before the upgrade
-    with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
-        with db_v34.conn.write_ctx() as write_cursor:
-            try_insert_mapping(write_cursor)
-        cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('BIFI',))
-        assert cursor.fetchone() == (1,)
-        # check that assets are updated correctly in the user db
-        cursor.execute(
-            'SELECT COUNT(*) from manually_tracked_balances WHERE asset=?',
-            ('BIFI',),
-        )
-        assert cursor.fetchone() == (1,)
+    with db_v34.conn.write_ctx() as write_cursor, pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member  # noqa: E501
+        try_insert_mapping(write_cursor)
 
     # Migrate the database
     db_v35 = _init_db_with_target_version(

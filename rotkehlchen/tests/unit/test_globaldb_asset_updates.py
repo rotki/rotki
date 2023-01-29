@@ -55,7 +55,7 @@ def mock_github_assets_response(url, timeout):  # pylint: disable=unused-argumen
     raise AssertionError(f'Unknown url {url}')
 
 
-@pytest.mark.parametrize('text,expected_data,error_msg', [
+@pytest.mark.parametrize(('text', 'expected_data', 'error_msg'), [
     (
         """
         INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol)

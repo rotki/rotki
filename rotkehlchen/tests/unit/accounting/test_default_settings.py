@@ -135,7 +135,7 @@ def test_accounting_no_settings(accounting_pot: 'AccountingPot'):
     assert len(accounting_pot.pnls) == 0, 'Nothing should have happened since there were no settings'  # noqa: E501
 
 
-@pytest.mark.parametrize('event_type,event_subtype,is_taxable,airdrops_taxable', [
+@pytest.mark.parametrize(('event_type', 'event_subtype', 'is_taxable', 'airdrops_taxable'), [
     (HistoryEventType.RECEIVE, HistoryEventSubType.NONE, True, False),
     (HistoryEventType.WITHDRAWAL, HistoryEventSubType.NONE, False, False),
     (HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP, False, False),
@@ -180,7 +180,7 @@ def test_accounting_receive_settings(
     assert accounting_pot.pnls.free == ZERO
 
 
-@pytest.mark.parametrize('event_type,event_subtype,is_taxable,counterparty,gas_taxable,include_crypto2crypto', [  # noqa: E501
+@pytest.mark.parametrize(('event_type', 'event_subtype', 'is_taxable', 'counterparty', 'gas_taxable', 'include_crypto2crypto'), [  # noqa: E501
     (HistoryEventType.SPEND, HistoryEventSubType.NONE, True, None, False, False),
     (HistoryEventType.SPEND, HistoryEventSubType.FEE, True, None, False, False),
     (HistoryEventType.SPEND, HistoryEventSubType.FEE, True, CPT_GAS, True, False),

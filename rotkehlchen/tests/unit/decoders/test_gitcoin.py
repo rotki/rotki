@@ -14,7 +14,7 @@ from rotkehlchen.types import Location, deserialize_evm_tx_hash
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_gitcoin_old_donation(database, ethereum_inquirer):
     """Data taken from

@@ -464,7 +464,7 @@ def fixture_btc_derivation_gap_limit():
     return DEFAULT_BTC_DERIVATION_GAP_LIMIT
 
 
-@pytest.fixture
+@pytest.fixture()
 def blockchain(
         ethereum_manager,
         optimism_manager,

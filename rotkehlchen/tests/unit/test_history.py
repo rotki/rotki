@@ -82,7 +82,7 @@ def test_query_ledger_actions(events_historian, function_scope_messages_aggregat
     assert length == 2
 
 
-@pytest.mark.parametrize('value,result', [
+@pytest.mark.parametrize(('value', 'result'), [
     ('manual', HistoricalPriceOracle.MANUAL),
     ('coingecko', HistoricalPriceOracle.COINGECKO),
     ('cryptocompare', HistoricalPriceOracle.CRYPTOCOMPARE),

@@ -162,10 +162,10 @@ def test_query_balances_invalid_json(mock_bitstamp):
         mock_bitstamp.query_balances()
 
 
-@pytest.mark.parametrize('response, has_reason', (
+@pytest.mark.parametrize(('response', 'has_reason'), [
     ('{"code": "APIXXX", "reason": "has reason"}', True),
     ('{"code": "APIXXX", "text": "has text"}', False),
-))
+])
 def test_query_balances_non_related_error_code(
         mock_bitstamp,
         response,
@@ -463,10 +463,10 @@ def test_api_query_paginated_invalid_json(mock_bitstamp):
         assert result == []
 
 
-@pytest.mark.parametrize('response', (
+@pytest.mark.parametrize('response', [
     '{"code": "APIXXX", "reason": "has reason"}',
     '{"code": "APIXXX", "text": "has text"}',
-))
+])
 def test_api_query_paginated_non_related_error_code(mock_bitstamp, response):
     """Test an error code unrelated with the system clock not synced one
     returns a an empty list.
@@ -750,7 +750,7 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
     assert result == expected_result
 
 
-@pytest.mark.parametrize('start_ts, since_id', [(0, 1), (1606995001, 6)])
+@pytest.mark.parametrize(('start_ts', 'since_id'), [(0, 1), (1606995001, 6)])
 def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
     """Test `since_id` value will change depending on `start_ts` value.
     Also tests `db_trades` are sorted by `link` (as int) in ascending mode.
@@ -945,7 +945,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
     assert movement == expected_movement
 
 
-@pytest.mark.parametrize('start_ts, since_id', [(0, 1), (1606901401, 6)])
+@pytest.mark.parametrize(('start_ts', 'since_id'), [(0, 1), (1606901401, 6)])
 def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
     """Test `since_id` value will change depending on `start_ts` value.
     Also tests `db_asset_movements` are sorted by `link` (as int) in ascending

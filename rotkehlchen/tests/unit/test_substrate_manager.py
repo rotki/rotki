@@ -137,7 +137,7 @@ def test_set_available_nodes_call_order(kusama_manager):
     ]
 
 
-@pytest.mark.parametrize('endpoint, formatted_endpoint', [
+@pytest.mark.parametrize(('endpoint', 'formatted_endpoint'), [
     ('', 'http://'),
     ('localhost:9933', 'http://localhost:9933'),
     ('http://localhost:9933', 'http://localhost:9933'),

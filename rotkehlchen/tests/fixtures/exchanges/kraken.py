@@ -15,7 +15,7 @@ def kraken(
     )
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def function_scope_kraken(
         inquirer,  # pylint: disable=unused-argument
         function_scope_messages_aggregator,
