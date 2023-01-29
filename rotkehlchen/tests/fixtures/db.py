@@ -3,6 +3,7 @@ import sys
 from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, Optional
+from unittest.mock import patch
 
 import pytest
 
@@ -11,6 +12,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
     add_blockchain_accounts_to_db,
@@ -132,6 +134,7 @@ def _init_database(
         data_migration_version: int,
         use_custom_database: Optional[str],
         sql_vm_instructions_cb: int,
+        perform_upgrades_at_unlock: bool,
 ) -> DBHandler:
     if use_custom_database is not None:
         _use_prepared_db(data_dir, use_custom_database)
@@ -139,6 +142,13 @@ def _init_database(
     with ExitStack() as stack:
         if use_custom_database is not None:
             stack.enter_context(mock_db_schema_sanity_check())
+        if perform_upgrades_at_unlock is False:
+            upgrades_patch = patch.object(
+                DBUpgradeManager,
+                'run_upgrades',
+                side_effect=lambda *args: None,
+            )
+            stack.enter_context(upgrades_patch)
         db = DBHandler(
             user_data_dir=data_dir,
             password=password,
@@ -175,6 +185,7 @@ def database(
         use_custom_database,
         new_db_unlock_actions,
         sql_vm_instructions_cb,
+        perform_upgrades_at_unlock,
 ) -> Optional[DBHandler]:
     if not start_with_logged_in_user:
         return None
@@ -193,6 +204,7 @@ def database(
         data_migration_version=data_migration_version,
         use_custom_database=use_custom_database,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        perform_upgrades_at_unlock=perform_upgrades_at_unlock,
     )
     if new_db_unlock_actions is not None:
         perform_new_db_unlock_actions(db=db_handler, new_db_unlock_actions=new_db_unlock_actions)
@@ -215,6 +227,7 @@ def session_database(
         data_migration_version,
         session_use_custom_database,
         session_sql_vm_instructions_cb,
+        session_perform_upgrades_at_unlock,
 ) -> Optional[DBHandler]:
     if not session_start_with_logged_in_user:
         return None
@@ -235,6 +248,7 @@ def session_database(
         data_migration_version=data_migration_version,
         use_custom_database=session_use_custom_database,
         sql_vm_instructions_cb=session_sql_vm_instructions_cb,
+        perform_upgrades_at_unlock=session_perform_upgrades_at_unlock,
     )
 
 
@@ -256,3 +270,8 @@ def fixture_use_custom_database() -> Optional[str]:
 @pytest.fixture(scope='session', name='session_use_custom_database')
 def fixture_session_use_custom_database() -> Optional[str]:
     return None
+
+
+@pytest.fixture(scope='session', name='session_perform_upgrades_at_unlock')
+def fixture_session_perform_upgrades_at_unlock() -> bool:
+    return True
