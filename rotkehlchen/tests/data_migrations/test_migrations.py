@@ -2,7 +2,7 @@ import json
 import operator
 from contextlib import ExitStack
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 from unittest.mock import patch
 
 import pytest
@@ -14,15 +14,15 @@ from rotkehlchen.data_migrations.manager import (
     DataMigrationManager,
     MigrationRecord,
 )
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.fval import FVal
+from rotkehlchen.icons import IconManager
 from rotkehlchen.tests.utils.blockchain import setup_filter_active_evm_addresses_mock
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import Location, SupportedBlockchain, TradeType
 
 if TYPE_CHECKING:
-    from rotkehlchen.api.server import APIServer
-    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
@@ -34,10 +34,21 @@ def _create_invalid_icon(icon_identifier: str, icons_dir: Path) -> Path:
     return icon_filepath
 
 
+class MockDataForMigrations(NamedTuple):
+    db: DBHandler
+
+
+class MockRotkiForMigrations:
+
+    def __init__(self, db) -> None:
+        self.data = MockDataForMigrations(db=db)
+        self.msg_aggregator = db.msg_aggregator
+
+
 @pytest.mark.parametrize('use_custom_database', ['data_migration_v0.db'])
 @pytest.mark.parametrize('data_migration_version', [0])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-def test_migration_1(rotkehlchen_api_server):
+def test_migration_1(database):
     """
     Test that the first data migration for rotki works. This migration removes information about
     some exchanges when there is more than one instance or if it is kraken.
@@ -45,16 +56,15 @@ def test_migration_1(rotkehlchen_api_server):
     In the test we setup instances of the exchanges to trigger the updates and one exchange
     (POLONIEX) that shouldn't be affected.
     """
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    db = rotki.data.db
+    rotki = MockRotkiForMigrations(database)
     for exchange_location in [Location.BINANCE, Location.KRAKEN, Location.POLONIEX]:
         check_saved_events_for_exchange(
             exchange_location=exchange_location,
-            db=rotki.data.db,
+            db=database,
             should_exist=True,
             queryrange_formatstr='{exchange}_{type}',
         )
-        cursor = db.conn.cursor()
+        cursor = database.conn.cursor()
         result = cursor.execute(
             'SELECT COUNT(*) from used_query_ranges WHERE name="bittrex_trades"',
         )
@@ -73,7 +83,7 @@ def test_migration_1(rotkehlchen_api_server):
     check_saved_events_for_exchange(Location.BINANCE, rotki.data.db, should_exist=False)
     check_saved_events_for_exchange(Location.POLONIEX, rotki.data.db, should_exist=True)
     check_saved_events_for_exchange(Location.KRAKEN, rotki.data.db, should_exist=False)
-    cursor = db.conn.cursor()
+    cursor = database.conn.cursor()
     result = cursor.execute(
         'SELECT COUNT(*) from used_query_ranges WHERE name="bittrex_trades"',
     )
@@ -81,7 +91,7 @@ def test_migration_1(rotkehlchen_api_server):
     assert rotki.data.db.get_settings(cursor).last_data_migration == 1
 
     # Migration shouldn't execute and information should stay in database
-    with db.user_write() as cursor:
+    with database.user_write() as cursor:
         for exchange_location in [Location.BINANCE, Location.KRAKEN]:
             trade_tuples = ((
                 f'custom-trade-id-{exchange_location}',
@@ -113,10 +123,10 @@ def test_migration_1(rotkehlchen_api_server):
                 notes)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
-            db.write_tuples(write_cursor=cursor, tuple_type='trade', query=query, tuples=trade_tuples)  # noqa: E501
-            db.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_trades_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
-            db.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_margins_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
-            db.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_asset_movements_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
+            database.write_tuples(write_cursor=cursor, tuple_type='trade', query=query, tuples=trade_tuples)  # noqa: E501
+            database.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_trades_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
+            database.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_margins_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
+            database.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_asset_movements_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
 
         with migration_patch:
             DataMigrationManager(rotki).maybe_migrate_data()
@@ -131,12 +141,11 @@ def test_migration_1(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('use_custom_database', ['data_migration_v0.db'])
-@pytest.mark.parametrize('data_migration_version', [0])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-def test_failed_migration(rotkehlchen_api_server):
+@pytest.mark.parametrize('data_migration_version', [0])
+def test_failed_migration(database):
     """Test that a failed migration does not update DB setting and logs error"""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    db = rotki.data.db
+    rotki = MockRotkiForMigrations(database)
 
     def botched_migration(rotki, progress_handler) -> None:
         raise ValueError('ngmi')
@@ -155,8 +164,8 @@ def test_failed_migration(rotkehlchen_api_server):
     with migrate_mock:
         DataMigrationManager(rotki).maybe_migrate_data()
 
-    with db.conn.read_ctx() as cursor:
-        settings = db.get_settings(cursor)
+    with database.conn.read_ctx() as cursor:
+        settings = database.get_settings(cursor)
     assert settings.last_data_migration == 0, 'no migration should have happened'
     errors = rotki.msg_aggregator.consume_errors()
     warnings = rotki.msg_aggregator.consume_warnings()
@@ -168,14 +177,14 @@ def test_failed_migration(rotkehlchen_api_server):
 @pytest.mark.parametrize('data_migration_version', [2])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_migration_3(rotkehlchen_api_server):
+def test_migration_3(database, data_dir):
     """
     Test that the third data migration for rotki works. This migration removes icons of assets
     that are not valid images and update the list of ignored assets.
     """
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    icon_manager = rotki.icon_manager
-
+    rotki = MockRotkiForMigrations(database)
+    icon_manager = IconManager(data_dir=data_dir, coingecko=None)
+    rotki.icon_manager = icon_manager
     btc_iconpath = _create_invalid_icon(A_BTC.identifier, icon_manager.icons_dir)
     eth_iconpath = _create_invalid_icon(A_ETH.identifier, icon_manager.icons_dir)
 
@@ -192,14 +201,13 @@ def test_migration_3(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('data_migration_version', [3])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_migration_4(rotkehlchen_api_server):
+def test_migration_4(database, blockchain):
     """
     Test that the fourth data migration for rotki works. This migration adds the ethereum nodes
     that will be used as open nodes to the database.
     """
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    database = rotki.data.db
+    rotki = MockRotkiForMigrations(database)
+    rotki.chains_aggregator = blockchain
     migration_patch = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=MIGRATION_LIST[3:],
@@ -241,13 +249,12 @@ def test_migration_4(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('data_migration_version', [3])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_migration_4_no_own_endpoint(rotkehlchen_api_server):
+def test_migration_4_no_own_endpoint(database, blockchain):
     """
     Test that the fourth data migration for rotki works when there is no custom node
     """
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    database = rotki.data.db
+    rotki = MockRotkiForMigrations(database)
+    rotki.chains_aggregator = blockchain
     migration_patch = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=MIGRATION_LIST[3:],
@@ -270,24 +277,26 @@ def test_migration_4_no_own_endpoint(rotkehlchen_api_server):
 @pytest.mark.parametrize('data_migration_version', [4])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_migration_5(rotkehlchen_api_server):
+def test_migration_5(database, data_dir):
     """
     Test that the fifth data migration for rotki works.
     - Create two fake icons and check that the file name was correctly updated
     """
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    rotki = MockRotkiForMigrations(database)
+    icon_manager = IconManager(data_dir=data_dir, coingecko=None)
+    rotki.icon_manager = icon_manager
     migration_patch = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=MIGRATION_LIST[4:],
     )
     # Create some fake icon files
-    icons_path = rotki.icon_manager.icons_dir
+    icons_path = icon_manager.icons_dir
     Path(icons_path, '_ceth_0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490_small.png').touch()
     Path(icons_path, '_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D_small.png').touch()
     Path(icons_path, '_ceth_0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9_small.png').touch()
     Path(icons_path, 'eip155%3A1%2Ferc20%3A0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9_small.png').touch()  # noqa: E501
     # the two files + the custom assets folder
-    assert len(list(rotki.icon_manager.icons_dir.iterdir())) == 5
+    assert len(list(icon_manager.icons_dir.iterdir())) == 5
     with migration_patch:
         DataMigrationManager(rotki).maybe_migrate_data()
 
@@ -351,14 +360,12 @@ def _write_nodes_and_migrate(
 @pytest.mark.parametrize('data_migration_version', [5])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
-def test_migration_6_default_rpc_nodes(rotkehlchen_api_server):
+def test_migration_6_default_rpc_nodes(database):
     """
     Test that the sixth data migration works when the user has not customized the nodes.
     """
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    database = rotki.data.db
+    rotki = MockRotkiForMigrations(database)
     old_nodes, new_nodes = _get_nodes()
-
     nodes_in_db = _write_nodes_and_migrate(database, rotki, old_nodes)
 
     # Now nodes should be the new defaults
@@ -369,14 +376,12 @@ def test_migration_6_default_rpc_nodes(rotkehlchen_api_server):
 @pytest.mark.parametrize('data_migration_version', [5])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
-def test_migration_6_customized_rpc_nodes(rotkehlchen_api_server):
+def test_migration_6_customized_rpc_nodes(database):
     """
     Test that the sixth data migration works when the user has customized the rpc nodes.
     """
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    database = rotki.data.db
+    rotki = MockRotkiForMigrations(database)
     old_nodes, _ = _get_nodes()
-
     old_nodes[-1][0] = 'Renamed cloudflare'  # customize a node
     # Also add a new node
     old_nodes.append(('flashbots', 'https://rpc.flashbots.net/', False, '0.1', True, 'ETH'))
@@ -397,13 +402,12 @@ def test_migration_6_customized_rpc_nodes(rotkehlchen_api_server):
 @pytest.mark.parametrize('data_migration_version', [5])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
-def test_migration_6_own_node(rotkehlchen_api_server):
+def test_migration_6_own_node(database):
     """
     Test that the sixth data migration works when user has no customized nodes but has
     an own node set.
     """
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    database = rotki.data.db
+    rotki = MockRotkiForMigrations(database)
     old_nodes, new_nodes = _get_nodes()
     # Add an owned node
     old_nodes.append(('Owned node', 'http://localhost:8045', True, '1', True, 'ETH'))
@@ -417,14 +421,12 @@ def test_migration_6_own_node(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('data_migration_version', [6])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-def test_migration_7_nodes(rotkehlchen_api_server: 'APIServer'):
+def test_migration_7_nodes(database, blockchain, greenlet_manager):
     """
     Test that the seventh data migration works adding llamanode to the list of eth nodes.
     """
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    database = rotki.data.db
-    assert rotki.chains_aggregator is not None
-
+    rotki = MockRotkiForMigrations(database)
+    rotki.chains_aggregator = blockchain
     migrate_mock = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=MIGRATION_LIST[3:7],
@@ -434,7 +436,7 @@ def test_migration_7_nodes(rotkehlchen_api_server: 'APIServer'):
 
     # check that the task to connect the ethereum node is spawned
     expected_greenlet_name = 'Attempt connection to LlamaNodes ethereum node'
-    assert any(expected_greenlet_name in greenlet.task_name for greenlet in rotki.greenlet_manager.greenlets) is True  # noqa: E501
+    assert any(expected_greenlet_name in greenlet.task_name for greenlet in greenlet_manager.greenlets) is True  # noqa: E501
 
     nodes = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM)
     # check that weight is correct for nodes
