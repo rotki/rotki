@@ -374,7 +374,7 @@ class UniswapV3Oracle(UniswapOracle):
 
         price = FVal((sqrt_price_x96 * sqrt_price_x96) / 2 ** (192) * decimals_constant)
 
-        if ZERO == price:
+        if price == ZERO:
             raise DefiPoolError(f'Uniswap pool for {token_0}/{token_1} has price 0')
 
         return PoolPrice(price=price, token_0=token_0, token_1=token_1)

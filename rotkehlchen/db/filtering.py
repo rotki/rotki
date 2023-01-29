@@ -1243,7 +1243,7 @@ class NFTFilterQuery(DBFilterQuery):
             filters.append(DBEqualsFilter(
                 and_op=True,
                 column='is_lp',
-                value=NftLpHandling.ONLY_LPS == lps_handling,
+                value=lps_handling == NftLpHandling.ONLY_LPS,
             ))
         if nft_id is not None:
             filters.append(DBSubStringFilter(

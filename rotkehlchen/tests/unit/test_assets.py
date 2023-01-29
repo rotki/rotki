@@ -574,12 +574,12 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
 def test_get_or_create_evm_token(globaldb, database):
     cursor = globaldb.conn.cursor()
     assets_num = cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0]
-    assert A_DAI == get_or_create_evm_token(
+    assert get_or_create_evm_token(
         userdb=database,
         symbol='DAI',
         evm_address='0x6B175474E89094C44Da98b954EedeAC495271d0F',
         chain_id=ChainID.ETHEREUM,
-    )
+    ) == A_DAI
     # Try getting a DAI token of a different address. Shold add new token to DB
     new_token = get_or_create_evm_token(
         userdb=database,
@@ -601,12 +601,12 @@ def test_get_or_create_evm_token(globaldb, database):
     assert new_token.evm_address == '0xB179B8204A49672FF9703e18eE61402FAfCCdD60'
     assert cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0] == assets_num + 2
     # Check that token with wrong symbol but existing address is returned
-    assert A_USDT == get_or_create_evm_token(
+    assert get_or_create_evm_token(
         userdb=database,
         symbol='ROFL',
         evm_address='0xdAC17F958D2ee523a2206206994597C13D831ec7',
         chain_id=ChainID.ETHEREUM,
-    )
+    ) == A_USDT
     assert cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0] == assets_num + 2
 
 

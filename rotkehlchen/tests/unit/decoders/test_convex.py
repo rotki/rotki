@@ -76,7 +76,7 @@ def test_convex_pools(ethereum_inquirer):
         decoded_lp_token_result = lp_tokens_contract.decode(single_lp_token_result, 'symbol')
         queried_convex_pools_info[convex_reward_addr] = decoded_lp_token_result[0]  # pylint: disable=unsubscriptable-object  # noqa: E501
 
-    if CONVEX_POOLS != queried_convex_pools_info:
+    if queried_convex_pools_info != CONVEX_POOLS:
         added_pools_addrs = queried_convex_pools_info.keys() - CONVEX_POOLS.keys()
         added_pools = {addr: queried_convex_pools_info[addr] for addr in added_pools_addrs}
         test_warnings.warn(UserWarning(
