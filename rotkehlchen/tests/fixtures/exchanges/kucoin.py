@@ -24,7 +24,7 @@ def fixture_kucoin_passphrase():
     return make_random_uppercasenumeric_string(size=6)
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_kucoin(
         database,
         inquirer,  # pylint: disable=unused-argument
@@ -65,7 +65,7 @@ def fixture_kucoin_sandbox_base_uri():
     return 'https://openapi-sandbox.kucoin.com'
 
 
-@pytest.fixture
+@pytest.fixture()
 def sandbox_kucoin(
         database,
         inquirer,  # pylint: disable=unused-argument

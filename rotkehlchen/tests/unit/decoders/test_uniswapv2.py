@@ -331,7 +331,7 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_inquirer, eth_transacti
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [['0xa931b486F661540c6D709aE6DfC8BcEF347ea437']])
 def test_uniswap_v2_swap_with_approval(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0xcbe558177f62ccdb77f59b6be11e60b0a3fed1d224d5ce28d2bb6dff59447d3b')  # noqa: E501

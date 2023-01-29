@@ -23,7 +23,7 @@ def fixture_okx_passphrase():
     return OKX_PASSPHRASE
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_okx(
         database,
         inquirer,  # pylint: disable=unused-argument

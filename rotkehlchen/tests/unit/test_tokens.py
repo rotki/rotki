@@ -19,7 +19,7 @@ def fixture_ethereumtokens(ethereum_inquirer, database, inquirer):  # pylint: di
     return EthereumTokens(database, ethereum_inquirer)
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr()
 @flaky(max_runs=3, min_passes=1)  # failed in a flaky way sometimes in the CI due to etherscan
 @pytest.mark.parametrize('ignored_assets', [[A_LPT]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])

@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+from contextlib import suppress
 from copy import deepcopy
 from unittest.mock import patch
 
@@ -488,8 +489,8 @@ def test_sqlcipher_detect_version():
         sql_mock.return_value = ConnectionMock('3.1.15 somethingelse')
         assert detect_sqlcipher_version() == 3
 
+        sql_mock.return_value = ConnectionMock('no version')
         with pytest.raises(ValueError):
-            sql_mock.return_value = ConnectionMock('no version')
             detect_sqlcipher_version()
 
 
@@ -1413,7 +1414,7 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
     assert 'Overflow error while trying to add "asset_movement" tuples to the DB. Tuples:' in caplog.text  # noqa: E501
 
 
-@pytest.mark.parametrize('enum_class, query, deserialize_from_db, deserialize', [
+@pytest.mark.parametrize(('enum_class', 'query', 'deserialize_from_db', 'deserialize'), [
     (Location, 'SELECT location, seq from location',
         Location.deserialize_from_db, Location.deserialize),
     (TradeType, 'SELECT type, seq from trade_type',
@@ -1460,7 +1461,7 @@ def test_all_balance_types_in_db(database):
         assert category == balance_type_serialization
 
 
-@pytest.mark.parametrize('enum_class, table_name', [
+@pytest.mark.parametrize(('enum_class', 'table_name'), [
     (Location, 'location'),
     (TradeType, 'trade_type'),
     (ActionType, 'action_type'),
@@ -1518,18 +1519,22 @@ def test_db_schema_sanity_check(database):
     connection = database.conn
     # by default should run without problems
     connection.schema_sanity_check()
-    with pytest.raises(DBSchemaError) as exception_info, database.user_write() as cursor:
+    with suppress(ValueError), database.user_write() as cursor:
         cursor.execute('DROP TABLE rpc_nodes')
         cursor.execute('CREATE TABLE rpc_nodes(column1 INTEGER)')
         cursor.execute('DROP TABLE ens_mappings')
         cursor.execute('CREATE TABLE ens_mappings(column2 TEXT)')
-        connection.schema_sanity_check()
+        with pytest.raises(DBSchemaError) as exception_info:
+            connection.schema_sanity_check()
+        raise ValueError('Do not persist any of the changes')
     assert 'in your user database differ' in str(exception_info.value)
     # Make sure that having an extra table does not break the sanity check
     with database.user_write() as cursor:
         cursor.execute('CREATE TABLE new_table(some_column integer)')
         connection.schema_sanity_check()
-    with pytest.raises(DBSchemaError) as exception_info, database.user_write() as cursor:
+
+    with database.user_write() as cursor:
         cursor.execute('DROP TABLE user_notes;')
-        connection.schema_sanity_check()
+        with pytest.raises(DBSchemaError) as exception_info:
+            connection.schema_sanity_check()
     assert 'Tables {\'user_notes\'} are missing' in str(exception_info.value)

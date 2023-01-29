@@ -8,7 +8,7 @@ def fixture_coinbasepro_passphrase():
     return 'supersecretpassphrase'
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def function_scope_coinbasepro(
         database,
         inquirer,  # pylint: disable=unused-argument,

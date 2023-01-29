@@ -13,7 +13,7 @@ from rotkehlchen.types import Location, Timestamp, deserialize_evm_tx_hash
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr()
 @pytest.mark.parametrize('optimism_accounts', [[ADDY]])
 def test_optimism_airdrop_claim(database, optimism_inquirer):
     """Data taken from
@@ -55,7 +55,7 @@ def test_optimism_airdrop_claim(database, optimism_inquirer):
     assert expected_events == events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr()
 @pytest.mark.parametrize('optimism_accounts', [[ADDY]])
 def test_optimism_delegate_change(database, optimism_inquirer):
     """Data taken from

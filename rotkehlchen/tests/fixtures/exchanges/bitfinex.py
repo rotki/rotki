@@ -14,7 +14,7 @@ def fixture_bitfinex_api_secret():
     return make_api_secret()
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_bitfinex(
         database,
         inquirer,  # pylint: disable=unused-argument

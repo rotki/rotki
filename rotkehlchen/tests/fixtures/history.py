@@ -39,7 +39,7 @@ def fixture_force_no_price_found_for():
     return []
 
 
-@pytest.fixture
+@pytest.fixture()
 def price_historian(
         data_dir,
         inquirer,  # pylint: disable=unused-argument
@@ -75,7 +75,7 @@ def price_historian(
     return historian
 
 
-@pytest.fixture
+@pytest.fixture()
 def events_historian(
         database,
         data_dir,

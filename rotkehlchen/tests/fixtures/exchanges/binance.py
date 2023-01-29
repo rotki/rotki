@@ -9,7 +9,7 @@ def fixture_binance_location() -> Location:
     return Location.BINANCE
 
 
-@pytest.fixture
+@pytest.fixture()
 def function_scope_binance(
         database,
         inquirer,  # pylint: disable=unused-argument

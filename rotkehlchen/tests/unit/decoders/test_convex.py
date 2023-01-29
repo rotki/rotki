@@ -26,7 +26,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr()
 def test_convex_pools(ethereum_inquirer):
     """Tests that our hardcoded information about convex pools is up-to-date.
     Queries data about convex pools reward addresses and their names from chain and compares it

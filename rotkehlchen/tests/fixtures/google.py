@@ -209,7 +209,7 @@ def fixture_upload_csv_to_google() -> bool:
     return True
 
 
-@pytest.fixture(scope='function', name='google_service')
+@pytest.fixture(name='google_service')
 def fixture_google_service(session_google_service, upload_csv_to_google) -> Optional[GoogleService]:  # noqa: E501
     if session_google_service is None:
         return None

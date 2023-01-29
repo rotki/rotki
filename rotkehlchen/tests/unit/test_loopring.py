@@ -10,7 +10,7 @@ from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
 
 
-@pytest.fixture(scope='function', name='temp_loopring')
+@pytest.fixture(name='temp_loopring')
 def mock_loopring(function_scope_messages_aggregator, database, ethereum_inquirer):
     return Loopring(
         database=database,

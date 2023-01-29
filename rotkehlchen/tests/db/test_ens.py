@@ -36,7 +36,7 @@ def _simple_ens_setup(database, freezer) -> tuple[DBEns, ChecksumEvmAddress, Che
     return dbens, addy1, addy2
 
 
-@pytest.mark.freeze_time
+@pytest.mark.freeze_time()
 def test_simple_ens_mapping(database, freezer):
     _simple_ens_setup(database, freezer)
 
@@ -48,7 +48,7 @@ def test_empty_addresses(database):
     assert res == {}
 
 
-@pytest.mark.freeze_time
+@pytest.mark.freeze_time()
 def test_update_ens_mapping(database, freezer):
     dbens, addy1, addy2 = _simple_ens_setup(database, freezer)
 
@@ -102,7 +102,7 @@ def test_update_ens_mapping(database, freezer):
     }
 
 
-@pytest.mark.freeze_time
+@pytest.mark.freeze_time()
 def test_multiple_ens_mapping_none(database, freezer):
     dbens, addy1, addy2 = _simple_ens_setup(database, freezer)
 
@@ -133,7 +133,7 @@ def test_multiple_ens_mapping_none(database, freezer):
     }
 
 
-@pytest.mark.freeze_time
+@pytest.mark.freeze_time()
 def test_conflict(database, freezer):
     dbens, addy1, addy2 = _simple_ens_setup(database, freezer)
     addy3 = make_evm_address()

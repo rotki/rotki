@@ -8,6 +8,6 @@ def messages_aggregator():
     return MessagesAggregator()
 
 
-@pytest.fixture
+@pytest.fixture()
 def function_scope_messages_aggregator():
     return MessagesAggregator()

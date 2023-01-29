@@ -79,7 +79,8 @@ select = [
     "COM",
     "DTZ",
     "EXE",
-    "INP"
+    "INP",
+    "PT"
     # "RUF",  # ruff specific rules, we enable only those we need below
 ]
 extend-select = [
@@ -109,6 +110,9 @@ ignore = [
     "S106",  # hard coded password checks got false positives
     "S324",  # insecure hash function. We use it for image md5 for etag. TODO: Change and enable?
     "G004",  # Our logs do use f-strings everywhere at least for now
+    # Some pytest-styles rules we don't check for
+    "PT011", # pytest.raises() too broad is fine, since there is functions that raise ValueError
+    "PT018", # composite assertions are fine
 ]
 # Exclude a variety of commonly ignored directories.
 exclude = [

@@ -378,7 +378,7 @@ def test_get_asset_with_symbol(globaldb):
         assert globaldb.get_assets_with_symbol(*x) == expected_renbtc
 
 
-@pytest.mark.parametrize('enum_class, table_name', [
+@pytest.mark.parametrize(('enum_class', 'table_name'), [
     (AssetType, 'asset_types'),
     (HistoricalPriceOracle, 'price_history_source_types'),
 ])

@@ -15,7 +15,7 @@ def poloniex(
     )
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def function_scope_poloniex(
         database,
         inquirer,  # pylint: disable=unused-argument

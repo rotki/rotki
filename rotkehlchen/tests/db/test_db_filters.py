@@ -32,7 +32,7 @@ def test_ethereum_transaction_filter():
     ]
 
 
-@pytest.mark.parametrize('and_op,order_by,pagination', [
+@pytest.mark.parametrize(('and_op', 'order_by', 'pagination'), [
     (True, True, True),
     (False, True, True),
     (True, False, True),

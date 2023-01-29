@@ -351,7 +351,7 @@ def test_edit_manually_tracked_balances(rotkehlchen_api_server):
     )
 
 
-@pytest.mark.parametrize('verb', ('PUT', 'PATCH'))
+@pytest.mark.parametrize('verb', ['PUT', 'PATCH'])
 def test_add_edit_manually_tracked_balances_errors(
         rotkehlchen_api_server,
         verb,

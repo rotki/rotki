@@ -258,7 +258,7 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     assert len(result) == 0, 'all xpub mappings should have been deleted'
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr()
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server):
     # Disable caching of query results

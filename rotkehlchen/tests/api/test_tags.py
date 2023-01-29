@@ -147,7 +147,7 @@ def test_add_tag_without_description(
     assert db_response['Public'].serialize() == tag1
 
 
-@pytest.mark.parametrize('verb', ('PUT', 'PATCH'))
+@pytest.mark.parametrize('verb', ['PUT', 'PATCH'])
 def test_add_edit_tag_errors(
         rotkehlchen_api_server,
         verb,

@@ -363,7 +363,7 @@ def test_is_valid_derivation_path():
     assert msg == expected_msg
 
 
-@pytest.mark.parametrize('scriptpubkey, expected_address', [
+@pytest.mark.parametrize(('scriptpubkey', 'expected_address'), [
     (
         '76a91462e907b15cbf27d5425399ebf6f0fb50ebb88f1888ac',
         '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
@@ -385,7 +385,7 @@ def test_scriptpubkey_to_p2sh_address():
     assert address == '3Ai1JZ8pdJb2ksieUV8FsxSNVJCpoPi8W6'
 
 
-@pytest.mark.parametrize('scriptpubkey, expected_address', [
+@pytest.mark.parametrize(('scriptpubkey', 'expected_address'), [
     (
         '0014751e76e8199196d454941c45d1b3a323f1433bd6',
         'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',

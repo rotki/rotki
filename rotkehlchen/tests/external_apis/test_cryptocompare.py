@@ -95,7 +95,7 @@ def check_cc_result(result: list, forward: bool):
             raise AssertionError(f'Unexpected time entry {entry.time}')
 
 
-@pytest.mark.freeze_time
+@pytest.mark.freeze_time()
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_cryptocompare_histohour_data_going_forward(data_dir, database, freezer):
     """Test that the cryptocompare histohour data retrieval works properly
@@ -138,7 +138,7 @@ def test_cryptocompare_histohour_data_going_forward(data_dir, database, freezer)
     assert data_range[1] == 1301544000  # that's the closest ts to now_ts cc returns
 
 
-@pytest.mark.freeze_time
+@pytest.mark.freeze_time()
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_cryptocompare_histohour_data_going_backward(data_dir, database, freezer):
     """Test that the cryptocompare histohour data retrieval works properly
@@ -204,7 +204,7 @@ def test_cryptocompare_dao_query(cryptocompare):
     'CI' in os.environ,
     reason='This test would contribute in cryptocompare rate limiting. No need to run often',
 )
-@pytest.mark.parametrize('from_asset,to_asset,timestamp,price', [
+@pytest.mark.parametrize(('from_asset', 'to_asset', 'timestamp', 'price'), [
     (A_ETH, A_USD, 1505527200, FVal('262.155')),
     (A_XMR, A_BTC, 1438992000, FVal('0.0026285')),
 ])

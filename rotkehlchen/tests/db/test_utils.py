@@ -15,7 +15,7 @@ from rotkehlchen.fval import FVal
 
 
 @pytest.mark.parametrize(
-    ('query_in, timestamp_attribute, from_ts, to_ts, expected_query_out, expected_bindings'),
+    (('query_in', 'timestamp_attribute', 'from_ts', 'to_ts', 'expected_query_out', 'expected_bindings')),  # noqa: E501
     [
         (
             'SELECT * FROM trades',

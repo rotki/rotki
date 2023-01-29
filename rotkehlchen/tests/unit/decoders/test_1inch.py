@@ -16,7 +16,7 @@ from rotkehlchen.types import Location, deserialize_evm_tx_hash
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_1inchv1_swap(database, ethereum_inquirer):
     """Data taken from
@@ -95,7 +95,7 @@ def test_1inchv1_swap(database, ethereum_inquirer):
     assert expected_events == events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
     """

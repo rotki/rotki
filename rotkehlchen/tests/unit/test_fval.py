@@ -156,4 +156,5 @@ def test_initialize_with_bool_fails():
 
     with pytest.raises(ValueError):
         FVal(True)
+    with pytest.raises(ValueError):
         FVal(False)

@@ -7,13 +7,13 @@ from rotkehlchen.premium.premium import Premium
 
 
 @pytest.fixture(name='mock_graph')
-def fixture_graph():
+def _fixture_graph():
     with patch('rotkehlchen.chain.ethereum.modules.uniswap.uniswap.Graph'):
         yield
 
 
 @pytest.fixture(name='mock_graph_query_limit')
-def fixture_graph_query_limit(graph_query_limit):
+def _fixture_graph_query_limit(graph_query_limit):
     with patch(
         'rotkehlchen.chain.ethereum.interfaces.ammswap.ammswap.GRAPH_QUERY_LIMIT',
         new=graph_query_limit,
@@ -21,7 +21,7 @@ def fixture_graph_query_limit(graph_query_limit):
         yield
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_uniswap(
         ethereum_inquirer,
         database,
