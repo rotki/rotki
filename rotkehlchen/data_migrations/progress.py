@@ -1,10 +1,7 @@
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.utils.interfaces import ProgressUpdater
-
-if TYPE_CHECKING:
-    pass
 
 
 class MigrationProgressHandler(ProgressUpdater):
