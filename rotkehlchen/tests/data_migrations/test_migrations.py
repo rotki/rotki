@@ -36,7 +36,6 @@ def _create_invalid_icon(icon_identifier: str, icons_dir: Path) -> Path:
 
 @pytest.mark.parametrize('use_custom_database', ['data_migration_v0.db'])
 @pytest.mark.parametrize('data_migration_version', [0])
-@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 def test_migration_1(rotkehlchen_api_server):
     """
@@ -133,7 +132,6 @@ def test_migration_1(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('use_custom_database', ['data_migration_v0.db'])
 @pytest.mark.parametrize('data_migration_version', [0])
-@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 def test_failed_migration(rotkehlchen_api_server):
     """Test that a failed migration does not update DB setting and logs error"""
@@ -168,7 +166,6 @@ def test_failed_migration(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('data_migration_version', [2])
-@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_migration_3(rotkehlchen_api_server):
@@ -194,7 +191,6 @@ def test_migration_3(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('data_migration_version', [3])
-@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_migration_4(rotkehlchen_api_server):
@@ -244,7 +240,6 @@ def test_migration_4(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('data_migration_version', [3])
-@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_migration_4_no_own_endpoint(rotkehlchen_api_server):
@@ -273,7 +268,6 @@ def test_migration_4_no_own_endpoint(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('data_migration_version', [4])
-@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_migration_5(rotkehlchen_api_server):
@@ -355,7 +349,6 @@ def _write_nodes_and_migrate(
 
 
 @pytest.mark.parametrize('data_migration_version', [5])
-@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
 def test_migration_6_default_rpc_nodes(rotkehlchen_api_server):
@@ -374,7 +367,6 @@ def test_migration_6_default_rpc_nodes(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('data_migration_version', [5])
-@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
 def test_migration_6_customized_rpc_nodes(rotkehlchen_api_server):
@@ -403,7 +395,6 @@ def test_migration_6_customized_rpc_nodes(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('data_migration_version', [5])
-@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
 def test_migration_6_own_node(rotkehlchen_api_server):
@@ -425,7 +416,6 @@ def test_migration_6_own_node(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('data_migration_version', [6])
-@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 def test_migration_7_nodes(rotkehlchen_api_server: 'APIServer'):
     """
@@ -458,7 +448,6 @@ def test_migration_7_nodes(rotkehlchen_api_server: 'APIServer'):
 
 
 @pytest.mark.parametrize('data_migration_version', [7])
-@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address(), make_evm_address(), make_evm_address(), make_evm_address()]])  # noqa: E501
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
