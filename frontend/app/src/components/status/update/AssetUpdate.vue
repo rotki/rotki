@@ -2,32 +2,53 @@
 import { type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import ConflictDialog from '@/components/status/update/ConflictDialog.vue';
-
 import { type ConflictResolution } from '@/services/assets/types';
 import { useAssets } from '@/store/assets';
 import { useMainStore } from '@/store/main';
 import { useMessageStore } from '@/store/message';
 import { useSessionStore } from '@/store/session';
-import { type AssetUpdateConflictResult } from '@/types/assets';
+import {
+  type AssetUpdateConflictResult,
+  type AssetVersionUpdate
+} from '@/types/assets';
 import { useConfirmStore } from '@/store/confirm';
+import AssetUpdateMessage from '@/components/status/update/AssetUpdateMessage.vue';
+import AssetUpdateChecking from '@/components/status/update/AssetUpdateStatus.vue';
+import AssetUpdateSetting from '@/components/status/update/AssetUpdateSetting.vue';
+import AssetUpdateInlineConfirm from '@/components/status/update/AssetUpdateInlineConfirm.vue';
 
-const props = defineProps({
-  auto: { required: false, default: false, type: Boolean }
+const props = withDefaults(defineProps<{ headless?: boolean }>(), {
+  headless: false
 });
 
-const { auto } = toRefs(props);
+const emit = defineEmits<{ (e: 'skip'): void; (e: 'complete'): void }>();
+
+const { headless } = toRefs(props);
+const checking: Ref<boolean> = ref(false);
+const applying: Ref<boolean> = ref(false);
+const inlineConfirm: Ref<boolean> = ref(false);
 const showUpdateDialog: Ref<boolean> = ref(false);
 const showConflictDialog: Ref<boolean> = ref(false);
-const skipUpdate: Ref<boolean> = ref(false);
-const localVersion: Ref<number> = ref(0);
-const remoteVersion: Ref<number> = ref(0);
-const changes: Ref<number> = ref(0);
-const upToVersion: Ref<number> = ref(0);
-const partial: Ref<boolean> = ref(false);
-
 const conflicts: Ref<AssetUpdateConflictResult[]> = ref([]);
+const changes: Ref<AssetVersionUpdate> = ref({
+  local: 0,
+  remote: 0,
+  changes: 0,
+  upToVersion: 0
+});
 
-const skipped = useLocalStorage('rotki_skip_asset_db_version', undefined);
+const skipped = useLocalStorage('rotki_skip_asset_db_version', 0);
+
+const status = computed(() => {
+  if (get(checking)) {
+    return 'checking';
+  }
+  if (get(applying)) {
+    return 'applying';
+  }
+
+  return null;
+});
 
 const { logout } = useSessionStore();
 const { checkForUpdate, applyUpdates } = useAssets();
@@ -35,12 +56,6 @@ const { connect, setConnected } = useMainStore();
 const { restartBackend } = useBackendManagement();
 
 const { tc } = useI18n();
-
-const multiple = computed(() => {
-  return get(remoteVersion) - get(localVersion) > 1;
-});
-
-const checking: Ref<boolean> = ref(false);
 const { setMessage } = useMessageStore();
 
 const check = async () => {
@@ -49,57 +64,53 @@ const check = async () => {
   set(checking, false);
   const skippedVersion = get(skipped);
   const versions = checkResult.versions;
-  if (get(auto) && skippedVersion && skippedVersion === versions?.remote) {
+  if (get(headless) && skippedVersion && skippedVersion === versions?.remote) {
     set(checking, false);
+    emit('skip');
     return;
   }
 
   set(showUpdateDialog, checkResult.updateAvailable);
 
-  if (!get(auto) && !checkResult.updateAvailable) {
-    setMessage({
-      description: tc('asset_update.up_to_date'),
-      success: true
-    });
+  if (!checkResult.updateAvailable) {
+    if (get(headless)) {
+      emit('skip');
+    } else {
+      setMessage({
+        description: tc('asset_update.up_to_date'),
+        success: true
+      });
+    }
   }
 
   if (versions) {
-    set(localVersion, versions.local);
-    set(remoteVersion, versions.remote);
-    set(changes, versions.newChanges);
-    set(upToVersion, versions.remote);
+    set(changes, {
+      local: versions.local,
+      remote: versions.remote,
+      changes: versions.newChanges,
+      upToVersion: versions.remote
+    });
   }
 };
 
-const skip = () => {
+const skip = (skipUpdate: boolean) => {
   set(showUpdateDialog, false);
   set(showConflictDialog, false);
-  if (get(skipUpdate)) {
-    set(skipped, get(remoteVersion));
+  if (skipUpdate) {
+    set(skipped, get(changes).remote);
   }
-};
-
-const onChange = (value: string) => {
-  const number = Number.parseInt(value);
-  const local = get(localVersion);
-  if (isNaN(number)) {
-    set(upToVersion, local + 1);
-  } else if (number < local) {
-    set(upToVersion, local + 1);
-  } else if (number > get(remoteVersion)) {
-    set(upToVersion, get(remoteVersion));
-  } else {
-    set(upToVersion, number);
-  }
+  emit('skip');
 };
 
 const updateAssets = async (resolution?: ConflictResolution) => {
   set(showUpdateDialog, false);
   set(showConflictDialog, false);
-  const version = get(multiple) ? get(upToVersion) : get(remoteVersion);
+  const version = get(changes).upToVersion;
+  set(applying, true);
   const updateResult = await applyUpdates({ version, resolution });
+  set(applying, false);
   if (updateResult.done) {
-    set(skipped, undefined);
+    set(skipped, 0);
     showDoneConfirmation();
   } else if (updateResult.conflicts) {
     set(conflicts, updateResult.conflicts);
@@ -111,134 +122,101 @@ const { navigateToUserLogin } = useAppNavigation();
 
 const updateComplete = async () => {
   await logout();
-  await navigateToUserLogin();
+  if (!get(headless)) {
+    await navigateToUserLogin();
+  } else {
+    emit('complete');
+  }
+
   setConnected(false);
   await restartBackend();
   await connect();
 };
 
-onMounted(async () => {
-  const skipUpdate = sessionStorage.getItem('skip_update');
-  if (skipUpdate) {
-    return;
-  }
-
-  if (get(auto)) {
-    await check();
-  }
-});
-
 const { show } = useConfirmStore();
 
 const showDoneConfirmation = () => {
-  show(
-    {
-      title: tc('asset_update.success.title'),
-      message: tc('asset_update.success.description', 0, {
-        remoteVersion: get(remoteVersion)
-      }),
-      primaryAction: tc('asset_update.success.ok'),
-      singleAction: true,
-      type: 'success'
-    },
-    updateComplete
-  );
+  if (get(headless)) {
+    set(inlineConfirm, true);
+  } else {
+    show(
+      {
+        title: tc('asset_update.success.title'),
+        message: tc('asset_update.success.description', 0, {
+          remoteVersion: get(changes).upToVersion
+        }),
+        primaryAction: tc('asset_update.success.ok'),
+        singleAction: true,
+        type: 'success'
+      },
+      updateComplete
+    );
+  }
 };
+
+onMounted(async () => {
+  const skipUpdate = sessionStorage.getItem('skip_update');
+  if (skipUpdate) {
+    emit('skip');
+    return;
+  }
+
+  if (get(headless)) {
+    await check();
+  }
+});
 </script>
 
 <template>
   <fragment>
-    <card v-if="!auto" class="mt-8">
-      <template #title>{{ tc('asset_update.manual.title') }}</template>
-      <template #subtitle>{{ tc('asset_update.manual.subtitle') }}</template>
-      <div v-if="skipped && skipped !== 'undefined'" class="text-body-1">
-        <i18n path="asset_update.manual.skipped">
-          <template #skipped>
-            <badge-display class="ml-2">{{ skipped }}</badge-display>
-          </template>
-        </i18n>
-      </div>
-      <template #buttons>
-        <v-btn depressed color="primary" :loading="checking" @click="check">
-          {{ tc('asset_update.manual.check') }}
-        </v-btn>
-      </template>
-    </card>
-    <v-dialog
-      v-if="showUpdateDialog"
-      v-model="showUpdateDialog"
-      max-width="500"
-      persistent
-    >
-      <card>
-        <template #title>{{ tc('asset_update.title') }}</template>
-        <i18n class="text-body-1" tag="div" path="asset_update.description">
-          <template #remote>
-            <span class="font-weight-medium">{{ remoteVersion }}</span>
-          </template>
-          <template #local>
-            <span class="font-weight-medium">{{ localVersion }}</span>
-          </template>
-        </i18n>
-        <div class="text-body-1 mt-4">
-          {{ tc('asset_update.total_changes', 0, { changes }) }}
-        </div>
+    <asset-update-setting
+      v-if="!headless"
+      :loading="checking || applying"
+      :skipped="skipped"
+      @check="check()"
+    />
+    <div v-else-if="headless">
+      <asset-update-checking
+        v-if="status"
+        :status="status"
+        :remote-version="changes.upToVersion"
+      />
+      <asset-update-inline-confirm
+        v-if="inlineConfirm"
+        :remote-version="changes.upToVersion"
+        @confirm="updateComplete()"
+      />
+    </div>
+    <div v-if="showUpdateDialog">
+      <v-dialog
+        v-if="!headless"
+        :value="showUpdateDialog"
+        max-width="500"
+        persistent
+      >
+        <asset-update-message
+          :headless="headless"
+          :versions="changes"
+          @update:versions="changes = $event"
+          @confirm="updateAssets()"
+          @dismiss="skip($event)"
+        />
+      </v-dialog>
+      <asset-update-message
+        v-else
+        :headless="headless"
+        :versions="changes"
+        @update:versions="changes = $event"
+        @confirm="updateAssets()"
+        @dismiss="skip($event)"
+      />
+    </div>
 
-        <div v-if="multiple" class="font-weight-medium text-body-1 mt-4">
-          {{ tc('asset_update.advanced') }}
-        </div>
-        <v-row v-if="multiple">
-          <v-col>
-            <v-checkbox
-              v-model="partial"
-              class="asset-update__partial"
-              dense
-              :label="tc('asset_update.partially_update')"
-            />
-          </v-col>
-          <v-col cols="6">
-            <v-text-field
-              v-if="partial"
-              v-model="upToVersion"
-              outlined
-              type="number"
-              dense
-              :min="localVersion"
-              :max="remoteVersion"
-              :label="tc('asset_update.up_to_version')"
-              @change="onChange"
-            />
-          </v-col>
-        </v-row>
-        <template #options>
-          <v-checkbox
-            v-if="auto"
-            v-model="skipUpdate"
-            dense
-            :label="tc('asset_update.skip_notification')"
-          />
-        </template>
-        <template #buttons>
-          <v-row justify="end" no-gutters>
-            <v-col cols="auto">
-              <v-btn text @click="skip">
-                {{ tc('common.actions.skip') }}
-              </v-btn>
-            </v-col>
-            <v-col cols="auto">
-              <v-btn text color="primary" @click="updateAssets()">
-                {{ tc('common.actions.update') }}
-              </v-btn>
-            </v-col>
-          </v-row>
-        </template>
-      </card>
-    </v-dialog>
     <conflict-dialog
       v-if="showConflictDialog"
       v-model="showConflictDialog"
       :conflicts="conflicts"
-      @cancel="showConflictDialog = false"
+      @cancel="skip(false)"
       @resolve="updateAssets($event)"
     />
   </fragment>

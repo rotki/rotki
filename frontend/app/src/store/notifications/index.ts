@@ -7,10 +7,6 @@ import {
 } from '@rotki/common/lib/messages';
 import { useSessionStorage } from '@vueuse/core';
 import { type Ref } from 'vue';
-import { useSessionApi } from '@/services/session';
-import { backoff } from '@/utils/backoff';
-import { uniqueStrings } from '@/utils/data';
-import { assert } from '@/utils/assertions';
 
 const notificationDefaults = (): NotificationPayload => ({
   title: '',
@@ -54,21 +50,12 @@ const createNotification = (
 
 export const emptyNotification = (): NotificationData => createNotification();
 
-const createPending = (username: string): Ref<NotificationData[]> => {
-  return useSessionStorage(`rotki.notification.pending.${username}`, []);
-};
-
 export const useNotificationsStore = defineStore('notifications', () => {
-  const data = ref<NotificationData[]>([]);
-  const { tc } = useI18n();
-  const { consumeMessages } = useSessionApi();
-  const { handlePollingMessage } = useMessageHandling();
+  const data: Ref<NotificationData[]> = ref([]);
   const lastDisplay: Ref<Record<string, number>> = useSessionStorage(
     'rotki.notification.last_display',
     {}
   );
-  let pending: Ref<NotificationData[] | null> = ref(null);
-  let isRunning = false;
 
   const count = computed(() => get(data).length);
   const nextId = computed(() => {
@@ -130,13 +117,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
         });
       }
 
-      if (notification.category === NotificationCategory.ADDRESS_MIGRATION) {
-        const notifications = get(pending);
-        assert(notifications);
-        set(pending, [...notifications, notification]);
-      } else {
-        update([notification]);
-      }
+      update([notification]);
     } else {
       const notification = dataList[notificationIndex];
       let date = new Date();
@@ -149,9 +130,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
       if (currentTime - lastTime < 60_000) {
         date = notification.date;
         display = false;
-      } else {
-        set(lastDisplay, { ...get(lastDisplay), [group]: currentTime });
       }
+
       const newNotification: NotificationData = {
         ...notification,
         date,
@@ -167,18 +147,6 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }
   };
 
-  function removeFromPending(ids: number[]): void {
-    const notifications = get(pending);
-    assert(notifications);
-    const newPending: NotificationData[] = [];
-    notifications.forEach(n => {
-      if (!ids.includes(n.id)) {
-        newPending.push(n);
-      }
-    });
-    set(pending, newPending);
-  }
-
   const displayed = (ids: number[]): void => {
     if (ids.length <= 0) {
       return;
@@ -190,53 +158,16 @@ export const useNotificationsStore = defineStore('notifications', () => {
       if (index < 0) {
         continue;
       }
-      notifications[index] = { ...notifications[index], display: false };
+      const notification = notifications[index];
+      if (notification.group) {
+        set(lastDisplay, {
+          ...get(lastDisplay),
+          [notification.group]: Date.now()
+        });
+      }
+      notifications[index] = { ...notification, display: false };
     }
     setNotifications(notifications);
-    removeFromPending(ids);
-  };
-
-  const consume = async (): Promise<void> => {
-    if (isRunning) {
-      return;
-    }
-
-    isRunning = true;
-    const title = tc('actions.notifications.consume.message_title');
-
-    try {
-      const messages = await backoff(3, () => consumeMessages(), 10000);
-      const existing = get(data).map(({ message }) => message);
-      messages.errors
-        .filter(uniqueStrings)
-        .filter(error => !existing.includes(error))
-        .forEach(message => handlePollingMessage(message, false));
-      messages.warnings
-        .filter(uniqueStrings)
-        .filter(warning => !existing.includes(warning))
-        .forEach(message => handlePollingMessage(message, true));
-    } catch (e: any) {
-      const message = e.message || e;
-      notify({
-        title,
-        message,
-        display: true
-      });
-    } finally {
-      isRunning = false;
-    }
-  };
-
-  const restorePending = () => {
-    const notifications = get(pending);
-    assert(notifications);
-    if (notifications.length > 0) {
-      set(data, [...notifications, ...get(data)]);
-    }
-  };
-
-  const initPending = (username: string) => {
-    pending = createPending(username);
   };
 
   return {
@@ -246,10 +177,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     queue,
     notify,
     displayed,
-    remove,
-    consume,
-    initPending,
-    restorePending
+    remove
   };
 });
 

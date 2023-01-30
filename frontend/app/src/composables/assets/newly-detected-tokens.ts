@@ -1,4 +1,4 @@
-import { type Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import { type NewDetectedToken } from '@/types/websocket-messages';
 
 const MAX_SIZE = 500;
@@ -8,14 +8,14 @@ const createStorage = (username: string): Ref<NewDetectedToken[]> => {
 };
 
 export const useNewlyDetectedTokens = createSharedComposable(() => {
-  let tokens: Ref<NewDetectedToken[]> = ref([]);
+  let internalTokens: Ref<NewDetectedToken[]> = ref([]);
 
-  const initTokens = (username: string) => {
-    tokens = createStorage(username);
+  const initTokens = (username: string): void => {
+    internalTokens = createStorage(username);
   };
 
   const addNewDetectedToken = (data: NewDetectedToken) => {
-    const tokenList = [...get(tokens)];
+    const tokenList = [...get(internalTokens)];
     const tokenIndex = tokenList.findIndex(
       ({ tokenIdentifier }) => tokenIdentifier === data.tokenIdentifier
     );
@@ -24,16 +24,20 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
     } else {
       tokenList.splice(tokenIndex, 1, data);
     }
-    set(tokens, tokenList.slice(-MAX_SIZE));
+    set(internalTokens, tokenList.slice(-MAX_SIZE));
   };
 
   const removeNewDetectedTokens = (tokensToRemove: string[]) => {
-    const filtered = get(tokens).filter(
+    const filtered = get(internalTokens).filter(
       item => !tokensToRemove.includes(item.tokenIdentifier)
     );
 
-    set(tokens, filtered);
+    set(internalTokens, filtered);
   };
+
+  const tokens: ComputedRef<NewDetectedToken[]> = computed(() => {
+    return get(internalTokens);
+  });
 
   return {
     tokens,

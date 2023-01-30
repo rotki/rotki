@@ -25,7 +25,6 @@ import { TaskType } from '@/types/task-type';
 import { UserAccount, type UserSettingsModel } from '@/types/user';
 import { lastLogin } from '@/utils/account-management';
 import { logger } from '@/utils/logging';
-import { useAccountMigrationStore } from '@/store/blockchain/accounts/migrate';
 
 export const useSessionStore = defineStore('session', () => {
   const showUpdatePopup = ref(false);
@@ -35,7 +34,6 @@ export const useSessionStore = defineStore('session', () => {
   const { logged, username, syncConflict, shouldFetchData } =
     storeToRefs(authStore);
   const { updateDbUpgradeStatus, updateDataMigrationStatus } = authStore;
-  const { upgradeMigratedAddresses } = useAccountMigrationStore();
 
   const { initialize } = useSessionSettings();
   const usersApi = useUsersApi();
@@ -161,7 +159,6 @@ export const useSessionStore = defineStore('session', () => {
       set(logged, false);
       updateDbUpgradeStatus();
       updateDataMigrationStatus();
-      upgradeMigratedAddresses();
     } catch (e: any) {
       setMessage({
         title: 'Logout failed',

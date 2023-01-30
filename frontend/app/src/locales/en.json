@@ -1058,6 +1058,16 @@
     "up_to_date": "Your asset database is up to date.",
     "up_to_version": "Only update up to version"
   },
+  "asset_update_status": {
+    "checking": {
+      "title": "Checking for updated assets",
+      "message": "Please wait while a check for an asset update is performed"
+    },
+    "applying": {
+      "title": "Applying asset update",
+      "message": "Please wait while your asset data are updated to version {remoteVersion}"
+    }
+  },
   "assets": {
     "amount": "Total Owned",
     "backup": {
@@ -2685,6 +2695,7 @@
     "label_username": "Username",
     "logout": "Logout",
     "migrating_data": {
+      "title": "Data Migration",
       "current": "Step {currentStep} of {totalSteps} of data migration {currentVersion} is applied.",
       "warning": "Data migration {currentVersion} is running. Please don't close the app until it's finished."
     },
@@ -2699,6 +2710,7 @@
     },
     "title": "Sign In",
     "upgrading_db": {
+      "title": "Database Upgrade",
       "current": "Step {currentStep} of {totalSteps} of database upgrade v{currentVersion} is applied.",
       "warning": "The database is being upgraded from version {fromVersion} to {toVersion}. Please don't close the app until it's finished."
     },
@@ -3017,7 +3029,7 @@
     "new_detected_token": {
       "action": "See more",
       "title": "New Token Detected|New Tokens Detected",
-      "message": "New token with identifier {identifier} is detected from EVM transactions.|{count} new tokens are detected from EVM transactions."
+      "message": "New token with identifier {identifier} was detected from event processing and queries.|{count} new tokens were detected from event processing and queries."
     },
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",

@@ -1,3 +1,4 @@
+import { type Ref } from 'vue';
 import { useSessionStore } from '@/store/session';
 import { useSessionAuthStore } from '@/store/session/auth';
 import {
@@ -7,14 +8,13 @@ import {
 import { setLastLogin } from '@/utils/account-management';
 import { useWebsocketStore } from '@/store/websocket';
 import { useMainStore } from '@/store/main';
-import { useNotificationsStore } from '@/store/notifications';
 import { useAccountMigrationStore } from '@/store/blockchain/accounts/migrate';
 import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
 
 export const useAccountManagement = () => {
-  const loading = ref(false);
-  const error = ref<string>('');
-  const errors = ref<string[]>([]);
+  const loading: Ref<boolean> = ref(false);
+  const error: Ref<string> = ref('');
+  const errors: Ref<string[]> = ref([]);
 
   const { tc } = useI18n();
   const { showGetPremiumButton, showPremiumDialog } = usePremiumReminder();
@@ -24,14 +24,13 @@ export const useAccountManagement = () => {
   const authStore = useSessionAuthStore();
   const { logged } = storeToRefs(authStore);
   const { updateDbUpgradeStatus, updateDataMigrationStatus } = authStore;
-  const { upgradeMigratedAddresses } = useAccountMigrationStore();
-  const { restorePending, initPending } = useNotificationsStore();
+  const { setupCache } = useAccountMigrationStore();
   const { initTokens } = useNewlyDetectedTokens();
 
   const createNewAccount = async (payload: CreateAccountPayload) => {
     set(loading, true);
     set(error, '');
-    initPending(payload.credentials.username);
+    setupCache(payload.credentials.username);
     initTokens(payload.credentials.username);
     await connect();
     const result = await createAccount(payload);
@@ -51,9 +50,9 @@ export const useAccountManagement = () => {
     username,
     password,
     syncApproval
-  }: LoginCredentials) => {
+  }: LoginCredentials): Promise<boolean> => {
     set(loading, true);
-    initPending(username);
+    setupCache(username);
     initTokens(username);
     await connect();
     const result = await login({
@@ -68,13 +67,12 @@ export const useAccountManagement = () => {
     set(loading, false);
     updateDbUpgradeStatus();
     updateDataMigrationStatus();
-    upgradeMigratedAddresses();
     if (get(logged)) {
-      restorePending();
       setLastLogin(username);
       showGetPremiumButton();
-      await showPremiumDialog();
+      return showPremiumDialog();
     }
+    return false;
   };
 
   return {
@@ -87,11 +85,11 @@ export const useAccountManagement = () => {
 };
 
 export const useAutoLogin = () => {
-  const autolog = ref(false);
+  const autolog: Ref<boolean> = ref(false);
 
   const { login } = useSessionStore();
   const { connected } = storeToRefs(useMainStore());
-  const { logged } = storeToRefs(useSessionAuthStore());
+  const { logged, canRequestData } = storeToRefs(useSessionAuthStore());
   const { resetSessionBackend } = useBackendManagement();
   const { showGetPremiumButton, showPremiumDialog } = usePremiumReminder();
 
@@ -109,6 +107,7 @@ export const useAutoLogin = () => {
     if (get(logged)) {
       await showPremiumDialog();
       showGetPremiumButton();
+      set(canRequestData, true);
     }
 
     set(autolog, false);

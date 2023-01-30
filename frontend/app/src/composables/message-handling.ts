@@ -9,7 +9,6 @@ import {
   type BalanceSnapshotError,
   type EvmTransactionQueryData,
   MESSAGE_WARNING,
-  type MigratedAddresses,
   type NewDetectedToken,
   type PremiumStatusUpdateData,
   SocketMessageType,
@@ -22,6 +21,9 @@ import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-toke
 import { Routes } from '@/router/routes';
 import router from '@/router';
 import { useAccountMigrationStore } from '@/store/blockchain/accounts/migrate';
+import { backoff } from '@/utils/backoff';
+import { uniqueStrings } from '@/utils/data';
+import { useSessionApi } from '@/services/session';
 
 export const useMessageHandling = () => {
   const { setQueryStatus } = useTxQueryStatusStore();
@@ -32,6 +34,8 @@ export const useMessageHandling = () => {
   const { notify } = notificationsStore;
   const { addNewDetectedToken } = useNewlyDetectedTokens();
   const { tc } = useI18n();
+  const { consumeMessages } = useSessionApi();
+  let isRunning = false;
 
   const handleSnapshotError = (data: BalanceSnapshotError): Notification => {
     return {
@@ -90,11 +94,7 @@ export const useMessageHandling = () => {
     return null;
   };
 
-  const { upgradeMigratedAddresses } = useAccountMigrationStore();
-
-  const handleMigratedAccounts = (data: MigratedAddresses) => {
-    upgradeMigratedAddresses(data);
-  };
+  const { setUpgradedAddresses } = useAccountMigrationStore();
 
   const handleNewTokenDetectedMessage = (
     data: NewDetectedToken
@@ -150,7 +150,7 @@ export const useMessageHandling = () => {
     } else if (type === SocketMessageType.DATA_MIGRATION_STATUS) {
       handleDataMigrationStatus(message.data);
     } else if (type === SocketMessageType.EVM_ADDRESS_MIGRATION) {
-      handleMigratedAccounts(message.data);
+      setUpgradedAddresses(message.data);
     } else if (type === SocketMessageType.NEW_EVM_TOKEN_DETECTED) {
       notifications.push(handleNewTokenDetectedMessage(message.data));
     } else {
@@ -184,8 +184,39 @@ export const useMessageHandling = () => {
     notifications.forEach(notify);
   };
 
+  const consume = async (): Promise<void> => {
+    if (isRunning) {
+      return;
+    }
+
+    isRunning = true;
+    const title = tc('actions.notifications.consume.message_title');
+
+    try {
+      const messages = await backoff(3, () => consumeMessages(), 10000);
+      const existing = get(notifications).map(({ message }) => message);
+      messages.errors
+        .filter(uniqueStrings)
+        .filter(error => !existing.includes(error))
+        .forEach(message => handlePollingMessage(message, false));
+      messages.warnings
+        .filter(uniqueStrings)
+        .filter(warning => !existing.includes(warning))
+        .forEach(message => handlePollingMessage(message, true));
+    } catch (e: any) {
+      const message = e.message || e;
+      notify({
+        title,
+        message,
+        display: true
+      });
+    } finally {
+      isRunning = false;
+    }
+  };
+
   return {
     handleMessage,
-    handlePollingMessage
+    consume
   };
 };

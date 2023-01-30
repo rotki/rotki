@@ -1,13 +1,14 @@
 <script setup lang="ts">
 const { navigateToPremium, premiumURL, isPackaged } = useInterop();
-const { navigateToDashboard } = useAppNavigation();
+
+const emit = defineEmits<{ (e: 'dismiss'): void }>();
 
 const keyHandler = async (event: KeyboardEvent) => {
   const keys = ['Escape', 'Esc'];
   if (!keys.includes(event.key)) {
     return;
   }
-  await navigateToDashboard();
+  emit('dismiss');
 };
 
 onBeforeMount(() => {
@@ -21,26 +22,24 @@ onBeforeUnmount(() => {
 const { t } = useI18n();
 </script>
 <template>
-  <v-card light max-width="500" class="mx-auto premium-reminder">
-    <v-card-title class="premium-reminder__title">
+  <card flat data-cy="premium-reminder">
+    <template #title>
       {{ t('premium_reminder.title') }}
-    </v-card-title>
-    <v-card-text>
-      <v-row class="mx-auto text-justify">
-        <v-col cols="auto" align-self="center">
-          <v-icon color="success" size="48"> mdi-information </v-icon>
-        </v-col>
-        <v-col cols="10">{{ t('premium_reminder.description') }}</v-col>
-      </v-row>
-    </v-card-text>
-    <v-card-actions class="pa-4">
+    </template>
+    <v-row class="mx-auto text-justify my-2 text-body-1">
+      <v-col cols="auto" align-self="center">
+        <v-icon color="success" size="48"> mdi-information </v-icon>
+      </v-col>
+      <v-col cols="10">{{ t('premium_reminder.description') }}</v-col>
+    </v-row>
+    <template #buttons>
       <v-spacer />
       <v-btn
         color="primary"
-        class="premium-reminder__buttons__cancel"
+        data-cy="premium-reminder__cancel"
         depressed
         outlined
-        @click="navigateToDashboard()"
+        @click="emit('dismiss')"
       >
         {{ t('common.actions.close') }}
       </v-btn>
@@ -49,11 +48,11 @@ const { t } = useI18n();
         depressed
         target="_blank"
         :href="isPackaged ? undefined : premiumURL"
-        class="premium-reminder__buttons__confirm"
+        data-cy="premium-reminder__confirm"
         @click="navigateToPremium()"
       >
         {{ t('common.actions.upgrade') }}
       </v-btn>
-    </v-card-actions>
-  </v-card>
+    </template>
+  </card>
 </template>

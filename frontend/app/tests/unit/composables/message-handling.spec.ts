@@ -41,9 +41,9 @@ describe('useMessageHandling', () => {
   test('notifies the user and runs token detection', async () => {
     const { handleMessage } = useMessageHandling();
     const { notify } = useNotificationsStore();
-    const { logged } = storeToRefs(useSessionAuthStore());
+    const { canRequestData } = storeToRefs(useSessionAuthStore());
     const { detectTokens } = useTokenDetection(Blockchain.OPTIMISM);
-    set(logged, true);
+    set(canRequestData, true);
     await handleMessage(
       JSON.stringify({
         type: SocketMessageType.EVM_ADDRESS_MIGRATION,
