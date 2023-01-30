@@ -122,7 +122,7 @@ def legacy_to_cash_address(address: str) -> Optional[BTCAddress]:
         if converted_bits is None:
             return None
         checksum = _calculate_checksum(_PREFIX, converted_bits)
-        return BTCAddress(_PREFIX + ':' + _b32encode(converted_bits + checksum))
+        return BTCAddress(_PREFIX + ':' + _b32encode(converted_bits + checksum))  # noqa: TRY300
     except ValueError:
         return None
 
@@ -150,7 +150,7 @@ def cash_to_legacy_address(address: str) -> Optional[BTCAddress]:
         version = _address_type('cash', converted_bits[0])[0]
         legacy_version = _address_type('legacy', version)[1]
         payload = converted_bits[1:-6]
-        return BTCAddress(b58encode_check(
+        return BTCAddress(b58encode_check(  # noqa: TRY300
             _code_list_to_string([legacy_version] + payload),
         ).decode())
     except ValueError:

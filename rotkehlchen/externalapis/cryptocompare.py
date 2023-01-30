@@ -323,7 +323,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
                     )
                     raise RemoteError(error_message)
 
-                return json_ret['Data'] if 'Data' in json_ret else json_ret
+                return json_ret['Data'] if 'Data' in json_ret else json_ret  # noqa: TRY300
             except KeyError as e:
                 raise RemoteError(
                     f'Unexpected format of Cryptocompare json_response. '

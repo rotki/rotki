@@ -106,7 +106,7 @@ def retry_calls(
                 tries -= 1
                 continue
 
-            return result
+            return result  # noqa: TRY300
 
         except requests.exceptions.RequestException as e:
             tries -= 1

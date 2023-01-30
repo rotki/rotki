@@ -572,6 +572,11 @@ def deserialize_evm_transaction(
         else:
             gas_used = read_integer(data, 'gasUsed', source)
         nonce = read_integer(data, 'nonce', source)
+    except KeyError as e:
+        raise DeserializationError(
+            f'evm {"internal" if internal else ""}transaction from {source} missing expected key {str(e)}',  # noqa: E501
+        ) from e
+    else:
         return EvmTransaction(
             timestamp=timestamp,
             chain_id=chain_id,
@@ -586,10 +591,6 @@ def deserialize_evm_transaction(
             input_data=input_data,
             nonce=nonce,
         )
-    except KeyError as e:
-        raise DeserializationError(
-            f'evm {"internal" if internal else ""}transaction from {source} missing expected key {str(e)}',  # noqa: E501
-        ) from e
 
 
 R = TypeVar('R')

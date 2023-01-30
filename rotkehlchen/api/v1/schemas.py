@@ -1619,14 +1619,15 @@ def _transform_substrate_address(
             chain=chain,
             public_key=SubstratePublicKey(resolved_address),
         )
-        log.debug(f'Resolved {chain} ENS {given_address} to {address}')
-        return address
     except (TypeError, ValueError) as e:
         raise ValidationError(
             f'Given ENS address {given_address} does not contain a valid '
             f'Substrate public key: {resolved_address}. {chain} address cannot be obtained.',
             field_name='address',
         ) from e
+    else:
+        log.debug(f'Resolved {chain} ENS {given_address} to {address}')
+        return address
 
 
 def _transform_evm_addresses(data: dict[str, Any], ethereum_inquirer: 'EthereumInquirer') -> None:

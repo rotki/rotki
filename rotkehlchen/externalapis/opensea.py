@@ -282,7 +282,7 @@ class Opensea(ExternalServiceWithApiKey):
             token_id = entry['asset_contract']['address'] + '_' + entry['token_id']
             if entry['asset_contract']['asset_contract_type'] == 'semi-fungible':
                 token_id += f'_{str(owner_address)}'
-            return NFT(
+            return NFT(  # noqa: TRY300  # can raise KeyError due to arg init
                 token_identifier=NFT_DIRECTIVE + token_id,
                 background_color=entry['background_color'],
                 image_url=entry['image_url'],

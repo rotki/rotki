@@ -998,21 +998,6 @@ class Binance(ExchangeInterface):
                 raw_data['obtainAmount'],
             )
             rate = deserialize_price(raw_data['price'])
-            base_asset = crypto_asset
-            quote_asset = fiat_asset
-            return Trade(
-                timestamp=timestamp,
-                location=self.location,
-                base_asset=base_asset,
-                quote_asset=quote_asset,
-                trade_type=trade_type,
-                amount=obtain_amount,
-                rate=rate,
-                fee=fee,
-                fee_currency=quote_asset,
-                link=link_str,
-            )
-
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found {str(self.location)} fiat payment with unknown asset '
@@ -1035,6 +1020,21 @@ class Binance(ExchangeInterface):
                 f'Error processing a {str(self.location)} fiat payment',
                 asset_movement=raw_data,
                 error=msg,
+            )
+        else:
+            base_asset = crypto_asset
+            quote_asset = fiat_asset
+            return Trade(
+                timestamp=timestamp,
+                location=self.location,
+                base_asset=base_asset,
+                quote_asset=quote_asset,
+                trade_type=trade_type,
+                amount=obtain_amount,
+                rate=rate,
+                fee=fee,
+                fee_currency=quote_asset,
+                link=link_str,
             )
 
         return None
@@ -1061,19 +1061,7 @@ class Binance(ExchangeInterface):
             fee = Fee(deserialize_asset_amount(raw_data['totalFee']))
             link_str = str(tx_id) if tx_id else ''
             amount = deserialize_asset_amount_force_positive(raw_data['amount'])
-            return AssetMovement(
-                location=self.location,
-                category=category,
-                address=deserialize_asset_movement_address(raw_data, 'address', asset),
-                transaction_id=tx_id,
-                timestamp=timestamp,
-                asset=asset,
-                amount=amount,
-                fee_asset=asset,
-                fee=fee,
-                link=link_str,
-            )
-
+            address = deserialize_asset_movement_address(raw_data, 'address', asset)
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found {str(self.location)} fiat deposit/withdrawal with unknown asset '
@@ -1096,6 +1084,19 @@ class Binance(ExchangeInterface):
                 f'Error processing a {str(self.location)} fiat deposit/withdrawal',
                 asset_movement=raw_data,
                 error=msg,
+            )
+        else:
+            return AssetMovement(
+                location=self.location,
+                category=category,
+                address=address,
+                transaction_id=tx_id,
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                fee_asset=asset,
+                fee=fee,
+                link=link_str,
             )
 
         return None
@@ -1124,19 +1125,8 @@ class Binance(ExchangeInterface):
             tx_id = get_key_if_has_val(raw_data, 'txId')
             internal_id = get_key_if_has_val(raw_data, 'id')
             link_str = str(internal_id) if internal_id else str(tx_id) if tx_id else ''
-            return AssetMovement(
-                location=self.location,
-                category=category,
-                address=deserialize_asset_movement_address(raw_data, 'address', asset),
-                transaction_id=tx_id,
-                timestamp=timestamp,
-                asset=asset,
-                amount=deserialize_asset_amount_force_positive(raw_data['amount']),
-                fee_asset=asset,
-                fee=fee,
-                link=link_str,
-            )
-
+            address = deserialize_asset_movement_address(raw_data, 'address', asset)
+            amount = deserialize_asset_amount_force_positive(raw_data['amount'])
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found {str(self.location)} deposit/withdrawal with unknown asset '
@@ -1159,6 +1149,19 @@ class Binance(ExchangeInterface):
                 f'Error processing a {str(self.location)} deposit/withdrawal',
                 asset_movement=raw_data,
                 error=msg,
+            )
+        else:
+            return AssetMovement(
+                location=self.location,
+                category=category,
+                address=address,
+                transaction_id=tx_id,
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                fee_asset=asset,
+                fee=fee,
+                link=link_str,
             )
 
         return None

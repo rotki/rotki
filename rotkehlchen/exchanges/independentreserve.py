@@ -347,10 +347,10 @@ class Independentreserve(ExchangeInterface):
         """Validates that the IndependentReserve API key is good for usage in rotki"""
         try:
             self._api_query(verb='post', method_type='Private', path='GetAccounts')
-            return True, ''
-
         except RemoteError as e:
             return False, str(e)
+        else:
+            return True, ''
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         assets_balance: dict[AssetWithOracles, Balance] = {}

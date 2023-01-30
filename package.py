@@ -226,7 +226,7 @@ class Environment:
             return 'linux'
         if self.is_windows():
             return 'windows.exe'
-        raise Exception(f'Invalid os {self.os}')
+        raise ValueError(f'Invalid os {self.os}')
 
     @staticmethod
     def mac_electron_env_set() -> bool:
