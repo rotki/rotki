@@ -1059,23 +1059,19 @@ def query_token_spam_list() -> set[Asset]:
             protocol=SPAM_PROTOCOL,
             underlying_tokens=None,
         )
-        token_exists = True
+
         try:
             evm_token.check_existence()
-        except UnknownAsset:
-            token_exists = False
-
-        if token_exists is True:
-            # make sure that the token has the spam protocol
-            db_evm_token = EvmToken(evm_token.identifier)
-            if db_evm_token.protocol != SPAM_PROTOCOL:
-                GlobalDBHandler().edit_evm_token(entry=evm_token)
-        else:
+        except UnknownAsset:  # token does not exist
             GlobalDBHandler().add_asset(
                 asset_id=evm_token.identifier,
                 asset_type=AssetType.EVM_TOKEN,
                 data=evm_token,
             )
+        else:  # token exists, make sure it has spam protocol set
+            db_evm_token = EvmToken(evm_token.identifier)
+            if db_evm_token.protocol != SPAM_PROTOCOL:
+                GlobalDBHandler().edit_evm_token(entry=evm_token)
         # save the asset instead of the EvmToken as we don't need all the extra information later
         tokens_to_ignore.add(Asset(evm_token.identifier))
 
