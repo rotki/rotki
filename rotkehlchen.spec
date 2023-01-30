@@ -82,7 +82,10 @@ for exchange_name in SUPPORTED_EXCHANGES:
     if exchange_name == Location.BINANCEUS:
         continue
     hiddenimports.append(f'rotkehlchen.exchanges.{exchange_name}')
-dynamic_modules = collect_submodules('rotkehlchen.chain.ethereum.modules')
+
+ethereum_modules = collect_submodules('rotkehlchen.chain.ethereum.modules')
+optimism_modules = collect_submodules('rotkehlchen.chain.optimism.modules')
+dynamic_modules = ethereum_modules + optimism_modules
 hiddenimports.extend(dynamic_modules)
 
 a = Entrypoint(
