@@ -2,11 +2,13 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 
-from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import SPAM_PROTOCOL, ChainID
+from rotkehlchen.types import SPAM_PROTOCOL, ChainID, EvmTokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -1039,7 +1041,7 @@ KNOWN_EVM_SPAM_TOKENS: list[dict[str, Any]] = [
 ]
 
 
-def query_token_spam_list(db: 'DBHandler') -> set[EvmToken]:
+def query_token_spam_list() -> set[Asset]:
     """
     Generate a set of assets that can be ignored using the list of spam
     assets KNOWN_EVM_SPAM_TOKENS.
@@ -1047,16 +1049,35 @@ def query_token_spam_list(db: 'DBHandler') -> set[EvmToken]:
     tokens_to_ignore = set()
     # Try to add custom list
     for info in KNOWN_EVM_SPAM_TOKENS:
-        own_token = get_or_create_evm_token(
-            userdb=db,
-            evm_address=info['address'],
+        evm_token = EvmToken.initialize(
+            address=info['address'],
             chain_id=info.get('chain', ChainID.ETHEREUM),
-            protocol=SPAM_PROTOCOL,
-            decimals=info.get('decimals', 18),
+            token_kind=EvmTokenKind.ERC20,
             name=info.get('name', MISSING_NAME_SPAM_TOKEN),
+            decimals=info.get('decimals', 18),
             symbol=info.get('symbol', MISSING_SYMBOL_SPAM_TOKEN),
+            protocol=SPAM_PROTOCOL,
+            underlying_tokens=None,
         )
-        tokens_to_ignore.add(own_token)
+        token_exists = True
+        try:
+            evm_token.check_existence()
+        except UnknownAsset:
+            token_exists = False
+
+        if token_exists is True:
+            # make sure that the token has the spam protocol
+            db_evm_token = EvmToken(evm_token.identifier)
+            if db_evm_token.protocol != SPAM_PROTOCOL:
+                GlobalDBHandler().edit_evm_token(entry=evm_token)
+        else:
+            GlobalDBHandler().add_asset(
+                asset_id=evm_token.identifier,
+                asset_type=AssetType.EVM_TOKEN,
+                data=evm_token,
+            )
+        # save the asset instead of the EvmToken as we don't need all the extra information later
+        tokens_to_ignore.add(Asset(evm_token.identifier))
 
     return tokens_to_ignore
 
@@ -1067,7 +1088,7 @@ def update_spam_assets(db: 'DBHandler') -> int:
     the addition of duplicates. It returns the amount of assets that were added
     to the ignore list
     """
-    spam_tokens = query_token_spam_list(db=db)
+    spam_tokens = query_token_spam_list()
     # order matters here. Make sure ignored_assets are queried after spam tokens creation
     # since it's possible for a token to exist in ignored assets but not global DB.
     # and in that case query_token_spam_list add it to the global DB
