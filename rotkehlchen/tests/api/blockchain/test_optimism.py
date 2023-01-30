@@ -19,13 +19,11 @@ from rotkehlchen.utils.misc import ts_now
 TEST_ADDY = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_add_optimism_blockchain_account(rotkehlchen_api_server):
     """Test adding an optimism account when there is none in the db
     works as expected and that balances are returned and tokens are detected.
-
-    TODO: Probably should mock this at some point. Atm just using
-    rotki's account in optimism
     """
     async_query = random.choice([False, True])
 
