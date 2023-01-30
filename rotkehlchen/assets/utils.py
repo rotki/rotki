@@ -215,7 +215,7 @@ def get_or_create_evm_token(
                 data = {'token_identifier': identifier}
                 if seen is not None:
                     if seen.tx_hash is not None:
-                        data['seen_tx_hash'] = '0x' + seen.tx_hash.hex()
+                        data['seen_tx_hash'] = seen.tx_hash.hex()
                     else:  # description should have been given
                         data['seen_description'] = seen.description  # type: ignore
                 userdb.msg_aggregator.add_message(
