@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import ConnectionFailureMessage from '@/components/account-management/ConnectionFailureMessage.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
-import PremiumReminder from '@/components/account-management/PremiumReminder.vue';
 import BackendSettingsButton from '@/components/helper/OnboardingSettingsButton.vue';
 import PrivacyNotice from '@/components/PrivacyNotice.vue';
 import AboutButton from '@/components/user/AboutButton.vue';
@@ -16,7 +15,6 @@ const css = useCssModule();
 
 const { autolog } = useAutoLogin();
 const { isPackaged } = useInterop();
-const { isPremiumDialogVisible } = usePremiumReminder();
 const { connectionFailure, connected, dockerRiskAccepted } = storeToRefs(
   useMainStore()
 );
@@ -33,7 +31,7 @@ const displayRouter = logicAnd(connected, loginIfConnected);
 
 <template>
   <login-overlay>
-    <div v-if="!isPremiumDialogVisible" :class="css.wrapper">
+    <div :class="css.wrapper">
       <div :class="css.container">
         <v-card
           class="pb-4"
@@ -48,7 +46,11 @@ const displayRouter = logicAnd(connected, loginIfConnected);
             :connected="connected && !autolog"
           />
           <connection-failure-message v-else />
-          <div v-if="displayRouter" data-cy="account-management-forms">
+          <div
+            v-if="displayRouter"
+            data-cy="account-management-forms"
+            :class="css.router"
+          >
             <router-view />
           </div>
         </v-card>
@@ -67,8 +69,6 @@ const displayRouter = logicAnd(connected, loginIfConnected);
         </template>
       </login-icon>
     </div>
-
-    <premium-reminder v-else />
   </login-overlay>
 </template>
 
@@ -92,6 +92,10 @@ const displayRouter = logicAnd(connected, loginIfConnected);
   @media (max-height: 800px) {
     padding-top: 0;
   }
+}
+
+.router {
+  min-height: 150px;
 }
 
 .card {

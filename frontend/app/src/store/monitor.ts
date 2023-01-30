@@ -1,6 +1,5 @@
 import { type Ref } from 'vue';
 import { useBalancesStore } from '@/store/balances';
-import { useNotificationsStore } from '@/store/notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useWatchersStore } from '@/store/session/watchers';
@@ -18,9 +17,9 @@ const BALANCES = 'balances';
 export const useMonitorStore = defineStore('monitor', () => {
   const monitors: Ref<Record<string, any>> = ref({});
 
-  const { logged } = storeToRefs(useSessionAuthStore());
+  const { canRequestData } = storeToRefs(useSessionAuthStore());
   const { check } = usePeriodicStore();
-  const { consume } = useNotificationsStore();
+  const { consume } = useMessageHandling();
   const { fetchWatchers } = useWatchersStore();
   const { monitor } = useTasks();
   const { autoRefresh } = useBalancesStore();
@@ -34,7 +33,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { connect, disconnect } = ws;
 
   const fetch = (): void => {
-    if (get(logged)) {
+    if (get(canRequestData)) {
       startPromise(check());
     }
 
@@ -75,15 +74,17 @@ export const useMonitorStore = defineStore('monitor', () => {
   const startWatcherMonitoring = (restarting: boolean): void => {
     const activeMonitors = get(monitors);
     if (!activeMonitors[WATCHER]) {
-      if (!restarting) {
+      if (!restarting && get(canRequestData)) {
         startPromise(fetchWatchers());
       }
       // check for watchers every 6 minutes (approx. half the firing time
       // of the server-side watchers)
-      activeMonitors[WATCHER] = setInterval(
-        () => startPromise(fetchWatchers()),
-        360000
-      );
+      activeMonitors[WATCHER] = setInterval(() => {
+        if (!get(canRequestData)) {
+          return;
+        }
+        startPromise(fetchWatchers());
+      }, 360000);
       set(monitors, activeMonitors);
     }
   };
@@ -92,7 +93,11 @@ export const useMonitorStore = defineStore('monitor', () => {
     const period = get(refreshPeriod) * 60 * 1000;
     const activeMonitors = get(monitors);
     if (!activeMonitors[BALANCES] && period > 0) {
-      activeMonitors[BALANCES] = setInterval(autoRefresh, period);
+      activeMonitors[BALANCES] = setInterval(() => {
+        if (get(canRequestData)) {
+          startPromise(autoRefresh());
+        }
+      }, period);
       set(monitors, activeMonitors);
     }
   };

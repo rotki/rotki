@@ -1,39 +1,16 @@
 <script setup lang="ts">
-defineProps({
-  connected: { required: true, type: Boolean }
-});
-
+defineProps<{ connected: boolean }>();
 const { t } = useI18n();
 </script>
 <template>
-  <v-row
-    v-if="!connected"
-    no-gutters
-    align="center"
-    justify="center"
-    class="my-3"
-  >
-    <v-col class="connection-loading__content grey-darken-1--text">
-      <span class="connection-loading__content__text my-3 pb-6">
-        {{ t('connection_loading.message') }}
-      </span>
-      <v-icon x-large> mdi-spin mdi-loading </v-icon>
-    </v-col>
-  </v-row>
+  <card v-if="!connected" flat>
+    <v-row class="my-6">
+      <v-col cols="auto" class="mx-2">
+        <v-progress-circular color="primary" indeterminate />
+      </v-col>
+      <v-col class="grey-darken-1--text text-h5">
+        <div class="ps-6">{{ t('connection_loading.message') }}</div>
+      </v-col>
+    </v-row>
+  </card>
 </template>
-<style scoped lang="scss">
-.connection-loading {
-  &__content {
-    align-items: center;
-    justify-content: center;
-    display: flex;
-    flex-direction: column;
-
-    &__text {
-      margin-top: 48px;
-      font-weight: 400;
-      font-size: 26px;
-    }
-  }
-}
-</style>

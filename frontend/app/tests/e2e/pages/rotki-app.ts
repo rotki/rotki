@@ -57,11 +57,11 @@ export class RotkiApp {
   }
 
   closePremiumOverlay() {
-    cy.get('.premium-reminder__title', {
+    cy.get('[data-cy=premium-reminder]', {
       timeout: 10000
     }).should('include.text', 'Upgrade to Premium');
-    cy.get('.premium-reminder__buttons__cancel').click();
-    cy.get('.premium-reminder').should('not.exist');
+    cy.get('[data-cy=premium-reminder__cancel]').click();
+    cy.get('[data-cy=premium-reminder]').should('not.exist');
   }
 
   login(username: string, password = '1234') {

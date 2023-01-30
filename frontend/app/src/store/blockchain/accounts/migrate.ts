@@ -4,32 +4,38 @@ import {
   NotificationCategory,
   Severity
 } from '@rotki/common/lib/messages';
+import { type MaybeRef, useSessionStorage } from '@vueuse/core';
 import { type MigratedAddresses } from '@/types/websocket-messages';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { startPromise } from '@/utils';
 import { useNotificationsStore } from '@/store/notifications';
 
+const setupMigrationSessionCache = (
+  username: string
+): Ref<MigratedAddresses> => {
+  return useSessionStorage(`rotki.migrated_addresses.${username}`, []);
+};
+
 export const useAccountMigrationStore = defineStore(
   'blockchain/accounts/migration',
   () => {
-    const migratedAddresses: Ref<MigratedAddresses | null> = ref(null);
+    let migratedAddresses: Ref<MigratedAddresses> = ref([]);
 
-    const { logged } = storeToRefs(useSessionAuthStore());
+    const { canRequestData } = storeToRefs(useSessionAuthStore());
     const { txEvmChains, getChain } = useSupportedChains();
 
     const { tc } = useI18n();
+    const { notify } = useNotificationsStore();
 
-    const upgradeMigratedAddresses = (
-      data: MigratedAddresses | null = null
-    ) => {
+    const upgradeMigratedAddresses = (data: MigratedAddresses): void => {
       set(migratedAddresses, data);
-      checkLoggedStatus(get(logged));
+      runMigrationIfPossible(canRequestData);
     };
 
-    const handleMigratedAccounts = () => {
-      const tokenChains = get(txEvmChains).map(x => x.evmChainName);
+    const handleMigratedAccounts = (): void => {
+      const tokenChains: string[] = get(txEvmChains).map(x => x.evmChainName);
       const addresses: Record<string, string[]> = {};
-      const migrated = get(migratedAddresses);
+      const migrated: MigratedAddresses | null = get(migratedAddresses);
 
       if (migrated === null || migrated.length === 0) return;
 
@@ -74,25 +80,28 @@ export const useAccountMigrationStore = defineStore(
       }
 
       startPromise(Promise.allSettled(promises));
-      set(migratedAddresses, null);
+      set(migratedAddresses, []);
 
-      notifications.forEach(useNotificationsStore().notify);
+      notifications.forEach(notify);
     };
 
-    const checkLoggedStatus = (logged: boolean) => {
+    const runMigrationIfPossible = (canRequestData: MaybeRef<boolean>) => {
       const migrated = get(migratedAddresses);
-      if (logged && migrated !== null) {
+      if (get(canRequestData) && migrated.length > 0) {
         handleMigratedAccounts();
       }
     };
 
-    watch(logged, logged => {
-      checkLoggedStatus(logged);
-    });
+    const setupCache = (username: string): void => {
+      migratedAddresses = setupMigrationSessionCache(username);
+    };
+
+    watch(canRequestData, runMigrationIfPossible);
 
     return {
       migratedAddresses,
-      upgradeMigratedAddresses
+      setupCache,
+      setUpgradedAddresses: upgradeMigratedAddresses
     };
   }
 );

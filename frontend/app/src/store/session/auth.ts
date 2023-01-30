@@ -1,3 +1,4 @@
+import { type ComputedRef, type Ref } from 'vue';
 import { type SyncConflict } from '@/store/session/types';
 import {
   type DataMigrationStatusData,
@@ -10,13 +11,19 @@ const defaultSyncConflict = (): SyncConflict => ({
 });
 
 export const useSessionAuthStore = defineStore('session/auth', () => {
-  const logged = ref(false);
-  const shouldFetchData = ref(false);
-  const premiumPrompt = ref(false);
-  const username = ref('');
-  const syncConflict = ref<SyncConflict>(defaultSyncConflict());
-  const dbUpgradeStatus = ref<DbUpgradeStatusData | null>(null);
-  const dataMigrationStatus = ref<DataMigrationStatusData | null>(null);
+  const logged: Ref<boolean> = ref(false);
+  const canRequestData: Ref<boolean> = ref(false);
+  const shouldFetchData: Ref<boolean> = ref(false);
+  const premiumPrompt: Ref<boolean> = ref(false);
+  const username: Ref<string> = ref('');
+  const syncConflict: Ref<SyncConflict> = ref(defaultSyncConflict());
+  const dbUpgradeStatus: Ref<DbUpgradeStatusData | null> = ref(null);
+  const dataMigrationStatus: Ref<DataMigrationStatusData | null> = ref(null);
+
+  const upgradeVisible: ComputedRef<boolean> = logicOr(
+    dbUpgradeStatus,
+    dataMigrationStatus
+  );
 
   const resetSyncConflict = (): void => {
     set(syncConflict, defaultSyncConflict());
@@ -53,9 +60,11 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
     dbUpgradeStatus,
     dataMigrationStatus,
     shouldFetchData,
+    canRequestData,
     username,
     premiumPrompt,
     syncConflict,
+    upgradeVisible,
     resetSyncConflict,
     handleDbUpgradeStatus,
     updateDbUpgradeStatus,

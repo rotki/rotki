@@ -2,12 +2,22 @@
 import { useListeners } from 'vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 
-const props = defineProps({
-  outlinedBody: { required: false, type: Boolean, default: false },
-  contained: { required: false, type: Boolean, default: false },
-  noRadiusBottom: { required: false, type: Boolean, default: false },
-  fullHeight: { required: false, type: Boolean, default: false }
-});
+const props = withDefaults(
+  defineProps<{
+    outlinedBody?: boolean;
+    contained?: boolean;
+    noRadiusBottom?: boolean;
+    fullHeight?: boolean;
+    flat?: boolean;
+  }>(),
+  {
+    outlinedBody: false,
+    contained: false,
+    noRadiusBottom: false,
+    fullHeight: false,
+    flat: false
+  }
+);
 
 const rootAttrs = useAttrs();
 const rootListeners = useListeners();
@@ -40,6 +50,7 @@ const bodyStyle = computed(() => {
 <template>
   <v-card
     v-bind="rootAttrs"
+    :flat="flat"
     :class="{
       [$style['no-radius-bottom']]: noRadiusBottom,
       [$style['full-height']]: fullHeight

@@ -5,7 +5,6 @@ import AppDrawer from '@/components/app/AppDrawer.vue';
 import AppIndicators from '@/components/app/AppIndicators.vue';
 import AppSidebars from '@/components/app/AppSidebars.vue';
 import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
-import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useStatisticsStore } from '@/store/statistics';
 
@@ -40,7 +39,6 @@ onBeforeMount(() => {
 
 <template>
   <div class="app__content rotki-light-grey">
-    <asset-update auto />
     <notification-popup />
     <app-drawer />
 

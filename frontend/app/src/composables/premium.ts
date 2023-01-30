@@ -1,3 +1,4 @@
+import { type ComputedRef, type Ref } from 'vue';
 import { useMessageStore } from '@/store/message';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePremiumStore } from '@/store/session/premium';
@@ -8,24 +9,23 @@ export const usePremium = () => {
 };
 
 export const usePremiumReminder = () => {
-  const premium = usePremium();
-  const { navigateToDashboard } = useAppNavigation();
+  const premium: Ref<boolean> = usePremium();
 
   const { premiumUserLoggedIn } = useInterop();
   const { premiumPrompt } = storeToRefs(useSessionAuthStore());
   const { message } = storeToRefs(useMessageStore());
 
-  const isPremiumDialogVisible = computed(
+  const isPremiumDialogVisible: ComputedRef<boolean> = computed(
     () => !get(premium) && !get(message).title && get(premiumPrompt)
   );
 
-  const showPremiumDialog = async () => {
+  const showPremiumDialog = async (): Promise<boolean> => {
     if (get(premium)) {
       set(premiumPrompt, false);
-      await navigateToDashboard();
-      return;
+      return true;
     }
     set(premiumPrompt, true);
+    return false;
   };
 
   const showGetPremiumButton = () => {

@@ -1,25 +1,16 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { type ComputedRef, type Ref } from 'vue';
+import { type Ref } from 'vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useSessionStore } from '@/store/session';
 import { type SyncConflict } from '@/store/session/types';
-import {
-  type CurrentDbUpgradeProgress,
-  type LoginCredentials,
-  type SyncApproval
-} from '@/types/login';
-import {
-  type DataMigrationStatusData,
-  type DbUpgradeStatusData
-} from '@/types/websocket-messages';
+import { type LoginCredentials, type SyncApproval } from '@/types/login';
 import {
   deleteBackendUrl,
   getBackendUrl,
   saveBackendUrl
 } from '@/utils/account-management';
-import DbActivityProgress from '@/components/account-management/DbActivityProgress.vue';
 
 const KEY_REMEMBER_USERNAME = 'rotki.remember_username';
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
@@ -30,13 +21,9 @@ const props = withDefaults(
     loading: boolean;
     syncConflict: SyncConflict;
     errors?: string[];
-    dbUpgradeStatus?: DbUpgradeStatusData | null;
-    dataMigrationStatus?: DataMigrationStatusData | null;
   }>(),
   {
-    errors: () => [],
-    dbUpgradeStatus: null,
-    dataMigrationStatus: null
+    errors: () => []
   }
 );
 
@@ -47,8 +34,7 @@ const emit = defineEmits<{
   (e: 'backend-changed', url: string | null): void;
 }>();
 
-const { syncConflict, errors, dbUpgradeStatus, dataMigrationStatus } =
-  toRefs(props);
+const { syncConflict, errors } = toRefs(props);
 
 const touched = () => emit('touched');
 const newAccount = () => emit('new-account');
@@ -72,50 +58,6 @@ const passwordRef: Ref<any> = ref(null);
 const savedRememberUsername = useLocalStorage(KEY_REMEMBER_USERNAME, null);
 const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
 const savedUsername = useLocalStorage(KEY_USERNAME, '');
-
-const dbUpgradeProgressData: ComputedRef<CurrentDbUpgradeProgress | null> =
-  computed(() => {
-    const status = get(dbUpgradeStatus);
-
-    if (!status) {
-      return null;
-    }
-    const { currentStep, toVersion, totalSteps } = status.currentUpgrade;
-    const current = toVersion - status.startVersion;
-    const total = status.targetVersion - status.startVersion;
-    return {
-      percentage: (currentStep / totalSteps) * 100,
-      totalPercentage: (current / total) * 100,
-      currentVersion: toVersion,
-      fromVersion: status.startVersion - 1,
-      toVersion: status.targetVersion,
-      currentStep: totalSteps > 0 ? currentStep : 1,
-      totalSteps: totalSteps > 0 ? totalSteps : 1
-    };
-  });
-
-const dataMigrationStatusData: ComputedRef<CurrentDbUpgradeProgress | null> =
-  computed(() => {
-    const status = get(dataMigrationStatus);
-
-    if (!status) {
-      return null;
-    }
-    const { currentStep, version, totalSteps, description } =
-      status.currentMigration;
-    const current = version - status.startVersion;
-    const total = status.targetVersion - status.startVersion;
-    return {
-      percentage: totalSteps === 0 ? 0 : (currentStep / totalSteps) * 100,
-      totalPercentage: total === 0 ? 0 : (current / total) * 100,
-      currentVersion: version,
-      fromVersion: status.startVersion,
-      toVersion: status.targetVersion,
-      currentStep: totalSteps > 0 ? currentStep : 1,
-      totalSteps: totalSteps > 0 ? totalSteps : 1,
-      description: description || ''
-    };
-  });
 
 const { tc } = useI18n();
 
@@ -535,12 +477,6 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
         </v-form>
       </v-card-text>
       <v-card-actions class="login__actions d-block">
-        <db-activity-progress
-          v-if="dataMigrationStatusData"
-          data-migration
-          :progress="dataMigrationStatusData"
-        />
-        <db-activity-progress v-else :progress="dbUpgradeProgressData" />
         <span>
           <v-btn
             class="login__button__sign-in"

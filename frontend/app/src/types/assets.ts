@@ -132,3 +132,10 @@ export const EvmNativeToken = ['ETH'];
 export const isEvmNativeToken = (asset: string) => {
   return EvmNativeToken.includes(asset);
 };
+
+export interface AssetVersionUpdate {
+  local: number;
+  remote: number;
+  changes: number;
+  upToVersion: number;
+}
