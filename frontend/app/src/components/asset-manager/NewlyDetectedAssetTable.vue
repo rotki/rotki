@@ -40,10 +40,9 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     value: 'address'
   },
   {
-    text: `${tc('common.description')}/${tc(
-      'asset_table.newly_detected.tx_origin'
-    )}`,
-    value: 'description'
+    text: tc('asset_table.newly_detected.seen_during'),
+    value: 'description',
+    sortable: false
   },
   {
     text: tc('common.actions.accept'),

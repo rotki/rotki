@@ -62,6 +62,9 @@ const multipleUpgrades = computed(() => {
       <div>
         {{ tc('login.migrating_data.current', 0, progress) }}
       </div>
+      <ul v-if="progress.description" class="ml-n2">
+        <li>{{ progress.description }}</li>
+      </ul>
     </div>
   </v-alert>
 </template>

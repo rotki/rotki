@@ -8,6 +8,7 @@ import { setLastLogin } from '@/utils/account-management';
 import { useWebsocketStore } from '@/store/websocket';
 import { useMainStore } from '@/store/main';
 import { useNotificationsStore } from '@/store/notifications';
+import { useAccountMigrationStore } from '@/store/blockchain/accounts/migrate';
 
 export const useAccountManagement = () => {
   const loading = ref(false);
@@ -22,6 +23,7 @@ export const useAccountManagement = () => {
   const authStore = useSessionAuthStore();
   const { logged } = storeToRefs(authStore);
   const { updateDbUpgradeStatus, updateDataMigrationStatus } = authStore;
+  const { upgradeMigratedAddresses } = useAccountMigrationStore();
   const { restorePending, initPending } = useNotificationsStore();
 
   const createNewAccount = async (payload: CreateAccountPayload) => {
@@ -62,6 +64,7 @@ export const useAccountManagement = () => {
     set(loading, false);
     updateDbUpgradeStatus();
     updateDataMigrationStatus();
+    upgradeMigratedAddresses();
     if (get(logged)) {
       restorePending();
       setLastLogin(username);

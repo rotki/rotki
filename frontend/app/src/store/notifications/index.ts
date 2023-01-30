@@ -122,7 +122,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
         get(nextId),
         Object.assign(notificationDefaults(), newData)
       );
-      update([notification]);
+
       if (groupToFind && notification.display) {
         set(lastDisplay, {
           ...get(lastDisplay),
@@ -134,6 +134,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
         const notifications = get(pending);
         assert(notifications);
         set(pending, [...notifications, notification]);
+      } else {
+        update([notification]);
       }
     } else {
       const notification = dataList[notificationIndex];
@@ -229,7 +231,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     const notifications = get(pending);
     assert(notifications);
     if (notifications.length > 0) {
-      set(data, [...get(data), ...notifications]);
+      set(data, [...notifications, ...get(data)]);
     }
   };
 
@@ -250,3 +252,9 @@ export const useNotificationsStore = defineStore('notifications', () => {
     restorePending
   };
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept(
+    acceptHMRUpdate(useNotificationsStore, import.meta.hot)
+  );
+}
