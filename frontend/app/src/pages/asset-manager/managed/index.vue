@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type Ref } from 'vue';
-import IgnoreScamAssetsButton from '@/components/asset-manager/IgnoreScamAssetsButton.vue';
 import ManagedAssetForm from '@/components/asset-manager/ManagedAssetForm.vue';
 import ManagedAssetTable from '@/components/asset-manager/ManagedAssetTable.vue';
 import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
@@ -181,7 +180,6 @@ const showDeleteConfirmation = (item: SupportedAsset) => {
 
     <v-row class="mt-2" justify="space-between">
       <v-col cols="auto">
-        <ignore-scam-assets-button @refresh="refresh" />
         <v-tooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
             <v-btn

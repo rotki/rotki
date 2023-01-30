@@ -44,17 +44,30 @@ export const PremiumStatusUpdateData = z.object({
 });
 export type PremiumStatusUpdateData = z.infer<typeof PremiumStatusUpdateData>;
 
-export const LoginStatusData = z.object({
-  startDbVersion: z.number().nonnegative(),
-  targetDbVersion: z.number().nonnegative(),
+export const DbUpgradeStatusData = z.object({
+  startVersion: z.number().nonnegative(),
+  targetVersion: z.number().nonnegative(),
   currentUpgrade: z.object({
     currentStep: z.number().nonnegative(),
-    fromDbVersion: z.number().nonnegative(),
+    toVersion: z.number().nonnegative(),
     totalSteps: z.number().nonnegative()
   })
 });
 
-export type LoginStatusData = z.infer<typeof LoginStatusData>;
+export type DbUpgradeStatusData = z.infer<typeof DbUpgradeStatusData>;
+
+export const DataMigrationStatusData = z.object({
+  startVersion: z.number().nonnegative(),
+  targetVersion: z.number().nonnegative(),
+  currentMigration: z.object({
+    currentStep: z.number().nonnegative(),
+    version: z.number().nonnegative(),
+    totalSteps: z.number().nonnegative(),
+    description: z.string().nullable()
+  })
+});
+
+export type DataMigrationStatusData = z.infer<typeof DataMigrationStatusData>;
 
 export const MigratedAddresses = z.array(EvmChainAddress);
 
@@ -73,7 +86,8 @@ export const SocketMessageType = {
   BALANCES_SNAPSHOT_ERROR: 'balance_snapshot_error',
   EVM_TRANSACTION_STATUS: 'evm_transaction_status',
   PREMIUM_STATUS_UPDATE: 'premium_status_update',
-  LOGIN_STATUS: 'login_status',
+  DB_UPGRADE_STATUS: 'db_upgrade_status',
+  DATA_MIGRATION_STATUS: 'data_migration_status',
   EVM_ADDRESS_MIGRATION: 'evm_address_migration',
   NEW_EVM_TOKEN_DETECTED: 'new_evm_token_detected'
 } as const;
@@ -106,9 +120,14 @@ const PremiumStatusUpdateMessage = z.object({
   data: PremiumStatusUpdateData
 });
 
-const LoginStatusMessage = z.object({
-  type: z.literal(SocketMessageType.LOGIN_STATUS),
-  data: LoginStatusData
+const DbUpgradeStatusMessage = z.object({
+  type: z.literal(SocketMessageType.DB_UPGRADE_STATUS),
+  data: DbUpgradeStatusData
+});
+
+const DataMigrationStatusMessage = z.object({
+  type: z.literal(SocketMessageType.DATA_MIGRATION_STATUS),
+  data: DataMigrationStatusData
 });
 
 const MigratedAccountsMessage = z.object({
@@ -127,7 +146,8 @@ export const WebsocketMessage = UnknownWebsocketMessage.or(
   .or(BalancesSnapshotErrorMessage)
   .or(EvmTransactionStatusMessage)
   .or(PremiumStatusUpdateMessage)
-  .or(LoginStatusMessage)
+  .or(DbUpgradeStatusMessage)
+  .or(DataMigrationStatusMessage)
   .or(MigratedAccountsMessage)
   .or(NewEvmTokenDetectedMessage);
 

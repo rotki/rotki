@@ -21,7 +21,7 @@ export const useAccountManagement = () => {
   const { connect } = useWebsocketStore();
   const authStore = useSessionAuthStore();
   const { logged } = storeToRefs(authStore);
-  const { updateLoginStatus } = authStore;
+  const { updateDbUpgradeStatus, updateDataMigrationStatus } = authStore;
   const { restorePending, initPending } = useNotificationsStore();
 
   const createNewAccount = async (payload: CreateAccountPayload) => {
@@ -60,7 +60,8 @@ export const useAccountManagement = () => {
       set(errors, [result.message]);
     }
     set(loading, false);
-    updateLoginStatus();
+    updateDbUpgradeStatus();
+    updateDataMigrationStatus();
     if (get(logged)) {
       restorePending();
       setLastLogin(username);

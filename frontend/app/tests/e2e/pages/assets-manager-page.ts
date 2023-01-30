@@ -5,19 +5,23 @@ export class AssetsManagerPage {
   }
 
   ignoredAssets() {
+    cy.get('[data-cy=asset-filter]').click();
     return cy
-      .get('.asset_management__ignored-assets__chip')
+      .get('[data-cy=asset-filter-ignored] .v-radio:nth-child(3)')
       .invoke('text')
       .then(text => {
-        cy.wrap(text);
+        cy.get('[data-cy=asset-filter]').click();
+        cy.wrap(text.replace(/[^\d.]/g, ''));
       });
   }
 
   ignoredAssetCount(number: number) {
-    cy.get('.asset_management__ignored-assets__chip').should(
+    cy.get('[data-cy=asset-filter]').click();
+    cy.get('[data-cy=asset-filter-ignored] .v-radio:nth-child(3)').should(
       'include.text',
       number.toString()
     );
+    cy.get('[data-cy=asset-filter]').click();
   }
 
   searchAsset(asset: string) {

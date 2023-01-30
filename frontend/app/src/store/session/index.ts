@@ -33,7 +33,7 @@ export const useSessionStore = defineStore('session', () => {
   const authStore = useSessionAuthStore();
   const { logged, username, syncConflict, shouldFetchData } =
     storeToRefs(authStore);
-  const { updateLoginStatus } = authStore;
+  const { updateDbUpgradeStatus, updateDataMigrationStatus } = authStore;
 
   const { initialize } = useSessionSettings();
   const usersApi = useUsersApi();
@@ -157,7 +157,8 @@ export const useSessionStore = defineStore('session', () => {
     try {
       await usersApi.logout(get(username));
       set(logged, false);
-      updateLoginStatus();
+      updateDbUpgradeStatus();
+      updateDataMigrationStatus();
     } catch (e: any) {
       setMessage({
         title: 'Logout failed',

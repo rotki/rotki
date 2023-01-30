@@ -10,13 +10,16 @@ import {
   type LoginCredentials,
   type SyncApproval
 } from '@/types/login';
-import { type LoginStatusData } from '@/types/websocket-messages';
+import {
+  type DataMigrationStatusData,
+  type DbUpgradeStatusData
+} from '@/types/websocket-messages';
 import {
   deleteBackendUrl,
   getBackendUrl,
   saveBackendUrl
 } from '@/utils/account-management';
-import DbUpgradeProgress from '@/components/account-management/DbUpgradeProgress.vue';
+import DbActivityProgress from '@/components/account-management/DbActivityProgress.vue';
 
 const KEY_REMEMBER_USERNAME = 'rotki.remember_username';
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
@@ -27,11 +30,13 @@ const props = withDefaults(
     loading: boolean;
     syncConflict: SyncConflict;
     errors?: string[];
-    loginStatus?: LoginStatusData | null;
+    dbUpgradeStatus?: DbUpgradeStatusData | null;
+    dataMigrationStatus?: DataMigrationStatusData | null;
   }>(),
   {
     errors: () => [],
-    loginStatus: null
+    dbUpgradeStatus: null,
+    dataMigrationStatus: null
   }
 );
 
@@ -42,7 +47,8 @@ const emit = defineEmits<{
   (e: 'backend-changed', url: string | null): void;
 }>();
 
-const { syncConflict, errors, loginStatus } = toRefs(props);
+const { syncConflict, errors, dbUpgradeStatus, dataMigrationStatus } =
+  toRefs(props);
 
 const touched = () => emit('touched');
 const newAccount = () => emit('new-account');
@@ -67,26 +73,47 @@ const savedRememberUsername = useLocalStorage(KEY_REMEMBER_USERNAME, null);
 const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
 const savedUsername = useLocalStorage(KEY_USERNAME, '');
 
-const primaryProgress: ComputedRef<CurrentDbUpgradeProgress | null> = computed(
-  () => {
-    const status = get(loginStatus);
+const dbUpgradeProgressData: ComputedRef<CurrentDbUpgradeProgress | null> =
+  computed(() => {
+    const status = get(dbUpgradeStatus);
+
     if (!status) {
       return null;
     }
-    const { currentStep, fromDbVersion, totalSteps } = status.currentUpgrade;
-    const current = fromDbVersion - status.startDbVersion + 1;
-    const total = status.targetDbVersion - status.startDbVersion;
+    const { currentStep, toVersion, totalSteps } = status.currentUpgrade;
+    const current = toVersion - status.startVersion;
+    const total = status.targetVersion - status.startVersion;
     return {
       percentage: (currentStep / totalSteps) * 100,
       totalPercentage: (current / total) * 100,
-      currentVersion: fromDbVersion + 1,
-      fromVersion: status.startDbVersion,
-      toVersion: status.targetDbVersion,
+      currentVersion: toVersion,
+      fromVersion: status.startVersion,
+      toVersion: status.targetVersion,
       currentStep: totalSteps > 0 ? currentStep : 1,
       totalSteps: totalSteps > 0 ? totalSteps : 1
     };
-  }
-);
+  });
+
+const dataMigrationStatusData: ComputedRef<CurrentDbUpgradeProgress | null> =
+  computed(() => {
+    const status = get(dataMigrationStatus);
+
+    if (!status) {
+      return null;
+    }
+    const { currentStep, version, totalSteps } = status.currentMigration;
+    const current = version - status.startVersion;
+    const total = status.targetVersion - status.startVersion;
+    return {
+      percentage: totalSteps === 0 ? 0 : (currentStep / totalSteps) * 100,
+      totalPercentage: total === 0 ? 0 : (current / total) * 100,
+      currentVersion: version,
+      fromVersion: status.startVersion,
+      toVersion: status.targetVersion,
+      currentStep: totalSteps > 0 ? currentStep : 1,
+      totalSteps: totalSteps > 0 ? totalSteps : 1
+    };
+  });
 
 const { tc } = useI18n();
 
@@ -506,7 +533,11 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
         </v-form>
       </v-card-text>
       <v-card-actions class="login__actions d-block">
-        <db-upgrade-progress :progress="primaryProgress" />
+        <db-activity-progress :progress="dbUpgradeProgressData" />
+        <db-activity-progress
+          data-migration
+          :progress="dataMigrationStatusData"
+        />
         <span>
           <v-btn
             class="login__button__sign-in"
