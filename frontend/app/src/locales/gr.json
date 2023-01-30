@@ -729,20 +729,6 @@
         "error": {
           "title": "Editing tag"
         }
-      },
-      "update_ignored_assets": {
-        "error": {
-          "message": "Failed to retrieve ignored assets from CryptoScamDB: {error}",
-          "title": "Querying ignored assets from CryptoScamDB"
-        },
-        "success": {
-          "empty_message": "No new ignored assets added.",
-          "message": "{total} ignored assets added.",
-          "title": "Successfully queried ignored assets from CryptoScamDB"
-        },
-        "task": {
-          "title": "Querying ignored assets from CryptoScamDB"
-        }
       }
     },
     "staking": {
@@ -977,8 +963,7 @@
       "title": "Managed Assets"
     },
     "merge_assets": "Merge Assets",
-    "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)",
-    "sync_ignored_assets_list": "Sync the list of ignored assets"
+    "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)"
   },
   "asset_table": {
     "copy_identifier": {
@@ -997,7 +982,7 @@
       "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts"
     },
     "notes": "Notes",
-    "only_show_ignored": "Only show ignored assets",
+    "only_show_ignored": "Only show ignored assets ({length})",
     "only_show_owned": "Only show owned assets",
     "only_show_unignored": "Only show un-ignored assets",
     "selected": "{count} asset(s) selected",

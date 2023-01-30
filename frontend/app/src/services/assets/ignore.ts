@@ -1,7 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import { type PendingTask } from '@/services/types-api';
 import {
   handleResponse,
   validStatus,
@@ -48,23 +46,9 @@ export const useAssetIgnoreApi = () => {
     return handleResponse(response);
   };
 
-  const reQueryIgnoredAssets = async (): Promise<PendingTask> => {
-    const response = await api.instance.post<ActionResult<PendingTask>>(
-      '/assets/ignored',
-      null,
-      {
-        params: axiosSnakeCaseTransformer({ asyncQuery: true }),
-        validateStatus: validWithoutSessionStatus
-      }
-    );
-
-    return handleResponse(response);
-  };
-
   return {
     getIgnoredAssets,
     addIgnoredAssets,
-    removeIgnoredAssets,
-    reQueryIgnoredAssets
+    removeIgnoredAssets
   };
 };

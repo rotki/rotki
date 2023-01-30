@@ -49,6 +49,7 @@ const options: Ref<AssetPaginationOptions> = ref(
   defaultAssetPagination(get(itemsPerPage))
 );
 
+const { ignoredAssets } = storeToRefs(useIgnoredAssetsStore());
 const { tc } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
@@ -266,7 +267,11 @@ const css = useCssModule();
                   />
                   <v-radio
                     value="show_only"
-                    :label="tc('asset_table.only_show_ignored')"
+                    :label="
+                      tc('asset_table.only_show_ignored', 0, {
+                        length: ignoredAssets.length
+                      })
+                    "
                   />
                 </v-radio-group>
               </v-list-item>

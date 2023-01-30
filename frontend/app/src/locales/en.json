@@ -740,20 +740,6 @@
         "error": {
           "title": "Editing tag"
         }
-      },
-      "update_ignored_assets": {
-        "error": {
-          "message": "Failed to retrieve ignored assets from CryptoScamDB: {error}",
-          "title": "Querying ignored assets from CryptoScamDB"
-        },
-        "success": {
-          "empty_message": "No new ignored assets added.",
-          "message": "{total} ignored assets added.",
-          "title": "Successfully queried ignored assets from CryptoScamDB"
-        },
-        "task": {
-          "title": "Querying ignored assets from CryptoScamDB"
-        }
       }
     },
     "staking": {
@@ -993,8 +979,7 @@
       "title": "Managed Assets"
     },
     "merge_assets": "Merge Assets",
-    "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)",
-    "sync_ignored_assets_list": "Sync the list of ignored assets"
+    "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)"
   },
   "asset_select": {
     "no_results": "No assets matching your search"
@@ -1024,7 +1009,7 @@
       "tx_origin": "Tx origin"
     },
     "notes": "Notes",
-    "only_show_ignored": "Only show ignored assets",
+    "only_show_ignored": "Only show ignored assets ({length})",
     "only_show_owned": "Only show owned assets",
     "only_show_unignored": "Only show un-ignored assets",
     "selected": "{count} asset(s) selected",
@@ -2699,6 +2684,10 @@
     "label_password": "Password",
     "label_username": "Username",
     "logout": "Logout",
+    "migrating_data": {
+      "current": "Step {currentStep} of {totalSteps} of data migration v{currentVersion} is applied.",
+      "warning": "The data is being migrated from version {fromVersion} to {toVersion}. Please don't close the app until it's finished."
+    },
     "remember_password": "Remember Password",
     "remember_password_tooltip": "The password will be saved on password management tool on your local machine (e.g. Keychain in MacOS)",
     "remember_username": "Remember Username",

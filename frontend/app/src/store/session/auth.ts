@@ -1,5 +1,8 @@
 import { type SyncConflict } from '@/store/session/types';
-import { type LoginStatusData } from '@/types/websocket-messages';
+import {
+  type DataMigrationStatusData,
+  type DbUpgradeStatusData
+} from '@/types/websocket-messages';
 
 const defaultSyncConflict = (): SyncConflict => ({
   message: '',
@@ -12,32 +15,52 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
   const premiumPrompt = ref(false);
   const username = ref('');
   const syncConflict = ref<SyncConflict>(defaultSyncConflict());
-  const loginStatus = ref<LoginStatusData | null>(null);
+  const dbUpgradeStatus = ref<DbUpgradeStatusData | null>(null);
+  const dataMigrationStatus = ref<DataMigrationStatusData | null>(null);
 
   const resetSyncConflict = (): void => {
     set(syncConflict, defaultSyncConflict());
   };
 
-  const handleLoginStatus = (data: LoginStatusData): void => {
+  const handleDbUpgradeStatus = (data: DbUpgradeStatusData): void => {
     if (!get(logged)) {
-      updateLoginStatus(data);
+      updateDbUpgradeStatus(data);
     }
   };
 
-  const updateLoginStatus = (status: LoginStatusData | null = null): void => {
-    set(loginStatus, status);
+  const updateDbUpgradeStatus = (
+    status: DbUpgradeStatusData | null = null
+  ): void => {
+    set(dbUpgradeStatus, status);
+  };
+
+  const handleDataMigrationStatus = (
+    data: DataMigrationStatusData | null = null
+  ): void => {
+    if (!get(logged)) {
+      updateDataMigrationStatus(data);
+    }
+  };
+
+  const updateDataMigrationStatus = (
+    status: DataMigrationStatusData | null = null
+  ): void => {
+    set(dataMigrationStatus, status);
   };
 
   return {
     logged,
-    loginStatus,
+    dbUpgradeStatus,
+    dataMigrationStatus,
     shouldFetchData,
     username,
     premiumPrompt,
     syncConflict,
     resetSyncConflict,
-    handleLoginStatus,
-    updateLoginStatus
+    handleDbUpgradeStatus,
+    updateDbUpgradeStatus,
+    handleDataMigrationStatus,
+    updateDataMigrationStatus
   };
 });
 

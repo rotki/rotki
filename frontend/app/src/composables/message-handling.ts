@@ -26,7 +26,8 @@ import router from '@/router';
 
 export const useMessageHandling = () => {
   const { setQueryStatus } = useTxQueryStatusStore();
-  const { handleLoginStatus } = useSessionAuthStore();
+  const { handleDbUpgradeStatus, handleDataMigrationStatus } =
+    useSessionAuthStore();
   const notificationsStore = useNotificationsStore();
   const { data: notifications } = storeToRefs(notificationsStore);
   const { notify } = notificationsStore;
@@ -187,8 +188,10 @@ export const useMessageHandling = () => {
       if (notification) {
         notifications.push(notification);
       }
-    } else if (type === SocketMessageType.LOGIN_STATUS) {
-      handleLoginStatus(message.data);
+    } else if (type === SocketMessageType.DB_UPGRADE_STATUS) {
+      handleDbUpgradeStatus(message.data);
+    } else if (type === SocketMessageType.DATA_MIGRATION_STATUS) {
+      handleDataMigrationStatus(message.data);
     } else if (type === SocketMessageType.EVM_ADDRESS_MIGRATION) {
       notifications.push(...handleMigratedAccounts(message.data));
     } else if (type === SocketMessageType.NEW_EVM_TOKEN_DETECTED) {
@@ -211,8 +214,10 @@ export const useMessageHandling = () => {
         notifications.push(handleSnapshotError(object));
       } else if (object.type === SocketMessageType.EVM_TRANSACTION_STATUS) {
         await handleEthereumTransactionStatus(object);
-      } else if (object.type === SocketMessageType.LOGIN_STATUS) {
-        await handleLoginStatus(object);
+      } else if (object.type === SocketMessageType.DB_UPGRADE_STATUS) {
+        await handleDbUpgradeStatus(object);
+      } else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS) {
+        await handleDataMigrationStatus(object);
       } else {
         logger.error('unsupported message:', message);
       }

@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { type CurrentDbUpgradeProgress } from '@/types/login';
 
-const props = defineProps<{
-  progress: CurrentDbUpgradeProgress | null;
-}>();
+const props = withDefaults(
+  defineProps<{
+    progress: CurrentDbUpgradeProgress | null;
+    dataMigration?: boolean;
+  }>(),
+  {
+    dataMigration: false
+  }
+);
 
 const { progress } = toRefs(props);
 
@@ -39,13 +45,22 @@ const multipleUpgrades = computed(() => {
       </div>
     </template>
 
-    <div>
+    <div v-if="!dataMigration">
       <div>
         {{ tc('login.upgrading_db.warning', 0, progress) }}
       </div>
       <v-divider class="my-2" />
       <div>
         {{ tc('login.upgrading_db.current', 0, progress) }}
+      </div>
+    </div>
+    <div v-else>
+      <div>
+        {{ tc('login.migrating_data.warning', 0, progress) }}
+      </div>
+      <v-divider class="my-2" />
+      <div>
+        {{ tc('login.migrating_data.current', 0, progress) }}
       </div>
     </div>
   </v-alert>
