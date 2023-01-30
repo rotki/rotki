@@ -1041,7 +1041,7 @@ KNOWN_EVM_SPAM_TOKENS: list[dict[str, Any]] = [
 ]
 
 
-def query_token_spam_list() -> set[Asset]:
+def query_token_spam_list(db: 'DBHandler') -> set[Asset]:
     """
     Generate a set of assets that can be ignored using the list of spam
     assets KNOWN_EVM_SPAM_TOKENS.
@@ -1068,6 +1068,9 @@ def query_token_spam_list() -> set[Asset]:
                 asset_type=AssetType.EVM_TOKEN,
                 data=evm_token,
             )
+            # add the asset to the asset table in the user's db
+            with db.user_write() as cursor:
+                db.add_asset_identifiers(cursor, [evm_token.identifier])
         else:  # token exists, make sure it has spam protocol set
             db_evm_token = EvmToken(evm_token.identifier)
             if db_evm_token.protocol != SPAM_PROTOCOL:
@@ -1084,7 +1087,7 @@ def update_spam_assets(db: 'DBHandler') -> int:
     the addition of duplicates. It returns the amount of assets that were added
     to the ignore list
     """
-    spam_tokens = query_token_spam_list()
+    spam_tokens = query_token_spam_list(db=db)
     # order matters here. Make sure ignored_assets are queried after spam tokens creation
     # since it's possible for a token to exist in ignored assets but not global DB.
     # and in that case query_token_spam_list add it to the global DB

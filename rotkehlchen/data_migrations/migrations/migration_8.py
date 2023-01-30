@@ -67,8 +67,7 @@ def data_migration_8(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressH
                 message_type=WSMessageType.EVM_ADDRESS_MIGRATION,
                 data=[{'evm_chain': str(x[0]), 'address': x[1]} for x in to_add_accounts],
             )
-    else:
-        # The only step is update the spam assets
+    else:  # The only step is updating the spam assets
         progress_handler.set_total_steps(1)
 
     # Also update the spam assets
