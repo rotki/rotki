@@ -11,7 +11,6 @@ from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 
-
 ITEMS_PER_DB_WRITE = 400
 
 
@@ -30,9 +29,10 @@ class BaseExchangeImporter(metaclass=ABCMeta):
             with self.db.user_write() as cursor:
                 self._import_csv(cursor, filepath=filepath, **kwargs)
                 self._flush_all(cursor)
-            return True, ''
         except InputError as e:
             return False, str(e)
+        else:
+            return True, ''
 
     @abstractmethod
     def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:

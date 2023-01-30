@@ -71,10 +71,7 @@ select = [
     "SIM",
     # "TID",  # tidy-imports -- we use relative imports from parent in some cases. Maybe stop?
     # "ARG",  # flake8-unused-arguments -- pylint already does this and we got ignores where needed
-    "PLC",
-    "PLE",
-    "PLR",
-    "PLW",
+    "PL",  # all pylint rules
     "PIE",
     "COM",
     "DTZ",
@@ -83,6 +80,7 @@ select = [
     "PT",
     # "TCH",  # Should do it at some point. Too many hits and no autofix. When enabled fully, remove from extend-select
     # "PTH",  # Should do it at some point. Many hits and no autofix. When enabled fully remove from extend-select
+    "TRY",
     # "RUF",  # ruff specific rules, we enable only those we need below
 ]
 extend-select = [
@@ -120,6 +118,10 @@ ignore = [
     # Some pytest-styles rules we don't check for
     "PT011", # pytest.raises() too broad is fine, since there is functions that raise ValueError
     "PT018", # composite assertions are fine
+    "TRY003",  # long messages outside the exception class. Perhaps enable when we do internationalization and need to put messages in class logic?
+    "TRY004",  # Prefer TypeError for wrong type. May be okay but would need to invetigate all usages of suggested changes
+    "TRY301",  # Abstract raise to an inner function -- not sure what this? Use exception for control flow?
+    "TRY400",  # loggin.exception instead of logging.error. Not sure I understood this one
 ]
 # Exclude a variety of commonly ignored directories.
 exclude = [

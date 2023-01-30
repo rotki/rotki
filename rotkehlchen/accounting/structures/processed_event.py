@@ -204,8 +204,9 @@ class ProcessedAccountingEvent:
             )
             event.count_cost_basis_pnl = data['count_cost_basis_pnl']
             event.count_entire_amount_spend = data['count_entire_amount_spend']
-            return event
         except KeyError as e:
             raise DeserializationError(f'Could not decode processed accounting event json from the DB due to missing key {str(e)}') from e  # noqa: E501
         except UnknownAsset as e:
             raise DeserializationError(f'Couldnt deserialize processed accounting event due to unkown asset {e.identifier}') from e  # noqa: E501
+        else:
+            return event

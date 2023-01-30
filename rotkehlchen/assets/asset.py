@@ -162,10 +162,11 @@ class Asset:
         """
         try:
             with_symbol = self.resolve_to_asset_with_symbol()
-            return with_symbol.symbol
         except WrongAssetType:
             with_name = self.resolve_to_asset_with_name_and_type()
             return with_name.name
+        else:
+            return with_symbol.symbol
 
     def __hash__(self) -> int:
         return hash(self.identifier)

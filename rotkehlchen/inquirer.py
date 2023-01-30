@@ -240,7 +240,7 @@ def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Optional[
     )
     try:
         resp = request_get_dict(querystr)
-        return Price(FVal(resp[pair]))
+        return Price(FVal(resp[pair]))  # noqa: TRY300  # can raise too
     except (ValueError, RemoteError, KeyError, UnableToDecryptRemoteData):
         log.error(
             'Querying free.currencyconverterapi.com fiat pair failed',
@@ -724,11 +724,12 @@ class Inquirer():
                     oracle=oracle,
                     used_main_currency=False,  # this is for usd only, so it doesn't matter
                 )
-                return usd_price, oracle, False
             except (RemoteError, DeserializationError) as e:
                 msg = f'Could not find price for BSQ. {str(e)}'
                 instance._msg_aggregator.add_warning(msg)
                 return Price(BTC_PER_BSQ * price_in_btc), CurrentPriceOracle.BLOCKCHAIN, False
+            else:
+                return usd_price, oracle, False
 
         if asset == A_KFEE:
             # KFEE is a kraken special asset where 1000 KFEE = 10 USD
@@ -899,9 +900,10 @@ class Inquirer():
         )
         try:
             price_per_share = contract.call(ethereum.node_inquirer, 'pricePerShare')
-            return Price(price_per_share * underlying_token_price / 10 ** token.decimals)
         except (RemoteError, BlockchainQueryError) as e:
             log.error(f'Failed to query pricePerShare method in Yearn v2 Vault. {str(e)}')
+        else:
+            return Price(price_per_share * underlying_token_price / 10 ** token.decimals)
 
         return None
 

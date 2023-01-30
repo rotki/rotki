@@ -525,19 +525,7 @@ class Ftx(ExchangeInterface):
             if isinstance(address, dict):
                 address = raw_data['address'].get('address', None)
             transaction_id = raw_data.get('txid', None)
-
-            return AssetMovement(
-                location=Location.FTX,
-                category=movement_category,
-                address=address,
-                transaction_id=transaction_id,
-                timestamp=timestamp,
-                asset=asset,
-                amount=amount,
-                fee_asset=asset,
-                fee=fee,
-                link=str(raw_data['id']),
-            )
+            link = str(raw_data['id'])
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found FTX deposit/withdrawal with unknown asset '
@@ -560,6 +548,19 @@ class Ftx(ExchangeInterface):
                 'Error processing FTX trade',
                 trade=raw_data,
                 error=msg,
+            )
+        else:
+            return AssetMovement(
+                location=Location.FTX,
+                category=movement_category,
+                address=address,
+                transaction_id=transaction_id,
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                fee_asset=asset,
+                fee=fee,
+                link=link,
             )
 
         return None

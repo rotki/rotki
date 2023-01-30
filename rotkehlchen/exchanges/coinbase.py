@@ -680,18 +680,6 @@ class Coinbase(ExchangeInterface):
                 if 'fee' in raw_data:
                     fee = deserialize_fee(raw_data['fee']['amount'])
 
-            return AssetMovement(
-                location=Location.COINBASE,
-                category=movement_category,
-                address=address,
-                transaction_id=transaction_id,
-                timestamp=timestamp,
-                asset=asset,
-                amount=amount,
-                fee_asset=asset,
-                fee=fee,
-                link=str(transaction_url),
-            )
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found coinbase deposit/withdrawal with unknown asset '
@@ -713,6 +701,19 @@ class Coinbase(ExchangeInterface):
             log.error(
                 f'Unexpected data encountered during deserialization of coinbase '
                 f'asset_movement {raw_data}. Error was: {msg}',
+            )
+        else:
+            return AssetMovement(
+                location=Location.COINBASE,
+                category=movement_category,
+                address=address,
+                transaction_id=transaction_id,
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                fee_asset=asset,
+                fee=fee,
+                link=str(transaction_url),
             )
 
         return None

@@ -213,7 +213,7 @@ def convert_to_int(
         try:
             if isinstance(val, str) and val.startswith('0x'):
                 return int(val, 16)
-            return int(val)
+            return int(val)  # noqa: TRY300
         except ValueError:
             # else also try to turn it into a float
             try:

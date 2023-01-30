@@ -172,8 +172,6 @@ class Premium():
 
         try:
             self.query_last_data_metadata()
-            self.status = SubscriptionStatus.ACTIVE
-            return True
         except RemoteError:
             self.status = SubscriptionStatus.INACTIVE
             if catch_connection_errors is False:
@@ -182,6 +180,9 @@ class Premium():
         except PremiumAuthenticationError:
             self.status = SubscriptionStatus.INACTIVE
             return False
+        else:
+            self.status = SubscriptionStatus.ACTIVE
+            return True
 
     def sign(self, method: str, **kwargs: Any) -> tuple[hmac.HMAC, dict]:
         urlpath = '/api/' + self.apiversion + '/' + method

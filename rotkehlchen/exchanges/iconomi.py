@@ -208,10 +208,10 @@ class Iconomi(ExchangeInterface):
 
         try:
             self._api_query('get', 'user/balance')
-            return True, ''
-
         except RemoteError:
             return False, 'Provided API Key is invalid'
+        else:
+            return True, ''
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         assets_balance: dict[AssetWithOracles, Balance] = {}

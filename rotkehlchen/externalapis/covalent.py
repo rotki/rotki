@@ -56,7 +56,7 @@ def convert_transaction_from_covalent(
             formatstr=DATE_FORMAT_COVALENT,
         )
         # TODO input and nonce is decoded in Covalent api, encoded in future
-        return CovalentTransaction(
+        return CovalentTransaction(  # noqa: TRY300  # can raise KeyError due to arg init
             timestamp=timestamp,
             block_number=data['block_height'],
             tx_hash=data['tx_hash'],
@@ -206,9 +206,10 @@ class Covalent(ExternalServiceWithApiKey):
                     datestr=value['block_signed_at'],
                     formatstr=DATE_FORMAT_COVALENT,
                 )
-                return from_ts <= v_timestamp <= to_ts  # type: ignore
             except KeyError:
                 return False
+            else:
+                return from_ts <= v_timestamp <= to_ts  # type: ignore
 
         list_transactions = list(filter(between_date, result_master))
         transactions = []
@@ -241,9 +242,10 @@ class Covalent(ExternalServiceWithApiKey):
                 datestr=transaction_receipt['block_signed_at'],
                 formatstr=DATE_FORMAT_COVALENT,
             )
-            return transaction_receipt
         except KeyError:
             return None
+        else:
+            return transaction_receipt
 
     def get_token_balances_address(
             self,

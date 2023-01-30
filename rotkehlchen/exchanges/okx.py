@@ -404,19 +404,7 @@ class Okx(ExchangeInterface):
             if fee_amount < 0:
                 fee_amount = Fee(-1 * fee_amount)
             fee_asset = asset_from_okx(raw_trade['feeCcy'])
-
-            return Trade(
-                timestamp=timestamp,
-                location=Location.OKX,
-                base_asset=base_asset,
-                quote_asset=quote_asset,
-                trade_type=trade_type,
-                amount=amount,
-                rate=rate,
-                fee=fee_amount,
-                fee_currency=fee_asset,
-                link=raw_trade['ordId'],
-            )
+            link = raw_trade['ordId']
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found {self.name} trade with unknown asset '
@@ -438,6 +426,19 @@ class Okx(ExchangeInterface):
             log.error(
                 f'Unexpected data encountered during deserialization of {self.name} '
                 f'trade {raw_trade}. Error was: {msg}',
+            )
+        else:
+            return Trade(
+                timestamp=timestamp,
+                location=Location.OKX,
+                base_asset=base_asset,
+                quote_asset=quote_asset,
+                trade_type=trade_type,
+                amount=amount,
+                rate=rate,
+                fee=fee_amount,
+                fee_currency=fee_asset,
+                link=link,
             )
 
         return None

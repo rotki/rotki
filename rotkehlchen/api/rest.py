@@ -2671,9 +2671,10 @@ class RestAPI():
                 validator_index=validator_index,
                 ownership_proportion=ownership_proportion,
             )
-            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
         except (InputError, ModuleInactive) as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        else:
+            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def delete_eth2_validator(
             self,
@@ -3717,15 +3718,16 @@ class RestAPI():
     def _sync_data(self, action: Literal['upload', 'download']) -> dict[str, Any]:
         try:
             success, msg = self.rotkehlchen.premium_sync_manager.sync_data(action)
-            if msg.startswith('Pulling failed'):
-                return wrap_in_fail_result(msg, status_code=HTTPStatus.BAD_GATEWAY)
-            return _wrap_in_result(success, message=msg)
         except RemoteError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
         except PremiumApiError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
         except PremiumAuthenticationError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.UNAUTHORIZED)
+        else:
+            if msg.startswith('Pulling failed'):
+                return wrap_in_fail_result(msg, status_code=HTTPStatus.BAD_GATEWAY)
+            return _wrap_in_result(success, message=msg)
 
     def sync_data(
             self,
@@ -4732,12 +4734,13 @@ class RestAPI():
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
         try:
             db_addressbook.add_addressbook_entries(book_type=book_type, entries=entries)
-            return api_response(result=OK_RESULT)
         except InputError as e:
             return api_response(
                 result=wrap_in_fail_result(str(e)),
                 status_code=HTTPStatus.CONFLICT,
             )
+        else:
+            return api_response(result=OK_RESULT)
 
     def update_addressbook_entries(
             self,
@@ -4747,12 +4750,13 @@ class RestAPI():
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
         try:
             db_addressbook.update_addressbook_entries(book_type=book_type, entries=entries)
-            return api_response(result=OK_RESULT)
         except InputError as e:
             return api_response(
                 result=wrap_in_fail_result(str(e)),
                 status_code=HTTPStatus.CONFLICT,
             )
+        else:
+            return api_response(result=OK_RESULT)
 
     def delete_addressbook_entries(
             self,
@@ -4765,12 +4769,13 @@ class RestAPI():
                 book_type=book_type,
                 chain_addresses=chain_addresses,
             )
-            return api_response(result=OK_RESULT)
         except InputError as e:
             return api_response(
                 result=wrap_in_fail_result(str(e)),
                 status_code=HTTPStatus.CONFLICT,
             )
+        else:
+            return api_response(result=OK_RESULT)
 
     def search_for_names_everywhere(
             self,

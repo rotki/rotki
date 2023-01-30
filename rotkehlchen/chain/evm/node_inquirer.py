@@ -121,7 +121,7 @@ def _query_web3_get_logs(
                     decoded_error = json.loads(str(e).replace("'", '"'))
                 except json.JSONDecodeError:
                     # reraise the value error if the error is not json
-                    raise e from None
+                    raise e from None  # noqa: TRY201, E501  # https://github.com/charliermarsh/ruff/issues/2334
 
                 msg = decoded_error.get('message', '')
             else:  # temporary hack for key error seen from pokt
@@ -135,7 +135,7 @@ def _query_web3_get_logs(
                 # repeat the query with smaller block range
                 continue
             # else, well we tried .. reraise the error
-            raise e
+            raise
 
         # Turn all HexBytes into hex strings
         for e_idx, event in enumerate(new_events_web3):

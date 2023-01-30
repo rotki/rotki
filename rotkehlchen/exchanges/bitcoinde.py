@@ -256,10 +256,10 @@ class Bitcoinde(ExchangeInterface):
 
         try:
             self._api_query('get', 'account')
-            return True, ''
-
         except RemoteError as e:
             return False, str(e)
+        else:
+            return True, ''
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         assets_balance: dict[AssetWithOracles, Balance] = {}
