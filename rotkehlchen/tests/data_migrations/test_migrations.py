@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, NamedTuple
 from unittest.mock import patch
 
 import pytest
+from rotkehlchen.assets.spam_assets import KNOWN_EVM_SPAM_TOKENS
 
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH
@@ -20,10 +21,12 @@ from rotkehlchen.icons import IconManager
 from rotkehlchen.tests.utils.blockchain import setup_filter_active_evm_addresses_mock
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import Location, SupportedBlockchain, TradeType
+from rotkehlchen.types import ChecksumEvmAddress, Location, SupportedBlockchain, TradeType
 
 if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
     from rotkehlchen.rotkehlchen import Rotkehlchen
+    from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
 def _create_invalid_icon(icon_identifier: str, icons_dir: Path) -> Path:
@@ -453,7 +456,11 @@ def test_migration_7_nodes(database, blockchain, greenlet_manager):
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address(), make_evm_address(), make_evm_address(), make_evm_address()]])  # noqa: E501
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
-def test_migration_8(rotkehlchen_api_server, ethereum_accounts, websocket_connection):
+def test_migration_8(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        websocket_connection: 'WebsocketReader',
+) -> None:
     """
     Test that accounts are properly duplicated from ethereum to optimism and avalanche
     """
@@ -492,18 +499,24 @@ def test_migration_8(rotkehlchen_api_server, ethereum_accounts, websocket_connec
         assert msg['data']['target_version'] == 8
         migration = msg['data']['current_migration']
         assert migration['version'] == 8
-        assert migration['total_steps'] == (5 if step_num != 0 else 0)
+        assert migration['total_steps'] == (6 if step_num != 0 else 0)
         assert migration['current_step'] == step_num
         if 1 <= step_num <= 4:
             assert 'EVM chain activity' in migration['description']
         else:
             assert migration['description'] == description
 
-    websocket_connection.wait_until_messages_num(num=7, timeout=10)
-    assert websocket_connection.messages_num() == 7
-    for i in range(7):
+    websocket_connection.wait_until_messages_num(num=8, timeout=10)
+    assert websocket_connection.messages_num() == 8
+    for i in range(8):
         msg = websocket_connection.pop_message()
-        if i >= 6:  # message for migrated address
+        if i == 7:
+            assert_progress_message(
+                msg=msg,
+                step_num=6,
+                description='Update the list of spam assets',
+            )
+        elif i == 6:  # message for migrated address
             assert msg['type'] == 'evm_address_migration'
             assert sorted(msg['data'], key=operator.itemgetter('evm_chain', 'address')) == sorted([
                 {'evm_chain': 'avalanche', 'address': ethereum_accounts[1]},
@@ -517,3 +530,9 @@ def test_migration_8(rotkehlchen_api_server, ethereum_accounts, websocket_connec
             assert_progress_message(msg, i, None)
         else:
             assert_progress_message(msg, i, None)
+
+    # check that the spam assets have been updated
+    database = rotki.data.db
+    with database.conn.read_ctx() as cursor:
+        spam_assets = rotki.data.db.get_ignored_assets(cursor)
+    assert len(spam_assets) >= len(KNOWN_EVM_SPAM_TOKENS)

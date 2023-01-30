@@ -24,6 +24,9 @@ from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, SupportedBlockchai
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
 
 if TYPE_CHECKING:
+    from contextlib import ExitStack
+
+    from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
@@ -603,12 +606,12 @@ def set_web3_in_inquirer(ethereum_inquirer: 'EthereumInquirer', web3: Web3) -> N
 
 
 def setup_filter_active_evm_addresses_mock(
-        stack,
-        chains_aggregator,
-        contract_addresses,
-        avalanche_addresses,
-        optimism_addresses,
-):
+        stack: 'ExitStack',
+        chains_aggregator: 'ChainsAggregator',
+        contract_addresses: list[ChecksumEvmAddress],
+        avalanche_addresses: list[ChecksumEvmAddress],
+        optimism_addresses: list[ChecksumEvmAddress],
+) -> 'ExitStack':
     def mock_ethereum_get_code(account):
         if account in contract_addresses:
             return '0xsomecode'
