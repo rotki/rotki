@@ -17,10 +17,13 @@ Before reporting an issue, make sure to check the issue tracker for similar ones
 Run rotki in debug mode
 =========================
 
-For running rotki in debug mode, you can do it either via a config file or the app UI:
+For running rotki in debug mode, you can do it either via a config file or the app UI. Choice will depend on how you run rotki.
 
-- **Config file**: see the section :ref:`set-the-backend-s-arguments`.
-- **App UI**: before log in, click the cog wheel at the bottom right corner and select "Debug" (image below). Press the save button and proceed to log in as usual.
+- **Config file**: see the section :ref:`set-the-backend-s-arguments`. This is possible in the **electron app** and the **docker version**. For docker you can even use environment variables as explained `here <https://rotki.readthedocs.io/en/latest/installation_guide.html?#configuring-backend-in-docker>`_.
+- **App UI**: before log in, click the cog wheel at the bottom right corner and select "Debug" (image below). Press the save button and proceed to log in as usual. This is only possible in the **electron app**.
+
+.. warning::
+    At the moment if you use the dappnode rotki package it is **not possible** to enable debug logs. For updates follow: `this issue <https://github.com/dappnode/DAppNodePackage-rotki/issues/29>`_.
 
 .. image:: images/rotki_debug_mode_set.png
    :alt: Run rotki in debug mode via app UI
