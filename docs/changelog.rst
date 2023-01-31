@@ -8,7 +8,8 @@ Changelog
 * :feature:`4487` Users can now customize the order of how addresses are resolved to human readable names.
 * :feature:`5001` The PnL report can now be generated with the Highest-In First Out (HIFO) accounting method.
 * :feature:`1793` The PnL report can now be generated with the average cost basis accounting method.
-* :feature:`5148` Users will now see tokens detected for accounts having a DSProxy
+* :feature:`5148` Users will now see tokens detected for accounts having a DSProxy.
+* :feature:`5526` Users will now be able to read the name of the profit currency when moving the mouse over the currency symbol.
 * :bug:`4332` Price oracles are now temporarily penalized after repeated failures.
 * :bug:`5402` Fix issue where the wrong filepath is used when deleting user DB backup in Windows.
 * :bug:`-` Fixed an edge case where users would be swamped with "This socket is already used by another greenlet" errors during websocket communication between backend and frontend.
