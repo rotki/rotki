@@ -135,6 +135,7 @@ from rotkehlchen.errors.misc import (
     DBSchemaError,
     DBUpgradeError,
     EthSyncError,
+    GreenletKilledError,
     InputError,
     ModuleInactive,
     RemoteError,
@@ -286,6 +287,15 @@ class RestAPI():
         except AttributeError:
             task_id = None
             task_str = 'Main greenlet'
+
+        if isinstance(greenlet.exception, GreenletKilledError):
+            log.debug(
+                f'Greenlet for task id {task_id} with name {task_str} was killed. '
+                f'{str(greenlet.exception)}',
+            )
+            # Setting empty message to signify that the death of the greenlet is expected.
+            self._write_task_result(task_id, {'result': None, 'message': ''})
+            return
 
         log.error(
             f'{task_str} dies with exception: {greenlet.exception}.\n'

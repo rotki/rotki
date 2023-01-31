@@ -68,3 +68,7 @@ class BlockchainQueryError(Exception):
 
 class DBSchemaError(Exception):
     """May be raised during database sanity check"""
+
+
+class GreenletKilledError(Exception):
+    """Raised when a greenlet is killed"""

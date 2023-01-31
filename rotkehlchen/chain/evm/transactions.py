@@ -1,8 +1,7 @@
 import logging
 from abc import ABCMeta
 from collections import defaultdict
-from contextlib import contextmanager
-from typing import TYPE_CHECKING, Iterator, Optional
+from typing import TYPE_CHECKING, Optional
 
 from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -43,20 +42,6 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         self.address_tx_locks: dict[ChecksumEvmAddress, Semaphore] = defaultdict(Semaphore)
         self.missing_receipts_lock = Semaphore()
         self.msg_aggregator = database.msg_aggregator
-
-    @contextmanager
-    def wait_until_no_query_for(self, addresses: list[ChecksumEvmAddress]) -> Iterator[None]:
-        """Will acquire all locks relevant to an address and yield to the caller"""
-        locks = []
-        for address in addresses:
-            lock = self.address_tx_locks[address]
-            lock.acquire()
-            locks.append(lock)
-
-        yield  # yield to caller since all locks are now acquired
-
-        for lock in locks:  # clean up
-            lock.release()
 
     def single_address_query_transactions(
             self,

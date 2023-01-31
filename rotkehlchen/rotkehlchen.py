@@ -11,6 +11,7 @@ from types import MethodType
 from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union, cast, overload
 
 import gevent
+from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
@@ -31,6 +32,7 @@ from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
+from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.chain.evm.nodes import populate_rpc_nodes_in_database
 from rotkehlchen.chain.optimism.accountant import OptimismAccountingAggregator
 from rotkehlchen.chain.optimism.manager import OptimismManager
@@ -49,7 +51,13 @@ from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import EthSyncError, InputError, RemoteError, SystemPermissionError
+from rotkehlchen.errors.misc import (
+    EthSyncError,
+    GreenletKilledError,
+    InputError,
+    RemoteError,
+    SystemPermissionError,
+)
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.coingecko import Coingecko
@@ -104,6 +112,20 @@ MAIN_LOOP_SECS_DELAY = 10
 
 ICONS_BATCH_SIZE = 3
 ICONS_QUERY_SLEEP = 60
+
+
+def kill_greenlet_and_acquire_locks(
+        stack: contextlib.ExitStack,
+        acquired_by_this_method: dict[Semaphore, bool],
+        greenlet: gevent.Greenlet,
+        locks: list[Semaphore],
+) -> None:
+    """Kills the provided greenlet and tries to acquire the locks."""
+    greenlet.kill(exception=GreenletKilledError('Killed to delete evm addresses'))
+    for lock in locks:
+        if lock.locked() is False:
+            stack.enter_context(lock)
+            acquired_by_this_method[lock] = True
 
 
 class Rotkehlchen():
@@ -173,8 +195,10 @@ class Rotkehlchen():
         self.shutdown_event = gevent.event.Event()
         self.migration_manager = DataMigrationManager(self)
 
-    def maybe_kill_running_tx_query_tasks(
+    def acquire_all_evm_tx_locks(
             self,
+            stack: contextlib.ExitStack,
+            evm_manager: 'EvmManager',
             blockchain: SupportedBlockchain,
             addresses: list[ChecksumEvmAddress],
     ) -> None:
@@ -182,26 +206,97 @@ class Rotkehlchen():
         addresses and kills them if they exist"""
         assert self.task_manager is not None, 'task manager should have been initialized at this point'  # noqa: E501
 
+        # Compute a list of all locks that have to be acquired
+        all_locks = [
+            evm_manager.transactions.missing_receipts_lock,
+            evm_manager.transactions_decoder.undecoded_tx_query_lock,
+            *[evm_manager.transactions.address_tx_locks[address] for address in addresses],
+        ]
+        # Locks don't have information about who acquired them, so we need to keep track
+        # of it manually.
+        acquired_by_this_method: dict[Semaphore, bool] = defaultdict(bool)
+
+        # Acquire everything what's possible at this point. Other locks will be acquired
+        # further down the line.
+        for lock in all_locks:
+            if lock.locked() is False:
+                stack.enter_context(lock)
+                acquired_by_this_method[lock] = True
+
         for address in addresses:
+            # Check all api task greenlets
             account_tuple = (address, blockchain.to_chain_id())
             for greenlet in self.api_task_greenlets:
                 is_evm_tx_greenlet = (
                     len(greenlet.args) >= 1 and
-                    isinstance(greenlet.args[0], MethodType) and
-                    greenlet.args[0].__func__.__qualname__ == 'RestAPI._get_evm_transactions'
+                    isinstance(greenlet.args[0], MethodType)
                 )
                 if (
                         is_evm_tx_greenlet and
+                        greenlet.args[0].__func__.__qualname__ == 'RestAPI._get_evm_transactions' and  # noqa: E501
                         greenlet.kwargs['only_cache'] is False and
                         account_tuple in greenlet.kwargs['filter_query'].accounts
                 ):
+                    kill_greenlet_and_acquire_locks(
+                        stack=stack,
+                        acquired_by_this_method=acquired_by_this_method,
+                        greenlet=greenlet,
+                        locks=[evm_manager.transactions.address_tx_locks[address]],
+                    )
+                elif (
+                    is_evm_tx_greenlet and
+                    greenlet.args[0].__func__.__qualname__ == 'RestAPI._decode_pending_evm_transactions'  # noqa: E501
+                ):
+                    kill_greenlet_and_acquire_locks(
+                        stack=stack,
+                        acquired_by_this_method=acquired_by_this_method,
+                        greenlet=greenlet,
+                        locks=[
+                            evm_manager.transactions_decoder.undecoded_tx_query_lock,
+                            evm_manager.transactions.missing_receipts_lock,
+                        ],
+                    )
 
-                    greenlet.kill()
+            # Check related periodic tasks greenlets
+            for greenlet in self.task_manager.running_greenlets.get(self.task_manager._maybe_query_evm_transactions, []):  # noqa: E501
+                address = greenlet.kwargs.get('address')
+                if address is None or address in addresses:
+                    kill_greenlet_and_acquire_locks(
+                        stack=stack,
+                        acquired_by_this_method=acquired_by_this_method,
+                        greenlet=greenlet,
+                        locks=[evm_manager.transactions.address_tx_locks[address]],
+                    )
 
-            tx_query_task_greenlets = self.task_manager.running_greenlets.get(self.task_manager._maybe_query_evm_transactions, [])  # noqa: E501
-            for greenlet in tx_query_task_greenlets:
-                if greenlet.kwargs['address'] in addresses:
-                    greenlet.kill()
+            for greenlet in self.task_manager.running_greenlets.get(self.task_manager._maybe_decode_evm_transactions, []):  # noqa: E501
+                addresses_argument = greenlet.kwargs.get('addresses')
+                if addresses_argument is None or len(set(addresses_argument) & set(addresses)) > 0:
+                    kill_greenlet_and_acquire_locks(
+                        stack=stack,
+                        acquired_by_this_method=acquired_by_this_method,
+                        greenlet=greenlet,
+                        locks=[evm_manager.transactions.missing_receipts_lock],
+                    )
+
+            for greenlet in self.task_manager.running_greenlets.get(self.task_manager._maybe_schedule_evm_txreceipts, []):  # noqa: E501
+                addresses_argument = greenlet.kwargs.get('addresses')
+                if addresses_argument is None or len(set(addresses_argument) & set(addresses)) > 0:
+                    kill_greenlet_and_acquire_locks(
+                        stack=stack,
+                        acquired_by_this_method=acquired_by_this_method,
+                        greenlet=greenlet,
+                        locks=[evm_manager.transactions_decoder.undecoded_tx_query_lock],
+                    )
+
+        if all([acquired_by_this_method[lock] for lock in all_locks]) is True:
+            log.debug('Acquired all locks for killing running tx query tasks')
+        else:
+            log.error('Failed to acquire all locks for killing running tx query tasks.')
+            # wait until the unkilled greenlets finish and the locks are acquired
+            for lock in all_locks:
+                if acquired_by_this_method[lock] is False:
+                    stack.enter_context(lock)
+                    acquired_by_this_method[lock] = True
 
     def reset_after_failed_account_creation_or_login(self) -> None:
         """If the account creation or login failed make sure that the rotki instance is clear
@@ -745,10 +840,7 @@ class Rotkehlchen():
                 blockchain = cast(EVM_CHAINS_WITH_TRANSACTIONS_TYPE, blockchain)  # by default mypy doesn't narrow the type  # noqa: E501
                 evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
                 evm_addresses: list[ChecksumEvmAddress] = cast(list[ChecksumEvmAddress], accounts)
-                self.maybe_kill_running_tx_query_tasks(blockchain, evm_addresses)
-                stack.enter_context(evm_manager.transactions.wait_until_no_query_for(evm_addresses))  # noqa: E501
-                stack.enter_context(evm_manager.transactions.missing_receipts_lock)
-                stack.enter_context(evm_manager.transactions_decoder.undecoded_tx_query_lock)
+                self.acquire_all_evm_tx_locks(stack, evm_manager, blockchain, evm_addresses)
             write_cursor = stack.enter_context(self.data.db.user_write())
             self.data.db.remove_single_blockchain_accounts(write_cursor, blockchain, accounts)
 
