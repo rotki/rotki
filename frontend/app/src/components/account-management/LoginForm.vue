@@ -87,7 +87,7 @@ const dbUpgradeProgressData: ComputedRef<CurrentDbUpgradeProgress | null> =
       percentage: (currentStep / totalSteps) * 100,
       totalPercentage: (current / total) * 100,
       currentVersion: toVersion,
-      fromVersion: status.startVersion,
+      fromVersion: status.startVersion - 1,
       toVersion: status.targetVersion,
       currentStep: totalSteps > 0 ? currentStep : 1,
       totalSteps: totalSteps > 0 ? totalSteps : 1
@@ -101,7 +101,8 @@ const dataMigrationStatusData: ComputedRef<CurrentDbUpgradeProgress | null> =
     if (!status) {
       return null;
     }
-    const { currentStep, version, totalSteps } = status.currentMigration;
+    const { currentStep, version, totalSteps, description } =
+      status.currentMigration;
     const current = version - status.startVersion;
     const total = status.targetVersion - status.startVersion;
     return {
@@ -111,7 +112,8 @@ const dataMigrationStatusData: ComputedRef<CurrentDbUpgradeProgress | null> =
       fromVersion: status.startVersion,
       toVersion: status.targetVersion,
       currentStep: totalSteps > 0 ? currentStep : 1,
-      totalSteps: totalSteps > 0 ? totalSteps : 1
+      totalSteps: totalSteps > 0 ? totalSteps : 1,
+      description: description || ''
     };
   });
 
@@ -533,11 +535,12 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
         </v-form>
       </v-card-text>
       <v-card-actions class="login__actions d-block">
-        <db-activity-progress :progress="dbUpgradeProgressData" />
         <db-activity-progress
+          v-if="dataMigrationStatusData"
           data-migration
           :progress="dataMigrationStatusData"
         />
+        <db-activity-progress v-else :progress="dbUpgradeProgressData" />
         <span>
           <v-btn
             class="login__button__sign-in"

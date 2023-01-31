@@ -4,6 +4,7 @@ import { SocketMessageType } from '@/types/websocket-messages';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTokenDetection } from '@/composables/balances/token-detection';
 import { type EvmChainInfo } from '@/types/api/chains';
+import { useSessionAuthStore } from '@/store/session/auth';
 
 vi.mock('@/store/notifications', async () => ({
   useNotificationsStore: vi.fn().mockReturnValue({
@@ -40,7 +41,9 @@ describe('useMessageHandling', () => {
   test('notifies the user and runs token detection', async () => {
     const { handleMessage } = useMessageHandling();
     const { notify } = useNotificationsStore();
+    const { logged } = storeToRefs(useSessionAuthStore());
     const { detectTokens } = useTokenDetection(Blockchain.OPTIMISM);
+    set(logged, true);
     await handleMessage(
       JSON.stringify({
         type: SocketMessageType.EVM_ADDRESS_MIGRATION,

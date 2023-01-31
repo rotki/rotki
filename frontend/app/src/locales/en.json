@@ -1003,10 +1003,10 @@
     "newly_detected": {
       "accept_selected": "Accept selected tokens",
       "ignore_selected": "Ignore selected tokens",
+      "seen_during": "Seen during",
       "select_deselect_all_tokens": "Select/deselect all tokens",
       "subtitle": "Inspect the list of newly detected tokens and add any spam assets to the ignored tokens list",
-      "title": "Newly detected tokens",
-      "tx_origin": "Tx origin"
+      "title": "Newly detected tokens"
     },
     "notes": "Notes",
     "only_show_ignored": "Only show ignored assets ({length})",
@@ -2685,8 +2685,8 @@
     "label_username": "Username",
     "logout": "Logout",
     "migrating_data": {
-      "current": "Step {currentStep} of {totalSteps} of data migration v{currentVersion} is applied.",
-      "warning": "The data is being migrated from version {fromVersion} to {toVersion}. Please don't close the app until it's finished."
+      "current": "Step {currentStep} of {totalSteps} of data migration {currentVersion} is applied.",
+      "warning": "Data migration {currentVersion} is running. Please don't close the app until it's finished."
     },
     "remember_password": "Remember Password",
     "remember_password_tooltip": "The password will be saved on password management tool on your local machine (e.g. Keychain in MacOS)",

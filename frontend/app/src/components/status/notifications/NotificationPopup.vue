@@ -20,22 +20,24 @@ const dismissAll = async () => {
   set(visibleNotification, { ...get(visibleNotification), display: false });
 };
 
-watch(
-  queue,
-  () => {
-    const data = [...get(queue)];
-    if (!get(visibleNotification).display && data.length > 0) {
-      const next = data.shift();
-      if (!next) {
-        return;
-      }
-      nextTick(() => {
-        set(visibleNotification, next);
-      });
+const checkQueue = () => {
+  const data = [...get(queue)];
+  if (!get(visibleNotification).display && data.length > 0) {
+    const next = data.shift();
+    if (!next) {
+      return;
     }
-  },
-  { deep: true }
-);
+    nextTick(() => {
+      set(visibleNotification, next);
+    });
+  }
+};
+
+watch(queue, checkQueue, { deep: true });
+
+onMounted(() => {
+  checkQueue();
+});
 
 const { t } = useI18n();
 </script>

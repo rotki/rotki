@@ -1,6 +1,5 @@
 import {
   type Notification,
-  NotificationCategory,
   NotificationGroup,
   Severity
 } from '@rotki/common/lib/messages';
@@ -16,13 +15,13 @@ import {
   SocketMessageType,
   WebsocketMessage
 } from '@/types/websocket-messages';
-import { startPromise } from '@/utils';
 import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
 import { logger } from '@/utils/logging';
 import { useNotificationsStore } from '@/store/notifications';
 import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
 import { Routes } from '@/router/routes';
 import router from '@/router';
+import { useAccountMigrationStore } from '@/store/blockchain/accounts/migrate';
 
 export const useMessageHandling = () => {
   const { setQueryStatus } = useTxQueryStatusStore();
@@ -32,7 +31,6 @@ export const useMessageHandling = () => {
   const { data: notifications } = storeToRefs(notificationsStore);
   const { notify } = notificationsStore;
   const { addNewDetectedToken } = useNewlyDetectedTokens();
-  const { txEvmChains, getChain } = useSupportedChains();
   const { tc } = useI18n();
 
   const handleSnapshotError = (data: BalanceSnapshotError): Notification => {
@@ -92,51 +90,10 @@ export const useMessageHandling = () => {
     return null;
   };
 
-  const handleMigratedAccounts = (data: MigratedAddresses): Notification[] => {
-    const tokenChains = get(txEvmChains).map(x => x.evmChainName);
-    const addresses: Record<string, string[]> = {};
-    data.forEach(({ address, evmChain }) => {
-      if (tokenChains.includes(evmChain)) {
-        if (!addresses[evmChain]) {
-          addresses[evmChain] = [address];
-        } else {
-          addresses[evmChain].push(address);
-        }
-      }
-    });
+  const { upgradeMigratedAddresses } = useAccountMigrationStore();
 
-    const promises: Promise<void>[] = [];
-    const notifications: Notification[] = [];
-    for (const chain in addresses) {
-      const chainAddresses = addresses[chain];
-      promises.push(
-        useTokenDetection(getChain(chain)).detectTokens(chainAddresses)
-      );
-      notifications.push({
-        title: tc(
-          'notification_messages.address_migration.title',
-          chainAddresses.length,
-          {
-            chain
-          }
-        ),
-        message: tc(
-          'notification_messages.address_migration.message',
-          chainAddresses.length,
-          {
-            chain,
-            addresses: chainAddresses.join(', ')
-          }
-        ),
-        severity: Severity.INFO,
-        display: true,
-        category: NotificationCategory.ADDRESS_MIGRATION,
-        duration: -1
-      });
-    }
-
-    startPromise(Promise.allSettled(promises));
-    return notifications;
+  const handleMigratedAccounts = (data: MigratedAddresses) => {
+    upgradeMigratedAddresses(data);
   };
 
   const handleNewTokenDetectedMessage = (
@@ -193,7 +150,7 @@ export const useMessageHandling = () => {
     } else if (type === SocketMessageType.DATA_MIGRATION_STATUS) {
       handleDataMigrationStatus(message.data);
     } else if (type === SocketMessageType.EVM_ADDRESS_MIGRATION) {
-      notifications.push(...handleMigratedAccounts(message.data));
+      handleMigratedAccounts(message.data);
     } else if (type === SocketMessageType.NEW_EVM_TOKEN_DETECTED) {
       notifications.push(handleNewTokenDetectedMessage(message.data));
     } else {

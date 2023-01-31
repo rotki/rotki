@@ -49,4 +49,5 @@ export interface CurrentDbUpgradeProgress {
   currentVersion: number;
   fromVersion: number;
   toVersion: number;
+  description?: string;
 }
