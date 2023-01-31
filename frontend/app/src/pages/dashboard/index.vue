@@ -6,6 +6,7 @@ import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { Routes } from '@/router/routes';
+import { Module } from '@/types/modules';
 
 const PriceRefresh = defineAsyncComponent(
   () => import('@/components/helper/PriceRefresh.vue')
@@ -77,6 +78,9 @@ const isAnyLoading = computed<boolean>(() => {
 });
 
 const { refreshBalance } = useRefresh();
+
+const { isModuleEnabled } = useModules();
+const nftEnabled = isModuleEnabled(Module.NFTS);
 </script>
 
 <template>
@@ -218,7 +222,11 @@ const { refreshBalance } = useRefresh();
         :loading="isAnyLoading"
         :balances="aggregatedLiabilities"
       />
-      <nft-balance-table data-cy="nft-balance-table" class="mt-8" />
+      <nft-balance-table
+        v-if="nftEnabled"
+        data-cy="nft-balance-table"
+        class="mt-8"
+      />
     </v-container>
   </div>
 </template>

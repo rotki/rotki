@@ -57,6 +57,7 @@ const { fontStyle } = useTheme();
 const action = async (notification: NotificationData) => {
   const action = notification.action?.action;
   action?.();
+  dismiss(notification.id);
 };
 </script>
 

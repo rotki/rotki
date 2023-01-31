@@ -9,6 +9,7 @@ import { useWebsocketStore } from '@/store/websocket';
 import { useMainStore } from '@/store/main';
 import { useNotificationsStore } from '@/store/notifications';
 import { useAccountMigrationStore } from '@/store/blockchain/accounts/migrate';
+import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
 
 export const useAccountManagement = () => {
   const loading = ref(false);
@@ -25,11 +26,13 @@ export const useAccountManagement = () => {
   const { updateDbUpgradeStatus, updateDataMigrationStatus } = authStore;
   const { upgradeMigratedAddresses } = useAccountMigrationStore();
   const { restorePending, initPending } = useNotificationsStore();
+  const { initTokens } = useNewlyDetectedTokens();
 
   const createNewAccount = async (payload: CreateAccountPayload) => {
     set(loading, true);
     set(error, '');
     initPending(payload.credentials.username);
+    initTokens(payload.credentials.username);
     await connect();
     const result = await createAccount(payload);
     set(loading, false);
@@ -51,6 +54,7 @@ export const useAccountManagement = () => {
   }: LoginCredentials) => {
     set(loading, true);
     initPending(username);
+    initTokens(username);
     await connect();
     const result = await login({
       username,
