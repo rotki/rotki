@@ -107,8 +107,9 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
 
     def query_chain(self, filter_query: EvmTransactionsFilterQuery) -> None:
         """Queries the chain (or a remote such as etherscan) for all transactions
-        of an evm address or of all addresses. Will query for only the time requested
-        in the filter and the part of that time that has not yet been queried.
+        of an evm address or of all addresses. Queries only chain `chain_id` of
+        `self.evm_inquirer`. Will query for only the time requested in the filter and the part of
+        that time that has not yet been queried.
 
         Saves the results in the database.
 
@@ -120,7 +121,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         """
         query_accounts = filter_query.accounts
         if query_accounts is not None:
-            accounts = [x.address for x in query_accounts]
+            accounts = [x.address for x in query_accounts if x.chain_id == self.evm_inquirer.chain_id]  # noqa: E501
         else:
             with self.database.conn.read_ctx() as cursor:
                 accounts = self.database.get_blockchain_accounts(cursor).get(
