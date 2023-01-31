@@ -3,11 +3,16 @@ import { type NewDetectedToken } from '@/types/websocket-messages';
 
 const MAX_SIZE = 500;
 
+const createStorage = (username: string): Ref<NewDetectedToken[]> => {
+  return useLocalStorage(`rotki.newly_detected_tokens.${username}`, []);
+};
+
 export const useNewlyDetectedTokens = createSharedComposable(() => {
-  const tokens: Ref<NewDetectedToken[]> = useLocalStorage(
-    'rotki.newly_detected_tokens',
-    []
-  );
+  let tokens: Ref<NewDetectedToken[]> = ref([]);
+
+  const initTokens = (username: string) => {
+    tokens = createStorage(username);
+  };
 
   const addNewDetectedToken = (data: NewDetectedToken) => {
     const tokenList = [...get(tokens)];
@@ -32,6 +37,7 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
 
   return {
     tokens,
+    initTokens,
     removeNewDetectedTokens,
     addNewDetectedToken
   };

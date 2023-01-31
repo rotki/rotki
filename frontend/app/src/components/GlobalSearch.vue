@@ -189,7 +189,21 @@ const getRoutes = (keyword: string): SearchItemWithoutValue[] => {
     { ...Routes.STATISTICS },
     { ...Routes.STAKING },
     { ...Routes.PROFIT_LOSS_REPORTS },
-    { ...Routes.ASSET_MANAGER },
+    {
+      ...Routes.ASSET_MANAGER_MANAGED,
+      texts: [Routes.ASSET_MANAGER.text, Routes.ASSET_MANAGER_MANAGED.text]
+    },
+    {
+      ...Routes.ASSET_MANAGER_CUSTOM,
+      texts: [Routes.ASSET_MANAGER.text, Routes.ASSET_MANAGER_CUSTOM.text]
+    },
+    {
+      ...Routes.ASSET_MANAGER_NEWLY_DETECTED,
+      texts: [
+        Routes.ASSET_MANAGER.text,
+        Routes.ASSET_MANAGER_NEWLY_DETECTED.text
+      ]
+    },
     {
       ...Routes.PRICE_MANAGER_LATEST,
       texts: [Routes.PRICE_MANAGER.text, Routes.PRICE_MANAGER_LATEST.text]

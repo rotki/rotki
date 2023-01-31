@@ -265,7 +265,7 @@ export const useAppRoutes = createSharedComposable(() => {
     },
     ASSET_MANAGER_NEWLY_DETECTED: {
       route: Routes.ASSET_MANAGER_NEWLY_DETECTED,
-      icon: 'mdi-database-edit',
+      icon: 'mdi-database-clock',
       text: tc('navigation_menu.manage_assets_sub.newly_detected')
     },
     PRICE_MANAGER: {

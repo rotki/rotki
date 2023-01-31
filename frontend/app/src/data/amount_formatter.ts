@@ -4,7 +4,7 @@ const abbreviationList = [
   [12, 'T'],
   [9, 'B'],
   [6, 'M'],
-  [3, 'K']
+  [3, 'k']
 ] as const;
 
 export class AmountFormatter {
