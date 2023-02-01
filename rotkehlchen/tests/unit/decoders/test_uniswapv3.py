@@ -9,7 +9,7 @@ from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT
 from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -546,6 +546,58 @@ def test_swap_eth_to_tokens(database, ethereum_inquirer, ethereum_accounts):
             balance=Balance(amount=FVal('841047.621362')),
             location_label=user_address,
             notes=f'Receive 841047.621362 USDC as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
+            counterparty=CPT_UNISWAP_V3,
+        ),
+    ]
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
+def test_swap_eth_to_tokens_refund(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x265c15c2b77090afb164f4c723b158f10d94853a705eda67410a340fc0113ece')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    assert events == [
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1669924223000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.00142634334688392')),
+            location_label=user_address,
+            notes='Burned 0.00142634334688392 ETH for gas',
+            counterparty=CPT_GAS,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=1,
+            timestamp=TimestampMS(1669924223000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.003918934703639028')),
+            location_label=user_address,
+            notes=f'Swap 0.003918934703639028 ETH via {CPT_UNISWAP_V3} auto router',
+            counterparty=CPT_UNISWAP_V3,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=2,
+            timestamp=TimestampMS(1669924223000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USDT,
+            balance=Balance(amount=FVal('5')),
+            location_label=user_address,
+            notes=f'Receive 5 USDT as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
         ),
     ]

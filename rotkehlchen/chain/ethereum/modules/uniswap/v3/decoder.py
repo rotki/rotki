@@ -107,7 +107,7 @@ def _find_to_asset_and_amount(events: list[HistoryBaseEntry]) -> Optional[tuple[
             elif to_asset != event.asset:  # We currently support only single `to_asset`.
                 return None  # unexpected event
             to_amount += event.balance.amount
-        elif event.event_type == HistoryEventType.RECEIVE and to_asset is None:
+        elif event.event_type == HistoryEventType.RECEIVE and event.asset != A_ETH and to_asset is None:  # noqa: E501
             # Some other swaps have only a single receive event. The structure is:
             # spend1, spend2, ..., spendN, receive
             # In this case the receive event won't be decoded as a trade and we check it here.
@@ -218,6 +218,7 @@ class Uniswapv3Decoder(DecoderInterface):
             self,
             decoded_events: list[HistoryBaseEntry],
             send_eth_event: HistoryBaseEntry,
+            receive_eth_event: Optional[HistoryBaseEntry],
     ) -> Optional[SwapData]:
         """
         Decode a swap of ETH to a token. Such swap consists of 3 events:
@@ -226,11 +227,8 @@ class Uniswapv3Decoder(DecoderInterface):
         3. Receiving tokens from the router.
         """
         from_amount = send_eth_event.balance.amount
-        for event in decoded_events:
-            if event.asset == A_ETH and event.event_type == HistoryEventType.RECEIVE:
-                # Optional refund event. Can be only one at max. Exists if price has changed.
-                from_amount -= event.balance.amount
-                break
+        if receive_eth_event is not None:
+            from_amount -= receive_eth_event.balance.amount  # a refund
 
         to_data = _find_to_asset_and_amount(decoded_events)
         if to_data is None:
@@ -301,21 +299,23 @@ class Uniswapv3Decoder(DecoderInterface):
             # The minimum is 3 events: gas, spend, receive.
             return decoded_events
 
-        eth_event = None
+        send_eth_event, receive_eth_event = None, None
         for event in decoded_events:
             if event.asset == A_ETH and event.counterparty != CPT_GAS:
-                eth_event = event
-                break
+                if event.event_type == HistoryEventType.SPEND:
+                    send_eth_event = event
+                else:  # Receive
+                    receive_eth_event = event
 
         # Since we check that the to_address is a known router, we can be sure that the ETH
         # transfer event (and other events) are parts of the swap.
-        if eth_event is not None:
-            if eth_event.event_type == HistoryEventType.SPEND:
-                # This is a swap from eth to token
-                swap_data = self._decode_eth_to_token_swap(decoded_events, eth_event)
-            else:  # Receive
-                # This is a swap from token to eth
-                swap_data = self._decode_token_to_eth_swap(decoded_events, eth_event)
+        if send_eth_event is not None:
+            # This is a swap from eth to token
+            # receive_eth_event may be or may not be None depending on whether there was a refund
+            swap_data = self._decode_eth_to_token_swap(decoded_events, send_eth_event, receive_eth_event)  # noqa: E501
+        elif receive_eth_event is not None:
+            # This is a swap from token to eth
+            swap_data = self._decode_token_to_eth_swap(decoded_events, receive_eth_event)
         else:
             # Then this should be a swap from token to token
             swap_data = self._decode_token_to_token_swap(decoded_events)
