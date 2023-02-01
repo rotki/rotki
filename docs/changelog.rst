@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`` Users will now be able to see newly detected token section under "Manage Assets" menu, so it will be easier to add any spam assets to the ignored tokens list.
 * :feature:`4416` Transactions that have interacted with the single collateral DAI CDP contracts are now properly decoded.
 * :feature:`5150` Add option to abbreviate large number. For example to show 1.234.567 as 1.23 M.
 * :feature:`4940` Users will now be able to reset the assets database without losing any custom information they may have added.
