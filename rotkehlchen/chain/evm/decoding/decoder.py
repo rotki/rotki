@@ -383,7 +383,11 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             # If no transaction hashes are passed, decode all transactions.
             if tx_hashes is None:
                 tx_hashes = []
-                for entry in cursor.execute('SELECT tx_hash FROM evm_transactions'):
+                cursor.execute(
+                    'SELECT tx_hash FROM evm_transactions WHERE chain_id=?',
+                    (self.evm_inquirer.chain_id.serialize_for_db(),),
+                )
+                for entry in cursor:
                     tx_hashes.append(EVMTxHash(entry[0]))
 
         for tx_hash in tx_hashes:
