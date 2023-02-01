@@ -108,20 +108,6 @@ const {
 
 const { data } = getCollectionData<EthTransactionEntry>(transactions);
 
-watchDebounced(
-  data,
-  async () => {
-    await checkEmptyEvents();
-  },
-  { debounce: 500, maxWait: 1000 }
-);
-
-const checkEmptyEvents = async () => {
-  await fetchTransactionEvents(
-    get(data).filter(item => item.decodedEvents!.length === 0)
-  );
-};
-
 const redecodeEvents = async (all = false) => {
   const txHashes = all ? null : get(data);
   await fetchTransactionEvents(txHashes, true);
@@ -630,6 +616,7 @@ const txChains = useArrayMap(txEvmChains, x => x.id);
                 :transaction="item"
                 :colspan="headers.length"
                 :show-event-detail="protocols.length > 0"
+                :loading="loading || eventTaskLoading"
                 @edit:event="editEventHandler"
                 @delete:event="promptForDelete"
               />

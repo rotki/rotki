@@ -35,20 +35,19 @@ import {
   filterAddressesFromWords,
   mapCollectionEntriesWithMeta
 } from '@/utils/history';
+import { startPromise } from '@/utils';
 
 export const useTransactions = defineStore('history/transactions', () => {
   const transactions: Ref<Collection<EthTransactionEntry>> = ref(
-    defaultCollectionState<EthTransactionEntry>()
+    defaultCollectionState()
   );
-
   const transactionsPayload: Ref<Partial<TransactionRequestPayload>> = ref(
-    defaultHistoricPayloadState<EthTransaction>()
+    defaultHistoricPayloadState()
   );
   const fetchedTxAccounts: Ref<EvmChainAddress[]> = ref([]);
-
   const decodedTxEvents: Ref<string[]> = ref([]);
-
-  const counterparties = ref<string[]>([]);
+  const counterparties: Ref<string[]> = ref([]);
+  const pageChanged: Ref<boolean> = ref(true);
 
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
@@ -151,7 +150,20 @@ export const useTransactions = defineStore('history/transactions', () => {
       }
 
       const fetchOnlyCache = async (): Promise<void> => {
-        set(transactions, await fetchTransactionsHandler(true));
+        const txs = await fetchTransactionsHandler(true);
+        set(transactions, txs);
+
+        if (get(pageChanged)) {
+          set(pageChanged, false);
+          startPromise(
+            fetchTransactionEvents(
+              txs.data.filter(
+                ({ decodedEvents }) =>
+                  decodedEvents && decodedEvents.length === 0
+              )
+            )
+          );
+        }
       };
 
       setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
@@ -196,6 +208,7 @@ export const useTransactions = defineStore('history/transactions', () => {
   ): Promise<void> => {
     if (!isEqual(get(transactionsPayload), newPayload)) {
       set(transactionsPayload, newPayload);
+      set(pageChanged, true);
       await fetchTransactions();
     }
   };
