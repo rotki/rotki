@@ -3,6 +3,7 @@ import traceback
 from typing import Any, Callable, Optional
 
 import gevent
+from rotkehlchen.errors.misc import GreenletKilledError
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import MessagesAggregator
@@ -52,8 +53,12 @@ class GreenletManager():
             log.error('went in handle_killed_greenlets without an exception')
             return
 
-        exception_is_error = getattr(greenlet, 'exception_is_error', True)
         task_name = getattr(greenlet, 'task_name', 'Unknown task')
+        if isinstance(greenlet.exception, GreenletKilledError):
+            log.debug(f'Greenlet for task {task_name} was killed')
+            return
+
+        exception_is_error = getattr(greenlet, 'exception_is_error', True)
         first_line = f'{task_name} died with exception: {greenlet.exception}'
         if not exception_is_error:
             log.warning(f'{first_line} but that is not treated as an error')
