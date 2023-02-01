@@ -1037,7 +1037,7 @@ Finally this can also be taken into account in the profit/loss report for any gi
 Liquity Staking
 ===============
 
-If you stake LQTY in the protocol you can see the amount staked and the changes in the staked amount.
+If you stake LQTY in the protocol you can see stability pool deposits, staked amount, and the stake events.
 
 .. image:: images/sc_staking_liquity.png
    :alt: See your Liquity staking gains
@@ -1225,7 +1225,7 @@ Inspecting list of assets
 =========================
 
 You can now manage the list of supported assets by your local rotki instance.
-You can inspect the list of all supported assets, edit them, delete them or add new ones. They're divided into two sections; managed assets & custom assets.
+You can inspect the list of all supported assets, edit them, delete them or add new ones. They're divided into 3 sections; managed assets, custom assets, and newly detected assets.
 
 .. image:: images/rotki_manage_assets.png
    :alt: Manage the list of assets
@@ -1288,14 +1288,21 @@ You can fill in the following fields:
 2. The type of custom asset being represented. It's just a string. The type field remembers all previously used types. This is required.
 3. The note to be added to the custom asset. This is optional.
 
+Newly detected assets
+=====================
+
+All newly detected EVM tokens will appear in the list of newly detected assets. You should inspect this list often and accept valid tokens and reject spam assets by adding them to the ignored tokens list.
+
+.. image:: images/rotki_manage_newly_detected_assets.png
+   :alt: Manage newly detected assets
+   :align: center
+
 Merging two assets
 =======================
 
 There are two possible situations where you might need to merge two assets into one.
 
-1. You added a custom asset that was later officially supported on rotki. In this case you should merge your
-custom asset to the officially supported one. If you don't do this might split balances between entries,
-especially for supported exchanges that will use the officially supported entry.
+1. You added a custom asset that was later officially supported on rotki. In this case you should merge your custom asset with the officially supported one. If you don't do this, you will see split balances between entries, especially for supported exchanges that will use the officially supported entry.
 
 2. There was an issue and an Unknown asset notification is now visible. This can happen if you somehow end up deleting your global DB of assets. This way all your custom assets will be unknown. In this case you would need to re-add the deleted assets, and merge the old asset id that errors to the new one that you created.
 
