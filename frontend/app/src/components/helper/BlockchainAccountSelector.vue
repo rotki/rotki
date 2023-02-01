@@ -77,9 +77,17 @@ const internalValue = computed(() => {
 const selectableAccounts: ComputedRef<AccountWithChain[]> = computed(() => {
   const filteredChains = get(chains);
   const blockchainAccounts: AccountWithChain[] = get(accounts);
+
+  const filteredAccounts =
+    filteredChains.length === 0
+      ? blockchainAccounts
+      : blockchainAccounts.filter(
+          ({ chain }) => chain === 'ALL' || filteredChains.includes(chain)
+        );
+
   if (get(multichain)) {
     const entries: Record<string, number> = {};
-    blockchainAccounts.forEach(account => {
+    filteredAccounts.forEach(account => {
       if (entries[account.address]) {
         entries[account.address] += 1;
       } else {
@@ -90,7 +98,7 @@ const selectableAccounts: ComputedRef<AccountWithChain[]> = computed(() => {
     for (const address in entries) {
       const count = entries[address];
       if (count > 1) {
-        blockchainAccounts.push({
+        filteredAccounts.push({
           address,
           label: '',
           tags: [],
@@ -100,13 +108,7 @@ const selectableAccounts: ComputedRef<AccountWithChain[]> = computed(() => {
     }
   }
 
-  if (filteredChains.length === 0) {
-    return blockchainAccounts;
-  }
-
-  return blockchainAccounts.filter(
-    ({ chain }) => chain === 'ALL' || filteredChains.includes(chain)
-  );
+  return filteredAccounts;
 });
 
 const hintText = computed(() => {
