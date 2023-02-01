@@ -383,8 +383,9 @@ class DBHandler:
                 'last_data_upload_ts',
                 'premium_should_sync',
                 'ongoing_upgrade_from_version',
+                'main_currency',
             ],
-            value: Union[int, Timestamp],
+            value: Union[int, Timestamp, Asset],
     ) -> None:
         write_cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
