@@ -1,16 +1,21 @@
+from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.accounting.mixins.event import AccountingEventType
+from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_ETH, A_EUR, A_KFEE, A_USDT
+from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_EUR, A_KFEE, A_USD, A_USDT
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process, check_pnls_and_csv
+from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import Location, Timestamp, TradeType
+from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TradeType
+
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.accountant import Accountant
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -180,3 +185,46 @@ def test_fees_in_received_asset(accountant, google_service):
         AccountingEventType.LEDGER_ACTION: PNL(taxable=FVal('178.615'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
+
+
+@pytest.mark.parametrize('mocked_price_queries', [{
+    'ETH': {'GBP': {1609537953: FVal('534.94')}},
+    'USD': {'GBP': {1609537953: FVal('0.741076')}},
+}])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+def test_main_currency_is_respected(
+        accountant: 'Accountant',
+        mocked_price_queries: dict[str, dict[str, dict[int, FVal]]],
+) -> None:
+    """Verify that the price after processing trades respects the main currency. We change the
+    main currency to GBP and assert the price for a trade using a different currency as quote.
+    """
+    with accountant.db.conn.write_ctx() as cursor:
+        accountant.db.set_setting(cursor, name='main_currency', value=A_GBP)
+
+    trade_rate = Price(FVal('2403.20'))
+    history: list['AccountingEventMixin'] = [
+        Trade(
+            timestamp=Timestamp(1609537953),
+            location=Location.EXTERNAL,
+            base_asset=A_ETH2,
+            quote_asset=A_USD,
+            trade_type=TradeType.SELL,
+            amount=AssetAmount(FVal('0.04')),
+            rate=trade_rate,
+            fee=Fee(ZERO),
+            fee_currency=A_EUR,
+            link=None,
+        ),
+    ]
+    accounting_history_process(
+        accountant=accountant,
+        start_ts=Timestamp(1436979735),
+        end_ts=Timestamp(1625001466),
+        history_list=history,
+    )
+    errors = accountant.msg_aggregator.consume_errors()
+    warnings = accountant.msg_aggregator.consume_warnings()
+    assert len(warnings) == len(errors) == 0
+    # Check that the price is correctly computed in GBP
+    assert accountant.pots[0].processed_events[0].price == trade_rate * mocked_price_queries['USD']['GBP'][1609537953]  # noqa: E501
