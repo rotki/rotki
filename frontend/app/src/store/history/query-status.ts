@@ -1,13 +1,14 @@
-import { type ComputedRef } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import {
   type EvmTransactionQueryData,
   EvmTransactionsQueryStatus
 } from '@/types/websocket-messages';
+import { type EvmChainAddress } from '@/types/history/tx';
 
 export const useTxQueryStatusStore = defineStore(
   'history/transactionsQueryStatus',
   () => {
-    const queryStatus = ref<Record<string, EvmTransactionQueryData>>({});
+    const queryStatus: Ref<Record<string, EvmTransactionQueryData>> = ref({});
 
     const setQueryStatus = (data: EvmTransactionQueryData): void => {
       const status = { ...get(queryStatus) };
@@ -36,7 +37,7 @@ export const useTxQueryStatusStore = defineStore(
       set(queryStatus, {});
     };
 
-    const isStatusFinished = (item: EvmTransactionQueryData) => {
+    const isStatusFinished = (item: EvmTransactionQueryData): boolean => {
       return (
         item.status ===
         EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED
@@ -52,13 +53,29 @@ export const useTxQueryStatusStore = defineStore(
       });
     });
 
-    const queryingLength = computed<number>(
+    const queryingLength: ComputedRef<number> = computed(
       () =>
         Object.values(get(queryStatus)).filter(item => !isStatusFinished(item))
           .length
     );
 
-    const length = computed<number>(() => Object.keys(get(queryStatus)).length);
+    const length: ComputedRef<number> = computed(
+      () => Object.keys(get(queryStatus)).length
+    );
+
+    const removeQueryStatus = (item: EvmChainAddress): void => {
+      const statuses = { ...get(queryStatus) };
+      set(
+        queryStatus,
+        Object.fromEntries(
+          Object.entries(statuses).filter(
+            ([_, status]) =>
+              status.evmChain !== item.evmChain ||
+              status.address !== item.address
+          )
+        )
+      );
+    };
 
     return {
       queryStatus,
@@ -67,6 +84,7 @@ export const useTxQueryStatusStore = defineStore(
       length,
       isStatusFinished,
       setQueryStatus,
+      removeQueryStatus,
       resetQueryStatus
     };
   }

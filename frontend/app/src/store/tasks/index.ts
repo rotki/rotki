@@ -4,7 +4,10 @@ import find from 'lodash/find';
 import toArray from 'lodash/toArray';
 import { type ComputedRef, type Ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
-import { TaskNotFoundError } from '@/services/types-api';
+import {
+  BackendCancelledTaskError,
+  TaskNotFoundError
+} from '@/services/types-api';
 import { SyncConflictError } from '@/types/login';
 import { type Task, type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -156,17 +159,19 @@ export const useTasks = defineStore('tasks', () => {
             let errorMessage: string;
             if (message) {
               errorMessage = message;
+              if (checkIfDevelopment()) {
+                errorMessage += `::dev_only_msg_part:: task_id: ${id}, task_type: ${
+                  TaskType[type]
+                }, meta: ${JSON.stringify(meta)}`;
+              }
+              reject(new Error(errorMessage));
             } else {
-              errorMessage = `No message returned for ${TaskType[type]} with id ${id}`;
+              reject(
+                new BackendCancelledTaskError(
+                  `Backend cancelled task_id: ${id}, task_type: ${TaskType[type]}`
+                )
+              );
             }
-
-            if (checkIfDevelopment()) {
-              errorMessage += `::dev_only_msg_part:: task_id: ${type}, task_type: ${
-                TaskType[type]
-              }, meta: ${JSON.stringify(meta)}`;
-            }
-
-            reject(new Error(errorMessage));
           } else {
             resolve({ result, meta, message });
           }
