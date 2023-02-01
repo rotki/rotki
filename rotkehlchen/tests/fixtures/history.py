@@ -55,13 +55,14 @@ def price_historian(
 ):
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
-    PriceHistorian._PriceHistorian__instance = None
+    PriceHistorian.__instance = None
     historian = PriceHistorian(
         data_directory=data_dir,
         cryptocompare=cryptocompare,
         coingecko=session_coingecko,
         defillama=session_defillama,
     )
+    old_method = historian.query_historical_price
     historian.set_oracles_order(historical_price_oracles_order)
     maybe_mock_historical_price_queries(
         historian=historian,
@@ -72,7 +73,8 @@ def price_historian(
         force_no_price_found_for=force_no_price_found_for,
     )
 
-    return historian
+    yield historian
+    historian.query_historical_price = old_method
 
 
 @pytest.fixture()

@@ -30,7 +30,7 @@ def fixture_fake_price_historian(historical_price_oracles_order):
     # NB: custom fixture for quick unit testing. Do not export.
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
-    PriceHistorian._PriceHistorian__instance = None
+    PriceHistorian.__instance = None
     price_historian = PriceHistorian(
         data_directory=MagicMock(spec=Path),
         cryptocompare=MagicMock(spec=Cryptocompare),

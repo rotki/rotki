@@ -16,6 +16,7 @@ from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.constants import (
@@ -32,7 +33,7 @@ from rotkehlchen.tests.utils.constants import (
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import AssetMovementCategory, Fee, Location, Timestamp
+from rotkehlchen.types import AssetMovementCategory, Fee, Location, Price, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -1129,9 +1130,9 @@ def assert_poloniex_trades_result(
 
 
 def maybe_mock_historical_price_queries(
-        historian,
+        historian: PriceHistorian,
         should_mock_price_queries: bool,
-        mocked_price_queries,
+        mocked_price_queries: dict['Asset', dict['Asset', dict[int, FVal]]],
         default_mock_value: Optional[FVal] = None,
         dont_mock_price_for: Optional[list['Asset']] = None,
         force_no_price_found_for: Optional[list[tuple['Asset', Timestamp]]] = None,
@@ -1150,17 +1151,21 @@ def maybe_mock_historical_price_queries(
     # the list of assets to not mock is non empty.
     original_function = historian.query_historical_price
 
-    def mock_historical_price_query(from_asset, to_asset, timestamp):
+    def mock_historical_price_query(
+            from_asset: 'Asset',
+            to_asset: 'Asset',
+            timestamp: Timestamp,
+    ) -> Price:
         if from_asset == to_asset:
-            return ONE
+            return Price(ONE)
 
         if from_asset == A_ETH2:
             from_asset = A_ETH
 
-        if from_asset in dont_mock_price_for:
+        if from_asset in dont_mock_price_for:  # type: ignore[operator]
             return original_function(from_asset, to_asset, timestamp)
 
-        if (from_asset, timestamp) in force_no_price_found_for:
+        if (from_asset, timestamp) in force_no_price_found_for:  # type: ignore[operator]
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
                 to_asset=to_asset,
@@ -1169,7 +1174,7 @@ def maybe_mock_historical_price_queries(
             )
 
         try:
-            price = mocked_price_queries[from_asset.identifier][to_asset.identifier][timestamp]
+            price = Price(mocked_price_queries[from_asset][to_asset][timestamp])
         except KeyError:
             if default_mock_value is None:
                 raise AssertionError(
@@ -1177,11 +1182,11 @@ def maybe_mock_historical_price_queries(
                     f'{to_asset.identifier} at {timestamp}',
                 ) from None
             # else just use the default
-            return default_mock_value
+            return Price(default_mock_value)
 
         return price
 
-    historian.query_historical_price = mock_historical_price_query
+    historian.query_historical_price = mock_historical_price_query  # type: ignore[assignment]
 
 
 def assert_pnl_debug_import(filepath: Path, database: DBHandler) -> None:

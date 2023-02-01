@@ -426,7 +426,7 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server):
         rotki.data.db.add_trades(cursor, [trade])
 
     coingecko = PriceHistorian._coingecko
-    PriceHistorian._PriceHistorian__instance = None
+    PriceHistorian.__instance = None
     price_historian = PriceHistorian(
         data_directory=MagicMock(spec=Path),
         cryptocompare=MagicMock(spec=Cryptocompare),
