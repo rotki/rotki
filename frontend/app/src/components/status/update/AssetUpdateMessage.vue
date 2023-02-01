@@ -36,13 +36,25 @@ const onChange = (value: string) => {
   } else if (number > remote) {
     updatedUpToVersion = remote;
   }
-  set(upToVersion, updatedUpToVersion);
+  setUpdateVersion(updatedUpToVersion);
+};
+
+const setUpdateVersion = (version: number) => {
+  set(upToVersion, version);
+  const update = get(versions);
 
   emit('update:versions', {
     ...update,
-    upToVersion: updatedUpToVersion
+    upToVersion: version
   });
 };
+
+watch(partial, partial => {
+  if (!partial) {
+    const remoteVersion = get(versions).remote;
+    setUpdateVersion(remoteVersion);
+  }
+});
 
 onMounted(() => {
   set(upToVersion, get(versions).upToVersion);
@@ -75,21 +87,23 @@ const { tc } = useI18n();
           v-model="partial"
           class="asset-update__partial"
           dense
+          hide-details
           :label="tc('asset_update.partially_update')"
         />
-      </v-col>
-      <v-col cols="6">
-        <v-text-field
-          v-if="partial"
-          :value="upToVersion"
-          outlined
-          type="number"
-          dense
-          :min="versions.local"
-          :max="versions.remote"
-          :label="tc('asset_update.up_to_version')"
-          @change="onChange"
-        />
+        <v-col cols="6" class="pa-0 ml-8 mt-2 mb-2">
+          <v-text-field
+            :disabled="!partial"
+            :value="upToVersion"
+            outlined
+            type="number"
+            dense
+            hide-details
+            :min="versions.local"
+            :max="versions.remote"
+            :label="tc('asset_update.up_to_version')"
+            @change="onChange"
+          />
+        </v-col>
       </v-col>
     </v-row>
     <template #options>
@@ -102,7 +116,7 @@ const { tc } = useI18n();
     </template>
     <template #buttons>
       <v-row justify="end" no-gutters>
-        <v-col cols="auto">
+        <v-col cols="auto" class="mr-2">
           <v-btn text @click="emit('dismiss', skipUpdate)">
             {{ tc('common.actions.skip') }}
           </v-btn>

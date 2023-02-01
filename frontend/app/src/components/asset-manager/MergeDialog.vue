@@ -113,14 +113,16 @@ const v$ = useVuelidate(
       <div v-if="done">{{ t('merge_dialog.done') }}</div>
 
       <v-form v-else :value="!v$.$invalid">
-        <asset-select
+        <!-- We use `v-text-field` here instead `asset-select` -->
+        <!-- because the source can be filled with unknown identifier -->
+        <v-text-field
           v-model="source"
-          outlined
-          :error-messages="v$.source.$errors.map(e => e.$message)"
           :label="t('merge_dialog.source.label')"
-          :hint="t('merge_dialog.source_hint')"
-          persistent-hint
+          :error-messages="v$.source.$errors.map(e => e.$message)"
+          outlined
           :disabled="pending"
+          persistent-hint
+          :hint="t('merge_dialog.source_hint')"
           @focus="clearErrors"
         />
         <v-row align="center" justify="center" class="my-4">

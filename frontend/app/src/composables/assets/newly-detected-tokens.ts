@@ -14,6 +14,10 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
     internalTokens = createStorage(username);
   };
 
+  const clearInternalTokens = () => {
+    set(internalTokens, []);
+  };
+
   const addNewDetectedToken = (data: NewDetectedToken) => {
     const tokenList = [...get(internalTokens)];
     const tokenIndex = tokenList.findIndex(
@@ -43,6 +47,7 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
     tokens,
     initTokens,
     removeNewDetectedTokens,
+    clearInternalTokens,
     addNewDetectedToken
   };
 });

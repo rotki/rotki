@@ -1317,7 +1317,7 @@
       "local": "Local",
       "remote": "Remote"
     },
-    "all_buttons_description": "For All conflicts",
+    "all_buttons_description": "For all conflicts",
     "hint": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input.",
     "keep_local": "Keep Local",
     "keep_remote": "Keep Remote",
@@ -2961,7 +2961,7 @@
     "new_detected_token": {
       "action": "See more",
       "title": "New Token Detected|New Tokens Detected",
-      "message": "New token with identifier {identifier} is detected from EVM transactions.|{count} new tokens are detected from EVM transactions."
+      "message": "New token with identifier {identifier} was detected from event processing and queries.|{count} new tokens were detected from event processing and queries."
     },
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
