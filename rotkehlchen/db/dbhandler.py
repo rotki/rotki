@@ -2824,6 +2824,40 @@ class DBHandler:
         - InputError if the xpub data already exist
         """
         try:
+            # Delete the tag mappings for all derived addresses
+            write_cursor.execute(
+                'DELETE FROM tag_mappings WHERE '
+                'object_reference IN ('
+                'SELECT blockchain || address from xpub_mappings WHERE xpub=? AND derivation_path IS ? AND blockchain=?);',  # noqa: E501
+                (
+                    xpub_data.xpub.xpub,
+                    xpub_data.serialize_derivation_path_for_db(),
+                    xpub_data.blockchain.value,
+                ),
+            )
+            write_cursor.execute(
+                'SELECT address from xpub_mappings WHERE xpub=? AND derivation_path IS ? AND blockchain=?',  # noqa: E501
+                (
+                    xpub_data.xpub.xpub,
+                    xpub_data.serialize_derivation_path_for_db(),
+                    xpub_data.blockchain.value,
+                ),
+            )
+            addresses_data = [
+                BlockchainAccountData(
+                    chain=xpub_data.blockchain,
+                    address=x[0],
+                    label=xpub_data.label,
+                    tags=xpub_data.tags,
+                )
+                for x in write_cursor
+            ]
+            # Update tag mappings of the derived addresses
+            replace_tag_mappings(
+                write_cursor=write_cursor,
+                data=addresses_data,
+                object_reference_keys=['chain', 'address'],
+            )
             key = xpub_data.xpub.xpub + xpub_data.serialize_derivation_path_for_db()  # type: ignore # noqa: E501
             # Delete the tag mappings for the xpub itself (type ignore is for xpub is not None)
             write_cursor.execute('DELETE FROM tag_mappings WHERE object_reference=?', (key,))
