@@ -3,7 +3,10 @@ import { type Ref } from 'vue';
 import { groupBy } from 'lodash';
 import { useHistoryApi } from '@/services/history';
 import { useTransactionsApi } from '@/services/history/transactions';
-import { type PendingTask } from '@/services/types-api';
+import {
+  BackendCancelledTaskError,
+  type PendingTask
+} from '@/services/types-api';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useTxQueryStatusStore } from '@/store/history/query-status';
 import { useNotificationsStore } from '@/store/notifications';
@@ -64,7 +67,7 @@ export const useTransactions = defineStore('history/transactions', () => {
   const { awaitTask, isTaskRunning } = useTasks();
 
   const { fetchAvailableCounterparties } = useHistoryApi();
-  const { resetQueryStatus } = useTxQueryStatusStore();
+  const { removeQueryStatus, resetQueryStatus } = useTxQueryStatusStore();
 
   const { txEvmChains, getEvmChainName, supportsTransactions } =
     useSupportedChains();
@@ -177,15 +180,20 @@ export const useTransactions = defineStore('history/transactions', () => {
         const refreshAddressTxs = accountsList.map(account =>
           fetchTransactionsHandler(false, { accounts: [account] }).catch(
             error => {
-              notify({
-                title: t('actions.transactions.error.title').toString(),
-                message: t('actions.transactions.error.description', {
-                  error,
-                  address: account.address,
-                  chain: account.evmChain
-                }).toString(),
-                display: true
-              });
+              if (error instanceof BackendCancelledTaskError) {
+                logger.debug(error);
+                removeQueryStatus(account);
+              } else {
+                notify({
+                  title: t('actions.transactions.error.title').toString(),
+                  message: t('actions.transactions.error.description', {
+                    error,
+                    address: account.address,
+                    chain: account.evmChain
+                  }).toString(),
+                  display: true
+                });
+              }
             }
           )
         );

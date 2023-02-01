@@ -97,7 +97,7 @@ export const usePriceApi = () => {
       '/assets/prices/latest',
       axiosSnakeCaseTransformer({
         asyncQuery: true,
-        assets: assets.join(','),
+        assets,
         targetAsset,
         ignoreCache: ignoreCache ? ignoreCache : undefined
       }),
