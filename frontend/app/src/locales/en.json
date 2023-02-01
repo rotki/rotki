@@ -1360,7 +1360,7 @@
       "local": "Local",
       "remote": "Remote"
     },
-    "all_buttons_description": "For All conflicts",
+    "all_buttons_description": "For all conflicts",
     "hint": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input.",
     "keep_local": "Keep Local",
     "keep_remote": "Keep Remote",
