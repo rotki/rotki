@@ -49,7 +49,9 @@ from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import EthSyncError, InputError, RemoteError, SystemPermissionError
+from rotkehlchen.errors.misc import (
+    EthSyncError, GreenletKilledError, InputError, RemoteError, SystemPermissionError,
+)
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.coingecko import Coingecko
@@ -195,13 +197,12 @@ class Rotkehlchen():
                         greenlet.kwargs['only_cache'] is False and
                         account_tuple in greenlet.kwargs['filter_query'].accounts
                 ):
-
-                    greenlet.kill()
+                    greenlet.kill(exception=GreenletKilledError('Killed due to request for evm address removal'))  # noqa: E501
 
             tx_query_task_greenlets = self.task_manager.running_greenlets.get(self.task_manager._maybe_query_evm_transactions, [])  # noqa: E501
             for greenlet in tx_query_task_greenlets:
                 if greenlet.kwargs['address'] in addresses:
-                    greenlet.kill()
+                    greenlet.kill(exception=GreenletKilledError('Killed due to request for evm address removal'))  # noqa: E501
 
     def reset_after_failed_account_creation_or_login(self) -> None:
         """If the account creation or login failed make sure that the rotki instance is clear

@@ -106,10 +106,10 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         )
 
     def query_chain(self, filter_query: EvmTransactionsFilterQuery) -> None:
-        """Queries the chain (or a remote such as etherscan) for all transactions
-        of an evm address or of all addresses. Queries only chain `chain_id` of
-        `self.evm_inquirer`. Will query for only the time requested in the filter and the part of
-        that time that has not yet been queried.
+        """Queries the chain (or a remote such as etherscan) for all transactions of an evm address
+        or of all addresses. Will query only addresses of the filter with same chain_id as this
+        class and query only the time requested in the filter and the part of that time that has
+        not yet been queried.
 
         Saves the results in the database.
 
