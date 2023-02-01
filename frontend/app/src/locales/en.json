@@ -3861,6 +3861,7 @@
         "withdrawal": "Withdrawal"
       },
       "loading": "Loading events...",
+      "no_data": "Events are hidden because they contain ignored assets",
       "type": {
         "airdrop": "Airdrop",
         "approval": "Approval",

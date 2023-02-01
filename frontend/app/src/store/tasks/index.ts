@@ -161,7 +161,9 @@ export const useTasks = defineStore('tasks', () => {
             }
 
             if (checkIfDevelopment()) {
-              errorMessage += `: ${JSON.stringify(meta)}`;
+              errorMessage += `::dev_only_msg_part:: task_id: ${type}, task_type: ${
+                TaskType[type]
+              }, meta: ${JSON.stringify(meta)}`;
             }
 
             reject(new Error(errorMessage));

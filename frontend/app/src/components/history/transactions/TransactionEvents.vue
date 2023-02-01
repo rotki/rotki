@@ -6,30 +6,16 @@ import {
   type EthTransactionEventWithMeta
 } from '@/types/history/tx';
 
-const TransactionEventNote = defineAsyncComponent(
-  () => import('@/components/history/transactions/TransactionEventNote.vue')
-);
-const RowActions = defineAsyncComponent(
-  () => import('@/components/helper/RowActions.vue')
-);
-const TransactionEventType = defineAsyncComponent(
-  () => import('@/components/history/transactions/TransactionEventType.vue')
-);
-const TransactionEventAsset = defineAsyncComponent(
-  () => import('@/components/history/transactions/TransactionEventAsset.vue')
-);
-const TableExpandContainer = defineAsyncComponent(
-  () => import('@/components/helper/table/TableExpandContainer.vue')
-);
-
 const props = withDefaults(
   defineProps<{
     transaction: EthTransactionEntry;
     colspan: number;
     showEventDetail?: boolean;
+    loading?: boolean;
   }>(),
   {
-    showEventDetail: false
+    showEventDetail: false,
+    loading: false
   }
 );
 
@@ -145,11 +131,14 @@ watch(transaction, (current, old) => {
                 :class="css.table"
                 :headers="headers"
                 :items="events"
-                :no-data-text="tc('transactions.events.loading')"
+                :loading="loading"
+                :loading-text="tc('transactions.events.loading')"
+                :no-data-text="tc('transactions.events.no_data')"
                 class="transparent"
                 hide-default-footer
                 :hide-default-header="$vuetify.breakpoint.mdAndUp"
               >
+                <template #progress><span /></template>
                 <template #item.type="{ item }">
                   <transaction-event-type
                     :event="item"

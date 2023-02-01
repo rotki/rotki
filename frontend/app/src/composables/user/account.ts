@@ -22,7 +22,7 @@ export const useAccountManagement = () => {
   const { createAccount, login } = useSessionStore();
   const { connect } = useWebsocketStore();
   const authStore = useSessionAuthStore();
-  const { logged } = storeToRefs(authStore);
+  const { logged, canRequestData } = storeToRefs(authStore);
   const { updateDbUpgradeStatus, updateDataMigrationStatus } = authStore;
   const { setupCache } = useAccountMigrationStore();
   const { initTokens } = useNewlyDetectedTokens();
@@ -39,6 +39,7 @@ export const useAccountManagement = () => {
     if (result.success) {
       if (get(logged)) {
         showGetPremiumButton();
+        set(canRequestData, true);
         await navigateToDashboard();
       }
     } else {
