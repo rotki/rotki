@@ -1104,13 +1104,6 @@ class DBHandler:
         - All tags exist in the DB
         - All accounts exist in the DB
         """
-        # Delete the current tag mappings for all affected accounts
-        write_cursor.executemany(
-            'DELETE FROM tag_mappings WHERE '
-            # Using chain.value since it has to match the key generated in `_prepare_tag_mappings`.
-            'object_reference = ?;', [(f'{x.chain.value}{x.address}',) for x in account_data],
-        )
-
         # Update the blockchain account labels in the DB
         tuples = [(
             entry.label,
@@ -1395,12 +1388,6 @@ class DBHandler:
         - InputError if any of the manually tracked balance labels to edit do not
         exist in the DB
         """
-        # Delete the current tag mappings for all affected balance entries
-        write_cursor.executemany(
-            'DELETE FROM tag_mappings WHERE '
-            'object_reference = ?;', [(x.id,) for x in data],
-        )
-
         # Update the manually tracked balance entries in the DB
         tuples = [(
             entry.asset.identifier,
@@ -2811,17 +2798,6 @@ class DBHandler:
         - InputError if the xpub data already exist
         """
         try:
-            # Delete the tag mappings for all derived addresses
-            write_cursor.execute(
-                'DELETE FROM tag_mappings WHERE '
-                'object_reference IN ('
-                'SELECT blockchain || address from xpub_mappings WHERE xpub=? AND derivation_path IS ? AND blockchain=?);',  # noqa: E501
-                (
-                    xpub_data.xpub.xpub,
-                    xpub_data.serialize_derivation_path_for_db(),
-                    xpub_data.blockchain.value,
-                ),
-            )
             write_cursor.execute(
                 'SELECT address from xpub_mappings WHERE xpub=? AND derivation_path IS ? AND blockchain=?',  # noqa: E501
                 (

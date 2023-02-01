@@ -260,6 +260,20 @@ def deserialize_tags_from_db(val: Optional[str]) -> Optional[list[str]]:
     return tags
 
 
+def _get_tag_reference(
+        entry: Union['ManuallyTrackedBalance', BlockchainAccountData, 'XpubData'],
+        object_reference_keys: list[
+            Literal['id', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
+        ],
+) -> str:
+    reference = ''
+    for key in object_reference_keys:
+        value = rgetattr(entry, key)
+        if value is not None:  # value.value is for SupportedBlockchain
+            reference += str(value) if key != 'chain' else value.value
+    return reference
+
+
 def _prepare_tag_mappings(
         entry: Union['ManuallyTrackedBalance', BlockchainAccountData, 'XpubData'],
         object_reference_keys: list[
@@ -267,12 +281,8 @@ def _prepare_tag_mappings(
         ],
 ) -> list[tuple[str, str]]:
     """Common function to prepare tag mappings. Caller has to make sure entry.tags is not None"""
-    reference = ''
     mapping_tuples = []
-    for key in object_reference_keys:
-        value = rgetattr(entry, key)
-        if value is not None:  # value.value is for SupportedBlockchain
-            reference += str(value) if key != 'chain' else value.value
+    reference = _get_tag_reference(entry, object_reference_keys)
     mapping_tuples.extend([(reference, tag) for tag in entry.tags])  # type: ignore[union-attr]
     return mapping_tuples
 
@@ -309,11 +319,10 @@ def replace_tag_mappings(
     insert_tuples = []
     delete_tuples = []
     for entry in data:
+        # Always delete current tags even if there are no new tags.
+        delete_tuples.append((_get_tag_reference(entry, object_reference_keys),))
         if entry.tags is not None:
-            tag_tuples = _prepare_tag_mappings(entry, object_reference_keys)
-            # tag_tuples should never be empty, since here entry.tags is not None and not empty
-            delete_tuples.append((tag_tuples[0][0],))
-            insert_tuples.extend(tag_tuples)
+            insert_tuples.extend(_prepare_tag_mappings(entry, object_reference_keys))
 
     write_cursor.executemany(
         'DELETE FROM tag_mappings WHERE object_reference = ?;', delete_tuples,
