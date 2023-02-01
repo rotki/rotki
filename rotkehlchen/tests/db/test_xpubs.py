@@ -113,6 +113,16 @@ def test_edit_bitcoin_xpub(setup_db_for_xpub_tests):
             ))
         result = db.get_bitcoin_xpub_data(cursor, blockchain=SupportedBlockchain.BITCOIN_CASH)
 
+        # Make sure that the tags of the derived addresses were updated
+        cursor.execute(
+            'SELECT B.tag_name FROM xpub_mappings as A LEFT JOIN tag_mappings as B '
+            'ON B.object_reference= ? || A.address WHERE xpub=? AND blockchain=?',
+            (SupportedBlockchain.BITCOIN_CASH.value, xpub.xpub.xpub, SupportedBlockchain.BITCOIN_CASH.value),  # noqa: E501
+        )
+        found_tags = [entry[0] for entry in cursor]
+        assert len(found_tags) == 3
+        assert found_tags == ['test', 'test', 'test']
+
     assert result[0].xpub == xpub.xpub
     assert result[0].label == '123'
     assert result[0].derivation_path == xpub.derivation_path
