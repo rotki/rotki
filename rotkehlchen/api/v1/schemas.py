@@ -1186,7 +1186,7 @@ class UserPremiumSyncSchema(AsyncQueryArgumentSchema):
     )
 
 
-class NewUserSchema(BaseUserSchema):
+class NewUserSchema(BaseUserSchema, AsyncQueryArgumentSchema):
     premium_api_key = fields.String(load_default='')
     premium_api_secret = fields.String(load_default='')
     sync_database = fields.Boolean(load_default=True)
