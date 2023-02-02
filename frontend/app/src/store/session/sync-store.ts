@@ -7,7 +7,7 @@ import { useTasks } from '@/store/tasks';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
-export const useSyncStoreStore = defineStore('syncStore', () => {
+export const useSyncStore = defineStore('syncStore', () => {
   const { isTaskRunning, awaitTask } = useTasks();
   const { notify } = useNotificationsStore();
   const { tc } = useI18n();
@@ -55,7 +55,7 @@ export const useSyncStoreStore = defineStore('syncStore', () => {
           display: true
         });
 
-        if (action === SYNC_DOWNLOAD) {
+        if (get(action) === SYNC_DOWNLOAD) {
           await logout();
         }
       } else {
@@ -72,5 +72,5 @@ export const useSyncStoreStore = defineStore('syncStore', () => {
 });
 
 if (import.meta.hot) {
-  import.meta.hot.accept(acceptHMRUpdate(useSyncStoreStore, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useSyncStore, import.meta.hot));
 }
