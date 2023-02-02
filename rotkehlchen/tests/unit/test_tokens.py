@@ -4,14 +4,19 @@ from unittest.mock import MagicMock, patch
 import pytest
 from flaky import flaky
 
+from rotkehlchen.assets.utils import _query_or_get_given_token_info
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
 from rotkehlchen.chain.evm.tokens import generate_multicall_chunks
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_OMG, A_WETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_LPT
-from rotkehlchen.types import ChainID
+from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.types import ChainID, EvmTokenKind
 from rotkehlchen.utils.misc import ts_now
+
+ERC20_INFO_RESPONSE = ((True, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06'), (True, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04USDT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'), (True, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\nTether USD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'))  # noqa: E501
+ERC721_INFO_RESPONSE = ((True, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06BLOCKS\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'), (True, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\nArt Blocks\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'))  # noqa: E501
 
 
 @pytest.fixture(name='tokens')
@@ -140,3 +145,50 @@ def test_last_queried_ts(tokens, freezer):
         assert len(after_second_query) == 1
         assert after_second_query[0][0] == 'last_queried_timestamp'
         assert int(after_second_query[0][1]) >= continuation
+
+
+def test_cache_is_per_token_type(ethereum_inquirer):
+    """This test makes sure that different info cache is used per token type."""
+    address = make_evm_address()
+
+    def query_token_info(token_kind):
+        """
+        Util function to request token info. Doesn't pass name, symbol or decimals because they
+        should be retrieved from the chain (chain calls are mocked below).
+        """
+        return _query_or_get_given_token_info(
+            evm_inquirer=ethereum_inquirer,
+            evm_address=address,
+            name=None,
+            symbol=None,
+            decimals=None,
+            token_kind=token_kind,
+        )
+
+    def patch_multicall_2(return_value):
+        """
+        This patch method together with ERC20_INFO_RESPONSE and ERC721_INFO_RESPONSE mocks
+        tokens info.
+        """
+        return patch.object(
+            ethereum_inquirer,
+            'multicall_2',
+            return_value=return_value,
+        )
+
+    with patch_multicall_2(ERC20_INFO_RESPONSE):
+        erc20_token_data = query_token_info(EvmTokenKind.ERC20)
+
+    with patch_multicall_2(ERC721_INFO_RESPONSE):
+        erc721_token_data = query_token_info(EvmTokenKind.ERC721)
+
+    with patch.object(  # disable chain calls
+        ethereum_inquirer,
+        'multicall_2',
+        new=MagicMock(side_effect=AssertionError('Chain calls should not be made')),
+    ):
+        erc20_cached_data = query_token_info(EvmTokenKind.ERC20)
+        erc721_cached_data = query_token_info(EvmTokenKind.ERC721)
+
+    assert erc20_token_data == erc20_cached_data == ('Tether USD', 'USDT', 6)
+    assert erc721_token_data == erc721_cached_data == ('Art Blocks', 'BLOCKS', 0)
