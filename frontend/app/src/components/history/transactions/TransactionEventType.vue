@@ -35,7 +35,7 @@ const { t } = useI18n();
                 <v-icon v-if="counterparty.icon" :color="counterparty.color">
                   {{ counterparty.icon }}
                 </v-icon>
-                <v-img v-else :src="counterparty.image" />
+                <v-img v-else contain :src="counterparty.image" />
               </v-avatar>
             </div>
           </template>

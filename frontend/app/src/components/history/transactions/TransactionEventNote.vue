@@ -12,12 +12,14 @@ withDefaults(
     amount?: BigNumber | null;
     asset?: string;
     chain?: Blockchain;
+    noTxHash?: boolean;
   }>(),
   {
     notes: '',
     amount: null,
     asset: '',
-    chain: Blockchain.ETH
+    chain: Blockchain.ETH,
+    noTxHash: false
   }
 );
 
@@ -41,7 +43,8 @@ interface NoteFormat {
 const formatNotes = (
   notes: string,
   amount: BigNumber | null,
-  assetId: string
+  assetId: string,
+  noTxHash: boolean
 ): NoteFormat[] => {
   const { assetSymbol } = useAssetInfoRetrieval();
 
@@ -68,7 +71,7 @@ const formatNotes = (
     }
 
     // Check if the word is Tx Hash
-    if (isValidTxHash(word)) {
+    if (isValidTxHash(word) && !noTxHash) {
       formats.push({ type: NoteType.TX, address: word });
       return;
     }
@@ -129,7 +132,7 @@ const formatNotes = (
 </script>
 <template>
   <div>
-    <template v-for="(note, index) in formatNotes(notes, amount, asset)">
+    <template v-for="(note, index) in formatNotes(notes, amount, asset, noTxHash)">
       <span
         v-if="note.type === 'address' || note.type === 'tx'"
         :key="index"

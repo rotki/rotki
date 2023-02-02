@@ -416,6 +416,11 @@ export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [
     image: './assets/images/airdrops/ens.svg'
   },
   {
+    identifier: TransactionEventProtocol.ETH2,
+    label: 'ETH2',
+    image: './assets/images/modules/eth.svg'
+  },
+  {
     identifier: TransactionEventProtocol.FRAX,
     label: 'FRAX',
     image: './assets/images/defi/frax.png'

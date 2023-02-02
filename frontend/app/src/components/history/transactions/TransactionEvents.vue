@@ -5,6 +5,10 @@ import {
   type EthTransactionEventEntry,
   type EthTransactionEventWithMeta
 } from '@/types/history/tx';
+import {
+  HistoryEventSubType,
+  TransactionEventProtocol
+} from '@/types/transaction';
 
 const props = withDefaults(
   defineProps<{
@@ -89,6 +93,13 @@ watch(transaction, (current, old) => {
     panel.value = [];
   }
 });
+
+const isNoTxHash = (item: EthTransactionEventEntry) => {
+  return (
+    item.counterparty === TransactionEventProtocol.ETH2 &&
+    item.eventSubtype === HistoryEventSubType.DEPOSIT_ASSET
+  );
+};
 </script>
 
 <template>
@@ -157,6 +168,7 @@ watch(transaction, (current, old) => {
                     :amount="item.balance.amount"
                     :asset="item.asset"
                     :chain="getChain(transaction.evmChain)"
+                    :no-tx-hash="isNoTxHash(item)"
                   />
                 </template>
                 <template #item.actions="{ item }">

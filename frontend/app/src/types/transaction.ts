@@ -82,6 +82,7 @@ export enum TransactionEventProtocol {
   DXDAO = 'dxdao',
   ELEMENT_FINANCE = 'element-finance',
   ENS = 'ens',
+  ETH2 = 'eth2',
   FRAX = 'frax',
   GAS = 'gas',
   GITCOIN = 'gitcoin',
