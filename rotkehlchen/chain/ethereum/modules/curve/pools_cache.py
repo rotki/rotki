@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, Optional
 
 from eth_utils import to_checksum_address
@@ -9,7 +10,9 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.errors.misc import NotERC20Conformant
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
     ChainID,
@@ -22,6 +25,8 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 CURVE_POOLS_MAPPING_TYPE = dict[
     ChecksumEvmAddress,  # lp token address
@@ -31,6 +36,8 @@ CURVE_POOLS_MAPPING_TYPE = dict[
         Optional[list[ChecksumEvmAddress]],  # optional list of underlying coins addresses
     ],
 ]
+# list of pools that we know contain bad tokens
+IGNORED_CURVE_POOLS = {'0x066B6e1E93FA7dcd3F0Eb7f8baC7D5A747CE0BF9'}
 
 
 def read_curve_pools() -> set[ChecksumEvmAddress]:
@@ -51,26 +58,20 @@ def read_curve_pools() -> set[ChecksumEvmAddress]:
 def ensure_curve_tokens_existence(
         ethereum_inquirer: 'EthereumInquirer',
         pools_mapping: CURVE_POOLS_MAPPING_TYPE,
-) -> None:
+) -> CURVE_POOLS_MAPPING_TYPE:
     """This function receives data about curve pools and ensures that lp tokens and pool coins
     exist in rotki's database.
+
+    Since is possible that a pool has an invalid token we keep a mapping of the valid ones
+    and return it.
 
     May raise:
     - NotERC20Conformant if failed to query info while calling get_or_create_evm_token
 
     """
+    updated_pools_mapping = {}
     for lp_token_address, pool_info in pools_mapping.items():
         _, coins, underlying_coins = pool_info
-        # ensure lp token exists in the globaldb
-        get_or_create_evm_token(
-            userdb=ethereum_inquirer.database,
-            evm_address=lp_token_address,
-            chain_id=ChainID.ETHEREUM,
-            evm_inquirer=ethereum_inquirer,
-            protocol=CURVE_POOL_PROTOCOL,
-            seen=TokenSeenAt(description='Querying curve pools'),
-        )
-
         # Ensure pool coins exist in the globaldb.
         # We have to create underlying tokens only if pool utilizes them.
         if underlying_coins is None or underlying_coins == coins:
@@ -80,13 +81,20 @@ def ensure_curve_tokens_existence(
                 if token_address == ETH_SPECIAL_ADDRESS:
                     continue
                 # ensure token exists
-                get_or_create_evm_token(
-                    userdb=ethereum_inquirer.database,
-                    evm_address=token_address,
-                    chain_id=ChainID.ETHEREUM,
-                    evm_inquirer=ethereum_inquirer,
-                    seen=TokenSeenAt(description='Querying curve pools'),
-                )
+                try:
+                    get_or_create_evm_token(
+                        userdb=ethereum_inquirer.database,
+                        evm_address=token_address,
+                        chain_id=ChainID.ETHEREUM,
+                        evm_inquirer=ethereum_inquirer,
+                        seen=TokenSeenAt(description='Querying curve pools'),
+                    )
+                except NotERC20Conformant as e:
+                    log.info(
+                        f'Skipping pool {pool_info} because {token_address} is not a '
+                        f'valid ERC20 token. {str(e)}',
+                    )
+                    continue
         else:
             # Otherwise, coins and underlying coins lists represent a
             # mapping of coin -> underlying coin (each coin always has one underlying coin).
@@ -94,26 +102,55 @@ def ensure_curve_tokens_existence(
                 if token_address == ETH_SPECIAL_ADDRESS:
                     continue
                 # ensure underlying token exists
-                get_or_create_evm_token(
-                    userdb=ethereum_inquirer.database,
-                    evm_address=underlying_token_address,
-                    chain_id=ChainID.ETHEREUM,
-                    evm_inquirer=ethereum_inquirer,
-                    seen=TokenSeenAt(description='Querying curve pools'),
-                )
-                # and ensure token exists
-                get_or_create_evm_token(
-                    userdb=ethereum_inquirer.database,
-                    evm_address=token_address,
-                    chain_id=ChainID.ETHEREUM,
-                    evm_inquirer=ethereum_inquirer,
-                    underlying_tokens=[UnderlyingToken(
-                        address=underlying_token_address,
-                        token_kind=EvmTokenKind.ERC20,
-                        weight=ONE,
-                    )],
-                    seen=TokenSeenAt(description='Querying curve pools'),
-                )
+                try:
+                    get_or_create_evm_token(
+                        userdb=ethereum_inquirer.database,
+                        evm_address=underlying_token_address,
+                        chain_id=ChainID.ETHEREUM,
+                        evm_inquirer=ethereum_inquirer,
+                        seen=TokenSeenAt(description='Querying curve pools'),
+                    )
+                except NotERC20Conformant as e:
+                    log.info(
+                        f'Skipping pool {pool_info} because {underlying_token_address} is not a '
+                        f'valid ERC20 token. {str(e)}',
+                    )
+                    continue
+
+                try:
+                    # and ensure token exists
+                    get_or_create_evm_token(
+                        userdb=ethereum_inquirer.database,
+                        evm_address=token_address,
+                        chain_id=ChainID.ETHEREUM,
+                        evm_inquirer=ethereum_inquirer,
+                        underlying_tokens=[UnderlyingToken(
+                            address=underlying_token_address,
+                            token_kind=EvmTokenKind.ERC20,
+                            weight=ONE,
+                        )],
+                        seen=TokenSeenAt(description='Querying curve pools'),
+                    )
+                except NotERC20Conformant as e:
+                    log.info(
+                        f'Skipping pool {pool_info} because {token_address} is not a '
+                        f'valid ERC20 token. {str(e)}',
+                    )
+                    continue
+
+        # finally ensure lp token exists in the globaldb. Since is a token created by curve
+        # it should always be an ERC20
+        get_or_create_evm_token(
+            userdb=ethereum_inquirer.database,
+            evm_address=lp_token_address,
+            chain_id=ChainID.ETHEREUM,
+            evm_inquirer=ethereum_inquirer,
+            protocol=CURVE_POOL_PROTOCOL,
+            seen=TokenSeenAt(description='Querying curve pools'),
+        )
+        updated_pools_mapping[lp_token_address] = pool_info
+
+    return updated_pools_mapping
 
 
 def save_curve_pools_to_cache(
@@ -281,6 +318,8 @@ def query_curve_meta_pools(
     )
     pools_mapping: CURVE_POOLS_MAPPING_TYPE = {}
     for pool_addr, (decoded_coins_result,) in zip(pool_addresses, pool_coins_result):
+        if pool_addr in IGNORED_CURVE_POOLS:
+            continue
         pool_coins = []
         for coin_addr in decoded_coins_result:
             checksumed_coin_addr = to_checksum_address(coin_addr)

@@ -254,9 +254,9 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
         curve_address_provider = self.contracts.contract('CURVE_ADDRESS_PROVIDER')
         pools = query_curve_registry_pools(ethereum=self, curve_address_provider=curve_address_provider)  # noqa: E501
         pools.update(query_curve_meta_pools(ethereum=self, curve_address_provider=curve_address_provider))  # noqa: E501
-        ensure_curve_tokens_existence(ethereum_inquirer=self, pools_mapping=pools)
+        updated_pools = ensure_curve_tokens_existence(ethereum_inquirer=self, pools_mapping=pools)
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            save_curve_pools_to_cache(write_cursor=write_cursor, pools_mapping=pools)
+            save_curve_pools_to_cache(write_cursor=write_cursor, pools_mapping=updated_pools)
 
         return True
 
