@@ -294,7 +294,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 )
                 to_block = self.get_blocknumber_by_time(
                     ts=period.to_value,  # type: ignore
-                    closest='after',
+                    closest='before',
                 )
 
             options['startBlock'] = str(from_block)
@@ -372,7 +372,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             from_block = self.get_blocknumber_by_time(ts=from_ts, closest='before')
             options['startBlock'] = str(from_block)
         if to_ts is not None:
-            to_block = self.get_blocknumber_by_time(ts=to_ts, closest='after')
+            to_block = self.get_blocknumber_by_time(ts=to_ts, closest='before')
             options['endBlock'] = str(to_block)
 
         hashes: set[tuple[str, Timestamp]] = set()

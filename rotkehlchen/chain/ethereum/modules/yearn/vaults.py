@@ -742,7 +742,7 @@ class YearnVaults(EthereumModule):
                 defi_balances = given_defi_balances()
 
             from_block = self.ethereum.get_blocknumber_by_time(from_timestamp, closest='before')
-            to_block = self.ethereum.get_blocknumber_by_time(to_timestamp, closest='after')
+            to_block = self.ethereum.get_blocknumber_by_time(to_timestamp, closest='before')
             history: dict[ChecksumEvmAddress, dict[str, YearnVaultHistory]] = {}
 
             for address in addresses:
@@ -777,7 +777,7 @@ class YearnVaults(EthereumModule):
             return []
 
         from_block = self.ethereum.get_blocknumber_by_time(from_timestamp, closest='before')
-        to_block = self.ethereum.get_blocknumber_by_time(to_timestamp, closest='after')
+        to_block = self.ethereum.get_blocknumber_by_time(to_timestamp, closest='before')
 
         events = []
         for address in addresses:
