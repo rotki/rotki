@@ -2,7 +2,9 @@
 Changelog
 =========
 
-* :feature:`` Users will now be able to see newly detected token section under "Manage Assets" menu, so it will be easier to add any spam assets to the ignored tokens list.
+* :release:`1.27.0 <2023-02-03>`
+* :feature:`5015` EVM assets across multiple chains will now appear together in the dashboard, with an option to break them down into their per-chain holding.
+* :feature:`-` Users will now be able to see newly detected token section under "Manage Assets" menu, so it will be easier to add any spam assets to the ignored tokens list.
 * :feature:`4416` Transactions that have interacted with the single collateral DAI CDP contracts are now properly decoded.
 * :feature:`5150` Add option to abbreviate large number. For example to show 1.234.567 as 1.23 M.
 * :feature:`4940` Users will now be able to reset the assets database without losing any custom information they may have added.
@@ -11,6 +13,8 @@ Changelog
 * :feature:`1793` The PnL report can now be generated with the average cost basis accounting method.
 * :feature:`5148` Users will now see tokens detected for accounts having a DSProxy.
 * :feature:`5526` Users will now be able to read the name of the profit currency when moving the mouse over the currency symbol.
+* :feature:`4912` Users can now ignore invidual NFTs and they will not appear in the dashboard balances or snapshots.
+* :feature:`5050` Users can now add a custom image/icon for each custom asset they own.
 * :bug:`4332` Price oracles are now temporarily penalized after repeated failures.
 * :bug:`5402` Fix issue where the wrong filepath is used when deleting user DB backup in Windows.
 * :bug:`-` Fixed an edge case where users would be swamped with "This socket is already used by another greenlet" errors during websocket communication between backend and frontend.
@@ -21,6 +25,7 @@ Changelog
 * :feature:`-` Swaps made via uniswap v3 auto routers (both v1 and v2) will now be decoded correctly.
 * :feature:`3231` Optimism is now supported. Optimism balances will be shown and optimism transactions will be decoded.
 * :feature:`1756` Uniswap and sushiswap pool join/exit events are now properly decoded and taken into account during PnL report.
+* :feature:`5463` Deposits into the eth2 contract should now be decoded correctly
 * :bug:`-` Fixed an issue where price for pairs of fiat currencies was not queried properly.
 * :bug:`-` Customized ownership proportions of validators owned by eth1 addresses will now be properly respected.
 
@@ -87,6 +92,7 @@ Changelog
 * :feature:`-` An ethereum address's tokens can now be manually detected by pressing a specific button in the UI.
 * :feature:`-` Transactions involving uniswap v2 and uniswap v3 will now be properly decoded in the ethereum transactions view
 * :feature:`2701` Multi-evm assets are now supported. All EVM assets display the chain they correspond to in the UI.
+* :feature:`2270` Users can now import generic data into rotki via a rotki CSV import option.
 * :bug:`-` When force sync fails a proper error message is displayed
 * :bug:`-` If something is wrong with an asset update, it won't end up having partial information.
 * :bug:`4930` Taxable ledger actions that spend fiat currencies should now be properly seen as taxable.
