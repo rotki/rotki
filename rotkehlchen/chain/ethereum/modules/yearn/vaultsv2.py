@@ -351,7 +351,7 @@ class YearnVaultsV2(EthereumModule):
                     self.database.delete_yearn_vaults_data(write_cursor=write_cursor, version=2)
 
             from_block = self.ethereum.get_blocknumber_by_time(from_timestamp, closest='before')
-            to_block = self.ethereum.get_blocknumber_by_time(to_timestamp, closest='after')
+            to_block = self.ethereum.get_blocknumber_by_time(to_timestamp, closest='before')
 
             return self.get_vaults_history(
                 eth_balances=eth_balances,

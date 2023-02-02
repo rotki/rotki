@@ -544,7 +544,7 @@ class Compound(EthereumModule):
             event_name='Transfer',
             argument_filters=argument_filters,
             from_block=from_block,
-            to_block=self.ethereum.get_blocknumber_by_time(to_ts, closest='after'),
+            to_block=self.ethereum.get_blocknumber_by_time(to_ts, closest='before'),
         )
 
         events = []
