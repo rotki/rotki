@@ -12,7 +12,7 @@ directory = pathlib.Path(__file__).parent
 requirements_txt = directory.joinpath('requirements.txt').read_text()
 requirements = [str(r) for r in parse_requirements(requirements_txt)]
 
-version = '1.26.3'  # Do not edit: this is maintained by bumpversion (see .bumpversion.cfg)
+version = '1.27.0'  # Do not edit: this is maintained by bumpversion (see .bumpversion.cfg)
 
 setup(
     name='rotkehlchen',
