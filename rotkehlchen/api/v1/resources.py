@@ -1148,6 +1148,7 @@ class UsersResource(BaseMethodView):
     @use_kwargs(put_schema, location='json')
     def put(
             self,
+            async_query: bool,
             name: str,
             password: str,
             premium_api_key: str,
@@ -1156,6 +1157,7 @@ class UsersResource(BaseMethodView):
             initial_settings: Optional[ModifiableDBSettings],
     ) -> Response:
         return self.rest_api.create_new_user(
+            async_query=async_query,
             name=name,
             password=password,
             premium_api_key=premium_api_key,

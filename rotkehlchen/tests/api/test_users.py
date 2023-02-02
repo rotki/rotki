@@ -1,4 +1,5 @@
 import os
+import random
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Optional
@@ -79,13 +80,18 @@ def test_not_loggedin_user_querying(rotkehlchen_api_server, username, data_dir):
 def test_user_creation(rotkehlchen_api_server, data_dir):
     """Test that PUT at user endpoint can create a new user"""
     # Create a user without any premium credentials
+    async_query = random.choice([False, True])
     username = 'hania'
-    data = {
-        'name': username,
-        'password': '1234',
-    }
+    data = {'name': username, 'password': '1234', 'async_query': async_query}
     response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
-    result = assert_proper_response_with_result(response)
+
+    if async_query is True:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        result = outcome['result']
+    else:
+        result = assert_proper_response_with_result(response)
+
     check_proper_unlock_result(result, {'submit_usage_analytics': True})
 
     # Query users and make sure the new user is logged in

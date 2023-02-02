@@ -1132,7 +1132,7 @@ class RestAPI():
         result_dict = _wrap_in_ok_result(result)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def create_new_user(
+    def _create_new_user(
             self,
             name: str,
             password: str,
@@ -1140,23 +1140,29 @@ class RestAPI():
             premium_api_secret: str,
             sync_database: bool,
             initial_settings: Optional[ModifiableDBSettings],
-    ) -> Response:
-        result_dict: dict[str, Any] = {'result': None, 'message': ''}
+    ) -> dict[str, Any]:
 
         if self.rotkehlchen.user_is_logged_in:
-            result_dict['message'] = (
+            message = (
                 f'Can not create a new user because user '
                 f'{self.rotkehlchen.data.username} is already logged in. '
                 f'Log out of that user first',
             )
-            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+            return {
+                'result': None,
+                'message': message,
+                'status_code': HTTPStatus.CONFLICT,
+            }
 
         if (
                 premium_api_key != '' and premium_api_secret == '' or
                 premium_api_secret != '' and premium_api_key == ''
         ):
-            result_dict['message'] = 'Must provide both or neither of api key/secret'
-            return api_response(result_dict, status_code=HTTPStatus.BAD_REQUEST)
+            return {
+                'result': None,
+                'message': 'Must provide both or neither of api key/secret',
+                'status_code': HTTPStatus.BAD_REQUEST,
+            }
 
         premium_credentials = None
         if premium_api_key != '' and premium_api_secret != '':
@@ -1166,8 +1172,11 @@ class RestAPI():
                     given_api_secret=premium_api_secret,
                 )
             except IncorrectApiKeyFormat:
-                result_dict['message'] = 'Provided API/Key secret format is invalid'
-                return api_response(result_dict, status_code=HTTPStatus.BAD_REQUEST)
+                return {
+                    'result': None,
+                    'message': 'Provided API/Key secret format is invalid',
+                    'status_code': HTTPStatus.BAD_REQUEST,
+                }
 
         try:
             self.rotkehlchen.unlock_user(
@@ -1190,16 +1199,54 @@ class RestAPI():
             DBSchemaError,
         ) as e:
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
-            result_dict['message'] = str(e)
-            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
         # Success!
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            result_dict['result'] = {
+            result = {
                 'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchanges_info(),
                 'settings': process_result(self.rotkehlchen.get_settings(cursor)),
             }
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return {
+            'result': result,
+            'message': '',
+            'status_code': HTTPStatus.OK,
+        }
+
+    def create_new_user(
+            self,
+            async_query: bool,
+            name: str,
+            password: str,
+            premium_api_key: str,
+            premium_api_secret: str,
+            sync_database: bool,
+            initial_settings: Optional[ModifiableDBSettings],
+    ) -> Response:
+        if async_query is True:
+            return self._query_async(
+                command=self._create_new_user,
+                name=name,
+                password=password,
+                premium_api_key=premium_api_key,
+                premium_api_secret=premium_api_secret,
+                sync_database=sync_database,
+                initial_settings=initial_settings,
+            )
+
+        response = self._create_new_user(
+            name=name,
+            password=password,
+            premium_api_key=premium_api_key,
+            premium_api_secret=premium_api_secret,
+            sync_database=sync_database,
+            initial_settings=initial_settings,
+        )
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+        result_dict = _wrap_in_result(result=result, message=msg)
+        return api_response(result_dict, status_code=status_code)
 
     def _user_login(
             self,
