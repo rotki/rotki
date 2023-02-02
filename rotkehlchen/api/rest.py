@@ -1146,7 +1146,7 @@ class RestAPI():
             message = (
                 f'Can not create a new user because user '
                 f'{self.rotkehlchen.data.username} is already logged in. '
-                f'Log out of that user first',
+                f'Log out of that user first'
             )
             return {
                 'result': None,

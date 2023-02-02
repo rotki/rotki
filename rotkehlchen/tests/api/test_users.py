@@ -2,7 +2,7 @@ import os
 import random
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import pytest
 import requests
@@ -24,6 +24,9 @@ from rotkehlchen.tests.utils.premium import (
     VALID_PREMIUM_SECRET,
     create_patched_premium,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 def check_proper_unlock_result(
@@ -258,11 +261,11 @@ def test_user_creation_with_invalid_premium_credentials(rotkehlchen_api_server, 
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_user_creation_errors(rotkehlchen_api_server, data_dir):
+def test_user_creation_errors(rotkehlchen_api_server: 'APIServer', data_dir: Path) -> None:
     """Test errors and edge cases for user creation"""
     # Missing username
     username = 'hania'
-    data = {
+    data: dict[str, Any] = {
         'password': '1234',
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
@@ -362,6 +365,16 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     assert_error_response(
         response=response,
         contained_in_msg='User another_user already exists',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # check that if there is an already logged in user it raises an error
+    rotkehlchen_api_server.rest_api.rotkehlchen.user_is_logged_in = True
+    rotkehlchen_api_server.rest_api.rotkehlchen.data.username = 'hania'
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='Can not create a new user because user hania is already logged in. Log out of that user first',  # noqa: E501
         status_code=HTTPStatus.CONFLICT,
     )
 
