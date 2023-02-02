@@ -1,5 +1,6 @@
 export enum TaskType {
   LOGIN,
+  CREATE_ACCOUNT,
   ADD_ACCOUNT,
   REMOVE_ACCOUNT,
   TRADE_HISTORY,

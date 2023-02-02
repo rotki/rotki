@@ -77,7 +77,17 @@ export const useSessionStore = defineStore('session', () => {
     payload: CreateAccountPayload
   ): Promise<ActionStatus> => {
     try {
-      const { settings, exchanges } = await usersApi.createAccount(payload);
+      start();
+      const taskType = TaskType.CREATE_ACCOUNT;
+      const { taskId } = await usersApi.createAccount(payload);
+      const { result } = await awaitTask<UserAccount, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: 'creating account'
+        }
+      );
+      const { settings, exchanges } = UserAccount.parse(result);
       const data: UnlockPayload = {
         settings,
         exchanges,
@@ -120,7 +130,7 @@ export const useSessionStore = defineStore('session', () => {
           UserAccount | SyncConflictPayload,
           TaskMeta
         >(taskId, taskType, {
-          title: ''
+          title: 'login in'
         });
 
         if (message && 'remoteLastModified' in result) {

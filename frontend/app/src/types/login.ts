@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { type SyncConflictPayload } from '@/store/session/types';
 import { type Exchange } from '@/types/exchanges';
 import { type UserSettingsModel } from '@/types/user';
@@ -17,7 +18,11 @@ export interface PremiumSetup {
   readonly syncDatabase: boolean;
 }
 
-export type AccountSession = Record<string, 'loggedin' | 'loggedout'>;
+export const AccountSession = z.record(
+  z.enum(['loggedin', 'loggedout'] as const)
+);
+
+export type AccountSession = z.infer<typeof AccountSession>;
 
 export class SyncConflictError extends Error {
   readonly payload: SyncConflictPayload;
