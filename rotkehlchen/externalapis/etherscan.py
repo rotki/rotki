@@ -73,6 +73,11 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         self.session = requests.session()
         self.warning_given = False
         set_user_agent(self.session)
+        # set per-chain earliest timestamps that can be turned to blocks. Never returns block 0
+        if service == ExternalService.ETHERSCAN:
+            self.earliest_ts = 1438269989
+        else:  # Optimism
+            self.earliest_ts = 1636665399
 
     @overload
     def _query(  # pylint: disable=no-self-use
@@ -283,8 +288,14 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 from_block = period.from_value
                 to_block = period.to_value
             else:  # timestamps
-                from_block = self.get_blocknumber_by_time(period.from_value)  # type: ignore
-                to_block = self.get_blocknumber_by_time(period.to_value)  # type: ignore
+                from_block = self.get_blocknumber_by_time(
+                    ts=period.from_value,  # type: ignore
+                    closest='before',
+                )
+                to_block = self.get_blocknumber_by_time(
+                    ts=period.to_value,  # type: ignore
+                    closest='after',
+                )
 
             options['startBlock'] = str(from_block)
             options['endBlock'] = str(to_block)
@@ -358,10 +369,10 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
     ) -> Iterator[list[str]]:
         options = {'address': str(account), 'sort': 'asc'}
         if from_ts is not None:
-            from_block = self.get_blocknumber_by_time(from_ts)
+            from_block = self.get_blocknumber_by_time(ts=from_ts, closest='before')
             options['startBlock'] = str(from_block)
         if to_ts is not None:
-            to_block = self.get_blocknumber_by_time(to_ts)
+            to_block = self.get_blocknumber_by_time(ts=to_ts, closest='after')
             options['endBlock'] = str(to_block)
 
         hashes: set[tuple[str, Timestamp]] = set()
@@ -512,17 +523,17 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         )
         return result
 
-    def get_blocknumber_by_time(self, ts: Timestamp) -> int:
+    def get_blocknumber_by_time(self, ts: Timestamp, closest: Literal['before', 'after'] = 'before') -> int:  # noqa: E501
         """Performs the etherscan api call to get the blocknumber by a specific timestamp
 
         May raise:
         - RemoteError if there are any problems with reaching Etherscan or if
         an unexpected response is returned
         """
-        if ts < 1438269989:
-            return 0  # etherscan does not handle timestamps close and before genesis well
+        if ts < self.earliest_ts:
+            return 0  # etherscan does not handle timestamps close to genesis well
 
-        options = {'timestamp': ts, 'closest': 'before'}
+        options = {'timestamp': ts, 'closest': closest}
         result = self._query(
             module='block',
             action='getblocknobytime',

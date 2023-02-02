@@ -317,7 +317,12 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
         else:
             return result
 
-    def get_blocknumber_by_time(self, ts: Timestamp, etherscan: bool = True) -> int:
+    def get_blocknumber_by_time(
+            self,
+            ts: Timestamp,
+            etherscan: bool = True,
+            closest: Literal['before', 'after'] = 'before',
+    ) -> int:
         """Searches for the blocknumber of a specific timestamp
         - Performs the etherscan api call by default first
         - If RemoteError raised or etherscan flag set to false
@@ -325,7 +330,7 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
         """
         if etherscan:
             with suppress(RemoteError):
-                return self.etherscan.get_blocknumber_by_time(ts)
+                return self.etherscan.get_blocknumber_by_time(ts, closest)
 
         return self._get_blocknumber_by_time_from_subgraph(ts)
 

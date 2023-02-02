@@ -59,9 +59,14 @@ class OptimismInquirer(EvmNodeInquirer):
     def have_archive(self, requery: bool = False) -> bool:
         return False
 
-    def get_blocknumber_by_time(self, ts: Timestamp, etherscan: bool = True) -> int:
+    def get_blocknumber_by_time(
+            self,
+            ts: Timestamp,
+            etherscan: bool = True,
+            closest: Literal['before', 'after'] = 'before',
+    ) -> int:
         """Searches for the blocknumber of a specific timestamp
 
         May raise RemoteError
         """
-        return self.etherscan.get_blocknumber_by_time(ts)
+        return self.etherscan.get_blocknumber_by_time(ts=ts, closest=closest)

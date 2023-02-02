@@ -85,7 +85,7 @@ class YearnVaultsV2(EthereumModule):
         )
         nominator = price_per_full_share - EXP18
         try:
-            denonimator = now_block_number - self.ethereum.etherscan.get_blocknumber_by_time(vault.started)  # noqa: E501
+            denonimator = now_block_number - self.ethereum.etherscan.get_blocknumber_by_time(ts=vault.started, closest='before')  # noqa: E501
         except RemoteError as e:
             self.msg_aggregator.add_error(
                 f'Failed to query ROI for vault {vault.evm_address}. '
@@ -350,8 +350,8 @@ class YearnVaultsV2(EthereumModule):
                 with self.database.user_write() as write_cursor:
                     self.database.delete_yearn_vaults_data(write_cursor=write_cursor, version=2)
 
-            from_block = self.ethereum.get_blocknumber_by_time(from_timestamp)
-            to_block = self.ethereum.get_blocknumber_by_time(to_timestamp)
+            from_block = self.ethereum.get_blocknumber_by_time(from_timestamp, closest='before')
+            to_block = self.ethereum.get_blocknumber_by_time(to_timestamp, closest='after')
 
             return self.get_vaults_history(
                 eth_balances=eth_balances,
