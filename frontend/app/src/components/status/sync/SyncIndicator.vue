@@ -22,10 +22,13 @@ import { useTasks } from '@/store/tasks';
 import { type Writeable } from '@/types';
 import { TaskType } from '@/types/task-type';
 import { startPromise } from '@/utils';
+import UpgradeProgressDisplay from '@/components/account-management/upgrade/UpgradeProgressDisplay.vue';
+import { useSessionAuthStore } from '@/store/session/auth';
 
 const { t, tc } = useI18n();
 const { logout } = useSessionStore();
 const { lastBalanceSave, lastDataUpload } = storeToRefs(usePeriodicStore());
+const { upgradeVisible, canRequestData } = storeToRefs(useSessionAuthStore());
 const { forceSync } = useSyncStore();
 
 const { fetchBalances } = useBalancesStore();
@@ -83,6 +86,9 @@ const actionLogout = async () => {
 
 const performSync = async () => {
   set(pending, true);
+  if (get(syncAction) === SYNC_DOWNLOAD) {
+    set(canRequestData, false);
+  }
   await forceSync(syncAction, actionLogout);
   set(pending, false);
 };
@@ -352,7 +358,13 @@ const importSnapshot = async () => {
         </div>
       </div>
     </v-menu>
+
+    <v-dialog v-if="upgradeVisible" width="500" :value="true" persistent>
+      <upgrade-progress-display />
+    </v-dialog>
+
     <confirm-dialog
+      v-else
       confirm-type="warning"
       :display="displayConfirmation"
       :title="tc('sync_indicator.upload_confirmation.title', textChoice)"

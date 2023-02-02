@@ -23,7 +23,7 @@ export const useAccountManagement = () => {
   const { connect } = useWebsocketStore();
   const authStore = useSessionAuthStore();
   const { logged, canRequestData } = storeToRefs(authStore);
-  const { updateDbUpgradeStatus, updateDataMigrationStatus } = authStore;
+  const { clearUpgradeMessages } = authStore;
   const { setupCache } = useAccountMigrationStore();
   const { initTokens } = useNewlyDetectedTokens();
 
@@ -66,9 +66,8 @@ export const useAccountManagement = () => {
       set(errors, [result.message]);
     }
     set(loading, false);
-    updateDbUpgradeStatus();
-    updateDataMigrationStatus();
     if (get(logged)) {
+      clearUpgradeMessages();
       setLastLogin(username);
       showGetPremiumButton();
       return showPremiumDialog();

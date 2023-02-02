@@ -27,7 +27,7 @@ import { useSessionApi } from '@/services/session';
 
 export const useMessageHandling = () => {
   const { setQueryStatus } = useTxQueryStatusStore();
-  const { handleDbUpgradeStatus, handleDataMigrationStatus } =
+  const { updateDataMigrationStatus, updateDbUpgradeStatus } =
     useSessionAuthStore();
   const notificationsStore = useNotificationsStore();
   const { data: notifications } = storeToRefs(notificationsStore);
@@ -146,9 +146,9 @@ export const useMessageHandling = () => {
         notifications.push(notification);
       }
     } else if (type === SocketMessageType.DB_UPGRADE_STATUS) {
-      handleDbUpgradeStatus(message.data);
+      updateDbUpgradeStatus(message.data);
     } else if (type === SocketMessageType.DATA_MIGRATION_STATUS) {
-      handleDataMigrationStatus(message.data);
+      updateDataMigrationStatus(message.data);
     } else if (type === SocketMessageType.EVM_ADDRESS_MIGRATION) {
       setUpgradedAddresses(message.data);
     } else if (type === SocketMessageType.NEW_EVM_TOKEN_DETECTED) {
@@ -172,9 +172,9 @@ export const useMessageHandling = () => {
       } else if (object.type === SocketMessageType.EVM_TRANSACTION_STATUS) {
         await handleEthereumTransactionStatus(object);
       } else if (object.type === SocketMessageType.DB_UPGRADE_STATUS) {
-        await handleDbUpgradeStatus(object);
+        await updateDbUpgradeStatus(object);
       } else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS) {
-        await handleDataMigrationStatus(object);
+        await updateDataMigrationStatus(object);
       } else {
         logger.error('unsupported message:', message);
       }

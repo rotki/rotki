@@ -35,6 +35,7 @@ export const useSyncStore = defineStore('syncStore', () => {
     }
 
     try {
+      api.cancel();
       const { taskId } = await api.forceSync(get(action));
       const { result, message } = await awaitTask<boolean, TaskMeta>(
         taskId,
