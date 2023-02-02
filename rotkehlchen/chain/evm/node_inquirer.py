@@ -2,6 +2,7 @@ import json
 import logging
 import random
 from abc import ABCMeta, abstractmethod
+from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Sequence, Union
 from urllib.parse import urlparse
 
@@ -199,8 +200,9 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
         log.debug(f'Initializing {self.chain_name} inquirer. Nodes to connect {connect_at_start}')
 
-        # A cache for the erc20 contract info to not requery same one
-        self.contract_info_cache: dict[ChecksumEvmAddress, dict[str, Any]] = {}
+        # A cache for erc20 and erc721 contract info to not requery the info
+        self.contract_info_erc20_cache: dict[ChecksumEvmAddress, dict[str, Any]] = {}
+        self.contract_info_erc721_cache: dict[ChecksumEvmAddress, dict[str, Any]] = {}
         self.connect_to_multiple_nodes(connect_at_start)
 
     def connected_to_any_web3(self) -> bool:
@@ -967,7 +969,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         if it is provided in the contract. This method may raise:
         - BadFunctionCallOutput: If there is an error calling a bad address
         """
-        cache = self.contract_info_cache.get(address)
+        cache = self.contract_info_erc20_cache.get(address)
         if cache is not None:
             return cache
 
@@ -1012,12 +1014,12 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             )
             log.debug(f'{address} was succesfuly decoded as ERC20 token')
 
-        for prop, value in zip(properties, decoded):
+        for prop, value in zip_longest(properties, decoded):
             if isinstance(value, bytes):
                 value = value.rstrip(b'\x00').decode()
             info[prop] = value
 
-        self.contract_info_cache[address] = info
+        self.contract_info_erc20_cache[address] = info
         return info
 
     def get_erc721_contract_info(self, address: ChecksumEvmAddress) -> dict[str, Any]:
@@ -1032,7 +1034,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         - BadFunctionCallOutput: If there is an error calling a bad address
         - NotERC721Conformant: If the address can't be decoded as an ERC721 contract
         """
-        cache = self.contract_info_cache.get(address)
+        cache = self.contract_info_erc721_cache.get(address)
         if cache is not None:
             return cache
 
@@ -1061,12 +1063,12 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         except (OverflowError, InsufficientDataBytes) as e:
             raise NotERC721Conformant(f'{address} token does not conform to the ERC721 spec') from e  # noqa: E501
 
-        for prop, value in zip(properties, decoded):
+        for prop, value in zip_longest(properties, decoded):
             if isinstance(value, bytes):
                 value = value.rstrip(b'\x00').decode()
             info[prop] = value
 
-        self.contract_info_cache[address] = info
+        self.contract_info_erc721_cache[address] = info
         return info
 
     def _process_contract_info(
