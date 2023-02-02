@@ -10,6 +10,7 @@ import { useWebsocketStore } from '@/store/websocket';
 import { useMainStore } from '@/store/main';
 import { useAccountMigrationStore } from '@/store/blockchain/accounts/migrate';
 import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
+import { wait } from '@/utils/backoff';
 
 export const useAccountManagement = () => {
   const loading: Ref<boolean> = ref(false);
@@ -22,8 +23,8 @@ export const useAccountManagement = () => {
   const { createAccount, login } = useSessionStore();
   const { connect } = useWebsocketStore();
   const authStore = useSessionAuthStore();
-  const { logged, canRequestData } = storeToRefs(authStore);
-  const { updateDbUpgradeStatus, updateDataMigrationStatus } = authStore;
+  const { logged, canRequestData, upgradeVisible } = storeToRefs(authStore);
+  const { clearUpgradeMessages } = authStore;
   const { setupCache } = useAccountMigrationStore();
   const { initTokens } = useNewlyDetectedTokens();
 
@@ -33,11 +34,17 @@ export const useAccountManagement = () => {
     setupCache(payload.credentials.username);
     initTokens(payload.credentials.username);
     await connect();
+    const start = Date.now();
     const result = await createAccount(payload);
+    const duration = (Date.now() - start) / 1000;
     set(loading, false);
 
     if (result.success) {
+      if (get(upgradeVisible) && duration < 10) {
+        await wait(3000);
+      }
       if (get(logged)) {
+        clearUpgradeMessages();
         showGetPremiumButton();
         set(canRequestData, true);
         await navigateToDashboard();
@@ -66,9 +73,8 @@ export const useAccountManagement = () => {
       set(errors, [result.message]);
     }
     set(loading, false);
-    updateDbUpgradeStatus();
-    updateDataMigrationStatus();
     if (get(logged)) {
+      clearUpgradeMessages();
       setLastLogin(username);
       showGetPremiumButton();
       return showPremiumDialog();

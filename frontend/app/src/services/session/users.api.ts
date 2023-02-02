@@ -1,5 +1,8 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import {
+  axiosSnakeCaseTransformer,
+  setupTransformer
+} from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { type PendingTask } from '@/services/types-api';
 import {
@@ -9,40 +12,40 @@ import {
   validStatus
 } from '@/services/utils';
 import {
-  type AccountSession,
+  AccountSession,
   type CreateAccountPayload,
   type LoginCredentials
 } from '@/types/login';
-import { UserAccount } from '@/types/user';
 
 export const useUsersApi = () => {
-  const checkIfLogged = async (username: string): Promise<boolean> =>
-    api.instance
-      .get<ActionResult<AccountSession>>(`/users`)
-      .then(handleResponse)
-      .then(result => result[username] === 'loggedin');
-
-  const loggedUsers = async (): Promise<string[]> =>
-    api.instance
-      .get<ActionResult<AccountSession>>(`/users`)
-      .then(handleResponse)
-      .then(result => {
-        const loggedUsers: string[] = [];
-        for (const user in result) {
-          if (result[user] !== 'loggedin') {
-            continue;
-          }
-          loggedUsers.push(user);
-        }
-        return loggedUsers;
-      });
+  const getUsers = async (): Promise<AccountSession> => {
+    const response = await api.instance.get<ActionResult<AccountSession>>(
+      `/users`,
+      {
+        transformResponse: setupTransformer(true)
+      }
+    );
+    return AccountSession.parse(handleResponse(response));
+  };
 
   const users = async (): Promise<string[]> => {
-    const response = await api.instance.get<ActionResult<AccountSession>>(
-      `/users`
-    );
-    const data = handleResponse(response);
-    return Object.keys(data);
+    return Object.keys(await getUsers());
+  };
+
+  const checkIfLogged = async (username: string): Promise<boolean> => {
+    return (await getUsers())[username] === 'loggedin';
+  };
+
+  const loggedUsers = async (): Promise<string[]> => {
+    const result: AccountSession = await getUsers();
+    const loggedUsers: string[] = [];
+    for (const user in result) {
+      if (result[user] !== 'loggedin') {
+        continue;
+      }
+      loggedUsers.push(user);
+    }
+    return loggedUsers;
   };
 
   const logout = async (username: string): Promise<boolean> => {
@@ -61,11 +64,11 @@ export const useUsersApi = () => {
 
   const createAccount = async (
     payload: CreateAccountPayload
-  ): Promise<UserAccount> => {
+  ): Promise<PendingTask> => {
     const { credentials, premiumSetup } = payload;
     const { username, password } = credentials;
 
-    const response = await api.instance.put<ActionResult<UserAccount>>(
+    const response = await api.instance.put<ActionResult<PendingTask>>(
       '/users',
       axiosSnakeCaseTransformer({
         name: username,
@@ -75,14 +78,14 @@ export const useUsersApi = () => {
         initialSettings: {
           submitUsageAnalytics: premiumSetup?.submitUsageAnalytics
         },
-        syncDatabase: premiumSetup?.syncDatabase
+        syncDatabase: premiumSetup?.syncDatabase,
+        asyncQuery: true
       }),
       {
         validateStatus: validStatus
       }
     );
-    const account = handleResponse(response);
-    return UserAccount.parse(account);
+    return handleResponse(response);
   };
 
   const login = async (credentials: LoginCredentials): Promise<PendingTask> => {

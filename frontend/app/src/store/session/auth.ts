@@ -29,30 +29,17 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
     set(syncConflict, defaultSyncConflict());
   };
 
-  const handleDbUpgradeStatus = (data: DbUpgradeStatusData): void => {
-    if (!get(logged)) {
-      updateDbUpgradeStatus(data);
-    }
-  };
-
-  const updateDbUpgradeStatus = (
-    status: DbUpgradeStatusData | null = null
-  ): void => {
+  const updateDbUpgradeStatus = (status: DbUpgradeStatusData): void => {
     set(dbUpgradeStatus, status);
   };
 
-  const handleDataMigrationStatus = (
-    data: DataMigrationStatusData | null = null
-  ): void => {
-    if (!get(logged)) {
-      updateDataMigrationStatus(data);
-    }
+  const updateDataMigrationStatus = (status: DataMigrationStatusData): void => {
+    set(dataMigrationStatus, status);
   };
 
-  const updateDataMigrationStatus = (
-    status: DataMigrationStatusData | null = null
-  ): void => {
-    set(dataMigrationStatus, status);
+  const clearUpgradeMessages = (): void => {
+    set(dataMigrationStatus, null);
+    set(dbUpgradeStatus, null);
   };
 
   return {
@@ -66,10 +53,9 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
     syncConflict,
     upgradeVisible,
     resetSyncConflict,
-    handleDbUpgradeStatus,
     updateDbUpgradeStatus,
-    handleDataMigrationStatus,
-    updateDataMigrationStatus
+    updateDataMigrationStatus,
+    clearUpgradeMessages
   };
 });
 

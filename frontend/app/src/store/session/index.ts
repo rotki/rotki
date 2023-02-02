@@ -33,7 +33,6 @@ export const useSessionStore = defineStore('session', () => {
   const authStore = useSessionAuthStore();
   const { logged, username, syncConflict, shouldFetchData } =
     storeToRefs(authStore);
-  const { updateDbUpgradeStatus, updateDataMigrationStatus } = authStore;
 
   const { initialize } = useSessionSettings();
   const usersApi = useUsersApi();
@@ -78,7 +77,17 @@ export const useSessionStore = defineStore('session', () => {
     payload: CreateAccountPayload
   ): Promise<ActionStatus> => {
     try {
-      const { settings, exchanges } = await usersApi.createAccount(payload);
+      start();
+      const taskType = TaskType.CREATE_ACCOUNT;
+      const { taskId } = await usersApi.createAccount(payload);
+      const { result } = await awaitTask<UserAccount, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: 'creating account'
+        }
+      );
+      const { settings, exchanges } = UserAccount.parse(result);
       const data: UnlockPayload = {
         settings,
         exchanges,
@@ -121,7 +130,7 @@ export const useSessionStore = defineStore('session', () => {
           UserAccount | SyncConflictPayload,
           TaskMeta
         >(taskId, taskType, {
-          title: ''
+          title: 'login in'
         });
 
         if (message && 'remoteLastModified' in result) {
@@ -157,8 +166,6 @@ export const useSessionStore = defineStore('session', () => {
     try {
       await usersApi.logout(get(username));
       set(logged, false);
-      updateDbUpgradeStatus();
-      updateDataMigrationStatus();
     } catch (e: any) {
       setMessage({
         title: 'Logout failed',
