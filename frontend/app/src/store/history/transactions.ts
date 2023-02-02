@@ -48,7 +48,6 @@ export const useTransactions = defineStore('history/transactions', () => {
     defaultHistoricPayloadState()
   );
   const fetchedTxAccounts: Ref<EvmChainAddress[]> = ref([]);
-  const decodedTxEvents: Ref<string[]> = ref([]);
   const counterparties: Ref<string[]> = ref([]);
   const pageChanged: Ref<boolean> = ref(true);
 
@@ -308,28 +307,8 @@ export const useTransactions = defineStore('history/transactions', () => {
       }));
     } else {
       if (transactions.length === 0) return;
-      const decodedTxEventsVal = [...get(decodedTxEvents)];
-      const mapped = transactions
-        .filter(({ evmChain, txHash }) => {
-          const key = evmChain + txHash;
-          const decoded = decodedTxEventsVal.includes(key);
 
-          if (decoded) {
-            return false;
-          }
-          decodedTxEventsVal.push(key);
-          set(decodedTxEvents, decodedTxEventsVal);
-
-          return true;
-        })
-        .map(({ evmChain, txHash }) => ({
-          evmChain,
-          txHash
-        }));
-
-      if (mapped.length === 0) return;
-
-      payloads = Object.entries(groupBy(mapped, 'evmChain')).map(
+      payloads = Object.entries(groupBy(transactions, 'evmChain')).map(
         ([evmChain, item]) => ({
           evmChain,
           txHashes: item.map(({ txHash }) => txHash)
@@ -350,16 +329,6 @@ export const useTransactions = defineStore('history/transactions', () => {
     const { result } = await awaitTask(taskId, taskType, taskMeta, true);
 
     if (result) {
-      const decodedTxEventsVal = [...get(decodedTxEvents)];
-      payloads.forEach(payload => {
-        if (payload.txHashes) {
-          payload.txHashes.forEach(txHash => {
-            const key = payload.evmChain + txHash;
-            decodedTxEventsVal.splice(decodedTxEventsVal.indexOf(key), 1);
-          });
-        }
-      });
-      set(decodedTxEvents, decodedTxEventsVal);
       await fetchTransactions();
     }
   };
