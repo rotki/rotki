@@ -1125,7 +1125,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def get_blocknumber_by_time(self, ts: Timestamp, etherscan: bool = True) -> int:
+    def get_blocknumber_by_time(self, ts: Timestamp, etherscan: bool = True, closest: Literal['before', 'after'] = 'before') -> int:  # noqa: E501
         """Searches for the blocknumber of a specific timestamp"""
         ...
 

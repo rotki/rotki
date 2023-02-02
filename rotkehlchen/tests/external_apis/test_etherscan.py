@@ -5,7 +5,7 @@ import pytest
 from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.ethereum.constants import ETHEREUM_BEGIN
+from rotkehlchen.chain.ethereum.constants import ETHEREUM_GENESIS
 from rotkehlchen.chain.ethereum.etherscan import EthereumEtherscan
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.db.dbhandler import DBHandler
@@ -123,7 +123,7 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
         )
     eth_transactions.single_address_query_transactions(
         address=account,
-        start_ts=ETHEREUM_BEGIN,
+        start_ts=ETHEREUM_GENESIS,
         end_ts=Timestamp(1451606400),
     )
     dbtx = DBEvmTx(database=db)
@@ -142,7 +142,7 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
         EvmTransaction(
             tx_hash=GENESIS_HASH,
             chain_id=ChainID.ETHEREUM,
-            timestamp=ETHEREUM_BEGIN,
+            timestamp=ETHEREUM_GENESIS,
             block_number=0,
             from_address=ZERO_ADDRESS,
             to_address=None,
@@ -173,7 +173,7 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
             parent_tx_hash=GENESIS_HASH,
             chain_id=ChainID.ETHEREUM,
             trace_id=0,
-            timestamp=ETHEREUM_BEGIN,
+            timestamp=ETHEREUM_GENESIS,
             block_number=0,
             from_address=ZERO_ADDRESS,
             to_address='0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A',

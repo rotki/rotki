@@ -3,7 +3,7 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.types import SupportedBlockchain, Timestamp
 
 OPTIMISM_ETHERSCAN_NODE_NAME = 'optimism etherscan'
-
+OPTIMISM_GENESIS = Timestamp(1636666246)
 OPTIMISM_ETHERSCAN_NODE = WeightedNode(
     node_info=NodeName(
         name=OPTIMISM_ETHERSCAN_NODE_NAME,
@@ -14,7 +14,5 @@ OPTIMISM_ETHERSCAN_NODE = WeightedNode(
     weight=ONE,
     active=True,
 )
-
-OPTIMISM_BEGIN = Timestamp(1611071500)
 
 CPT_OPTIMISM = 'optimism'

@@ -1,11 +1,11 @@
 import logging
 from typing import TYPE_CHECKING, Any, Optional, get_args
 
-from rotkehlchen.chain.ethereum.constants import ETHEREUM_BEGIN
+from rotkehlchen.chain.ethereum.constants import ETHEREUM_GENESIS
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import EvmAccount
-from rotkehlchen.chain.optimism.constants import OPTIMISM_BEGIN
+from rotkehlchen.chain.optimism.constants import OPTIMISM_GENESIS
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, TransactionsNotDecodedFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -546,9 +546,9 @@ class DBEvmTx():
             tx = tx_in_db[0]
         else:
             if chain_id == ChainID.ETHEREUM:
-                timestamp = ETHEREUM_BEGIN
+                timestamp = ETHEREUM_GENESIS
             else:  # for now only optimism
-                timestamp = OPTIMISM_BEGIN
+                timestamp = OPTIMISM_GENESIS
             tx = EvmTransaction(
                 chain_id=chain_id,
                 timestamp=timestamp,
