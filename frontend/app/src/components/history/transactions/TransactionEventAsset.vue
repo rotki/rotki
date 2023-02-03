@@ -25,7 +25,14 @@ const { event } = toRefs(props);
 const { assetSymbol } = useAssetInfoRetrieval();
 
 const showBalance = computed<boolean>(() => {
-  return getEventType(get(event)) !== TransactionEventType.APPROVAL;
+  const type = getEventType(get(event));
+  return (
+    !type ||
+    ![
+      TransactionEventType.APPROVAL,
+      TransactionEventType.INFORMATIONAL
+    ].includes(type)
+  );
 });
 
 const eventAsset = computed(() => get(event).asset);
