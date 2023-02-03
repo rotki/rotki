@@ -530,6 +530,7 @@ CREATE TABLE IF NOT EXISTS used_query_ranges (
 );
 """
 
+# Currently this table is used only to store a flag that shows whether a transaction is decoded.
 DB_CREATE_EVM_TX_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS evm_tx_mappings (
     tx_hash BLOB NOT NULL,
@@ -634,6 +635,7 @@ CREATE TABLE IF NOT EXISTS history_events (
 );
 """
 
+# This table is used to store for each history event it's chain id and whether it is customized.
 DB_CREATE_HISTORY_EVENTS_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS history_events_mappings (
     parent_identifier INTEGER NOT NULL,

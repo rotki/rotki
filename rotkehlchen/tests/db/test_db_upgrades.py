@@ -1202,21 +1202,10 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
             else:
                 assert entry[i] == tx_address_mappings_result[idx][i - 1]
     new_tx_mappings_result = cursor.execute('SELECT * from evm_tx_mappings').fetchall()  # noqa: E501
-    assert len(new_tx_mappings_result) == 305
-    for idx, entry in enumerate(new_tx_mappings_result):
-        for i in range(3):
-            if i == 0:
-                assert entry[i] == tx_mappings_result[idx][i]
-            elif i == 1:
-                assert entry[i] == 1
-            else:
-                if entry[i] == 0:
-                    assert tx_mappings_result[idx][i] == 'decoded'
-                elif entry[i] == 1:
-                    assert tx_mappings_result[idx][i] == 'customized'
-                else:
-                    raise AssertionError(f'Unexpected value {entry[i]} in evm_tx_mappings')
-    assert cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 562
+    # All 305 mappings that we had before the upgrade are deleted, so that
+    # the events get redecoded.
+    assert len(new_tx_mappings_result) == 0
+
     assert table_exists(cursor, 'web3_nodes') is False
     assert table_exists(cursor, 'rpc_nodes') is True
     upgraded_nodes_results = [(x[0], x[1], x[2], x[3], str(x[4]), x[5]) for x in old_nodes_results]
@@ -1282,11 +1271,7 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', None, 'yabir everywhere'),
     ]
     cursor.execute('SELECT extra_data FROM history_events WHERE counterparty="liquity"')
-    assert cursor.fetchall() == [
-        (None,),
-        ('{"liquity_staking": {"staked_amount": "0", "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"}}',),  # noqa: E501
-        (None,),
-    ]
+    res = cursor.fetchall()
 
     # check that pnl for validators has been corrected on genesis
     cursor.execute('SELECT validator_index, pnl FROM eth2_daily_staking_details')
@@ -1295,6 +1280,13 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         (120000, '0'),
         (1000, '0.01455'),
     ]
+
+    # Check that customized events were not deleted
+    res = cursor.execute('SELECT * FROM history_events_mappings').fetchall()
+    assert res == [(234, 'state', 1)]  # A customized event that was not deleted
+    res = cursor.execute('SELECT * FROM history_events WHERE identifier=?', (234,)).fetchone()
+    assert res is not None
+    assert res[9] == 'Edited event'  # event's notes
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
