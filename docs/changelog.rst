@@ -28,6 +28,7 @@ Changelog
 * :feature:`5463` Deposits into the eth2 contract should now be decoded correctly
 * :bug:`-` Fixed an issue where price for pairs of fiat currencies was not queried properly.
 * :bug:`-` Customized ownership proportions of validators owned by eth1 addresses will now be properly respected.
+* :bug:`-` If an exchange location is set as non-syncing but has also been removed, attempting to query for it will no longer query all exchanges.
 
 * :release:`1.26.3 <2022-12-30>`
 * :bug:`5315` Fix issue where balance is not fully refreshed after detect tokens button pressed.
