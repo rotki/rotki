@@ -36,11 +36,11 @@ import {
 import { sortDesc } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
 import { updateBalancesPrices } from '@/utils/prices';
+import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 
 export const useExchangeBalancesStore = defineStore(
   'balances/exchanges',
   () => {
-    const connectedExchanges: Ref<Exchange[]> = ref([]);
     const exchangeBalances: Ref<ExchangeData> = ref({});
 
     const { t, tc } = useI18n();
@@ -54,6 +54,7 @@ export const useExchangeBalancesStore = defineStore(
     const { assetPrice } = useBalancePricesStore();
     const { queryRemoveExchange, queryExchangeBalances, querySetupExchange } =
       useExchangeApi();
+    const { connectedExchanges } = storeToRefs(useAssociatedLocationsStore());
 
     const exchanges: ComputedRef<ExchangeInfo[]> = computed(() => {
       const balances = get(exchangeBalances);

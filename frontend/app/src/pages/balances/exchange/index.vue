@@ -11,6 +11,7 @@ import { type SupportedExchange } from '@/types/exchanges';
 import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
+import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 
 const props = defineProps({
   exchange: {
@@ -23,7 +24,7 @@ const props = defineProps({
 const { exchange } = toRefs(props);
 const { isTaskRunning } = useTasks();
 const store = useExchangeBalancesStore();
-const { connectedExchanges } = storeToRefs(store);
+const { connectedExchanges } = storeToRefs(useAssociatedLocationsStore());
 
 const selectedExchange = ref<string>('');
 const usedExchanges = computed<SupportedExchange[]>(() => {
