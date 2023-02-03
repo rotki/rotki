@@ -1,11 +1,14 @@
+from unittest.mock import patch
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
+from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.data_structures import Trade, deserialize_trade, trades_from_dictlist
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Location, Timestamp, TradeType
+from rotkehlchen.types import ExchangeLocationID, Location, Timestamp, TradeType
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 
@@ -125,3 +128,23 @@ def test_serialize_deserialize_trade():
     assert serialized_trade == rlk_jsondumps(raw_trade2)
     deserialized_trade = deserialize_trade(raw_trade2)
     assert deserialized_trade == trade
+
+
+@pytest.mark.parametrize('db_settings', [
+    {'non_syncing_exchanges': [ExchangeLocationID(name='FTX', location=Location.FTX)]}])
+def test_query_trade_history_online_but_exchange_excluded(events_historian):
+    """Test that if an online refresh of trades for an exchange is requested,
+    that exchange is not connected, but is also at the excluded exchanges we
+    don't end up querying trades of all exchanges"""
+
+    patch_latest_trades = patch.object(events_historian, 'query_location_latest_trades')
+    patch_iterate_exchanges = patch.object(events_historian.exchange_manager, 'iterate_exchanges')
+
+    with patch_latest_trades as latest_trades_mock, patch_iterate_exchanges as iterate_exchanges_mock:  # noqa: E501
+        events_historian.query_trades(
+            filter_query=TradesFilterQuery.make(location=Location.FTX),
+            only_cache=False,
+        )
+
+    assert latest_trades_mock.call_count == 0
+    assert iterate_exchanges_mock.call_count == 0
