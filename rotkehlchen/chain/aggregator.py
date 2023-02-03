@@ -1222,11 +1222,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             public_key=public_key,
             ownership_proportion=ownership_proportion,
         )
-        self.flush_cache('get_eth2_staking_deposits')
-        self.flush_cache('get_eth2_staking_details')
-        self.flush_cache('get_eth2_history_events')
-        self.flush_cache('get_eth2_daily_stats')
-        self.flush_cache('query_eth2_balances')
+        self.flush_eth2_cache()
         self.flush_cache('query_balances')
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
         self.flush_cache('query_balances', blockchain=None, ignore_cache=False)
@@ -1243,6 +1239,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         - ModuleInactive if eth2 module is not activated
         - InputError if the validator is not found in the DB
         """
+        self.flush_eth2_cache()
         eth2 = self.get_module('eth2')
         if eth2 is None:
             raise ModuleInactive('Cant delete eth2 validator since eth2 module is not active')
@@ -1357,3 +1354,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             added_accounts.append((chain, account))
 
         return added_accounts
+
+    def flush_eth2_cache(self) -> None:
+        self.flush_cache('get_eth2_staking_deposits')
+        self.flush_cache('get_eth2_staking_details')
+        self.flush_cache('get_eth2_history_events')
+        self.flush_cache('get_eth2_daily_stats')
+        self.flush_cache('query_eth2_balances')
