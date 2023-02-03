@@ -2,22 +2,23 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.base import LIQUITY_STAKING_DETAILS
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.eth2.utils import (
     DAY_AFTER_ETH2_GENESIS,
     INITIAL_ETH_DEPOSIT,
 )
-from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED, HISTORY_MAPPING_STATE_DECODED,
+)
 from rotkehlchen.db.settings import DEFAULT_ACTIVE_MODULES
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import ChainID
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
@@ -551,36 +552,6 @@ def _add_okx(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _add_okx')
 
 
-def _upgrade_liquity_staking_events(write_cursor: 'DBCursor', conn: 'DBConnection') -> None:
-    """
-    Since we changed the format of `extra_data`, we have to upgrade the liquity staking events.
-    In this upgrade function we make sure that the staking data is stored under the
-    appropriate key (LIQUITY_STAKING_DETAILS).
-    """
-    log.debug('Enter _upgrade_liquity_staking_events')
-    upgraded_data_tuples = []
-    with conn.read_ctx() as read_cursor:
-        read_cursor.execute(
-            'SELECT identifier, extra_data FROM history_events WHERE type=? AND subtype IN (?, ?) AND counterparty=? AND extra_data IS NOT NULL',  # noqa: E501
-            (
-                HistoryEventType.STAKING.serialize(),
-                HistoryEventSubType.DEPOSIT_ASSET.serialize(),
-                HistoryEventSubType.REMOVE_ASSET.serialize(),
-                CPT_LIQUITY,
-            ),
-        )
-        for (identifier, serialized_extra_data) in read_cursor:
-            extra_data = json.loads(serialized_extra_data)
-            upgraded_extra_data = {LIQUITY_STAKING_DETAILS: extra_data}
-            upgraded_data_tuples.append((json.dumps(upgraded_extra_data), identifier))
-
-    write_cursor.executemany(
-        'UPDATE history_events SET extra_data=? WHERE identifier=?',
-        upgraded_data_tuples,
-    )
-    log.debug('Exit _upgrade_liquity_staking_events')
-
-
 def _remove_old_tables(write_cursor: 'DBCursor') -> None:
     """In 1.27.0 we added a check for old tables in the DB.
 
@@ -614,6 +585,32 @@ def _fix_eth2_pnl_genesis(write_cursor: 'DBCursor') -> None:
             'UPDATE eth2_daily_staking_details SET pnl=? WHERE validator_index=? AND timestamp=?',
             fixed_values,
         )
+
+
+def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    """
+    The code is taken from `delete_events_by_tx_hash` right before 1.27 release.
+    Has to happen after `_upgrade_events_mappings` so that the schema is the needed one.
+    """
+    write_cursor.execute('SELECT tx_hash from evm_transactions')
+    tx_hashes = [x[0] for x in write_cursor]
+    write_cursor.execute(
+        'SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?',
+        (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+    )
+    customized_event_ids = [x[0] for x in write_cursor]
+    length = len(customized_event_ids)
+    querystr = 'DELETE FROM history_events WHERE event_identifier=?'
+    if length != 0:
+        querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
+        bindings = [(x, *customized_event_ids) for x in tx_hashes]
+    else:
+        bindings = [(x,) for x in tx_hashes]
+    write_cursor.executemany(querystr, bindings)
+    write_cursor.executemany(
+        'DELETE from evm_tx_mappings WHERE tx_hash=? AND chain_id=? AND value=?',
+        [(tx_hash, ChainID.ETHEREUM.serialize_for_db(), HISTORY_MAPPING_STATE_DECODED) for tx_hash in tx_hashes],  # noqa: E501
+    )
 
 
 def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
@@ -651,11 +648,11 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
         _add_okx(write_cursor)
         progress_handler.new_step()
-        _upgrade_liquity_staking_events(write_cursor, db.conn)
-        progress_handler.new_step()
         _remove_old_tables(write_cursor)
         progress_handler.new_step()
         _fix_eth2_pnl_genesis(write_cursor)
+        progress_handler.new_step()
+        _reset_decoded_events(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finished userdb v35->v36 upgrade')
