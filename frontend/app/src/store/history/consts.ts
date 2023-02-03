@@ -293,6 +293,11 @@ export const useTransactionEventTypeData = createSharedComposable(() => {
         identifier: TransactionEventType.LIQUIDATE,
         label: tc('transactions.events.type.liquidate'),
         icon: 'mdi-water'
+      },
+      {
+        identifier: TransactionEventType.INFORMATIONAL,
+        label: tc('transactions.events.type.informational'),
+        icon: 'mdi-information-outline'
       }
     ]
   );
@@ -321,7 +326,8 @@ export const transactionEventTypeMapping: Record<
     [HistoryEventSubType.AIRDROP]: TransactionEventType.AIRDROP,
     [HistoryEventSubType.REWARD]: TransactionEventType.CLAIM_REWARD,
     [HistoryEventSubType.NONE]: TransactionEventType.RECEIVE,
-    [HistoryEventSubType.DONATE]: TransactionEventType.RECEIVE_DONATION
+    [HistoryEventSubType.DONATE]: TransactionEventType.RECEIVE_DONATION,
+    [HistoryEventSubType.NFT]: TransactionEventType.RECEIVE
   },
   [HistoryEventType.INFORMATIONAL]: {
     [HistoryEventSubType.APPROVE]: TransactionEventType.APPROVAL,
@@ -329,7 +335,7 @@ export const transactionEventTypeMapping: Record<
     [HistoryEventSubType.DEPLOY]: TransactionEventType.DEPLOY,
     [HistoryEventSubType.REMOVE_ASSET]: TransactionEventType.WITHDRAW,
     [HistoryEventSubType.PLACE_ORDER]: TransactionEventType.PLACE_ORDER,
-    [HistoryEventSubType.NONE]: TransactionEventType.APPROVAL
+    [HistoryEventSubType.NONE]: TransactionEventType.INFORMATIONAL
   },
   [HistoryEventType.TRANSFER]: {
     [HistoryEventSubType.NONE]: TransactionEventType.TRANSFER,
