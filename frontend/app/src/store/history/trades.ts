@@ -40,8 +40,8 @@ export const useTrades = defineStore('history/trades', () => {
   );
 
   const locationsStore = useAssociatedLocationsStore();
-  const { associatedLocations } = storeToRefs(locationsStore);
   const { fetchAssociatedLocations } = locationsStore;
+  const { connectedExchanges } = storeToRefs(locationsStore);
   const { exchangeName } = useTradeLocations();
   const { tc } = useI18n();
   const { notify } = useNotificationsStore();
@@ -137,29 +137,29 @@ export const useTrades = defineStore('history/trades', () => {
       if (!onlyLocation) await fetchOnlyCache();
 
       if (!onlyCache || onlyLocation) {
-        setStatus(Status.REFRESHING);
-
         const locations = onlyLocation
           ? [onlyLocation]
-          : get(associatedLocations);
+          : get(connectedExchanges).map(x => x.location);
 
-        await Promise.all(
-          locations.map(async location => {
-            const exchange = exchangeName(location as TradeLocation);
-            await fetchTradesHandler(false, { location }).catch(error => {
-              notify({
-                title: tc('actions.trades.error.title', undefined, {
-                  exchange
-                }),
-                message: tc('actions.trades.error.description', undefined, {
-                  exchange,
-                  error
-                }),
-                display: true
+        if (locations.length > 0) {
+          await Promise.all(
+            locations.map(async location => {
+              const exchange = exchangeName(location as TradeLocation);
+              await fetchTradesHandler(false, { location }).catch(error => {
+                notify({
+                  title: tc('actions.trades.error.title', undefined, {
+                    exchange
+                  }),
+                  message: tc('actions.trades.error.description', undefined, {
+                    exchange,
+                    error
+                  }),
+                  display: true
+                });
               });
-            });
-          })
-        );
+            })
+          );
+        }
 
         if (!onlyLocation) await fetchOnlyCache();
       }

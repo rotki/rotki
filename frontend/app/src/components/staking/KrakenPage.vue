@@ -2,15 +2,15 @@
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
 import { SupportedExchange } from '@/types/exchanges';
 import { Section } from '@/types/status';
+import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 
 const { shouldShowLoadingScreen } = useSectionLoading();
 const { load } = useKrakenStakingStore();
 
-const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());
+const { connectedExchanges } = storeToRefs(useAssociatedLocationsStore());
 const isKrakenConnected = computed(() => {
   const exchanges = get(connectedExchanges);
   return exchanges.some(

@@ -3,6 +3,7 @@ import { useHistoryApi } from '@/services/history';
 import { useNotificationsStore } from '@/store/notifications';
 import { type TradeLocation } from '@/types/history/trade-location';
 import { logger } from '@/utils/logging';
+import { type Exchange } from '@/types/exchanges';
 
 export const useAssociatedLocationsStore = defineStore(
   'history/associated-locations',
@@ -10,6 +11,7 @@ export const useAssociatedLocationsStore = defineStore(
     const { notify } = useNotificationsStore();
     const { t } = useI18n();
     const associatedLocations: Ref<TradeLocation[]> = ref([]);
+    const connectedExchanges: Ref<Exchange[]> = ref([]);
     const { fetchAssociatedLocations: fetchAssociatedLocationsApi } =
       useHistoryApi();
 
@@ -35,6 +37,7 @@ export const useAssociatedLocationsStore = defineStore(
     };
 
     return {
+      connectedExchanges,
       associatedLocations,
       fetchAssociatedLocations
     };

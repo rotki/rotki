@@ -132,7 +132,9 @@ const formatNotes = (
 </script>
 <template>
   <div>
-    <template v-for="(note, index) in formatNotes(notes, amount, asset, noTxHash)">
+    <template
+      v-for="(note, index) in formatNotes(notes, amount, asset, noTxHash)"
+    >
       <span
         v-if="note.type === 'address' || note.type === 'tx'"
         :key="index"
