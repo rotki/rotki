@@ -50,7 +50,11 @@ from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import (
-    EthSyncError, GreenletKilledError, InputError, RemoteError, SystemPermissionError,
+    EthSyncError,
+    GreenletKilledError,
+    InputError,
+    RemoteError,
+    SystemPermissionError,
 )
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -832,11 +836,8 @@ class Rotkehlchen():
                 )
             else:
                 location_str = str(exchange.location)
-                # TODO: Don't know why the type is not properly detected here. The expected one
-                # is Dict[Asset, Balance] and the one received
-                # is Dict[AssetWithOracles, Balance]
-                if location_str not in balances:
-                    balances[location_str] = exchange_balances  # type: ignore
+                if location_str not in balances:  # need to widen type at assignment here
+                    balances[location_str] = cast(dict[Asset, Balance], exchange_balances)
                 else:  # multiple exchange of same type. Combine balances
                     balances[location_str] = combine_dicts(
                         balances[location_str],
