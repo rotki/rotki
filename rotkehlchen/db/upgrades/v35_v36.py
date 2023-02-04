@@ -8,7 +8,9 @@ from rotkehlchen.chain.ethereum.modules.eth2.utils import (
 )
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.constants import (
-    HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED, HISTORY_MAPPING_STATE_DECODED,
+    HISTORY_MAPPING_KEY_STATE,
+    HISTORY_MAPPING_STATE_CUSTOMIZED,
+    HISTORY_MAPPING_STATE_DECODED,
 )
 from rotkehlchen.db.settings import DEFAULT_ACTIVE_MODULES
 from rotkehlchen.db.utils import table_exists
@@ -202,7 +204,7 @@ def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
 
             tx_mappings.append((entry[0], 1, value))
 
-    # Kill tables -- TODO: foreign keys off here or not?
+    # Kill tables
     write_cursor.execute('DROP TABLE IF EXISTS ethereum_transactions')
     write_cursor.execute('DROP TABLE IF EXISTS ethereum_internal_transactions')
     write_cursor.execute('DROP TABLE IF EXISTS ethtx_receipts')

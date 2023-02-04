@@ -1,17 +1,6 @@
 import typing
 from enum import Enum, auto
-from typing import (
-    Any,
-    Callable,
-    Final,
-    Literal,
-    NamedTuple,
-    NewType,
-    Optional,
-    TypeVar,
-    Union,
-    get_args,
-)
+from typing import Any, Final, Literal, NamedTuple, NewType, Optional, TypeVar, Union, get_args
 
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes as Web3HexBytes
@@ -21,7 +10,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
-from rotkehlchen.utils.mixins.serializableenumvalue import SerializableEnumValueMixin2
+from rotkehlchen.utils.mixins.serializableenumvalue import SerializableEnumValueMixin
 
 from rotkehlchen.chain.substrate.types import SubstrateAddress  # isort:skip
 
@@ -381,7 +370,7 @@ class CovalentTransaction(NamedTuple):
         return self.tx_hash + self.from_address.replace('0x', '') + str(self.nonce)
 
 
-class SupportedBlockchain(SerializableEnumValueMixin2):
+class SupportedBlockchain(SerializableEnumValueMixin):
     """
     These are the currently supported chains in any capacity in rotki
     """
@@ -397,18 +386,6 @@ class SupportedBlockchain(SerializableEnumValueMixin2):
     def get_key(self) -> str:
         """Returns the key to be used as attribute for this chain in the code"""
         return self.value.lower()
-
-    def get_address_type(self) -> Callable:
-        if self.is_evm():
-            return ChecksumEvmAddress
-        if self == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
-            return Eth2PubKey
-        if self.is_bitcoin():
-            return BTCAddress
-        if self.is_substrate():
-            return SubstrateAddress
-
-        raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
     def is_evm(self) -> bool:
         return self in get_args(SUPPORTED_EVM_CHAINS)
@@ -456,10 +433,6 @@ class SupportedBlockchain(SerializableEnumValueMixin2):
     def to_range_prefix(self, range_type: Literal['txs', 'internaltxs', 'tokentxs']) -> str:
         """Provide the appropriate range prefix for the DB for this chain"""
         return f'{self.value}{range_type}'
-
-    @classmethod
-    def from_chain_id(cls, chain: ChainID) -> 'SupportedBlockchain':
-        return CHAINID_TO_SUPPORTED_BLOCKCHAIN[chain]
 
 
 EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
