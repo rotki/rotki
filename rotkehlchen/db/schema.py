@@ -94,6 +94,10 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('c', 35);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('d', 36);
 /* OKX */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('e', 37);
+/* ETHEREUM */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('f', 38);
+/* OPTIMISM */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('g', 39);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)

@@ -6,11 +6,12 @@ from typing import TYPE_CHECKING, NamedTuple
 from unittest.mock import patch
 
 import pytest
-from rotkehlchen.assets.spam_assets import KNOWN_EVM_SPAM_TOKENS
 
+from rotkehlchen.assets.spam_assets import KNOWN_EVM_SPAM_TOKENS
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.data_migrations.manager import (
+    LAST_DATA_MIGRATION,
     MIGRATION_LIST,
     DataMigrationManager,
     MigrationRecord,
@@ -536,3 +537,68 @@ def test_migration_8(
     with database.conn.read_ctx() as cursor:
         spam_assets = rotki.data.db.get_ignored_assets(cursor)
     assert len(spam_assets) >= len(KNOWN_EVM_SPAM_TOKENS)
+
+
+@pytest.mark.parametrize('use_custom_database', ['data_migration_9.db'])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+# make sure fixtures does not modify DB last_data_migration
+@pytest.mark.parametrize('data_migration_version', [None])
+def test_migration_9(database) -> None:
+    """This is a multifaceted test that tests multiple things:
+
+    1. Makes sure that if a new account was created with 1.27.0 and is opened later
+    with 1.27.1 it runs migration 9.
+    2. Make sure that migration 9 works properly
+    """
+    rotki = MockRotkiForMigrations(database)
+    # Check DB before migration
+    with rotki.data.db.conn.read_ctx() as cursor:
+        cursor.execute('SELECT COUNT(*) from location WHERE location IN ("f", "g") ')
+        assert cursor.fetchone()[0] == 0
+        cursor.execute('SELECT COUNT(*) from history_events')
+        assert cursor.fetchone()[0] == 237
+        cursor.execute('SELECT location from history_events')
+        assert all([x[0] == 'J'] for x in cursor)
+
+    migration_patch = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=[MIGRATION_LIST[8]],
+    )
+    with migration_patch:
+        DataMigrationManager(rotki).maybe_migrate_data()  # type: ignore  # it's a mock
+
+    # And now assert migration worked fine
+    errors = rotki.msg_aggregator.consume_errors()
+    warnings = rotki.msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+    with rotki.data.db.conn.read_ctx() as cursor:
+        cursor.execute('SELECT COUNT(*) from location WHERE location IN ("f", "g") ')
+        assert cursor.fetchone()[0] == 2
+        cursor.execute('SELECT COUNT(*) from history_events')
+        assert cursor.fetchone()[0] == 237
+        cursor.execute('SELECT location from history_events')
+        assert all([x[0] in ('f', 'g')] for x in cursor)
+
+
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+# make sure fixtures does not modify DB last_data_migration
+@pytest.mark.parametrize('data_migration_version', [None])
+def test_new_db_remembers_last_migration_even_if_no_migrations_run(database):
+    """Test that a newly created database remembers the current last data migration
+    at the time of creation even if no migration has actually ran"""
+    rotki = MockRotkiForMigrations(database)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        cursor.execute('SELECT value FROM settings WHERE name="last_data_migration"')
+        assert cursor.fetchone() is None
+
+    migration_patch = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=[],
+    )
+    with migration_patch:
+        DataMigrationManager(rotki).maybe_migrate_data()
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        cursor.execute('SELECT value FROM settings WHERE name="last_data_migration"')
+        assert int(cursor.fetchone()[0]) == LAST_DATA_MIGRATION
