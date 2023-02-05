@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import Any, Callable, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -14,14 +14,9 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_KYBER
-
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
 
 KYBER_TRADE_LEGACY = b'\xf7$\xb4\xdff\x17G6\x12\xb5=\x7f\x88\xec\xc6\xea\x980t\xb3\t`\xa0I\xfc\xd0e\x7f\xfe\x80\x80\x83'  # noqa: E501
 KYBER_LEGACY_CONTRACT = string_to_evm_address('0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950')
@@ -87,17 +82,6 @@ def _maybe_update_events_legacy_contrats(
 
 
 class KyberDecoder(DecoderInterface):
-    def __init__(
-            self,
-            ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: MessagesAggregator,
-    ) -> None:
-        super().__init__(
-            evm_inquirer=ethereum_inquirer,
-            base_tools=base_tools,
-            msg_aggregator=msg_aggregator,
-        )
 
     def _decode_legacy_trade(  # pylint: disable=no-self-use
         self,

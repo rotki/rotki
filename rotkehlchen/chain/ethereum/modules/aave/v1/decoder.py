@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -12,11 +12,6 @@ from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.user_messages import MessagesAggregator
-
 from ..constants import CPT_AAVE_V1
 
 DEPOSIT = b'\xc1,W\xb1\xc7:,:.\xa4a>\x94v\xab\xb3\xd8\xd1F\x85z\xabs)\xe2BC\xfbYq\x0c\x82'
@@ -24,15 +19,6 @@ REDEEM_UNDERLYING = b'\x9cN\xd5\x99\xcd\x85U\xb9\xc1\xe8\xcdvC$\r}q\xebv\xb7\x92
 
 
 class Aavev1Decoder(DecoderInterface):
-
-    def __init__(
-            self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseDecoderTools',  # pylint: disable=unused-argument
-            msg_aggregator: 'MessagesAggregator',
-    ) -> None:
-        super().__init__(evm_inquirer, base_tools, msg_aggregator)
-        self.ethereum = evm_inquirer
 
     def _decode_pool_event(  # pylint: disable=no-self-use
             self,
@@ -137,7 +123,7 @@ class Aavev1Decoder(DecoderInterface):
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
-            self.ethereum.contracts.contract('AAVE_V1_LENDING_POOL').address: (self._decode_pool_event,),  # noqa: E501
+            self.evm_inquirer.contracts.contract('AAVE_V1_LENDING_POOL').address: (self._decode_pool_event,),  # noqa: E501
         }
 
     def counterparties(self) -> list[str]:

@@ -32,11 +32,13 @@ class DxdaomesaDecoder(DecoderInterface):
             self,
             ethereum_inquirer: 'EthereumInquirer',
             base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
+            msg_aggregator: 'MessagesAggregator',
     ) -> None:
-        self.base = base_tools
-        self.ethereum = ethereum_inquirer
-
+        super().__init__(
+            evm_inquirer=ethereum_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
         dir_path = os.path.dirname(os.path.realpath(__file__))
         with open(os.path.join(dir_path, 'data', 'contracts.json')) as f:
             contracts = json.loads(f.read())
@@ -180,7 +182,7 @@ class DxdaomesaDecoder(DecoderInterface):
         if not self.base.is_tracked(owner):
             return None, []
 
-        result = self.ethereum.multicall_specific(
+        result = self.evm_inquirer.multicall_specific(
             contract=self.contract,
             method_name='tokenIdToAddressMap',
             arguments=[[topic_data[1]], [topic_data[2]]],

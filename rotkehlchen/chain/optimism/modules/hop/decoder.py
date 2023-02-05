@@ -26,11 +26,15 @@ class HopDecoder(DecoderInterface):
 
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            optimism_inquirer: 'OptimismInquirer',  # pylint: disable=unused-argument
+            optimism_inquirer: 'OptimismInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
-        self.base_tools = base_tools
+        super().__init__(
+            evm_inquirer=optimism_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
         self.weth = A_WETH_OPT.resolve_to_evm_token()
         self.heth = A_HETH_OPT.resolve_to_evm_token()
 
@@ -46,7 +50,7 @@ class HopDecoder(DecoderInterface):
             return None, []
 
         recipient = hex_or_bytes_to_address(tx_log.topics[1])
-        if not self.base_tools.is_tracked(recipient):
+        if not self.base.is_tracked(recipient):
             return None, []
 
         amount_raw = hex_or_bytes_to_int(tx_log.data[:32])

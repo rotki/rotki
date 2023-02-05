@@ -45,8 +45,11 @@ class YearnDecoder(DecoderInterface):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
-        super().__init__(ethereum_inquirer, base_tools, msg_aggregator)
-        self.base_tools = base_tools
+        super().__init__(
+            evm_inquirer=ethereum_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
         vaults_v1 = GlobalDBHandler().get_evm_tokens(chain_id=ChainID.ETHEREUM, protocol=YEARN_VAULTS_V1_PROTOCOL)  # noqa: E501
         vaults_v2 = GlobalDBHandler().get_evm_tokens(chain_id=ChainID.ETHEREUM, protocol=YEARN_VAULTS_V2_PROTOCOL)  # noqa: E501
         self.vaults_v1 = {vault.evm_address for vault in vaults_v1}
