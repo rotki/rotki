@@ -102,3 +102,60 @@ def test_gas_fees_after_year(accountant, google_service):
             free=FVal('38.93895')),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_ignoring_transaction_from_accounting(accountant, google_service, database):
+    """
+    Test that ignoring a transaction from accounting does not include it in the PnL
+
+    2 events, same tx hash, one is optimism, the other Ethereum. (super improbable to happen)
+    But just to test that chain is taken into account during ignoring
+    """
+    addr2 = make_evm_address()
+    tx_hash = HistoryBaseEntry.deserialize_event_identifier('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
+    history = [
+        HistoryBaseEntry(
+            identifier=1,
+            event_identifier=tx_hash,
+            sequence_index=0,
+            timestamp=1569924574000,
+            location=Location.OPTIMISM,
+            location_label=make_evm_address(),
+            asset=A_ETH,
+            balance=Balance(amount=FVal('1.5')),
+            notes=f'Received 1.5 ETH from {addr2} in Optimism',
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            counterparty=addr2,
+        ), HistoryBaseEntry(
+            identifier=2,
+            event_identifier=tx_hash,
+            sequence_index=0,
+            timestamp=1569924574000,
+            location=Location.ETHEREUM,
+            location_label=make_evm_address(),
+            asset=A_ETH,
+            balance=Balance(amount=FVal('1.5')),
+            notes=f'Received 1.5 ETH from {addr2} in Ethereum',
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            counterparty=addr2,
+        )]
+    with database.user_write() as write_cursor:
+        database.add_to_ignored_action_ids(
+            write_cursor=write_cursor,
+            action_type=ActionType.EVM_TRANSACTION,
+            identifiers=['100x' + tx_hash.hex()],
+        )
+    accounting_history_process(
+        accountant,
+        start_ts=0,
+        end_ts=1640493376,
+        history_list=history,
+    )
+    no_message_errors(accountant.msg_aggregator)
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRANSACTION_EVENT: PNL(taxable=FVal('242.385'), free=ZERO),
+    })
+    check_pnls_and_csv(accountant, expected_pnls, google_service)

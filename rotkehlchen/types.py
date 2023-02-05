@@ -593,6 +593,21 @@ class Location(DBEnumMixIn):
         # else
         return Location.OPTIMISM
 
+    def to_chain_id(self) -> int:
+        """EVMLocation to chain id
+
+        Dealing directly with ints since it's only used in one place and helps with import hell
+        """
+        assert self in EVM_LOCATIONS
+        if self == Location.ETHEREUM:
+            return 1
+        assert self == Location.OPTIMISM, 'should have only been optimism here'
+        return 10
+
+
+EVM_LOCATIONS_TYPE_ = Literal[Location.ETHEREUM, Location.OPTIMISM]
+EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE_, ...] = typing.get_args(EVM_LOCATIONS_TYPE_)
+
 
 class AssetMovementCategory(DBEnumMixIn):
     """Supported Asset Movement Types so far only deposit and withdrawals"""
