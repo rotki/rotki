@@ -469,6 +469,13 @@ EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
 
 EVM_CHAINS_WITH_TRANSACTIONS: tuple[EVM_CHAINS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAINS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
 
+EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE = Literal[
+    ChainID.ETHEREUM,
+    ChainID.OPTIMISM,
+]
+
+EVM_CHAIN_IDS_WITH_TRANSACTIONS: tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
+
 SUPPORTED_EVM_CHAINS = Literal[
     SupportedBlockchain.ETHEREUM,
     SupportedBlockchain.OPTIMISM,
@@ -578,6 +585,13 @@ class Location(DBEnumMixIn):
     OKX = 37
     ETHEREUM = 38  # on-chain etherem events
     OPTIMISM = 39  # on-chain optimism events
+
+    @staticmethod
+    def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'Location':
+        if chain_id == ChainID.ETHEREUM:
+            return Location.ETHEREUM
+        # else
+        return Location.OPTIMISM
 
 
 class AssetMovementCategory(DBEnumMixIn):

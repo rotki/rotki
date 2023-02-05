@@ -9,8 +9,8 @@ from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, ts_sec_to_ms
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
 OPTIMISM_TOKEN = string_to_evm_address('0x4200000000000000000000000000000000000042')
 
@@ -36,17 +36,15 @@ class OptimismDecoder(DecoderInterface):
 
         from_delegate = hex_or_bytes_to_address(tx_log.topics[2])
         to_delegate = hex_or_bytes_to_address(tx_log.topics[3])
-        event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
-            sequence_index=self.base.get_sequence_index(tx_log),
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            location=Location.BLOCKCHAIN,
-            location_label=transaction.from_address,
-            asset=A_ETH,
-            balance=Balance(),
-            notes=f'Change OP Delegate from {from_delegate} to {to_delegate}',
+        event = self.base.make_event_from_transaction(
+            transaction=transaction,
+            tx_log=tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=transaction.from_address,
+            notes=f'Change OP Delegate from {from_delegate} to {to_delegate}',
             counterparty=CPT_OPTIMISM,
         )
         return event, []

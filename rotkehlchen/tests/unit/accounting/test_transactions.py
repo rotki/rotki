@@ -7,7 +7,11 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.accounting.structures.types import (
+    ActionType,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH
@@ -31,7 +35,7 @@ def test_receiving_value_from_tx(accountant, google_service):
             event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1569924574000,
-            location=Location.BLOCKCHAIN,
+            location=Location.ETHEREUM,
             location_label=make_evm_address(),
             asset=A_ETH,
             balance=Balance(amount=FVal('1.5')),
@@ -76,7 +80,7 @@ def test_gas_fees_after_year(accountant, google_service):
             event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1640493374000,  # 4072.51 EUR/ETH
-            location=Location.BLOCKCHAIN,
+            location=Location.ETHEREUM,
             location_label=make_evm_address(),
             asset=A_ETH,
             balance=Balance(amount=FVal('0.01')),

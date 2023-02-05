@@ -14,8 +14,8 @@ from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_PETH, A_SAI, A_WETH
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -146,14 +146,12 @@ class MakerdaosaiDecoder(DecoderInterface):
 
         cdp_creator = hex_or_bytes_to_address(tx_log.topics[1])
         cdp_id = hex_or_bytes_to_int(tx_log.data[:32])
-        event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            sequence_index=self.base.get_sequence_index(tx_log),
-            location=Location.BLOCKCHAIN,
-            asset=self.eth,
+        event = self.base.make_event_from_transaction(
+            transaction=transaction,
+            tx_log=tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
+            asset=self.eth,
             balance=Balance(),
             location_label=cdp_creator,
             counterparty=CPT_SAI,
@@ -195,14 +193,12 @@ class MakerdaosaiDecoder(DecoderInterface):
                 # which is caused by the tx_logs containing similar log entries
                 return None, []
 
-        event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            sequence_index=self.base.get_sequence_index(tx_log),
-            location=Location.BLOCKCHAIN,
-            asset=self.eth,
+        event = self.base.make_event_from_transaction(
+            transaction=transaction,
+            tx_log=tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
+            asset=self.eth,
             balance=Balance(),
             location_label=cdp_creator,
             counterparty=CPT_SAI,
@@ -242,14 +238,12 @@ class MakerdaosaiDecoder(DecoderInterface):
                 return None, []
 
         if self.base.is_tracked(withdrawer) is True:
-            event = HistoryBaseEntry(
-                event_identifier=transaction.tx_hash,
-                timestamp=ts_sec_to_ms(transaction.timestamp),
-                sequence_index=self.base.get_sequence_index(tx_log),
-                location=Location.BLOCKCHAIN,
-                asset=self.sai,
+            event = self.base.make_event_from_transaction(
+                transaction=transaction,
+                tx_log=tx_log,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.GENERATE_DEBT,
+                asset=self.sai,
                 balance=Balance(amount=amount_withdrawn),
                 location_label=withdrawer,
                 counterparty=CPT_SAI,
@@ -316,14 +310,12 @@ class MakerdaosaiDecoder(DecoderInterface):
                 return None, []
 
         if self.base.is_tracked(depositor) is True:
-            event = HistoryBaseEntry(
-                event_identifier=transaction.tx_hash,
-                timestamp=ts_sec_to_ms(transaction.timestamp),
-                sequence_index=self.base.get_sequence_index(tx_log),
-                location=Location.BLOCKCHAIN,
-                asset=self.sai,
+            event = self.base.make_event_from_transaction(
+                transaction=transaction,
+                tx_log=tx_log,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+                asset=self.sai,
                 balance=Balance(amount=amount_paid),
                 location_label=depositor,
                 counterparty=CPT_SAI,
@@ -371,15 +363,13 @@ class MakerdaosaiDecoder(DecoderInterface):
                 amount_raw = hex_or_bytes_to_int(log.data[:32])
                 amount = asset_normalized_value(amount=amount_raw, asset=self.weth)
 
-                event = HistoryBaseEntry(
-                    event_identifier=transaction.tx_hash,
-                    timestamp=ts_sec_to_ms(transaction.timestamp),
-                    sequence_index=self.base.get_sequence_index(tx_log),
-                    location=Location.BLOCKCHAIN,
-                    asset=self.peth,
-                    balance=Balance(amount=amount),
+                event = self.base.make_event_from_transaction(
+                    transaction=transaction,
+                    tx_log=tx_log,
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.LIQUIDATE,
+                    asset=self.peth,
+                    balance=Balance(amount=amount),
                     location_label=liquidator,
                     notes=f'Liquidate {amount} {self.peth.symbol} for CDP {cdp_id}',
                     counterparty=CPT_SAI,
@@ -508,14 +498,12 @@ class MakerdaosaiDecoder(DecoderInterface):
             amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
             amount = asset_normalized_value(amount=amount_raw, asset=self.peth)
 
-            event = HistoryBaseEntry(
-                event_identifier=transaction.tx_hash,
-                sequence_index=self.base.get_sequence_index(tx_log),
-                timestamp=ts_sec_to_ms(transaction.timestamp),
-                location=Location.BLOCKCHAIN,
-                asset=self.peth,
+            event = self.base.make_event_from_transaction(
+                transaction=transaction,
+                tx_log=tx_log,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+                asset=self.peth,
                 balance=Balance(amount=amount),
                 location_label=owner,
                 counterparty=CPT_SAI,

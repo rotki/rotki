@@ -12,12 +12,11 @@ from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction, Location
+from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,
     hex_or_bytes_to_int,
     hex_or_bytes_to_str,
-    ts_sec_to_ms,
 )
 
 from ..constants import CPT_AAVE_V2
@@ -41,16 +40,14 @@ class Aavev2Decoder(DecoderInterface):
         user = hex_or_bytes_to_address(tx_log.topics[2])
         if self.base.is_tracked(user) is False:
             return None
-        return HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
-            sequence_index=tx_log.log_index,
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            location=Location.BLOCKCHAIN,
-            location_label=user,
+        return self.base.make_event_from_transaction(
+            transaction=transaction,
+            tx_log=tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=token,
             balance=Balance(),
+            location_label=user,
             notes=f'{"Enable" if tx_log.topics[0] == ENABLE_COLLATERAL else "Disable"} {token.symbol} as collateral on AAVE v2',  # noqa: E501
             counterparty=CPT_AAVE_V2,
         )
