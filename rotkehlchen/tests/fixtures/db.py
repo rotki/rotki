@@ -13,7 +13,6 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
     add_blockchain_accounts_to_db,
@@ -129,11 +128,12 @@ def _run_no_db_upgrades(self) -> bool:
     """
     with self.db.conn.write_ctx() as cursor:
         try:
-            our_version = self.db.get_setting(cursor, 'version')
+            self.db.get_setting(cursor, 'version')
         except sqlcipher.OperationalError:  # pylint: disable=no-member
             return True  # fresh database. Nothing to upgrade.
 
     return False
+
 
 def _init_database(
         data_dir: Path,
