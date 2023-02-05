@@ -6,10 +6,11 @@ import logging
 import time
 from base64 import b64decode, b64encode
 from collections import defaultdict
+from collections.abc import Iterator
 from contextlib import suppress
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, DefaultDict, Iterator, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union
 from urllib.parse import urlencode
 
 import gevent

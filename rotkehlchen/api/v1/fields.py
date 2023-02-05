@@ -1,7 +1,8 @@
 import logging
 import urllib
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Literal, Mapping, Optional, Sequence, Union
+from typing import Any, Literal, Optional, Union
 
 import webargs
 from eth_utils import to_checksum_address

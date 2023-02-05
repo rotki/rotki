@@ -1,5 +1,6 @@
 import json
 import logging
+from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -7,7 +8,6 @@ from typing import (
     Literal,
     NamedTuple,
     Optional,
-    Sequence,
     TypeVar,
     Union,
     overload,

@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+from collections.abc import Iterator
 from importlib import import_module
 from pathlib import Path
 from typing import (
@@ -7,7 +8,6 @@ from typing import (
     Any,
     Callable,
     DefaultDict,
-    Iterator,
     Literal,
     Optional,
     TypeVar,

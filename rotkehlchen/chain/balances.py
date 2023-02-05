@@ -1,17 +1,8 @@
 from collections import defaultdict
+from collections.abc import Iterator
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    DefaultDict,
-    Iterator,
-    Literal,
-    Optional,
-    Union,
-    get_args,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union, get_args, overload
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.bitcoin.xpub import XpubData

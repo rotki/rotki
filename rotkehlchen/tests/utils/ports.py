@@ -1,5 +1,5 @@
+from collections.abc import Iterator
 from itertools import count
-from typing import Iterator
 
 import psutil
 

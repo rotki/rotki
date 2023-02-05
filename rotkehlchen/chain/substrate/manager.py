@@ -1,8 +1,9 @@
 import logging
+from collections.abc import Iterable, Sequence
 from functools import wraps
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence, Union, cast
+from typing import Any, Callable, NamedTuple, Optional, Union, cast
 from urllib.parse import urlparse
 
 import gevent

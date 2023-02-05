@@ -1,9 +1,10 @@
 import logging
 import os
 import warnings as test_warnings
+from collections.abc import Generator
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Generator, Optional
+from typing import Any, Optional
 
 import pytest
 from google.oauth2.service_account import Credentials

@@ -3,6 +3,7 @@ import hmac
 import json
 import logging
 from collections import defaultdict
+from collections.abc import Iterable
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import (
@@ -10,7 +11,6 @@ from typing import (
     Any,
     Callable,
     DefaultDict,
-    Iterable,
     Literal,
     NamedTuple,
     Optional,

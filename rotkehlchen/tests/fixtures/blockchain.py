@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from contextlib import ExitStack
-from typing import Literal, Optional, Sequence
+from typing import Literal, Optional
 from unittest.mock import patch
 
 import pytest

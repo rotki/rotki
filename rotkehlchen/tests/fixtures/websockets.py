@@ -1,6 +1,7 @@
 import json
 from collections import deque
-from typing import Any, Deque, Generator
+from collections.abc import Generator
+from typing import Any, Deque
 
 import gevent
 import pytest

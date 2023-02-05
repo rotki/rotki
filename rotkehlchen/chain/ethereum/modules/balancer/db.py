@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Optional, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Optional
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 

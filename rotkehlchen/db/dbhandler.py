@@ -5,9 +5,10 @@ import re
 import shutil
 import tempfile
 from collections import defaultdict
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
-from typing import Any, Iterable, Iterator, Literal, Optional, Sequence, Union, cast, overload
+from typing import Any, Literal, Optional, Union, cast, overload
 
 from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher

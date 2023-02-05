@@ -1,8 +1,9 @@
 import logging
 from collections import defaultdict
+from collections.abc import Iterator
 from importlib import import_module
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Iterator, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.errors.misc import InputError

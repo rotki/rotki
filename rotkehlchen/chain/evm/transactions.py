@@ -1,8 +1,9 @@
 import logging
 from abc import ABCMeta
 from collections import defaultdict
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Iterator, Optional
+from typing import TYPE_CHECKING, Optional
 
 from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher

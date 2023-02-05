@@ -1,5 +1,6 @@
 import functools
-from typing import Any, Callable, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Callable, Optional
 
 from flask.views import MethodView
 from marshmallow import Schema, exceptions as ma_exceptions

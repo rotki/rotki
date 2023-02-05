@@ -1,7 +1,8 @@
 import logging
 from abc import ABCMeta
+from collections.abc import Iterator, Sequence
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Iterator, Literal, Optional, Sequence, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
 
 import gevent
 import requests

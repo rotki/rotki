@@ -2,8 +2,9 @@ import argparse
 import logging.config
 import re
 import sys
+from collections.abc import MutableMapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, MutableMapping, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import gevent
 

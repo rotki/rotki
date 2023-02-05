@@ -2,8 +2,9 @@ import json
 import logging
 import random
 from abc import ABCMeta, abstractmethod
+from collections.abc import Sequence
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union
 from urllib.parse import urlparse
 
 import requests
@@ -122,7 +123,7 @@ def _query_web3_get_logs(
                     decoded_error = json.loads(str(e).replace("'", '"'))
                 except json.JSONDecodeError:
                     # reraise the value error if the error is not json
-                    raise e from None  # noqa: TRY201, E501  # https://github.com/charliermarsh/ruff/issues/2334
+                    raise e from None
 
                 msg = decoded_error.get('message', '')
             else:  # temporary hack for key error seen from pokt

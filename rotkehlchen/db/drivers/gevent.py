@@ -5,11 +5,12 @@ but heavily modified"""
 import random
 import re
 import sqlite3
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from enum import Enum, auto
 from pathlib import Path
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Generator, Literal, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 from uuid import uuid4
 
 import gevent

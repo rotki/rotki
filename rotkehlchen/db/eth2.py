@@ -1,5 +1,6 @@
 import logging
-from typing import TYPE_CHECKING, Literal, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
