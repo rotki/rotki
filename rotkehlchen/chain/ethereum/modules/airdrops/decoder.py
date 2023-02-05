@@ -69,7 +69,6 @@ class AirdropsDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.base = base_tools
         self.uni = A_UNI.resolve_to_evm_token()
         self.fox = A_FOX.resolve_to_evm_token()
         self.badger = A_BADGER.resolve_to_evm_token()

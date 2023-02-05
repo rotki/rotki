@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from eth_utils import encode_hex
 
@@ -16,12 +16,6 @@ from rotkehlchen.utils.misc import from_gwei, hex_or_bytes_to_int
 
 from .constants import CPT_ETH2
 
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.user_messages import MessagesAggregator
-
-
 DEPOSIT_EVENT = b'd\x9b\xbcb\xd0\xe3\x13B\xaf\xeaN\\\xd8-@I\xe7\xe1\xee\x91/\xc0\x88\x9a\xa7\x90\x80;\xe3\x908\xc5'  # noqa: E501
 
 logger = logging.getLogger(__name__)
@@ -29,14 +23,6 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class Eth2Decoder(DecoderInterface):
-    def __init__(  # pylint: disable=super-init-not-called
-            self,
-            ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
-    ) -> None:
-        self.base = base_tools
-        self.ethereum = ethereum_inquirer
 
     def _decode_eth2_deposit_event(
             self,

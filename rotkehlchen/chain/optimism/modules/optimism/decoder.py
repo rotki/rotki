@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
@@ -12,25 +12,12 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, ts_sec_to_ms
 
-if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
-    from rotkehlchen.user_messages import MessagesAggregator
-
 OPTIMISM_TOKEN = string_to_evm_address('0x4200000000000000000000000000000000000042')
 
 DELEGATE_CHANGED = b'14\xe8\xa2\xe6\xd9~\x92\x9a~T\x01\x1e\xa5H]}\x19m\xd5\xf0\xbaMN\xf9X\x03\xe8\xe3\xfc%\x7f'  # noqa: E501
 
 
 class OptimismDecoder(DecoderInterface):
-
-    def __init__(    # pylint: disable=super-init-not-called
-            self,
-            optimism_inquirer: 'OptimismInquirer',  # pylint: disable=unused-argument
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-    ) -> None:
-        self.base = base_tools
 
     def _decode_delegate_changed(  # pylint: disable=no-self-use
             self,

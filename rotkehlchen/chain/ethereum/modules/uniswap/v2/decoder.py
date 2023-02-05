@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import Callable, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.assets.asset import EvmToken
@@ -18,11 +18,6 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.types import UNISWAP_PROTOCOL, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_int
 
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.user_messages import MessagesAggregator
-
 # https://www.4byte.directory/api/v1/event-signatures/?hex_signature=0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822  # noqa: E501
 SWAP_SIGNATURE = b'\xd7\x8a\xd9_\xa4l\x99KeQ\xd0\xda\x85\xfc\'_\xe6\x13\xce7e\x7f\xb8\xd5\xe3\xd10\x84\x01Y\xd8"'  # noqa: E501
 MINT_SIGNATURE = b'L \x9b_\xc8\xadPu\x8f\x13\xe2\xe1\x08\x8b\xa5jV\r\xffi\n\x1co\xef&9OL\x03\x82\x1cO'  # noqa: E501
@@ -33,20 +28,6 @@ UNISWAP_V2_INIT_CODE_HASH = '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee3
 
 
 class Uniswapv2Decoder(DecoderInterface):
-
-    def __init__(
-            self,
-            ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-    ) -> None:
-        super().__init__(
-            evm_inquirer=ethereum_inquirer,
-            base_tools=base_tools,
-            msg_aggregator=msg_aggregator,
-        )
-        self.database = ethereum_inquirer.database
-        self.ethereum_inquirer = ethereum_inquirer
 
     def _decode_basic_swap_info(
             self,
@@ -95,8 +76,8 @@ class Uniswapv2Decoder(DecoderInterface):
                     decoded_events=decoded_events,
                     transaction=transaction,
                     counterparty=CPT_UNISWAP_V2,
-                    database=self.database,
-                    ethereum_inquirer=self.ethereum_inquirer,
+                    database=self.evm_inquirer.database,
+                    ethereum_inquirer=self.evm_inquirer,  # type: ignore[arg-type]  # is ethereum
                     notify_user=self.notify_user,
                 )
 
@@ -122,8 +103,8 @@ class Uniswapv2Decoder(DecoderInterface):
                 all_logs=all_logs,
                 event_action_type='addition',
                 counterparty=CPT_UNISWAP_V2,
-                ethereum_inquirer=self.ethereum_inquirer,
-                database=self.database,
+                ethereum_inquirer=self.evm_inquirer,  # type: ignore[arg-type]  # is ethereum
+                database=self.evm_inquirer.database,
                 factory_address=UNISWAP_V2_FACTORY,
                 init_code_hash=UNISWAP_V2_INIT_CODE_HASH,
                 tx_hash=transaction.tx_hash,
@@ -135,8 +116,8 @@ class Uniswapv2Decoder(DecoderInterface):
                 all_logs=all_logs,
                 event_action_type='removal',
                 counterparty=CPT_UNISWAP_V2,
-                ethereum_inquirer=self.ethereum_inquirer,
-                database=self.database,
+                ethereum_inquirer=self.evm_inquirer,  # type: ignore[arg-type]  # is ethereum
+                database=self.evm_inquirer.database,
                 factory_address=UNISWAP_V2_FACTORY,
                 init_code_hash=UNISWAP_V2_INIT_CODE_HASH,
                 tx_hash=transaction.tx_hash,

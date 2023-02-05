@@ -45,7 +45,6 @@ class BalancerDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.base_tools = base_tools
         self.eth = A_ETH.resolve_to_crypto_asset()
         self.weth = A_WETH.resolve_to_evm_token()
 

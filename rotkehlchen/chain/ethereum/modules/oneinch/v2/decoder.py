@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -13,22 +13,10 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from ..constants import CPT_ONEINCH_V2
 
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.user_messages import MessagesAggregator
-
 SWAPPED = b'v\xaf"J\x148e\xa5\x0bAIn\x1asb&\x98i,V\\\x12\x14\xbc\x86/\x18\xe2-\x82\x9c^'
 
 
 class Oneinchv2Decoder(DecoderInterface):
-    def __init__(  # pylint: disable=super-init-not-called
-            self,
-            ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
-    ) -> None:
-        self.base = base_tools
 
     def _decode_swapped(  # pylint: disable=no-self-use
             self,

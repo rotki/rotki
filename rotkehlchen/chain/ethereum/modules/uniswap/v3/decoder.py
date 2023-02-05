@@ -139,8 +139,6 @@ class Uniswapv3Decoder(DecoderInterface):
             token_type=EvmTokenKind.ERC721,
         )
         self.eth = A_ETH.resolve_to_crypto_asset()
-        self.base_tools = base_tools
-        self.ethereum_inquirer = ethereum_inquirer
 
     def _decode_deposits_and_withdrawals(
             self,
@@ -413,8 +411,8 @@ class Uniswapv3Decoder(DecoderInterface):
             # 9 -> position.feeGrowthInside1LastX128,
             # 10 -> position.tokensOwed0,
             # 11 -> position.tokensOwed1
-            liquidity_pool_position_info = self.ethereum_inquirer.contracts.contract('UNISWAP_V3_NFT_MANAGER').call(  # noqa: E501
-                node_inquirer=self.ethereum_inquirer,
+            liquidity_pool_position_info = self.evm_inquirer.contracts.contract('UNISWAP_V3_NFT_MANAGER').call(  # noqa: E501
+                node_inquirer=self.evm_inquirer,
                 method_name='positions',
                 arguments=[liquidity_pool_id],
             )
@@ -425,11 +423,11 @@ class Uniswapv3Decoder(DecoderInterface):
         # index 2 -> first token in pair; index 3 -> second token in pair
         for token, amount in zip(liquidity_pool_position_info[2:4], (amount0_raw, amount1_raw)):
             token_with_data: 'CryptoAsset' = get_or_create_evm_token(
-                userdb=self.ethereum_inquirer.database,
+                userdb=self.evm_inquirer.database,
                 evm_address=token,
                 chain_id=ChainID.ETHEREUM,
                 token_kind=EvmTokenKind.ERC20,
-                evm_inquirer=self.ethereum_inquirer,
+                evm_inquirer=self.evm_inquirer,
                 seen=TokenSeenAt(tx_hash=transaction.tx_hash),
             )
             token_with_data = self.eth if token_with_data == A_WETH else token_with_data
@@ -480,7 +478,7 @@ class Uniswapv3Decoder(DecoderInterface):
             new_action_items.append(
                 ActionItem(
                     action='transform',
-                    sequence_index=self.base_tools.get_next_sequence_counter(),
+                    sequence_index=self.base.get_next_sequence_counter(),
                     from_event_type=from_event_type[0],
                     from_event_subtype=from_event_type[1],
                     asset=resolved_assets_and_amounts[0].asset,
@@ -500,7 +498,7 @@ class Uniswapv3Decoder(DecoderInterface):
             new_action_items.append(
                 ActionItem(
                     action='transform',
-                    sequence_index=self.base_tools.get_next_sequence_counter(),
+                    sequence_index=self.base.get_next_sequence_counter(),
                     from_event_type=from_event_type[0],
                     from_event_subtype=from_event_type[1],
                     asset=resolved_assets_and_amounts[1].asset,

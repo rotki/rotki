@@ -42,9 +42,11 @@ class MakerdaosaiDecoder(DecoderInterface):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
-        super().__init__(ethereum_inquirer, base_tools, msg_aggregator)
-        self.ethereum_inquirer = ethereum_inquirer
-        self.base_tools = base_tools
+        super().__init__(
+            evm_inquirer=ethereum_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
         self.topics_to_methods: dict[bytes, Callable] = {
             b'\x89\xb8\x89;\x80m\xb5\x08\x97\xc8\xe26,qW\x1c\xfa\xeb\x97a\xee@r\x7fh?\x17\x93\xcd\xa9\xdf\x16': self._decode_new_cdp_event,  # noqa: E501
             b'\xb8M!\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00': self._decode_close_cdp,  # noqa: E501
@@ -147,7 +149,7 @@ class MakerdaosaiDecoder(DecoderInterface):
         event = HistoryBaseEntry(
             event_identifier=transaction.tx_hash,
             timestamp=ts_sec_to_ms(transaction.timestamp),
-            sequence_index=self.base_tools.get_sequence_index(tx_log),
+            sequence_index=self.base.get_sequence_index(tx_log),
             location=Location.BLOCKCHAIN,
             asset=self.eth,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -196,7 +198,7 @@ class MakerdaosaiDecoder(DecoderInterface):
         event = HistoryBaseEntry(
             event_identifier=transaction.tx_hash,
             timestamp=ts_sec_to_ms(transaction.timestamp),
-            sequence_index=self.base_tools.get_sequence_index(tx_log),
+            sequence_index=self.base.get_sequence_index(tx_log),
             location=Location.BLOCKCHAIN,
             asset=self.eth,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -239,11 +241,11 @@ class MakerdaosaiDecoder(DecoderInterface):
                 # which is caused by the tx_logs containing similar log entries
                 return None, []
 
-        if self.base_tools.is_tracked(withdrawer) is True:
+        if self.base.is_tracked(withdrawer) is True:
             event = HistoryBaseEntry(
                 event_identifier=transaction.tx_hash,
                 timestamp=ts_sec_to_ms(transaction.timestamp),
-                sequence_index=self.base_tools.get_sequence_index(tx_log),
+                sequence_index=self.base.get_sequence_index(tx_log),
                 location=Location.BLOCKCHAIN,
                 asset=self.sai,
                 event_type=HistoryEventType.RECEIVE,
@@ -313,11 +315,11 @@ class MakerdaosaiDecoder(DecoderInterface):
                 # which is caused by the tx_logs containing similar log entries
                 return None, []
 
-        if self.base_tools.is_tracked(depositor) is True:
+        if self.base.is_tracked(depositor) is True:
             event = HistoryBaseEntry(
                 event_identifier=transaction.tx_hash,
                 timestamp=ts_sec_to_ms(transaction.timestamp),
-                sequence_index=self.base_tools.get_sequence_index(tx_log),
+                sequence_index=self.base.get_sequence_index(tx_log),
                 location=Location.BLOCKCHAIN,
                 asset=self.sai,
                 event_type=HistoryEventType.SPEND,
@@ -372,7 +374,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 event = HistoryBaseEntry(
                     event_identifier=transaction.tx_hash,
                     timestamp=ts_sec_to_ms(transaction.timestamp),
-                    sequence_index=self.base_tools.get_sequence_index(tx_log),
+                    sequence_index=self.base.get_sequence_index(tx_log),
                     location=Location.BLOCKCHAIN,
                     asset=self.peth,
                     balance=Balance(amount=amount),
@@ -508,7 +510,7 @@ class MakerdaosaiDecoder(DecoderInterface):
 
             event = HistoryBaseEntry(
                 event_identifier=transaction.tx_hash,
-                sequence_index=self.base_tools.get_sequence_index(tx_log),
+                sequence_index=self.base.get_sequence_index(tx_log),
                 timestamp=ts_sec_to_ms(transaction.timestamp),
                 location=Location.BLOCKCHAIN,
                 asset=self.peth,

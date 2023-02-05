@@ -36,7 +36,6 @@ class WethDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.base_tools = base_tools
         self.weth = A_WETH.resolve_to_evm_token()
         self.eth = A_ETH.resolve_to_crypto_asset()
 
@@ -102,7 +101,7 @@ class WethDecoder(DecoderInterface):
 
         in_event = HistoryBaseEntry(
             event_identifier=transaction.tx_hash,
-            sequence_index=self.base_tools.get_next_sequence_counter(),
+            sequence_index=self.base.get_next_sequence_counter(),
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.RECEIVE,
@@ -148,7 +147,7 @@ class WethDecoder(DecoderInterface):
         out_event = HistoryBaseEntry(
             event_identifier=transaction.tx_hash,
             timestamp=ts_sec_to_ms(transaction.timestamp),
-            sequence_index=self.base_tools.get_next_sequence_counter(),
+            sequence_index=self.base.get_next_sequence_counter(),
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,

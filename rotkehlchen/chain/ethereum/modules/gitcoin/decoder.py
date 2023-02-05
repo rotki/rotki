@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Callable
+from typing import Callable
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -12,24 +12,11 @@ from rotkehlchen.types import EvmTransaction
 
 from .constants import CPT_GITCOIN
 
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.user_messages import MessagesAggregator
-
-
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
 class GitcoinDecoder(DecoderInterface):
-    def __init__(  # pylint: disable=super-init-not-called
-            self,
-            ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
-    ) -> None:
-        self.base = base_tools
 
     def _maybe_enrich_gitcoin_transfers(  # pylint: disable=no-self-use
             self,

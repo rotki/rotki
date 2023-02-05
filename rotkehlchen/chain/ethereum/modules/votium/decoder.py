@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -15,11 +15,6 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_VOTIUM
 
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.user_messages import MessagesAggregator
-
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -28,19 +23,6 @@ VOTIUM_CONTRACT = string_to_evm_address('0x378Ba9B73309bE80BF4C2c027aAD799766a7E
 
 
 class VotiumDecoder(DecoderInterface):
-
-    def __init__(
-            self,
-            ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-    ) -> None:
-        super().__init__(
-            evm_inquirer=ethereum_inquirer,
-            base_tools=base_tools,
-            msg_aggregator=msg_aggregator,
-        )
-        self.msg_aggregator = msg_aggregator
 
     def _decode_claim(  # pylint: disable=no-self-use
         self,
