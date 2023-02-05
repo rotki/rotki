@@ -287,9 +287,8 @@ class DBHandler:
         """
         # Run upgrades if needed
         fresh_db = DBUpgradeManager(self).run_upgrades()
-        # create tables if needed (first run - or some new tables)
-        self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
-        if fresh_db:  # add DB version. https://github.com/rotki/rotki/issues/3744
+        if fresh_db:  # create tables during the first run and add the DB version
+            self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
             cursor = self.conn.cursor()
             cursor.execute(
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -297,7 +296,6 @@ class DBHandler:
             )
         # set up transient connection
         self._connect(password, conn_attribute='conn_transient')
-        # creating tables if necessary
         if self.conn_transient:
             transient_version = 0
             cursor = self.conn_transient.cursor()
