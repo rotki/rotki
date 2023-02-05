@@ -66,7 +66,6 @@ select = [
     # "Q",  # flake8-quotes -- does not seem to be configurable for us
     "ERA",
     "PGH",
-    "RUF",
     "RET",
     "SIM",
     # "TID",  # tidy-imports -- we use relative imports from parent in some cases. Maybe stop?
@@ -81,7 +80,9 @@ select = [
     # "TCH",  # Should do it at some point. Too many hits and no autofix. When enabled fully, remove from extend-select
     # "PTH",  # Should do it at some point. Many hits and no autofix. When enabled fully remove from extend-select
     "TRY",
-    # "RUF",  # ruff specific rules, we enable only those we need below
+    "RSE",
+    #  "SLF",  Private member access -- we unfortunately do that some times
+    "RUF",
 ]
 extend-select = [
     "Q002",   # Single quote docstring found but double quotes preferred

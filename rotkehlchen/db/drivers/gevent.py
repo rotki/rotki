@@ -66,7 +66,7 @@ class DBCursor:
         if result is None:
             if __debug__:
                 logger.trace(f'Stopping iteration for cursor {self._cursor}')
-            raise StopIteration()
+            raise StopIteration
 
         if __debug__:
             logger.trace(f'Got next item for cursor {self._cursor}')
