@@ -1,9 +1,10 @@
 import logging
 import operator
+from collections.abc import Iterable, Sequence
 from contextlib import suppress
 from enum import auto
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterable, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
 from rotkehlchen.assets.asset import Asset, EvmToken, FiatAsset
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query

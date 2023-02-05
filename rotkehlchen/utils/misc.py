@@ -7,19 +7,9 @@ import platform
 import re
 import sys
 import time
+from collections.abc import Iterable, Iterator
 from itertools import zip_longest
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    DefaultDict,
-    Iterable,
-    Iterator,
-    Literal,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Literal, TypeVar, Union, overload
 
 import pkg_resources
 from eth_utils import is_hexstr

@@ -2,13 +2,13 @@ import heapq
 import logging
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     DefaultDict,
-    Iterator,
     Literal,
     NamedTuple,
     Optional,

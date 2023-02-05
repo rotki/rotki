@@ -3,8 +3,9 @@ import os
 import shutil
 import sqlite3
 from collections import defaultdict
+from collections.abc import Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast, overload
 
 from rotkehlchen.assets.asset import (
     Asset,

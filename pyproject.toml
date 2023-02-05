@@ -108,6 +108,8 @@ ignore = [
     "PGH003",  # we do use blanket type: ignore. Perhaps can fix in the future
     "SIM108",  # we do use ternary operator when it makes sense. But forcing it everywhere makes the code unreadable.
     "PLR2004", # we try to use constant vars where possile but this complains abouttoo many things
+    "PLR0913", # too many arguments to function call. This is a bit too much to enforce in the codebase
+    "PLR0915", # too many statements -- we probably could use this ... but with custom statements number?
     # Some bandit rules we don't check for
     "S101",  # asserts are fine
     "S103",  # permissive mask on file/directory

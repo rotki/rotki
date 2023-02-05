@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Sequence
 from contextlib import suppress
-from typing import TYPE_CHECKING, Literal, Optional, Sequence, Union, cast, overload
+from typing import TYPE_CHECKING, Literal, Optional, Union, cast, overload
 
 import requests
 from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI

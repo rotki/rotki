@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from rotkehlchen.types import ChecksumEvmAddress
 

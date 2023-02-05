@@ -1,7 +1,8 @@
 import logging
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
-from typing import TYPE_CHECKING, Optional, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import token_normalized_value

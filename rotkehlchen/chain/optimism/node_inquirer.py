@@ -1,5 +1,6 @@
 import logging
-from typing import TYPE_CHECKING, Literal, Sequence, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Literal, cast
 
 from eth_typing import BlockNumber
 
