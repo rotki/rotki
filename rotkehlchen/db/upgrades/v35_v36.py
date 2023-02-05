@@ -8,7 +8,9 @@ from rotkehlchen.chain.ethereum.modules.eth2.utils import (
 )
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.constants import (
-    HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED, HISTORY_MAPPING_STATE_DECODED,
+    HISTORY_MAPPING_KEY_STATE,
+    HISTORY_MAPPING_STATE_CUSTOMIZED,
+    HISTORY_MAPPING_STATE_DECODED,
 )
 from rotkehlchen.db.settings import DEFAULT_ACTIVE_MODULES
 from rotkehlchen.db.utils import table_exists
@@ -614,7 +616,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
 
 
 def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
-    """Upgrades the DB from v35 to v36
+    """Upgrades the DB from v35 to v36. This was in v1.27.0 release.
 
         - Remove adex data
         - upgrade ignored actions ids for transactions
