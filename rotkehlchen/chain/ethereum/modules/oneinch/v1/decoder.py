@@ -10,8 +10,8 @@ from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from ..constants import CPT_ONEINCH_V1
 
@@ -109,17 +109,16 @@ class Oneinchv1Decoder(DecoderInterface):
 
         # And now create a new event for the fee
         fee_amount = asset_normalized_value(fee_raw, to_asset)
-        fee_event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
-            sequence_index=self.base.get_sequence_index(tx_log),
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            location=Location.BLOCKCHAIN,
-            location_label=sender_address,
-            asset=to_asset,
-            balance=Balance(amount=fee_amount),
-            notes=f'Deduct {fee_amount} {to_asset.symbol} from {sender_address} as {CPT_ONEINCH_V1} fees',  # noqa: E501
+        fee_event = self.base.make_event_from_transaction(
+            transaction=transaction,
+            tx_log=tx_log,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
+            asset=to_asset,
+            balance=Balance(amount=fee_amount),
+            location_label=sender_address,
+            notes=f'Deduct {fee_amount} {to_asset.symbol} from {sender_address} as {CPT_ONEINCH_V1} fees',  # noqa: E501
+
             counterparty=CPT_ONEINCH_V1,
         )
         return fee_event, []

@@ -13,8 +13,8 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_ELFI, A_FOX, A_FPIS, A_UNI
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
     CPT_BADGER,
@@ -258,17 +258,15 @@ class AirdropsDecoder(DecoderInterface):
                 transfer_raw == raw_amount
             ):
                 delegate_str = 'self-delegate' if user_address == delegate_address else f'delegate it to {delegate_address}'  # noqa: E501
-                event = HistoryBaseEntry(
-                    event_identifier=transaction.tx_hash,
-                    sequence_index=self.base.get_sequence_index(tx_log),
-                    timestamp=ts_sec_to_ms(transaction.timestamp),
-                    location=Location.BLOCKCHAIN,
-                    location_label=user_address,
-                    asset=self.elfi,
-                    balance=Balance(amount=amount),
-                    notes=f'Claim {amount} ELFI from element-finance airdrop and {delegate_str}',
+                event = self.base.make_event_from_transaction(
+                    transaction=transaction,
+                    tx_log=tx_log,
                     event_type=HistoryEventType.RECEIVE,
                     event_subtype=HistoryEventSubType.AIRDROP,
+                    asset=self.elfi,
+                    balance=Balance(amount=amount),
+                    location_label=user_address,
+                    notes=f'Claim {amount} ELFI from element-finance airdrop and {delegate_str}',
                     counterparty=CPT_ELEMENT_FINANCE,
                 )
                 return event, []

@@ -54,7 +54,7 @@ def _add_entries(server, chain_id: ChainID) -> list[HistoryBaseEntry]:
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
         sequence_index=162,
         timestamp=TimestampMS(1569924574000),
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         asset=A_DAI,
         balance=Balance(amount=FVal('1.542'), usd_value=FVal('1.675')),
@@ -66,7 +66,7 @@ def _add_entries(server, chain_id: ChainID) -> list[HistoryBaseEntry]:
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
         sequence_index=163,
         timestamp=TimestampMS(1569924574000),
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         asset=A_USDT,
         balance=Balance(amount=FVal('1.542'), usd_value=FVal('1.675')),
@@ -78,7 +78,7 @@ def _add_entries(server, chain_id: ChainID) -> list[HistoryBaseEntry]:
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
         sequence_index=2,
         timestamp=TimestampMS(1619924574000),
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         event_type=HistoryEventType.SPEND,
         asset=A_ETH,
         balance=Balance(amount=FVal('0.0001'), usd_value=FVal('5.31')),
@@ -90,7 +90,7 @@ def _add_entries(server, chain_id: ChainID) -> list[HistoryBaseEntry]:
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
         sequence_index=3,
         timestamp=TimestampMS(1619924574000),
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         event_type=HistoryEventType.DEPOSIT,
         asset=A_ETH,
         balance=Balance(amount=FVal('0.0001'), usd_value=FVal('5.31')),
@@ -102,7 +102,7 @@ def _add_entries(server, chain_id: ChainID) -> list[HistoryBaseEntry]:
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0x4b5489ed325483db3a8c4831da1d5ac08fb9ab0fd8c570aa3657e0c267a7d023'),  # noqa: E501
         sequence_index=55,
         timestamp=TimestampMS(1629924574000),
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         asset=A_ETH,
         balance=Balance(amount=ONE, usd_value=FVal('1525.11')),
@@ -272,7 +272,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
         event_identifier=transaction.tx_hash,
         sequence_index=221,
         timestamp=ts_sec_to_ms(transaction.timestamp),
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_SUSHI,
@@ -282,7 +282,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
         event_identifier=transaction.tx_hash,
         sequence_index=222,
         timestamp=ts_sec_to_ms(transaction.timestamp),
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDT,

@@ -27,20 +27,8 @@ from rotkehlchen.errors.serialization import ConversionError, DeserializationErr
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    ChecksumEvmAddress,
-    EvmTokenKind,
-    EvmTransaction,
-    EVMTxHash,
-    Location,
-    TimestampMS,
-)
-from rotkehlchen.utils.misc import (
-    from_wei,
-    hex_or_bytes_to_address,
-    hex_or_bytes_to_int,
-    ts_sec_to_ms,
-)
+from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction, EVMTxHash
+from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .base import BaseDecoderTools
@@ -455,7 +443,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             tx: EvmTransaction,
             tx_receipt: EvmTxReceipt,
             events: list[HistoryBaseEntry],
-            ts_ms: TimestampMS,
     ) -> None:
         """
         check for internal transactions if the transaction is not canceled. This function mutates
@@ -484,17 +471,15 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
 
             event_type, location_label, counterparty, verb = direction_result
             preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
-            events.append(HistoryBaseEntry(
-                event_identifier=tx.tx_hash,
-                sequence_index=self.base.get_next_sequence_counter(),
-                timestamp=ts_ms,
-                location=Location.BLOCKCHAIN,
-                location_label=location_label,
-                asset=self.value_asset,
-                balance=Balance(amount=amount),
-                notes=f'{verb} {amount} {self.value_asset.symbol} {preposition} {counterparty}',
+            events.append(self.base.make_event_next_index(
+                tx_hash=tx.tx_hash,
+                timestamp=tx.timestamp,
                 event_type=event_type,
                 event_subtype=HistoryEventSubType.NONE,
+                asset=self.value_asset,
+                balance=Balance(amount=amount),
+                location_label=location_label,
+                notes=f'{verb} {amount} {self.value_asset.symbol} {preposition} {counterparty}',
                 counterparty=counterparty,
             ))
 
@@ -508,17 +493,15 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         event_type, location_label, counterparty, verb = direction_result
         amount = ZERO if tx.value == 0 else from_wei(FVal(tx.value))
         preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
-        return HistoryBaseEntry(
-            event_identifier=tx.tx_hash,
-            sequence_index=self.base.get_next_sequence_counter(),
-            timestamp=ts_sec_to_ms(tx.timestamp),
-            location=Location.BLOCKCHAIN,
-            location_label=location_label,
-            asset=self.value_asset,
-            balance=Balance(amount=amount),
-            notes=f'{verb} {amount} {self.value_asset.symbol} {preposition} {counterparty}',
+        return self.base.make_event_next_index(
+            tx_hash=tx.tx_hash,
+            timestamp=tx.timestamp,
             event_type=event_type,
             event_subtype=HistoryEventSubType.NONE,
+            asset=self.value_asset,
+            balance=Balance(amount=amount),
+            location_label=location_label,
+            notes=f'{verb} {amount} {self.value_asset.symbol} {preposition} {counterparty}',
             counterparty=counterparty,
         )
 
@@ -555,17 +538,15 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         amount = token_normalized_value(token_amount=amount_raw, token=token)
         prefix = f'Revoke {token.symbol} approval' if amount == ZERO else f'Approve {amount} {token.symbol}'  # noqa: E501
         notes = f'{prefix} of {owner_address} for spending by {spender_address}'
-        event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
-            sequence_index=self.base.get_sequence_index(tx_log),
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            location=Location.BLOCKCHAIN,
-            location_label=owner_address,
-            asset=token,
-            balance=Balance(amount=amount),
-            notes=notes,
+        event = self.base.make_event_from_transaction(
+            transaction=transaction,
+            tx_log=tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
+            asset=token,
+            balance=Balance(amount=amount),
+            location_label=owner_address,
+            notes=notes,
             counterparty=spender_address,
         )
         return event, []
@@ -577,25 +558,21 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
     ) -> list[HistoryBaseEntry]:
         """Decodes normal ETH transfers, internal transactions and gas cost payments"""
         events: list[HistoryBaseEntry] = []
-        ts_ms = ts_sec_to_ms(tx.timestamp)
-
         # check for gas spent
         direction_result = self.base.decode_direction(tx.from_address, tx.to_address)
         if direction_result is not None:
             event_type, location_label, _, _ = direction_result
             if event_type in OUTGOING_EVENT_TYPES:
                 eth_burned_as_gas = from_wei(FVal(tx.gas_used * tx.gas_price))
-                events.append(HistoryBaseEntry(
-                    event_identifier=tx.tx_hash,
-                    sequence_index=self.base.get_next_sequence_counter(),
-                    timestamp=ts_ms,
-                    location=Location.BLOCKCHAIN,
-                    location_label=location_label,
-                    asset=self.value_asset,
-                    balance=Balance(amount=eth_burned_as_gas),
-                    notes=f'Burned {eth_burned_as_gas} {self.value_asset.symbol} for gas',
+                events.append(self.base.make_event_next_index(
+                    tx_hash=tx.tx_hash,
+                    timestamp=tx.timestamp,
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
+                    asset=self.value_asset,
+                    balance=Balance(amount=eth_burned_as_gas),
+                    location_label=location_label,
+                    notes=f'Burned {eth_burned_as_gas} {self.value_asset.symbol} for gas',
                     counterparty=CPT_GAS,
                 ))
 
@@ -604,7 +581,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             tx=tx,
             tx_receipt=tx_receipt,
             events=events,
-            ts_ms=ts_ms,
         )
 
         if tx_receipt.status is False or direction_result is None:
@@ -618,17 +594,15 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             if not self.base.is_tracked(tx.from_address):
                 return events
 
-            events.append(HistoryBaseEntry(  # contract deployment
-                event_identifier=tx.tx_hash,
-                sequence_index=self.base.get_next_sequence_counter(),
-                timestamp=ts_ms,
-                location=Location.BLOCKCHAIN,
-                location_label=tx.from_address,
-                asset=self.value_asset,
-                balance=Balance(amount=amount),
-                notes='Contract deployment',
+            events.append(self.base.make_event_next_index(  # contract deployment
+                tx_hash=tx.tx_hash,
+                timestamp=tx.timestamp,
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.DEPLOY,
+                asset=self.value_asset,
+                balance=Balance(amount=amount),
+                location_label=tx.from_address,
+                notes='Contract deployment',
                 counterparty=None,  # TODO: Find out contract address
             ))
             return events

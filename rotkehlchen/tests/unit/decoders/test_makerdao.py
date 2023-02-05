@@ -32,7 +32,7 @@ def test_makerdao_simple_transaction(
             event_identifier=HexBytes('0x95de47059bcc084ebb8bdd60f48fbcf05619c2af84bf612fdc27a6bbf9b5097e'),  # noqa: E501
             sequence_index=0,
             timestamp=1593572988000,
-            location=Location.BLOCKCHAIN,
+            location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -46,7 +46,7 @@ def test_makerdao_simple_transaction(
             event_identifier=HexBytes('0x95de47059bcc084ebb8bdd60f48fbcf05619c2af84bf612fdc27a6bbf9b5097e'),  # noqa: E501
             sequence_index=1,
             timestamp=1593572988000,
-            location=Location.BLOCKCHAIN,
+            location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_ETH,
@@ -60,7 +60,7 @@ def test_makerdao_simple_transaction(
             event_identifier=HexBytes('0x95de47059bcc084ebb8bdd60f48fbcf05619c2af84bf612fdc27a6bbf9b5097e'),  # noqa: E501
             sequence_index=105,
             timestamp=1593572988000,
-            location=Location.BLOCKCHAIN,
+            location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.PAYBACK_DEBT,
             asset=A_DAI,

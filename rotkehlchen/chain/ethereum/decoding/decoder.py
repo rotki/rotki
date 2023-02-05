@@ -15,8 +15,7 @@ from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_GTC
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
-from rotkehlchen.utils.misc import ts_sec_to_ms
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 from .constants import (
     CPT_GNOSIS_CHAIN,
@@ -126,17 +125,15 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             proposal_id = decoded_data[0]
             proposal_text = decoded_data[8]
             notes = f'Create {governance_name} proposal {proposal_id}. {proposal_text}'
-            event = HistoryBaseEntry(
-                event_identifier=transaction.tx_hash,
-                sequence_index=self.base.get_sequence_index(tx_log),
-                timestamp=ts_sec_to_ms(transaction.timestamp),
-                location=Location.BLOCKCHAIN,
-                location_label=transaction.from_address,
-                asset=A_ETH,
-                balance=Balance(),
-                notes=notes,
+            event = self.base.make_event_from_transaction(
+                transaction=transaction,
+                tx_log=tx_log,
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.GOVERNANCE,
+                asset=A_ETH,
+                balance=Balance(),
+                location_label=transaction.from_address,
+                notes=notes,
                 counterparty=governance_name,
             )
             return event, []

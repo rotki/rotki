@@ -1,22 +1,30 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
 from rotkehlchen.constants import ONE
-from rotkehlchen.types import ChainID, ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.assets.asset import Asset
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Callable, EvmTokenKind, EvmTransaction, Location
+from rotkehlchen.types import (
+    EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+    Callable,
+    EvmTokenKind,
+    EvmTransaction,
+    EVMTxHash,
+    Location,
+)
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
 logger = logging.getLogger(__name__)
@@ -29,7 +37,7 @@ class BaseDecoderTools():
     def __init__(
             self,
             database: 'DBHandler',
-            chain_id: ChainID,
+            chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
             is_non_conformant_erc721_fn: Callable[[ChecksumEvmAddress], bool],
             address_is_exchange_fn: Callable[[ChecksumEvmAddress], Optional[str]],
     ) -> None:
@@ -165,17 +173,103 @@ class BaseDecoderTools():
         else:
             return None  # unknown kind
 
-        return HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
+        return self.make_event(
+            tx_hash=transaction.tx_hash,
             sequence_index=self.get_sequence_index(tx_log),
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            location=Location.BLOCKCHAIN,
-            location_label=location_label,
-            asset=token,
-            balance=Balance(amount=amount),
-            notes=notes,
+            timestamp=(transaction.timestamp),
             event_type=event_type,
             event_subtype=HistoryEventSubType.NONE,
+            asset=token,
+            balance=Balance(amount=amount),
+            location_label=location_label,
+            notes=notes,
+            counterparty=counterparty,
+            extra_data=extra_data,
+        )
+
+    def make_event(
+            self,
+            tx_hash: EVMTxHash,
+            sequence_index: int,
+            timestamp: Timestamp,
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
+            asset: 'Asset',
+            balance: Balance,
+            location_label: Optional[str] = None,
+            notes: Optional[str] = None,
+            counterparty: Optional[str] = None,
+            extra_data: Optional[dict[str, Any]] = None,
+    ) -> HistoryBaseEntry:
+        """A convenience function to create a HistoryBaseEntry depending on the
+        decoder's chain id"""
+        return HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=sequence_index,
+            timestamp=ts_sec_to_ms(timestamp),
+            location=Location.from_chain_id(self.chain_id),
+            event_type=event_type,
+            event_subtype=event_subtype,
+            asset=asset,
+            balance=balance,
+            location_label=location_label,
+            notes=notes,
+            counterparty=counterparty,
+            extra_data=extra_data,
+        )
+
+    def make_event_from_transaction(
+            self,
+            transaction: EvmTransaction,
+            tx_log: EvmTxReceiptLog,
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
+            asset: 'Asset',
+            balance: Balance,
+            location_label: Optional[str] = None,
+            notes: Optional[str] = None,
+            counterparty: Optional[str] = None,
+            extra_data: Optional[dict[str, Any]] = None,
+    ) -> HistoryBaseEntry:
+        """Convenience function on top of make_event to use transaction and ReceiptLog"""
+        return self.make_event(
+            tx_hash=transaction.tx_hash,
+            sequence_index=self.get_sequence_index(tx_log),
+            timestamp=transaction.timestamp,
+            event_type=event_type,
+            event_subtype=event_subtype,
+            asset=asset,
+            balance=balance,
+            location_label=location_label,
+            notes=notes,
+            counterparty=counterparty,
+            extra_data=extra_data,
+        )
+
+    def make_event_next_index(
+            self,
+            tx_hash: EVMTxHash,
+            timestamp: Timestamp,
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
+            asset: 'Asset',
+            balance: Balance,
+            location_label: Optional[str] = None,
+            notes: Optional[str] = None,
+            counterparty: Optional[str] = None,
+            extra_data: Optional[dict[str, Any]] = None,
+    ) -> HistoryBaseEntry:
+        """Convenience function on top of make_event to use next sequence index"""
+        return self.make_event(
+            tx_hash=tx_hash,
+            sequence_index=self.get_next_sequence_counter(),
+            timestamp=timestamp,
+            event_type=event_type,
+            event_subtype=event_subtype,
+            asset=asset,
+            balance=balance,
+            location_label=location_label,
+            notes=notes,
             counterparty=counterparty,
             extra_data=extra_data,
         )

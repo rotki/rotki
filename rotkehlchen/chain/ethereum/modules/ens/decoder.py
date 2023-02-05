@@ -16,8 +16,8 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
-from rotkehlchen.utils.misc import from_wei, ts_sec_to_ms
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.utils.misc import from_wei
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .constants import CPT_ENS
@@ -193,17 +193,15 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             # Not able to give more info to the user such as address that was set since
             # we don't have historical info and event doesn't provide it
             notes = f'Set ENS address for {ens_name}'
-            decoded_events.append(HistoryBaseEntry(
-                event_identifier=transaction.tx_hash,
-                sequence_index=self.base.get_sequence_index(tx_log),
-                timestamp=ts_sec_to_ms(transaction.timestamp),
-                location=Location.BLOCKCHAIN,
-                location_label=transaction.from_address,
-                asset=A_ETH,
-                balance=Balance(),
-                notes=notes,
+            decoded_events.append(self.base.make_event_from_transaction(
+                transaction=transaction,
+                tx_log=tx_log,
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                balance=Balance(),
+                location_label=transaction.from_address,
+                notes=notes,
                 counterparty=CPT_ENS,
             ))
         return None, []
@@ -249,17 +247,15 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             name_to_show = ens_mapping.get(address, address)
 
             notes = f'Set ENS {changed_key} attribute for {name_to_show}'
-            decoded_events.append(HistoryBaseEntry(
-                event_identifier=transaction.tx_hash,
-                sequence_index=self.base.get_sequence_index(tx_log),
-                timestamp=ts_sec_to_ms(transaction.timestamp),
-                location=Location.BLOCKCHAIN,
-                location_label=transaction.from_address,
-                asset=A_ETH,
-                balance=Balance(),
-                notes=notes,
+            decoded_events.append(self.base.make_event_from_transaction(
+                transaction=transaction,
+                tx_log=tx_log,
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                balance=Balance(),
+                location_label=transaction.from_address,
+                notes=notes,
                 counterparty=CPT_ENS,
             ))
         return None, []

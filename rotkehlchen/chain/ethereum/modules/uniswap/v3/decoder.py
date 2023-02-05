@@ -20,8 +20,8 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction, Location
-from rotkehlchen.utils.misc import hex_or_bytes_to_int
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.utils.misc import hex_or_bytes_to_int, ts_ms_to_sec
 
 from ..constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
 
@@ -336,32 +336,30 @@ class Uniswapv3Decoder(DecoderInterface):
         assert gas_event is not None, 'Gas event should always exist when interacting with a uniswap auto router'  # noqa: E501
         gas_event.sequence_index = 0
 
-        timestamp = decoded_events[0].timestamp  # all events have same timestamp
-        from_event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
+        timestamp = ts_ms_to_sec(decoded_events[0].timestamp)  # all events have same timestamp
+        from_event = self.base.make_event(
+            tx_hash=transaction.tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.BLOCKCHAIN,
-            location_label=transaction.from_address,
-            asset=from_crypto_asset,
-            balance=Balance(amount=swap_data.from_amount),
-            notes=f'Swap {swap_data.from_amount} {from_crypto_asset.symbol} via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
+            asset=from_crypto_asset,
+            balance=Balance(amount=swap_data.from_amount),
+            location_label=transaction.from_address,
+            notes=f'Swap {swap_data.from_amount} {from_crypto_asset.symbol} via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
         )
 
-        to_event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
+        to_event = self.base.make_event(
+            tx_hash=transaction.tx_hash,
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.BLOCKCHAIN,
-            location_label=transaction.from_address,
-            asset=to_crypto_asset,
-            balance=Balance(amount=swap_data.to_amount),
-            notes=f'Receive {swap_data.to_amount} {to_crypto_asset.symbol} as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
+            asset=to_crypto_asset,
+            balance=Balance(amount=swap_data.to_amount),
+            location_label=transaction.from_address,
+            notes=f'Receive {swap_data.to_amount} {to_crypto_asset.symbol} as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
         )
 

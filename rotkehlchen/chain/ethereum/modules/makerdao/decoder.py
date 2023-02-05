@@ -39,13 +39,8 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
-from rotkehlchen.utils.misc import (
-    hex_or_bytes_to_address,
-    hex_or_bytes_to_int,
-    shift_num_right_by,
-    ts_sec_to_ms,
-)
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, shift_num_right_by
 
 from .constants import CPT_DSR, CPT_MIGRATION, CPT_VAULT
 
@@ -322,18 +317,15 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
             proxy_address = hex_or_bytes_to_address(tx_log.data[0:32])
             notes = f'Create DSR proxy {proxy_address} with owner {owner_address}'
-            event = HistoryBaseEntry(
-                event_identifier=transaction.tx_hash,
-                sequence_index=self.base.get_sequence_index(tx_log),
-                timestamp=ts_sec_to_ms(transaction.timestamp),
-                location=Location.BLOCKCHAIN,
-                location_label=owner_address,
-                # TODO: This should be null for proposals and other informational events
-                asset=A_ETH,
-                balance=Balance(),
-                notes=notes,
+            event = self.base.make_event_from_transaction(
+                transaction=transaction,
+                tx_log=tx_log,
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.DEPLOY,
+                asset=A_ETH,
+                balance=Balance(),
+                location_label=owner_address,
+                notes=notes,
                 counterparty=proxy_address,
             )
             return event, []
@@ -356,18 +348,15 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
         cdp_id = hex_or_bytes_to_int(tx_log.topics[3])
         notes = f'Create MakerDAO vault with id {cdp_id} and owner {owner_address}'
-        event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
-            sequence_index=self.base.get_sequence_index(tx_log),
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            location=Location.BLOCKCHAIN,
+        event = self.base.make_event_from_transaction(
+            transaction=transaction,
+            tx_log=tx_log,
             location_label=owner_address,
-            # TODO: This should be null for proposals and other informational events
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.DEPLOY,
             asset=A_ETH,
             balance=Balance(),
             notes=notes,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.DEPLOY,
             counterparty='makerdao vault',
         )
         return event, []

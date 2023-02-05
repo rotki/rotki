@@ -10,8 +10,7 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
-from rotkehlchen.utils.misc import ts_sec_to_ms
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 from .constants import CPT_DXDAO_MESA
 
@@ -148,18 +147,15 @@ class DxdaomesaDecoder(DecoderInterface):
             return None, []
         amount = asset_normalized_value(amount=log_data[0], asset=token)
 
-        event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
-            sequence_index=self.base.get_sequence_index(tx_log),
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            location=Location.BLOCKCHAIN,
+        event = self.base.make_event_from_transaction(
+            transaction=transaction,
+            tx_log=tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
             location_label=user,
-            # Asset means nothing here since the event is informational. TODO: Improve?
             asset=token,
             balance=Balance(amount=amount),
             notes=f'Request a withdrawal of {amount} {token.symbol} from DXDao Mesa',
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.REMOVE_ASSET,
             counterparty=CPT_DXDAO_MESA,
         )
         return event, []
@@ -196,18 +192,15 @@ class DxdaomesaDecoder(DecoderInterface):
 
         buy_amount = asset_normalized_value(amount=log_data[3], asset=buy_token)
         sell_amount = asset_normalized_value(amount=log_data[4], asset=sell_token)
-        event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
-            sequence_index=self.base.get_sequence_index(tx_log),
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            location=Location.BLOCKCHAIN,
+        event = self.base.make_event_from_transaction(
+            transaction=transaction,
+            tx_log=tx_log,
             location_label=owner,
-            # Asset means nothing here since the event is informational. TODO: Improve?
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.PLACE_ORDER,
             asset=sell_token,
             balance=Balance(amount=sell_amount),
             notes=f'Place an order in DXDao Mesa to sell {sell_amount} {sell_token.symbol} for {buy_amount} {buy_token.symbol}',  # noqa: E501
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.PLACE_ORDER,
             counterparty=CPT_DXDAO_MESA,
         )
         return event, []
