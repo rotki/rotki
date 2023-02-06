@@ -2,6 +2,9 @@
 Changelog
 =========
 
+* :bug:`-` Fixes bug where asset breakdown wasn't displayed correctly on exchange balance section.
+* :bug:`-` Fixes bug where navigation bar on the left didn't expanded by default.
+
 * :release:`1.27.0 <2023-02-03>`
 * :feature:`5015` EVM assets across multiple chains will now appear together in the dashboard, with an option to break them down into their per-chain holding.
 * :feature:`-` Users will now be able to see newly detected token section under "Manage Assets" menu, so it will be easier to add any spam assets to the ignored tokens list.
