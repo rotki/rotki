@@ -14,8 +14,8 @@ from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_PETH, A_SAI, A_WETH
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -42,9 +42,11 @@ class MakerdaosaiDecoder(DecoderInterface):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
-        super().__init__(ethereum_inquirer, base_tools, msg_aggregator)
-        self.ethereum_inquirer = ethereum_inquirer
-        self.base_tools = base_tools
+        super().__init__(
+            evm_inquirer=ethereum_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
         self.topics_to_methods: dict[bytes, Callable] = {
             b'\x89\xb8\x89;\x80m\xb5\x08\x97\xc8\xe26,qW\x1c\xfa\xeb\x97a\xee@r\x7fh?\x17\x93\xcd\xa9\xdf\x16': self._decode_new_cdp_event,  # noqa: E501
             b'\xb8M!\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00': self._decode_close_cdp,  # noqa: E501
@@ -144,14 +146,12 @@ class MakerdaosaiDecoder(DecoderInterface):
 
         cdp_creator = hex_or_bytes_to_address(tx_log.topics[1])
         cdp_id = hex_or_bytes_to_int(tx_log.data[:32])
-        event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            sequence_index=self.base_tools.get_sequence_index(tx_log),
-            location=Location.BLOCKCHAIN,
-            asset=self.eth,
+        event = self.base.make_event_from_transaction(
+            transaction=transaction,
+            tx_log=tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
+            asset=self.eth,
             balance=Balance(),
             location_label=cdp_creator,
             counterparty=CPT_SAI,
@@ -193,14 +193,12 @@ class MakerdaosaiDecoder(DecoderInterface):
                 # which is caused by the tx_logs containing similar log entries
                 return None, []
 
-        event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            sequence_index=self.base_tools.get_sequence_index(tx_log),
-            location=Location.BLOCKCHAIN,
-            asset=self.eth,
+        event = self.base.make_event_from_transaction(
+            transaction=transaction,
+            tx_log=tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
+            asset=self.eth,
             balance=Balance(),
             location_label=cdp_creator,
             counterparty=CPT_SAI,
@@ -239,15 +237,13 @@ class MakerdaosaiDecoder(DecoderInterface):
                 # which is caused by the tx_logs containing similar log entries
                 return None, []
 
-        if self.base_tools.is_tracked(withdrawer) is True:
-            event = HistoryBaseEntry(
-                event_identifier=transaction.tx_hash,
-                timestamp=ts_sec_to_ms(transaction.timestamp),
-                sequence_index=self.base_tools.get_sequence_index(tx_log),
-                location=Location.BLOCKCHAIN,
-                asset=self.sai,
+        if self.base.is_tracked(withdrawer) is True:
+            event = self.base.make_event_from_transaction(
+                transaction=transaction,
+                tx_log=tx_log,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.GENERATE_DEBT,
+                asset=self.sai,
                 balance=Balance(amount=amount_withdrawn),
                 location_label=withdrawer,
                 counterparty=CPT_SAI,
@@ -313,15 +309,13 @@ class MakerdaosaiDecoder(DecoderInterface):
                 # which is caused by the tx_logs containing similar log entries
                 return None, []
 
-        if self.base_tools.is_tracked(depositor) is True:
-            event = HistoryBaseEntry(
-                event_identifier=transaction.tx_hash,
-                timestamp=ts_sec_to_ms(transaction.timestamp),
-                sequence_index=self.base_tools.get_sequence_index(tx_log),
-                location=Location.BLOCKCHAIN,
-                asset=self.sai,
+        if self.base.is_tracked(depositor) is True:
+            event = self.base.make_event_from_transaction(
+                transaction=transaction,
+                tx_log=tx_log,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+                asset=self.sai,
                 balance=Balance(amount=amount_paid),
                 location_label=depositor,
                 counterparty=CPT_SAI,
@@ -369,15 +363,13 @@ class MakerdaosaiDecoder(DecoderInterface):
                 amount_raw = hex_or_bytes_to_int(log.data[:32])
                 amount = asset_normalized_value(amount=amount_raw, asset=self.weth)
 
-                event = HistoryBaseEntry(
-                    event_identifier=transaction.tx_hash,
-                    timestamp=ts_sec_to_ms(transaction.timestamp),
-                    sequence_index=self.base_tools.get_sequence_index(tx_log),
-                    location=Location.BLOCKCHAIN,
-                    asset=self.peth,
-                    balance=Balance(amount=amount),
+                event = self.base.make_event_from_transaction(
+                    transaction=transaction,
+                    tx_log=tx_log,
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.LIQUIDATE,
+                    asset=self.peth,
+                    balance=Balance(amount=amount),
                     location_label=liquidator,
                     notes=f'Liquidate {amount} {self.peth.symbol} for CDP {cdp_id}',
                     counterparty=CPT_SAI,
@@ -506,14 +498,12 @@ class MakerdaosaiDecoder(DecoderInterface):
             amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
             amount = asset_normalized_value(amount=amount_raw, asset=self.peth)
 
-            event = HistoryBaseEntry(
-                event_identifier=transaction.tx_hash,
-                sequence_index=self.base_tools.get_sequence_index(tx_log),
-                timestamp=ts_sec_to_ms(transaction.timestamp),
-                location=Location.BLOCKCHAIN,
-                asset=self.peth,
+            event = self.base.make_event_from_transaction(
+                transaction=transaction,
+                tx_log=tx_log,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+                asset=self.peth,
                 balance=Balance(amount=amount),
                 location_label=owner,
                 counterparty=CPT_SAI,

@@ -26,11 +26,9 @@ jobs:
         id: change_log
         run: |
           version=$(echo $RELEASE_VERSION | sed 's/^v//g')
-          changes=$(python3 tools/scripts/generate_changelog.py -f docs/changelog.rst -v $version)
-          changes="${changes//'%'/'%25'}"
-          changes="${changes//$'\n'/'%0A'}"
-          changes="${changes//$'\r'/'%0D'}"        
-          echo "changes=${changes}" >> $GITHUB_OUTPUT
+          echo 'changes<<EOF' >> $GITHUB_OUTPUT
+          python3 tools/scripts/generate_changelog.py -f docs/changelog.rst -v $version >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
           echo "version=${version}" >> $GITHUB_OUTPUT
       - name: Create Release
         id: create_release
@@ -280,7 +278,7 @@ jobs:
           draft: true
           files: |
             dist/*.sha512
-            dist/rotki-core-*-macos.zip    
+            dist/rotki-core-*-macos.zip
 
   windows:
     name: 'Build windows binary'
@@ -323,7 +321,7 @@ jobs:
       - name: Setup pnpm cache
         uses: actions/cache@v3
         with:
-          path: |            
+          path: |
             ${{ steps.pnpm-cache.outputs.STORE_PATH }}
             frontend/app/components.d.ts
             ~\AppData\Local\Cypress
@@ -386,7 +384,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |            
+          tags: |
             ${{ github.repository }}:${{ steps.rotki_version.outputs.version }}
           build-args: |
             REVISION=${{ github.sha }}

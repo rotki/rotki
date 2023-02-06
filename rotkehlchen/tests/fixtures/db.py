@@ -12,7 +12,6 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
     add_blockchain_accounts_to_db,
@@ -23,6 +22,7 @@ from rotkehlchen.tests.utils.database import (
     maybe_include_etherscan_key,
     mock_db_schema_sanity_check,
     perform_new_db_unlock_actions,
+    run_no_db_upgrades,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -143,10 +143,10 @@ def _init_database(
         if use_custom_database is not None:
             stack.enter_context(mock_db_schema_sanity_check())
         if perform_upgrades_at_unlock is False:
-            upgrades_patch = patch.object(
-                DBUpgradeManager,
-                'run_upgrades',
-                side_effect=lambda *args: None,
+            upgrades_patch = patch(
+                'rotkehlchen.db.upgrade_manager.DBUpgradeManager.run_upgrades',
+                side_effect=run_no_db_upgrades,
+                autospec=True,
             )
             stack.enter_context(upgrades_patch)
         db = DBHandler(

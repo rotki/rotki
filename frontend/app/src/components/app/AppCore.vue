@@ -23,6 +23,10 @@ const { updateTray } = useInterop();
 
 const toggleDrawer = visibilityStore.toggleDrawer;
 
+onMounted(() => {
+  set(showDrawer, !get(isMobile));
+});
+
 watch(overall, overall => {
   if (overall.percentage === '-') {
     return;

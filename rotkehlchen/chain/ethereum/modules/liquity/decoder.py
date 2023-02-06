@@ -53,7 +53,6 @@ class LiquityDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.base_tools = base_tools
         self.lusd = A_LUSD.resolve_to_crypto_asset()
         self.eth = A_ETH.resolve_to_crypto_asset()
         self.lqty = A_LQTY.resolve_to_evm_token()

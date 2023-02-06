@@ -355,9 +355,9 @@ class EventsHistorian:
 
         step = self._increase_progress(step, total_steps)
 
-        self.processing_state_name = 'Querying ethereum transactions history'
         for blockchain in EVM_CHAINS_WITH_TRANSACTIONS:
             str_blockchain = str(blockchain)
+            self.processing_state_name = f'Querying {str_blockchain} transactions history'
             evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
             tx_filter_query = EvmTransactionsFilterQuery.make(
                 limit=None,

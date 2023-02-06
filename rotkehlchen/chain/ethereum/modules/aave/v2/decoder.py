@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
@@ -12,18 +12,12 @@ from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction, Location
+from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,
     hex_or_bytes_to_int,
     hex_or_bytes_to_str,
-    ts_sec_to_ms,
 )
-
-if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.user_messages import MessagesAggregator
 
 from ..constants import CPT_AAVE_V2
 
@@ -36,15 +30,6 @@ REPAY = b'L\xdd\xe6\xe0\x9b\xb7U\xc9\xa5X\x9e\xba\xecd\x0b\xbf\xed\xff\x13b\xd4\
 
 
 class Aavev2Decoder(DecoderInterface):
-    def __init__(
-            self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-    ) -> None:
-        super().__init__(evm_inquirer, base_tools, msg_aggregator)
-        self.evm_inquirer = evm_inquirer
-        self.base_tools = base_tools
 
     def _decode_collateral_events(
             self,
@@ -53,18 +38,16 @@ class Aavev2Decoder(DecoderInterface):
             tx_log: EvmTxReceiptLog,
     ) -> Optional[HistoryBaseEntry]:
         user = hex_or_bytes_to_address(tx_log.topics[2])
-        if self.base_tools.is_tracked(user) is False:
+        if self.base.is_tracked(user) is False:
             return None
-        return HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
-            sequence_index=tx_log.log_index,
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            location=Location.BLOCKCHAIN,
-            location_label=user,
+        return self.base.make_event_from_transaction(
+            transaction=transaction,
+            tx_log=tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=token,
             balance=Balance(),
+            location_label=user,
             notes=f'{"Enable" if tx_log.topics[0] == ENABLE_COLLATERAL else "Disable"} {token.symbol} as collateral on AAVE v2',  # noqa: E501
             counterparty=CPT_AAVE_V2,
         )
@@ -79,8 +62,8 @@ class Aavev2Decoder(DecoderInterface):
         user = hex_or_bytes_to_address(tx_log.data[:32])
         on_behalf_of = hex_or_bytes_to_address(tx_log.data[64:96]) if hex_or_bytes_to_str(tx_log.data[64:96]) != '' else None  # noqa: E501
         if (
-            self.base_tools.is_tracked(user) is False and
-            (on_behalf_of is None or self.base_tools.is_tracked(on_behalf_of) is False)
+            self.base.is_tracked(user) is False and
+            (on_behalf_of is None or self.base.is_tracked(on_behalf_of) is False)
         ):
             return
         amount = asset_normalized_value(
@@ -118,7 +101,7 @@ class Aavev2Decoder(DecoderInterface):
         """Decode aave v2 withdrawal event"""
         user = hex_or_bytes_to_address(tx_log.topics[2])
         to = hex_or_bytes_to_address(tx_log.topics[3])
-        if self.base_tools.is_tracked(user) is False and self.base_tools.is_tracked(to) is False:  # noqa: E501
+        if self.base.is_tracked(user) is False and self.base.is_tracked(to) is False:
             return
         amount = asset_normalized_value(
             amount=hex_or_bytes_to_int(tx_log.data),
@@ -156,7 +139,7 @@ class Aavev2Decoder(DecoderInterface):
         """Decode aave v2 borrow event"""
         on_behalf_of = hex_or_bytes_to_address(tx_log.topics[2])
         user = hex_or_bytes_to_address(tx_log.data[:32])
-        if self.base_tools.is_tracked(user) is False and self.base_tools.is_tracked(on_behalf_of) is False:  # noqa: E501
+        if self.base.is_tracked(user) is False and self.base.is_tracked(on_behalf_of) is False:  # noqa: E501
             return
         amount = asset_normalized_value(
             amount=hex_or_bytes_to_int(tx_log.data[32:64]),
@@ -195,7 +178,7 @@ class Aavev2Decoder(DecoderInterface):
         """Decode aave v2 repay event"""
         user = hex_or_bytes_to_address(tx_log.topics[2])
         repayer = hex_or_bytes_to_address(tx_log.topics[3])
-        if self.base_tools.is_tracked(user) is False and self.base_tools.is_tracked(repayer) is False:  # noqa: E501
+        if self.base.is_tracked(user) is False and self.base.is_tracked(repayer) is False:  # noqa: E501
             return
         amount = asset_normalized_value(
             amount=hex_or_bytes_to_int(tx_log.data),

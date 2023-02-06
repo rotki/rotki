@@ -442,6 +442,13 @@ EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
 
 EVM_CHAINS_WITH_TRANSACTIONS: tuple[EVM_CHAINS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAINS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
 
+EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE = Literal[
+    ChainID.ETHEREUM,
+    ChainID.OPTIMISM,
+]
+
+EVM_CHAIN_IDS_WITH_TRANSACTIONS: tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
+
 SUPPORTED_EVM_CHAINS = Literal[
     SupportedBlockchain.ETHEREUM,
     SupportedBlockchain.OPTIMISM,
@@ -549,6 +556,30 @@ class Location(DBEnumMixIn):
     BISQ = 35
     FTXUS = 36
     OKX = 37
+    ETHEREUM = 38  # on-chain etherem events
+    OPTIMISM = 39  # on-chain optimism events
+
+    @staticmethod
+    def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'Location':
+        if chain_id == ChainID.ETHEREUM:
+            return Location.ETHEREUM
+        # else
+        return Location.OPTIMISM
+
+    def to_chain_id(self) -> int:
+        """EVMLocation to chain id
+
+        Dealing directly with ints since it's only used in one place and helps with import hell
+        """
+        assert self in EVM_LOCATIONS
+        if self == Location.ETHEREUM:
+            return 1
+        assert self == Location.OPTIMISM, 'should have only been optimism here'
+        return 10
+
+
+EVM_LOCATIONS_TYPE_ = Literal[Location.ETHEREUM, Location.OPTIMISM]
+EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE_, ...] = typing.get_args(EVM_LOCATIONS_TYPE_)
 
 
 class AssetMovementCategory(DBEnumMixIn):

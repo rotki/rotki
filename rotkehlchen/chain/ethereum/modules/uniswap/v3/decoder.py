@@ -20,8 +20,8 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction, Location
-from rotkehlchen.utils.misc import hex_or_bytes_to_int
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.utils.misc import hex_or_bytes_to_int, ts_ms_to_sec
 
 from ..constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
 
@@ -139,8 +139,6 @@ class Uniswapv3Decoder(DecoderInterface):
             token_type=EvmTokenKind.ERC721,
         )
         self.eth = A_ETH.resolve_to_crypto_asset()
-        self.base_tools = base_tools
-        self.ethereum_inquirer = ethereum_inquirer
 
     def _decode_deposits_and_withdrawals(
             self,
@@ -338,32 +336,30 @@ class Uniswapv3Decoder(DecoderInterface):
         assert gas_event is not None, 'Gas event should always exist when interacting with a uniswap auto router'  # noqa: E501
         gas_event.sequence_index = 0
 
-        timestamp = decoded_events[0].timestamp  # all events have same timestamp
-        from_event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
+        timestamp = ts_ms_to_sec(decoded_events[0].timestamp)  # all events have same timestamp
+        from_event = self.base.make_event(
+            tx_hash=transaction.tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.BLOCKCHAIN,
-            location_label=transaction.from_address,
-            asset=from_crypto_asset,
-            balance=Balance(amount=swap_data.from_amount),
-            notes=f'Swap {swap_data.from_amount} {from_crypto_asset.symbol} via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
+            asset=from_crypto_asset,
+            balance=Balance(amount=swap_data.from_amount),
+            location_label=transaction.from_address,
+            notes=f'Swap {swap_data.from_amount} {from_crypto_asset.symbol} via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
         )
 
-        to_event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
+        to_event = self.base.make_event(
+            tx_hash=transaction.tx_hash,
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.BLOCKCHAIN,
-            location_label=transaction.from_address,
-            asset=to_crypto_asset,
-            balance=Balance(amount=swap_data.to_amount),
-            notes=f'Receive {swap_data.to_amount} {to_crypto_asset.symbol} as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
+            asset=to_crypto_asset,
+            balance=Balance(amount=swap_data.to_amount),
+            location_label=transaction.from_address,
+            notes=f'Receive {swap_data.to_amount} {to_crypto_asset.symbol} as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
         )
 
@@ -413,8 +409,8 @@ class Uniswapv3Decoder(DecoderInterface):
             # 9 -> position.feeGrowthInside1LastX128,
             # 10 -> position.tokensOwed0,
             # 11 -> position.tokensOwed1
-            liquidity_pool_position_info = self.ethereum_inquirer.contracts.contract('UNISWAP_V3_NFT_MANAGER').call(  # noqa: E501
-                node_inquirer=self.ethereum_inquirer,
+            liquidity_pool_position_info = self.evm_inquirer.contracts.contract('UNISWAP_V3_NFT_MANAGER').call(  # noqa: E501
+                node_inquirer=self.evm_inquirer,
                 method_name='positions',
                 arguments=[liquidity_pool_id],
             )
@@ -425,11 +421,11 @@ class Uniswapv3Decoder(DecoderInterface):
         # index 2 -> first token in pair; index 3 -> second token in pair
         for token, amount in zip(liquidity_pool_position_info[2:4], (amount0_raw, amount1_raw)):
             token_with_data: 'CryptoAsset' = get_or_create_evm_token(
-                userdb=self.ethereum_inquirer.database,
+                userdb=self.evm_inquirer.database,
                 evm_address=token,
                 chain_id=ChainID.ETHEREUM,
                 token_kind=EvmTokenKind.ERC20,
-                evm_inquirer=self.ethereum_inquirer,
+                evm_inquirer=self.evm_inquirer,
                 seen=TokenSeenAt(tx_hash=transaction.tx_hash),
             )
             token_with_data = self.eth if token_with_data == A_WETH else token_with_data
@@ -480,7 +476,7 @@ class Uniswapv3Decoder(DecoderInterface):
             new_action_items.append(
                 ActionItem(
                     action='transform',
-                    sequence_index=self.base_tools.get_next_sequence_counter(),
+                    sequence_index=self.base.get_next_sequence_counter(),
                     from_event_type=from_event_type[0],
                     from_event_subtype=from_event_type[1],
                     asset=resolved_assets_and_amounts[0].asset,
@@ -500,7 +496,7 @@ class Uniswapv3Decoder(DecoderInterface):
             new_action_items.append(
                 ActionItem(
                     action='transform',
-                    sequence_index=self.base_tools.get_next_sequence_counter(),
+                    sequence_index=self.base.get_next_sequence_counter(),
                     from_event_type=from_event_type[0],
                     from_event_subtype=from_event_type[1],
                     asset=resolved_assets_and_amounts[1].asset,

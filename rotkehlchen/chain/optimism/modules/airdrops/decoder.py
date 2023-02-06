@@ -35,7 +35,6 @@ class AirdropsDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.base = base_tools
         self.op_token = A_OP.resolve_to_evm_token()
 
     def _decode_optimism_airdrop_claim(  # pylint: disable=no-self-use

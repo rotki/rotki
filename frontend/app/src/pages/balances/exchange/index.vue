@@ -156,6 +156,7 @@ const { t, tc } = useI18n();
       >
         <asset-balances
           v-if="exchange"
+          hide-breakdown
           :loading="isExchangeLoading"
           :balances="balances"
         />

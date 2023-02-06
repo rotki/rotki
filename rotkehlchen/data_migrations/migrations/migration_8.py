@@ -18,7 +18,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 def data_migration_8(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:
     """
-    - Introduced at optimism addition.
+    Introduced at optimism addition. v1.27.0
     This migration duplicates accounts if active at optimism or avalanche.
     """
     log.debug('Enter data_migration_8')

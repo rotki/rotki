@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
@@ -10,28 +10,16 @@ from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from ..constants import CPT_ONEINCH_V1
-
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.user_messages import MessagesAggregator
 
 HISTORY = b'\x89M\xbf\x12b\x19\x9c$\xe1u\x02\x98\xa3\x84\xc7\t\x16\x0fI\xd1cB,\xc6\xce\xe6\x94\xc77\x13\xf1\xd2'  # noqa: E501
 SWAPPED = b'\xe2\xce\xe3\xf6\x83`Y\x82\x0bg9C\x85:\xfe\xbd\x9b0&\x12]\xab\rwB\x84\xe6\xf2\x8aHU\xbe'  # noqa: E501
 
 
 class Oneinchv1Decoder(DecoderInterface):
-    def __init__(  # pylint: disable=super-init-not-called
-            self,
-            ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-    ) -> None:
-        self.base = base_tools
 
     def _decode_history(
             self,
@@ -121,17 +109,16 @@ class Oneinchv1Decoder(DecoderInterface):
 
         # And now create a new event for the fee
         fee_amount = asset_normalized_value(fee_raw, to_asset)
-        fee_event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
-            sequence_index=self.base.get_sequence_index(tx_log),
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            location=Location.BLOCKCHAIN,
-            location_label=sender_address,
-            asset=to_asset,
-            balance=Balance(amount=fee_amount),
-            notes=f'Deduct {fee_amount} {to_asset.symbol} from {sender_address} as {CPT_ONEINCH_V1} fees',  # noqa: E501
+        fee_event = self.base.make_event_from_transaction(
+            transaction=transaction,
+            tx_log=tx_log,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
+            asset=to_asset,
+            balance=Balance(amount=fee_amount),
+            location_label=sender_address,
+            notes=f'Deduct {fee_amount} {to_asset.symbol} from {sender_address} as {CPT_ONEINCH_V1} fees',  # noqa: E501
+
             counterparty=CPT_ONEINCH_V1,
         )
         return fee_event, []

@@ -8,18 +8,20 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
-from rotkehlchen.db.constants import (
-    HISTORY_MAPPING_KEY_CHAINID,
-    HISTORY_MAPPING_KEY_STATE,
-    HISTORY_MAPPING_STATE_CUSTOMIZED,
-)
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import ChainID, EVMTxHash, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+    EVMTxHash,
+    Location,
+    Timestamp,
+    TimestampMS,
+)
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
@@ -74,25 +76,16 @@ class DBHistoryEvents():
             self,
             write_cursor: 'DBCursor',
             history: Sequence[HistoryBaseEntry],
-            chain_id: Optional[ChainID] = None,
     ) -> None:
         """Insert a list of history events in the database.
-
-        Optionally provide a chain id to associate them with in the history
-        events mapping table
 
         May raise:
         - InputError if the events couldn't be stored in the database
         """
-        mapping_values = None
-        if chain_id is not None:
-            mapping_values = {HISTORY_MAPPING_KEY_CHAINID: chain_id.serialize_for_db()}
-
         for event in history:
             self.add_history_event(
                 write_cursor=write_cursor,
                 event=event,
-                mapping_values=mapping_values,
             )
 
     def edit_history_event(self, event: HistoryBaseEntry) -> tuple[bool, str]:
@@ -162,7 +155,7 @@ class DBHistoryEvents():
             self,
             write_cursor: 'DBCursor',
             tx_hashes: list[EVMTxHash],
-            chain_id: ChainID,
+            chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     ) -> None:
         """Delete all relevant (by event_identifier) history events except those that
         are customized"""
@@ -179,7 +172,7 @@ class DBHistoryEvents():
     def get_customized_event_identifiers(
             self,
             cursor: 'DBCursor',
-            chain_id: Optional[ChainID],
+            chain_id: Optional[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
     ) -> list[int]:      # pylint: disable=no-self-use
         """Returns the identifiers of all the events in the database that have been customized
 
@@ -194,10 +187,11 @@ class DBHistoryEvents():
             cursor.execute(
                 'SELECT A.parent_identifier FROM history_events_mappings A JOIN '
                 'history_events_mappings B ON A.parent_identifier=B.parent_identifier AND '
-                'A.name=? AND A.value=? AND B.name=? AND B.value=?',
+                'A.name=? AND A.value=? '
+                'JOIN history_events C ON C.identifier=A.parent_identifier AND C.location=?',
                 (
                     HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED,
-                    HISTORY_MAPPING_KEY_CHAINID, chain_id.serialize_for_db(),
+                    Location.from_chain_id(chain_id).serialize_for_db(),
                 ),
             )
 

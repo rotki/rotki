@@ -4,11 +4,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.accounting.structures.types import (
-    ActionType,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
@@ -113,7 +109,7 @@ def test_include_gas_costs(accountant, google_service):
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hash),
             sequence_index=0,
             timestamp=1569924574000,
-            location=Location.BLOCKCHAIN,
+            location=Location.ETHEREUM,
             location_label=addr1,
             asset=A_ETH,
             balance=Balance(amount=FVal('0.000030921')),
@@ -129,66 +125,6 @@ def test_include_gas_costs(accountant, google_service):
     if accountant.pots[0].settings.include_gas_costs:
         expected = FVal('-0.0052163727')
         expected_pnls[AccountingEventType.TRANSACTION_EVENT] = PNL(taxable=expected, free=ZERO)
-    check_pnls_and_csv(accountant, expected_pnls, google_service)
-
-
-@pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('ignored_assets', [[A_DASH]])
-def test_ignored_transactions(accountant, google_service):
-    addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
-    tx_hash = '0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a'
-    ignored_tx_hash = '0x1000e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde11'
-    with accountant.db.user_write() as cursor:
-        accountant.db.add_to_ignored_action_ids(
-            write_cursor=cursor,
-            action_type=ActionType.EVM_TRANSACTION,
-            identifiers=[ignored_tx_hash],
-        )
-    history = [
-        Trade(
-            timestamp=1539388574,
-            location=Location.EXTERNAL,
-            base_asset=A_ETH,
-            quote_asset=A_EUR,
-            trade_type=TradeType.BUY,
-            amount=FVal(10),
-            rate=FVal('168.7'),
-            fee=None,
-            fee_currency=None,
-            link=None,
-        ), HistoryBaseEntry(
-            identifier='uniqueid1',  # should normally be given by DB at write time
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hash),
-            sequence_index=0,
-            timestamp=1569924574000,
-            location=Location.BLOCKCHAIN,
-            location_label=addr1,
-            asset=A_ETH,
-            balance=Balance(amount=FVal('0.000030921')),
-            notes='Burned 0.000030921 ETH for gas',
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.FEE,
-            counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
-            identifier='uniqueid2',    # should normally be given by DB at write time
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(ignored_tx_hash),
-            sequence_index=0,
-            timestamp=1569934574000,
-            location=Location.BLOCKCHAIN,
-            location_label=addr1,
-            asset=A_ETH,
-            balance=Balance(amount=FVal('0.000040921')),
-            notes='Burned 0.000040921 ETH for gas',
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.FEE,
-            counterparty=CPT_GAS,
-        )]
-    _, events = accounting_history_process(accountant, start_ts=1436979735, end_ts=1619693374, history_list=history)  # noqa: E501
-    assert len(events) == 3
-    no_message_errors(accountant.msg_aggregator)
-    expected_pnls = PnlTotals({
-        AccountingEventType.TRANSACTION_EVENT: PNL(taxable=FVal('-0.0052163727'), free=ZERO),
-    })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 

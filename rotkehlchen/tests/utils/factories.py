@@ -124,7 +124,7 @@ def make_ethereum_event(
         sequence_index=index,
         identifier=index,
         timestamp=TimestampMS(0),
-        location=Location.EXTERNAL,
+        location=Location.ETHEREUM,
         event_type=event_type,
         event_subtype=event_subtype,
         asset=asset,

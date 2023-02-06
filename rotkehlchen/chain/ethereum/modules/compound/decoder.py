@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -18,11 +18,6 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import COMPTROLLER_PROXY_ADDRESS, CPT_COMPOUND
 
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.user_messages import MessagesAggregator
-
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -32,13 +27,6 @@ DISTRIBUTED_SUPPLIER_COMP = b',\xae\xcd\x17\xd0/V\xfa\x89w\x05\xdc\xc7@\xda-#|7?
 
 
 class CompoundDecoder(DecoderInterface):
-    def __init__(  # pylint: disable=super-init-not-called
-            self,
-            ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
-    ) -> None:
-        self.base = base_tools
 
     def _decode_mint(
             self,

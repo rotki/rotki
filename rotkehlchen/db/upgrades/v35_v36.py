@@ -616,7 +616,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
 
 
 def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
-    """Upgrades the DB from v35 to v36
+    """Upgrades the DB from v35 to v36. This was in v1.27.0 release.
 
         - Remove adex data
         - upgrade ignored actions ids for transactions

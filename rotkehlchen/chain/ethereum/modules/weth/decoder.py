@@ -11,8 +11,8 @@ from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -36,7 +36,6 @@ class WethDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.base_tools = base_tools
         self.weth = A_WETH.resolve_to_evm_token()
         self.eth = A_ETH.resolve_to_crypto_asset()
 
@@ -100,11 +99,9 @@ class WethDecoder(DecoderInterface):
         if out_event is None:
             return None, []
 
-        in_event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
-            sequence_index=self.base_tools.get_next_sequence_counter(),
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            location=Location.BLOCKCHAIN,
+        in_event = self.base.make_event_next_index(
+            tx_hash=transaction.tx_hash,
+            timestamp=transaction.timestamp,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=self.weth,
@@ -145,11 +142,9 @@ class WethDecoder(DecoderInterface):
         if in_event is None:
             return None, []
 
-        out_event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash,
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            sequence_index=self.base_tools.get_next_sequence_counter(),
-            location=Location.BLOCKCHAIN,
+        out_event = self.base.make_event_next_index(
+            tx_hash=transaction.tx_hash,
+            timestamp=transaction.timestamp,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=self.weth,

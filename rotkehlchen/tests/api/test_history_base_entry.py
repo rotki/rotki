@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 import requests
@@ -36,7 +36,6 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 def entry_to_input_dict(
         entry: HistoryBaseEntry,
         include_identifier: bool,
-        chain_id: Optional[ChainID] = None,
 ) -> dict[str, Any]:
     serialized = entry.serialize_without_extra_data()
     if include_identifier:
@@ -44,17 +43,15 @@ def entry_to_input_dict(
         serialized['identifier'] = entry.identifier
     else:
         serialized.pop('identifier')  # there is `identifier`: `None` which we have to remove
-    if chain_id is not None:
-        serialized['evm_chain'] = str(chain_id)
     return serialized
 
 
-def _add_entries(server, chain_id: ChainID) -> list[HistoryBaseEntry]:
+def _add_entries(server) -> list[HistoryBaseEntry]:
     entries = [HistoryBaseEntry(
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
         sequence_index=162,
         timestamp=TimestampMS(1569924574000),
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         asset=A_DAI,
         balance=Balance(amount=FVal('1.542'), usd_value=FVal('1.675')),
@@ -66,7 +63,7 @@ def _add_entries(server, chain_id: ChainID) -> list[HistoryBaseEntry]:
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
         sequence_index=163,
         timestamp=TimestampMS(1569924574000),
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         asset=A_USDT,
         balance=Balance(amount=FVal('1.542'), usd_value=FVal('1.675')),
@@ -78,7 +75,7 @@ def _add_entries(server, chain_id: ChainID) -> list[HistoryBaseEntry]:
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
         sequence_index=2,
         timestamp=TimestampMS(1619924574000),
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         event_type=HistoryEventType.SPEND,
         asset=A_ETH,
         balance=Balance(amount=FVal('0.0001'), usd_value=FVal('5.31')),
@@ -90,7 +87,7 @@ def _add_entries(server, chain_id: ChainID) -> list[HistoryBaseEntry]:
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
         sequence_index=3,
         timestamp=TimestampMS(1619924574000),
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         event_type=HistoryEventType.DEPOSIT,
         asset=A_ETH,
         balance=Balance(amount=FVal('0.0001'), usd_value=FVal('5.31')),
@@ -102,7 +99,7 @@ def _add_entries(server, chain_id: ChainID) -> list[HistoryBaseEntry]:
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0x4b5489ed325483db3a8c4831da1d5ac08fb9ab0fd8c570aa3657e0c267a7d023'),  # noqa: E501
         sequence_index=55,
         timestamp=TimestampMS(1629924574000),
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         asset=A_ETH,
         balance=Balance(amount=ONE, usd_value=FVal('1525.11')),
@@ -113,7 +110,7 @@ def _add_entries(server, chain_id: ChainID) -> list[HistoryBaseEntry]:
     )]
 
     for entry in entries:
-        json_data = entry_to_input_dict(entry, include_identifier=False, chain_id=chain_id)
+        json_data = entry_to_input_dict(entry, include_identifier=False)
         response = requests.put(
             api_url_for(server, 'historybaseentryresource'),
             json=json_data,
@@ -126,10 +123,9 @@ def _add_entries(server, chain_id: ChainID) -> list[HistoryBaseEntry]:
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-@pytest.mark.parametrize('chain_id', [ChainID.ETHEREUM, ChainID.OPTIMISM])
-def test_add_edit_delete_entries(rotkehlchen_api_server, chain_id):
+def test_add_edit_delete_entries(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    entries = _add_entries(rotkehlchen_api_server, chain_id)
+    entries = _add_entries(rotkehlchen_api_server)
     db = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
         saved_events = db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
@@ -166,7 +162,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server, chain_id):
     # test adding event with  sequence index same as an existing one fails
     entry.sequence_index = 3
     entry.timestamp = TimestampMS(1649924575000)
-    json_data = entry_to_input_dict(entry, include_identifier=False, chain_id=chain_id)
+    json_data = entry_to_input_dict(entry, include_identifier=False)
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
         json=json_data,
@@ -240,14 +236,6 @@ def test_add_edit_delete_entries(rotkehlchen_api_server, chain_id):
         saved_events = db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
         assert saved_events == [entries[0], entries[3], entry]
 
-        chain_ids_in_db = [
-            entry[1]
-            for entry in cursor.execute('select name, value from history_events_mappings')
-            if entry[0] == 'chain_id'
-        ]
-        assert len(chain_ids_in_db) == 3
-        assert all([chain_id_entry == chain_id.serialize() for chain_id_entry in chain_ids_in_db])
-
 
 def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
     """Checks that if some events have details this is handled correctly."""
@@ -272,7 +260,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
         event_identifier=transaction.tx_hash,
         sequence_index=221,
         timestamp=ts_sec_to_ms(transaction.timestamp),
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_SUSHI,
@@ -282,7 +270,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
         event_identifier=transaction.tx_hash,
         sequence_index=222,
         timestamp=ts_sec_to_ms(transaction.timestamp),
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDT,

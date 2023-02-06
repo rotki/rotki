@@ -16,18 +16,14 @@ class DecoderInterface(metaclass=ABCMeta):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',  # pylint: disable=unused-argument
-            base_tools: 'BaseDecoderTools',  # pylint: disable=unused-argument
+            evm_inquirer: 'EvmNodeInquirer',
+            base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
-        """This is the Decoder interface initialization signature
-
-        To have smaller objects and since few decoders use most of the given objects
-        we do not save anything here at the moment (except for the msg_aggregator used to send
-        possible errors to the user), but instead let it up to the individual
-        decoder to choose what to keep.
-        """
+        """This is the Decoder interface initialization signature"""
+        self.base = base_tools
         self.msg_aggregator = msg_aggregator
+        self.evm_inquirer = evm_inquirer
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:  # pylint: disable=no-self-use  # noqa: E501
         """Subclasses may implement this to return the mappings of addresses to decode functions"""
