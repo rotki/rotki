@@ -1,3 +1,5 @@
+name: Backend Tests
+
 on:
   workflow_call:
     inputs:
