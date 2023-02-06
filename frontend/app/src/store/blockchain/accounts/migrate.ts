@@ -6,9 +6,7 @@ import {
 } from '@rotki/common/lib/messages';
 import { type MaybeRef, useSessionStorage } from '@vueuse/core';
 import { type MigratedAddresses } from '@/types/websocket-messages';
-import { useSessionAuthStore } from '@/store/session/auth';
 import { startPromise } from '@/utils';
-import { useNotificationsStore } from '@/store/notifications';
 
 const setupMigrationSessionCache = (
   username: string

@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import LedgerActionContent from '@/components/history/ledger-actions/LedgerActionContent.vue';
-import { useLedgerActions } from '@/store/history/ledger-actions';
 import { Section } from '@/types/status';
 
-const { fetchLedgerActions } = useLedgerActions();
+const { fetchLedgerActions } = useLedgerActionStore();
 
 onBeforeMount(async () => {
   await fetchLedgerActions();

@@ -5,25 +5,17 @@ import Fragment from '@/components/helper/Fragment';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import SyncButtons from '@/components/status/sync/SyncButtons.vue';
-
 import { useSnapshotApi } from '@/services/settings/snapshot-api';
 import {
   SYNC_DOWNLOAD,
   SYNC_UPLOAD,
   type SyncAction
 } from '@/services/types-api';
-import { useBalancesStore } from '@/store/balances';
-import { type AllBalancePayload } from '@/store/balances/types';
-import { useMessageStore } from '@/store/message';
-import { useSessionStore } from '@/store/session';
-import { usePeriodicStore } from '@/store/session/periodic';
-import { useSyncStore } from '@/store/session/sync-store';
-import { useTasks } from '@/store/tasks';
 import { type Writeable } from '@/types';
 import { TaskType } from '@/types/task-type';
 import { startPromise } from '@/utils';
 import UpgradeProgressDisplay from '@/components/account-management/upgrade/UpgradeProgressDisplay.vue';
-import { useSessionAuthStore } from '@/store/session/auth';
+import { type AllBalancePayload } from '@/types/accounts';
 
 const { t, tc } = useI18n();
 const { logout } = useSessionStore();
@@ -93,7 +85,7 @@ const performSync = async () => {
   set(pending, false);
 };
 
-const { isTaskRunning } = useTasks();
+const { isTaskRunning } = useTaskStore();
 const isSyncing = isTaskRunning(TaskType.FORCE_SYNC);
 
 watch(isSyncing, (current, prev) => {

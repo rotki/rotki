@@ -1,12 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { getBnFormat } from '@/data/amount_formatter';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { usePremiumStore } from '@/store/session/premium';
-import { useAccountingSettingsStore } from '@/store/settings/accounting';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { type Exchange } from '@/types/exchanges';
 import { type UserSettingsModel } from '@/types/user';
 

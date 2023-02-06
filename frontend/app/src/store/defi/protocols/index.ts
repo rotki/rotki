@@ -14,23 +14,13 @@ import sortBy from 'lodash/sortBy';
 import { type ComputedRef } from 'vue';
 import { truncateAddress } from '@/filters';
 import { ProtocolVersion } from '@/services/defi/consts';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useAaveStore } from '@/store/defi/aave';
-import { useCompoundStore } from '@/store/defi/compound';
-import { useLiquityStore } from '@/store/defi/liquity';
-import { type LiquityLoan } from '@/store/defi/liquity/types';
-import { useMakerDaoStore } from '@/store/defi/makerdao';
 import {
   type AaveLoan,
   type BaseDefiBalance,
   type DefiBalance,
   type DefiLendingHistory,
   type LoanSummary
-} from '@/store/defi/types';
-import { balanceUsdValueSum } from '@/store/defi/utils';
-import { useYearnStore } from '@/store/defi/yearn';
-import { getStatus, setStatus } from '@/store/status';
-import { isLoading } from '@/store/utils';
+} from '@/types/defi/lending';
 import { type Writeable } from '@/types';
 import { type Collateral, type DefiLoan } from '@/types/defi';
 import {
@@ -43,6 +33,9 @@ import { Section, Status } from '@/types/status';
 import { assert } from '@/utils/assertions';
 import { Zero, zeroBalance } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
+import { type LiquityLoan } from '@/types/defi/liquity';
+import { balanceUsdValueSum } from '@/utils/balances';
+import { isLoading } from '@/utils/status';
 
 const isLendingEvent = (
   value: AaveHistoryEvents
@@ -59,9 +52,9 @@ type NullableLoan =
   | null;
 
 export const useDefiSupportedProtocolsStore = defineStore(
-  'defi/supportedProtocols',
+  'defi/protocols',
   () => {
-    const { assetInfo } = useAssetInfoRetrieval();
+    const { assetInfo } = useAssetInfoRetrievalStore();
     const premium = usePremium();
 
     const liquityStore = useLiquityStore();

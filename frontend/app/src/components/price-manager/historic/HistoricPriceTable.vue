@@ -11,9 +11,7 @@ import {
   type HistoricalPrice,
   type ManualPricePayload
 } from '@/services/assets/types';
-import { useNotificationsStore } from '@/store/notifications';
 import { useAssetPricesApi } from '@/services/assets/prices';
-import { useConfirmStore } from '@/store/confirm';
 
 const props = defineProps({
   filter: {

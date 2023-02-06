@@ -8,7 +8,6 @@ import {
   type HistoricalPriceFormPayload
 } from '@/services/assets/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { type EditableMissingPrice } from '@/types/prices';
 import { type MissingPrice } from '@/types/reports';
 import { useAssetPricesApi } from '@/services/assets/prices';

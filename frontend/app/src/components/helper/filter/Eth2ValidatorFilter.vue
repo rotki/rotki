@@ -3,7 +3,6 @@ import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ValidatorFilterInput from '@/components/helper/filter/ValidatorFilterInput.vue';
-import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 
 withDefaults(
   defineProps<{

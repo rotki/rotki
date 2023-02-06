@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type ComputedRef, type PropType } from 'vue';
 import { type Currency } from '@/types/currencies';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
 
 const props = defineProps({
   currency: { required: true, type: Object as PropType<Currency> },
@@ -48,7 +46,7 @@ const displayAsset = computed(() => {
   return '';
 });
 
-const { assetSymbol } = useAssetInfoRetrieval();
+const { assetSymbol } = useAssetInfoRetrievalStore();
 
 const symbol: ComputedRef<string> = computed(() => {
   if (get(asset)) {

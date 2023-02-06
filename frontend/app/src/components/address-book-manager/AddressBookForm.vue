@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+
 import {
   type AddressBookLocation,
   type AddressBookPayload

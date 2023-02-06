@@ -1,6 +1,5 @@
 import { type Ref } from 'vue';
 import { useHistoryApi } from '@/services/history';
-import { useNotificationsStore } from '@/store/notifications';
 import { type TradeLocation } from '@/types/history/trade-location';
 import { logger } from '@/utils/logging';
 import { type Exchange } from '@/types/exchanges';

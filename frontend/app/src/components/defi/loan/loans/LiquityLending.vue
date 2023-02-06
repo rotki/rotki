@@ -8,11 +8,11 @@ import LiquityCollateral from '@/components/defi/loan/loans/liquity/LiquityColla
 import LiquityLiquidation from '@/components/defi/loan/loans/liquity/LiquityLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 
-import { type LiquityLoan } from '@/store/defi/liquity/types';
 import {
   HistoryEventType,
   TransactionEventProtocol
 } from '@/types/transaction';
+import { type LiquityLoan } from '@/types/defi/liquity';
 
 const props = defineProps({
   loan: {

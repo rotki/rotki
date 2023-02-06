@@ -4,7 +4,6 @@ import Vuetify from 'vuetify';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { defaultGeneralSettings } from '@/data/factories';
 import { useSettingsApi } from '@/services/settings/settings-api';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useCurrencies } from '@/types/currencies';
 import { Module } from '@/types/modules';
 

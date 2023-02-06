@@ -1,4 +1,3 @@
-import { useEth2StakingStore } from '@/store/staking/eth2';
 import { Module } from '@/types/modules';
 
 export const useStakingStore = defineStore('staking', () => {

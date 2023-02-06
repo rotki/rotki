@@ -3,9 +3,11 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { type Ref } from 'vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import { useSessionStore } from '@/store/session';
-import { type SyncConflict } from '@/store/session/types';
-import { type LoginCredentials, type SyncApproval } from '@/types/login';
+import {
+  type LoginCredentials,
+  type SyncApproval,
+  type SyncConflict
+} from '@/types/login';
 import {
   deleteBackendUrl,
   getBackendUrl,

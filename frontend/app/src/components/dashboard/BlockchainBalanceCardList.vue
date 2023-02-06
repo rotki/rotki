@@ -7,12 +7,12 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
-import { type ActionDataEntry } from '@/store/types';
 import {
   type BlockchainTotal,
   SupportedSubBlockchainProtocolData
 } from '@/types/blockchain';
 import { toSentenceCase } from '@/utils/text';
+import { type ActionDataEntry } from '@/types/action';
 
 const props = defineProps({
   total: { required: true, type: Object as PropType<BlockchainTotal> }

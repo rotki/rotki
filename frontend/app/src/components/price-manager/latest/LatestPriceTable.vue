@@ -9,17 +9,11 @@ import { type DataTableHeader } from 'vuetify';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { type ManualPrice } from '@/services/assets/types';
-import { useBalancesStore } from '@/store/balances';
-import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useNotificationsStore } from '@/store/notifications';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
 import { useAssetPricesApi } from '@/services/assets/prices';
-import { useConfirmStore } from '@/store/confirm';
+
 import NftDetails from '@/components/helper/NftDetails.vue';
 import { isNft } from '@/utils/nft';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { One } from '@/utils/bignumbers';
 
 const props = defineProps({

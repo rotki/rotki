@@ -14,11 +14,6 @@ import {
   type BtcAccountData,
   type GeneralAccountData
 } from '@/services/types-api';
-import {
-  type AccountWithBalance,
-  type AssetBreakdown,
-  type BlockchainAccountWithBalance
-} from '@/store/balances/types';
 import { type AssetBalances } from '@/types/balances';
 import {
   type BlockchainAssetBalances,
@@ -27,8 +22,11 @@ import {
 import { NoPrice, Zero, sortDesc, zeroBalance } from '@/utils/bignumbers';
 import { assetSum, balanceSum } from '@/utils/calculation';
 import { getTags } from '@/utils/tags';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import {
+  type AccountWithBalance,
+  type AssetBreakdown,
+  type BlockchainAccountWithBalance
+} from '@/types/accounts';
 
 export const removeZeroAssets = (entries: AssetBalances): AssetBalances => {
   const balances = { ...entries };
@@ -114,7 +112,7 @@ const toSortedAndGroupedArray = <T extends Balance>(
   groupMultiChain: boolean,
   map: (asset: string) => T & { asset: string }
 ): T[] => {
-  const { assetInfo } = useAssetInfoRetrieval();
+  const { assetInfo } = useAssetInfoRetrievalStore();
   const { fetchedAssetCollections } = storeToRefs(useAssetCacheStore());
 
   const data = Object.keys(ownedAssets)
@@ -350,3 +348,8 @@ export const getBtcBreakdown = (
   }
   return breakdown;
 };
+
+export const balanceUsdValueSum = (balances: HasBalance[]): BigNumber =>
+  balances
+    .map(({ balance: { usdValue } }) => usdValue)
+    .reduce((sum, value) => sum.plus(value), Zero);

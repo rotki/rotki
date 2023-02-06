@@ -6,7 +6,7 @@ import {
 import { type EvmChainAddress } from '@/types/history/tx';
 
 export const useTxQueryStatusStore = defineStore(
-  'history/transactionsQueryStatus',
+  'history/transaction-query-status',
   () => {
     const queryStatus: Ref<Record<string, EvmTransactionQueryData>> = ref({});
 

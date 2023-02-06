@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { useCostBasisMethod } from '@/store/reports/consts';
-import { type ActionDataEntry } from '@/store/types';
 import {
   type BaseAccountingSettings,
   type CostBasisMethod
 } from '@/types/user';
+import { useCostBasisMethod } from '@/composables/reports';
+import { type ActionDataEntry } from '@/types/action';
 
 const props = defineProps({
   accountingSettings: {

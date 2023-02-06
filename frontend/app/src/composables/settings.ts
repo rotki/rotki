@@ -1,15 +1,10 @@
 import { promiseTimeout } from '@vueuse/core';
-import { useSettingsStore } from '@/store/settings';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import {
-  type SessionSettings,
-  useSessionSettingsStore
-} from '@/store/settings/session';
-import { type ActionStatus } from '@/store/types';
 import { type FrontendSettingsPayload } from '@/types/frontend-settings';
 import { type BaseMessage } from '@/types/messages';
 import { type SettingsUpdate } from '@/types/user';
 import { logger } from '@/utils/logging';
+import { type SessionSettings } from '@/types/session';
+import { type ActionStatus } from '@/types/action';
 
 export enum SettingLocation {
   FRONTEND,

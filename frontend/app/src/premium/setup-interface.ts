@@ -18,8 +18,6 @@ import {
   userSettings,
   utilsApi
 } from '@/premium/premium-apis';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type DateFormat } from '@/types/date-format';
 import { type FrontendSettingsPayload } from '@/types/frontend-settings';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';

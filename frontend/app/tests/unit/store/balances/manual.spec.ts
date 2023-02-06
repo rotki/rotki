@@ -7,8 +7,6 @@ import {
 } from '@/data/defaults';
 import { useManualBalancesApi } from '@/services/balances/manual';
 import { BalanceType } from '@/services/balances/types';
-import { useManualBalancesStore } from '@/store/balances/manual';
-import { useTasks } from '@/store/tasks';
 import { type AssetPrices } from '@/types/prices';
 import { bigNumberify } from '@/utils/bignumbers';
 
@@ -28,7 +26,7 @@ vi.mock('@/services/balances/manual', () => ({
 }));
 
 vi.mock('@/store/tasks', () => ({
-  useTasks: vi.fn().mockReturnValue({
+  useTaskStore: vi.fn().mockReturnValue({
     awaitTask: vi.fn().mockResolvedValue({})
   })
 }));
@@ -167,7 +165,7 @@ describe('store::balances/manual', () => {
     ];
 
     test('default', async () => {
-      vi.mocked(useTasks().awaitTask).mockResolvedValue({
+      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
         result: { balances: mockBalancesResponse },
         meta: { title: '' }
       });

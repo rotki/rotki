@@ -11,9 +11,9 @@ import {
 import { type PendingTask } from '@/services/types-api';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { handleResponse, validStatus, validTaskStatus } from '@/services/utils';
-import { type ActionStatus } from '@/store/types';
 import { downloadFileByUrl } from '@/utils/download';
 import { api } from '@/services/rotkehlchen-api';
+import { type ActionStatus } from '@/types/action';
 
 export const useReportsApi = () => {
   const generateReport = async ({

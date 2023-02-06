@@ -1,6 +1,6 @@
 import { type Ref } from 'vue';
-import { type BlockchainAccountWithBalance } from '@/store/balances/types';
 import { logger } from '@/utils/logging';
+import { type BlockchainAccountWithBalance } from '@/types/accounts';
 
 type Title = {
   title: string;

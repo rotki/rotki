@@ -1,7 +1,5 @@
 import { type ComputedRef, type Ref } from 'vue';
 import { useAssetInfoApi } from '@/services/assets/info';
-import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type MatchedKeyword, type SearchMatcher } from '@/types/filtering';
 import { TradeType } from '@/types/history/trades';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';

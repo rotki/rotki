@@ -7,11 +7,6 @@ import {
   BackendCancelledTaskError,
   type PendingTask
 } from '@/services/types-api';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useTxQueryStatusStore } from '@/store/history/query-status';
-import { useNotificationsStore } from '@/store/notifications';
-import { useTasks } from '@/store/tasks';
-import { type ActionStatus } from '@/store/types';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { type EntryWithMeta } from '@/types/history/meta';
 import { type TradeRequestPayload } from '@/types/history/trades';
@@ -32,15 +27,15 @@ import {
   mapCollectionResponse
 } from '@/utils/collection';
 import { logger } from '@/utils/logging';
-import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import {
   defaultHistoricPayloadState,
   filterAddressesFromWords,
   mapCollectionEntriesWithMeta
 } from '@/utils/history';
 import { startPromise } from '@/utils';
+import { type ActionStatus } from '@/types/action';
 
-export const useTransactions = defineStore('history/transactions', () => {
+export const useTransactionStore = defineStore('history/transactions', () => {
   const transactions: Ref<Collection<EthTransactionEntry>> = ref(
     defaultCollectionState()
   );
@@ -63,7 +58,7 @@ export const useTransactions = defineStore('history/transactions', () => {
     addTransactionEvent: addTransactionEventCaller,
     editTransactionEvent: editTransactionEventCaller
   } = useTransactionsApi();
-  const { awaitTask, isTaskRunning } = useTasks();
+  const { awaitTask, isTaskRunning } = useTaskStore();
 
   const { fetchAvailableCounterparties } = useHistoryApi();
   const { removeQueryStatus, resetQueryStatus } = useTxQueryStatusStore();
@@ -371,5 +366,5 @@ export const useTransactions = defineStore('history/transactions', () => {
 });
 
 if (import.meta.hot) {
-  import.meta.hot.accept(acceptHMRUpdate(useTransactions, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useTransactionStore, import.meta.hot));
 }

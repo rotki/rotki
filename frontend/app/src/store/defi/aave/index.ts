@@ -1,10 +1,6 @@
 import { type ProfitLossModel } from '@rotki/common/lib/defi';
 import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
 import { type Ref } from 'vue';
-import { useNotificationsStore } from '@/store/notifications';
-import { getStatus, setStatus } from '@/store/status';
-import { useTasks } from '@/store/tasks';
-import { isLoading } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
@@ -12,13 +8,14 @@ import { TaskType } from '@/types/task-type';
 import { balanceSum } from '@/utils/calculation';
 import { logger } from '@/utils/logging';
 import { useAaveApi } from '@/services/defi/aave';
+import { isLoading } from '@/utils/status';
 
 export const useAaveStore = defineStore('defi/aave', () => {
   const balances: Ref<AaveBalances> = ref({});
   const history: Ref<AaveHistory> = ref({});
 
   const { notify } = useNotificationsStore();
-  const { awaitTask } = useTasks();
+  const { awaitTask } = useTaskStore();
   const { activeModules } = useModules();
   const premium = usePremium();
   const { tc } = useI18n();

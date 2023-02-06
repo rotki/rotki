@@ -5,9 +5,7 @@ import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import { type Module } from '@/types/modules';
 import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
 import { getMetamaskAddresses } from '@/utils/metamask';
-import { type AccountPayload } from '@/store/balances/types';
-import { useNotificationsStore } from '@/store/notifications';
-import { useBlockchainStore } from '@/store/blockchain';
+import { type AccountPayload } from '@/types/accounts';
 
 const selectedModules = ref<Module[]>([]);
 const label = ref('');

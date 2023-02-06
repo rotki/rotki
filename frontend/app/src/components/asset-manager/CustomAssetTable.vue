@@ -6,7 +6,7 @@ import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+
 import {
   type CustomAsset,
   type CustomAssetPagination,

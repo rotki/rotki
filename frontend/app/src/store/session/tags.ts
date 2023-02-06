@@ -1,10 +1,8 @@
 import logger from 'loglevel';
 import { type ComputedRef } from 'vue';
 import { useTagsApi } from '@/services/tags';
-import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
-import { useMessageStore } from '@/store/message';
-import { type ActionStatus } from '@/store/types';
 import { READ_ONLY_TAGS, type Tag, type Tags } from '@/types/user';
+import { type ActionStatus } from '@/types/action';
 
 export const useTagStore = defineStore('session/tags', () => {
   const allTags = ref<Tags>({});

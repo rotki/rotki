@@ -1,5 +1,4 @@
 import { type Balance, BigNumber } from '@rotki/common';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { Zero } from '@/utils/bignumbers';
 
 export const assetSum = (balances: Record<string, Balance>): BigNumber => {

@@ -3,15 +3,10 @@ import { type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import ConflictDialog from '@/components/status/update/ConflictDialog.vue';
 import { type ConflictResolution } from '@/services/assets/types';
-import { useAssets } from '@/store/assets';
-import { useMainStore } from '@/store/main';
-import { useMessageStore } from '@/store/message';
-import { useSessionStore } from '@/store/session';
 import {
   type AssetUpdateConflictResult,
   type AssetVersionUpdate
 } from '@/types/assets';
-import { useConfirmStore } from '@/store/confirm';
 import AssetUpdateMessage from '@/components/status/update/AssetUpdateMessage.vue';
 import AssetUpdateChecking from '@/components/status/update/AssetUpdateStatus.vue';
 import AssetUpdateSetting from '@/components/status/update/AssetUpdateSetting.vue';

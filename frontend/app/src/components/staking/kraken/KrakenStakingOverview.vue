@@ -2,7 +2,6 @@
 import { BigNumber } from '@rotki/common';
 import { type PropType } from 'vue';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { type ReceivedAmount } from '@/types/staking';
 import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';

@@ -1,23 +1,11 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import { api } from '@/services/rotkehlchen-api';
-import { NftResponse } from '@/store/session/types';
-import { useTasks } from '@/store/tasks';
-import { type AssetInfoWithId } from '@/types/assets';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-
-/**
- * It is like {@link AssetInfoWithId} but with two extra properties for
- * NFTs. It contains an imageUrl (optional) which is the image associated
- * with the NFT and a collectionName (optional)
- */
-export interface NftAsset extends AssetInfoWithId {
-  imageUrl?: string;
-  collectionName?: string;
-}
+import { NftResponse } from '@/types/nfts';
 
 export const useNftsStore = defineStore('assets/nfts', () => {
-  const { awaitTask } = useTasks();
+  const { awaitTask } = useTaskStore();
   const { t } = useI18n();
 
   const fetchNfts = async (

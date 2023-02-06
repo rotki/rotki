@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useSessionSettingsStore } from '@/store/settings/session';
-
 const animationsEnabled = ref<boolean>(true);
 const { tc } = useI18n();
 

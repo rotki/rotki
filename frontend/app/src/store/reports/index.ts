@@ -1,10 +1,5 @@
 import { type Message } from '@rotki/common/lib/messages';
 import { type ComputedRef, type Ref } from 'vue';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useTasks } from '@/store/tasks';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
   ProfitLossEventTypeEnum,
@@ -80,7 +75,7 @@ const defaultProgress = (): Progress => ({
   totalProgress: ''
 });
 
-export const useReports = defineStore('reports', () => {
+export const useReportsStore = defineStore('reports', () => {
   const report: Ref<SelectedReport> = ref(defaultReport());
   const reports: Ref<Reports> = ref(defaultReports());
   const accountingSettings: Ref<AccountingSettings | null> = ref(null);
@@ -229,7 +224,7 @@ export const useReports = defineStore('reports', () => {
       set(reportProgress, await getProgress());
     }, 2000);
 
-    const { awaitTask } = useTasks();
+    const { awaitTask } = useTaskStore();
     try {
       const { taskId } = await generateReportCaller(period);
       const { result } = await awaitTask<number, TaskMeta>(
@@ -281,7 +276,7 @@ export const useReports = defineStore('reports', () => {
       set(reportProgress, await getProgress());
     }, 2000);
 
-    const { awaitTask } = useTasks();
+    const { awaitTask } = useTaskStore();
     try {
       const { taskId } = await exportReportDataCaller(payload);
       const { result } = await awaitTask<number, TaskMeta>(
@@ -349,5 +344,5 @@ export const useReports = defineStore('reports', () => {
 });
 
 if (import.meta.hot) {
-  import.meta.hot.accept(acceptHMRUpdate(useReports, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useReportsStore, import.meta.hot));
 }

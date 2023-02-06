@@ -5,15 +5,10 @@ import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
 import { type OracleCacheMeta } from '@/services/balances/types';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useNotificationsStore } from '@/store/notifications';
-import { useTasks } from '@/store/tasks';
 import { PriceOracle } from '@/types/price-oracle';
 import { type PrioritizedListItemData } from '@/types/prioritized-list-data';
 import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/prioritized-list-id';
 import { TaskType } from '@/types/task-type';
-import { useConfirmStore } from '@/store/confirm';
 
 const { t, tc } = useI18n();
 
@@ -40,7 +35,7 @@ const headers = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-const { isTaskRunning } = useTasks();
+const { isTaskRunning } = useTaskStore();
 const { createOracleCache, getPriceCache, deletePriceCache } =
   useBalancePricesStore();
 
@@ -81,7 +76,7 @@ watch(selection, async () => {
 const pending = isTaskRunning(TaskType.CREATE_PRICE_CACHE);
 
 const { notify } = useNotificationsStore();
-const { assetSymbol } = useAssetInfoRetrieval();
+const { assetSymbol } = useAssetInfoRetrievalStore();
 
 const clearCache = async (entry: OracleCacheMeta) => {
   const { fromAsset, toAsset } = entry;

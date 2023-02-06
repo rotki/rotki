@@ -1,19 +1,12 @@
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
-import { PrivacyMode } from '@/store/session/types';
-import { type ActionStatus } from '@/store/types';
+import { PrivacyMode, type SessionSettings } from '@/types/session';
+import { type ActionStatus } from '@/types/action';
 
 const useSharedLocalStorage = createSharedComposable(useLocalStorage);
 const isAnimationEnabledSetting = useSharedLocalStorage(
   'rotki.animations_enabled',
   true
 );
-
-export interface SessionSettings {
-  privacyMode: PrivacyMode;
-  scrambleData: boolean;
-  timeframe: TimeFramePeriod;
-  animationsEnabled: boolean;
-}
 
 const defaultSessionSettings = (): SessionSettings => ({
   privacyMode: PrivacyMode.NORMAL,

@@ -6,7 +6,6 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import { BalanceType } from '@/services/balances/types';
-import { useManualBalancesStore } from '@/store/balances/manual';
 import { type ManualBalance } from '@/types/manual-balances';
 
 const form = ref<any | null>(null);

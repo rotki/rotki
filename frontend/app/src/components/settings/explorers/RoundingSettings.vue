@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import RoundingSelector from '@/components/settings/explorers/RoundingSelector.vue';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type RoundingMode } from '@/types/frontend-settings';
 import { bigNumberify } from '@/utils/bignumbers';
 

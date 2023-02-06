@@ -4,11 +4,6 @@ import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vue';
-
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useNotificationsStore } from '@/store/notifications';
-import { useSettingsStore } from '@/store/settings';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Writeable } from '@/types';
 import {
   type Exchange,
@@ -16,7 +11,6 @@ import {
   SupportedExchange
 } from '@/types/exchanges';
 import { useTradeLocations } from '@/types/trades';
-import { useConfirmStore } from '@/store/confirm';
 
 const placeholder: () => ExchangePayload = () => ({
   location: SupportedExchange.KRAKEN,

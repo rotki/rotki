@@ -6,10 +6,7 @@ import FileUpload from '@/components/import/FileUpload.vue';
 import ReportGenerator from '@/components/profitloss/ReportGenerator.vue';
 import ReportsTable from '@/components/profitloss/ReportsTable.vue';
 import { Routes } from '@/router/routes';
-import { useMessageStore } from '@/store/message';
-import { useReports } from '@/store/reports';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
-import { useTasks } from '@/store/tasks';
+
 import {
   type ProfitLossReportDebugPayload,
   type ProfitLossReportPeriod
@@ -19,8 +16,8 @@ import { TaskType } from '@/types/task-type';
 import { downloadFileByUrl } from '@/utils/download';
 import { useReportsApi } from '@/services/reports';
 
-const { isTaskRunning } = useTasks();
-const reportsStore = useReports();
+const { isTaskRunning } = useTaskStore();
+const reportsStore = useReportsStore();
 const { reportError } = storeToRefs(reportsStore);
 const { generateReport, clearError, exportReportData } = reportsStore;
 const isRunning = isTaskRunning(TaskType.TRADE_HISTORY);
@@ -132,7 +129,7 @@ const importData = async () => {
   let success: boolean;
   let message = '';
 
-  const { awaitTask } = useTasks();
+  const { awaitTask } = useTaskStore();
   const taskType = TaskType.IMPORT_PNL_REPORT_DATA;
 
   try {

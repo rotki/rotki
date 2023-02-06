@@ -1,13 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import { useBlockchainBalanceApi } from '@/services/balances/blockchain';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { type BlockchainBalancePayload } from '@/store/balances/types';
-import { useBtcBalancesStore } from '@/store/blockchain/balances/btc';
-import { useChainBalancesStore } from '@/store/blockchain/balances/chains';
-import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
-import { useNotificationsStore } from '@/store/notifications';
-import { useTasks } from '@/store/tasks';
 import { chainSection } from '@/types/blockchain';
 import { BlockchainBalances } from '@/types/blockchain/balances';
 import { type AssetPrices } from '@/types/prices';
@@ -15,11 +8,12 @@ import { Status } from '@/types/status';
 import { type BlockchainMetadata } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
+import { type BlockchainBalancePayload } from '@/types/accounts';
 
 export const useBlockchainBalancesStore = defineStore(
   'balances/blockchain',
   () => {
-    const { awaitTask } = useTasks();
+    const { awaitTask } = useTaskStore();
     const { notify } = useNotificationsStore();
     const { queryBlockchainBalances } = useBlockchainBalanceApi();
     const { update: updateEth, updatePrices: updateEthPrices } =

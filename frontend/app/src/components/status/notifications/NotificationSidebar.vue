@@ -3,10 +3,6 @@ import orderBy from 'lodash/orderBy';
 import Notification from '@/components/status/notifications/Notification.vue';
 import PendingTasks from '@/components/status/notifications/PendingTasks.vue';
 
-import { useTasks } from '@/store/tasks';
-import { useNotificationsStore } from '@/store/notifications';
-import { useConfirmStore } from '@/store/confirm';
-
 defineProps({
   visible: { required: true, type: Boolean }
 });
@@ -54,7 +50,7 @@ const notifications = computed(() => {
 });
 
 const { isMobile } = useTheme();
-const { hasRunningTasks } = storeToRefs(useTasks());
+const { hasRunningTasks } = storeToRefs(useTaskStore());
 </script>
 
 <template>

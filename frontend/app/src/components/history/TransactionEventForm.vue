@@ -13,12 +13,6 @@ import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useHistoryEventTypeData } from '@/store/history/consts';
-import { useMessageStore } from '@/store/message';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTasks } from '@/store/tasks';
-import { type ActionStatus } from '@/store/types';
 import { type Writeable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
@@ -31,6 +25,8 @@ import { TaskType } from '@/types/task-type';
 import { One, Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useEventTypeData } from '@/utils/history';
+import { useHistoryEventTypeData } from '@/composables/history/event-data';
+import { type ActionStatus } from '@/types/action';
 
 const props = defineProps({
   value: { required: false, type: Boolean, default: false },
@@ -60,7 +56,7 @@ const { edit, transaction, saveData } = toRefs(props);
 
 const input = (valid: boolean) => emit('input', valid);
 
-const { isTaskRunning } = useTasks();
+const { isTaskRunning } = useTaskStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { exchangeRate, getHistoricPrice } = useBalancePricesStore();
 const { getEventTypeData } = useEventTypeData();

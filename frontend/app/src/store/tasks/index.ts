@@ -9,13 +9,11 @@ import {
   TaskNotFoundError
 } from '@/services/types-api';
 import { SyncConflictError } from '@/types/login';
-import { type Task, type TaskMeta } from '@/types/task';
+import { type Task, type TaskMap, type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { logger } from '@/utils/logging';
-
-export type TaskMap<T extends TaskMeta> = Record<number, Task<T>>;
 
 const unlockTask = (lockedTasks: Ref<number[]>, taskId: number): number[] => {
   const locked = [...get(lockedTasks)];
@@ -49,7 +47,7 @@ interface TaskResponse<R, M extends TaskMeta> {
   meta: M;
   message?: string;
 }
-export const useTasks = defineStore('tasks', () => {
+export const useTaskStore = defineStore('tasks', () => {
   const locked = ref<number[]>([]);
   const tasks = ref<TaskMap<TaskMeta>>({});
   const handlers: Record<string, (result: any, meta: any) => void> = {};
@@ -279,5 +277,5 @@ export const useTasks = defineStore('tasks', () => {
 });
 
 if (import.meta.hot) {
-  import.meta.hot.accept(acceptHMRUpdate(useTasks, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useTaskStore, import.meta.hot));
 }

@@ -1,14 +1,10 @@
 import { type Ref } from 'vue';
-import { useSessionStore } from '@/store/session';
-import { useSessionAuthStore } from '@/store/session/auth';
+
 import {
   type CreateAccountPayload,
   type LoginCredentials
 } from '@/types/login';
 import { setLastLogin } from '@/utils/account-management';
-import { useWebsocketStore } from '@/store/websocket';
-import { useMainStore } from '@/store/main';
-import { useAccountMigrationStore } from '@/store/blockchain/accounts/migrate';
 import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
 import { wait } from '@/utils/backoff';
 

@@ -1,6 +1,5 @@
 ﻿<script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { explorerUrls } from '@/types/asset-urls';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 

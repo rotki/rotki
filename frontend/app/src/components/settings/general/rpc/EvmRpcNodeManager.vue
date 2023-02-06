@@ -4,15 +4,12 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RpcNodeForm from '@/components/settings/general/rpc/RpcNodeForm.vue';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
-import { usePeriodicStore } from '@/store/session/periodic';
+
 import {
   type EvmRpcNode,
   type EvmRpcNodeList,
   getPlaceholderNode
 } from '@/types/settings';
-import { useConfirmStore } from '@/store/confirm';
 import { ApiValidationError } from '@/types/api/errors';
 
 const props = withDefaults(

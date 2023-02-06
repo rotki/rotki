@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import { useSettingsStore } from '@/store/settings';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const emit = defineEmits(['updated']);
 

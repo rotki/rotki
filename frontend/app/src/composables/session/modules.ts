@@ -1,4 +1,3 @@
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Module } from '@/types/modules';
 
 export const useModules = () => {

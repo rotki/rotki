@@ -2,9 +2,6 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
 import { type MaybeRef } from '@vueuse/core';
 import { useAddressesNamesApi } from '@/services/blockchain/addresses-names';
-import { useNotificationsStore } from '@/store/notifications';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useTasks } from '@/store/tasks';
 import {
   AddressBookEntries,
   type AddressBookEntry,
@@ -20,7 +17,7 @@ import { isValidEthAddress } from '@/utils/text';
 import { type Chains } from '@/types/asset-urls';
 import { isBlockchain } from '@/types/blockchain/chains';
 
-export const useAddressesNamesStore = defineStore('addressesNames', () => {
+export const useAddressesNamesStore = defineStore('addresses', () => {
   const { enableAliasNames } = storeToRefs(useFrontendSettingsStore());
 
   const fetchedEntries = ref<AddressBookSimplePayload[]>([]);
@@ -36,7 +33,7 @@ export const useAddressesNamesStore = defineStore('addressesNames', () => {
     };
   });
 
-  const { awaitTask } = useTasks();
+  const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { t, tc } = useI18n();
 

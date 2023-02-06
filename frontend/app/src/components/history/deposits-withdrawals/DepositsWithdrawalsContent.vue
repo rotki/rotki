@@ -13,9 +13,8 @@ import TableFilter from '@/components/history/filtering/TableFilter.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-
 import { Routes } from '@/router/routes';
-import { useAssetMovements } from '@/store/history/asset-movements';
+
 import {
   type AssetMovement,
   type AssetMovementEntry,

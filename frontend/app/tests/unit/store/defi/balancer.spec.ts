@@ -2,7 +2,6 @@ import { type BalancerBalance } from '@rotki/common/lib/defi/balancer';
 import { type XswapPool } from '@rotki/common/lib/defi/xswap';
 import { get, set } from '@vueuse/core';
 import { createPinia, setActivePinia, storeToRefs } from 'pinia';
-import { useBalancerStore } from '@/store/defi/balancer';
 import { bigNumberify } from '@/utils/bignumbers';
 
 export const setBalancerBalances = () => {

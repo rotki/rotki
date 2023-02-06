@@ -6,8 +6,6 @@ import {
 } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { type Module } from '@/types/modules';
 
 const props = defineProps<{ module: Module }>();

@@ -1,9 +1,5 @@
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
-import { useNotificationsStore } from '@/store/notifications';
-import { getStatus, setStatus } from '@/store/status';
-import { useTasks } from '@/store/tasks';
-import { isLoading } from '@/store/utils';
 import {
   type ApiMakerDAOVault,
   ApiMakerDAOVaults,
@@ -19,6 +15,7 @@ import { TaskType } from '@/types/task-type';
 import { Zero, bigNumberify } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
 import { useMakerDaoApi } from '@/services/defi/makerdao';
+import { isLoading } from '@/utils/status';
 
 const convertMakerDAOVaults = (vaults: ApiMakerDAOVault[]): MakerDAOVault[] =>
   vaults.map(vault => ({
@@ -47,7 +44,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
   const makerDAOVaults: Ref<MakerDAOVault[]> = ref([]);
   const makerDAOVaultDetails: Ref<MakerDAOVaultDetails> = ref([]);
 
-  const { awaitTask } = useTasks();
+  const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { activeModules } = useModules();
   const premium = usePremium();

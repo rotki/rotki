@@ -2,7 +2,6 @@
 import { type PropType } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import TagManager from '@/components/tags/TagManager.vue';
-import { useTagStore } from '@/store/session/tags';
 import { type Tag } from '@/types/user';
 import { invertColor, randomColor } from '@/utils/color';
 import { checkIfDevelopment } from '@/utils/env-utils';

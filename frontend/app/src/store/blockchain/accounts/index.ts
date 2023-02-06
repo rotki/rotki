@@ -3,16 +3,6 @@ import {
   type BtcAccountData,
   type GeneralAccountData
 } from '@/services/types-api';
-import {
-  type AccountPayload,
-  type BasicBlockchainAccountPayload,
-  type BlockchainAccountPayload
-} from '@/store/balances/types';
-import { useBtcAccountsStore } from '@/store/blockchain/accounts/btc';
-import { useChainsAccountsStore } from '@/store/blockchain/accounts/chains';
-import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
-import { useNotificationsStore } from '@/store/notifications';
-import { useTasks } from '@/store/tasks';
 import { type BlockchainBalances } from '@/types/blockchain/balances';
 import {
   type BtcChains,
@@ -24,7 +14,11 @@ import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import { logger } from '@/utils/logging';
 import { startPromise } from '@/utils';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import {
+  type AccountPayload,
+  type BasicBlockchainAccountPayload,
+  type BlockchainAccountPayload
+} from '@/types/accounts';
 
 export const useBlockchainAccountsStore = defineStore(
   'blockchain/accounts',
@@ -46,7 +40,7 @@ export const useBlockchainAccountsStore = defineStore(
     } = useEthAccountsStore();
     const { removeTag: removeChainTag, update: updateChain } =
       useChainsAccountsStore();
-    const { awaitTask } = useTasks();
+    const { awaitTask } = useTaskStore();
     const { notify } = useNotificationsStore();
     const { tc } = useI18n();
 

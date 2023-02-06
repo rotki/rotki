@@ -4,7 +4,6 @@ import {
   SYNC_UPLOAD,
   type SyncAction
 } from '@/services/types-api';
-import { usePremiumStore } from '@/store/session/premium';
 
 defineProps({
   pending: { required: true, type: Boolean }

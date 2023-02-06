@@ -1,8 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
-import { useSessionStore } from '@/store/session';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { usePremiumStore } from '@/store/session/premium';
-import { type ActionSuccess } from '@/store/types';
+
+import type ActionSuccess from '@/types/action';
 
 vi.mock('vue-router/composables', () => ({
   useRoute: vi.fn(),

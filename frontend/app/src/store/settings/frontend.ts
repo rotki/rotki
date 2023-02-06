@@ -8,7 +8,6 @@ import { type ComputedRef } from 'vue';
 import { getBnFormat } from '@/data/amount_formatter';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { useSettingsApi } from '@/services/settings/settings-api';
-import { type ActionStatus } from '@/store/types';
 import { type CurrencyLocation } from '@/types/currency-location';
 import { type DateFormat } from '@/types/date-format';
 import {
@@ -23,6 +22,7 @@ import {
   SupportedLanguage
 } from '@/types/frontend-settings';
 import { assert } from '@/utils/assertions';
+import { type ActionStatus } from '@/types/action';
 
 export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const settings = reactive(FrontendSettings.parse({}));

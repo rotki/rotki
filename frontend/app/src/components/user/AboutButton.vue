@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useAreaVisibilityStore } from '@/store/session/visibility';
-
 const { t } = useI18n();
 const { showAbout } = storeToRefs(useAreaVisibilityStore());
 

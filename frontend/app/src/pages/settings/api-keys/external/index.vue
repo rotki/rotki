@@ -4,10 +4,6 @@ import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ApiKeyBox from '@/components/settings/api-keys/ApiKeyBox.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { useExternalServicesApi } from '@/services/settings/external-services-api';
-import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
 import {
   type ExternalServiceKey,

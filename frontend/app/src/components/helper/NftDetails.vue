@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/types/status';
 import { isVideo } from '@/utils/nft';
 
@@ -17,7 +15,7 @@ const props = defineProps({
 const css = useCssModule();
 
 const { identifier } = toRefs(props);
-const { assetInfo } = useAssetInfoRetrieval();
+const { assetInfo } = useAssetInfoRetrievalStore();
 
 const balanceData = assetInfo(identifier);
 

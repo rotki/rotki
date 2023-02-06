@@ -2,7 +2,7 @@ import { type Wrapper, mount } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import AssetBalances from '@/components/AssetBalances.vue';
-import { useSessionStore } from '@/store/session';
+
 import createCustomPinia from '../../utils/create-pinia';
 
 describe('AssetBalances.vue', () => {

@@ -7,9 +7,6 @@ import {
   ALL_TRANSACTIONS
 } from '@/services/session/consts';
 import { type Purgeable } from '@/services/session/types';
-import { useDefiStore } from '@/store/defi';
-import { usePurgeStore } from '@/store/history/purge';
-import { useStakingStore } from '@/store/staking';
 import { SUPPORTED_EXCHANGES, type SupportedExchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
 

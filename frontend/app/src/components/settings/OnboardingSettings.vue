@@ -15,10 +15,8 @@ import {
   type BackendConfiguration,
   type DefaultBackendArguments
 } from '@/services/types-api';
-import { useMainStore } from '@/store/main';
 import { type Writeable } from '@/types';
 import { LogLevel } from '@/utils/log-level';
-import { useConfirmStore } from '@/store/confirm';
 import { api } from '@/services/rotkehlchen-api';
 import SettingResetButton from '@/components/settings/SettingResetButton.vue';
 

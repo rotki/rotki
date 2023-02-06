@@ -2,13 +2,11 @@ import { Severity } from '@rotki/common/lib/messages';
 import { type MaybeRef } from '@vueuse/core';
 import { api } from '@/services/rotkehlchen-api';
 import { SYNC_DOWNLOAD, type SyncAction } from '@/services/types-api';
-import { useNotificationsStore } from '@/store/notifications';
-import { useTasks } from '@/store/tasks';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 export const useSyncStore = defineStore('syncStore', () => {
-  const { isTaskRunning, awaitTask } = useTasks();
+  const { isTaskRunning, awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { tc } = useI18n();
 

@@ -6,10 +6,6 @@ import dayjs from 'dayjs';
 import { type PropType } from 'vue';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useTasks } from '@/store/tasks';
-import { type ActionStatus } from '@/store/types';
 import { type Writeable } from '@/types';
 import {
   type NewTrade,
@@ -20,6 +16,7 @@ import {
 import { TaskType } from '@/types/task-type';
 import { Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+import { type ActionStatus } from '@/types/action';
 
 const props = defineProps({
   value: { required: false, type: Boolean, default: false },
@@ -43,7 +40,7 @@ const { edit, saveData } = toRefs(props);
 
 const input = (valid: boolean) => emit('input', valid);
 
-const { isTaskRunning } = useTasks();
+const { isTaskRunning } = useTaskStore();
 const { getHistoricPrice } = useBalancePricesStore();
 
 const id = ref<string>('');
@@ -67,7 +64,7 @@ const rateInput = ref<any>(null);
 const feeInput = ref<any>(null);
 const feeCurrencyInput = ref<any>(null);
 
-const { assetSymbol } = useAssetInfoRetrieval();
+const { assetSymbol } = useAssetInfoRetrievalStore();
 const baseSymbol = assetSymbol(base);
 const quoteSymbol = assetSymbol(quote);
 

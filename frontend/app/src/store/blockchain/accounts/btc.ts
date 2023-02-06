@@ -1,14 +1,12 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
 import { type BtcAccountData } from '@/services/types-api';
-import { type XpubPayload } from '@/store/balances/types';
-import { useNotificationsStore } from '@/store/notifications';
-import { useTasks } from '@/store/tasks';
 import { type BtcChains } from '@/types/blockchain/chains';
 import { type BlockchainMetadata } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { removeBtcTags } from '@/utils/tags';
+import { type XpubPayload } from '@/types/accounts';
 
 const defaultAccountState = (): BtcAccountData => ({
   standalone: [],
@@ -21,7 +19,7 @@ export const useBtcAccountsStore = defineStore(
     const btc: Ref<BtcAccountData> = ref(defaultAccountState());
     const bch: Ref<BtcAccountData> = ref(defaultAccountState());
 
-    const { awaitTask, isTaskRunning } = useTasks();
+    const { awaitTask, isTaskRunning } = useTaskStore();
     const { notify } = useNotificationsStore();
     const { tc } = useI18n();
 

@@ -1,10 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
 import { useTradesApi } from '@/services/history/trades';
-import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
-import { useNotificationsStore } from '@/store/notifications';
-import { useTasks } from '@/store/tasks';
-import { type ActionStatus } from '@/store/types';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { type SupportedExchange } from '@/types/exchanges';
 import { type EntryWithMeta } from '@/types/history/meta';
@@ -29,8 +25,9 @@ import {
   defaultHistoricPayloadState,
   mapCollectionEntriesWithMeta
 } from '@/utils/history';
+import { type ActionStatus } from '@/types/action';
 
-export const useTrades = defineStore('history/trades', () => {
+export const useTradeStore = defineStore('history/trades', () => {
   const trades: Ref<Collection<TradeEntry>> = ref(
     defaultCollectionState<TradeEntry>()
   );
@@ -58,7 +55,7 @@ export const useTrades = defineStore('history/trades', () => {
     refresh = false,
     onlyLocation?: SupportedExchange
   ): Promise<void> => {
-    const { awaitTask, isTaskRunning } = useTasks();
+    const { awaitTask, isTaskRunning } = useTaskStore();
     const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
       Section.TRADES,
       !!onlyLocation
@@ -240,5 +237,5 @@ export const useTrades = defineStore('history/trades', () => {
 });
 
 if (import.meta.hot) {
-  import.meta.hot.accept(acceptHMRUpdate(useTrades, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useTradeStore, import.meta.hot));
 }

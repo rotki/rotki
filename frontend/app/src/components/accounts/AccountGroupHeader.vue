@@ -5,10 +5,9 @@ import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { bigNumberSum, truncateAddress, truncationPoints } from '@/filters';
-import { type XpubAccountWithBalance } from '@/store/balances/types';
-import { balanceUsdValueSum } from '@/store/defi/utils';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { assert } from '@/utils/assertions';
+import { balanceUsdValueSum } from '@/utils/balances';
+import { type XpubAccountWithBalance } from '@/types/accounts';
 
 const props = defineProps({
   group: { required: true, type: String },

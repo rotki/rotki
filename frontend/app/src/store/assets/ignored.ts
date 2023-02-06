@@ -1,9 +1,8 @@
 import { type MaybeRef } from '@vueuse/core';
 import { useAssetIgnoreApi } from '@/services/assets/ignore';
-import { useNotificationsStore } from '@/store/notifications';
-import { type ActionStatus } from '@/store/types';
+import { type ActionStatus } from '@/types/action';
 
-export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
+export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
   const ignoredAssets = ref<string[]>([]);
   const { notify } = useNotificationsStore();
   const { t, tc } = useI18n();

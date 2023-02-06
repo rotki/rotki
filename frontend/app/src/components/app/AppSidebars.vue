@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useAreaVisibilityStore } from '@/store/session/visibility';
-
 const HelpSidebar = defineAsyncComponent(
   () => import('@/components/help/HelpSidebar.vue')
 );

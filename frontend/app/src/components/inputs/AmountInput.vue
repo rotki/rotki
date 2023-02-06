@@ -7,7 +7,6 @@ export default {
 <script setup lang="ts">
 import Cleave from 'cleave.js';
 import { useListeners } from 'vue';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const props = defineProps({
   integer: { required: false, type: Boolean, default: false },

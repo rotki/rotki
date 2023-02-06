@@ -4,7 +4,6 @@ import { type DataTableHeader } from 'vuetify';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import { ProtocolVersion } from '@/services/defi/consts';
-import { useYearnStore } from '@/store/defi/yearn';
 import { type YearnVaultAsset } from '@/types/defi/yearn';
 
 const props = defineProps({

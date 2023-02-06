@@ -1,17 +1,9 @@
-import { type BigNumber, type HasBalance } from '@rotki/common';
 import { type ProfitLossModel } from '@rotki/common/lib/defi';
 import { type CompoundProfitAndLoss } from '@/types/defi/compound';
-import { Zero } from '@/utils/bignumbers';
 
-export function balanceUsdValueSum(balances: HasBalance[]): BigNumber {
-  return balances
-    .map(({ balance: { usdValue } }) => usdValue)
-    .reduce((sum, value) => sum.plus(value), Zero);
-}
-
-export function toProfitLossModel(
+export const toProfitLossModel = (
   profitAndLoss: CompoundProfitAndLoss
-): ProfitLossModel[] {
+): ProfitLossModel[] => {
   const data: ProfitLossModel[] = [];
   for (const address of Object.keys(profitAndLoss)) {
     const assets = profitAndLoss[address];
@@ -25,4 +17,4 @@ export function toProfitLossModel(
   }
 
   return data;
-}
+};

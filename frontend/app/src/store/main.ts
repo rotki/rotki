@@ -1,10 +1,10 @@
 import { type Ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
 import { useUsersApi } from '@/services/session/users.api';
-import { type Version } from '@/store/types';
 import { type Nullable } from '@/types';
 import { type LogLevel } from '@/utils/log-level';
 import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
+import { type Version } from '@/types/action';
 
 let intervalId: any = null;
 export const useMainStore = defineStore('main', () => {

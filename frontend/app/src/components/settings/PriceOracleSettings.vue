@@ -2,7 +2,7 @@
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+
 import {
   PrioritizedListData,
   type PrioritizedListItemData

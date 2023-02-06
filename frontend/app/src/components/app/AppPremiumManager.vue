@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { loadLibrary } from '@/premium/premium';
 import { setupPremium } from '@/premium/setup-premium';
-import { usePremiumStore } from '@/store/session/premium';
-import { useStatusStore } from '@/store/status';
 
 const { premium, componentsReady } = storeToRefs(usePremiumStore());
 const status = useStatusStore();

@@ -1,8 +1,4 @@
 import { BackendCode } from '@/electron-main/backend-code';
-import { useMainStore } from '@/store/main';
-import { useMonitorStore } from '@/store/monitor';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { logger } from '@/utils/logging';
 

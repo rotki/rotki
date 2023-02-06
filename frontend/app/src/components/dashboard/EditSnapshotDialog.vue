@@ -4,9 +4,7 @@ import EditBalancesSnapshotTable from '@/components/dashboard/EditBalancesSnapsh
 import EditLocationDataSnapshotTable from '@/components/dashboard/EditLocationDataSnapshotTable.vue';
 import EditSnapshotTotal from '@/components/dashboard/EditSnapshotTotal.vue';
 import { useSnapshotApi } from '@/services/settings/snapshot-api';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
-import { useStatisticsStore } from '@/store/statistics';
+
 import {
   type BalanceSnapshot,
   type LocationDataSnapshot,

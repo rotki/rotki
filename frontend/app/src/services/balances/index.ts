@@ -3,7 +3,7 @@ import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { type PendingTask } from '@/services/types-api';
 import { handleResponse, validStatus } from '@/services/utils';
-import { type AllBalancePayload } from '@/store/balances/types';
+import { type AllBalancePayload } from '@/types/accounts';
 
 export const useBalancesApi = () => {
   const queryBalancesAsync = async (

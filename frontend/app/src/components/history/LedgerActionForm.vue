@@ -7,8 +7,6 @@ import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { useLedgerActionData } from '@/store/history/consts';
-import { type ActionStatus } from '@/store/types';
 import { type Writeable } from '@/types';
 import {
   type LedgerAction,
@@ -18,6 +16,8 @@ import {
 import { LedgerActionType } from '@/types/ledger-actions';
 import { Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+import { useLedgerActionData } from '@/composables/history/ledger-actions';
+import { type ActionStatus } from '@/types/action';
 
 const props = defineProps({
   value: { required: false, type: Boolean, default: false },

@@ -1,10 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
 import { useAssetMovementsApi } from '@/services/history/asset-movements';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
-import { useNotificationsStore } from '@/store/notifications';
-import { useTasks } from '@/store/tasks';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { type SupportedExchange } from '@/types/exchanges';
 import { type EntryWithMeta } from '@/types/history/meta';
@@ -29,7 +25,7 @@ import {
   mapCollectionEntriesWithMeta
 } from '@/utils/history';
 
-export const useAssetMovements = defineStore('history/assetMovements', () => {
+export const useAssetMovements = defineStore('history/asset-movements', () => {
   const assetMovements: Ref<Collection<AssetMovementEntry>> = ref(
     defaultCollectionState<AssetMovementEntry>()
   );
@@ -51,7 +47,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
     refresh = false,
     onlyLocation?: SupportedExchange
   ): Promise<void> => {
-    const { awaitTask, isTaskRunning } = useTasks();
+    const { awaitTask, isTaskRunning } = useTaskStore();
     const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
       Section.ASSET_MOVEMENT,
       !!onlyLocation

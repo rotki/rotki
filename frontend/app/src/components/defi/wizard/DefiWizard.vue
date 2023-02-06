@@ -3,7 +3,6 @@ import { ref } from 'vue';
 
 import ModuleAddressSelector from '@/components/defi/wizard/ModuleAddressSelector.vue';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const { updateSetting } = useFrontendSettingsStore();
 

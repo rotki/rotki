@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import OnboardingSettings from '@/components/settings/OnboardingSettings.vue';
-import { useMainStore } from '@/store/main';
 
 const visible = ref<boolean>(false);
 const { connected } = toRefs(useMainStore());

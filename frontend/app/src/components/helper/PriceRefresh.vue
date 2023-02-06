@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { type ComputedRef, type PropType } from 'vue';
-import { useBalancesStore } from '@/store/balances';
-import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
-import { useTasks } from '@/store/tasks';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 
@@ -14,7 +11,7 @@ const props = defineProps({
   }
 });
 
-const { isTaskRunning } = useTasks();
+const { isTaskRunning } = useTaskStore();
 const { refreshPrices } = useBalancesStore();
 const { isSectionRefreshing } = useSectionLoading();
 

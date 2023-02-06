@@ -2,9 +2,6 @@
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 
-import { useMonitorStore } from '@/store/monitor';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-
 const queryPeriod = ref<string>('5');
 const minQueryPeriod = 5;
 const maxQueryPeriod = 3600;

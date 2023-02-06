@@ -4,8 +4,7 @@ import { type DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
-import { type BaseDefiBalance } from '@/store/defi/types';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { type BaseDefiBalance } from '@/types/defi/lending';
 
 defineProps({
   assets: { required: true, type: Array as PropType<BaseDefiBalance[]> },

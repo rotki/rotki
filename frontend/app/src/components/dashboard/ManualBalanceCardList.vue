@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { toSentenceCase } from '@/utils/text';
 
 defineProps({

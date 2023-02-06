@@ -11,9 +11,7 @@ import {
   getEventDetails,
   getPoolProfit,
   getPools
-} from '@/store/defi/xswap-utils';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { type OnError } from '@/store/typing';
+} from '@/utils/defi/xswap';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
@@ -21,6 +19,7 @@ import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
 import { fetchDataAsync } from '@/utils/fetch-async';
 import { useUniswapApi } from '@/services/defi/uniswap';
+import { type OnError } from '@/types/fetch';
 
 export const useUniswapStore = defineStore('defi/uniswap', () => {
   const v2Balances: Ref<XswapBalances> = ref<XswapBalances>({});

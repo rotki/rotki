@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { type AssetInfoWithId } from '@/types/assets';
 
 const props = defineProps({
@@ -21,7 +20,7 @@ const props = defineProps({
 });
 
 const { asset, enableAssociation, isCollectionParent } = toRefs(props);
-const { assetInfo } = useAssetInfoRetrieval();
+const { assetInfo } = useAssetInfoRetrievalStore();
 
 const assetDetails = assetInfo(asset, enableAssociation, isCollectionParent);
 

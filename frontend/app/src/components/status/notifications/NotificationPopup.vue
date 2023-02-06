@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import Notification from '@/components/status/notifications/Notification.vue';
-import {
-  emptyNotification,
-  useNotificationsStore
-} from '@/store/notifications';
+import { createNotification } from '@/utils/notifications';
 
-const visibleNotification = ref(emptyNotification());
+const visibleNotification = ref(createNotification());
 const notificationStore = useNotificationsStore();
 const { queue } = storeToRefs(notificationStore);
 const { displayed } = notificationStore;

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useGeneralSettingsStore } from '@/store/settings/general';
-
 const btcDerivationGapLimit = ref<string>('20');
 
 const { btcDerivationGapLimit: limit } = storeToRefs(useGeneralSettingsStore());

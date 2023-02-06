@@ -9,8 +9,6 @@ import NftDetails from '@/components/helper/NftDetails.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { bigNumberSum } from '@/filters';
 import { BalanceType } from '@/services/balances/types';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
   type BalanceSnapshot,

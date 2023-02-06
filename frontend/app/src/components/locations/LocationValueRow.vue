@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Zero } from '@/utils/bignumbers';
 
 const props = defineProps({

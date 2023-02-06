@@ -2,7 +2,6 @@ import {
   type EvmTransactionQueryData,
   EvmTransactionsQueryStatus
 } from '@/types/websocket-messages';
-import { useTxQueryStatusStore } from '@/store/history/query-status';
 
 export const useTransactionQueryStatus = () => {
   const { tc } = useI18n();

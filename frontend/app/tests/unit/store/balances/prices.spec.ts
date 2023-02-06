@@ -1,9 +1,6 @@
 import { beforeEach } from 'vitest';
 import { defaultGeneralSettings } from '@/data/factories';
 import { usePriceApi } from '@/services/balances/price';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTasks } from '@/store/tasks';
 import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
 import { PriceOracle } from '@/types/price-oracle';
 import { bigNumberify } from '@/utils/bignumbers';
@@ -20,7 +17,7 @@ vi.mock('@/services/balances/price', () => ({
 }));
 
 vi.mock('@/store/tasks', () => ({
-  useTasks: vi.fn().mockReturnValue({
+  useTaskStore: vi.fn().mockReturnValue({
     isTaskRunning: vi.fn().mockReturnValue(false),
     awaitTask: vi.fn().mockResolvedValue({})
   })
@@ -48,7 +45,7 @@ describe('store::balances/manual', () => {
         }
       };
 
-      vi.mocked(useTasks().awaitTask).mockResolvedValue({
+      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
         result: mockPricesResponse,
         meta: { title: '' }
       });
@@ -86,7 +83,7 @@ describe('store::balances/manual', () => {
         }
       };
 
-      vi.mocked(useTasks().awaitTask).mockResolvedValue({
+      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
         result: mockPricesResponse,
         meta: { title: '' }
       });
@@ -150,7 +147,7 @@ describe('store::balances/manual', () => {
         EUR: 1.5
       };
 
-      vi.mocked(useTasks().awaitTask).mockResolvedValue({
+      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
         result: mockExchangeRatesResponse,
         meta: { title: '' }
       });
@@ -186,7 +183,7 @@ describe('store::balances/manual', () => {
         }
       };
 
-      vi.mocked(useTasks().awaitTask).mockResolvedValue({
+      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
         result: { assets: mockResponse, targetAsset: 'USD' },
         meta: { title: '' }
       });
@@ -207,7 +204,7 @@ describe('store::balances/manual', () => {
     });
 
     test('failed', async () => {
-      vi.mocked(useTasks().awaitTask).mockResolvedValue({
+      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
         result: { assets: {}, targetAsset: 'USD' },
         meta: { title: '' }
       });

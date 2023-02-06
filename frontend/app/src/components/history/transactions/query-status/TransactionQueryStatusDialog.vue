@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useTxQueryStatusStore } from '@/store/history/query-status';
 import TransactionQueryStatusCurrent from '@/components/history/transactions/query-status/TransactionQueryStatusCurrent.vue';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import TransactionQueryStatusLine from '@/components/history/transactions/query-status/TransactionQueryStatusLine.vue';

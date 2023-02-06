@@ -13,8 +13,6 @@ import Fragment from '@/components/helper/Fragment';
 import HelpLink from '@/components/helper/HelpLink.vue';
 import { CUSTOM_ASSET, EVM_TOKEN } from '@/services/assets/consts';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useMessageStore } from '@/store/message';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import {
   isValidEthAddress,
@@ -43,7 +41,7 @@ const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
 
 const { t, tc } = useI18n();
 const { edit } = toRefs(props);
-const { fetchTokenDetails } = useAssetInfoRetrieval();
+const { fetchTokenDetails } = useAssetInfoRetrievalStore();
 
 const input = (value: boolean) => {
   emit('input', value);

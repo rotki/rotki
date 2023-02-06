@@ -4,9 +4,6 @@ import MacOsVersionUnsupported from '@/components/error/MacOsVersionUnsupported.
 import StartupErrorScreen from '@/components/error/StartupErrorScreen.vue';
 import WinVersionUnsupported from '@/components/error/WinVersionUnsupported.vue';
 import Fragment from '@/components/helper/Fragment';
-import { useBackendMessagesStore } from '@/store/backend-messages';
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
 
 const {
   startupErrorMessage,

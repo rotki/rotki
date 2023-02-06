@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useTransactions } from '@/store/history/transactions';
 import { Section } from '@/types/status';
 
 const ProgressScreen = defineAsyncComponent(
@@ -8,7 +7,7 @@ const ProgressScreen = defineAsyncComponent(
 const TransactionContent = defineAsyncComponent(
   () => import('@/components/history/transactions/TransactionContent.vue')
 );
-const { fetchTransactions } = useTransactions();
+const { fetchTransactions } = useTransactionStore();
 
 const { shouldShowLoadingScreen } = useSectionLoading();
 const loading = shouldShowLoadingScreen(Section.TX);

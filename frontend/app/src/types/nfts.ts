@@ -1,38 +1,15 @@
-import { type BigNumber, NumericString } from '@rotki/common';
 import { z } from 'zod';
+import { type BigNumber, NumericString } from '@rotki/common';
+import { type AssetInfoWithId } from '@/types/assets';
 
-export enum PrivacyMode {
-  NORMAL = 0,
-  SEMI_PRIVATE = 1,
-  PRIVATE = 2
-}
-
-export interface Pinned {
-  name: string;
-  props: Record<string, any>;
-}
-
-export const SyncConflictPayload = z.object({
-  localLastModified: z.number(),
-  remoteLastModified: z.number()
-});
-
-export type SyncConflictPayload = z.infer<typeof SyncConflictPayload>;
-
-export interface SyncConflict {
-  readonly message: string;
-  readonly payload: SyncConflictPayload | null;
-}
-
-export interface PremiumCredentialsPayload {
-  readonly username: string;
-  readonly apiKey: string;
-  readonly apiSecret: string;
-}
-
-export interface ChangePasswordPayload {
-  readonly currentPassword: string;
-  readonly newPassword: string;
+/**
+ * It is like {@link AssetInfoWithId} but with two extra properties for
+ * NFTs. It contains an imageUrl (optional) which is the image associated
+ * with the NFT and a collectionName (optional)
+ */
+export interface NftAsset extends AssetInfoWithId {
+  imageUrl?: string;
+  collectionName?: string;
 }
 
 const NftCollectionInfo = z.object({
@@ -41,7 +18,6 @@ const NftCollectionInfo = z.object({
   name: z.string().nullable(),
   largeImage: z.string().nullable()
 });
-
 const Nft = z.object({
   tokenIdentifier: z.string().nonempty(),
   name: z.string().nullable(),
@@ -53,7 +29,6 @@ const Nft = z.object({
   priceEth: NumericString,
   priceUsd: NumericString
 });
-
 export type Nft = z.infer<typeof Nft>;
 
 export interface GalleryNft extends Omit<Nft, 'priceEth'> {
@@ -63,13 +38,10 @@ export interface GalleryNft extends Omit<Nft, 'priceEth'> {
 }
 
 const Nfts = z.record(z.array(Nft));
-
 export type Nfts = z.infer<typeof Nfts>;
-
 export const NftResponse = z.object({
   addresses: Nfts,
   entriesFound: z.number(),
   entriesLimit: z.number()
 });
-
 export type NftResponse = z.infer<typeof NftResponse>;

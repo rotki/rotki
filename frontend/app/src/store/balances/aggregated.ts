@@ -1,11 +1,6 @@
 import { type AssetBalanceWithPrice } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useAggregatedBlockchainBalancesStore } from '@/store/blockchain/balances/aggregated';
 import { samePriceAssets } from '@/types/blockchain';
 import { type AssetPriceInfo } from '@/types/prices';
 import {
@@ -29,7 +24,7 @@ export const useAggregatedBalancesStore = defineStore(
     const { balances: manualBalances, liabilities: manualLiabilities } =
       useManualAssetBalances();
 
-    const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
+    const { getAssociatedAssetIdentifier } = useAssetInfoRetrievalStore();
 
     const balances = (
       hideIgnored = true,

@@ -1,11 +1,4 @@
 import { type Ref } from 'vue';
-import { useBalancesStore } from '@/store/balances';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { usePeriodicStore } from '@/store/session/periodic';
-import { useWatchersStore } from '@/store/session/watchers';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useTasks } from '@/store/tasks';
-import { useWebsocketStore } from '@/store/websocket';
 import { startPromise } from '@/utils';
 import { logger } from '@/utils/logging';
 
@@ -21,7 +14,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { check } = usePeriodicStore();
   const { consume } = useMessageHandling();
   const { fetchWatchers } = useWatchersStore();
-  const { monitor } = useTasks();
+  const { monitor } = useTaskStore();
   const { autoRefresh } = useBalancesStore();
 
   const { queryPeriod, refreshPeriod } = storeToRefs(

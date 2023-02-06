@@ -1,7 +1,4 @@
 import { type AssetUpdatePayload } from '@/services/assets/types';
-import { useNotificationsStore } from '@/store/notifications';
-import { useTasks } from '@/store/tasks';
-import { type ActionStatus } from '@/store/types';
 import {
   type ApplyUpdateResult,
   type AssetDBVersion,
@@ -12,9 +9,10 @@ import {
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { useAssetsApi } from '@/services/assets';
+import { type ActionStatus } from '@/types/action';
 
 export const useAssets = defineStore('assets', () => {
-  const { awaitTask } = useTasks();
+  const { awaitTask } = useTaskStore();
   const { t } = useI18n();
   const { appSession, openDirectory } = useInterop();
   const {

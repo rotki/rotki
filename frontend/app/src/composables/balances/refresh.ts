@@ -1,12 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
-import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTokenDetection } from '@/composables/balances/token-detection';
 import { BlockchainRefreshButtonBehaviour } from '@/types/frontend-settings';
-import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 
 export const useRefresh = (blockchain?: MaybeRef<Blockchain>) => {
   const { fetchBlockchainBalances } = useBlockchainBalancesStore();

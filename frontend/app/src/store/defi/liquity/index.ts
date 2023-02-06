@@ -4,13 +4,13 @@ import {
   LiquityStakingDetails
 } from '@rotki/common/lib/liquity';
 import { type Ref } from 'vue';
-import { type OnError } from '@/store/typing';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { fetchDataAsync } from '@/utils/fetch-async';
 import { useLiquityApi } from '@/services/defi/liquity';
+import { type OnError } from '@/types/fetch';
 
 export const useLiquityStore = defineStore('defi/liquity', () => {
   const balances: Ref<LiquityBalances> = ref({});

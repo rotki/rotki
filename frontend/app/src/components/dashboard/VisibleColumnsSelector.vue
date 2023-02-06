@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+
 import {
   type DashboardTableType,
   type FrontendSettingsPayload

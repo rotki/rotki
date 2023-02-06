@@ -1,13 +1,9 @@
 <script setup lang="ts">
 import { type PropType, type Ref } from 'vue';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
-import { useSettingsStore } from '@/store/settings';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Nullable } from '@/types';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { assert } from '@/utils/assertions';
-import { useConfirmStore } from '@/store/confirm';
 
 interface ModuleWithStatus {
   readonly identifier: Module;

@@ -4,8 +4,6 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { assert } from '@/utils/assertions';
 

@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { type SyncConflictPayload } from '@/store/session/types';
 import { type Exchange } from '@/types/exchanges';
 import { type UserSettingsModel } from '@/types/user';
 
@@ -23,6 +22,18 @@ export const AccountSession = z.record(
 );
 
 export type AccountSession = z.infer<typeof AccountSession>;
+
+export const SyncConflictPayload = z.object({
+  localLastModified: z.number(),
+  remoteLastModified: z.number()
+});
+
+export type SyncConflictPayload = z.infer<typeof SyncConflictPayload>;
+
+export interface SyncConflict {
+  readonly message: string;
+  readonly payload: SyncConflictPayload | null;
+}
 
 export class SyncConflictError extends Error {
   readonly payload: SyncConflictPayload;

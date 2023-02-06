@@ -4,8 +4,6 @@ import {
   type QueriedAddressPayload,
   type QueriedAddresses
 } from '@/services/session/types';
-import { useMessageStore } from '@/store/message';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { Module } from '@/types/modules';
 
 vi.mock('@/services/session/queried-addresses-api', () => ({

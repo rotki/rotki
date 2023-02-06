@@ -1,6 +1,5 @@
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef, type Ref } from 'vue';
-
 import { type AssetInfo } from '../data';
 import { type LpType, type ProfitLossModel } from '../defi';
 import {

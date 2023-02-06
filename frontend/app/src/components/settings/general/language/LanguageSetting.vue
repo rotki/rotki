@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import LanguageSelectorItem from '@/components/settings/general/language/LanguageSelectorItem.vue';
-
 import { supportedLanguages } from '@/data/supported-language';
-
-import { useSessionStore } from '@/store/session';
 import { SupportedLanguage } from '@/types/frontend-settings';
 
 const props = defineProps({

@@ -6,7 +6,6 @@ import FileUpload from '@/components/import/FileUpload.vue';
 import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { api } from '@/services/rotkehlchen-api';
-import { useTasks } from '@/store/tasks';
 import { DateFormat } from '@/types/date-format';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -64,7 +63,7 @@ const dateInputFormatExample = computed(() => {
 });
 
 const taskType = TaskType.IMPORT_CSV;
-const { awaitTask, isTaskRunning } = useTasks();
+const { awaitTask, isTaskRunning } = useTaskStore();
 
 const loading = isTaskRunning(taskType, { source: get(source) });
 

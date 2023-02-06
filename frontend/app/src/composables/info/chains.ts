@@ -6,7 +6,6 @@ import {
   type EvmChainInfo,
   type SupportedChains
 } from '@/types/api/chains';
-import { useMainStore } from '@/store/main';
 import { isBlockchain } from '@/types/blockchain/chains';
 
 const isEvmChain = (info: ChainInfo): info is EvmChainInfo => {

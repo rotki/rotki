@@ -2,7 +2,7 @@
 import { type PropType } from 'vue';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
-import { type AaveLoan } from '@/store/defi/types';
+import { type AaveLoan } from '@/types/defi/lending';
 import { totalCollateral } from '@/utils/total-collateral';
 
 const props = defineProps({

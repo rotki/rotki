@@ -8,14 +8,8 @@ import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vu
 import DataTable from '@/components/helper/DataTable.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
-import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
-import { type AssetBreakdown } from '@/store/balances/types';
-import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
-import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatusStore } from '@/store/status';
 import { CURRENCY_USD } from '@/types/currencies';
+import { type AssetBreakdown } from '@/types/accounts';
 
 interface AssetLocation extends AssetBreakdown {
   readonly account?: GeneralAccount;

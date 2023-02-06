@@ -5,10 +5,6 @@ import {
 } from '@rotki/common/lib/staking/eth2';
 import { type ComputedRef, type Ref } from 'vue';
 import { type GeneralAccountData } from '@/services/types-api';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTasks } from '@/store/tasks';
 import { type Eth2Validator } from '@/types/balances';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
@@ -17,7 +13,7 @@ import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { removeTags } from '@/utils/tags';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { type ActionStatus } from '@/store/types';
+import { type ActionStatus } from '@/types/action';
 
 const defaultValidators = (): Eth2Validators => ({
   entries: [],
@@ -31,7 +27,7 @@ export const useEthAccountsStore = defineStore(
     const eth: Ref<GeneralAccountData[]> = ref([]);
     const eth2Validators: Ref<Eth2Validators> = ref(defaultValidators());
 
-    const { awaitTask } = useTasks();
+    const { awaitTask } = useTaskStore();
     const { activeModules } = storeToRefs(useGeneralSettingsStore());
     const { notify } = useNotificationsStore();
     const { setMessage } = useMessageStore();

@@ -3,7 +3,6 @@ import { type ComputedRef } from 'vue';
 import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
 import { useAppRoutes } from '@/router/routes';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type TabContent } from '@/types/tabs';
 
 const { appRoutes } = useAppRoutes();

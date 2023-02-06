@@ -1,9 +1,4 @@
 <script setup lang="ts">
-import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useManualBalancesStore } from '@/store/balances/manual';
-import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
-import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { Routes } from '@/router/routes';
 import { Module } from '@/types/modules';
@@ -41,7 +36,7 @@ const LiquidityProviderBalanceTable = defineAsyncComponent(
 );
 
 const { t, tc } = useI18n();
-const { isTaskRunning } = useTasks();
+const { isTaskRunning } = useTaskStore();
 
 const { balances, liabilities } = useAggregatedBalancesStore();
 const { blockchainTotals } = storeToRefs(useAccountBalancesStore());

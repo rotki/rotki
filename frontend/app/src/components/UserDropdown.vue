@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import ThemeControl from '@/components/premium/ThemeControl.vue';
-import { useConfirmStore } from '@/store/confirm';
-import { useSessionStore } from '@/store/session';
-import { useSessionAuthStore } from '@/store/session/auth';
 
 const { t, tc } = useI18n();
 

@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { api } from '@/services/rotkehlchen-api';
-import { useMessageStore } from '@/store/message';
-import { useReports } from '@/store/reports';
 import { useReportsApi } from '@/services/reports';
 
 defineProps({
@@ -12,7 +10,7 @@ defineProps({
   }
 });
 
-const { createCsv } = useReports();
+const { createCsv } = useReportsStore();
 const { setMessage } = useMessageStore();
 
 const { t } = useI18n();

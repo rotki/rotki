@@ -4,20 +4,14 @@ import AccountBalanceTable from '@/components/accounts/AccountBalanceTable.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+import { TaskType } from '@/types/task-type';
+import { startPromise } from '@/utils';
+import { isTokenChain } from '@/types/blockchain/chains';
 import {
   type AccountWithBalance,
   type BlockchainAccountWithBalance,
   type XpubPayload
-} from '@/store/balances/types';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
-import { useBtcAccountsStore } from '@/store/blockchain/accounts/btc';
-import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
-import { useConfirmStore } from '@/store/confirm';
-import { useTasks } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
-import { startPromise } from '@/utils';
-import { isTokenChain } from '@/types/blockchain/chains';
+} from '@/types/accounts';
 
 const props = withDefaults(
   defineProps<{
@@ -42,7 +36,7 @@ const visibleTags = ref<string[]>([]);
 const editedAccount = ref<string>('');
 const balanceTable = ref<any>(null);
 
-const { isTaskRunning } = useTasks();
+const { isTaskRunning } = useTaskStore();
 const { refreshBlockchainBalances } = useRefresh(blockchain);
 const { detectTokensOfAllAddresses, detectingTokens } =
   useTokenDetection(blockchain);

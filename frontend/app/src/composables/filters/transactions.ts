@@ -1,7 +1,5 @@
 import { type ComputedRef, type Ref } from 'vue';
 import { useAssetInfoApi } from '@/services/assets/info';
-import { useTransactions } from '@/store/history/transactions';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type MatchedKeyword, type SearchMatcher } from '@/types/filtering';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
@@ -30,7 +28,7 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
   const filters: Ref<Filters> = ref({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-  const { counterparties } = storeToRefs(useTransactions());
+  const { counterparties } = storeToRefs(useTransactionStore());
   const { txEvmChains } = useSupportedChains();
   const { assetSearch } = useAssetInfoApi();
   const { tc } = useI18n();

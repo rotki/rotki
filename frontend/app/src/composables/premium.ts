@@ -1,7 +1,4 @@
 import { type ComputedRef, type Ref } from 'vue';
-import { useMessageStore } from '@/store/message';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { usePremiumStore } from '@/store/session/premium';
 
 export const usePremium = () => {
   const { premium } = storeToRefs(usePremiumStore());

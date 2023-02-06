@@ -3,14 +3,6 @@ import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef, type Ref } from 'vue';
 import { useManualBalancesApi } from '@/services/balances/manual';
 import { BalanceType } from '@/services/balances/types';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { type AssetBreakdown } from '@/store/balances/types';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTasks } from '@/store/tasks';
-import { type ActionStatus } from '@/store/types';
 import {
   type AssetBalances,
   type BalanceByLocation,
@@ -28,6 +20,8 @@ import { TaskType } from '@/types/task-type';
 import { appendAssetBalance } from '@/utils/balances';
 import { sortDesc } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
+import { type ActionStatus } from '@/types/action';
+import { type AssetBreakdown } from '@/types/accounts';
 
 export const useManualBalancesStore = defineStore('balances/manual', () => {
   const manualBalancesData: Ref<ManualBalanceWithValue[]> = ref([]);
@@ -35,7 +29,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
   const { t, tc } = useI18n();
   const { notify } = useNotificationsStore();
   const { setMessage } = useMessageStore();
-  const { awaitTask } = useTasks();
+  const { awaitTask } = useTaskStore();
   const { exchangeRate } = useBalancePricesStore();
   const {
     queryManualBalances,
@@ -44,7 +38,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     deleteManualBalances
   } = useManualBalancesApi();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-  const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
+  const { getAssociatedAssetIdentifier } = useAssetInfoRetrievalStore();
 
   const manualBalances: ComputedRef<ManualBalanceWithValue[]> = computed(() => {
     return get(manualBalancesData).filter(

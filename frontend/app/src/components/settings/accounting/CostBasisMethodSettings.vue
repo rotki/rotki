@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useAttrs, useListeners } from 'vue';
-import { useCostBasisMethod } from '@/store/reports/consts';
+import { useListeners } from 'vue';
+import { useCostBasisMethod } from '@/composables/reports';
 
 const rootAttrs = useAttrs();
 const rootListeners = useListeners();

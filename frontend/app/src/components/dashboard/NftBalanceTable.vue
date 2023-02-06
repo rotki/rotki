@@ -9,10 +9,6 @@ import NftDetails from '@/components/helper/NftDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { Routes } from '@/router/routes';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatisticsStore } from '@/store/statistics';
 import { DashboardTableType } from '@/types/frontend-settings';
 import {
   type NonFungibleBalance,

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredUnless } from '@vuelidate/validators';
-import { useAssets } from '@/store/assets';
 
 defineProps({
   value: { required: true, type: Boolean }

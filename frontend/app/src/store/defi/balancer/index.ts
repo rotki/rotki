@@ -8,8 +8,6 @@ import {
 import { type XswapPool } from '@rotki/common/lib/defi/xswap';
 import cloneDeep from 'lodash/cloneDeep';
 import { type ComputedRef, type Ref } from 'vue';
-import { type OnError } from '@/store/typing';
-import { filterAddresses } from '@/store/utils';
 import { type Writeable } from '@/types';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
@@ -18,6 +16,8 @@ import { TaskType } from '@/types/task-type';
 import { balanceSum } from '@/utils/calculation';
 import { fetchDataAsync } from '@/utils/fetch-async';
 import { useBalancerApi } from '@/services/defi/balancer';
+import { type OnError } from '@/types/fetch';
+import { filterAddresses } from '@/utils/addresses';
 
 export const useBalancerStore = defineStore('defi/balancer', () => {
   const events: Ref<BalancerEvents> = ref({});

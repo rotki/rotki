@@ -1,7 +1,5 @@
 import { type Watcher, type WatcherTypes } from '@/services/session/types';
 import { useWatchersApi } from '@/services/session/watchers-api';
-import { useNotificationsStore } from '@/store/notifications';
-import { usePremiumStore } from '@/store/session/premium';
 
 export const useWatchersStore = defineStore('session/watchers', () => {
   const watchers = ref<Watcher<WatcherTypes>[]>([]);

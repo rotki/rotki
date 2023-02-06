@@ -1,7 +1,4 @@
 import { type Ref } from 'vue';
-import { useHistory } from '@/store/history';
-import { useMessageStore } from '@/store/message';
-import { type ActionStatus } from '@/store/types';
 import { type EntryMeta } from '@/types/history/meta';
 import {
   type CommonIgnorePayload,
@@ -10,6 +7,7 @@ import {
   IgnoreActionType,
   type IgnorePayload
 } from '@/types/history/ignored';
+import { type ActionStatus } from '@/types/action';
 
 interface EvmTxIgnoreAction<T extends EntryMeta> {
   actionType: IgnoreActionType.EVM_TRANSACTIONS;
@@ -27,7 +25,7 @@ export const useIgnore = <T extends EntryMeta>(
   refresh: () => any
 ) => {
   const { setMessage } = useMessageStore();
-  const { ignoreInAccounting } = useHistory();
+  const { ignoreInAccounting } = useHistoryStore();
   const { tc } = useI18n();
 
   const ignoreActions = async (

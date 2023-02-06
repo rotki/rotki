@@ -8,7 +8,7 @@ import AnimationsButton from '@/components/user/AnimationsButton.vue';
 import LoginHeader from '@/components/user/LoginHeader.vue';
 import LoginIcon from '@/components/user/LoginIcon.vue';
 import LoginOverlay from '@/components/user/LoginOverlay.vue';
-import { useMainStore } from '@/store/main';
+
 import DockerWarning from '@/components/account-management/DockerWarning.vue';
 
 const css = useCssModule();

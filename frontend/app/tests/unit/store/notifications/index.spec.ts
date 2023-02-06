@@ -1,5 +1,4 @@
 import { NotificationGroup } from '@rotki/common/lib/messages';
-import { useNotificationsStore } from '@/store/notifications';
 
 describe('store::notifications/index', () => {
   beforeEach(() => {

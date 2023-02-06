@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useNotificationsStore } from '@/store/notifications';
 import { downloadFileByUrl } from '@/utils/download';
 import IndexedDb from '@/utils/indexed-db';
 

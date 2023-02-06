@@ -19,15 +19,15 @@ import {
   validWithSessionAndExternalService,
   validWithSessionStatus
 } from '@/services/utils';
-import {
-  type BlockchainAccountPayload,
-  type XpubPayload
-} from '@/store/balances/types';
 import { type BtcChains } from '@/types/blockchain/chains';
 import { assert } from '@/utils/assertions';
 import { type Eth2Validator } from '@/types/balances';
 import { EvmAccountsResult } from '@/types/api/accounts';
 import { nonEmptyProperties } from '@/utils/data';
+import {
+  type BlockchainAccountPayload,
+  type XpubPayload
+} from '@/types/accounts';
 
 const performAsyncQuery = async (
   url: string,

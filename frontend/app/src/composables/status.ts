@@ -1,4 +1,3 @@
-import { useStatusStore } from '@/store/status';
 import { type Section, Status } from '@/types/status';
 
 export const useStatusUpdater = (section: Section, ignore = false) => {

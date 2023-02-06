@@ -8,7 +8,7 @@ import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
-import { useDefiStore } from '@/store/defi';
+
 import {
   AIRDROP_1INCH,
   AIRDROP_CONVEX,

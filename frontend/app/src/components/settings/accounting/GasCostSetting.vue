@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
 const gasCosts = ref(false);
 const { includeGasCosts } = storeToRefs(useAccountingSettingsStore());

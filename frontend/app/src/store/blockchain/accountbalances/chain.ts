@@ -1,12 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
-
-import {
-  type AccountWithBalance,
-  type AssetBreakdown
-} from '@/store/balances/types';
-import { useChainsAccountsStore } from '@/store/blockchain/accounts/chains';
-import { useChainBalancesStore } from '@/store/blockchain/balances/chains';
 import { type BlockchainTotal } from '@/types/blockchain';
 import { Section } from '@/types/status';
 import {
@@ -14,6 +7,7 @@ import {
   getBlockchainBreakdown,
   sum
 } from '@/utils/balances';
+import { type AccountWithBalance, type AssetBreakdown } from '@/types/accounts';
 
 export const useChainAccountBalancesStore = defineStore(
   'blockchain/accountbalances/chain',

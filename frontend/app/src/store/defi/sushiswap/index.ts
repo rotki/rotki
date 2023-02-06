@@ -11,8 +11,7 @@ import {
   getEventDetails,
   getPoolProfit,
   getPools
-} from '@/store/defi/xswap-utils';
-import { type OnError } from '@/store/typing';
+} from '@/utils/defi/xswap';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
@@ -20,6 +19,7 @@ import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
 import { fetchDataAsync } from '@/utils/fetch-async';
 import { useSushiswapApi } from '@/services/defi/sushiswap';
+import { type OnError } from '@/types/fetch';
 
 export const useSushiswapStore = defineStore('defi/sushiswap', () => {
   const balances: Ref<XswapBalances> = ref<XswapBalances>({});

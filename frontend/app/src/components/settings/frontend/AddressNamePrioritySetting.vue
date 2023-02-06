@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+
 import {
   PrioritizedListData,
   type PrioritizedListItemData

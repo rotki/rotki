@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
-
 import { Constraints } from '@/data/constraints';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const versionUpdateCheckFrequency = ref<string>('');
 const versionUpdateCheckEnabled = ref<boolean>(false);

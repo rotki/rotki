@@ -9,13 +9,10 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { Routes } from '@/router/routes';
 import { EVM_TOKEN } from '@/services/assets/consts';
 import { useAssetManagementApi } from '@/services/assets/management-api';
-import { useMessageStore } from '@/store/message';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type Nullable } from '@/types';
 import { type AssetPagination, defaultAssetPagination } from '@/types/assets';
 import { convertPagination } from '@/types/pagination';
 import { assert } from '@/utils/assertions';
-import { useConfirmStore } from '@/store/confirm';
 
 const props = defineProps({
   identifier: { required: false, type: String, default: null }

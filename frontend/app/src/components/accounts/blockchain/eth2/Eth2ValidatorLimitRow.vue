@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 
 defineProps({
   colspan: {

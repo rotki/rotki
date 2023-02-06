@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { useMainStore } from '@/store/main';
-import { useNotificationsStore } from '@/store/notifications';
 import { useAssetsApi } from '@/services/assets';
-import { useConfirmStore } from '@/store/confirm';
-import { useSessionStore } from '@/store/session';
 
 defineProps({
   dropdown: {

@@ -2,8 +2,6 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 
-import { useGeneralSettingsStore } from '@/store/settings/general';
-
 const floatingPrecision = ref<string>('0');
 const maxFloatingPrecision = 8;
 const { tc } = useI18n();

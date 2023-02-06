@@ -22,9 +22,7 @@
 //
 //
 // -- This is will overwrite an existing command --
-// Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
-
-import { type ExternalLedgerAction, type ExternalTrade } from './types';
+// Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })import { type ExternalLedgerAction, type ExternalTrade } from './types';
 
 const logout = () => {
   cy.request({

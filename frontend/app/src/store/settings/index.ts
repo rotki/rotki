@@ -1,14 +1,9 @@
 import { useSettingsApi } from '@/services/settings/settings-api';
-import { useMessageStore } from '@/store/message';
-import { usePremiumStore } from '@/store/session/premium';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
-import { useAccountingSettingsStore } from '@/store/settings/accounting';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { type ActionStatus } from '@/store/types';
 import { type KrakenAccountType } from '@/types/exchanges';
 import { type Module } from '@/types/modules';
 import { type SettingsUpdate } from '@/types/user';
 import { uniqueStrings } from '@/utils/data';
+import { type ActionStatus } from '@/types/action';
 
 export const useSettingsStore = defineStore('settings', () => {
   const { setMessage } = useMessageStore();

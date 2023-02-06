@@ -7,8 +7,6 @@ import {
 import { type ComputedRef } from 'vue';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 
 type AccountWithChain = GeneralAccount<BlockchainSelection>;
 

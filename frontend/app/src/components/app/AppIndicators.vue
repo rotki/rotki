@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Fragment from '@/components/helper/Fragment';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { checkIfDevelopment } from '@/utils/env-utils';
 
 const isDevelopment = checkIfDevelopment();

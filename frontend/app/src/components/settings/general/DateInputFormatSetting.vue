@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-
 import { displayDateFormatter } from '@/data/date_formatter';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const dateInputFormat = ref<string>('');
 const { dateInputFormat: inputFormat } = storeToRefs(

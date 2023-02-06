@@ -1,9 +1,5 @@
 import { type ComputedRef, type Ref } from 'vue';
 import { useKrakenApi } from '@/services/staking/kraken';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useNotificationsStore } from '@/store/notifications';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useTasks } from '@/store/tasks';
 import {
   type KrakenStakingEvents,
   type KrakenStakingPagination,
@@ -39,7 +35,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
 
   const api = useKrakenApi();
 
-  const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
+  const { getAssociatedAssetIdentifier } = useAssetInfoRetrievalStore();
   const { t } = useI18n();
 
   const events: ComputedRef<KrakenStakingEvents> = computed(() => {
@@ -72,7 +68,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     };
   });
 
-  const { isTaskRunning, awaitTask } = useTasks();
+  const { isTaskRunning, awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { isFirstLoad, loading, setStatus, resetStatus } = useStatusUpdater(
     Section.STAKING_KRAKEN

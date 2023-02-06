@@ -1,7 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { useAddressesNamesApi } from '@/services/blockchain/addresses-names';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { FrontendSettings } from '@/types/frontend-settings';
 
 vi.mock('@/services/blockchain/addresses-names', () => ({
@@ -17,7 +15,7 @@ vi.mock('@/services/blockchain/addresses-names', () => ({
 }));
 
 vi.mock('@/store/tasks', () => ({
-  useTasks: vi.fn().mockReturnValue({
+  useTaskStore: vi.fn().mockReturnValue({
     awaitTask: vi.fn().mockResolvedValue({})
   })
 }));

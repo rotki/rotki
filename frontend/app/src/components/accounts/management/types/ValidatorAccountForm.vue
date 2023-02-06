@@ -3,12 +3,10 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Eth2Validator } from '@/types/balances';
 import { assert } from '@/utils/assertions';
 import { startPromise } from '@/utils';
-import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
-import { useBlockchainStore } from '@/store/blockchain';
+
 import Eth2Input from '@/components/accounts/blockchain/Eth2Input.vue';
-import { useMessageStore } from '@/store/message';
 import { type ValidationErrors } from '@/types/api/errors';
-import { type BlockchainAccountWithBalance } from '@/store/balances/types';
+import { type BlockchainAccountWithBalance } from '@/types/accounts';
 
 const validator = ref<Eth2Validator | null>(null);
 const errorMessages = ref<ValidationErrors>({});

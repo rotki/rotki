@@ -3,7 +3,6 @@ import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
 import { type SystemVersion } from '@/electron-main/ipc';
-import { useMainStore } from '@/store/main';
 import { type WebVersion } from '@/types';
 
 const css = useCssModule();
