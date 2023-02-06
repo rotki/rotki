@@ -148,12 +148,13 @@ def test_ignoring_transaction_from_accounting(accountant, google_service, databa
             action_type=ActionType.EVM_TRANSACTION,
             identifiers=['100x' + tx_hash.hex()],
         )
-    accounting_history_process(
+    events = accounting_history_process(
         accountant,
         start_ts=0,
         end_ts=1640493376,
         history_list=history,
     )
+    assert len(events) == 2
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
         AccountingEventType.TRANSACTION_EVENT: PNL(taxable=FVal('242.385'), free=ZERO),

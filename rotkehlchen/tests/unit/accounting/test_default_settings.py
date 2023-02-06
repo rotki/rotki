@@ -158,7 +158,7 @@ def test_accounting_receive_settings(
     expected_event = ProcessedAccountingEvent(
         type=AccountingEventType.TRANSACTION_EVENT,
         notes='Received 1 ETH',
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         timestamp=TIMESTAMP_1_SECS,
         asset=A_ETH,
         free_amount=ZERO if is_taxable else ONE,
@@ -246,7 +246,7 @@ def test_accounting_spend_settings(
     expected_event = ProcessedAccountingEvent(
         type=AccountingEventType.TRANSACTION_EVENT,
         notes='Send 0.5 ETH to 0xABC',
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         timestamp=TIMESTAMP_2_SECS,
         asset=A_ETH,
         free_amount=ZERO,
@@ -308,7 +308,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot'):
     expected_spend_event = ProcessedAccountingEvent(
         type=AccountingEventType.TRANSACTION_EVENT,
         notes='Swap 1 ETH in a uniswap pool',
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         timestamp=TIMESTAMP_2_SECS,
         asset=A_ETH,
         free_amount=ZERO,
@@ -335,7 +335,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot'):
     expected_receive_event = ProcessedAccountingEvent(
         type=AccountingEventType.TRANSACTION_EVENT,
         notes='Receive 3000 DAI as the result of a swap',
-        location=Location.BLOCKCHAIN,
+        location=Location.ETHEREUM,
         timestamp=TIMESTAMP_2_SECS,
         asset=A_DAI,
         free_amount=FVal(3000),

@@ -74,12 +74,12 @@ class DataMigrationManager:
                         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                         ('last_data_migration', current_migration),
                     )
-
-        with self.rotki.data.db.user_write() as write_cursor:
-            write_cursor.execute(  # even if no migration happens we need to remember last one
-                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                ('last_data_migration', LAST_DATA_MIGRATION),
-            )
+        else:  # no break -- all migrations completed okay, so remember last one
+            with self.rotki.data.db.user_write() as write_cursor:
+                write_cursor.execute(  # even if no migration happens we need to remember last one
+                    'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                    ('last_data_migration', LAST_DATA_MIGRATION),
+                )
 
     def _perform_migration(self, migration: MigrationRecord) -> bool:
         """Performs a single data migration and returns boolean for success/failure"""

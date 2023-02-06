@@ -294,7 +294,7 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
             extra_data=None,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
-            sequence_index=251,
+            sequence_index=252,
             timestamp=0,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -380,7 +380,7 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
             extra_data=None,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
-            sequence_index=24,
+            sequence_index=25,
             timestamp=0,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
