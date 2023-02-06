@@ -20,6 +20,8 @@ def data_migration_1(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressH
     """
     Purge data for exchanges where there is more than one instance. Also purge information
     from kraken as requested for https://github.com/rotki/rotki/pull/3755
+
+    Migration was introduced at least before 1.22.3
     """
     exchange_re = re.compile(r'(.*?)_(trades|margins|asset_movements|ledger_actions).*')
     db = rotki.data.db
@@ -70,7 +72,22 @@ def data_migration_1(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressH
 
         with db.user_write() as write_cursor:
             if location in multiple_locations or location == Location.KRAKEN:
-                db.purge_exchange_data(write_cursor, location)
+                write_cursor.execute(
+                    'DELETE FROM trades WHERE location = ?;',
+                    (location.serialize_for_db(),),
+                )
+                write_cursor.execute(
+                    'DELETE FROM asset_movements WHERE location = ?;',
+                    (location.serialize_for_db(),),
+                )
+                write_cursor.execute(
+                    'DELETE FROM ledger_actions WHERE location = ?;',
+                    (location.serialize_for_db(),),
+                )
+                write_cursor.execute(
+                    'DELETE FROM asset_movements WHERE location = ?;',
+                    (location.serialize_for_db(),),
+                )
                 db.delete_used_query_range_for_exchange(write_cursor=write_cursor, location=location)  # noqa: E501
             else:
                 write_cursor.execute(

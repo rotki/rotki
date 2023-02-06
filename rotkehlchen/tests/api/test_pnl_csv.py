@@ -41,7 +41,7 @@ def assert_csv_export_response(response, csv_dir, is_download=False):
                 'bittrex',
                 'binance',
                 'poloniex',
-                'blockchain',
+                'ethereum',
                 'bitmex',
             )
             assert row['type'] in (

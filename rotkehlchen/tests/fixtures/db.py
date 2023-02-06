@@ -6,7 +6,6 @@ from typing import Any, Optional
 from unittest.mock import patch
 
 import pytest
-from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -23,6 +22,7 @@ from rotkehlchen.tests.utils.database import (
     maybe_include_etherscan_key,
     mock_db_schema_sanity_check,
     perform_new_db_unlock_actions,
+    run_no_db_upgrades,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -120,21 +120,6 @@ def fixture_session_sql_vm_instructions_cb() -> int:
     return DEFAULT_SQL_VM_INSTRUCTIONS_CB
 
 
-def _run_no_db_upgrades(self) -> bool:
-    """Patched version of DBUpgradeManager to not run any upgrades but still
-    return true for fresh DB and false otherwise
-
-    Keep up to date with actual upgrade_manager.py:DBUpgradeError.run_upgrades
-    """
-    with self.db.conn.write_ctx() as cursor:
-        try:
-            self.db.get_setting(cursor, 'version')
-        except sqlcipher.OperationalError:  # pylint: disable=no-member
-            return True  # fresh database. Nothing to upgrade.
-
-    return False
-
-
 def _init_database(
         data_dir: Path,
         password: str,
@@ -160,7 +145,7 @@ def _init_database(
         if perform_upgrades_at_unlock is False:
             upgrades_patch = patch(
                 'rotkehlchen.db.upgrade_manager.DBUpgradeManager.run_upgrades',
-                side_effect=_run_no_db_upgrades,
+                side_effect=run_no_db_upgrades,
                 autospec=True,
             )
             stack.enter_context(upgrades_patch)

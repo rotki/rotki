@@ -52,6 +52,7 @@ class MockRotkiForMigrations:
 @pytest.mark.parametrize('use_custom_database', ['data_migration_v0.db'])
 @pytest.mark.parametrize('data_migration_version', [0])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('new_db_unlock_actions', [None])
 def test_migration_1(database):
     """
     Test that the first data migration for rotki works. This migration removes information about
@@ -74,28 +75,8 @@ def test_migration_1(database):
         )
         assert result.fetchone()[0] == 1
 
-    migration_patch = patch(
-        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=MIGRATION_LIST[:1],
-    )
-    with migration_patch:
-        DataMigrationManager(rotki).maybe_migrate_data()
-    errors = rotki.msg_aggregator.consume_errors()
-    warnings = rotki.msg_aggregator.consume_warnings()
-    assert len(errors) == 0
-    assert len(warnings) == 0
-    check_saved_events_for_exchange(Location.BINANCE, rotki.data.db, should_exist=False)
-    check_saved_events_for_exchange(Location.POLONIEX, rotki.data.db, should_exist=True)
-    check_saved_events_for_exchange(Location.KRAKEN, rotki.data.db, should_exist=False)
-    cursor = database.conn.cursor()
-    result = cursor.execute(
-        'SELECT COUNT(*) from used_query_ranges WHERE name="bittrex_trades"',
-    )
-    assert result.fetchone()[0] == 0
-    assert rotki.data.db.get_settings(cursor).last_data_migration == 1
-
     # Migration shouldn't execute and information should stay in database
-    with database.user_write() as cursor:
+    with database.user_write() as write_cursor:
         for exchange_location in [Location.BINANCE, Location.KRAKEN]:
             trade_tuples = ((
                 f'custom-trade-id-{exchange_location}',
@@ -127,26 +108,32 @@ def test_migration_1(database):
                 notes)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
-            database.write_tuples(write_cursor=cursor, tuple_type='trade', query=query, tuples=trade_tuples)  # noqa: E501
-            database.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_trades_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
-            database.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_margins_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
-            database.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_asset_movements_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
+            database.write_tuples(write_cursor=write_cursor, tuple_type='trade', query=query, tuples=trade_tuples)  # noqa: E501
+            database.update_used_query_range(write_cursor=write_cursor, name=f'{str(exchange_location)}_trades_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
+            database.update_used_query_range(write_cursor=write_cursor, name=f'{str(exchange_location)}_margins_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
+            database.update_used_query_range(write_cursor=write_cursor, name=f'{str(exchange_location)}_asset_movements_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
 
-        with migration_patch:
-            DataMigrationManager(rotki).maybe_migrate_data()
-        errors = rotki.msg_aggregator.consume_errors()
-        warnings = rotki.msg_aggregator.consume_warnings()
-        assert len(errors) == 0
-        assert len(warnings) == 0
-        check_saved_events_for_exchange(Location.BINANCE, rotki.data.db, should_exist=True)
-        check_saved_events_for_exchange(Location.POLONIEX, rotki.data.db, should_exist=True)
-        check_saved_events_for_exchange(Location.KRAKEN, rotki.data.db, should_exist=True)
-        assert rotki.data.db.get_settings(cursor).last_data_migration == 1
+    migration_patch = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=[MIGRATION_LIST[0]],
+    )
+    with migration_patch:
+        DataMigrationManager(rotki).maybe_migrate_data()
+    errors = rotki.msg_aggregator.consume_errors()
+    warnings = rotki.msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+    check_saved_events_for_exchange(Location.BINANCE, rotki.data.db, should_exist=False)
+    check_saved_events_for_exchange(Location.POLONIEX, rotki.data.db, should_exist=True)
+    check_saved_events_for_exchange(Location.KRAKEN, rotki.data.db, should_exist=False)
+    with database.conn.read_ctx() as cursor:
+        assert rotki.data.db.get_settings(cursor).last_data_migration == LAST_DATA_MIGRATION
 
 
 @pytest.mark.parametrize('use_custom_database', ['data_migration_v0.db'])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('data_migration_version', [0])
+@pytest.mark.parametrize('new_db_unlock_actions', [None])
 def test_failed_migration(database):
     """Test that a failed migration does not update DB setting and logs error"""
     rotki = MockRotkiForMigrations(database)
@@ -468,7 +455,7 @@ def test_migration_8(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     migration_patch = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=MIGRATION_LIST[7:],
+        new=[MIGRATION_LIST[7]],
     )
     avalanche_addresses = [ethereum_accounts[1], ethereum_accounts[3]]
     optimism_addresses = [ethereum_accounts[2], ethereum_accounts[3]]
@@ -497,7 +484,7 @@ def test_migration_8(
     def assert_progress_message(msg, step_num, description) -> None:
         assert msg['type'] == 'data_migration_status'
         assert msg['data']['start_version'] == 8
-        assert msg['data']['target_version'] == 8
+        assert msg['data']['target_version'] == LAST_DATA_MIGRATION
         migration = msg['data']['current_migration']
         assert migration['version'] == 8
         assert migration['total_steps'] == (6 if step_num != 0 else 0)

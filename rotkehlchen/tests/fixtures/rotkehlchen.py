@@ -8,7 +8,6 @@ import rotkehlchen.tests.utils.exchanges as exchange_tests
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB
 from rotkehlchen.data_migrations.manager import LAST_DATA_MIGRATION
 from rotkehlchen.db.settings import DBSettings
-from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
@@ -26,6 +25,7 @@ from rotkehlchen.tests.utils.database import (
     maybe_include_etherscan_key,
     mock_db_schema_sanity_check,
     perform_new_db_unlock_actions,
+    run_no_db_upgrades,
 )
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
@@ -209,12 +209,16 @@ def initialize_mock_rotkehlchen_instance(
 
             new_db_unlock_actions_patch = patch('rotkehlchen.rotkehlchen.Rotkehlchen._perform_new_db_actions', side_effect=actions_after_unlock, autospec=True)  # noqa: E501
         stack.enter_context(new_db_unlock_actions_patch)
-
+        # disable migrations at unlock for tests
+        stack.enter_context(patch(
+            'rotkehlchen.data_migrations.manager.DataMigrationManager.maybe_migrate_data',
+            side_effect=lambda *args: None,
+        ))
         if perform_upgrades_at_unlock is False:
-            upgrades_patch = patch.object(
-                DBUpgradeManager,
-                'run_upgrades',
-                side_effect=lambda *args: None,
+            upgrades_patch = patch(
+                'rotkehlchen.db.upgrade_manager.DBUpgradeManager.run_upgrades',
+                side_effect=run_no_db_upgrades,
+                autospec=True,
             )
             stack.enter_context(upgrades_patch)
 

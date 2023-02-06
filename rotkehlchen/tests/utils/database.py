@@ -6,6 +6,8 @@ from shutil import copyfile
 from typing import Any, Optional
 from unittest.mock import _patch, patch
 
+from pysqlcipher3 import dbapi2 as sqlcipher
+
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -165,3 +167,18 @@ def perform_new_db_unlock_actions(db: DBHandler, new_db_unlock_actions: tuple[st
             populate_rpc_nodes_in_database(write_cursor)
     if 'spam_assets' in new_db_unlock_actions:
         update_spam_assets(db)
+
+
+def run_no_db_upgrades(self) -> bool:
+    """Patched version of DBUpgradeManager to not run any upgrades but still
+    return true for fresh DB and false otherwise
+
+    Keep up to date with actual upgrade_manager.py:DBUpgradeError.run_upgrades
+    """
+    with self.db.conn.write_ctx() as cursor:
+        try:
+            self.db.get_setting(cursor, 'version')
+        except sqlcipher.OperationalError:  # pylint: disable=no-member
+            return True  # fresh database. Nothing to upgrade.
+
+    return False
