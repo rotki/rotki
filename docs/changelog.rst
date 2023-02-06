@@ -8,6 +8,7 @@ Changelog
 * :bug:`-` Fixes bug where asset breakdown wasn't displayed correctly in the exchange balance section.
 * :bug:`-` Fixes bug where navigation bar on the left didn't expand by default.
 * :bug:`-` Fixes curve deposits and withdrawals accounting.
+* :bug:`5561` Fixes average cost basis calculation.
 
 * :release:`1.27.0 <2023-02-03>`
 * :feature:`5015` EVM assets across multiple chains will now appear together in the dashboard, with an option to break them down into their per-chain holding.
