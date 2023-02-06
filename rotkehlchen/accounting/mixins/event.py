@@ -31,7 +31,6 @@ class AccountingEventMixin(metaclass=ABCMeta):
     @abstractmethod
     def get_timestamp(self) -> Timestamp:
         """Get the event's timestamp"""
-        ...
 
     @staticmethod
     @abstractmethod
@@ -39,17 +38,14 @@ class AccountingEventMixin(metaclass=ABCMeta):
         """
         Returns the event type for accounting
         """
-        ...
 
     @abstractmethod
     def get_identifier(self) -> str:
         """Get a unique identifier from an accounting event"""
-        ...
 
     @abstractmethod
     def should_ignore(self, ignored_ids_mapping: dict['ActionType', list[str]]) -> bool:
         """Returns whether this event should be ignored due to user settings"""
-        ...
 
     @abstractmethod
     def get_assets(self) -> list[Asset]:
@@ -59,7 +55,6 @@ class AccountingEventMixin(metaclass=ABCMeta):
         - UnknownAsset, UnsupportedAsset due to the trade pair's assets
         - UnprocessableTradePair: If a trade's pair can't be processed
         """
-        ...
 
     @abstractmethod
     def process(
@@ -74,11 +69,10 @@ class AccountingEventMixin(metaclass=ABCMeta):
 
         Returns the number of events consumed.
         """
-        ...
 
     @abstractmethod
     def serialize(self) -> dict[str, Any]:
-        ...
+        """Serializes the event"""
 
     def serialize_for_debug_import(self) -> dict[str, Any]:
         data = self.serialize()
@@ -88,4 +82,4 @@ class AccountingEventMixin(metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def deserialize(cls, data: dict[str, Any]) -> 'AccountingEventMixin':
-        ...
+        """Deserializes the event"""

@@ -31,7 +31,6 @@ class ModuleAccountantInterface(metaclass=ABCMeta):
         """
         Subclasses implement this to specify rules/settings for their created events
         """
-        ...
 
     def reset(self) -> None:
         """Subclasses may implement this to reset state between accounting runs"""

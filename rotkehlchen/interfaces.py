@@ -18,7 +18,7 @@ class CurrentPriceOracleInterface(metaclass=abc.ABCMeta):
             self,
             seconds: Optional[int] = None,
     ) -> bool:
-        ...
+        """Denotes if the oracles has been rate limited in the last ``seconds``"""
 
     @abc.abstractmethod
     def query_current_price(
@@ -36,7 +36,6 @@ class CurrentPriceOracleInterface(metaclass=abc.ABCMeta):
         for the current oracle
         2. Whether returned price is in main currency
         """
-        ...
 
 
 class HistoricalPriceOracleInterface(CurrentPriceOracleInterface):
@@ -51,7 +50,6 @@ class HistoricalPriceOracleInterface(CurrentPriceOracleInterface):
             seconds: Optional[int] = None,
     ) -> bool:
         """Checks if it's okay to query historical price"""
-        ...
 
     @abc.abstractmethod
     def query_historical_price(
@@ -67,7 +65,6 @@ class HistoricalPriceOracleInterface(CurrentPriceOracleInterface):
         - NoPriceForGivenTimestamp
         - RemoteError
         """
-        ...
 
     @abc.abstractmethod
     def all_coins(self) -> dict[str, dict[str, Any]]:

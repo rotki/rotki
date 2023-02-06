@@ -723,17 +723,14 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         It assumes that the event being decoded has been already filtered and is a
         transfer.
         """
-        ...
 
     @staticmethod
     @abstractmethod
     def _is_non_conformant_erc721(address: ChecksumEvmAddress) -> bool:
         """Determine whether the address is a non-conformant erc721 for the chain"""
-        ...
 
     @staticmethod
     @abstractmethod
     def _address_is_exchange(address: ChecksumEvmAddress) -> Optional[str]:
         """Takes an address and returns if it's an exchange in the given chain
         and the counterparty to use if it is."""
-        ...

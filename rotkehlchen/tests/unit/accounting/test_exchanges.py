@@ -145,7 +145,6 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges):
     assert event5.free_amount == ZERO
     assert event5.taxable_amount == FVal(0.00001)
     assert event5.asset == A_BTC
-    ...
 
     event6 = events[5]
     assert event6.type == AccountingEventType.MARGIN_POSITION

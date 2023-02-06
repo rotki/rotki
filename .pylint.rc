@@ -55,10 +55,12 @@ logging-modules=logging
 #    wildcard-import,
 #    wrong-import-order,
 #    abstract-method
+#    missing-timeout  # we already check this via ruff S113. But we skip all test files
 
 # When wanting to discover new things to check for comment the following line and uncomment above
 disable=all
 enable=
+    unnecessary-ellipsis,
     no-value-for-parameter,
     too-many-format-args,
     no-member,

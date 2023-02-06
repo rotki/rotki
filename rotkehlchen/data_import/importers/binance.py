@@ -72,7 +72,6 @@ class BinanceSingleEntry(BinanceEntry, metaclass=abc.ABCMeta):
     ) -> None:
         """This method receives a csv row and processes it into internal Rotki's representation
         Should be implemented by subclass."""
-        ...
 
 
 class BinanceMultipleEntry(BinanceEntry, metaclass=abc.ABCMeta):
@@ -80,7 +79,6 @@ class BinanceMultipleEntry(BinanceEntry, metaclass=abc.ABCMeta):
     def are_entries(self, requested_operations: list) -> bool:
         """The subclass's method checks whether requested operations can be processed
         Not implemented here because the logic can differ for each subclass"""
-        ...
 
     @abc.abstractmethod
     def process_entries(
@@ -91,7 +89,6 @@ class BinanceMultipleEntry(BinanceEntry, metaclass=abc.ABCMeta):
             data: list[BinanceCsvRow],
     ) -> int:
         """Turns given csv rows into internal Rotki's representation"""
-        ...
 
 
 class BinanceTradeEntry(BinanceMultipleEntry):

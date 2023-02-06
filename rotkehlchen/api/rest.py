@@ -2302,7 +2302,7 @@ class RestAPI():
         return _wrap_in_ok_result(balances)
 
     @overload
-    def _modify_manually_tracked_balances(  # pylint: disable=unused-argument, no-self-use
+    def _modify_manually_tracked_balances(  # pylint: disable=unused-argument
             self,
             function: Callable[['DBHandler', list[ManuallyTrackedBalance]], None],
             data_or_ids: list[ManuallyTrackedBalance],
@@ -2310,7 +2310,7 @@ class RestAPI():
         ...
 
     @overload
-    def _modify_manually_tracked_balances(  # pylint: disable=unused-argument, no-self-use
+    def _modify_manually_tracked_balances(  # pylint: disable=unused-argument
             self,
             function: Callable[['DBHandler', list[int]], None],
             data_or_ids: list[int],
