@@ -588,42 +588,20 @@ class HistoryBaseEntrySchema(Schema):
     )
     counterparty = fields.String(required=False)
 
-    def make_history_base_entry(  # pylint: disable=no-self-use
-            self,
-            data: dict[str, Any],
-    ) -> HistoryBaseEntry:
-        if data['event_subtype'] is None:
-            data['event_subtype'] = HistoryEventSubType.NONE
-        data['event_identifier'] = HistoryBaseEntry.deserialize_event_identifier(data['event_identifier'])  # noqa: E501
-        return HistoryBaseEntry(**data)
-
-
-class AddHistoryBaseEntrySchema(HistoryBaseEntrySchema):
-    evm_chain = EvmChainNameField(required=True)
-
     @post_load
-    def make_history_base_entry_and_chain_id(  # pylint: disable=no-self-use
+    def make_history_base_entry(  # pylint: disable=no-self-use
             self,
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        chain_id = data.pop('evm_chain')
-        return {
-            'event': super().make_history_base_entry(data),
-            'chain_id': chain_id,
-        }
+        if data.get('event_subtype', None) is None:
+            data['event_subtype'] = HistoryEventSubType.NONE
+        data['event_identifier'] = HistoryBaseEntry.deserialize_event_identifier(data['event_identifier'])  # noqa: E501
+        return {'event': HistoryBaseEntry(**data)}
 
 
 class EditHistoryBaseEntrySchema(HistoryBaseEntrySchema):
     identifier = fields.Integer(required=True)
-
-    @post_load
-    def make_history_base_entry_with_identifier(  # pylint: disable=no-self-use
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> dict[str, Any]:
-        return {'event': super().make_history_base_entry(data)}
 
 
 class AssetMovementsQuerySchema(

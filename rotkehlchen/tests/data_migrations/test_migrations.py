@@ -546,6 +546,8 @@ def test_migration_9(database) -> None:
         assert cursor.fetchone()[0] == 237
         cursor.execute('SELECT location from history_events')
         assert all([x[0] == 'J'] for x in cursor)
+        cursor.execute('SELECT COUNT(*) from history_events_mappings WHERE name="chain_id"')
+        assert cursor.fetchone()[0] == 237
 
     migration_patch = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
@@ -566,6 +568,8 @@ def test_migration_9(database) -> None:
         assert cursor.fetchone()[0] == 237
         cursor.execute('SELECT location from history_events')
         assert all([x[0] in ('f', 'g')] for x in cursor)
+        cursor.execute('SELECT COUNT(*) from history_events_mappings WHERE name="chain_id"')
+        assert cursor.fetchone()[0] == 0
 
 
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
