@@ -1,18 +1,25 @@
 <script setup lang="ts">
+import { type BigNumber } from '@rotki/common';
 import { useAssetPricesApi } from '@/services/assets/prices';
 
-defineProps({
-  pending: {
-    required: true,
-    type: Boolean
+const props = withDefaults(
+  defineProps<{
+    pending: boolean;
+    asset?: string;
+  }>(),
+  {
+    asset: ''
   }
-});
+);
 
 const price = ref<string>('');
 const priceAsset = ref<string>('');
 const fetchingPrice = ref<boolean>(false);
 const fetchedPrice = ref<string>('');
 const isCustomPrice = ref<boolean>(false);
+const fiatPriceHint = ref<BigNumber | null>();
+
+const { asset } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const {
@@ -23,24 +30,11 @@ const {
 } = useBalancePricesStore();
 const { addLatestPrice } = useAssetPricesApi();
 
-const searchAssetPrice = async (asset: string) => {
-  if (!asset) {
-    set(price, '');
-    set(priceAsset, '');
-    set(fetchedPrice, '');
-    set(isCustomPrice, true);
-    return;
-  }
+const { fetchLatestPrices } = useAssetPricesApi();
 
-  const mainCurrency = get(currencySymbol);
-  if (mainCurrency === asset) {
-    set(price, '1');
-    set(priceAsset, mainCurrency);
-    set(fetchedPrice, '1');
-    set(isCustomPrice, false);
-    return;
-  }
-
+const getAssetPriceInFiat = async (
+  asset: string
+): Promise<BigNumber | null> => {
   set(fetchingPrice, true);
   await fetchPrices({
     ignoreCache: true,
@@ -51,19 +45,63 @@ const searchAssetPrice = async (asset: string) => {
   const priceInFiat = get(assetPrice(asset));
 
   if (priceInFiat && !priceInFiat.eq(0)) {
-    const priceInCurrentRate = get(toSelectedCurrency(priceInFiat)).toFixed();
+    const priceInCurrentRate = get(toSelectedCurrency(priceInFiat));
     const isCurrentCurrency = get(isAssetPriceInCurrentCurrency(asset));
 
-    const usedPrice = isCurrentCurrency
-      ? priceInFiat.toFixed()
-      : priceInCurrentRate;
-    set(price, usedPrice);
-    set(priceAsset, mainCurrency);
-    set(fetchedPrice, usedPrice);
-    set(isCustomPrice, false);
-  } else {
-    set(isCustomPrice, true);
+    return isCurrentCurrency ? priceInFiat : priceInCurrentRate;
   }
+
+  return null;
+};
+
+const setPriceAndPriceAsset = (newPrice = '', newPriceAsset = '') => {
+  set(price, newPrice);
+  set(priceAsset, newPriceAsset);
+  set(fetchedPrice, newPrice);
+  set(isCustomPrice, !newPrice || !newPriceAsset);
+  set(fiatPriceHint, null);
+};
+
+const searchAssetPrice = async () => {
+  const assetProp = get(asset);
+
+  if (!assetProp) {
+    setPriceAndPriceAsset();
+    return;
+  }
+
+  const mainCurrency = get(currencySymbol);
+
+  const customLatestPrices = await fetchLatestPrices({ fromAsset: assetProp });
+  if (customLatestPrices.length > 0) {
+    const customLatestPrice = customLatestPrices[0];
+    const newPrice = customLatestPrice.price.toFixed();
+    const newPriceAsset = customLatestPrice.toAsset;
+
+    setPriceAndPriceAsset(newPrice, newPriceAsset);
+
+    if (mainCurrency !== newPriceAsset) {
+      const priceInFiat = await getAssetPriceInFiat(assetProp);
+      if (priceInFiat) {
+        set(fiatPriceHint, priceInFiat);
+      }
+    }
+
+    return;
+  }
+
+  if (mainCurrency === assetProp) {
+    setPriceAndPriceAsset('1', mainCurrency);
+    return;
+  }
+
+  const priceInFiat = await getAssetPriceInFiat(assetProp);
+  if (priceInFiat) {
+    setPriceAndPriceAsset(priceInFiat.toFixed(), mainCurrency);
+    return;
+  }
+
+  setPriceAndPriceAsset();
 };
 
 const savePrice = async (asset: string) => {
@@ -80,29 +118,37 @@ watch(isCustomPrice, isCustomPrice => {
   if (isCustomPrice) {
     set(price, '');
     set(priceAsset, '');
+    set(fiatPriceHint, null);
   } else {
-    set(price, get(fetchedPrice));
-    set(priceAsset, get(currencySymbol));
+    searchAssetPrice();
   }
+});
+
+onMounted(() => {
+  searchAssetPrice();
+});
+
+watch(asset, () => {
+  searchAssetPrice();
 });
 
 const { tc } = useI18n();
 
 defineExpose({
-  searchAssetPrice,
   savePrice
 });
 </script>
 
 <template>
   <div>
-    <v-row>
+    <v-row class="pb-8">
       <v-col class="col" md="6">
         <amount-input
           v-model="price"
           :disabled="fetchingPrice || !isCustomPrice || pending"
           :loading="fetchingPrice"
           outlined
+          hide-details
           :label="tc('common.price')"
         />
       </v-col>
@@ -113,10 +159,30 @@ defineExpose({
           :disabled="fetchingPrice || !isCustomPrice || pending"
           :loading="fetchingPrice"
           outlined
+          hide-details
           :label="tc('manual_balances_form.fields.price_asset')"
         />
       </v-col>
     </v-row>
+
+    <div
+      v-if="fiatPriceHint"
+      class="mt-n10 mb-8 text-body-2 font-weight-bold green--text"
+    >
+      <span
+        >{{
+          tc('common.price_in_symbol', 0, {
+            symbol: currencySymbol
+          })
+        }}:
+      </span>
+      <span>
+        <amount-display
+          :value="fiatPriceHint"
+          :fiat-currency="currencySymbol"
+        />
+      </span>
+    </div>
 
     <v-row v-if="fetchedPrice" class="mt-n10 mb-0">
       <v-col cols="auto">

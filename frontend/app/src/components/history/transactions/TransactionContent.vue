@@ -234,7 +234,7 @@ const saveData = async (
   event: NewEthTransactionEvent | EthTransactionEventEntry
 ) => {
   if ('identifier' in event) {
-    return await editTransactionEvent(omit(event, 'evmChain'));
+    return await editTransactionEvent(event);
   }
   return await addTransactionEvent(event);
 };
