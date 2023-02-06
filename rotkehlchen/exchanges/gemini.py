@@ -241,7 +241,7 @@ class Gemini(ExchangeInterface):
         return json_ret
 
     @overload
-    def _private_api_query(  # pylint: disable=no-self-use
+    def _private_api_query(
             self,
             endpoint: Literal['roles'],
             options: Optional[dict[str, Any]] = None,
@@ -249,7 +249,7 @@ class Gemini(ExchangeInterface):
         ...
 
     @overload
-    def _private_api_query(  # pylint: disable=no-self-use
+    def _private_api_query(
             self,
             endpoint: Literal['balances', 'mytrades', 'transfers', 'balances/earn'],
             options: Optional[dict[str, Any]] = None,
@@ -564,14 +564,14 @@ class Gemini(ExchangeInterface):
         return movements
 
     def query_online_margin_history(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[MarginPosition]:
         return []  # noop for gemini
 
     def query_online_income_loss_expense(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[LedgerAction]:

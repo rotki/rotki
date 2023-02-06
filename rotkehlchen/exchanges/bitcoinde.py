@@ -370,21 +370,21 @@ class Bitcoinde(ExchangeInterface):
         return trades, (start_ts, end_ts)
 
     def query_online_deposits_withdrawals(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[AssetMovement]:
         return []  # noop for bitcoinde
 
     def query_online_income_loss_expense(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[LedgerAction]:
         return []  # noop for bitcoinde
 
     def query_online_margin_history(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[MarginPosition]:

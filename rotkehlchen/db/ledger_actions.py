@@ -81,7 +81,7 @@ class DBLedgerActions():
 
         return actions
 
-    def add_ledger_action(self, write_cursor: 'DBCursor', action: LedgerAction) -> int:  # pylint: disable=no-self-use  # noqa: E501
+    def add_ledger_action(self, write_cursor: 'DBCursor', action: LedgerAction) -> int:  # noqa: E501
         """Adds a new ledger action to the DB and returns its identifier for success
 
         May raise:
@@ -111,7 +111,7 @@ class DBLedgerActions():
                 self.db.msg_aggregator.add_warning('Did not add ledger action to DB due to it already existing')  # noqa: E501
                 log.warning(f'Did not add ledger action {action} to the DB due to it already existing')  # noqa: E501
 
-    def remove_ledger_actions(self, write_cursor: 'DBCursor', identifiers: list[int]) -> None:  # pylint: disable=no-self-use  # noqa: E501
+    def remove_ledger_actions(self, write_cursor: 'DBCursor', identifiers: list[int]) -> None:  # noqa: E501
         """Remove multiple ledger actions from the DB using their identifier.
         May raise:
         - InputError if any of the identifiers are non-existent

@@ -160,7 +160,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         """
         raise NotImplementedError('query_balances should only be implemented by subclasses')
 
-    def query_exchange_specific_history(  # pylint: disable=no-self-use
+    def query_exchange_specific_history(
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument

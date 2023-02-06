@@ -23,7 +23,7 @@ ETH_WITHDRAWAL_FINALIZED = b'*\xc6\x9e\xe8\x04\xd9\xa7\xa0\x98BI\xf5\x08\xdf\xab
 
 
 class OptimismBridgeDecoder(DecoderInterface):
-    def _decode_bridge(  # pylint: disable=no-self-use
+    def _decode_bridge(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument

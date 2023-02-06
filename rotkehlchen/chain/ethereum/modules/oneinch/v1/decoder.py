@@ -75,7 +75,7 @@ class Oneinchv1Decoder(DecoderInterface):
         maybe_reshuffle_events(out_event=out_event, in_event=in_event, events_list=decoded_events)
         return None, []
 
-    def _decode_swapped(  # pylint: disable=no-self-use
+    def _decode_swapped(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,

@@ -18,7 +18,7 @@ SWAPPED = b'v\xaf"J\x148e\xa5\x0bAIn\x1asb&\x98i,V\\\x12\x14\xbc\x86/\x18\xe2-\x
 
 class Oneinchv2Decoder(DecoderInterface):
 
-    def _decode_swapped(  # pylint: disable=no-self-use
+    def _decode_swapped(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument

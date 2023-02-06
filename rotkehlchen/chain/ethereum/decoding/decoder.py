@@ -101,7 +101,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
 
         return None, []
 
-    def _maybe_decode_governance(  # pylint: disable=no-self-use
+    def _maybe_decode_governance(
             self,
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
@@ -142,7 +142,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
 
     # -- methods that need to be implemented by child classes --
 
-    def _enrich_protocol_tranfers(  # pylint: disable=no-self-use
+    def _enrich_protocol_tranfers(
             self,
             token: EvmToken,
             tx_log: EvmTxReceiptLog,

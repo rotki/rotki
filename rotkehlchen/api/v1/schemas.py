@@ -162,7 +162,7 @@ class BalanceSchema(Schema):
     usd_value = AmountField(required=True)
 
     @post_load
-    def make_balance_entry(  # pylint: disable=no-self-use
+    def make_balance_entry(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -189,7 +189,7 @@ class DBOrderBySchema(Schema):
     ascending = DelimitedOrNormalList(fields.Boolean(), load_default=None)  # noqa: E501 most recent first by default
 
     @validates_schema
-    def validate_order_by_schema(  # pylint: disable=no-self-use
+    def validate_order_by_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -223,7 +223,7 @@ class RequiredEvmAddressOptionalChainSchema(Schema):
     )
 
     @post_load
-    def transform_data(  # pylint: disable=no-self-use
+    def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -267,7 +267,7 @@ class EvmTransactionQuerySchema(
     )
 
     @validates_schema
-    def validate_evmtx_query_schema(  # pylint: disable=no-self-use
+    def validate_evmtx_query_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -302,7 +302,7 @@ class EvmTransactionQuerySchema(
             )
 
     @post_load
-    def make_evm_transaction_query(  # pylint: disable=no-self-use
+    def make_evm_transaction_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -346,7 +346,7 @@ class SingleEVMTransactionDecodingSchema(Schema):
     tx_hashes = fields.List(EVMTransactionHashField(), load_default=None)
 
     @validates_schema
-    def validate_schema(  # pylint: disable=no-self-use
+    def validate_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -368,7 +368,7 @@ class SingleEvmPendingTransactionDecodingSchema(Schema):
     addresses = fields.List(EthereumAddressField(), load_default=None)
 
     @validates_schema
-    def validate_schema(  # pylint: disable=no-self-use
+    def validate_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -385,7 +385,7 @@ class EvmPendingTransactionDecodingSchema(AsyncQueryArgumentSchema):
     data = fields.List(fields.Nested(SingleEvmPendingTransactionDecodingSchema), required=True)
 
     @validates_schema
-    def validate_schema(  # pylint: disable=no-self-use
+    def validate_schema(
             self,
             data: list[EvmPendingTransactionDecodingApiData],
             **_kwargs: Any,
@@ -419,7 +419,7 @@ class TradesQuerySchema(
         self.treat_eth2_as_eth = treat_eth2_as_eth
 
     @validates_schema
-    def validate_trades_query_schema(  # pylint: disable=no-self-use
+    def validate_trades_query_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -447,7 +447,7 @@ class TradesQuerySchema(
             )
 
     @post_load
-    def make_trades_query(  # pylint: disable=no-self-use
+    def make_trades_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -505,7 +505,7 @@ class StakingQuerySchema(
         self.treat_eth2_as_eth = treat_eth2_as_eth
 
     @post_load
-    def make_staking_query(  # pylint: disable=no-self-use
+    def make_staking_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -589,7 +589,7 @@ class HistoryBaseEntrySchema(Schema):
     counterparty = fields.String(required=False)
 
     @post_load
-    def make_history_base_entry(  # pylint: disable=no-self-use
+    def make_history_base_entry(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -624,7 +624,7 @@ class AssetMovementsQuerySchema(
         self.treat_eth2_as_eth = treat_eth2_as_eth
 
     @validates_schema
-    def validate_asset_movements_query_schema(  # pylint: disable=no-self-use
+    def validate_asset_movements_query_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -651,7 +651,7 @@ class AssetMovementsQuerySchema(
             )
 
     @post_load
-    def make_asset_movements_query(  # pylint: disable=no-self-use
+    def make_asset_movements_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -699,7 +699,7 @@ class LedgerActionsQuerySchema(
         self.treat_eth2_as_eth = treat_eth2_as_eth
 
     @validates_schema
-    def validate_asset_movements_query_schema(  # pylint: disable=no-self-use
+    def validate_asset_movements_query_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -726,7 +726,7 @@ class LedgerActionsQuerySchema(
             )
 
     @post_load
-    def make_asset_movements_query(  # pylint: disable=no-self-use
+    def make_asset_movements_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -768,10 +768,10 @@ class TradeSchema(Schema):
     notes = fields.String(load_default=None)
 
     @validates_schema
-    def validate_trade(  # pylint: disable=no-self-use
-        self,
-        data: dict[str, Any],
-        **_kwargs: Any,
+    def validate_trade(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
     ) -> None:
         """This validation checks that fee_currency is provided whenever fee is given and
         vice versa. It also checks that fee is not a zero value when both fee and
@@ -820,7 +820,7 @@ class LedgerActionSchema(Schema):
             )
 
     @post_load(pass_many=True)
-    def make_ledger_action(  # pylint: disable=no-self-use
+    def make_ledger_action(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -844,10 +844,10 @@ class TagsSettingSchema(Schema):
     tags = fields.List(fields.String(), load_default=None)
 
     @validates_schema
-    def validate_tags(  # pylint: disable=no-self-use
-        self,
-        data: dict[str, Any],
-        **_kwargs: Any,
+    def validate_tags(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
     ) -> None:
         if isinstance(data['tags'], list) and len(data['tags']) == 0:
             raise ValidationError(
@@ -864,7 +864,7 @@ class ManuallyTrackedBalanceAddSchema(TagsSettingSchema):
     balance_type = SerializableEnumField(enum_class=BalanceType, load_default=BalanceType.ASSET)
 
     @post_load
-    def make_manually_tracked_balances(  # pylint: disable=no-self-use
+    def make_manually_tracked_balances(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -877,7 +877,7 @@ class ManuallyTrackedBalanceEditSchema(ManuallyTrackedBalanceAddSchema):
     id = fields.Integer(required=True)
 
     @post_load
-    def make_manually_tracked_balances(  # pylint: disable=no-self-use
+    def make_manually_tracked_balances(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -971,7 +971,7 @@ class ExchangeLocationIDSchema(Schema):
     location = LocationField(required=True)
 
     @post_load()
-    def make_exchange_location_id(  # pylint: disable=no-self-use
+    def make_exchange_location_id(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1061,7 +1061,7 @@ class ModifiableSettingsSchema(Schema):
     ), load_default=DEFAULT_ADDRESS_NAME_PRIORITY)
 
     @validates_schema
-    def validate_settings_schema(  # pylint: disable=no-self-use
+    def validate_settings_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1075,7 +1075,7 @@ class ModifiableSettingsSchema(Schema):
                     )
 
     @post_load
-    def transform_data(  # pylint: disable=no-self-use
+    def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1131,7 +1131,7 @@ class UserActionSchema(Schema):
     premium_api_secret = fields.String(load_default='')
 
     @validates_schema
-    def validate_user_action_schema(  # pylint: disable=no-self-use
+    def validate_user_action_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1182,7 +1182,7 @@ class ExternalServiceSchema(Schema):
     api_key = fields.String(required=True)
 
     @post_load
-    def make_external_service(  # pylint: disable=no-self-use
+    def make_external_service(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1275,7 +1275,7 @@ class AccountingReportsSchema(Schema):
         self.required_report_id = required_report_id
 
     @validates_schema
-    def validate_accounting_reports_schema(  # pylint: disable=no-self-use
+    def validate_accounting_reports_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1291,7 +1291,7 @@ class AccountingReportDataSchema(DBPaginationSchema, DBOrderBySchema):
     to_timestamp = TimestampField(load_default=ts_now)
 
     @validates_schema
-    def validate_report_schema(  # pylint: disable=no-self-use
+    def validate_report_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1311,7 +1311,7 @@ class AccountingReportDataSchema(DBPaginationSchema, DBOrderBySchema):
             )
 
     @post_load
-    def make_report_data_query(  # pylint: disable=no-self-use
+    def make_report_data_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1341,7 +1341,7 @@ class BlockchainAccountDataSchema(TagsSettingSchema):
     label = fields.String(load_default=None)
 
     @validates_schema
-    def validate_blockchain_account_schema(  # pylint: disable=no-self-use
+    def validate_blockchain_account_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1371,7 +1371,7 @@ class XpubAddSchema(AsyncQueryArgumentSchema, TagsSettingSchema):
     xpub_type = SerializableEnumField(XpubType, load_default=None)
 
     @post_load
-    def transform_data(  # pylint: disable=no-self-use
+    def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1624,7 +1624,7 @@ class EvmAccountsPutSchema(AsyncQueryArgumentSchema):
         self.ethereum_inquirer = ethereum_inquirer
 
     @validates_schema
-    def validate_schema(  # pylint: disable=no-self-use
+    def validate_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1634,7 +1634,7 @@ class EvmAccountsPutSchema(AsyncQueryArgumentSchema):
         data.pop('blockchain')
 
     @post_load
-    def transform_data(  # pylint: disable=no-self-use
+    def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1652,7 +1652,7 @@ class BlockchainAccountsPatchSchema(Schema):
         self.ethereum_inquirer = ethereum_inquirer
 
     @validates_schema
-    def validate_schema(  # pylint: disable=no-self-use
+    def validate_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1660,7 +1660,7 @@ class BlockchainAccountsPatchSchema(Schema):
         _validate_blockchain_account_schemas(data, lambda x: x['address'])
 
     @post_load
-    def transform_data(  # pylint: disable=no-self-use
+    def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1698,7 +1698,7 @@ class BlockchainAccountsDeleteSchema(AsyncQueryArgumentSchema):
         self.ethereum_inquirer = ethereum_inquirer
 
     @validates_schema
-    def validate_blockchain_accounts_delete_schema(  # pylint: disable=no-self-use
+    def validate_blockchain_accounts_delete_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1706,7 +1706,7 @@ class BlockchainAccountsDeleteSchema(AsyncQueryArgumentSchema):
         _validate_blockchain_account_schemas(data, lambda x: x)
 
     @post_load
-    def transform_data(  # pylint: disable=no-self-use
+    def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1738,7 +1738,7 @@ class IgnoredActionsModifySchema(Schema):
     data = fields.List(fields.Raw(), required=True)
 
     @post_load
-    def transform_data(  # pylint: disable=no-self-use
+    def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1829,7 +1829,7 @@ class CryptoAssetSchema(BaseCryptoAssetSchema):
         self.cryptocompare_obj = cryptocompare
 
     @validates_schema
-    def validate_schema(  # pylint: disable=no-self-use
+    def validate_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1859,7 +1859,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
         self.db = db
 
     @validates_schema
-    def validate_schema(  # pylint: disable=no-self-use
+    def validate_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1920,7 +1920,7 @@ class AssetsSearchLevenshteinSchema(Schema):
     search_nfts = fields.Boolean(load_default=False)
 
     @post_load
-    def make_levenshtein_search_query(  # pylint: disable=no-self-use
+    def make_levenshtein_search_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1947,7 +1947,7 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
     return_exact_matches = fields.Boolean(load_default=False)
 
     @post_load
-    def make_assets_search_query(  # pylint: disable=no-self-use
+    def make_assets_search_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -1994,7 +1994,7 @@ class EvmTokenSchema(BaseCryptoAssetSchema, RequiredEvmAddressSchema):
         self.cryptocompare_obj = cryptocompare
 
     @validates_schema
-    def validate_ethereum_token_schema(  # pylint: disable=no-self-use
+    def validate_ethereum_token_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2026,7 +2026,7 @@ class EvmTokenSchema(BaseCryptoAssetSchema, RequiredEvmAddressSchema):
             _validate_single_oracle_id(data, 'cryptocompare', self.cryptocompare_obj)  # type: ignore  # noqa: E501
 
     @post_load
-    def transform_data(  # pylint: disable=no-self-use
+    def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2061,7 +2061,7 @@ class ModifyEvmTokenSchema(Schema):
         token.schema.cryptocompare_obj = cryptocompare
 
     @validates_schema
-    def validate_modify_ethereum_token_schema(  # pylint: disable=no-self-use
+    def validate_modify_ethereum_token_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2101,7 +2101,7 @@ class DataImportSchema(AsyncQueryArgumentSchema):
     timestamp_format = fields.String(load_default=None)
 
     @post_load
-    def transform_data(  # pylint: disable=no-self-use
+    def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2294,7 +2294,7 @@ class Eth2ValidatorSchema(Schema):
     ownership_percentage = FloatingPercentageField(load_default=ONE)
 
     @validates_schema
-    def validate_eth2_validator_schema(  # pylint: disable=no-self-use
+    def validate_eth2_validator_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2320,7 +2320,7 @@ class Eth2ValidatorSchema(Schema):
                 )
 
     @post_load
-    def transform_data(  # pylint: disable=no-self-use
+    def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2363,7 +2363,7 @@ class Eth2DailyStatsSchema(
     validators = fields.List(fields.Integer(), load_default=None)
 
     @validates_schema
-    def validate_eth2_daily_stats_schema(  # pylint: disable=no-self-use
+    def validate_eth2_daily_stats_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2401,7 +2401,7 @@ class Eth2DailyStatsSchema(
             )
 
     @post_load
-    def make_eth2_daily_stats_query(  # pylint: disable=no-self-use
+    def make_eth2_daily_stats_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2449,7 +2449,7 @@ class AssetsImportingSchema(Schema):
     )
 
     @validates_schema
-    def validate_schema(  # pylint: disable=no-self-use
+    def validate_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2480,7 +2480,7 @@ class AddressWithOptionalBlockchainSchema(Schema):
     blockchain = BlockchainField(load_default=None)
 
     @post_load()
-    def transform_data(  # pylint: disable=no-self-use
+    def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2513,7 +2513,7 @@ class AddressbookEntrySchema(Schema):
     blockchain = BlockchainField(load_default=None)
 
     @post_load()
-    def transform_data(  # pylint: disable=no-self-use
+    def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2542,7 +2542,7 @@ class SnapshotQuerySchema(SnapshotTimestampQuerySchema):
     path = DirectoryField(load_default=None)
 
     @validates_schema
-    def validate_schema(  # pylint: disable=no-self-use
+    def validate_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2568,7 +2568,7 @@ class BalanceSnapshotSchema(Schema):
     usd_value = AmountField(required=True)
 
     @post_load
-    def make_balance(  # pylint: disable=no-self-use
+    def make_balance(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2588,7 +2588,7 @@ class LocationDataSnapshotSchema(Schema):
     usd_value = AmountField(required=True)
 
     @post_load
-    def make_location_data(  # pylint: disable=no-self-use
+    def make_location_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2614,7 +2614,7 @@ class SnapshotEditingSchema(Schema):
     )
 
     @validates_schema
-    def validate_schema(  # pylint: disable=no-self-use
+    def validate_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2656,7 +2656,7 @@ class RpcNodeEditSchema(RpcAddNodeSchema):
     identifier = fields.Integer(required=True)
 
     @validates_schema
-    def validate_schema(  # pylint: disable=no-self-use
+    def validate_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2679,7 +2679,7 @@ class RpcNodeListDeleteSchema(Schema):
     identifier = fields.Integer(required=True)
 
     @validates_schema
-    def validate_schema(  # pylint: disable=no-self-use
+    def validate_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2721,7 +2721,7 @@ class UserNotesGetSchema(DBPaginationSchema, DBOrderBySchema):
     location = fields.String(load_default=None)
 
     @post_load
-    def make_user_notes_query(  # pylint: disable=no-self-use
+    def make_user_notes_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2746,7 +2746,7 @@ class CustomAssetsQuerySchema(DBPaginationSchema, DBOrderBySchema):
     custom_asset_type = fields.String(load_default=None)
 
     @post_load
-    def make_custom_assets_query(  # pylint: disable=no-self-use
+    def make_custom_assets_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2772,7 +2772,7 @@ class BaseCustomAssetSchema(Schema):
     custom_asset_type = fields.String(required=True)
 
     @post_load
-    def make_custom_asset(  # pylint: disable=no-self-use
+    def make_custom_asset(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2790,7 +2790,7 @@ class EditCustomAssetSchema(BaseCustomAssetSchema):
     identifier = fields.UUID(required=True)
 
     @post_load
-    def make_custom_asset(  # pylint: disable=no-self-use
+    def make_custom_asset(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -2827,7 +2827,7 @@ class NFTFilterQuerySchema(
         self.db = db
 
     @post_load
-    def make_nft_filter_query(  # pylint: disable=no-self-use
+    def make_nft_filter_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,

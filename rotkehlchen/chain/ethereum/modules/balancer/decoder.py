@@ -152,7 +152,7 @@ class BalancerDecoder(DecoderInterface):
 
         return None, [action_item]
 
-    def _maybe_enrich_balancer_v2_transfers(  # pylint: disable=no-self-use
+    def _maybe_enrich_balancer_v2_transfers(
             self,
             token: 'EvmToken',  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,

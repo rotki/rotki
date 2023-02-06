@@ -45,7 +45,7 @@ class DBAddressbook:
         with self.db.user_write() as cursor:
             yield cursor
 
-    def get_addressbook_entries(  # pylint: disable=no-self-use
+    def get_addressbook_entries(
             self,
             cursor: 'DBCursor',
             optional_chain_addresses: Optional[list[OptionalChainAddress]] = None,

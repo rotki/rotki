@@ -42,7 +42,7 @@ class OptimismTransactionDecoder(EVMTransactionDecoder):
 
     # -- methods that need to be implemented by child classes --
 
-    def _enrich_protocol_tranfers(  # pylint: disable=no-self-use
+    def _enrich_protocol_tranfers(
             self,
             token: 'EvmToken',
             tx_log: 'EvmTxReceiptLog',

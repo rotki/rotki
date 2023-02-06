@@ -374,7 +374,7 @@ class Bitmex(ExchangeInterface):
         return [], (start_ts, end_ts)  # noop for bitmex
 
     def query_online_income_loss_expense(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[LedgerAction]:

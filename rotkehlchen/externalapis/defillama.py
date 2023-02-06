@@ -181,7 +181,7 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         rate_price = Inquirer().find_price(from_asset=A_USD, to_asset=to_asset)
         return Price(usd_price * rate_price), False
 
-    def can_query_history(  # pylint: disable=no-self-use
+    def can_query_history(
             self,
             from_asset: Asset,  # pylint: disable=unused-argument
             to_asset: Asset,

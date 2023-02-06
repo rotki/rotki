@@ -38,7 +38,7 @@ class HopDecoder(DecoderInterface):
         self.weth = A_WETH_OPT.resolve_to_evm_token()
         self.heth = A_HETH_OPT.resolve_to_evm_token()
 
-    def _decode_receive_eth(  # pylint: disable=no-self-use
+    def _decode_receive_eth(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument

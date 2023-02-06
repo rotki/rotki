@@ -19,7 +19,7 @@ ZKSYNC_BRIDGE = string_to_evm_address('0xaBEA9132b05A70803a4E85094fD0e1800777fBE
 
 class ZksyncDecoder(DecoderInterface):
 
-    def _decode_event(  # pylint: disable=no-self-use
+    def _decode_event(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
@@ -32,7 +32,7 @@ class ZksyncDecoder(DecoderInterface):
 
         return None, []
 
-    def _decode_deposit(  # pylint: disable=no-self-use
+    def _decode_deposit(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument

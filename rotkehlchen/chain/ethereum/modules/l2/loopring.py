@@ -310,7 +310,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
         return True
 
     @overload
-    def _api_query(  # pylint: disable=no-self-use
+    def _api_query(
             self,
             endpoint: Literal['user/balances'],
             options: Optional[dict[str, Any]],
@@ -318,7 +318,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
         ...
 
     @overload
-    def _api_query(  # pylint: disable=no-self-use
+    def _api_query(
             self,
             endpoint: Literal['account'],
             options: Optional[dict[str, Any]],

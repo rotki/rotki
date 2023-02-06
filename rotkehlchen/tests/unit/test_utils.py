@@ -184,7 +184,7 @@ class Foo(CacheableMixIn):
         self.do_something_arguments_dont_matter_count = 0
 
     @cache_response_timewise()
-    def do_sum(self, arg1, arg2, **kwargs):  # pylint: disable=no-self-use, unused-argument
+    def do_sum(self, arg1, arg2, **kwargs):  # pylint: disable=unused-argument
         self.do_sum_call_count += 1
         return arg1 + arg2
 

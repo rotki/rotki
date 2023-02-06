@@ -26,7 +26,7 @@ ETH_PURCHASE = b'\x7f@\x91\xb4l3\xe9\x18\xa0\xf3\xaaB0vA\xd1{\xb6p)BzSi\xe5K59\x
 
 class Uniswapv1Decoder(DecoderInterface):
 
-    def _maybe_decode_swap(  # pylint: disable=no-self-use
+    def _maybe_decode_swap(
             self,
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,

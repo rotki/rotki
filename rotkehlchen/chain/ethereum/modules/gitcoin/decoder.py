@@ -18,7 +18,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class GitcoinDecoder(DecoderInterface):
 
-    def _maybe_enrich_gitcoin_transfers(  # pylint: disable=no-self-use
+    def _maybe_enrich_gitcoin_transfers(
             self,
             token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument

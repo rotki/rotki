@@ -23,7 +23,7 @@ class AssetDataSchema(OptionalEvmTokenInformationSchema):
     started = TimestampField(required=True, allow_none=True)
 
     @post_load
-    def transform_data(  # pylint: disable=no-self-use
+    def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,

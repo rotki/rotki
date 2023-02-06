@@ -3978,7 +3978,6 @@ class RestAPI():
         )
 
     def get_all_binance_pairs(self, location: Location) -> Response:
-        # pylint: disable=no-self-use
         try:
             pairs = list(query_binance_exchange_pairs(location=location).keys())
         except InputError as e:
@@ -4005,12 +4004,12 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
-    def add_manual_price(  # pylint: disable=no-self-use
-        self,
-        from_asset: Asset,
-        to_asset: Asset,
-        price: Price,
-        timestamp: Timestamp,
+    def add_manual_price(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            price: Price,
+            timestamp: Timestamp,
     ) -> Response:
         historical_price = HistoricalPrice(
             from_asset=from_asset,
@@ -4027,12 +4026,12 @@ class RestAPI():
             status_code=HTTPStatus.CONFLICT,
         )
 
-    def edit_manual_price(  # pylint: disable=no-self-use
-        self,
-        from_asset: Asset,
-        to_asset: Asset,
-        price: Price,
-        timestamp: Timestamp,
+    def edit_manual_price(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            price: Price,
+            timestamp: Timestamp,
     ) -> Response:
         historical_price = HistoricalPrice(
             from_asset=from_asset,
@@ -4049,21 +4048,21 @@ class RestAPI():
             status_code=HTTPStatus.CONFLICT,
         )
 
-    def get_manual_prices(  # pylint: disable=no-self-use
-        self,
-        from_asset: Optional[Asset],
-        to_asset: Optional[Asset],
+    def get_manual_prices(
+            self,
+            from_asset: Optional[Asset],
+            to_asset: Optional[Asset],
     ) -> Response:
         return api_response(
             _wrap_in_ok_result(GlobalDBHandler().get_manual_prices(from_asset, to_asset)),
             status_code=HTTPStatus.OK,
         )
 
-    def delete_manual_price(  # pylint: disable=no-self-use
-        self,
-        from_asset: Asset,
-        to_asset: Asset,
-        timestamp: Timestamp,
+    def delete_manual_price(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
     ) -> Response:
         deleted = GlobalDBHandler().delete_manual_price(from_asset, to_asset, timestamp)
         if deleted:

@@ -20,7 +20,7 @@ REDEEM_UNDERLYING = b'\x9cN\xd5\x99\xcd\x85U\xb9\xc1\xe8\xcdvC$\r}q\xebv\xb7\x92
 
 class Aavev1Decoder(DecoderInterface):
 
-    def _decode_pool_event(  # pylint: disable=no-self-use
+    def _decode_pool_event(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
@@ -35,7 +35,7 @@ class Aavev1Decoder(DecoderInterface):
 
         return None, []
 
-    def _decode_deposit_event(  # pylint: disable=no-self-use
+    def _decode_deposit_event(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
@@ -77,7 +77,7 @@ class Aavev1Decoder(DecoderInterface):
         maybe_reshuffle_events(out_event=deposit_event, in_event=receive_event)
         return None, []
 
-    def _decode_redeem_underlying_event(  # pylint: disable=no-self-use
+    def _decode_redeem_underlying_event(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument

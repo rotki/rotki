@@ -362,7 +362,7 @@ class Bitstamp(ExchangeInterface):
         return response
 
     @overload
-    def _api_query_paginated(  # pylint: disable=no-self-use
+    def _api_query_paginated(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
@@ -372,7 +372,7 @@ class Bitstamp(ExchangeInterface):
         ...
 
     @overload
-    def _api_query_paginated(  # pylint: disable=no-self-use
+    def _api_query_paginated(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
@@ -649,7 +649,7 @@ class Bitstamp(ExchangeInterface):
         )
 
     @overload
-    def _process_unsuccessful_response(  # pylint: disable=no-self-use
+    def _process_unsuccessful_response(
             self,
             response: Response,
             case: Literal['validate_api_key'],
@@ -657,7 +657,7 @@ class Bitstamp(ExchangeInterface):
         ...
 
     @overload
-    def _process_unsuccessful_response(  # pylint: disable=no-self-use
+    def _process_unsuccessful_response(
             self,
             response: Response,
             case: Literal['balances'],
@@ -665,7 +665,7 @@ class Bitstamp(ExchangeInterface):
         ...
 
     @overload
-    def _process_unsuccessful_response(  # pylint: disable=no-self-use
+    def _process_unsuccessful_response(
             self,
             response: Response,
             case: Literal['trades'],
@@ -673,7 +673,7 @@ class Bitstamp(ExchangeInterface):
         ...
 
     @overload
-    def _process_unsuccessful_response(  # pylint: disable=no-self-use
+    def _process_unsuccessful_response(
             self,
             response: Response,
             case: Literal['asset_movements'],
@@ -731,14 +731,14 @@ class Bitstamp(ExchangeInterface):
         raise AssertionError(f'Unexpected Bitstamp response_case: {case}.')
 
     def query_online_margin_history(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[MarginPosition]:
         return []  # noop for bitstamp
 
     def query_online_income_loss_expense(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[LedgerAction]:

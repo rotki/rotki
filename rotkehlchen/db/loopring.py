@@ -12,7 +12,7 @@ class DBLoopring():
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
 
-    def add_accountid_mapping(  # pylint: disable=no-self-use
+    def add_accountid_mapping(
             self,
             write_cursor: 'DBCursor',
             address: ChecksumEvmAddress,
@@ -23,13 +23,13 @@ class DBLoopring():
             (f'loopring_{address}_account_id', str(account_id)),
         )
 
-    def remove_accountid_mapping(self, write_cursor: 'DBCursor', address: ChecksumEvmAddress) -> None:  # pylint: disable=no-self-use  # noqa: E501
+    def remove_accountid_mapping(self, write_cursor: 'DBCursor', address: ChecksumEvmAddress) -> None:  # noqa: E501
         write_cursor.execute(
             'DELETE FROM multisettings WHERE name=?;',
             (f'loopring_{address}_account_id',),
         )
 
-    def get_accountid_mapping(  # pylint: disable=no-self-use
+    def get_accountid_mapping(
             self,
             cursor: 'DBCursor',
             address: ChecksumEvmAddress,

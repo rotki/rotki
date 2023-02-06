@@ -83,13 +83,13 @@ def _maybe_update_events_legacy_contrats(
 
 class KyberDecoder(DecoderInterface):
 
-    def _decode_legacy_trade(  # pylint: disable=no-self-use
-        self,
-        tx_log: EvmTxReceiptLog,
-        transaction: EvmTransaction,  # pylint: disable=unused-argument
-        decoded_events: list[HistoryBaseEntry],
-        all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-        action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+    def _decode_legacy_trade(
+            self,
+            tx_log: EvmTxReceiptLog,
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] == KYBER_TRADE_LEGACY:
             return None, []
@@ -114,13 +114,13 @@ class KyberDecoder(DecoderInterface):
 
         return None, []
 
-    def _decode_legacy_upgraded_trade(  # pylint: disable=no-self-use
-        self,
-        tx_log: EvmTxReceiptLog,
-        transaction: EvmTransaction,  # pylint: disable=unused-argument
-        decoded_events: list[HistoryBaseEntry],
-        all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-        action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+    def _decode_legacy_upgraded_trade(
+            self,
+            tx_log: EvmTxReceiptLog,
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] != KYBER_TRADE_LEGACY:
             return None, []

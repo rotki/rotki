@@ -87,7 +87,7 @@ class DBEth2():
                 )
                 continue
 
-    def get_eth2_deposits(  # pylint: disable=no-self-use
+    def get_eth2_deposits(
             self,
             cursor: 'DBCursor',
             from_ts: Optional[Timestamp] = None,
@@ -204,7 +204,7 @@ class DBEth2():
                 daily_stat.pnl = daily_stat.pnl * owned_proportion
         return daily_stats
 
-    def validator_exists(  # pylint: disable=no-self-use
+    def validator_exists(
             self,
             cursor: 'DBCursor',
             field: Literal['validator_index', 'public_key'],
@@ -213,11 +213,11 @@ class DBEth2():
         cursor.execute(f'SELECT COUNT(*) from eth2_validators WHERE {field}=?', (arg,))
         return cursor.fetchone()[0] == 1  # count always returns
 
-    def get_validators(self, cursor: 'DBCursor') -> list[Eth2Validator]:  # pylint: disable=no-self-use  # noqa: E501
+    def get_validators(self, cursor: 'DBCursor') -> list[Eth2Validator]:
         cursor.execute('SELECT * from eth2_validators;')
         return [Eth2Validator.deserialize_from_db(x) for x in cursor]
 
-    def add_validators(self, write_cursor: 'DBCursor', validators: list[Eth2Validator]) -> None:  # pylint: disable=no-self-use  # noqa: E501
+    def add_validators(self, write_cursor: 'DBCursor', validators: list[Eth2Validator]) -> None:  # noqa: E501
         write_cursor.executemany(
             'INSERT OR IGNORE INTO '
             'eth2_validators(validator_index, public_key, ownership_proportion) VALUES(?, ?, ?)',
