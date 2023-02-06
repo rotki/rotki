@@ -48,7 +48,7 @@ class DxdaomesaDecoder(DecoderInterface):
             deployed_block=contracts['DXDAOMESA']['deployed_block'],
         )
 
-    def _decode_events(  # pylint: disable=no-self-use
+    def _decode_events(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
@@ -67,7 +67,7 @@ class DxdaomesaDecoder(DecoderInterface):
 
         return None, []
 
-    def _decode_deposit(  # pylint: disable=no-self-use
+    def _decode_deposit(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
@@ -96,7 +96,7 @@ class DxdaomesaDecoder(DecoderInterface):
 
         return None, []
 
-    def _decode_withdraw(  # pylint: disable=no-self-use
+    def _decode_withdraw(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
@@ -125,7 +125,7 @@ class DxdaomesaDecoder(DecoderInterface):
 
         return None, []
 
-    def _decode_withdraw_request(  # pylint: disable=no-self-use
+    def _decode_withdraw_request(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
@@ -160,7 +160,7 @@ class DxdaomesaDecoder(DecoderInterface):
         )
         return event, []
 
-    def _decode_order_placement(  # pylint: disable=no-self-use
+    def _decode_order_placement(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument

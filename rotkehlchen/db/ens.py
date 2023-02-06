@@ -15,7 +15,7 @@ class DBEns:
     def __init__(self, db_handler: 'DBHandler') -> None:
         self.db = db_handler
 
-    def add_ens_mapping(    # pylint: disable=no-self-use
+    def add_ens_mapping(
             self,
             write_cursor: 'DBCursor',
             address: ChecksumEvmAddress,
@@ -36,7 +36,7 @@ class DBEns:
             (name, address, now),
         )
 
-    def get_reverse_ens(    # pylint: disable=no-self-use
+    def get_reverse_ens(
             self,
             cursor: 'DBCursor',
             addresses: list[ChecksumEvmAddress],

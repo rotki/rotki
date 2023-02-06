@@ -27,12 +27,12 @@ class ModuleAccountantInterface(metaclass=ABCMeta):
         self.reset()
 
     @abstractmethod
-    def event_settings(self, pot: 'AccountingPot') -> dict[str, 'TxEventSettings']:  # pylint: disable=no-self-use  # noqa: E501
+    def event_settings(self, pot: 'AccountingPot') -> dict[str, 'TxEventSettings']:
         """
         Subclasses implement this to specify rules/settings for their created events
         """
         ...
 
-    def reset(self) -> None:  # pylint: disable=no-self-use
+    def reset(self) -> None:
         """Subclasses may implement this to reset state between accounting runs"""
         return None

@@ -611,7 +611,7 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
             )
             return Price(ZERO), False
 
-    def can_query_history(  # pylint: disable=no-self-use
+    def can_query_history(
             self,
             from_asset: Asset,  # pylint: disable=unused-argument
             to_asset: Asset,

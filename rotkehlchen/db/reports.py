@@ -137,7 +137,7 @@ class DBAccountingReports():
                 tuples,
             )
 
-    def _get_report_size(self, cursor: 'DBCursor', report_id: int) -> int:  # pylint: disable=no-self-use  # noqa: E501
+    def _get_report_size(self, cursor: 'DBCursor', report_id: int) -> int:
         """Returns an approximation of the DB size in bytes for the given report.
 
         It's an approximation since length() in sqlite returns the string length

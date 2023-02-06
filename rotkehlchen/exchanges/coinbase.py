@@ -859,7 +859,7 @@ class Coinbase(ExchangeInterface):
         return ledger_actions
 
     def query_online_margin_history(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[MarginPosition]:

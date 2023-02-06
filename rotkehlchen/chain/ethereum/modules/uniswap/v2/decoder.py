@@ -57,7 +57,7 @@ class Uniswapv2Decoder(DecoderInterface):
             notify_user=self.notify_user,
         )
 
-    def _maybe_decode_v2_swap(  # pylint: disable=no-self-use
+    def _maybe_decode_v2_swap(
             self,
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
@@ -87,7 +87,7 @@ class Uniswapv2Decoder(DecoderInterface):
 
         return None, []
 
-    def _maybe_decode_v2_liquidity_addition_and_removal(  # pylint: disable=no-self-use
+    def _maybe_decode_v2_liquidity_addition_and_removal(
             self,
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,

@@ -708,7 +708,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
     # -- methods to be implemented by child classes --
 
     @abstractmethod
-    def _enrich_protocol_tranfers(  # pylint: disable=no-self-use
+    def _enrich_protocol_tranfers(
             self,
             token: EvmToken,
             tx_log: EvmTxReceiptLog,

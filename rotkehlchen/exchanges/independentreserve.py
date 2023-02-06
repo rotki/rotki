@@ -466,7 +466,7 @@ class Independentreserve(ExchangeInterface):
         return trades, (start_ts, end_ts)
 
     def query_online_deposits_withdrawals(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[AssetMovement]:
@@ -526,14 +526,14 @@ class Independentreserve(ExchangeInterface):
         return movements
 
     def query_online_margin_history(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[MarginPosition]:
         return []  # noop for independentreserve
 
     def query_online_income_loss_expense(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[LedgerAction]:

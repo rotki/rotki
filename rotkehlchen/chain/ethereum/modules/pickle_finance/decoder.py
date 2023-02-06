@@ -40,7 +40,7 @@ class PickleFinanceDecoder(DecoderInterface):
         )
         self.pickle_contracts = {jar.evm_address for jar in jars}
 
-    def _maybe_enrich_pickle_transfers(  # pylint: disable=no-self-use
+    def _maybe_enrich_pickle_transfers(
             self,
             token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,

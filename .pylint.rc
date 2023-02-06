@@ -65,7 +65,6 @@ enable=
     bad-except-order,
     redefined-builtin,
     unused-variable,
-    no-self-use,
     import-self,
     useless-object-inheritance,
     unused-argument,

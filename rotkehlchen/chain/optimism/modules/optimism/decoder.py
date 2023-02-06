@@ -19,7 +19,7 @@ DELEGATE_CHANGED = b'14\xe8\xa2\xe6\xd9~\x92\x9a~T\x01\x1e\xa5H]}\x19m\xd5\xf0\x
 
 class OptimismDecoder(DecoderInterface):
 
-    def _decode_delegate_changed(  # pylint: disable=no-self-use
+    def _decode_delegate_changed(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,

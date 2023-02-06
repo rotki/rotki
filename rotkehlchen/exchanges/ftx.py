@@ -246,7 +246,7 @@ class Ftx(ExchangeInterface):
         return json_ret['result']
 
     @overload
-    def _api_query(  # pylint: disable=no-self-use
+    def _api_query(
             self,
             endpoint: Literal['wallet/all_balances'],
             start_time: Optional[Timestamp] = None,
@@ -257,7 +257,7 @@ class Ftx(ExchangeInterface):
         ...
 
     @overload
-    def _api_query(  # pylint: disable=no-self-use
+    def _api_query(
             self,
             endpoint: Literal['wallet/balances'],
             start_time: Optional[Timestamp] = None,
@@ -268,7 +268,7 @@ class Ftx(ExchangeInterface):
         ...
 
     @overload
-    def _api_query(  # pylint: disable=no-self-use
+    def _api_query(
             self,
             endpoint: Literal['account'],
             start_time: Optional[Timestamp] = None,
@@ -604,14 +604,14 @@ class Ftx(ExchangeInterface):
         return movements
 
     def query_online_margin_history(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[MarginPosition]:
         return []  # noop for FTX
 
     def query_online_income_loss_expense(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[LedgerAction]:

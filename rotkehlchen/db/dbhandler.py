@@ -373,7 +373,7 @@ class DBHandler:
 
         return default_value  # type: ignore
 
-    def set_setting(  # pylint: disable=no-self-use
+    def set_setting(
             self,
             write_cursor: 'DBCursor',
             name: Literal[
@@ -551,7 +551,6 @@ class DBHandler:
         with self.conn_transient.write_ctx() as cursor:
             yield cursor
 
-    # pylint: disable=no-self-use
     def get_settings(self, cursor: 'DBCursor', have_premium: bool = False) -> DBSettings:
         """Aggregates settings from DB and from the given args and returns the settings object"""
         cursor.execute('SELECT name, value FROM settings;')
@@ -563,7 +562,6 @@ class DBHandler:
         settings_dict['have_premium'] = have_premium
         return db_settings_from_dict(settings_dict, self.msg_aggregator)
 
-    # pylint: disable=no-self-use
     def set_settings(self, write_cursor: 'DBCursor', settings: ModifiableDBSettings) -> None:
         settings_dict = settings.serialize()
         write_cursor.executemany(
@@ -571,7 +569,6 @@ class DBHandler:
             list(settings_dict.items()),
         )
 
-    # pylint: disable=no-self-use
     @need_writable_cursor('user_write')
     def add_external_service_credentials(
             self,
@@ -626,7 +623,6 @@ class DBHandler:
             # There can only be 1 result, since name is the primary key of the table
             return ExternalServiceApiCredentials(service=service_name, api_key=result[0])
 
-    # pylint: disable=no-self-use
     @need_writable_cursor('user_write')
     def add_to_ignored_assets(self, write_cursor: 'DBCursor', asset: Asset) -> None:
         write_cursor.execute(
@@ -634,7 +630,6 @@ class DBHandler:
             ('ignored_asset', asset.identifier),
         )
 
-    # pylint: disable=no-self-use
     def remove_from_ignored_assets(self, write_cursor: 'DBCursor', asset: Asset) -> None:
         write_cursor.execute(
             'DELETE FROM multisettings WHERE name="ignored_asset" AND value=?;',
@@ -715,7 +710,6 @@ class DBHandler:
                 f'ignored actions that do not exist',
             )
 
-    # pylint: disable=no-self-use
     def get_ignored_action_ids(
             self,
             cursor: 'DBCursor',
@@ -737,7 +731,6 @@ class DBHandler:
 
         return mapping
 
-    # pylint: disable=no-self-use
     def add_multiple_balances(self, write_cursor: 'DBCursor', balances: list[DBAssetBalance]) -> None:  # noqa: E501
         """Execute addition of multiple balances in the DB"""
         serialized_balances = [balance.serialize_for_db() for balance in balances]
@@ -753,7 +746,6 @@ class DBHandler:
                 'or an entry for the given timestamp already exists',
             ) from e
 
-    # pylint: disable=no-self-use
     def add_aave_events(self, write_cursor: 'DBCursor', address: ChecksumEvmAddress, events: Sequence[AaveEvent]) -> None:  # noqa: E501
         for e in events:
             event_tuple = e.to_db_tuple(address)
@@ -992,7 +984,6 @@ class DBHandler:
         """Delete all loopring related data"""
         write_cursor.execute('DELETE FROM multisettings WHERE name LIKE "loopring_%";')
 
-    # pylint: disable=no-self-use
     def get_used_query_range(self, cursor: 'DBCursor', name: str) -> Optional[tuple[Timestamp, Timestamp]]:  # noqa: E501
         """Get the last start/end timestamp range that has been queried for name
 
@@ -1079,7 +1070,6 @@ class DBHandler:
                     f' already existing timestamp {entry.time}.',
                 ) from e
 
-    # pylint: disable=no-self-use
     def add_blockchain_accounts(
             self,
             write_cursor: 'DBCursor',
@@ -1369,7 +1359,6 @@ class DBHandler:
 
         return data
 
-    # pylint: disable=no-self-use
     def add_manually_tracked_balances(self, write_cursor: 'DBCursor', data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
         """Adds manually tracked balances in the DB
 
@@ -2004,7 +1993,6 @@ class DBHandler:
 
         return asset_movements
 
-    # pylint: disable=no-self-use
     def get_entries_count(
             self,
             cursor: 'DBCursor',
@@ -2419,7 +2407,6 @@ class DBHandler:
         assets = self.query_owned_assets(cursor)
         GlobalDBHandler().add_user_owned_assets(assets)
 
-    # pylint: disable=no-self-use
     def add_asset_identifiers(self, write_cursor: 'DBCursor', asset_identifiers: list[str]) -> None:  # noqa: E501
         """Adds an asset to the user db asset identifier table"""
         write_cursor.executemany(

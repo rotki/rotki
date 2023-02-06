@@ -227,7 +227,7 @@ class Bitfinex(ExchangeInterface):
         return response
 
     @overload
-    def _api_query_paginated(  # pylint: disable=no-self-use
+    def _api_query_paginated(
             self,
             options: dict[str, Any],
             case: Literal['trades'],
@@ -235,7 +235,7 @@ class Bitfinex(ExchangeInterface):
         ...
 
     @overload
-    def _api_query_paginated(  # pylint: disable=no-self-use
+    def _api_query_paginated(
             self,
             options: dict[str, Any],
             case: Literal['asset_movements'],
@@ -362,7 +362,7 @@ class Bitfinex(ExchangeInterface):
         return results
 
     @overload
-    def _deserialize_api_query_paginated_results(  # pylint: disable=no-self-use
+    def _deserialize_api_query_paginated_results(
             self,
             case: Literal['trades'],
             options: dict[str, Any],
@@ -372,7 +372,7 @@ class Bitfinex(ExchangeInterface):
         ...
 
     @overload
-    def _deserialize_api_query_paginated_results(  # pylint: disable=no-self-use
+    def _deserialize_api_query_paginated_results(
             self,
             case: Literal['asset_movements'],
             options: dict[str, Any],
@@ -720,7 +720,7 @@ class Bitfinex(ExchangeInterface):
         )
 
     @overload
-    def _process_unsuccessful_response(  # pylint: disable=no-self-use
+    def _process_unsuccessful_response(
             self,
             response: Response,
             case: Literal['validate_api_key'],
@@ -728,7 +728,7 @@ class Bitfinex(ExchangeInterface):
         ...
 
     @overload
-    def _process_unsuccessful_response(  # pylint: disable=no-self-use
+    def _process_unsuccessful_response(
             self,
             response: Response,
             case: Literal['balances'],
@@ -736,7 +736,7 @@ class Bitfinex(ExchangeInterface):
         ...
 
     @overload
-    def _process_unsuccessful_response(  # pylint: disable=no-self-use
+    def _process_unsuccessful_response(
             self,
             response: Response,
             case: Literal['trades'],
@@ -744,7 +744,7 @@ class Bitfinex(ExchangeInterface):
         ...
 
     @overload
-    def _process_unsuccessful_response(  # pylint: disable=no-self-use
+    def _process_unsuccessful_response(
             self,
             response: Response,
             case: Literal['asset_movements'],
@@ -1014,14 +1014,14 @@ class Bitfinex(ExchangeInterface):
         return True, ''
 
     def query_online_margin_history(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[MarginPosition]:
         return []  # noop for bitfinex
 
     def query_online_income_loss_expense(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[LedgerAction]:

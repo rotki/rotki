@@ -136,7 +136,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
         return mapping['urns'], mapping['owns']
 
-    def decode_makerdao_vault_action(  # pylint: disable=no-self-use
+    def decode_makerdao_vault_action(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
@@ -182,7 +182,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
         return None, []
 
-    def decode_makerdao_debt_payback(  # pylint: disable=no-self-use
+    def decode_makerdao_debt_payback(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument

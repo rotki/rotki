@@ -171,13 +171,13 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
 
         return None, []
 
-    def _decode_curve_events(  # pylint: disable=no-self-use
-        self,
-        tx_log: EvmTxReceiptLog,
-        transaction: EvmTransaction,
-        decoded_events: list[HistoryBaseEntry],
-        all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-        action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+    def _decode_curve_events(
+            self,
+            tx_log: EvmTxReceiptLog,
+            transaction: EvmTransaction,
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] in (
             REMOVE_LIQUIDITY,

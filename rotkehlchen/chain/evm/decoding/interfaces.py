@@ -25,25 +25,25 @@ class DecoderInterface(metaclass=ABCMeta):
         self.msg_aggregator = msg_aggregator
         self.evm_inquirer = evm_inquirer
 
-    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:  # pylint: disable=no-self-use  # noqa: E501
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         """Subclasses may implement this to return the mappings of addresses to decode functions"""
         return {}
 
     @abstractmethod
-    def counterparties(self) -> list[str]:  # pylint: disable=no-self-use
+    def counterparties(self) -> list[str]:
         """
         Subclasses implement this to specify which counterparty values are introduced by the module
         """
         ...
 
-    def decoding_rules(self) -> list[Callable]:  # pylint: disable=no-self-use
+    def decoding_rules(self) -> list[Callable]:
         """
         Subclasses may implement this to add new generic decoding rules to be attempted
         by the decoding process
         """
         return []
 
-    def enricher_rules(self) -> list[Callable]:  # pylint: disable=no-self-use
+    def enricher_rules(self) -> list[Callable]:
         """
         Subclasses may implement this to add new generic decoding rules to be attempted
         by the decoding process
@@ -77,7 +77,7 @@ class DecoderInterface(metaclass=ABCMeta):
 class ReloadableDecoderMixin(metaclass=ABCMeta):
 
     @abstractmethod
-    def reload_data(self) -> Optional[Mapping[ChecksumEvmAddress, tuple[Any, ...]]]:  # pylint: disable=no-self-use  # noqa: E501
+    def reload_data(self) -> Optional[Mapping[ChecksumEvmAddress, tuple[Any, ...]]]:
         """Subclasses may implement this to be able to reload some of the decoder's properties
         Returns only new mappings of addresses to decode functions
         """

@@ -26,7 +26,7 @@ SUSHISWAP_V2_INIT_CODE_HASH = '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d6
 
 class SushiswapDecoder(DecoderInterface):
 
-    def _maybe_decode_v2_swap(  # pylint: disable=no-self-use
+    def _maybe_decode_v2_swap(
             self,
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
@@ -47,7 +47,7 @@ class SushiswapDecoder(DecoderInterface):
             )
         return None, []
 
-    def _maybe_decode_v2_liquidity_addition_and_removal(  # pylint: disable=no-self-use
+    def _maybe_decode_v2_liquidity_addition_and_removal(
             self,
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,

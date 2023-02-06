@@ -134,7 +134,7 @@ class Opensea(ExternalServiceWithApiKey):
         return self.backup_key
 
     @overload
-    def _query(  # pylint: disable=no-self-use
+    def _query(
             self,
             endpoint: Literal['assets', 'collectionstats'],
             options: Optional[dict[str, Any]] = None,
@@ -143,7 +143,7 @@ class Opensea(ExternalServiceWithApiKey):
         ...
 
     @overload
-    def _query(  # pylint: disable=no-self-use
+    def _query(
             self,
             endpoint: Literal['collections'],
             options: Optional[dict[str, Any]] = None,

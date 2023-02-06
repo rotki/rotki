@@ -31,7 +31,7 @@ chainid_to_name = {
 
 class HopDecoder(DecoderInterface):
 
-    def _decode_send_eth(  # pylint: disable=no-self-use
+    def _decode_send_eth(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument

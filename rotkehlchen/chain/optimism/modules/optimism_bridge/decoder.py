@@ -28,7 +28,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class OptimismBridgeDecoder(DecoderInterface):
-    def _decode_receive_deposit(  # pylint: disable=no-self-use
+    def _decode_receive_deposit(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument

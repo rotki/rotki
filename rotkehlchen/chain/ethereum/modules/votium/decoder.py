@@ -24,13 +24,13 @@ VOTIUM_CONTRACT = string_to_evm_address('0x378Ba9B73309bE80BF4C2c027aAD799766a7E
 
 class VotiumDecoder(DecoderInterface):
 
-    def _decode_claim(  # pylint: disable=no-self-use
-        self,
-        tx_log: EvmTxReceiptLog,
-        transaction: EvmTransaction,  # pylint: disable=unused-argument
-        decoded_events: list[HistoryBaseEntry],
-        all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-        action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+    def _decode_claim(
+            self,
+            tx_log: EvmTxReceiptLog,
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         if tx_log.topics[0] != VOTIUM_CLAIM:
             return None, []

@@ -281,7 +281,7 @@ class Kucoin(ExchangeInterface):
         return response
 
     @overload
-    def _api_query_paginated(  # pylint: disable=no-self-use
+    def _api_query_paginated(
             self,
             options: dict[str, Any],
             case: Literal[KucoinCase.OLD_TRADES, KucoinCase.TRADES],
@@ -291,7 +291,7 @@ class Kucoin(ExchangeInterface):
         ...
 
     @overload
-    def _api_query_paginated(  # pylint: disable=no-self-use
+    def _api_query_paginated(
             self,
             options: dict[str, Any],
             case: Literal[KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS],
@@ -618,7 +618,7 @@ class Kucoin(ExchangeInterface):
         return trade
 
     @overload
-    def _process_unsuccessful_response(  # pylint: disable=no-self-use
+    def _process_unsuccessful_response(
             self,
             response: Response,
             case: Literal[KucoinCase.API_KEY],
@@ -626,7 +626,7 @@ class Kucoin(ExchangeInterface):
         ...
 
     @overload
-    def _process_unsuccessful_response(  # pylint: disable=no-self-use
+    def _process_unsuccessful_response(
             self,
             response: Response,
             case: Literal[KucoinCase.BALANCES],
@@ -634,7 +634,7 @@ class Kucoin(ExchangeInterface):
         ...
 
     @overload
-    def _process_unsuccessful_response(  # pylint: disable=no-self-use
+    def _process_unsuccessful_response(
             self,
             response: Response,
             case: Literal[KucoinCase.TRADES, KucoinCase.OLD_TRADES],
@@ -642,7 +642,7 @@ class Kucoin(ExchangeInterface):
         ...
 
     @overload
-    def _process_unsuccessful_response(  # pylint: disable=no-self-use
+    def _process_unsuccessful_response(
             self,
             response: Response,
             case: Literal[KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS],
@@ -812,14 +812,14 @@ class Kucoin(ExchangeInterface):
         return True, ''
 
     def query_online_margin_history(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[MarginPosition]:
         return []  # noop for kucoin
 
     def query_online_income_loss_expense(
-            self,  # pylint: disable=no-self-use
+            self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[LedgerAction]:

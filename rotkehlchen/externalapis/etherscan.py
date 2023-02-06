@@ -81,7 +81,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             self.earliest_ts = 1636665399
 
     @overload
-    def _query(  # pylint: disable=no-self-use
+    def _query(
             self,
             module: str,
             action: Literal[
@@ -97,7 +97,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         ...
 
     @overload
-    def _query(  # pylint: disable=no-self-use
+    def _query(
             self,
             module: str,
             action: Literal[
@@ -111,7 +111,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         ...
 
     @overload
-    def _query(  # pylint: disable=no-self-use
+    def _query(
             self,
             module: str,
             action: Literal[

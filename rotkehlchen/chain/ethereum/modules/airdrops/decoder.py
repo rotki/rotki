@@ -77,7 +77,7 @@ class AirdropsDecoder(DecoderInterface):
         self.fpis = A_FPIS.resolve_to_evm_token()
         self.elfi = A_ELFI.resolve_to_evm_token()
 
-    def _decode_uniswap_claim(  # pylint: disable=no-self-use
+    def _decode_uniswap_claim(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
@@ -102,7 +102,7 @@ class AirdropsDecoder(DecoderInterface):
 
         return None, []
 
-    def _decode_fox_claim(  # pylint: disable=no-self-use
+    def _decode_fox_claim(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
@@ -127,7 +127,7 @@ class AirdropsDecoder(DecoderInterface):
 
         return None, []
 
-    def _decode_badger_claim(  # pylint: disable=no-self-use
+    def _decode_badger_claim(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
@@ -155,7 +155,7 @@ class AirdropsDecoder(DecoderInterface):
 
         return None, []
 
-    def _decode_oneinch_claim(  # pylint: disable=no-self-use
+    def _decode_oneinch_claim(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
@@ -180,7 +180,7 @@ class AirdropsDecoder(DecoderInterface):
 
         return None, []
 
-    def _decode_fpis_claim(  # pylint: disable=no-self-use
+    def _decode_fpis_claim(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
@@ -224,7 +224,7 @@ class AirdropsDecoder(DecoderInterface):
 
         return None, []
 
-    def _decode_elfi_claim(  # pylint: disable=no-self-use
+    def _decode_elfi_claim(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument

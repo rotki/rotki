@@ -41,7 +41,7 @@ class DBHistoryEvents():
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
 
-    def add_history_event(    # pylint: disable=no-self-use
+    def add_history_event(
             self,
             write_cursor: 'DBCursor',
             event: HistoryBaseEntry,
@@ -72,7 +72,7 @@ class DBHistoryEvents():
 
         return identifier
 
-    def add_history_events(    # pylint: disable=no-self-use
+    def add_history_events(
             self,
             write_cursor: 'DBCursor',
             history: Sequence[HistoryBaseEntry],
@@ -173,7 +173,7 @@ class DBHistoryEvents():
             self,
             cursor: 'DBCursor',
             chain_id: Optional[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
-    ) -> list[int]:      # pylint: disable=no-self-use
+    ) -> list[int]:
         """Returns the identifiers of all the events in the database that have been customized
 
         Optionally filter by chain_id
@@ -322,14 +322,14 @@ class DBHistoryEvents():
                 )
         return assets
 
-    def get_history_events_count(self, cursor: 'DBCursor', query_filter: HistoryEventFilterQuery) -> int:  # noqa: E501  # pylint: disable=no-self-use
+    def get_history_events_count(self, cursor: 'DBCursor', query_filter: HistoryEventFilterQuery) -> int:  # noqa: E501
         """Returns how many of certain base entry events are in the database"""
         query, bindings = query_filter.prepare(with_pagination=False)
         query = 'SELECT COUNT(*) from history_events ' + query
         cursor.execute(query, bindings)
         return cursor.fetchone()[0]  # count(*) always returns
 
-    def get_value_stats(      # pylint: disable=no-self-use
+    def get_value_stats(
             self,
             cursor: 'DBCursor',
             query_filter: HistoryEventFilterQuery,

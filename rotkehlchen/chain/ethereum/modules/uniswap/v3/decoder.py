@@ -169,7 +169,7 @@ class Uniswapv3Decoder(DecoderInterface):
 
         return None, []
 
-    def _maybe_decode_v3_swap(  # pylint: disable=no-self-use
+    def _maybe_decode_v3_swap(
             self,
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,

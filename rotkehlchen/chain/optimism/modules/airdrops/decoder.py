@@ -37,7 +37,7 @@ class AirdropsDecoder(DecoderInterface):
         )
         self.op_token = A_OP.resolve_to_evm_token()
 
-    def _decode_optimism_airdrop_claim(  # pylint: disable=no-self-use
+    def _decode_optimism_airdrop_claim(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument

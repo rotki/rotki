@@ -328,7 +328,7 @@ class DBEvmTx():
             cursor.execute(querystr, bindings)
             return cursor.fetchone()[0]
 
-    def add_receipt_data(  # pylint: disable=no-self-use
+    def add_receipt_data(
             self,
             write_cursor: 'DBCursor',
             chain_id: ChainID,
@@ -398,7 +398,7 @@ class DBEvmTx():
                     topic_tuples,
                 )
 
-    def get_receipt(  # pylint: disable=no-self-use
+    def get_receipt(
             self,
             cursor: 'DBCursor',
             tx_hash: EVMTxHash,
