@@ -435,7 +435,7 @@ def calculate_total_amounts_of_tokens(
 
     sqrt_a = LOG_PRICE**FVal(tick_a / 2) * POW_96
     sqrt_b = LOG_PRICE**FVal(tick_b / 2) * POW_96
-    total_amount_0 = ((liquidity * POW_96 * (sqrt_b - sqrt_a) / sqrt_b / sqrt_a) / 10**decimal_0)
+    total_amount_0 = (liquidity * POW_96 * (sqrt_b - sqrt_a) / sqrt_b / sqrt_a) / 10**decimal_0
     total_amount_1 = liquidity * (sqrt_b - sqrt_a) / POW_96 / 10**decimal_1
 
     return FVal(total_amount_0), FVal(total_amount_1)

@@ -14,7 +14,7 @@ ignore-patterns=
 
 [EXCEPTIONS]
 
-overgeneral-exceptions=Exception
+overgeneral-exceptions=builtins.Exception
 
 [BASIC]
 
@@ -77,7 +77,7 @@ enable=
     reimported,
     too-many-function-args,
     no-else-raise,
-    no-else-return,
+#     no-else-return,  # https://github.com/PyCQA/pylint/issues/8155
     raise-missing-from,
     useless-return,
     consider-iterating-dictionary,
