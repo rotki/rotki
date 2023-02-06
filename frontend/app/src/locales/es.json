@@ -91,7 +91,7 @@
   "account_settings": {
     "cost_basis_method_settings": {
       "labels": {
-        "acb": "Adjusted Cost Basis",
+        "acb": "Average Cost Basis",
         "fifo": "First In, First Out",
         "hifo": "Highest In, First Out",
         "lifo": "Last In, First Out"

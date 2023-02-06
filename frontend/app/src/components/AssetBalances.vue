@@ -16,10 +16,12 @@ const props = withDefaults(
     balances: AssetBalanceWithPrice[];
     loading?: boolean;
     hideTotal?: boolean;
+    hideBreakdown?: boolean;
   }>(),
   {
     loading: false,
-    hideTotal: false
+    hideTotal: false,
+    hideBreakdown: false
   }
 );
 
@@ -153,7 +155,9 @@ const sortItems = getSortItems(asset => get(assetInfo(asset)));
     </template>
     <template #item.expand="{ item }">
       <row-expander
-        v-if="item.breakdown || isEvmNativeToken(item.asset)"
+        v-if="
+          !hideBreakdown && (item.breakdown || isEvmNativeToken(item.asset))
+        "
         :expanded="expanded.includes(item)"
         @click="expanded = expanded.includes(item) ? [] : [item]"
       />
