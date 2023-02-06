@@ -97,9 +97,7 @@ def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
             # First two calls to schedule should handle the addresses
             for i in range(2):
                 task_manager.schedule()
-                while True:
-                    if tx_mock.call_count == i + 1:
-                        break
+                while tx_mock.call_count != i + 1:
                     gevent.sleep(.2)
 
             task_manager.schedule()
@@ -136,9 +134,7 @@ def test_maybe_schedule_xpub_derivation(task_manager, database):
     try:
         with gevent.Timeout(timeout), xpub_derive_patch as xpub_mock:
             task_manager.schedule()
-            while True:
-                if xpub_mock.call_count == 2:
-                    break
+            while xpub_mock.call_count != 2:
                 gevent.sleep(.2)
 
     except gevent.Timeout as e:
@@ -161,9 +157,7 @@ def test_maybe_schedule_exchange_query(task_manager, exchange_manager, poloniex)
     try:
         with gevent.Timeout(timeout), poloniex_patch as poloniex_mock:
             task_manager.schedule()
-            while True:
-                if poloniex_mock.call_count == 1:
-                    break
+            while poloniex_mock.call_count != 1:
                 gevent.sleep(.2)
 
             task_manager.schedule()
@@ -215,10 +209,7 @@ def test_maybe_schedule_ethereum_txreceipts(
         with gevent.Timeout(timeout), receipt_get_patch as receipt_task_mock, mock_evm_chains_with_transactions():  # noqa: E501
             task_manager.schedule()
             with database.conn.read_ctx() as cursor:
-                while True:
-                    if len(queried_receipts) == 2:
-                        break
-
+                while len(queried_receipts) != 2:
                     for txhash in (tx_hash_1, tx_hash_2):
                         if dbevmtx.get_receipt(cursor, txhash, ChainID.ETHEREUM) is not None:
                             queried_receipts.add(txhash)
@@ -306,9 +297,7 @@ def test_update_snapshot_balances(task_manager):
     try:
         with gevent.Timeout(timeout), query_balances_patch as query_mock:
             task_manager.schedule()
-            while True:
-                if query_mock.call_count == 1:
-                    break
+            while query_mock.call_count != 1:
                 gevent.sleep(.2)
 
             query_mock.assert_called_once_with(
@@ -332,9 +321,7 @@ def test_update_curve_pools(task_manager):
     try:
         with gevent.Timeout(timeout), query_balances_patch as query_mock:
             task_manager.schedule()
-            while True:
-                if query_mock.call_count == 1:
-                    break
+            while query_mock.call_count != 1:
                 gevent.sleep(.2)
     except gevent.Timeout as e:
         raise AssertionError(f'Update curve pools was not completed within {timeout} seconds') from e  # noqa: E501
