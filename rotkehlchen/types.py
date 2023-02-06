@@ -764,7 +764,6 @@ class OracleSource(SerializableEnumMixin):
     Abstraction to represent a variable that could be either HistoricalPriceOracle
     or CurrentPriceOracle. Can't have any member since you can't override them later
     """
-    ...
 
 
 AddressNameSource = Literal[

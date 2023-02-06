@@ -1114,7 +1114,6 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
         May Raise RemoteError if querying fails
         """
-        ...
 
     @abstractmethod
     def have_archive(self, requery: bool = False) -> bool:
@@ -1123,12 +1122,10 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
         If requery is True it always queries the node. Otherwise it remembers last query.
         """
-        ...
 
     @abstractmethod
     def get_blocknumber_by_time(self, ts: Timestamp, etherscan: bool = True, closest: Literal['before', 'after'] = 'before') -> int:  # noqa: E501
         """Searches for the blocknumber of a specific timestamp"""
-        ...
 
     # -- methods to be optionally implemented by child classes --
 

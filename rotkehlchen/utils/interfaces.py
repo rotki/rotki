@@ -35,17 +35,14 @@ class EthereumModule(metaclass=ABCMeta):
 
         Can optionally return a list of asset balances determined by the module
         """
-        ...
 
     @abstractmethod
     def on_account_removal(self, address: ChecksumEvmAddress) -> None:
         """Actions to run on removal of an ethereum account"""
-        ...
 
     @abstractmethod
     def deactivate(self) -> None:
         """Actions to run on module's deactivation"""
-        ...
 
 
 class ProgressUpdater(metaclass=ABCMeta):
@@ -95,4 +92,3 @@ class ProgressUpdater(metaclass=ABCMeta):
     @abstractmethod
     def _notify_frontend(self, step_name: Optional[str] = None) -> None:
         """Sends to the user through websockets all information about progress."""
-        ...

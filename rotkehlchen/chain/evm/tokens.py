@@ -371,7 +371,6 @@ class EvmTokens(metaclass=ABCMeta):
 
         Each chain needs to implement any chain-specific exceptions here.
         """
-        ...
 
     def maybe_detect_proxies_tokens(self, addresses: list[ChecksumEvmAddress]) -> None:  # pylint: disable=unused-argument  # noqa: E501
         """Subclasses may implement this method to detect tokens for proxies"""

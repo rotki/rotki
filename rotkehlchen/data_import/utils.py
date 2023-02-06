@@ -40,7 +40,6 @@ class BaseExchangeImporter(metaclass=ABCMeta):
         May raise:
         - InputError if one of the rows is malformed
         """
-        ...
 
     def add_trade(self, cursor: DBCursor, trade: Trade) -> None:
         self._trades.append(trade)

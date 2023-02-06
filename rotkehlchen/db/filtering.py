@@ -581,12 +581,10 @@ class DBMultiValueFilter(Generic[T], DBFilter):
 
 class DBMultiStringFilter(DBMultiValueFilter[str]):
     """Filter a column having a string value out of a selection of values"""
-    ...
 
 
 class DBMultiBytesFilter(DBMultiValueFilter[bytes]):
     """Filter a column having a bytes value out of a selection of values"""
-    ...
 
 
 class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):

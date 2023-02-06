@@ -75,7 +75,6 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
             token_1: EvmToken,
     ) -> list[str]:
         """Given two tokens returns a list of pools where they can be swapped"""
-        ...
 
     @abc.abstractmethod
     def get_pool_price(
@@ -88,7 +87,6 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
         May raise:
         - DefiPoolError
         """
-        ...
 
     def _find_pool_for(
             self,

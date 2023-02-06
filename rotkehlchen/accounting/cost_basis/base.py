@@ -140,7 +140,6 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
         This method takes a new acquisition and decides where to insert it
         and thus determines the PnL order.
         """
-        ...
 
     def processing_iterator(self) -> Iterator[AssetAcquisitionEvent]:
         """

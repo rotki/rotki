@@ -34,7 +34,6 @@ class DecoderInterface(metaclass=ABCMeta):
         """
         Subclasses implement this to specify which counterparty values are introduced by the module
         """
-        ...
 
     def decoding_rules(self) -> list[Callable]:
         """
@@ -81,4 +80,3 @@ class ReloadableDecoderMixin(metaclass=ABCMeta):
         """Subclasses may implement this to be able to reload some of the decoder's properties
         Returns only new mappings of addresses to decode functions
         """
-        ...
