@@ -239,7 +239,7 @@ def find_uniswap_v2_lp_price(
             f'Couldnt retrieve non zero price information for tokens {token0}, {token1} '
             f'with result {token0_price}, {token1_price}',
         )
-    numerator = (token0_supply * token0_price + token1_supply * token1_price)
+    numerator = token0_supply * token0_price + token1_supply * token1_price
     share_value = numerator / total_supply
     return Price(share_value)
 
