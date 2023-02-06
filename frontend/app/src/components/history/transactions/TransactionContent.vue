@@ -3,7 +3,6 @@ import { type Account, type GeneralAccount } from '@rotki/common/lib/account';
 import { type ComputedRef, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import { type BlockchainSelection } from '@rotki/common/lib/blockchain';
-import { omit } from 'lodash';
 import {
   type HistoryEventType,
   type TransactionEventProtocol
