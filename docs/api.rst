@@ -5015,24 +5015,22 @@ Dealing with BaseHistoryEntry events
           "event_identifier": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
           "sequence_index": 162,
           "timestamp": 1569924574,
-          "location": "blockchain",
+          "location": "ethereum",
           "event_type": "informational",
           "asset": "eip155:1/erc20:0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
           "balance": {"amount": "1.542", "usd_value": "1.675"},
           "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
           "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
           "event_subtype": "approve",
-          "counterparty": "0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
-          "evm_chain": "optimism"
+          "counterparty": "0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE"
       }
 
    .. _history_base_entry_schema_section:
 
    :reqjson string event_identifier: This is an identifier that could be common between multiple history base entries so that entries identifying a single event can be grouped. For ethereum transactions for example it's the transaction hash.
    :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
-   :reqjson string evm_chain: The name of the evm chain for which to add the event. ``"ethereum"``, ``"optimism"`` etc.
    :reqjson int timestamp: The timestamp of the entry
-   :reqjson string location: The location of the entry
+   :reqjson string location: The location of the entry. Such as "ethereum", "optimism", etc.
    :reqjson string event_type: The main event type of the entry. Possible event types can be seen in HistoryEventType enum.
    :reqjson string asset: The asset identifier for this entry
    :reqjson object balance: The amount/usd value of the event. If not known usd_value can also be "0".

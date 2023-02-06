@@ -17,10 +17,11 @@ def data_migration_9(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressH
 
     - Add an on-chain locations for events by ethereum and optimism decoders
     - Go through all on-chain history events in the DB and depending on the transaction
+    - Remove the obsolete chain_id mappings from history_events_mappings
     hash point location to either ethereum or optimism instead of generic blockchain
     """
     log.debug('Enter data migration 9')
-    progress_handler.set_total_steps(2)
+    progress_handler.set_total_steps(3)
     progress_handler.new_step('Add two new locations')
     with rotki.data.db.conn.write_ctx() as write_cursor:
         write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("f", 38);')
@@ -51,5 +52,7 @@ def data_migration_9(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressH
         write_cursor.executemany(
             'UPDATE history_events SET location=? WHERE event_identifier=?', update_tuples,
         )
+        progress_handler.new_step('Remove obsolete chain id mappings')
+        write_cursor.execute('DELETE FROM history_events_mappings WHERE name="chain_id"')
 
     log.debug('Exit data migration 9')

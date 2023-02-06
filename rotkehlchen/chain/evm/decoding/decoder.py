@@ -324,7 +324,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             self.dbevents.add_history_events(
                 write_cursor=write_cursor,
                 history=events,
-                chain_id=self.evm_inquirer.chain_id,
             )
             write_cursor.execute(
                 'INSERT OR IGNORE INTO evm_tx_mappings(tx_hash, chain_id, value) VALUES(?, ?, ?)',

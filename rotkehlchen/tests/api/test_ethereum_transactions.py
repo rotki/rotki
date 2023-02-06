@@ -1195,7 +1195,7 @@ def test_query_transactions_check_decoded_events(
     })
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
-        json={key: value for key, value in tx4_events[0]['entry'].items() if key != 'extra_data'} | {'evm_chain': 'ethereum'},  # noqa: E501
+        json={key: value for key, value in tx4_events[0]['entry'].items() if key != 'extra_data'},
     )
     result = assert_proper_response_with_result(response)
     tx4_events[0]['entry']['identifier'] = result['identifier']
@@ -1206,7 +1206,7 @@ def test_query_transactions_check_decoded_events(
                 ('evm_transactions', 4), ('evm_internal_transactions', 0),
                 ('evmtx_receipts', 4), ('evmtx_receipt_log_topics', 6),
                 ('evmtx_address_mappings', 4), ('evm_tx_mappings', 4),
-                ('history_events_mappings', 9),
+                ('history_events_mappings', 2),
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
 
@@ -1221,7 +1221,7 @@ def test_query_transactions_check_decoded_events(
                 ('evm_transactions', 2), ('evm_internal_transactions', 0),
                 ('evmtx_receipts', 2), ('evmtx_receipt_log_topics', 6),
                 ('evmtx_address_mappings', 2), ('evm_tx_mappings', 0),
-                ('history_events_mappings', 4),
+                ('history_events_mappings', 2),
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
         customized_events = dbevents.get_history_events(cursor, HistoryEventFilterQuery.make(), True)  # noqa: E501
@@ -1293,7 +1293,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         dbevmtx.add_evm_transactions(cursor, [tx1, tx2], relevant_address=ethereum_accounts[0])  # noqa: E501
         dbevmtx.add_evm_transactions(cursor, [tx3], relevant_address=ethereum_accounts[1])
         dbevmtx.add_evm_transactions(cursor, [tx4], relevant_address=ethereum_accounts[2])
-        dbevents.add_history_events(cursor, [event1, event2, event3, event4, event5, event6], ChainID.ETHEREUM)  # noqa: E501
+        dbevents.add_history_events(cursor, [event1, event2, event3, event4, event5, event6])
 
     response = requests.post(
         api_url_for(

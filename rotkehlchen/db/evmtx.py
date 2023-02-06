@@ -479,7 +479,11 @@ class DBEvmTx():
         if len(tx_hashes) == 0:
             return
 
-        dbevents.delete_events_by_tx_hash(write_cursor, tx_hashes, chain_id)
+        dbevents.delete_events_by_tx_hash(
+            write_cursor=write_cursor,
+            tx_hashes=tx_hashes,
+            chain_id=chain_id,  # type: ignore[arg-type] # comes from SUPPORTED_EVM_CHAINS
+        )
         # Now delete all relevant transactions. By deleting all relevant transactions all tables
         # are cleared thanks to cascading (except for history_events which was cleared above)
         write_cursor.executemany(

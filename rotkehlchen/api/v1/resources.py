@@ -21,7 +21,6 @@ from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.schemas import (
     AccountingReportDataSchema,
     AccountingReportsSchema,
-    AddHistoryBaseEntrySchema,
     AddressbookAddressesSchema,
     AddressbookUpdateSchema,
     AllBalancesQuerySchema,
@@ -80,6 +79,7 @@ from rotkehlchen.api.v1.schemas import (
     ExternalServicesResourceDeleteSchema,
     FileListSchema,
     HistoricalAssetsPriceSchema,
+    HistoryBaseEntrySchema,
     HistoryExportingSchema,
     HistoryProcessingDebugImportSchema,
     HistoryProcessingExportSchema,
@@ -1118,14 +1118,14 @@ class LedgerActionsResource(BaseMethodView):
 
 class HistoryBaseEntryResource(BaseMethodView):
 
-    put_schema = AddHistoryBaseEntrySchema()
+    put_schema = HistoryBaseEntrySchema()
     patch_schema = EditHistoryBaseEntrySchema()
     delete_schema = IdentifiersListSchema()
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')
-    def put(self, event: HistoryBaseEntry, chain_id: ChainID) -> Response:
-        return self.rest_api.add_history_event(event=event, chain_id=chain_id)
+    def put(self, event: HistoryBaseEntry) -> Response:
+        return self.rest_api.add_history_event(event=event)
 
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json')
