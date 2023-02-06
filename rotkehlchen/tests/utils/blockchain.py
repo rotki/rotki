@@ -228,9 +228,7 @@ def mock_etherscan_query(
             queried_accounts = []
             length = 72
             # process url and get the accounts
-            while True:
-                if len(url) < length:
-                    break
+            while len(url) >= length:
                 potential_address = url[length:length + 42]
                 if 'apikey=' in potential_address:
                     break

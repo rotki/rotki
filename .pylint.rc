@@ -4,7 +4,7 @@ persistent=yes
 suggestion-mode=yes
 unsafe-load-any-extension=no
 init-hook="import sys; sys.path.append('.')"
-load-plugins=tools.pylint.log_checker,tools.pylint.not_checker
+load-plugins=tools.pylint.log_checker,tools.pylint.not_checker,pylint.extensions.comparison_placement, pylint.extensions.consider_refactoring_into_while_condition
 
 # Blacklist files or directories (basenames, not paths)
 ignore=
@@ -28,7 +28,7 @@ logging-modules=logging
 [MESSAGES CONTROL]
 
 # These are rules we either want to completely ignore or have no time to fix yet
-#disable=
+# disable=
 #    missing-module-docstring,
 #    missing-function-docstring,
 #    invalid-name,
@@ -114,6 +114,13 @@ enable=
     duplicate-string-formatting-argument,
     misplaced-comparison-constant,
     unidiomatic-typecheck,
+    pointless-exception-statement,
+    shadowed-import,
+    unbalanced-dict-unpacking,
+    positional-only-arguments-expected,
+    named-expr-without-context,
+    invalid-slice-step,
+    consider-refactoring-into-while-condition,
     rotki-lognokwargs,
     rotki-nonbooleannot
 
@@ -128,7 +135,6 @@ expected-line-ending-format=LF
 ignore-long-lines=^\s*(# )?<?https?://\S+>?$
 max-line-length=100
 max-module-lines=1000
-no-space-check=trailing-comma
 
 [VARIABLES]
 
