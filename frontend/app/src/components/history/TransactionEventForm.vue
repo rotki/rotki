@@ -25,7 +25,6 @@ import { TaskType } from '@/types/task-type';
 import { One, Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useEventTypeData } from '@/utils/history';
-import { useHistoryEventTypeData } from '@/composables/history/event-data';
 import { type ActionStatus } from '@/types/action';
 
 const props = defineProps({

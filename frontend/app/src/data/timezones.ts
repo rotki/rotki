@@ -1,3 +1,5 @@
+/* eslint-disable max-lines */
+
 export const timezones: string[] = [
   'Africa/Abidjan',
   'Africa/Accra',

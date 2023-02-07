@@ -215,35 +215,6 @@ export class RotkehlchenApi {
     return handleResponse(response);
   }
 
-  async queryBinanceMarkets(location: string): Promise<string[]> {
-    const response = await this.axios.get<ActionResult<string[]>>(
-      '/exchanges/binance/pairs',
-      {
-        params: axiosSnakeCaseTransformer({
-          location
-        })
-      }
-    );
-
-    return handleResponse(response);
-  }
-
-  async queryBinanceUserMarkets(
-    name: string,
-    location: string
-  ): Promise<string[]> {
-    const response = await this.axios.get<ActionResult<string[]>>(
-      `/exchanges/binance/pairs/${name}`,
-      {
-        params: axiosSnakeCaseTransformer({
-          location
-        })
-      }
-    );
-
-    return handleResponse(response);
-  }
-
   async fetchNfts(ignoreCache: boolean): Promise<PendingTask> {
     const params = Object.assign(
       {

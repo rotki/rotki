@@ -2,11 +2,9 @@
 import { type DataTableHeader } from 'vuetify';
 import { type ComputedRef, type Ref } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
 import { type NewDetectedToken } from '@/types/websocket-messages';
 import { uniqueStrings } from '@/utils/data';
 import { getAddressFromEvmIdentifier } from '@/utils/assets';
-import { useSupportedChains } from '@/composables/info/chains';
 
 const { tc } = useI18n();
 

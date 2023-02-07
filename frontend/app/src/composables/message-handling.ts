@@ -3,7 +3,6 @@ import {
   NotificationGroup,
   Severity
 } from '@rotki/common/lib/messages';
-
 import {
   type BalanceSnapshotError,
   type EvmTransactionQueryData,
@@ -15,7 +14,6 @@ import {
 } from '@/types/websocket-messages';
 import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
 import { logger } from '@/utils/logging';
-import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
 import { Routes } from '@/router/routes';
 import router from '@/router';
 import { backoff } from '@/utils/backoff';

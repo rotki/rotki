@@ -1,6 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
-import { useTokenDetection } from '@/composables/balances/token-detection';
 import { BlockchainRefreshButtonBehaviour } from '@/types/frontend-settings';
 
 export const useRefresh = (blockchain?: MaybeRef<Blockchain>) => {

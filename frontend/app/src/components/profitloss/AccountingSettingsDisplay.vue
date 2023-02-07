@@ -1,18 +1,11 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import {
   type BaseAccountingSettings,
   type CostBasisMethod
 } from '@/types/user';
-import { useCostBasisMethod } from '@/composables/reports';
 import { type ActionDataEntry } from '@/types/action';
 
-const props = defineProps({
-  accountingSettings: {
-    required: true,
-    type: Object as PropType<BaseAccountingSettings>
-  }
-});
+const props = defineProps<{ accountingSettings: BaseAccountingSettings }>();
 
 const { accountingSettings } = toRefs(props);
 const { tc } = useI18n();

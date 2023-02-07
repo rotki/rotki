@@ -5,7 +5,6 @@ import {
   type LoginCredentials
 } from '@/types/login';
 import { setLastLogin } from '@/utils/account-management';
-import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
 import { wait } from '@/utils/backoff';
 
 export const useAccountManagement = () => {

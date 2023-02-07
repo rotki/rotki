@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
+import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import { type MissingAcquisition, type SelectedReport } from '@/types/reports';
+import LedgerActionFormDialog from '@/components/history/ledger-actions/LedgerActionFormDialog.vue';
+import { type LedgerAction } from '@/types/history/ledger-actions';
 
 type GroupedItems = Record<string, MissingAcquisition[]>;
 interface MappedGroupedItems {
@@ -22,6 +24,8 @@ const props = defineProps({
 });
 
 const { items, isPinned } = toRefs(props);
+
+const { isAssetIgnored, ignoreAsset } = useIgnoredAssetsStore();
 
 const groupedMissingAcquisitions = computed<MappedGroupedItems[]>(() => {
   const grouped: GroupedItems = {};
@@ -81,6 +85,14 @@ const headers = computed<DataTableHeader[]>(() => {
       ...pinnedClass
     },
     {
+      text: t(
+        'profit_loss_report.actionable.missing_acquisitions.headers.quick_action'
+      ).toString(),
+      value: 'action',
+      sortable: false,
+      ...pinnedClass
+    },
+    {
       text: '',
       value: 'expand',
       align: 'end',
@@ -112,9 +124,35 @@ const childHeaders = computed<DataTableHeader[]>(() => {
       ).toString(),
       value: 'missingAmount',
       ...pinnedClass
+    },
+    {
+      text: t(
+        'profit_loss_report.actionable.missing_acquisitions.headers.quick_action'
+      ).toString(),
+      value: 'action',
+      sortable: false,
+      ...pinnedClass
     }
   ];
 });
+
+const openLedgerActionDialog: Ref<boolean> = ref(false);
+
+const ledgerActionForm: Ref<Partial<LedgerAction> | null> = ref(null);
+const addLedgerAction = (item: MissingAcquisition) => {
+  const form = {
+    timestamp: item.time,
+    amount: item.missingAmount,
+    asset: item.asset
+  };
+
+  set(ledgerActionForm, form);
+  set(openLedgerActionDialog, true);
+};
+
+const isIgnored = (asset: string) => {
+  return get(isAssetIgnored(asset));
+};
 </script>
 <template>
   <div>
@@ -150,6 +188,35 @@ const childHeaders = computed<DataTableHeader[]>(() => {
       <template #item.total_missing_acquisition="{ item }">
         {{ item.acquisitions.length }}
       </template>
+      <template #item.action="{ item }">
+        <v-menu offset-y>
+          <template #activator="{ on }">
+            <v-btn icon v-on="on">
+              <v-icon>mdi-dots-vertical</v-icon>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item link @click="ignoreAsset(item.asset)">
+              <v-list-item-title>{{ t('assets.ignore') }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+
+        <v-tooltip v-if="isIgnored(item.asset)" bottom>
+          <template #activator="{ on }">
+            <badge-display class="ml-2" color="grey" v-on="on">
+              <v-icon small> mdi-eye-off </v-icon>
+            </badge-display>
+          </template>
+          <span>
+            {{
+              t(
+                'profit_loss_report.actionable.missing_acquisitions.asset_is_ignored'
+              )
+            }}
+          </span>
+        </v-tooltip>
+      </template>
       <template #item.expand="{ item }">
         <row-expander
           :expanded="expanded.includes(item)"
@@ -172,11 +239,37 @@ const childHeaders = computed<DataTableHeader[]>(() => {
             <template #item.missingAmount="{ item: childItem }">
               <amount-display pnl :value="childItem.missingAmount" />
             </template>
+            <template #item.action="{ item: childItem }">
+              <v-menu offset-y>
+                <template #activator="{ on }">
+                  <v-btn icon v-on="on">
+                    <v-icon>mdi-dots-vertical</v-icon>
+                  </v-btn>
+                </template>
+                <v-list>
+                  <v-list-item link @click="addLedgerAction(childItem)">
+                    <v-list-item-title>
+                      {{
+                        t(
+                          'profit_loss_report.actionable.missing_acquisitions.add_ledger_action'
+                        )
+                      }}
+                    </v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
+            </template>
           </data-table>
         </table-expand-container>
       </template>
     </data-table>
     <slot name="actions" />
+
+    <ledger-action-form-dialog
+      :open="openLedgerActionDialog"
+      :form-data="ledgerActionForm"
+      @update:open="openLedgerActionDialog = $event"
+    />
   </div>
 </template>
 
