@@ -1,5 +1,4 @@
 import { type ComputedRef, type Ref } from 'vue';
-import { useAssetInfoApi } from '@/services/assets/info';
 import { type MatchedKeyword, type SearchMatcher } from '@/types/filtering';
 import { MovementCategory } from '@/types/history/movements';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';

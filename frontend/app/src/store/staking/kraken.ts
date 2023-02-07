@@ -1,5 +1,4 @@
 import { type ComputedRef, type Ref } from 'vue';
-import { useKrakenApi } from '@/services/staking/kraken';
 import {
   type KrakenStakingEvents,
   type KrakenStakingPagination,

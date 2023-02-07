@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { dropRight } from 'lodash';
+import dropRight from 'lodash/dropRight';
 import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import NonFungibleBalanceEdit from '@/components/accounts/balances/NonFungibleBalanceEdit.vue';
@@ -9,8 +9,7 @@ import NftDetails from '@/components/helper/NftDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { type ManualPriceFormPayload } from '@/services/assets/types';
-import { type IgnoredAssetsHandlingType } from '@/types/assets';
+import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { type Module } from '@/types/modules';
 import {
   type NonFungibleBalance,
@@ -19,9 +18,9 @@ import {
 import { Section } from '@/types/status';
 import { assert } from '@/utils/assertions';
 import { uniqueStrings } from '@/utils/data';
-import { useAssetPricesApi } from '@/services/assets/prices';
 import { type TablePagination } from '@/types/pagination';
 import { type ActionStatus } from '@/types/action';
+import { type ManualPriceFormPayload } from '@/types/prices';
 
 defineProps({
   modules: {

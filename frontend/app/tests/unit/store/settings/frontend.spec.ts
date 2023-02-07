@@ -8,7 +8,6 @@ import { type Pinia, createPinia } from 'pinia';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { useSettingsApi } from '@/services/settings/settings-api';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
 import {
@@ -20,7 +19,7 @@ import {
 } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 
-vi.mock('@/services/settings/settings-api', () => ({
+vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
     setSettings: vi.fn()
   })

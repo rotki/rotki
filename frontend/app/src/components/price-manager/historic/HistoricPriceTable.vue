@@ -7,11 +7,7 @@ import {
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import RowActions from '@/components/helper/RowActions.vue';
-import {
-  type HistoricalPrice,
-  type ManualPricePayload
-} from '@/services/assets/types';
-import { useAssetPricesApi } from '@/services/assets/prices';
+import { type HistoricalPrice, type ManualPricePayload } from '@/types/prices';
 
 const props = defineProps({
   filter: {

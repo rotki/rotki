@@ -9,14 +9,14 @@ import DataTable from '@/components/helper/DataTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
-import { CUSTOM_ASSET } from '@/services/assets/consts';
 
 import {
   type AssetPagination,
   type AssetPaginationOptions,
+  CUSTOM_ASSET,
   type IgnoredAssetsHandlingType,
   defaultAssetPagination
-} from '@/types/assets';
+} from '@/types/asset';
 import { convertPagination } from '@/types/pagination';
 import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@/utils/assets';
 import { uniqueStrings } from '@/utils/data';

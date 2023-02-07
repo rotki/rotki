@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import { useAssetPricesApi } from '@/services/assets/prices';
 
 const props = withDefaults(
   defineProps<{

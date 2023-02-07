@@ -1,7 +1,6 @@
 import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef, type Ref } from 'vue';
-import { useExchangeApi } from '@/services/balances/exchanges';
 import { AssetBalances } from '@/types/balances';
 import {
   type EditExchange,
@@ -28,7 +27,7 @@ import { updateBalancesPrices } from '@/utils/prices';
 import {
   type AssetBreakdown,
   type ExchangeBalancePayload
-} from '@/types/accounts';
+} from '@/types/blockchain/accounts';
 
 export const useExchangeBalancesStore = defineStore(
   'balances/exchanges',

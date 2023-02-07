@@ -4,7 +4,6 @@ import { timeframes } from '@rotki/common/lib/settings/graphs';
 import { type NetValue } from '@rotki/common/lib/statistics';
 import dayjs from 'dayjs';
 import { type ComputedRef } from 'vue';
-import { useStatisticsApi } from '@/services/statistics/statistics-api';
 import { CURRENCY_USD } from '@/types/currencies';
 import { One, Zero, bigNumberify } from '@/utils/bignumbers';
 

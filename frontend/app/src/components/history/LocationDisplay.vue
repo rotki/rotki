@@ -4,8 +4,10 @@ import ListItem from '@/components/helper/ListItem.vue';
 import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { Routes } from '@/router/routes';
-import { type TradeLocation } from '@/types/history/trade-location';
-import { type TradeLocationData } from '@/types/trades';
+import {
+  type TradeLocation,
+  type TradeLocationData
+} from '@/types/history/trade/trade-location';
 
 const props = defineProps({
   identifier: { required: true, type: String as PropType<TradeLocation> },

@@ -1,7 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { useMessageHandling } from '@/composables/message-handling';
 import { SocketMessageType } from '@/types/websocket-messages';
-import { useTokenDetection } from '@/composables/balances/token-detection';
 import { type EvmChainInfo } from '@/types/api/chains';
 
 vi.mock('@/store/notifications', async () => ({

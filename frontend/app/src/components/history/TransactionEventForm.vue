@@ -7,7 +7,7 @@ import { type PropType } from 'vue';
 import {
   HistoryEventSubType,
   type HistoryEventType
-} from '@/types/transaction';
+} from '@/types/history/tx/tx-events';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
@@ -20,7 +20,7 @@ import {
   type EthTransactionEvent,
   type EthTransactionEventEntry,
   type NewEthTransactionEvent
-} from '@/types/history/tx';
+} from '@/types/history/tx/tx';
 import { TaskType } from '@/types/task-type';
 import { One, Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';

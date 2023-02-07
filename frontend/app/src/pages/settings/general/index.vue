@@ -1,24 +1,4 @@
 ﻿<script setup lang="ts">
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import RoundingSettings from '@/components/settings/explorers/RoundingSettings.vue';
-import FrontendSettings from '@/components/settings/FrontendSettings.vue';
-import AbbreviateNumberSetting from '@/components/settings/general/AbbreviateNumberSetting.vue';
-import BalanceSaveFrequencySetting from '@/components/settings/general/BalanceSaveFrequencySetting.vue';
-import BtcDerivationGapLimitSetting from '@/components/settings/general/BtcDerivationGapLimitSetting.vue';
-import CurrencyLocationSetting from '@/components/settings/general/CurrencyLocationSetting.vue';
-import DateDisplayFormatSetting from '@/components/settings/general/DateDisplayFormatSetting.vue';
-import DateInputFormatSetting from '@/components/settings/general/DateInputFormatSetting.vue';
-import DisplayDateInLocaltimeSetting from '@/components/settings/general/DisplayDateInLocaltimeSetting.vue';
-import FloatingPrecisionSetting from '@/components/settings/general/FloatingPrecisionSetting.vue';
-import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
-import MainCurrencySetting from '@/components/settings/general/MainCurrencySetting.vue';
-import NumericSeparatorsSettings from '@/components/settings/general/NumericSeparatorsSettings.vue';
-import RpcSettings from '@/components/settings/general/rpc/RpcSettings.vue';
-import TreatEthAsEth2Setting from '@/components/settings/general/TreatEthAsEth2Setting.vue';
-import UsageAnalyticsSetting from '@/components/settings/general/UsageAnalyticsSetting.vue';
-import VersionUpdateFrequencySetting from '@/components/settings/general/VersionUpdateFrequencySetting.vue';
-import PriceOracleSettings from '@/components/settings/PriceOracleSettings.vue';
-import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { bigNumberify } from '@/utils/bignumbers';
 
 const amountExample = bigNumberify(123456.789);

@@ -12,7 +12,7 @@ import {
   type CustomAssetPagination,
   type CustomAssetPaginationOptions,
   defaultCustomAssetPagination
-} from '@/types/assets';
+} from '@/types/asset';
 import { convertPagination } from '@/types/pagination';
 
 const props = defineProps({

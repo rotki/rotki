@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useAssetIconApi } from '@/services/assets/icon-api';
-
 const props = defineProps({
   identifier: {
     required: true,

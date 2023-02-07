@@ -1,14 +1,14 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
 import { type DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
-import { type OracleCacheMeta } from '@/services/balances/types';
 import { PriceOracle } from '@/types/price-oracle';
 import { type PrioritizedListItemData } from '@/types/prioritized-list-data';
 import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/prioritized-list-id';
 import { TaskType } from '@/types/task-type';
+import { type OracleCacheMeta } from '@/types/prices';
 
 const { t, tc } = useI18n();
 

@@ -19,10 +19,10 @@ import {
   LendingHistory,
   YearnVaultsProfitDetails
 } from '@/premium/premium';
-import { ProtocolVersion } from '@/services/defi/consts';
 import { type YearnVaultProfitLoss } from '@/types/defi/yearn';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
+import { ProtocolVersion } from '@/types/defi';
 
 const section = Section.DEFI_LENDING;
 const historySection = Section.DEFI_LENDING_HISTORY;

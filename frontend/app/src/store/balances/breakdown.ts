@@ -3,7 +3,7 @@ import { type ComputedRef } from 'vue';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { mergeAssetBalances } from '@/utils/balances';
 import { NoPrice, sortDesc } from '@/utils/bignumbers';
-import { type AssetBreakdown } from '@/types/accounts';
+import { type AssetBreakdown } from '@/types/blockchain/accounts';
 
 export const useBalancesBreakdownStore = defineStore(
   'balances/breakdown',

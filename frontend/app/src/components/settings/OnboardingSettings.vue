@@ -10,15 +10,13 @@ import {
 import { type Ref } from 'vue';
 import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
 import { type BackendOptions } from '@/electron-main/ipc';
-import { useSettingsApi } from '@/services/settings/settings-api';
+import { type Writeable } from '@/types';
+import { LogLevel } from '@/utils/log-level';
+import SettingResetButton from '@/components/settings/SettingResetButton.vue';
 import {
   type BackendConfiguration,
   type DefaultBackendArguments
-} from '@/services/types-api';
-import { type Writeable } from '@/types';
-import { LogLevel } from '@/utils/log-level';
-import { api } from '@/services/rotkehlchen-api';
-import SettingResetButton from '@/components/settings/SettingResetButton.vue';
+} from '@/types/backend';
 
 const emit = defineEmits<{
   (e: 'dismiss'): void;
@@ -42,8 +40,9 @@ const configuration: Ref<BackendConfiguration> = asyncComputed(() =>
   backendSettings()
 );
 
+const { info } = useInfoApi();
 const defaultArguments: Ref<DefaultBackendArguments> = asyncComputed(
-  () => api.info().then(info => info.backendDefaultArguments),
+  () => info().then(info => info.backendDefaultArguments),
   {
     maxLogfilesNum: 0,
     maxSizeInMbAllLogs: 0,

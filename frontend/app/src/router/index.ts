@@ -1,6 +1,6 @@
 /* istanbul ignore file */
+/* eslint-disable max-lines,import/max-dependencies */
 
-// eslint-disable-next-line import/no-unresolved
 import { setupLayouts } from 'virtual:generated-layouts';
 import Vue from 'vue';
 import Router, { type Route } from 'vue-router';

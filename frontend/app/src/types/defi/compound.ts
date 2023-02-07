@@ -4,7 +4,7 @@ import {
   DEFI_EVENT_BORROW,
   DEFI_EVENT_LIQUIDATION,
   DEFI_EVENT_REPAY
-} from '@/services/defi/events';
+} from '@/types/defi/events';
 import { type Collateral, type CollateralizedLoan } from '@/types/defi/index';
 
 const CompoundReward = z.object({

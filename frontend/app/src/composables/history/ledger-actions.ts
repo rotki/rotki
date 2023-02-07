@@ -1,4 +1,4 @@
-import { LedgerActionType } from '@/types/ledger-actions';
+import { LedgerActionType } from '@/types/history/ledger-action/ledger-actions-type';
 
 export const useLedgerActionData = createSharedComposable(() => {
   const { tc } = useI18n();

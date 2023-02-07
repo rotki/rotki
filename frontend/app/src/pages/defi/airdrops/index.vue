@@ -113,8 +113,8 @@ const sources: AirdropSources = {
 
 const { t, tc } = useI18n();
 const css = useCssModule();
-const defiStore = useDefiStore();
-const { airdropAddresses } = storeToRefs(defiStore);
+const airdropStore = useAirdropStore();
+const { airdropAddresses } = storeToRefs(airdropStore);
 const { isPackaged, navigate } = useInterop();
 const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
 
@@ -123,7 +123,7 @@ const refreshing = isSectionRefreshing(section);
 
 const entries = computed(() => {
   const addresses = get(selectedAccounts).map(({ address }) => address);
-  const airdrops = get(defiStore.airdropList(addresses));
+  const airdrops = get(airdropStore.airdropList(addresses));
   return airdrops.map((value, index) => ({
     ...value,
     index
@@ -154,7 +154,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 ]);
 
 const refresh = async () => {
-  await defiStore.fetchAirdrops(true);
+  await airdropStore.fetchAirdrops(true);
 };
 
 const getIcon = (source: AirdropType) => sources[source]?.icon ?? '';
@@ -169,7 +169,7 @@ const expand = (item: Airdrop) => {
 };
 
 onMounted(async () => {
-  await defiStore.fetchAirdrops();
+  await airdropStore.fetchAirdrops();
 });
 </script>
 

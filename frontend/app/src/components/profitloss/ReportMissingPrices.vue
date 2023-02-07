@@ -2,15 +2,13 @@
 import { type BigNumber } from '@rotki/common';
 import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
+import { deserializeApiErrorMessage } from '@/services/converters';
+import { type EditableMissingPrice, type MissingPrice } from '@/types/reports';
 import {
   type HistoricalPrice,
   type HistoricalPriceDeletePayload,
   type HistoricalPriceFormPayload
-} from '@/services/assets/types';
-import { deserializeApiErrorMessage } from '@/services/converters';
-import { type EditableMissingPrice } from '@/types/prices';
-import { type MissingPrice } from '@/types/reports';
-import { useAssetPricesApi } from '@/services/assets/prices';
+} from '@/types/prices';
 
 const props = defineProps({
   items: { required: true, type: Array as PropType<MissingPrice[]> },

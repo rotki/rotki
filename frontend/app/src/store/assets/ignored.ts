@@ -1,5 +1,4 @@
 import { type MaybeRef } from '@vueuse/core';
-import { useAssetIgnoreApi } from '@/services/assets/ignore';
 import { type ActionStatus } from '@/types/action';
 
 export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {

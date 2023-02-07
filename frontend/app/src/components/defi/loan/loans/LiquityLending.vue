@@ -11,7 +11,7 @@ import PremiumCard from '@/components/display/PremiumCard.vue';
 import {
   HistoryEventType,
   TransactionEventProtocol
-} from '@/types/transaction';
+} from '@/types/history/tx/tx-events';
 import { type LiquityLoan } from '@/types/defi/liquity';
 
 const props = defineProps({

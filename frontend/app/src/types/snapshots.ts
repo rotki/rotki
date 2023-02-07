@@ -1,6 +1,6 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { BalanceType } from '@/services/balances/types';
+import { BalanceType } from '@/types/balances';
 
 export const BalanceSnapshot = z.object({
   timestamp: z.number(),

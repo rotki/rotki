@@ -6,7 +6,7 @@ import { type BlockchainSelection } from '@rotki/common/lib/blockchain';
 import {
   type HistoryEventType,
   type TransactionEventProtocol
-} from '@/types/transaction';
+} from '@/types/history/tx/tx-events';
 import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
 import { type Writeable } from '@/types';
 import {
@@ -16,7 +16,7 @@ import {
   type EvmChainAddress,
   type NewEthTransactionEvent,
   type TransactionRequestPayload
-} from '@/types/history/tx';
+} from '@/types/history/tx/tx';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { getCollectionData } from '@/utils/collection';

@@ -1,4 +1,3 @@
-import { useSettingsApi } from '@/services/settings/settings-api';
 import { type KrakenAccountType } from '@/types/exchanges';
 import { type Module } from '@/types/modules';
 import { type SettingsUpdate } from '@/types/user';

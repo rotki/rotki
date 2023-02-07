@@ -9,7 +9,7 @@ import DataTable from '@/components/helper/DataTable.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { CURRENCY_USD } from '@/types/currencies';
-import { type AssetBreakdown } from '@/types/accounts';
+import { type AssetBreakdown } from '@/types/blockchain/accounts';
 
 interface AssetLocation extends AssetBreakdown {
   readonly account?: GeneralAccount;

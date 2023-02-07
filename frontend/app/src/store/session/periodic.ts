@@ -1,4 +1,3 @@
-import { useSessionApi } from '@/services/session';
 import { backoff } from '@/utils/backoff';
 
 export const usePeriodicStore = defineStore('session/periodic', () => {

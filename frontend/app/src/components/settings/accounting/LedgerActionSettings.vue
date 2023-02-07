@@ -2,7 +2,7 @@
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
-import { LedgerActionType } from '@/types/ledger-actions';
+import { LedgerActionType } from '@/types/history/ledger-action/ledger-actions-type';
 
 const defaultTaxable: () => TaxableState = () => {
   const status: any = {};

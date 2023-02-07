@@ -10,7 +10,7 @@ import {
 import {
   type AssetBreakdown,
   type BlockchainAccountWithBalance
-} from '@/types/accounts';
+} from '@/types/blockchain/accounts';
 
 export const useBtcAccountBalancesStore = defineStore(
   'blockchain/accountbalances/btc',

@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { explorerUrls } from '@/types/asset-urls';
+import { explorerUrls } from '@/types/asset/asset-urls';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 
 const additional = ['ETC'] as const;

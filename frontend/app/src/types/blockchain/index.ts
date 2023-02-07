@@ -7,7 +7,7 @@ import {
 } from '@/types/protocols';
 import { Section } from '@/types/status';
 import { type ActionDataEntry } from '@/types/action';
-import { type ChainSections } from '@/types/accounts';
+import { type ChainSections } from '@/types/blockchain/accounts';
 
 export const chainSection: ChainSections = {
   BTC: Section.BLOCKCHAIN_BTC,

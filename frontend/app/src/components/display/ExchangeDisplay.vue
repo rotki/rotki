@@ -2,8 +2,8 @@
 import { type PropType } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { type SupportedExchange } from '@/types/exchanges';
-import { type TradeLocationData, useTradeLocations } from '@/types/trades';
 import { toSentenceCase } from '@/utils/text';
+import { type TradeLocationData } from '@/types/history/trade/trade-location';
 
 const props = defineProps({
   exchange: { required: true, type: String as PropType<SupportedExchange> }

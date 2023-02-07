@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
-import { type AssetVersionUpdate } from '@/types/assets';
+import { type AssetVersionUpdate } from '@/types/asset';
 
 const props = defineProps<{
   headless: boolean;

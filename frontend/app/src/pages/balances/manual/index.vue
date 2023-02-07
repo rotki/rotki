@@ -5,8 +5,8 @@ import ManualBalanceTable from '@/components/accounts/manual-balances/ManualBala
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import { BalanceType } from '@/services/balances/types';
 import { type ManualBalance } from '@/types/manual-balances';
+import { BalanceType } from '@/types/balances';
 
 const form = ref<any | null>(null);
 const balanceToEdit: Ref<ManualBalance | null> = ref(null);

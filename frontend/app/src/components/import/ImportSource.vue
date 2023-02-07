@@ -66,11 +66,12 @@ const taskType = TaskType.IMPORT_CSV;
 const { awaitTask, isTaskRunning } = useTaskStore();
 
 const loading = isTaskRunning(taskType, { source: get(source) });
+const { importDataFrom, importFile } = useImportDataApi();
 
 const uploadPackaged = async (file: string) => {
   try {
     const sourceVal = get(source);
-    const { taskId } = await api.importDataFrom(
+    const { taskId } = await importDataFrom(
       sourceVal,
       file,
       get(dateInputFormat) || null
@@ -111,7 +112,7 @@ const uploadFile = async () => {
         formData.append('timestamp_format', dateInputFormatVal);
       }
       try {
-        const { taskId } = await api.importFile(formData);
+        const { taskId } = await importFile(formData);
         const { result } = await awaitTask<boolean, TaskMeta>(
           taskId,
           taskType,

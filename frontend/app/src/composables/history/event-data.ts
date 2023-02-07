@@ -1,5 +1,8 @@
 import { type ComputedRef } from 'vue';
-import { HistoryEventSubType, HistoryEventType } from '@/types/transaction';
+import {
+  HistoryEventSubType,
+  HistoryEventType
+} from '@/types/history/tx/tx-events';
 import { type ActionDataEntry } from '@/types/action';
 
 export const useHistoryEventTypeData = createSharedComposable(() => {

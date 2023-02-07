@@ -4,7 +4,6 @@ import { type DataTableHeader } from 'vuetify';
 import Fragment from '@/components/helper/Fragment';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { displayDateFormatter } from '@/data/date_formatter';
-import { useBackupApi } from '@/services/backup';
 import { type UserDbBackup } from '@/types/backup';
 import { getFilepath } from '@/utils/backups';
 import { size } from '@/utils/data';

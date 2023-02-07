@@ -2,6 +2,7 @@ import { type BigNumber } from '@rotki/common';
 import { z } from 'zod';
 import { type Nullable } from '@/types';
 import { type AssetBalances } from '@/types/balances';
+import { type EXTERNAL_EXCHANGES } from '@/data/defaults';
 
 export const KrakenAccountType = z.enum(['starter', 'intermediate', 'pro']);
 export type KrakenAccountType = z.infer<typeof KrakenAccountType>;
@@ -31,6 +32,8 @@ export enum SupportedExchange {
 const SupportedExchangeType = z.nativeEnum(SupportedExchange);
 
 export const SUPPORTED_EXCHANGES = Object.values(SupportedExchange);
+
+export type SupportedExternalExchanges = typeof EXTERNAL_EXCHANGES[number];
 
 export const Exchange = z.object({
   location: SupportedExchangeType,

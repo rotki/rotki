@@ -1,4 +1,4 @@
-import { TransactionEventProtocol } from '@/types/transaction';
+import { TransactionEventProtocol } from '@/types/history/tx/tx-events';
 import { type ActionDataEntry } from '@/types/action';
 
 export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [

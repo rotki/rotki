@@ -13,7 +13,6 @@ import {
 import sortBy from 'lodash/sortBy';
 import { type ComputedRef } from 'vue';
 import { truncateAddress } from '@/filters';
-import { ProtocolVersion } from '@/services/defi/consts';
 import {
   type AaveLoan,
   type BaseDefiBalance,
@@ -22,7 +21,7 @@ import {
   type LoanSummary
 } from '@/types/defi/lending';
 import { type Writeable } from '@/types';
-import { type Collateral, type DefiLoan } from '@/types/defi';
+import { type Collateral, type DefiLoan, ProtocolVersion } from '@/types/defi';
 import {
   type CompoundBalances,
   type CompoundLoan

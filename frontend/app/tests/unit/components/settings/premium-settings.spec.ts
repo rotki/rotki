@@ -5,7 +5,6 @@ import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import Vuetify from 'vuetify';
 import Card from '@/components/helper/Card.vue';
 import PremiumSettings from '@/pages/settings/api-keys/premium/index.vue';
-import { api } from '@/services/rotkehlchen-api';
 
 vi.mock('@/composables/electron-interop', () => {
   const mockInterop = {
@@ -17,10 +16,13 @@ vi.mock('@/composables/electron-interop', () => {
   };
 });
 
-vi.mock('@/services/rotkehlchen-api');
+vi.mock('@/composables/api/session/premium-credentials', () => ({
+  usePremiumCredentialsApi: vi.fn().mockReturnValue({})
+}));
 
 describe('PremiumSettings.vue', () => {
   let wrapper: Wrapper<PremiumSettings>;
+  let api: ReturnType<typeof usePremiumCredentialsApi>;
 
   function createWrapper() {
     const vuetify = new Vuetify();
@@ -39,6 +41,7 @@ describe('PremiumSettings.vue', () => {
   beforeEach(() => {
     document.body.dataset.app = 'true';
     wrapper = createWrapper();
+    api = usePremiumCredentialsApi();
   });
 
   test('updates premium status upon setting keys', async () => {

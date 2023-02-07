@@ -1,7 +1,6 @@
 import { type BigNumber } from '@rotki/common';
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
-import { useNftBalanceApi } from '@/services/balances/nft';
 import { type Collection } from '@/types/collection';
 import { Module } from '@/types/modules';
 import {
@@ -57,7 +56,7 @@ export const useNonFungibleBalancesStore = defineStore(
       }
     };
 
-    const { fetchNfBalances, fetchNfBalancesTask } = useNftBalanceApi();
+    const { fetchNfBalances, fetchNfBalancesTask } = useNftBalancesApi();
 
     const fetchNonFungibleBalances = async (refresh = false) => {
       if (!get(activeModules).includes(Module.NFTS)) {

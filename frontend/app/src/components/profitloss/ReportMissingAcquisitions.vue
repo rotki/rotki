@@ -4,7 +4,7 @@ import { type DataTableHeader } from 'vuetify';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import { type MissingAcquisition, type SelectedReport } from '@/types/reports';
 import LedgerActionFormDialog from '@/components/history/ledger-actions/LedgerActionFormDialog.vue';
-import { type LedgerAction } from '@/types/history/ledger-actions';
+import { type LedgerAction } from '@/types/history/ledger-action/ledger-actions';
 
 type GroupedItems = Record<string, MissingAcquisition[]>;
 interface MappedGroupedItems {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { getEventCounterpartyData, useEventTypeData } from '@/utils/history';
-import { type EthTransactionEventEntry } from '@/types/history/tx';
+import { type EthTransactionEventEntry } from '@/types/history/tx/tx';
 import { type ActionDataEntry } from '@/types/action';
 
 const props = defineProps<{

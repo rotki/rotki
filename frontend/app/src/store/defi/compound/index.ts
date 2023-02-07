@@ -5,7 +5,6 @@ import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
-import { useCompoundApi } from '@/services/defi/compound';
 import { toProfitLossModel } from '@/utils/defi';
 import { isLoading } from '@/utils/status';
 

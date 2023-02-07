@@ -9,7 +9,6 @@ import { Section } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { fetchDataAsync } from '@/utils/fetch-async';
-import { useLiquityApi } from '@/services/defi/liquity';
 import { type OnError } from '@/types/fetch';
 
 export const useLiquityStore = defineStore('defi/liquity', () => {

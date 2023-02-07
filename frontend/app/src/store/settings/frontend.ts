@@ -7,7 +7,6 @@ import {
 import { type ComputedRef } from 'vue';
 import { getBnFormat } from '@/data/amount_formatter';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { useSettingsApi } from '@/services/settings/settings-api';
 import { type CurrencyLocation } from '@/types/currency-location';
 import { type DateFormat } from '@/types/date-format';
 import {

@@ -2,7 +2,6 @@
 import { BigNumber } from '@rotki/common';
 import { type PropType } from 'vue';
 import { type SupportedExchange } from '@/types/exchanges';
-import { useTradeLocations } from '@/types/trades';
 
 const props = defineProps({
   balance: { required: true, type: BigNumber },

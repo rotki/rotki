@@ -5,13 +5,12 @@ import {
   type SupportedAsset,
   type UnderlyingToken
 } from '@rotki/common/lib/data';
-import { omit } from 'lodash';
+import omit from 'lodash/omit';
 import { type ComputedRef, type PropType, type Ref } from 'vue';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import HelpLink from '@/components/helper/HelpLink.vue';
-import { CUSTOM_ASSET, EVM_TOKEN } from '@/services/assets/consts';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import {
@@ -20,8 +19,8 @@ import {
   toSentenceCase
 } from '@/utils/text';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
-import { useAssetManagementApi } from '@/services/assets/management-api';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
+import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
 
 function time(t: string): number | undefined {
   return t ? convertToTimestamp(t) : undefined;

@@ -3,13 +3,14 @@ import dayjs from 'dayjs';
 import find from 'lodash/find';
 import toArray from 'lodash/toArray';
 import { type ComputedRef, type Ref } from 'vue';
-import { api } from '@/services/rotkehlchen-api';
+import { SyncConflictError } from '@/types/login';
 import {
   BackendCancelledTaskError,
+  type Task,
+  type TaskMap,
+  type TaskMeta,
   TaskNotFoundError
-} from '@/services/types-api';
-import { SyncConflictError } from '@/types/login';
-import { type Task, type TaskMap, type TaskMeta } from '@/types/task';
+} from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import { checkIfDevelopment } from '@/utils/env-utils';
@@ -54,6 +55,8 @@ export const useTaskStore = defineStore('tasks', () => {
   let isRunning = false;
 
   const { error } = useError();
+
+  const api = useTaskApi();
 
   const registerHandler = <R, M extends TaskMeta>(
     task: TaskType,

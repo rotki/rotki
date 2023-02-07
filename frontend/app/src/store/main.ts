@@ -1,6 +1,5 @@
 import { type Ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
-import { useUsersApi } from '@/services/session/users.api';
 import { type Nullable } from '@/types';
 import { type LogLevel } from '@/utils/log-level';
 import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
@@ -17,6 +16,7 @@ export const useMainStore = defineStore('main', () => {
   const dockerRiskAccepted: Ref<boolean> = ref(true);
 
   const usersApi = useUsersApi();
+  const { info, ping } = useInfoApi();
 
   const updateNeeded = computed(() => {
     const { version: appVersion, downloadUrl } = get(version);
@@ -32,7 +32,7 @@ export const useMainStore = defineStore('main', () => {
   });
 
   const getVersion = async (): Promise<void> => {
-    const { version: appVersion } = await api.info(true);
+    const { version: appVersion } = await info(true);
     if (appVersion) {
       set(version, {
         version: appVersion.ourVersion || '',
@@ -47,7 +47,7 @@ export const useMainStore = defineStore('main', () => {
       dataDirectory: appDataDirectory,
       logLevel: level,
       acceptDockerRisk
-    } = await api.info(false);
+    } = await info(false);
     set(dataDirectory, appDataDirectory);
     set(logLevel, level);
     set(dockerRiskAccepted, acceptDockerRisk);
@@ -75,7 +75,7 @@ export const useMainStore = defineStore('main', () => {
       try {
         updateApi(payload);
 
-        const isConnected = !!(await api.ping());
+        const isConnected = !!(await ping());
         if (isConnected) {
           const accounts = await usersApi.users();
           if (accounts.length === 0) {

@@ -10,7 +10,7 @@ import { assert } from '@/utils/assertions';
 import {
   type XpubAccountWithBalance,
   type XpubPayload
-} from '@/types/accounts';
+} from '@/types/blockchain/accounts';
 
 const props = defineProps<{ blockchain: BtcChains }>();
 

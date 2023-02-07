@@ -1,12 +1,11 @@
 import { type MaybeRef } from '@vueuse/core';
-import { useBalancesApi } from '@/services/balances';
 import { CURRENCY_USD } from '@/types/currencies';
 import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { One } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
-import { type AllBalancePayload } from '@/types/accounts';
+import { type AllBalancePayload } from '@/types/blockchain/accounts';
 
 export const useBalancesStore = defineStore('balances', () => {
   const { updatePrices: updateManualPrices, fetchManualBalances } =

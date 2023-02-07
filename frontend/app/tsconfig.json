@@ -8,7 +8,7 @@
       "vite-plugin-vue-layouts/client"
     ]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "components.d.ts"],
   "exclude": ["node_modules/**", "**/.*"],
   "vueCompilerOptions": {
     "target": 2.7

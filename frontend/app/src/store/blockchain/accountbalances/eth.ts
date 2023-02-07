@@ -11,7 +11,6 @@ import {
 import { type BlockchainAssetBalances } from '@/types/blockchain/balances';
 import { L2_LOOPRING } from '@/types/protocols';
 import { Section } from '@/types/status';
-import { ReadOnlyTag } from '@/types/user';
 import {
   accountsWithBalances,
   getBlockchainBreakdown,
@@ -20,12 +19,13 @@ import {
 import { zeroBalance } from '@/utils/bignumbers';
 import { assetSum, balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
+import { ReadOnlyTag } from '@/types/tags';
 import {
   type AccountWithBalance,
   type AccountWithBalanceAndSharedOwnership,
   type AssetBreakdown,
   type BlockchainAccountWithBalance
-} from '@/types/accounts';
+} from '@/types/blockchain/accounts';
 
 function addLoopringBreakdown(
   loopring: AccountAssetBalances,

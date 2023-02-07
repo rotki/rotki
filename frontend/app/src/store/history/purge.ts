@@ -1,6 +1,6 @@
-import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
 import { type SupportedExchange } from '@/types/exchanges';
 import { Section } from '@/types/status';
+import { ALL_CENTRALIZED_EXCHANGES } from '@/types/session/purge';
 
 export const usePurgeStore = defineStore('history/purge', () => {
   const { fetchTrades } = useTradeStore();

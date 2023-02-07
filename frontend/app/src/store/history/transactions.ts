@@ -1,15 +1,9 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
-import { groupBy } from 'lodash';
-import { useHistoryApi } from '@/services/history';
-import { useTransactionsApi } from '@/services/history/transactions';
-import {
-  BackendCancelledTaskError,
-  type PendingTask
-} from '@/services/types-api';
+import groupBy from 'lodash/groupBy';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { type EntryWithMeta } from '@/types/history/meta';
-import { type TradeRequestPayload } from '@/types/history/trades';
+import { type TradeRequestPayload } from '@/types/history/trade/trades';
 import {
   type EthTransaction,
   EthTransactionCollectionResponse,
@@ -18,9 +12,13 @@ import {
   type NewEthTransactionEvent,
   type TransactionHashAndEvmChainPayload,
   type TransactionRequestPayload
-} from '@/types/history/tx';
+} from '@/types/history/tx/tx';
 import { Section, Status } from '@/types/status';
-import { type TaskMeta } from '@/types/task';
+import {
+  BackendCancelledTaskError,
+  type PendingTask,
+  type TaskMeta
+} from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import {
   defaultCollectionState,

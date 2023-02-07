@@ -1,10 +1,9 @@
 import { type AssetInfo } from '@rotki/common/lib/data';
 import flushPromises from 'flush-promises';
 import { type ComputedRef } from 'vue';
-import { useAssetInfoApi } from '@/services/assets/info';
-import { type AssetMap } from '@/types/assets';
+import { type AssetMap } from '@/types/asset';
 
-vi.mock('@/services/assets/info', () => ({
+vi.mock('@/composables/api/assets/info', () => ({
   useAssetInfoApi: vi.fn().mockReturnValue({
     assetMapping: vi.fn().mockResolvedValue({})
   })

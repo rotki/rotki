@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { omit } from 'lodash';
+import omit from 'lodash/omit';
 import { type PropType, type Ref } from 'vue';
-import { type CustomAsset } from '@/types/assets';
+import { type CustomAsset } from '@/types/asset';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
-import { useAssetManagementApi } from '@/services/assets/management-api';
 
 const props = defineProps({
   edit: {

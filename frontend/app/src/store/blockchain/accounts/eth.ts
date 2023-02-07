@@ -4,7 +4,6 @@ import {
   type Eth2Validators
 } from '@rotki/common/lib/staking/eth2';
 import { type ComputedRef, type Ref } from 'vue';
-import { type GeneralAccountData } from '@/services/types-api';
 import { type Eth2Validator } from '@/types/balances';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
@@ -14,6 +13,7 @@ import { logger } from '@/utils/logging';
 import { removeTags } from '@/utils/tags';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { type ActionStatus } from '@/types/action';
+import { type GeneralAccountData } from '@/types/blockchain/accounts';
 
 const defaultValidators = (): Eth2Validators => ({
   entries: [],

@@ -6,7 +6,7 @@ import AssetBalances from '@/components/AssetBalances.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 
 import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
-import { type BlockchainAccountWithBalance } from '@/types/accounts';
+import { type BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
 
 type Intersections = {
   [key in Blockchain]: boolean;

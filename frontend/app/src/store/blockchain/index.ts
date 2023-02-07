@@ -9,7 +9,7 @@ import {
   type AccountPayload,
   type AddAccountsPayload,
   type BaseAddAccountsPayload
-} from '@/types/accounts';
+} from '@/types/blockchain/accounts';
 
 export const useBlockchainStore = defineStore('blockchain', () => {
   const { addAccount, fetch } = useBlockchainAccountsStore();

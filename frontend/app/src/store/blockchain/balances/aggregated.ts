@@ -5,7 +5,6 @@ import {
 } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
-import { bigNumberSum } from '@/filters';
 import { type AssetBalances } from '@/types/balances';
 import {
   appendAssetBalance,
@@ -13,7 +12,7 @@ import {
   toSortedAssetBalanceArray,
   toSortedAssetBalanceWithPrice
 } from '@/utils/balances';
-import { balanceSum } from '@/utils/calculation';
+import { balanceSum, bigNumberSum } from '@/utils/calculation';
 
 export const useAggregatedBlockchainBalancesStore = defineStore(
   'blockchain/balances/aggregated',

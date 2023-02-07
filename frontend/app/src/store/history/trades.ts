@@ -1,21 +1,19 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
-import { useTradesApi } from '@/services/history/trades';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { type SupportedExchange } from '@/types/exchanges';
 import { type EntryWithMeta } from '@/types/history/meta';
-import { type TradeLocation } from '@/types/history/trade-location';
+import { type TradeLocation } from '@/types/history/trade/trade-location';
 import {
   type NewTrade,
   type Trade,
   TradeCollectionResponse,
   type TradeEntry,
   type TradeRequestPayload
-} from '@/types/history/trades';
+} from '@/types/history/trade/trades';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { useTradeLocations } from '@/types/trades';
 import {
   defaultCollectionState,
   mapCollectionResponse

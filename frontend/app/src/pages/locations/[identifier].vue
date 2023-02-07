@@ -6,7 +6,7 @@ import LocationIcon from '@/components/history/LocationIcon.vue';
 import LocationAssets from '@/components/locations/LocationAssets.vue';
 import LocationValueRow from '@/components/locations/LocationValueRow.vue';
 import { Section } from '@/types/status';
-import { type TradeLocationData } from '@/types/trades';
+import { type TradeLocationData } from '@/types/history/trade/trade-location';
 
 const props = defineProps({
   identifier: { required: true, type: String }

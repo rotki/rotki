@@ -14,8 +14,6 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type AccountingSettings } from '@/types/user';
 import { logger } from '@/utils/logging';
-import { useReportsApi } from '@/services/reports';
-import { useHistoryApi } from '@/services/history';
 import { filterAddressesFromWords } from '@/utils/history';
 
 const notify = (info: {

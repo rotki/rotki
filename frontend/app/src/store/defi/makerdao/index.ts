@@ -14,7 +14,6 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { Zero, bigNumberify } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
-import { useMakerDaoApi } from '@/services/defi/makerdao';
 import { isLoading } from '@/utils/status';
 
 const convertMakerDAOVaults = (vaults: ApiMakerDAOVault[]): MakerDAOVault[] =>

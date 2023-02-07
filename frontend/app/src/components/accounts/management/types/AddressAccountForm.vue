@@ -10,7 +10,7 @@ import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import {
   type BlockchainAccountPayload,
   type BlockchainAccountWithBalance
-} from '@/types/accounts';
+} from '@/types/blockchain/accounts';
 
 const props = defineProps<{ blockchain: Blockchain }>();
 

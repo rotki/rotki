@@ -8,13 +8,12 @@ import { type ComputedRef, type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import RowActions from '@/components/helper/RowActions.vue';
-import { type ManualPrice } from '@/services/assets/types';
 import { CURRENCY_USD } from '@/types/currencies';
-import { useAssetPricesApi } from '@/services/assets/prices';
 
 import NftDetails from '@/components/helper/NftDetails.vue';
 import { isNft } from '@/utils/nft';
 import { One } from '@/utils/bignumbers';
+import { type ManualPrice } from '@/types/prices';
 
 const props = defineProps({
   assetFilter: {

@@ -3,7 +3,7 @@ import {
   type BtcAccountData,
   type GeneralAccountData,
   type XpubAccountData
-} from '@/services/types-api';
+} from '@/types/blockchain/accounts';
 
 const removeTag = (tags: string[] | null, tagName: string): string[] | null => {
   if (!tags) {

@@ -1,4 +1,3 @@
-import { useBlockie } from '@/composables/accounts/blockie';
 import { createBlockie } from '@/utils/blockie';
 
 describe('accounts/blockie', () => {

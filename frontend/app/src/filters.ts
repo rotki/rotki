@@ -1,6 +1,3 @@
-import { type BigNumber } from '@rotki/common';
-import { Zero } from '@/utils/bignumbers';
-
 export const truncationPoints: Record<string, number> = {
   xs: 3,
   sm: 6,
@@ -31,24 +28,4 @@ export function truncateAddress(address: string, truncLength = 4): string {
     address!.length - truncLength,
     address!.length
   )}`;
-}
-
-export function bigNumberSum(value: BigNumber[]): BigNumber {
-  return value.reduce(
-    (previousValue, currentValue) => previousValue.plus(currentValue),
-    Zero
-  );
-}
-
-export function aggregateTotal(
-  balances: any[],
-  mainCurrency: string,
-  exchangeRate: BigNumber
-): BigNumber {
-  return balances.reduce((previousValue, currentValue) => {
-    if (currentValue.asset === mainCurrency) {
-      return previousValue.plus(currentValue.amount);
-    }
-    return previousValue.plus(currentValue.usdValue.multipliedBy(exchangeRate));
-  }, Zero);
 }

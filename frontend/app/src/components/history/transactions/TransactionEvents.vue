@@ -4,11 +4,11 @@ import {
   type EthTransactionEntry,
   type EthTransactionEventEntry,
   type EthTransactionEventWithMeta
-} from '@/types/history/tx';
+} from '@/types/history/tx/tx';
 import {
   HistoryEventSubType,
   TransactionEventProtocol
-} from '@/types/transaction';
+} from '@/types/history/tx/tx-events';
 
 const props = withDefaults(
   defineProps<{

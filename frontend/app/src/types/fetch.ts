@@ -1,8 +1,7 @@
 import { type Ref } from 'vue';
-import { type TaskMeta } from '@/types/task';
+import { type PendingTask, type TaskMeta } from '@/types/task';
 import { type TaskType } from '@/types/task-type';
 import { type Section } from '@/types/status';
-import { type PendingTask } from '@/services/types-api';
 import { type Module } from '@/types/modules';
 
 export interface OnError {

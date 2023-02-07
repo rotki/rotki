@@ -10,7 +10,6 @@ import {
   type ExchangePayload,
   SupportedExchange
 } from '@/types/exchanges';
-import { useTradeLocations } from '@/types/trades';
 
 const placeholder: () => ExchangePayload = () => ({
   location: SupportedExchange.KRAKEN,

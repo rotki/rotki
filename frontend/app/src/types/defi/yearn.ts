@@ -1,6 +1,6 @@
 import { Balance } from '@rotki/common';
 import { z } from 'zod';
-import { ProtocolVersion } from '@/services/defi/consts';
+import { ProtocolVersion } from '@/types/defi/index';
 
 export const WITHDRAW = 'withdraw';
 export const DEPOSIT = 'deposit';

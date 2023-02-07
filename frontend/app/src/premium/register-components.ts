@@ -1,3 +1,5 @@
+/* eslint-disable import/max-dependencies */
+
 import Vue from 'vue';
 import {
   VAlert,

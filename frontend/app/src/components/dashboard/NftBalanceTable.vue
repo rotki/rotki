@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import { dropRight } from 'lodash';
+import dropRight from 'lodash/dropRight';
 import { type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';

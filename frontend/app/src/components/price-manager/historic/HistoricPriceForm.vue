@@ -2,9 +2,9 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { type PropType } from 'vue';
-import { type HistoricalPriceFormPayload } from '@/services/assets/types';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+import { type HistoricalPriceFormPayload } from '@/types/prices';
 
 const props = defineProps({
   value: {

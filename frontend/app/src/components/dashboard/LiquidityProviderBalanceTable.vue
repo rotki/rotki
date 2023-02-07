@@ -4,7 +4,7 @@ import {
   type XswapAsset,
   type XswapBalance
 } from '@rotki/common/lib/defi/xswap';
-import { isEqual } from 'lodash';
+import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';

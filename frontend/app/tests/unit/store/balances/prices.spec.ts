@@ -1,11 +1,10 @@
 import { beforeEach } from 'vitest';
 import { defaultGeneralSettings } from '@/data/factories';
-import { usePriceApi } from '@/services/balances/price';
 import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
 import { PriceOracle } from '@/types/price-oracle';
 import { bigNumberify } from '@/utils/bignumbers';
 
-vi.mock('@/services/balances/price', () => ({
+vi.mock('@/composables/api/balances/price', () => ({
   usePriceApi: vi.fn().mockReturnValue({
     getPriceCache: vi.fn().mockResolvedValue([]),
     createPriceCache: vi.fn().mockResolvedValue(1),

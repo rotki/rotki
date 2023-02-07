@@ -1,18 +1,7 @@
 <script setup lang="ts">
-import { dropRight } from 'lodash';
+import dropRight from 'lodash/dropRight';
 import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
-import DataTable from '@/components/helper/DataTable.vue';
-import NavigatorLink from '@/components/helper/NavigatorLink.vue';
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
-import DepositWithdrawalDetails from '@/components/history/deposits-withdrawals/DepositWithdrawalDetails.vue';
-import TableFilter from '@/components/history/filtering/TableFilter.vue';
-import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
-import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { Routes } from '@/router/routes';
 
 import {
@@ -20,9 +9,9 @@ import {
   type AssetMovementEntry,
   type AssetMovementRequestPayload
 } from '@/types/history/movements';
-import { type TradeLocation } from '@/types/history/trade-location';
+import { type TradeLocation } from '@/types/history/trade/trade-location';
 import { Section } from '@/types/status';
-import { type TradeEntry } from '@/types/history/trades';
+import { type TradeEntry } from '@/types/history/trade/trades';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { type TablePagination } from '@/types/pagination';
 

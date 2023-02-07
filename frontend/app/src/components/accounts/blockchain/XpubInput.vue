@@ -13,7 +13,7 @@ import {
 } from '@/utils/xpub';
 import { type ValidationErrors } from '@/types/api/errors';
 import { type BtcChains } from '@/types/blockchain/chains';
-import { type XpubPayload } from '@/types/accounts';
+import { type XpubPayload } from '@/types/blockchain/accounts';
 
 const props = defineProps<{
   disabled: boolean;

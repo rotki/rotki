@@ -5,7 +5,7 @@ import {
   type WatcherOpTypes,
   type WatcherType,
   type WatcherTypes
-} from '@/services/session/types';
+} from '@/types/session';
 
 const props = defineProps({
   title: { required: true, type: String },

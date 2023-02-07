@@ -1,8 +1,7 @@
-import { useQueriedAddressApi } from '@/services/session/queried-addresses-api';
 import {
   type QueriedAddressPayload,
   type QueriedAddresses
-} from '@/services/session/types';
+} from '@/types/session';
 
 export const useQueriedAddressesStore = defineStore(
   'session/queried-addresses',

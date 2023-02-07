@@ -2,20 +2,17 @@
 import PurgeSelector from '@/components/settings/data-security/PurgeSelector.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
+import { SUPPORTED_EXCHANGES, type SupportedExchange } from '@/types/exchanges';
+import { type BaseMessage } from '@/types/messages';
+import { Module } from '@/types/modules';
 import {
   ALL_CENTRALIZED_EXCHANGES,
   ALL_DECENTRALIZED_EXCHANGES,
   ALL_MODULES,
-  ALL_TRANSACTIONS
-} from '@/services/session/consts';
-import { type Purgeable } from '@/services/session/types';
-import { SUPPORTED_EXCHANGES, type SupportedExchange } from '@/types/exchanges';
-import { type BaseMessage } from '@/types/messages';
-import { Module } from '@/types/modules';
-import { type PurgeParams } from '@/types/purge';
-import { useExchangeApi } from '@/services/balances/exchanges';
-import { useTransactionsApi } from '@/services/history/transactions';
-import { useBlockchainBalanceApi } from '@/services/balances/blockchain';
+  ALL_TRANSACTIONS,
+  type PurgeParams,
+  type Purgeable
+} from '@/types/session/purge';
 
 const source = ref<Purgeable>(ALL_TRANSACTIONS);
 const status = ref<BaseMessage | null>(null);
@@ -38,7 +35,7 @@ const showConfirmation = (source: PurgeParams) => {
   set(confirm, true);
 };
 
-const { deleteModuleData } = useBlockchainBalanceApi();
+const { deleteModuleData } = useBlockchainBalancesApi();
 const { deleteEthTransactions } = useTransactionsApi();
 const { deleteExchangeData } = useExchangeApi();
 

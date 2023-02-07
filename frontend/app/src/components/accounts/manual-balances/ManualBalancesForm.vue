@@ -8,15 +8,14 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import { BalanceType } from '@/services/balances/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { type TradeLocation } from '@/types/history/trade-location';
+import { type TradeLocation } from '@/types/history/trade/trade-location';
 import { type ManualBalance } from '@/types/manual-balances';
 import { startPromise } from '@/utils';
 import { bigNumberify } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation-errors';
 import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
-import { useAssetManagementApi } from '@/services/assets/management-api';
+import { BalanceType } from '@/types/balances';
 
 const props = withDefaults(
   defineProps<{

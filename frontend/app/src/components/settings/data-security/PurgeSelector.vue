@@ -1,18 +1,17 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
+import { type BaseMessage } from '@/types/messages';
+import { SUPPORTED_MODULES } from '@/types/modules';
 import {
   ALL_CENTRALIZED_EXCHANGES,
   ALL_DECENTRALIZED_EXCHANGES,
   ALL_MODULES,
   ALL_TRANSACTIONS,
-  PURGABLE
-} from '@/services/session/consts';
-import { type Purgeable } from '@/services/session/types';
-import { type BaseMessage } from '@/types/messages';
-import { SUPPORTED_MODULES } from '@/types/modules';
-import { type PurgeParams } from '@/types/purge';
-import { useTradeLocations } from '@/types/trades';
+  PURGABLE,
+  type PurgeParams,
+  type Purgeable
+} from '@/types/session/purge';
 
 defineProps({
   value: { required: true, type: String as PropType<Purgeable> },

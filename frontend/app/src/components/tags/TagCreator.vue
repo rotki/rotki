@@ -3,8 +3,7 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { type PropType, type Ref } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { type TagEvent } from '@/types/tags';
-import { type Tag } from '@/types/user';
+import { type Tag, type TagEvent } from '@/types/tags';
 import { invertColor, randomColor } from '@/utils/color';
 
 const props = defineProps({

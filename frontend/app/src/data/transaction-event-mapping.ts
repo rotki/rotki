@@ -2,7 +2,7 @@ import {
   HistoryEventSubType,
   HistoryEventType,
   TransactionEventType
-} from '@/types/transaction';
+} from '@/types/history/tx/tx-events';
 
 export const transactionEventTypeMapping: Record<
   string,

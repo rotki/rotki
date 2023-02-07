@@ -9,7 +9,6 @@ const needRefresh = ref<boolean>(false);
 const updating = ref<boolean>(false);
 
 onMounted(async () => {
-  // eslint-disable-next-line import/no-unresolved
   const { registerSW } = await import('virtual:pwa-register');
 
   try {
