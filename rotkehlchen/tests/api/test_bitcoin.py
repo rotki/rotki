@@ -407,9 +407,9 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server):
     assert rotki.chains_aggregator.accounts.bch == []
     # Check that we still have derived BTC addresses
     assert len(result) >= 23
-    for address, xpub, _, _, _, blockchain in result:
+    for address, xpub_result, _, _, _, blockchain in result:
         assert address in rotki.chains_aggregator.accounts.btc
-        assert xpub == xpub
+        assert xpub == xpub_result
         assert blockchain == 'BTC'
 
     # test that adding a btc p2tr xpub works

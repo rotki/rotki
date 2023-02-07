@@ -129,6 +129,7 @@ enable=
     invalid-slice-step,
     consider-refactoring-into-while-condition,
     consider-using-dict-items,
+    comparison-with-itself,
     rotki-lognokwargs,
     rotki-nonbooleannot
 
