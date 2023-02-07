@@ -92,6 +92,9 @@ Handling user creation, sign-in, log-out and querying
 
    By doing a ``PUT`` at this endpoint you can create a new user
 
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
