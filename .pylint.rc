@@ -130,6 +130,7 @@ enable=
     consider-refactoring-into-while-condition,
     consider-using-dict-items,
     comparison-with-itself,
+    unnecessary-comprehension,
     rotki-lognokwargs,
     rotki-nonbooleannot
 

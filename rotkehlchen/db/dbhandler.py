@@ -2258,7 +2258,7 @@ class DBHandler:
                         'timestamp >= ? AND currency LIKE ? GROUP BY timestamp',
                         (from_ts, f'{NFT_DIRECTIVE}%'),
                     )
-                    nft_values = {time: value for time, value in nft_cursor}
+                    nft_values = dict(nft_cursor)
 
             data = []
             times_int = []

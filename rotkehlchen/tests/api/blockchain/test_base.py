@@ -615,7 +615,7 @@ def test_add_blockchain_accounts_concurrent(rotkehlchen_api_server):
     # We are making an assumption of sequential ids here. This may not always
     # be the case so for that later down the test we will skip the task check
     # if this happens. Can't think of a better way to do this at the moment
-    task_ids = {idx: account for idx, account in enumerate(query_accounts)}
+    task_ids = dict(enumerate(query_accounts))
 
     with gevent.Timeout(ASYNC_TASK_WAIT_TIMEOUT):
         while len(task_ids) != 0:
