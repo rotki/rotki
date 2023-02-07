@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { type PropType, type Ref } from 'vue';
+import { type Ref } from 'vue';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
@@ -18,15 +18,16 @@ import { toMessages } from '@/utils/validation-errors';
 import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 import { useAssetManagementApi } from '@/services/assets/management-api';
 
-const props = defineProps({
-  edit: {
-    required: false,
-    type: Object as PropType<ManualBalance | null>,
-    default: null
-  },
-  value: { required: true, type: Boolean },
-  context: { required: true, type: String as PropType<BalanceType> }
-});
+const props = withDefaults(
+  defineProps<{
+    edit?: ManualBalance | null;
+    value: boolean;
+    context: BalanceType;
+  }>(),
+  {
+    edit: null
+  }
+);
 
 const emit = defineEmits<{
   (e: 'clear'): void;
@@ -235,16 +236,10 @@ watch(v$, ({ $invalid }) => {
   input(!$invalid);
 });
 
-watch(asset, async asset => {
-  const form = get(priceForm);
-  await form?.searchAssetPrice(asset);
-});
-
 onMounted(async () => {
   const editPayload = get(edit);
   if (editPayload) {
-    const form = get(priceForm);
-    await form?.searchAssetPrice(editPayload.asset);
+    set(asset, editPayload.asset);
   }
 });
 
@@ -313,7 +308,11 @@ defineExpose({
       </v-col>
     </v-row>
 
-    <manual-balances-price-form ref="priceForm" :pending="pending" />
+    <manual-balances-price-form
+      ref="priceForm"
+      :pending="pending"
+      :asset="asset"
+    />
 
     <amount-input
       v-model="amount"

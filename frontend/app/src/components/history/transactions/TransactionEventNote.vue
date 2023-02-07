@@ -137,11 +137,12 @@ const formatNotes = (
       <span
         v-if="note.type === 'address' || note.type === 'tx'"
         :key="index"
+        :class="$style.address"
         class="d-inline-flex"
       >
         <hash-link
           :class="{
-            [$style.address]: true,
+            [$style['address__content']]: true,
             'pl-2': note.type === 'tx'
           }"
           :text="note.address"
@@ -163,9 +164,13 @@ const formatNotes = (
 </template>
 <style lang="scss" module>
 .address {
-  background: var(--v-rotki-light-grey-darken1);
-  padding-right: 0.25rem;
-  border-radius: 3rem;
-  margin: 2px;
+  vertical-align: middle;
+
+  &__content {
+    background: var(--v-rotki-light-grey-darken1);
+    padding-right: 0.25rem;
+    border-radius: 3rem;
+    margin: 2px;
+  }
 }
 </style>

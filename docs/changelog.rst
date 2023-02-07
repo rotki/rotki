@@ -2,6 +2,9 @@
 Changelog
 =========
 
+* :release:`1.28.0`
+* :bug:`5491` Show original manual latest price asset in manual balance form.
+
 * :bug:`5560` EVM transaction events should now be properly ignored in accounting.
 * :bug:`-` Fixes bug where asset breakdown wasn't displayed correctly in the exchange balance section.
 * :bug:`-` Fixes bug where navigation bar on the left didn't expand by default.
