@@ -551,10 +551,10 @@ class DBConnection:
             # Check structure of which tables in the database differ from the expected.
             differing_tables_properties: dict[str, tuple[tuple[str, str], str]] = {}
             # At this point keys of two dictionaries match
-            for table_name in tables_data_from_db:
-                if tables_data_from_db[table_name][0] != self.minimized_schema[table_name]:
+            for table_name, table_data in tables_data_from_db.items():
+                if table_data[0] != self.minimized_schema[table_name]:
                     differing_tables_properties[table_name] = (
-                        tables_data_from_db[table_name],
+                        table_data,
                         self.minimized_schema[table_name],
                     )
 
