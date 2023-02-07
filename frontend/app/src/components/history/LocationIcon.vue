@@ -33,7 +33,7 @@ const iconStyle = computed(() => ({
         v-if="item.imageIcon"
         :width="size"
         contain
-        position="left"
+        position="center"
         :max-height="size"
         :src="item.icon"
       />

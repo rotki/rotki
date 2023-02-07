@@ -14,7 +14,9 @@ import {
   TRADE_LOCATION_BLOCKCHAIN,
   TRADE_LOCATION_COMMODITIES,
   TRADE_LOCATION_EQUITIES,
+  TRADE_LOCATION_ETHEREUM,
   TRADE_LOCATION_EXTERNAL,
+  TRADE_LOCATION_OPTIMISM,
   TRADE_LOCATION_REALESTATE
 } from '@/data/defaults';
 import { SupportedExchange } from '@/types/exchanges';
@@ -250,6 +252,20 @@ export const useTradeLocations = createSharedComposable(() => {
       name: 'Blockchain',
       icon: 'mdi-link',
       imageIcon: false,
+      exchange: false
+    },
+    {
+      identifier: TRADE_LOCATION_ETHEREUM,
+      name: 'Ethereum',
+      icon: './assets/images/chains/ethereum.svg',
+      imageIcon: true,
+      exchange: false
+    },
+    {
+      identifier: TRADE_LOCATION_OPTIMISM,
+      name: 'Optimism',
+      icon: './assets/images/chains/optimism.svg',
+      imageIcon: true,
       exchange: false
     },
     {
