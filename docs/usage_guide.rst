@@ -1334,13 +1334,18 @@ Ignoring assets
 
 Specify which assets you own and would like to completely ignore from all calculations and balance queries. Any actions that involve these assets are ignored.
 You can ignore/un-ignore the assets by toggling the switch on the table. You can also ignore/un-ignore multiple assets by using the checkboxes.
-We have introduced a mechanism to populate the ignore list with assets labeled as spam/scam by us. This list can be re-queried at any time by the user by clicking on ``Sync the list of ignored assets``.
 
 .. image:: images/asset_overview.png
    :alt: Asset overview page
    :align: center
 
 You can also ignore assets by clicking asset icons anywhere on the app, that will redirect you to this overview asset page. In this page, you can ignore or un-ignore a selected asset.
+
+It is also possible to ignore NFTs. To do this navigate to ``Accounts & Balances > Non fungible balances`` and toggle the ignore NFT switch. Then you can use the filter to view the ignored NFTs.
+
+.. image:: images/rotki_ignore_nfts.png
+   :alt: Ignoring NFTs
+   :align: center
 
 Adding missing prices
 **********************
