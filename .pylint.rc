@@ -54,8 +54,14 @@ logging-modules=logging
 #    attribute-defined-outside-init,
 #    wildcard-import,
 #    wrong-import-order,
-#    abstract-method
-#    missing-timeout  # we already check this via ruff S113. But we skip all test files
+#    abstract-method,
+#    wrong-import-position,  # handled by isort
+#    missing-module-docstring,  # maybe activate in future?
+#    missing-class-docstring,  # maybe activate in future?
+#    too-many-arguments,  # we don't conform to certain number
+#    line-too-long,  # already checked by others
+#    missing-timeout,  # we already check this via ruff S113. But we skip all test files
+#    use-implicit-booleaness-not-comparison  # we don't use implitic booleaness in the code
 
 # When wanting to discover new things to check for comment the following line and uncomment above
 disable=all
@@ -122,6 +128,7 @@ enable=
     named-expr-without-context,
     invalid-slice-step,
     consider-refactoring-into-while-condition,
+    consider-using-dict-items,
     rotki-lognokwargs,
     rotki-nonbooleannot
 

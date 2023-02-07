@@ -366,13 +366,13 @@ class CryptocomImporter(BaseExchangeImporter):
                 asset = row['Currency']
                 investments_withdrawals[asset].append(row)
 
-        for timestamp in multiple_rows:
+        for timestamp, m_row in multiple_rows.items():
             # When we convert multiple assets dust to CRO
             # in one time, it will create multiple debited rows with
             # the same timestamp
             try:
-                debited_rows = multiple_rows[timestamp]['debited']
-                credited_row = multiple_rows[timestamp]['credited']
+                debited_rows = m_row['debited']
+                credited_row = m_row['credited']
             except KeyError as e:
                 self.db.msg_aggregator.add_warning(
                     f'Failed to get {str(e)} event at timestamp {timestamp}.',
