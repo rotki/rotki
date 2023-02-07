@@ -2459,6 +2459,11 @@
     "rate_asset": {
       "hint": "[Optional] The asset used for the rate",
       "label": "Rate asset"
+    },
+    "type": {
+      "validation": {
+        "non_empty": "The type field cannot be empty."
+      }
     }
   },
   "ledger_action_settings": {
@@ -3360,10 +3365,13 @@
       },
       "issues_found": "{total} issues found with the generated report",
       "missing_acquisitions": {
+        "add_ledger_action": "Add ledger action",
+        "asset_is_ignored": "This asset is ignored",
         "headers": {
           "found_amount": "Found Amount",
           "missing_acquisitions": "Missing Acquisitions",
-          "missing_amount": "Missing Amount"
+          "missing_amount": "Missing Amount",
+          "quick_action": "Quick Action"
         },
         "hint": "Some asset acquisitions are missing. You will need to figure out where you bought them and either import or manually create the relevant acquisition events",
         "title": "Missing Acquisitions ({total})",

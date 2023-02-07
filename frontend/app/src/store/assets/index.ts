@@ -23,6 +23,8 @@ export const useAssets = defineStore('assets', () => {
     exportCustom
   } = useAssetsApi();
 
+  const { notify } = useNotificationsStore();
+
   const checkForUpdate = async (): Promise<AssetUpdateCheckResult> => {
     try {
       const taskType = TaskType.ASSET_UPDATE;
@@ -44,7 +46,6 @@ export const useAssets = defineStore('assets', () => {
       const description = t('actions.assets.versions.error.description', {
         message: e.message
       }).toString();
-      const { notify } = useNotificationsStore();
       notify({
         title,
         message: description,
@@ -84,7 +85,6 @@ export const useAssets = defineStore('assets', () => {
       const description = t('actions.assets.update.error.description', {
         message: e.message
       }).toString();
-      const { notify } = useNotificationsStore();
       notify({
         title,
         message: description,

@@ -2,7 +2,6 @@
 import { dropRight } from 'lodash';
 import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
@@ -13,16 +12,16 @@ import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LedgerActionDetails from '@/components/history/ledger-actions/LedgerActionDetails.vue';
-import LedgerActionForm from '@/components/history/LedgerActionForm.vue';
+import LedgerActionFormDialog from '@/components/history/ledger-actions/LedgerActionFormDialog.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
+
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { Routes } from '@/router/routes';
 
 import {
   type LedgerAction,
   type LedgerActionEntry,
-  type LedgerActionRequestPayload,
-  type NewLedgerAction
+  type LedgerActionRequestPayload
 } from '@/types/history/ledger-actions';
 import { type TradeLocation } from '@/types/history/trade-location';
 import { Section } from '@/types/status';
@@ -49,19 +48,12 @@ const editableItem: Ref<LedgerActionEntry | null> = ref(null);
 const ledgerActionsToDelete: Ref<LedgerActionEntry[]> = ref([]);
 const confirmationMessage: Ref<string> = ref('');
 const expanded: Ref<LedgerActionEntry[]> = ref([]);
-const valid: Ref<boolean> = ref(false);
-const form = ref<InstanceType<typeof LedgerActionForm> | null>(null);
 
 const fetch = (refresh = false) => emit('fetch', refresh);
 
 const ledgerActionStore = useLedgerActionStore();
 const { ledgerActions } = storeToRefs(ledgerActionStore);
-const {
-  addLedgerAction,
-  editLedgerAction,
-  deleteLedgerAction,
-  updateLedgerActionsPayload
-} = ledgerActionStore;
+const { deleteLedgerAction, updateLedgerActionsPayload } = ledgerActionStore;
 
 const { filters, matchers, updateFilter } = useLedgerActionsFilter();
 
@@ -129,29 +121,6 @@ const deleteLedgerActionHandler = async () => {
     selected,
     selectedVal.filter(ledgerActions => !ids.includes(ledgerActions.identifier))
   );
-};
-
-const clearDialog = () => {
-  get(form)?.reset();
-
-  set(openDialog, false);
-  set(editableItem, null);
-};
-
-const confirmSave = async () => {
-  if (get(form)) {
-    const success = await get(form)?.save();
-    if (success) {
-      clearDialog();
-    }
-  }
-};
-
-const saveData = async (ledgerAction: NewLedgerAction | LedgerActionEntry) => {
-  if ((ledgerAction as LedgerActionEntry).identifier) {
-    return await editLedgerAction(ledgerAction as LedgerActionEntry);
-  }
-  return await addLedgerAction(ledgerAction as NewLedgerAction);
 };
 
 const updatePayloadHandler = async () => {
@@ -463,21 +432,14 @@ const showDeleteConfirmation = () => {
         </template>
       </collection-handler>
     </card>
-    <big-dialog
-      :display="openDialog"
-      :title="dialogTitle"
-      :subtitle="dialogSubtitle"
-      :primary-action="tc('common.actions.save')"
-      :action-disabled="loading || !valid"
-      @confirm="confirmSave()"
-      @cancel="clearDialog()"
-    >
-      <ledger-action-form
-        ref="form"
-        v-model="valid"
-        :edit="editableItem"
-        :save-data="saveData"
-      />
-    </big-dialog>
+
+    <ledger-action-form-dialog
+      :loading="loading"
+      :edit="!!editableItem"
+      :form-data="editableItem"
+      :open="openDialog"
+      @update:open="openDialog = $event"
+      @reset-edit="editableItem = null"
+    />
   </fragment>
 </template>

@@ -2,7 +2,6 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import dayjs from 'dayjs';
-import { type PropType } from 'vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { convertKeys } from '@/services/axios-tranformers';
@@ -16,29 +15,25 @@ import {
 import { LedgerActionType } from '@/types/ledger-actions';
 import { Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
-import { useLedgerActionData } from '@/composables/history/ledger-actions';
-import { type ActionStatus } from '@/types/action';
 
-const props = defineProps({
-  value: { required: false, type: Boolean, default: false },
-  edit: {
-    required: false,
-    type: Object as PropType<LedgerAction | null>,
-    default: null
-  },
-  saveData: {
-    required: true,
-    type: Function as PropType<
-      (trade: NewLedgerAction | LedgerActionEntry) => Promise<ActionStatus>
-    >
+const props = withDefaults(
+  defineProps<{
+    value?: boolean;
+    edit?: boolean;
+    formData?: Partial<LedgerAction> | null;
+  }>(),
+  {
+    value: false,
+    edit: false,
+    formData: null
   }
-});
+);
 
 const emit = defineEmits<{
   (e: 'input', valid: boolean): void;
 }>();
 
-const { edit, saveData } = toRefs(props);
+const { edit, formData } = toRefs(props);
 
 const input = (valid: boolean) => emit('input', valid);
 
@@ -82,6 +77,12 @@ const rules = {
       t('ledger_action_form.location.validation.non_empty').toString(),
       required
     )
+  },
+  actionType: {
+    required: helpers.withMessage(
+      t('ledger_action_form.type.validation.non_empty').toString(),
+      required
+    )
   }
 };
 
@@ -90,7 +91,8 @@ const v$ = useVuelidate(
   {
     amount,
     asset,
-    location
+    location,
+    actionType
   },
   { $autoDirty: true, $externalResults: errorMessages }
 );
@@ -114,22 +116,45 @@ const reset = () => {
 };
 
 const setEditMode = () => {
-  const ledgerAction = get(edit);
+  const ledgerAction = get(formData);
   if (!ledgerAction) {
     reset();
     return;
   }
 
   set(location, ledgerAction.location);
-  set(datetime, convertFromTimestamp(ledgerAction.timestamp, true));
+  if (ledgerAction.timestamp) {
+    set(datetime, convertFromTimestamp(ledgerAction.timestamp, true));
+  } else {
+    set(datetime, convertFromTimestamp(dayjs().unix(), true));
+  }
   set(asset, ledgerAction.asset);
-  set(amount, ledgerAction.amount.toFixed());
-  set(actionType, ledgerAction.actionType.toString());
+  if (ledgerAction.amount) {
+    set(amount, ledgerAction.amount.toFixed());
+  } else {
+    set(amount, '0');
+  }
+  if (ledgerAction.actionType) {
+    set(actionType, ledgerAction.actionType.toString());
+  } else {
+    set(actionType, LedgerActionType.ACTION_INCOME);
+  }
   set(rate, ledgerAction.rate?.toFixed() ?? '');
   set(rateAsset, ledgerAction.rateAsset ?? '');
   set(link, ledgerAction.link ?? '');
   set(notes, ledgerAction.notes ?? '');
   set(id, ledgerAction.identifier);
+};
+
+const ledgerActionStore = useLedgerActionStore();
+const { addLedgerAction, editLedgerAction } = ledgerActionStore;
+
+const saveData = async (ledgerAction: NewLedgerAction | LedgerActionEntry) => {
+  if ('identifier' in ledgerAction) {
+    return await editLedgerAction(ledgerAction);
+  }
+
+  return await addLedgerAction(ledgerAction);
 };
 
 const save = async (): Promise<boolean> => {
@@ -148,10 +173,11 @@ const save = async (): Promise<boolean> => {
     notes: get(notes) ? get(notes) : undefined
   };
 
-  const save = get(saveData);
-  const result = !get(id)
-    ? await save(ledgerActionPayload)
-    : await save({ ...ledgerActionPayload, identifier: get(id)! });
+  const idVal = get(id);
+
+  const result = !idVal
+    ? await saveData(ledgerActionPayload)
+    : await saveData({ ...ledgerActionPayload, identifier: idVal });
 
   if (result.success) {
     reset();
@@ -168,7 +194,7 @@ const save = async (): Promise<boolean> => {
   return false;
 };
 
-watch(edit, () => {
+watch([edit, formData], () => {
   setEditMode();
 });
 

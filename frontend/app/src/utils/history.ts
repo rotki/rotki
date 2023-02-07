@@ -11,8 +11,6 @@ import { type PaginationRequestPayload } from '@/types/common';
 import { type EntryMeta, type EntryWithMeta } from '@/types/history/meta';
 import { type Collection } from '@/types/collection';
 import { transactionEventTypeMapping } from '@/data/transaction-event-mapping';
-import { useTransactionEventTypeData } from '@/composables/history/tx-event-type';
-import { transactionEventProtocolData } from '@/composables/history/protocol-data';
 import { type ActionDataEntry } from '@/types/action';
 
 export const getEventType = (event: {

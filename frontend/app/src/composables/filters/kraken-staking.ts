@@ -2,7 +2,6 @@ import { type ComputedRef, type Ref } from 'vue';
 import { useAssetInfoApi } from '@/services/assets/info';
 import { type MatchedKeyword, type SearchMatcher } from '@/types/filtering';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
-import { useKrakenStakingEventTypes } from '@/composables/staking/kraken-events';
 
 enum KrakenStakingKeys {
   TYPE = 'type',

@@ -13,7 +13,6 @@ import {
   type KrakenStakingPagination,
   type KrakenStakingPaginationOptions
 } from '@/types/staking';
-import { useKrakenStakingEventTypes } from '@/composables/staking/kraken-events';
 
 const props = defineProps({
   events: {

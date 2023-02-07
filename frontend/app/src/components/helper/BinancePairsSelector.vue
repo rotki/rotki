@@ -30,6 +30,8 @@ const handleInput = (value: string[]) => {
 const { t } = useI18n();
 const api = useExchangeApi();
 
+const { notify } = useNotificationsStore();
+
 onMounted(async () => {
   set(loading, true);
   try {
@@ -42,7 +44,6 @@ onMounted(async () => {
     const description = t('binance_market_selector.query_user.error', {
       message: e.message
     }).toString();
-    const { notify } = useNotificationsStore();
     notify({
       title,
       message: description,
@@ -58,7 +59,6 @@ onMounted(async () => {
     const description = t('binance_market_selector.query_all.error', {
       message: e.message
     }).toString();
-    const { notify } = useNotificationsStore();
     notify({
       title,
       message: description,

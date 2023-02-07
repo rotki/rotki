@@ -3,7 +3,6 @@ import { type Nullable } from '@rotki/common';
 import { type PropType } from 'vue';
 import ReportMissingAcquisitions from '@/components/profitloss/ReportMissingAcquisitions.vue';
 import ReportMissingPrices from '@/components/profitloss/ReportMissingPrices.vue';
-import { Routes } from '@/router/routes';
 import { type EditableMissingPrice } from '@/types/prices';
 import { type SelectedReport } from '@/types/reports';
 import { toSentenceCase } from '@/utils/text';
@@ -17,10 +16,12 @@ const props = defineProps({
   isPinned: { required: false, type: Boolean, default: false }
 });
 
-const emit = defineEmits<{ (e: 'set-dialog', value: boolean): void }>();
+const emit = defineEmits<{
+  (e: 'set-dialog', value: boolean): void;
+  (e: 'regenerate'): void;
+}>();
 const { t, tc } = useI18n();
 const { report, isPinned } = toRefs(props);
-const router = useRouter();
 const { pinned } = storeToRefs(useAreaVisibilityStore());
 
 const setDialog = (dialog: boolean) => {
@@ -134,15 +135,8 @@ const ignoreIssues = () => {
   setDialog(false);
 };
 
-const regenerateReport = async () => {
-  await router.push({
-    path: Routes.PROFIT_LOSS_REPORTS,
-    query: {
-      regenerate: 'true',
-      start: get(report).start.toString(),
-      end: get(report).end.toString()
-    }
-  });
+const regenerateReport = () => {
+  emit('regenerate');
 };
 
 const close = () => {
