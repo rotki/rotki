@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
 
 const { t } = useI18n();

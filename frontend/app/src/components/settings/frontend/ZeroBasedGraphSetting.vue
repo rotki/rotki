@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-
 const zeroBased = ref<boolean>(false);
 const { graphZeroBased: enabled } = storeToRefs(useFrontendSettingsStore());
 

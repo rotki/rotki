@@ -4,7 +4,6 @@ import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDetails.vue';
-import { useLiquityStore } from '@/store/defi/liquity';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 

@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 
-import { useSessionStore } from '@/store/session';
-
 const releaseNotesLink = 'https://github.com/rotki/rotki/releases';
 
 const downloadReady = ref(false);

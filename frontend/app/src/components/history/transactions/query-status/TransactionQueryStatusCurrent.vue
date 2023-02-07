@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useTxQueryStatusStore } from '@/store/history/query-status';
-
 const { t } = useI18n();
 
 const { queryingLength, length, isAllFinished } = toRefs(

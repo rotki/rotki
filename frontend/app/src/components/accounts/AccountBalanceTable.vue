@@ -15,13 +15,6 @@ import RowAppend from '@/components/helper/RowAppend.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { bigNumberSum } from '@/filters';
-import {
-  type BlockchainAccountWithBalance,
-  type XpubAccountWithBalance,
-  type XpubPayload
-} from '@/store/balances/types';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTasks } from '@/store/tasks';
 import { type Properties } from '@/types';
 import { chainSection } from '@/types/blockchain';
 import { Section } from '@/types/status';
@@ -30,6 +23,11 @@ import { assert } from '@/utils/assertions';
 import { Zero, zeroBalance } from '@/utils/bignumbers';
 import { isTokenChain } from '@/types/blockchain/chains';
 import { balanceSum } from '@/utils/calculation';
+import {
+  type BlockchainAccountWithBalance,
+  type XpubAccountWithBalance,
+  type XpubPayload
+} from '@/types/accounts';
 
 const props = withDefaults(
   defineProps<{
@@ -55,7 +53,7 @@ const { balances, blockchain, visibleTags, selected, loopring } = toRefs(props);
 const rootAttrs = useAttrs();
 const rootListeners = useListeners();
 
-const { isTaskRunning } = useTasks();
+const { isTaskRunning } = useTaskStore();
 const { currencySymbol, treatEth2AsEth } = storeToRefs(
   useGeneralSettingsStore()
 );

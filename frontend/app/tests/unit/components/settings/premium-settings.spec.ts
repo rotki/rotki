@@ -6,8 +6,6 @@ import Vuetify from 'vuetify';
 import Card from '@/components/helper/Card.vue';
 import PremiumSettings from '@/pages/settings/api-keys/premium/index.vue';
 import { api } from '@/services/rotkehlchen-api';
-import { usePremiumStore } from '@/store/session/premium';
-import { useConfirmStore } from '@/store/confirm';
 
 vi.mock('@/composables/electron-interop', () => {
   const mockInterop = {

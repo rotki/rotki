@@ -3,11 +3,8 @@ import { type ComputedRef } from 'vue';
 import { type AssetBalance } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
 import isEmpty from 'lodash/isEmpty';
-import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
-import { useChainBalancesStore } from '@/store/blockchain/balances/chains';
 import { type BlockchainAssetBalances } from '@/types/blockchain/balances';
 import { toSortedAssetBalanceArray } from '@/utils/balances';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 
 export const useAccountDetails = (
   blockchain: MaybeRef<Blockchain>,

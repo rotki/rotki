@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
 import { type BtcChains } from '@/types/blockchain/chains';
-import {
-  type XpubAccountWithBalance,
-  type XpubPayload
-} from '@/store/balances/types';
 import { startPromise } from '@/utils';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
-import { useMessageStore } from '@/store/message';
+
 import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { logger } from '@/utils/logging';
 import { assert } from '@/utils/assertions';
+import {
+  type XpubAccountWithBalance,
+  type XpubPayload
+} from '@/types/accounts';
 
 const props = defineProps<{ blockchain: BtcChains }>();
 

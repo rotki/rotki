@@ -1,9 +1,9 @@
 import { type ComputedRef, type Ref } from 'vue';
-import { type SyncConflict } from '@/store/session/types';
 import {
   type DataMigrationStatusData,
   type DbUpgradeStatusData
 } from '@/types/websocket-messages';
+import { type SyncConflict } from '@/types/login';
 
 const defaultSyncConflict = (): SyncConflict => ({
   message: '',

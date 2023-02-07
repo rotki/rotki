@@ -2,8 +2,8 @@
 import { type PropType } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import IconLink from '@/components/base/IconLink.vue';
-import { type GalleryNft } from '@/store/session/types';
 import { isVideo } from '@/utils/nft';
+import { type GalleryNft } from '@/types/nfts';
 
 const props = defineProps({
   item: {

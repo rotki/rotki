@@ -5,7 +5,6 @@ import { type Ref } from 'vue';
 import PremiumCredentials from '@/components/account-management/PremiumCredentials.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import { useMainStore } from '@/store/main';
 import { type CreateAccountPayload } from '@/types/login';
 
 const props = defineProps({

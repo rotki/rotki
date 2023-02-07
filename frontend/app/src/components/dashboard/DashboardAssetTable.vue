@@ -11,11 +11,6 @@ import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelecto
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { aggregateTotal } from '@/filters';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatisticsStore } from '@/store/statistics';
 import { type Nullable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
 import { type DashboardTableType } from '@/types/frontend-settings';
@@ -53,7 +48,7 @@ const total = computed(() => {
   return get(totalInUsd).multipliedBy(get(exchangeRate(mainCurrency)) ?? One);
 });
 
-const { assetSymbol, assetName, assetInfo } = useAssetInfoRetrieval();
+const { assetSymbol, assetName, assetInfo } = useAssetInfoRetrievalStore();
 
 const assetFilter = (
   _value: Nullable<string>,

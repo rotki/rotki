@@ -14,13 +14,7 @@ import NftDetails from '@/components/helper/NftDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { Routes } from '@/router/routes';
-import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
-import { useBalancerStore } from '@/store/defi/balancer';
-import { useSushiswapStore } from '@/store/defi/sushiswap';
-import { useUniswapStore } from '@/store/defi/uniswap';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatisticsStore } from '@/store/statistics';
+
 import {
   DashboardTableType,
   type DashboardTablesVisibleColumns

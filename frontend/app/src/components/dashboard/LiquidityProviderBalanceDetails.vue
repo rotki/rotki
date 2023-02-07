@@ -5,8 +5,6 @@ import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Zero } from '@/utils/bignumbers';
 
 defineProps({

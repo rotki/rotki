@@ -2,18 +2,15 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
 import { type Module } from '@/types/modules';
-import { useMessageStore } from '@/store/message';
 import { startPromise } from '@/utils';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import {
   type BlockchainAccountPayload,
   type BlockchainAccountWithBalance
-} from '@/store/balances/types';
+} from '@/types/accounts';
 
 const props = defineProps<{ blockchain: Blockchain }>();
 

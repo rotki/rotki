@@ -5,7 +5,6 @@ import { setupLayouts } from 'virtual:generated-layouts';
 import Vue from 'vue';
 import Router, { type Route } from 'vue-router';
 import { Routes } from '@/router/routes';
-import { useSessionAuthStore } from '@/store/session/auth';
 import { NoteLocation } from '@/types/notes';
 import { checkIfDevelopment } from '@/utils/env-utils';
 

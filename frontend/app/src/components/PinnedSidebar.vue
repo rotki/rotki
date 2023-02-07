@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
 import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 defineProps({
   visible: { required: true, type: Boolean }

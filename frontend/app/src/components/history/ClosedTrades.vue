@@ -17,9 +17,6 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TradeDetails from '@/components/history/TradeDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { Routes } from '@/router/routes';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useTrades } from '@/store/history/trades';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type TradeLocation } from '@/types/history/trade-location';
 import {
   type NewTrade,
@@ -28,7 +25,6 @@ import {
   type TradeRequestPayload
 } from '@/types/history/trades';
 import { Section } from '@/types/status';
-import { useConfirmStore } from '@/store/confirm';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { type TablePagination } from '@/types/pagination';
 
@@ -136,8 +132,8 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
   return headers;
 });
 
-const tradeStore = useTrades();
-const assetInfoRetrievalStore = useAssetInfoRetrieval();
+const tradeStore = useTradeStore();
+const assetInfoRetrievalStore = useAssetInfoRetrievalStore();
 const { assetSymbol } = assetInfoRetrievalStore;
 const { trades } = storeToRefs(tradeStore);
 

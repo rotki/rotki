@@ -1,9 +1,7 @@
 ﻿<script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { truncateAddress } from '@/filters';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useSessionSettingsStore } from '@/store/settings/session';
+
 import {
   type Chains,
   type ExplorerUrls,

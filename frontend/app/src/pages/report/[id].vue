@@ -9,12 +9,11 @@ import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import ReportActionable from '@/components/profitloss/ReportActionable.vue';
 import ReportHeader from '@/components/profitloss/ReportHeader.vue';
 import { Routes } from '@/router/routes';
-import { useReports } from '@/store/reports';
 import { type SelectedReport } from '@/types/reports';
 
 const loading = ref(true);
 const refreshing = ref(false);
-const reportsStore = useReports();
+const reportsStore = useReportsStore();
 const { report, reports } = storeToRefs(reportsStore);
 
 const { fetchReports, fetchReport, clearReport, isLatestReport } = reportsStore;

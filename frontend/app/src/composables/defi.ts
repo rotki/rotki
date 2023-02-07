@@ -1,10 +1,6 @@
 import { type BigNumber } from '@rotki/common';
 import { LpType } from '@rotki/common/lib/defi';
 import { bigNumberSum } from '@/filters';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useBalancerStore } from '@/store/defi/balancer';
-import { useSushiswapStore } from '@/store/defi/sushiswap';
-import { useUniswapStore } from '@/store/defi/uniswap';
 import { createEvmIdentifierFromAddress } from '@/utils/assets';
 import { sortDesc } from '@/utils/bignumbers';
 
@@ -12,7 +8,7 @@ export const useLiquidityPosition = () => {
   const { uniswapV2Balances, uniswapV3Balances } = useUniswapStore();
   const { balanceList: sushiswapBalances } = useSushiswapStore();
   const { balancerBalances } = useBalancerStore();
-  const { assetSymbol } = useAssetInfoRetrieval();
+  const { assetSymbol } = useAssetInfoRetrievalStore();
 
   const lpAggregatedBalances = (includeNft = true) =>
     computed(() => {

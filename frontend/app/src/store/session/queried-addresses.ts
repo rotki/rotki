@@ -3,10 +3,9 @@ import {
   type QueriedAddressPayload,
   type QueriedAddresses
 } from '@/services/session/types';
-import { useMessageStore } from '@/store/message';
 
 export const useQueriedAddressesStore = defineStore(
-  'session/queriedAddresses',
+  'session/queried-addresses',
   () => {
     const queriedAddresses = ref<QueriedAddresses>({});
 

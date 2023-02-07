@@ -2,13 +2,12 @@
 import CollapsedPendingTasks from '@/components/status/notifications/CollapsedPendingTasks.vue';
 import NoTasksRunning from '@/components/status/notifications/NoTasksRunning.vue';
 import PendingTask from '@/components/status/notifications/PendingTask.vue';
-import { useTasks } from '@/store/tasks';
 
 const expanded = ref(false);
 
 const css = useCssModule();
 
-const store = useTasks();
+const store = useTaskStore();
 const { hasRunningTasks, tasks } = storeToRefs(store);
 </script>
 

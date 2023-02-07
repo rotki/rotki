@@ -1,4 +1,3 @@
-import { getStatus, useStatusStore } from '@/store/status';
 import { type Section, Status } from '@/types/status';
 import { assert } from '@/utils/assertions';
 

@@ -5,7 +5,6 @@ import {
   TransactionEventType
 } from '@/types/transaction';
 import TransactionEventLiquityExtraData from '@/components/history/transactions/TransactionEventLiquityExtraData.vue';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { getEventType } from '@/utils/history';
 import { type EthTransactionEventEntry } from '@/types/history/tx';
 
@@ -22,7 +21,7 @@ const props = withDefaults(
 const { tc } = useI18n();
 
 const { event } = toRefs(props);
-const { assetSymbol } = useAssetInfoRetrieval();
+const { assetSymbol } = useAssetInfoRetrievalStore();
 
 const showBalance = computed<boolean>(() => {
   const type = getEventType(get(event));

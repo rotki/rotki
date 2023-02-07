@@ -4,12 +4,10 @@ import { type PropType } from 'vue';
 import ReportMissingAcquisitions from '@/components/profitloss/ReportMissingAcquisitions.vue';
 import ReportMissingPrices from '@/components/profitloss/ReportMissingPrices.vue';
 import { Routes } from '@/router/routes';
-import { useReports } from '@/store/reports';
-import { type Pinned } from '@/store/session/types';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { type EditableMissingPrice } from '@/types/prices';
 import { type SelectedReport } from '@/types/reports';
 import { toSentenceCase } from '@/utils/text';
+import { type Pinned } from '@/types/session';
 
 const props = defineProps({
   report: {
@@ -29,7 +27,7 @@ const setDialog = (dialog: boolean) => {
   emit('set-dialog', dialog);
 };
 
-const reportsStore = useReports();
+const reportsStore = useReportsStore();
 const { actionableItems } = toRefs(reportsStore);
 
 const actionableItemsLength = computed(() => {

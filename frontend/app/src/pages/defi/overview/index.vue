@@ -3,7 +3,6 @@ import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import Overview from '@/components/defi/Overview.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import { useDefiStore } from '@/store/defi';
 import { Section } from '@/types/status';
 
 const store = useDefiStore();

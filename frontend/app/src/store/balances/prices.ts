@@ -2,11 +2,6 @@ import { type BigNumber } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
 import { usePriceApi } from '@/services/balances/price';
-import { type FetchPricePayload } from '@/store/balances/types';
-import { useNotificationsStore } from '@/store/notifications';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTasks } from '@/store/tasks';
-import { type ActionStatus } from '@/store/types';
 import { type Balances } from '@/types/blockchain/balances';
 import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
 import {
@@ -23,12 +18,14 @@ import { ExchangeRates } from '@/types/user';
 import { bigNumberify } from '@/utils/bignumbers';
 import { chunkArray } from '@/utils/data';
 import { convertFromTimestamp } from '@/utils/date';
+import { type ActionStatus } from '@/types/action';
+import { type FetchPricePayload } from '@/types/accounts';
 
 export const useBalancePricesStore = defineStore('balances/prices', () => {
   const prices = ref<AssetPrices>({});
   const exchangeRates = ref<ExchangeRates>({});
 
-  const { awaitTask, isTaskRunning } = useTasks();
+  const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
   const {

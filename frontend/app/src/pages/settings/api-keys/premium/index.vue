@@ -2,13 +2,8 @@
 import { type Ref } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-
-import { useSessionAuthStore } from '@/store/session/auth';
-import { usePremiumStore } from '@/store/session/premium';
-import { type PremiumCredentialsPayload } from '@/store/session/types';
-import { useSettingsStore } from '@/store/settings';
 import { trimOnPaste } from '@/utils/event';
-import { useConfirmStore } from '@/store/confirm';
+import { type PremiumCredentialsPayload } from '@/types/session';
 
 const { username } = storeToRefs(useSessionAuthStore());
 const { update } = useSettingsStore();

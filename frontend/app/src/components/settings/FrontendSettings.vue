@@ -13,7 +13,6 @@ import QueryPeriodSetting from '@/components/settings/general/QueryPeriodSetting
 import RefreshSetting from '@/components/settings/general/RefreshSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { ThemeManager } from '@/premium/premium';
-import { usePremiumStore } from '@/store/session/premium';
 
 const { premium } = storeToRefs(usePremiumStore());
 

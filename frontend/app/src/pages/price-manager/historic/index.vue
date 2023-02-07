@@ -6,7 +6,6 @@ import {
   type HistoricalPrice,
   type HistoricalPriceFormPayload
 } from '@/services/assets/types';
-import { useMessageStore } from '@/store/message';
 import { type Nullable } from '@/types';
 import { useAssetPricesApi } from '@/services/assets/prices';
 

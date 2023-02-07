@@ -16,9 +16,8 @@ import LedgerActionDetails from '@/components/history/ledger-actions/LedgerActio
 import LedgerActionForm from '@/components/history/LedgerActionForm.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-
 import { Routes } from '@/router/routes';
-import { useLedgerActions } from '@/store/history/ledger-actions';
+
 import {
   type LedgerAction,
   type LedgerActionEntry,
@@ -27,7 +26,6 @@ import {
 } from '@/types/history/ledger-actions';
 import { type TradeLocation } from '@/types/history/trade-location';
 import { Section } from '@/types/status';
-import { useConfirmStore } from '@/store/confirm';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { type TablePagination } from '@/types/pagination';
 
@@ -56,7 +54,7 @@ const form = ref<InstanceType<typeof LedgerActionForm> | null>(null);
 
 const fetch = (refresh = false) => emit('fetch', refresh);
 
-const ledgerActionStore = useLedgerActions();
+const ledgerActionStore = useLedgerActionStore();
 const { ledgerActions } = storeToRefs(ledgerActionStore);
 const {
   addLedgerAction,

@@ -5,13 +5,6 @@ import { type NetValue } from '@rotki/common/lib/statistics';
 import dayjs from 'dayjs';
 import { type ComputedRef } from 'vue';
 import { useStatisticsApi } from '@/services/statistics/statistics-api';
-import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useNotificationsStore } from '@/store/notifications';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { CURRENCY_USD } from '@/types/currencies';
 import { One, Zero, bigNumberify } from '@/utils/bignumbers';
 

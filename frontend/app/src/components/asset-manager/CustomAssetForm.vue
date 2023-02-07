@@ -3,7 +3,6 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { omit } from 'lodash';
 import { type PropType, type Ref } from 'vue';
-import { useMessageStore } from '@/store/message';
 import { type CustomAsset } from '@/types/assets';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { useAssetManagementApi } from '@/services/assets/management-api';

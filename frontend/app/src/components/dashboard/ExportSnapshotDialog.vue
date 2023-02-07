@@ -5,12 +5,8 @@ import dayjs from 'dayjs';
 import EditSnapshotDialog from '@/components/dashboard/EditSnapshotDialog.vue';
 import { api } from '@/services/rotkehlchen-api';
 import { useSnapshotApi } from '@/services/settings/snapshot-api';
-import { useMessageStore } from '@/store/message';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatisticsStore } from '@/store/statistics';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { downloadFileByUrl } from '@/utils/download';
-import { useConfirmStore } from '@/store/confirm';
 
 const props = defineProps({
   value: { required: false, type: Boolean, default: false },

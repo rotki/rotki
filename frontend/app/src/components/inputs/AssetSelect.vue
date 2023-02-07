@@ -4,11 +4,10 @@ import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import { useAssetInfoApi } from '@/services/assets/info';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { type NftAsset } from '@/store/assets/nft';
 import { type AssetInfoWithId } from '@/types/assets';
 import { getValidSelectorFromEvmAddress } from '@/utils/assets';
 import { getUpdatedKey } from '@/services/axios-tranformers';
+import { type NftAsset } from '@/types/nfts';
 
 const props = defineProps({
   items: {

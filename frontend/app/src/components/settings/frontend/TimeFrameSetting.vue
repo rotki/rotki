@@ -3,8 +3,6 @@ import {
   TimeFramePeriod,
   type TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 const defaultGraphTimeframe = ref<TimeFrameSetting>(TimeFramePeriod.ALL);
 const visibleTimeframes = ref<TimeFrameSetting[]>([]);

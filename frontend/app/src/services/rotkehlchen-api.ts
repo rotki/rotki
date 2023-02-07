@@ -19,8 +19,7 @@ import {
   validWithParamsSessionAndExternalService,
   validWithoutSessionStatus
 } from '@/services/utils';
-import { SyncConflictPayload } from '@/store/session/types';
-import { SyncConflictError } from '@/types/login';
+import { SyncConflictError, SyncConflictPayload } from '@/types/login';
 import { type TaskResultResponse } from '@/types/task';
 
 export class RotkehlchenApi {

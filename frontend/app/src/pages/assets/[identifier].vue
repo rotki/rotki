@@ -6,9 +6,7 @@ import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
+
 import AssetBalances from '@/components/AssetBalances.vue';
 
 const props = defineProps({
@@ -31,7 +29,7 @@ const toggleIgnoreAsset = async () => {
 
 const premium = usePremium();
 
-const { assetName, assetSymbol, assetInfo } = useAssetInfoRetrieval();
+const { assetName, assetSymbol, assetInfo } = useAssetInfoRetrievalStore();
 const name = assetName(identifier);
 const symbol = assetSymbol(identifier);
 const asset = assetInfo(identifier);

@@ -7,15 +7,13 @@ import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useKrakenStakingEventTypes } from '@/store/staking/consts';
 import {
   type KrakenStakingEventType,
   type KrakenStakingEvents,
   type KrakenStakingPagination,
   type KrakenStakingPaginationOptions
 } from '@/types/staking';
+import { useKrakenStakingEventTypes } from '@/composables/staking/kraken-events';
 
 const props = defineProps({
   events: {

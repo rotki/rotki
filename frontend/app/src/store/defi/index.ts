@@ -8,19 +8,6 @@ import {
   ALL_DECENTRALIZED_EXCHANGES,
   ALL_MODULES
 } from '@/services/session/consts';
-import { useAaveStore } from '@/store/defi/aave';
-import { useBalancerStore } from '@/store/defi/balancer';
-import { useCompoundStore } from '@/store/defi/compound';
-import { useLiquityStore } from '@/store/defi/liquity';
-import { useMakerDaoStore } from '@/store/defi/makerdao';
-import { useDefiSupportedProtocolsStore } from '@/store/defi/protocols';
-import { useSushiswapStore } from '@/store/defi/sushiswap';
-import { useUniswapStore } from '@/store/defi/uniswap';
-import { useYearnStore } from '@/store/defi/yearn';
-import { useNotificationsStore } from '@/store/notifications';
-import { getStatus, setStatus } from '@/store/status';
-import { useTasks } from '@/store/tasks';
-import { isLoading } from '@/store/utils';
 import { type Writeable } from '@/types';
 import {
   AIRDROP_POAP,
@@ -54,6 +41,7 @@ import { Zero, bigNumberify } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
 import { useDefiApi } from '@/services/defi';
+import { isLoading } from '@/utils/status';
 
 type ResetStateParams =
   | Module
@@ -63,7 +51,7 @@ export const useDefiStore = defineStore('defi', () => {
   const allProtocols: Ref<AllDefiProtocols> = ref({});
   const airdrops: Ref<Airdrops> = ref({});
 
-  const { awaitTask } = useTasks();
+  const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const premium = usePremium();
 

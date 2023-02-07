@@ -5,8 +5,6 @@ import {
   type BlockchainSelection
 } from '@rotki/common/lib/blockchain';
 import { truncateAddress } from '@/filters';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { randomHex } from '@/utils/data';
 
 const AssetIcon = defineAsyncComponent(

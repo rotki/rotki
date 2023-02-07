@@ -4,12 +4,9 @@ import { type ComputedRef, type Ref } from 'vue';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import { type BlockchainAccountWithBalance } from '@/store/balances/types';
-import { useBtcAccountBalancesStore } from '@/store/blockchain/accountbalances/btc';
-import { useChainAccountBalancesStore } from '@/store/blockchain/accountbalances/chain';
-import { useEthAccountBalancesStore } from '@/store/blockchain/accountbalances/eth';
-import { useAggregatedBlockchainBalancesStore } from '@/store/blockchain/balances/aggregated';
+
 import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
+import { type BlockchainAccountWithBalance } from '@/types/accounts';
 
 type Intersections = {
   [key in Blockchain]: boolean;

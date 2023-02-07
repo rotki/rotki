@@ -4,9 +4,7 @@ import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import CompoundCollateral from '@/components/defi/loan/loans/compound/CompoundCollateral.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
-
 import { CompoundBorrowingDetails } from '@/premium/premium';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { type CompoundLoan } from '@/types/defi/compound';
 import { uniqueStrings } from '@/utils/data';
 
@@ -33,7 +31,7 @@ const assets = computed(() => {
   return assets;
 });
 
-const { assetSymbol } = useAssetInfoRetrieval();
+const { assetSymbol } = useAssetInfoRetrievalStore();
 const symbol = asyncComputed(() => assetSymbol(get(loan).asset));
 
 const { tc } = useI18n();

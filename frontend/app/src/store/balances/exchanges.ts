@@ -2,17 +2,6 @@ import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef, type Ref } from 'vue';
 import { useExchangeApi } from '@/services/balances/exchanges';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import {
-  type AssetBreakdown,
-  type ExchangeBalancePayload
-} from '@/store/balances/types';
-import { usePurgeStore } from '@/store/history/purge';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
-import { useTasks } from '@/store/tasks';
 import { AssetBalances } from '@/types/balances';
 import {
   type EditExchange,
@@ -36,7 +25,10 @@ import {
 import { sortDesc } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
 import { updateBalancesPrices } from '@/utils/prices';
-import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
+import {
+  type AssetBreakdown,
+  type ExchangeBalancePayload
+} from '@/types/accounts';
 
 export const useExchangeBalancesStore = defineStore(
   'balances/exchanges',
@@ -45,11 +37,11 @@ export const useExchangeBalancesStore = defineStore(
 
     const { t, tc } = useI18n();
 
-    const { awaitTask, isTaskRunning, metadata } = useTasks();
+    const { awaitTask, isTaskRunning, metadata } = useTaskStore();
     const { notify } = useNotificationsStore();
     const { setMessage } = useMessageStore();
     const { purgeHistoryLocation } = usePurgeStore();
-    const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
+    const { getAssociatedAssetIdentifier } = useAssetInfoRetrievalStore();
     const { isAssetIgnored } = useIgnoredAssetsStore();
     const { assetPrice } = useBalancePricesStore();
     const { queryRemoveExchange, queryExchangeBalances, querySetupExchange } =

@@ -11,9 +11,6 @@ import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useUniswapStore } from '@/store/defi/uniswap';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 
@@ -32,7 +29,7 @@ const { fetchV3Balances: fetchBalances, uniswapV3Balances: uniswapBalances } =
 const { uniswapV3Addresses: addresses, uniswapV3PoolAssets: poolAssets } =
   storeToRefs(store);
 const { isModuleEnabled } = useModules();
-const { tokenAddress } = useAssetInfoRetrieval();
+const { tokenAddress } = useAssetInfoRetrievalStore();
 const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
 const { tc } = useI18n();
 

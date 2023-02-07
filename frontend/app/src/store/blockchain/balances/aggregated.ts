@@ -6,12 +6,6 @@ import {
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
 import { bigNumberSum } from '@/filters';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useBtcBalancesStore } from '@/store/blockchain/balances/btc';
-import { useChainBalancesStore } from '@/store/blockchain/balances/chains';
-import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
 import { type AssetBalances } from '@/types/balances';
 import {
   appendAssetBalance,
@@ -25,7 +19,7 @@ export const useAggregatedBlockchainBalancesStore = defineStore(
   'blockchain/balances/aggregated',
   () => {
     const { isAssetIgnored } = useIgnoredAssetsStore();
-    const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
+    const { getAssociatedAssetIdentifier } = useAssetInfoRetrievalStore();
     const ethBalancesStore = useEthBalancesStore();
     const { totals: ethTotals, liabilities: ethLiabilities } =
       storeToRefs(ethBalancesStore);

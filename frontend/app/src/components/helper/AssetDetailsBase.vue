@@ -3,8 +3,7 @@ import { type ComputedRef, type PropType } from 'vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import ListItem from '@/components/helper/ListItem.vue';
 import { Routes } from '@/router/routes';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { type NftAsset } from '@/store/assets/nft';
+import { type NftAsset } from '@/types/nfts';
 
 const props = defineProps({
   asset: {

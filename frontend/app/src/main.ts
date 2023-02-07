@@ -1,6 +1,4 @@
-/* istanbul ignore file */
-
-import { PiniaVuePlugin, createPinia } from 'pinia';
+/* istanbul ignore file */ import { PiniaVuePlugin, createPinia } from 'pinia';
 import Vue, { provide } from 'vue';
 import App from '@/App.vue';
 import '@/filters';
@@ -9,8 +7,6 @@ import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';
 import vuetify from '@/plugins/vuetify';
 import { usePremiumApi } from '@/premium/setup-interface';
-import { storePiniaPlugins } from '@/store/debug';
-import { StoreResetPlugin, StoreTrackPlugin } from '@/store/plugins';
 import { setupDayjs } from '@/utils/date';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { logger } from '@/utils/logging';

@@ -2,8 +2,6 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, sameAs } from '@vuelidate/validators';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import { useSessionStore } from '@/store/session';
-import { usePremiumStore } from '@/store/session/premium';
 
 interface Form {
   reset: () => boolean;

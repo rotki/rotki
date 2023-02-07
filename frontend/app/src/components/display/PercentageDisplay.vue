@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 const props = defineProps({
   value: {

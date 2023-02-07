@@ -1,5 +1,4 @@
 import { useAssetIgnoreApi } from '@/services/assets/ignore';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 
 vi.mock('@/services/assets/ignore', () => ({
   useAssetIgnoreApi: vi.fn().mockReturnValue({

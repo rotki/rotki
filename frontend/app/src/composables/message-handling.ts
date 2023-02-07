@@ -3,8 +3,7 @@ import {
   NotificationGroup,
   Severity
 } from '@rotki/common/lib/messages';
-import { useTxQueryStatusStore } from '@/store/history/query-status';
-import { useSessionAuthStore } from '@/store/session/auth';
+
 import {
   type BalanceSnapshotError,
   type EvmTransactionQueryData,
@@ -16,11 +15,9 @@ import {
 } from '@/types/websocket-messages';
 import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
 import { logger } from '@/utils/logging';
-import { useNotificationsStore } from '@/store/notifications';
 import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
 import { Routes } from '@/router/routes';
 import router from '@/router';
-import { useAccountMigrationStore } from '@/store/blockchain/accounts/migrate';
 import { backoff } from '@/utils/backoff';
 import { uniqueStrings } from '@/utils/data';
 import { useSessionApi } from '@/services/session';

@@ -5,11 +5,9 @@ import Fragment from '@/components/helper/Fragment';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { useBackupApi } from '@/services/backup';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type UserDbBackup } from '@/types/backup';
 import { getFilepath } from '@/utils/backups';
 import { size } from '@/utils/data';
-import { useConfirmStore } from '@/store/confirm';
 
 const props = defineProps({
   items: { required: true, type: Array as PropType<UserDbBackup[]> },

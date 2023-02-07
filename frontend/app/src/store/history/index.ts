@@ -1,8 +1,7 @@
-import { useMessageStore } from '@/store/message';
-import { type ActionStatus } from '@/store/types';
 import { type IgnorePayload } from '@/types/history/ignored';
+import { type ActionStatus } from '@/types/action';
 
-export const useHistory = defineStore('history', () => {
+export const useHistoryStore = defineStore('history', () => {
   const { setMessage } = useMessageStore();
   const { t } = useI18n();
 
@@ -51,5 +50,5 @@ export const useHistory = defineStore('history', () => {
 });
 
 if (import.meta.hot) {
-  import.meta.hot.accept(acceptHMRUpdate(useHistory, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useHistoryStore, import.meta.hot));
 }

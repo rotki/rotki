@@ -2,8 +2,6 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, not, numeric, required, sameAs } from '@vuelidate/validators';
 
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-
 const thousandSeparator = ref<string>('');
 const decimalSeparator = ref<string>('');
 

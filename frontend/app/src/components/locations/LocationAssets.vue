@@ -2,8 +2,6 @@
 import { type AssetBalanceWithPrice } from '@rotki/common';
 import { type ComputedRef } from 'vue';
 import AssetBalances from '@/components/AssetBalances.vue';
-import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
-import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
 const props = defineProps({
@@ -11,7 +9,7 @@ const props = defineProps({
 });
 
 const { identifier } = toRefs(props);
-const { isTaskRunning } = useTasks();
+const { isTaskRunning } = useTaskStore();
 
 const { t } = useI18n();
 

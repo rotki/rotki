@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, required } from '@vuelidate/validators';
-import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
 const taxFreeAfterPeriod = ref<number | null>(null);
 const taxFreePeriod = ref(false);

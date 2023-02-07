@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useSessionSettingsStore } from '@/store/settings/session';
-
 const { scrambleData: enabled } = useSessionSettingsStore();
 
 const scrambleData = ref<boolean>(false);

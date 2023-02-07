@@ -9,8 +9,6 @@ import {
   ALL_TRANSACTIONS
 } from '@/services/session/consts';
 import { type Purgeable } from '@/services/session/types';
-import { useConfirmStore } from '@/store/confirm';
-import { useSessionPurgeStore } from '@/store/session/purge';
 import { SUPPORTED_EXCHANGES, type SupportedExchange } from '@/types/exchanges';
 import { type BaseMessage } from '@/types/messages';
 import { Module } from '@/types/modules';

@@ -4,7 +4,6 @@ import {
 } from '@rotki/common/lib/defi/xswap';
 import { get, set } from '@vueuse/core';
 import { createPinia, setActivePinia, storeToRefs } from 'pinia';
-import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { bigNumberify } from '@/utils/bignumbers';
 
 export const setSushiswapBalances = () => {

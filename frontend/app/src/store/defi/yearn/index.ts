@@ -1,10 +1,5 @@
 import { type ComputedRef, type Ref } from 'vue';
 import { ProtocolVersion } from '@/services/defi/consts';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useNotificationsStore } from '@/store/notifications';
-import { getStatus, setStatus } from '@/store/status';
-import { useTasks } from '@/store/tasks';
-import { isLoading } from '@/store/utils';
 import {
   DEPOSIT,
   type YearnVaultAsset,
@@ -21,6 +16,7 @@ import { isEvmIdentifier } from '@/utils/assets';
 import { zeroBalance } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
 import { useYearnApi } from '@/services/defi/yearn';
+import { isLoading } from '@/utils/status';
 
 export const useYearnStore = defineStore('defi/yearn', () => {
   const vaultsBalances: Ref<YearnVaultsBalances> = ref({});
@@ -28,10 +24,10 @@ export const useYearnStore = defineStore('defi/yearn', () => {
   const vaultsV2Balances: Ref<YearnVaultsBalances> = ref({});
   const vaultsV2History: Ref<YearnVaultsHistory> = ref({});
 
-  const { awaitTask } = useTasks();
+  const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { activeModules } = useModules();
-  const { assetSymbol } = useAssetInfoRetrieval();
+  const { assetSymbol } = useAssetInfoRetrievalStore();
   const premium = usePremium();
   const { t } = useI18n();
   const { fetchYearnVaultsBalances, fetchYearnVaultsHistory } = useYearnApi();

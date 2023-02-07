@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
-import { useReports } from '@/store/reports';
 import { type SelectedReport } from '@/types/reports';
 
 const props = defineProps({
@@ -15,7 +14,7 @@ const props = defineProps({
 const { initialOpen } = toRefs(props);
 const mainDialogOpen = ref<boolean>(get(initialOpen));
 
-const reportsStore = useReports();
+const reportsStore = useReportsStore();
 const { actionableItems } = toRefs(reportsStore);
 
 const actionableItemsLength = computed(() => {

@@ -14,8 +14,6 @@ import {
 } from 'chart.js';
 import dayjs from 'dayjs';
 import { type PropType } from 'vue';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type ValueOverTime } from '@/types/graphs';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';

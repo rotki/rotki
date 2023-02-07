@@ -3,7 +3,6 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { type PropType } from 'vue';
 import { type HistoricalPriceFormPayload } from '@/services/assets/types';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
@@ -21,7 +20,7 @@ const props = defineProps({
 const emit = defineEmits(['input', 'valid']);
 
 const { value } = toRefs(props);
-const { assetSymbol } = useAssetInfoRetrieval();
+const { assetSymbol } = useAssetInfoRetrievalStore();
 
 const date = computed(({ value }) =>
   value.timestamp ? convertFromTimestamp(value.timestamp, true) : ''

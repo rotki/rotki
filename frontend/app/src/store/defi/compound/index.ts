@@ -1,9 +1,4 @@
 import { type Ref } from 'vue';
-import { toProfitLossModel } from '@/store/defi/utils';
-import { useNotificationsStore } from '@/store/notifications';
-import { getStatus, setStatus } from '@/store/status';
-import { useTasks } from '@/store/tasks';
-import { isLoading } from '@/store/utils';
 import { CompoundBalances, CompoundHistory } from '@/types/defi/compound';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
@@ -11,8 +6,10 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { useCompoundApi } from '@/services/defi/compound';
+import { toProfitLossModel } from '@/utils/defi';
+import { isLoading } from '@/utils/status';
 
-export const defaultCompoundHistory = (): CompoundHistory => ({
+const defaultCompoundHistory = (): CompoundHistory => ({
   events: [],
   debtLoss: {},
   interestProfit: {},
@@ -25,7 +22,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
   const history: Ref<CompoundHistory> = ref(defaultCompoundHistory());
 
   const { resetStatus } = useStatusUpdater(Section.DEFI_COMPOUND_BALANCES);
-  const { awaitTask } = useTasks();
+  const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { activeModules } = useModules();
   const premium = usePremium();

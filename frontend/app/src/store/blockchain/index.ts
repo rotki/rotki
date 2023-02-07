@@ -1,26 +1,15 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Severity } from '@rotki/common/lib/messages';
 import { type MaybeRef } from '@vueuse/core';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
-import {
-  type AccountPayload,
-  type AddAccountsPayload,
-  type BaseAddAccountsPayload
-} from '@/store/balances/types';
-import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
-import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
-import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
-import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
-import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
-import { useDefiStore } from '@/store/defi';
-import { useNotificationsStore } from '@/store/notifications';
-import { useSettingsStore } from '@/store/settings';
-import { useStatusStore } from '@/store/status';
-import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { startPromise } from '@/utils';
 import { logger } from '@/utils/logging';
 import { isBlockchain, isTokenChain } from '@/types/blockchain/chains';
+import {
+  type AccountPayload,
+  type AddAccountsPayload,
+  type BaseAddAccountsPayload
+} from '@/types/accounts';
 
 export const useBlockchainStore = defineStore('blockchain', () => {
   const { addAccount, fetch } = useBlockchainAccountsStore();
@@ -34,7 +23,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   const { resetDefiStatus } = useStatusStore();
   const { addEvmAccount } = useBlockchainAccountsApi();
 
-  const { isTaskRunning } = useTasks();
+  const { isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { tc } = useI18n();
 

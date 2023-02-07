@@ -1,5 +1,4 @@
 import { BackendOptions } from '@/electron-main/ipc';
-import { useMainStore } from '@/store/main';
 import { type Writeable } from '@/types';
 import { deleteBackendUrl, getBackendUrl } from '@/utils/account-management';
 import { type LogLevel } from '@/utils/log-level';

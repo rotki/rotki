@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { type AssetPriceInfo } from '@/types/prices';
 
 const props = defineProps({

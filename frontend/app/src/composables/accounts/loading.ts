@@ -1,12 +1,11 @@
 import { type ComputedRef } from 'vue';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
-import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
 export const useAccountLoading = createSharedComposable(() => {
   const pending = ref<boolean>(false);
 
-  const { isTaskRunning } = useTasks();
+  const { isTaskRunning } = useTaskStore();
 
   const isQueryingBlockchain = isTaskRunning(
     TaskType.QUERY_BLOCKCHAIN_BALANCES

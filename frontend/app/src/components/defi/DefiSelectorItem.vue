@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type DefiProtocol } from '@rotki/common/lib/blockchain';
 import { type PropType } from 'vue';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 interface DefiProtocolInfo {
   readonly identifier: string;

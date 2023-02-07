@@ -10,10 +10,7 @@ import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import { CUSTOM_ASSET } from '@/services/assets/consts';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useMessageStore } from '@/store/message';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { type ActionStatus } from '@/store/types';
+
 import {
   type AssetPagination,
   type AssetPaginationOptions,
@@ -24,6 +21,7 @@ import { convertPagination } from '@/types/pagination';
 import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@/utils/assets';
 import { uniqueStrings } from '@/utils/data';
 import { toSentenceCase } from '@/utils/text';
+import { type ActionStatus } from '@/types/action';
 
 defineProps({
   tokens: { required: true, type: Array as PropType<SupportedAsset[]> },

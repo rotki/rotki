@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
 import { useExchangeApi } from '@/services/balances/exchanges';
-import { useNotificationsStore } from '@/store/notifications';
 import { uniqueStrings } from '@/utils/data';
 
 const props = defineProps({

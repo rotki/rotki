@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { truncateAddress, truncationPoints } from '@/filters';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { randomHex } from '@/utils/data';
 
 const { t } = useI18n();

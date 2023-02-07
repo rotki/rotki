@@ -6,8 +6,6 @@ import AppMessages from '@/components/app/AppMessages.vue';
 import FrontendUpdateNotifier from '@/components/status/FrontendUpdateNotifier.vue';
 import AppUpdatePopup from '@/components/status/update/AppUpdatePopup.vue';
 import { ThemeChecker } from '@/premium/premium';
-import { usePremiumStore } from '@/store/session/premium';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 const { showAbout } = storeToRefs(useAreaVisibilityStore());
 const { showComponents } = storeToRefs(usePremiumStore());

@@ -2,10 +2,8 @@
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
-import { useKrakenStakingStore } from '@/store/staking/kraken';
 import { SupportedExchange } from '@/types/exchanges';
 import { Section } from '@/types/status';
-import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 
 const { shouldShowLoadingScreen } = useSectionLoading();
 const { load } = useKrakenStakingStore();

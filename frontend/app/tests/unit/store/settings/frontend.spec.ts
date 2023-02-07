@@ -9,7 +9,6 @@ import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { useSettingsApi } from '@/services/settings/settings-api';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
 import {

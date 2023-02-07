@@ -2,7 +2,6 @@
 import { type BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { bigNumberify } from '@/utils/bignumbers';
 import { isValidEthAddress, isValidTxHash } from '@/utils/text';
 
@@ -46,7 +45,7 @@ const formatNotes = (
   assetId: string,
   noTxHash: boolean
 ): NoteFormat[] => {
-  const { assetSymbol } = useAssetInfoRetrieval();
+  const { assetSymbol } = useAssetInfoRetrievalStore();
 
   const asset = get(assetSymbol(assetId));
 

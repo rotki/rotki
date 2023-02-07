@@ -8,13 +8,12 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import { Routes } from '@/router/routes';
-import { useReports } from '@/store/reports';
 import { type Report } from '@/types/reports';
 import { size } from '@/utils/data';
 import { calculateTotalProfitLoss } from '@/utils/report';
 
 const expanded: Ref<Report[]> = ref([]);
-const reportStore = useReports();
+const reportStore = useReportsStore();
 const { fetchReports, deleteReport, isLatestReport } = reportStore;
 const { reports } = storeToRefs(reportStore);
 const { tc } = useI18n();

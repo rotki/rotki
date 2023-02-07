@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { useAssetIconApi } from '@/services/assets/icon-api';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
 
 const props = defineProps({
   identifier: {

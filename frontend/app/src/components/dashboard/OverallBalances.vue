@@ -10,16 +10,10 @@ import dayjs from 'dayjs';
 import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
 import Loading from '@/components/helper/Loading.vue';
 import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
-import { usePremiumStore } from '@/store/session/premium';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { isPeriodAllowed } from '@/store/settings/utils';
-import { useStatisticsStore } from '@/store/statistics';
 import { Section } from '@/types/status';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
-import { useSessionAuthStore } from '@/store/session/auth';
+import { isPeriodAllowed } from '@/utils/settings';
 
 const { t } = useI18n();
 const { currencySymbol, floatingPrecision } = storeToRefs(

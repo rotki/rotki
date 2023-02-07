@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import AppPremiumManager from '@/components/app/AppPremiumManager.vue';
-import { useSessionStore } from '@/store/session';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { checkIfDevelopment } from '@/utils/env-utils';
 
 const DevApp = defineAsyncComponent(() => import('@/DevApp.vue'));

@@ -15,10 +15,7 @@ import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue
 import LpPoolIcon from '@/components/display/defi/LpPoolIcon.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-
 import { UniswapDetails } from '@/premium/premium';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useUniswapStore } from '@/store/defi/uniswap';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 
@@ -42,7 +39,7 @@ const { uniswapV2Addresses: addresses, uniswapV2PoolAssets: poolAssets } =
   storeToRefs(store);
 
 const { isModuleEnabled } = useModules();
-const { tokenAddress } = useAssetInfoRetrieval();
+const { tokenAddress } = useAssetInfoRetrievalStore();
 const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
 
 const { tc } = useI18n();

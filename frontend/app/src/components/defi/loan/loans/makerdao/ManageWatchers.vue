@@ -3,8 +3,6 @@ import { type PropType } from 'vue';
 import WatcherDialog from '@/components/dialogs/WatcherDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
-
-import { useWatchersStore } from '@/store/session/watchers';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps({

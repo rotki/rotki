@@ -9,9 +9,6 @@ import {
   type TransactionEventProtocol
 } from '@/types/transaction';
 import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
-import { useTxQueryStatusStore } from '@/store/history/query-status';
-import { useTransactions } from '@/store/history/transactions';
-import { useTasks } from '@/store/tasks';
 import { type Writeable } from '@/types';
 import {
   type EthTransaction,
@@ -24,7 +21,6 @@ import {
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { getCollectionData } from '@/utils/collection';
-import { useConfirmStore } from '@/store/confirm';
 import { IgnoreActionType } from '@/types/history/ignored';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
@@ -92,10 +88,10 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-const transactionStore = useTransactions();
+const transactionStore = useTransactionStore();
 const { transactions } = storeToRefs(transactionStore);
 
-const { isTaskRunning } = useTasks();
+const { isTaskRunning } = useTaskStore();
 
 const {
   fetchTransactions,

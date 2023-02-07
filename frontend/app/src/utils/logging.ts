@@ -3,7 +3,6 @@ import logger, {
   type LogLevelNumbers,
   type LoggingMethod
 } from 'loglevel';
-
 import { checkIfDevelopment } from '@/utils/env-utils';
 import IndexedDb from '@/utils/indexed-db';
 import { LogLevel } from '@/utils/log-level';

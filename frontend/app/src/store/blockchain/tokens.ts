@@ -6,16 +6,11 @@ import {
   type EthDetectedTokensInfo,
   type EvmTokensRecord
 } from '@/services/balances/types';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
-import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
-import { useTasks } from '@/store/tasks';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { useBlockchainBalanceApi } from '@/services/balances/blockchain';
 import { type TokenChains, isTokenChain } from '@/types/blockchain/chains';
-import { useChainsAccountsStore } from '@/store/blockchain/accounts/chains';
 
 const noTokens = (): EthDetectedTokensInfo => ({
   tokens: [],
@@ -52,7 +47,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   ) => {
     try {
       if (address) {
-        const { awaitTask } = useTasks();
+        const { awaitTask } = useTaskStore();
         const taskType = TaskType.FETCH_DETECTED_TOKENS;
 
         const { taskId } = await fetchDetectedTokensTask(chain, [address]);
@@ -134,7 +129,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     await fetchDetectedTokens(Blockchain.OPTIMISM);
   });
 
-  const { isTaskRunning } = useTasks();
+  const { isTaskRunning } = useTaskStore();
   const isEthDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
     chain: Blockchain.ETH
   });

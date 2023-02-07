@@ -9,14 +9,7 @@ import NftDetails from '@/components/helper/NftDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-
 import { type ManualPriceFormPayload } from '@/services/assets/types';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { type ActionStatus } from '@/store/types';
 import { type IgnoredAssetsHandlingType } from '@/types/assets';
 import { type Module } from '@/types/modules';
 import {
@@ -27,8 +20,8 @@ import { Section } from '@/types/status';
 import { assert } from '@/utils/assertions';
 import { uniqueStrings } from '@/utils/data';
 import { useAssetPricesApi } from '@/services/assets/prices';
-import { useConfirmStore } from '@/store/confirm';
 import { type TablePagination } from '@/types/pagination';
+import { type ActionStatus } from '@/types/action';
 
 defineProps({
   modules: {

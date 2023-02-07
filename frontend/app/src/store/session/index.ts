@@ -2,22 +2,13 @@ import { type ComputedRef } from 'vue';
 import { useExchangeApi } from '@/services/balances/exchanges';
 import { useUsersApi } from '@/services/session/users.api';
 import { useSettingsApi } from '@/services/settings/settings-api';
-import { useMessageStore } from '@/store/message';
-import { useMonitorStore } from '@/store/monitor';
-import { useSessionAuthStore } from '@/store/session/auth';
-import {
-  type ChangePasswordPayload,
-  type SyncConflictPayload
-} from '@/store/session/types';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useTasks } from '@/store/tasks';
-import { type ActionStatus } from '@/store/types';
 import { type Exchange } from '@/types/exchanges';
 import { type SupportedLanguage } from '@/types/frontend-settings';
 import {
   type CreateAccountPayload,
   type LoginCredentials,
   SyncConflictError,
+  type SyncConflictPayload,
   type UnlockPayload
 } from '@/types/login';
 import { type TaskMeta } from '@/types/task';
@@ -25,6 +16,8 @@ import { TaskType } from '@/types/task-type';
 import { UserAccount, type UserSettingsModel } from '@/types/user';
 import { lastLogin } from '@/utils/account-management';
 import { logger } from '@/utils/logging';
+import { type ChangePasswordPayload } from '@/types/session';
+import { type ActionStatus } from '@/types/action';
 
 export const useSessionStore = defineStore('session', () => {
   const showUpdatePopup = ref(false);
@@ -43,7 +36,7 @@ export const useSessionStore = defineStore('session', () => {
 
   const { checkForUpdates, resetTray, isPackaged, clearPassword } =
     useInterop();
-  const { awaitTask } = useTasks();
+  const { awaitTask } = useTaskStore();
 
   const { t } = useI18n();
   const { start } = useMonitorStore();

@@ -2,9 +2,6 @@ import { type Wrapper, mount } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
-import { useSessionStore } from '@/store/session';
-import { useStatusStore } from '@/store/status';
-import { useTasks } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import createCustomPinia from '../../utils/create-pinia';
@@ -32,7 +29,7 @@ describe('AccountBalances.vue', () => {
   });
 
   test('table enters into loading state when balances load', async () => {
-    const { add, remove } = useTasks();
+    const { add, remove } = useTaskStore();
     add({
       id: 1,
       type: TaskType.QUERY_BLOCKCHAIN_BALANCES,

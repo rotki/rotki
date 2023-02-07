@@ -8,10 +8,10 @@ import {
   validWithoutSessionStatus
 } from '@/services/utils';
 import { type ConflictResolution } from '@/services/assets/types';
-import { type ActionStatus } from '@/store/types';
 import { assert } from '@/utils/assertions';
 import { api } from '@/services/rotkehlchen-api';
 import { downloadFileByUrl } from '@/utils/download';
+import { type ActionStatus } from '@/types/action';
 
 export const useAssetsApi = () => {
   const checkForAssetUpdate = async (): Promise<PendingTask> => {

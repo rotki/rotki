@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
 import { type PropType } from 'vue';
-import { useReports } from '@/store/reports';
 import { type Task, type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
@@ -15,7 +14,7 @@ const props = defineProps({
 const { task } = toRefs(props);
 const isHistory = computed(() => task.value.type === TaskType.TRADE_HISTORY);
 
-const { progress } = storeToRefs(useReports());
+const { progress } = storeToRefs(useReportsStore());
 
 const time = computed(() => {
   return dayjs(task.value.time).format('LLL');

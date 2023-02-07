@@ -4,7 +4,6 @@ import { getIdentifierFromSymbolMap } from '@rotki/common/lib/data';
 import { type ComputedRef } from 'vue';
 import TokenPlaceholder from '@/components/svgs/TokenPlaceholder.vue';
 import { useAssetIconApi } from '@/services/assets/icon-api';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useCurrencies } from '@/types/currencies';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 
@@ -59,7 +58,7 @@ const currency = computed<string | undefined>(() => {
     ?.unicodeSymbol;
 });
 
-const { assetInfo } = useAssetInfoRetrieval();
+const { assetInfo } = useAssetInfoRetrievalStore();
 const { assetImageUrl } = useAssetIconApi();
 
 const asset = assetInfo(mappedIdentifier, enableAssociation);

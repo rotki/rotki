@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-
 const showGraphRangeSelector = ref<boolean>(true);
 const { showGraphRangeSelector: enabled } = storeToRefs(
   useFrontendSettingsStore()

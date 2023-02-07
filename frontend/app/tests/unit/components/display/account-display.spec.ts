@@ -4,9 +4,7 @@ import { type Wrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
-import { useSessionStore } from '@/store/session';
-import { PrivacyMode } from '@/store/session/types';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { PrivacyMode } from '@/types/session';
 
 vi.mock('@/services/rotkehlchen-api', () => ({
   assets: {

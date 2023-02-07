@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { useMainStore } from '@/store/main';
-import { useSessionStore } from '@/store/session';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { startPromise } from '@/utils';
 
 const mainStore = useMainStore();

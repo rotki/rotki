@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { displayDateFormatter } from '@/data/date_formatter';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 const props = defineProps({
   timestamp: { required: true, type: Number },

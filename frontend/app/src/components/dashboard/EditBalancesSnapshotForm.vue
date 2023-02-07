@@ -5,7 +5,6 @@ import { helpers, required } from '@vuelidate/validators';
 import { type PropType } from 'vue';
 import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBalancesSnapshotLocationSelector.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type BalanceSnapshotPayload } from '@/types/snapshots';
 import { isNft } from '@/utils/nft';
 

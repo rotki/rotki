@@ -1,7 +1,7 @@
 import cloneDeep from 'lodash/cloneDeep';
 import { type PiniaPluginContext, type StoreGeneric } from 'pinia';
 
-export function StoreResetPlugin({ store }: PiniaPluginContext): void {
+export const StoreResetPlugin = ({ store }: PiniaPluginContext): void => {
   const initialState = cloneDeep(store.$state);
   store.$reset = (): void => {
     let state: any;
@@ -14,16 +14,16 @@ export function StoreResetPlugin({ store }: PiniaPluginContext): void {
     }
     store.$patch(toReactive(state));
   };
-}
+};
 
 /**
  * Keeps track of the installed pinia stores.
  */
 const storeMap = new Map<string, StoreGeneric>();
 
-export function StoreTrackPlugin({ store }: PiniaPluginContext): void {
+export const StoreTrackPlugin = ({ store }: PiniaPluginContext): void => {
   storeMap.set(store.$id, store);
-}
+};
 
 /**
  * Resets the state of all the installed pinia stores.

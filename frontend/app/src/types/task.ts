@@ -26,3 +26,5 @@ export interface TaskResultResponse<T> {
   status: 'completed' | 'not-found' | 'pending';
   statusCode?: number;
 }
+
+export type TaskMap<T extends TaskMeta> = Record<number, Task<T>>;

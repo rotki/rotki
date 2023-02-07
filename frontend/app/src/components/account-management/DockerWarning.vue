@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useMainStore } from '@/store/main';
-
 const { dockerRiskAccepted } = storeToRefs(useMainStore());
 const { tc } = useI18n();
 const { usageGuideUrl } = useInterop();

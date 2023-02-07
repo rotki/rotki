@@ -6,10 +6,6 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useAppRoutes } from '@/router/routes';
 import { useAssetInfoApi } from '@/services/assets/info';
-import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
-import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Exchange } from '@/types/exchanges';
 import { type TradeLocationData } from '@/types/trades';
 

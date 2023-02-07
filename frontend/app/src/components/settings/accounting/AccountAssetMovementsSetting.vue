@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
 const accountForAssetsMovements = ref(false);
 const { accountForAssetsMovements: enabled } = storeToRefs(

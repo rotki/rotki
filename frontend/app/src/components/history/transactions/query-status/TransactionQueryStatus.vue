@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useTxQueryStatusStore } from '@/store/history/query-status';
 import { type EvmTransactionQueryData } from '@/types/websocket-messages';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import TransactionQueryStatusDialog from '@/components/history/transactions/query-status/TransactionQueryStatusDialog.vue';

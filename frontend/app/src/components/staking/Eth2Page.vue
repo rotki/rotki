@@ -5,8 +5,6 @@ import Eth2ValidatorFilter from '@/components/helper/filter/Eth2ValidatorFilter.
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { Eth2Staking } from '@/premium/premium';
-import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
-import { useEth2StakingStore } from '@/store/staking/eth2';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 

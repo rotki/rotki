@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { useTagStore } from '@/store/session/tags';
 
 defineProps({
   tags: {

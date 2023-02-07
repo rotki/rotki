@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type Collection } from '@/types/collection';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const props = defineProps<{
   collection: Collection<any>;

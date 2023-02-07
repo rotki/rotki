@@ -2,7 +2,6 @@
 import dayjs from 'dayjs';
 import { type PropType, type Ref } from 'vue';
 import { timezones } from '@/data/timezones';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { DateFormat } from '@/types/date-format';
 import {
   changeDateFormat,

@@ -20,25 +20,13 @@ import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
 import { truncateAddress } from '@/filters';
 import { useStatisticsApi } from '@/services/statistics/statistics-api';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
-import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useBalancerStore } from '@/store/defi/balancer';
-import { useCompoundStore } from '@/store/defi/compound';
-import { useSushiswapStore } from '@/store/defi/sushiswap';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { useStatisticsStore } from '@/store/statistics';
 import { One } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
 import { useAssetManagementApi } from '@/services/assets/management-api';
 
 export const assetsApi = (): AssetsApi => {
   const { assetInfo, assetSymbol, assetName, tokenAddress } =
-    useAssetInfoRetrieval();
+    useAssetInfoRetrievalStore();
 
   return {
     assetInfo,

@@ -5,9 +5,6 @@ import LedgerActionContent from '@/components/history/ledger-actions/LedgerActio
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import LocationAssets from '@/components/locations/LocationAssets.vue';
 import LocationValueRow from '@/components/locations/LocationValueRow.vue';
-import { useAssetMovements } from '@/store/history/asset-movements';
-import { useLedgerActions } from '@/store/history/ledger-actions';
-import { useTrades } from '@/store/history/trades';
 import { Section } from '@/types/status';
 import { type TradeLocationData } from '@/types/trades';
 
@@ -19,7 +16,7 @@ const { identifier } = toRefs(props);
 
 const { getLocation } = useLocationInfo();
 
-const tradeStore = useTrades();
+const tradeStore = useTradeStore();
 const { updateTradesPayload } = tradeStore;
 const { trades } = storeToRefs(tradeStore);
 
@@ -27,7 +24,7 @@ const assetMovementStore = useAssetMovements();
 const { updateAssetMovementsPayload } = assetMovementStore;
 const { assetMovements } = storeToRefs(assetMovementStore);
 
-const ledgerActionStore = useLedgerActions();
+const ledgerActionStore = useLedgerActionStore();
 const { updateLedgerActionsPayload } = ledgerActionStore;
 const { ledgerActions } = storeToRefs(ledgerActionStore);
 

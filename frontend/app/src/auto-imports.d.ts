@@ -10,6 +10,8 @@ declare global {
   const $toRef: typeof import('vue/macros')['$toRef']
   const EffectScope: typeof import('vue')['EffectScope']
   const SettingLocation: typeof import('./composables/settings')['SettingLocation']
+  const StoreResetPlugin: typeof import('./store/plugins')['StoreResetPlugin']
+  const StoreTrackPlugin: typeof import('./store/plugins')['StoreTrackPlugin']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
   const asyncComputed: typeof import('@vueuse/core')['asyncComputed']
   const autoResetRef: typeof import('@vueuse/core')['autoResetRef']
@@ -43,6 +45,7 @@ declare global {
   const getActivePinia: typeof import('pinia')['getActivePinia']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
+  const getStatus: typeof import('./store/status')['getStatus']
   const h: typeof import('vue')['h']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
   const inject: typeof import('vue')['inject']
@@ -99,6 +102,7 @@ declare global {
   const refIsTruthy: typeof import('./composables/ref')['refIsTruthy']
   const refThrottled: typeof import('@vueuse/core')['refThrottled']
   const refWithControl: typeof import('@vueuse/core')['refWithControl']
+  const resetState: typeof import('./store/plugins')['resetState']
   const resolveComponent: typeof import('vue')['resolveComponent']
   const resolveDirective: typeof import('vue')['resolveDirective']
   const resolveRef: typeof import('@vueuse/core')['resolveRef']
@@ -107,9 +111,11 @@ declare global {
   const set: typeof import('@vueuse/shared')['set']
   const setActivePinia: typeof import('pinia')['setActivePinia']
   const setMapStoreSuffix: typeof import('pinia')['setMapStoreSuffix']
+  const setStatus: typeof import('./store/status')['setStatus']
   const shallowReactive: typeof import('vue')['shallowReactive']
   const shallowReadonly: typeof import('vue')['shallowReadonly']
   const shallowRef: typeof import('vue')['shallowRef']
+  const storePiniaPlugins: typeof import('./store/debug')['storePiniaPlugins']
   const storeToRefs: typeof import('pinia')['storeToRefs']
   const syncRef: typeof import('@vueuse/core')['syncRef']
   const syncRefs: typeof import('@vueuse/core')['syncRefs']
@@ -120,6 +126,7 @@ declare global {
   const toReactive: typeof import('@vueuse/core')['toReactive']
   const toRef: typeof import('vue')['toRef']
   const toRefs: typeof import('vue')['toRefs']
+  const transactionEventProtocolData: typeof import('./composables/history/protocol-data')['transactionEventProtocolData']
   const triggerRef: typeof import('vue')['triggerRef']
   const tryOnBeforeMount: typeof import('@vueuse/core')['tryOnBeforeMount']
   const tryOnBeforeUnmount: typeof import('@vueuse/core')['tryOnBeforeUnmount']
@@ -129,14 +136,22 @@ declare global {
   const unref: typeof import('vue')['unref']
   const unrefElement: typeof import('@vueuse/core')['unrefElement']
   const until: typeof import('@vueuse/core')['until']
+  const useAaveStore: typeof import('./store/defi/aave/index')['useAaveStore']
   const useAbs: typeof import('@vueuse/math')['useAbs']
+  const useAccountBalancesStore: typeof import('./store/blockchain/accountbalances/index')['useAccountBalancesStore']
   const useAccountDetails: typeof import('./composables/balances/account-details')['useAccountDetails']
   const useAccountDialog: typeof import('./composables/accounts/dialog')['useAccountDialog']
   const useAccountLoading: typeof import('./composables/accounts/loading')['useAccountLoading']
   const useAccountManagement: typeof import('./composables/user/account')['useAccountManagement']
+  const useAccountMigrationStore: typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']
+  const useAccountingSettingsStore: typeof import('./store/settings/accounting')['useAccountingSettingsStore']
   const useActiveElement: typeof import('@vueuse/core')['useActiveElement']
+  const useAddressesNamesStore: typeof import('./store/blockchain/accounts/addresses-names')['useAddressesNamesStore']
+  const useAggregatedBalancesStore: typeof import('./store/balances/aggregated')['useAggregatedBalancesStore']
+  const useAggregatedBlockchainBalancesStore: typeof import('./store/blockchain/balances/aggregated')['useAggregatedBlockchainBalancesStore']
   const useAnimation: typeof import('./composables/user/animations')['useAnimation']
   const useAppNavigation: typeof import('./composables/navigation')['useAppNavigation']
+  const useAreaVisibilityStore: typeof import('./store/session/visibility')['useAreaVisibilityStore']
   const useArrayEvery: typeof import('@vueuse/core')['useArrayEvery']
   const useArrayFilter: typeof import('@vueuse/core')['useArrayFilter']
   const useArrayFind: typeof import('@vueuse/core')['useArrayFind']
@@ -147,30 +162,53 @@ declare global {
   const useArrayReduce: typeof import('@vueuse/core')['useArrayReduce']
   const useArraySome: typeof import('@vueuse/core')['useArraySome']
   const useArrayUnique: typeof import('@vueuse/core')['useArrayUnique']
+  const useAssetCacheStore: typeof import('./store/assets/asset-cache')['useAssetCacheStore']
   const useAssetFilter: typeof import('./composables/filters/assets')['useAssetFilter']
+  const useAssetInfoRetrievalStore: typeof import('./store/assets/retrieval')['useAssetInfoRetrievalStore']
   const useAssetMovementFilters: typeof import('./composables/filters/asset-movement')['useAssetMovementFilters']
+  const useAssetMovements: typeof import('./store/history/asset-movements')['useAssetMovements']
+  const useAssets: typeof import('./store/assets/index')['useAssets']
+  const useAssociatedLocationsStore: typeof import('./store/history/associated-locations')['useAssociatedLocationsStore']
   const useAsyncQueue: typeof import('@vueuse/core')['useAsyncQueue']
   const useAsyncState: typeof import('@vueuse/core')['useAsyncState']
   const useAttrs: typeof import('vue')['useAttrs']
   const useAutoLogin: typeof import('./composables/user/account')['useAutoLogin']
   const useAverage: typeof import('@vueuse/math')['useAverage']
   const useBackendManagement: typeof import('./composables/backend')['useBackendManagement']
+  const useBackendMessagesStore: typeof import('./store/backend-messages')['useBackendMessagesStore']
+  const useBalancePricesStore: typeof import('./store/balances/prices')['useBalancePricesStore']
+  const useBalancerStore: typeof import('./store/defi/balancer/index')['useBalancerStore']
+  const useBalancesBreakdownStore: typeof import('./store/balances/breakdown')['useBalancesBreakdownStore']
+  const useBalancesStore: typeof import('./store/balances/index')['useBalancesStore']
   const useBase64: typeof import('@vueuse/core')['useBase64']
   const useBattery: typeof import('@vueuse/core')['useBattery']
   const useBlockchainAccountsApi: typeof import('./composables/api/accounts')['useBlockchainAccountsApi']
+  const useBlockchainAccountsStore: typeof import('./store/blockchain/accounts/index')['useBlockchainAccountsStore']
+  const useBlockchainBalancesStore: typeof import('./store/blockchain/balances/index')['useBlockchainBalancesStore']
+  const useBlockchainStore: typeof import('./store/blockchain/index')['useBlockchainStore']
+  const useBlockchainTokensStore: typeof import('./store/blockchain/tokens')['useBlockchainTokensStore']
   const useBlockie: typeof import('./composables/accounts/blockie')['useBlockie']
   const useBluetooth: typeof import('@vueuse/core')['useBluetooth']
   const useBreakpoints: typeof import('@vueuse/core')['useBreakpoints']
   const useBroadcastChannel: typeof import('@vueuse/core')['useBroadcastChannel']
   const useBrowserLocation: typeof import('@vueuse/core')['useBrowserLocation']
+  const useBtcAccountBalancesStore: typeof import('./store/blockchain/accountbalances/btc')['useBtcAccountBalancesStore']
+  const useBtcAccountsStore: typeof import('./store/blockchain/accounts/btc')['useBtcAccountsStore']
+  const useBtcBalancesStore: typeof import('./store/blockchain/balances/btc')['useBtcBalancesStore']
   const useCached: typeof import('@vueuse/core')['useCached']
   const useCeil: typeof import('@vueuse/math')['useCeil']
+  const useChainAccountBalancesStore: typeof import('./store/blockchain/accountbalances/chain')['useChainAccountBalancesStore']
+  const useChainBalancesStore: typeof import('./store/blockchain/balances/chains')['useChainBalancesStore']
+  const useChainsAccountsStore: typeof import('./store/blockchain/accounts/chains')['useChainsAccountsStore']
   const useClamp: typeof import('@vueuse/math')['useClamp']
   const useClearableMessages: typeof import('./composables/settings')['useClearableMessages']
   const useClipboard: typeof import('@vueuse/core')['useClipboard']
   const useCloned: typeof import('@vueuse/core')['useCloned']
   const useColorMode: typeof import('@vueuse/core')['useColorMode']
+  const useCompoundStore: typeof import('./store/defi/compound/index')['useCompoundStore']
   const useConfirmDialog: typeof import('@vueuse/core')['useConfirmDialog']
+  const useConfirmStore: typeof import('./store/confirm')['useConfirmStore']
+  const useCostBasisMethod: typeof import('./composables/reports')['useCostBasisMethod']
   const useCounter: typeof import('@vueuse/core')['useCounter']
   const useCssModule: typeof import('vue')['useCssModule']
   const useCssVar: typeof import('@vueuse/core')['useCssVar']
@@ -185,6 +223,8 @@ declare global {
   const useDebounce: typeof import('@vueuse/core')['useDebounce']
   const useDebounceFn: typeof import('@vueuse/core')['useDebounceFn']
   const useDebouncedRefHistory: typeof import('@vueuse/core')['useDebouncedRefHistory']
+  const useDefiStore: typeof import('./store/defi/index')['useDefiStore']
+  const useDefiSupportedProtocolsStore: typeof import('./store/defi/protocols/index')['useDefiSupportedProtocolsStore']
   const useDeviceMotion: typeof import('@vueuse/core')['useDeviceMotion']
   const useDeviceOrientation: typeof import('@vueuse/core')['useDeviceOrientation']
   const useDevicePixelRatio: typeof import('@vueuse/core')['useDevicePixelRatio']
@@ -198,10 +238,15 @@ declare global {
   const useElementHover: typeof import('@vueuse/core')['useElementHover']
   const useElementSize: typeof import('@vueuse/core')['useElementSize']
   const useElementVisibility: typeof import('@vueuse/core')['useElementVisibility']
+  const useEth2StakingStore: typeof import('./store/staking/eth2')['useEth2StakingStore']
+  const useEthAccountBalancesStore: typeof import('./store/blockchain/accountbalances/eth')['useEthAccountBalancesStore']
+  const useEthAccountsStore: typeof import('./store/blockchain/accounts/eth')['useEthAccountsStore']
+  const useEthBalancesStore: typeof import('./store/blockchain/balances/eth')['useEthBalancesStore']
   const useEventBus: typeof import('@vueuse/core')['useEventBus']
   const useEventListener: typeof import('@vueuse/core')['useEventListener']
   const useEventSource: typeof import('@vueuse/core')['useEventSource']
   const useEvmNodesApi: typeof import('./composables/api/settings/evm-nodes-api')['useEvmNodesApi']
+  const useExchangeBalancesStore: typeof import('./store/balances/exchanges')['useExchangeBalancesStore']
   const useEyeDropper: typeof import('@vueuse/core')['useEyeDropper']
   const useFavicon: typeof import('@vueuse/core')['useFavicon']
   const useFetch: typeof import('@vueuse/core')['useFetch']
@@ -212,14 +257,19 @@ declare global {
   const useFocusWithin: typeof import('@vueuse/core')['useFocusWithin']
   const useFooterProps: typeof import('./composables/datatable.common')['useFooterProps']
   const useFps: typeof import('@vueuse/core')['useFps']
+  const useFrontendSettingsStore: typeof import('./store/settings/frontend')['useFrontendSettingsStore']
   const useFullscreen: typeof import('@vueuse/core')['useFullscreen']
   const useGamepad: typeof import('@vueuse/core')['useGamepad']
+  const useGeneralSettingsStore: typeof import('./store/settings/general')['useGeneralSettingsStore']
   const useGeolocation: typeof import('@vueuse/core')['useGeolocation']
   const useGraph: typeof import('./composables/graphs')['useGraph']
+  const useHistoryEventTypeData: typeof import('./composables/history/event-data')['useHistoryEventTypeData']
   const useHistoryIgnoringApi: typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']
+  const useHistoryStore: typeof import('./store/history/index')['useHistoryStore']
   const useI18n: typeof import('vue-i18n-composable')['useI18n']
   const useIdle: typeof import('@vueuse/core')['useIdle']
   const useIgnore: typeof import('./composables/history')['useIgnore']
+  const useIgnoredAssetsStore: typeof import('./store/assets/ignored')['useIgnoredAssetsStore']
   const useImage: typeof import('@vueuse/core')['useImage']
   const useInfiniteScroll: typeof import('@vueuse/core')['useInfiniteScroll']
   const useInterop: typeof import('./composables/electron-interop')['useInterop']
@@ -227,17 +277,25 @@ declare global {
   const useInterval: typeof import('@vueuse/core')['useInterval']
   const useIntervalFn: typeof import('@vueuse/core')['useIntervalFn']
   const useKeyModifier: typeof import('@vueuse/core')['useKeyModifier']
+  const useKrakenStakingEventTypes: typeof import('./composables/staking/kraken-events')['useKrakenStakingEventTypes']
   const useKrakenStakingFilter: typeof import('./composables/filters/kraken-staking')['useKrakenStakingFilter']
+  const useKrakenStakingStore: typeof import('./store/staking/kraken')['useKrakenStakingStore']
   const useLastChanged: typeof import('@vueuse/core')['useLastChanged']
   const useLastLanguage: typeof import('./composables/session/language')['useLastLanguage']
+  const useLedgerActionData: typeof import('./composables/history/ledger-actions')['useLedgerActionData']
+  const useLedgerActionStore: typeof import('./store/history/ledger-actions')['useLedgerActionStore']
   const useLedgerActionsFilter: typeof import('./composables/filters/ledger-actions')['useLedgerActionsFilter']
   const useLink: typeof import('vue-router/composables')['useLink']
   const useLinks: typeof import('./composables/links')['useLinks']
   const useLiquidityPosition: typeof import('./composables/defi')['useLiquidityPosition']
+  const useLiquityStore: typeof import('./store/defi/liquity/index')['useLiquityStore']
   const useLocalStorage: typeof import('@vueuse/core')['useLocalStorage']
   const useLocationInfo: typeof import('./composables/balances')['useLocationInfo']
   const useMagicKeys: typeof import('@vueuse/core')['useMagicKeys']
+  const useMainStore: typeof import('./store/main')['useMainStore']
+  const useMakerDaoStore: typeof import('./store/defi/makerdao/index')['useMakerDaoStore']
   const useManualAssetBalances: typeof import('./composables/balances/manual')['useManualAssetBalances']
+  const useManualBalancesStore: typeof import('./store/balances/manual')['useManualBalancesStore']
   const useManualRefHistory: typeof import('@vueuse/core')['useManualRefHistory']
   const useMath: typeof import('@vueuse/math')['useMath']
   const useMax: typeof import('@vueuse/math')['useMax']
@@ -246,8 +304,10 @@ declare global {
   const useMemoize: typeof import('@vueuse/core')['useMemoize']
   const useMemory: typeof import('@vueuse/core')['useMemory']
   const useMessageHandling: typeof import('./composables/message-handling')['useMessageHandling']
+  const useMessageStore: typeof import('./store/message')['useMessageStore']
   const useMin: typeof import('@vueuse/math')['useMin']
   const useModules: typeof import('./composables/session/modules')['useModules']
+  const useMonitorStore: typeof import('./store/monitor')['useMonitorStore']
   const useMounted: typeof import('@vueuse/core')['useMounted']
   const useMouse: typeof import('@vueuse/core')['useMouse']
   const useMouseInElement: typeof import('@vueuse/core')['useMouseInElement']
@@ -256,12 +316,16 @@ declare global {
   const useNavigatorLanguage: typeof import('@vueuse/core')['useNavigatorLanguage']
   const useNetwork: typeof import('@vueuse/core')['useNetwork']
   const useNewlyDetectedTokens: typeof import('./composables/assets/newly-detected-tokens')['useNewlyDetectedTokens']
+  const useNftsStore: typeof import('./store/assets/nft')['useNftsStore']
+  const useNonFungibleBalancesStore: typeof import('./store/balances/non-fungible')['useNonFungibleBalancesStore']
+  const useNotificationsStore: typeof import('./store/notifications/index')['useNotificationsStore']
   const useNow: typeof import('@vueuse/core')['useNow']
   const useObjectUrl: typeof import('@vueuse/core')['useObjectUrl']
   const useOffsetPagination: typeof import('@vueuse/core')['useOffsetPagination']
   const useOnline: typeof import('@vueuse/core')['useOnline']
   const usePageLeave: typeof import('@vueuse/core')['usePageLeave']
   const useParallax: typeof import('@vueuse/core')['useParallax']
+  const usePeriodicStore: typeof import('./store/session/periodic')['usePeriodicStore']
   const usePermission: typeof import('@vueuse/core')['usePermission']
   const usePointer: typeof import('@vueuse/core')['usePointer']
   const usePointerSwipe: typeof import('@vueuse/core')['usePointerSwipe']
@@ -273,12 +337,16 @@ declare global {
   const usePreferredReducedMotion: typeof import('@vueuse/core')['usePreferredReducedMotion']
   const usePremium: typeof import('./composables/premium')['usePremium']
   const usePremiumReminder: typeof import('./composables/premium')['usePremiumReminder']
+  const usePremiumStore: typeof import('./store/session/premium')['usePremiumStore']
   const usePrivacyMode: typeof import('./composables/privacy')['usePrivacyMode']
   const useProjection: typeof import('@vueuse/math')['useProjection']
   const useProxy: typeof import('./composables/common')['useProxy']
+  const usePurgeStore: typeof import('./store/history/purge')['usePurgeStore']
+  const useQueriedAddressesStore: typeof import('./store/session/queried-addresses')['useQueriedAddressesStore']
   const useRafFn: typeof import('@vueuse/core')['useRafFn']
   const useRefHistory: typeof import('@vueuse/core')['useRefHistory']
   const useRefresh: typeof import('./composables/balances/refresh')['useRefresh']
+  const useReportsStore: typeof import('./store/reports/index')['useReportsStore']
   const useResizeObserver: typeof import('@vueuse/core')['useResizeObserver']
   const useRound: typeof import('@vueuse/math')['useRound']
   const useRoute: typeof import('vue-router/composables')['useRoute']
@@ -289,15 +357,23 @@ declare global {
   const useScroll: typeof import('@vueuse/core')['useScroll']
   const useScrollLock: typeof import('@vueuse/core')['useScrollLock']
   const useSectionLoading: typeof import('./composables/common')['useSectionLoading']
+  const useSessionAuthStore: typeof import('./store/session/auth')['useSessionAuthStore']
+  const useSessionPurgeStore: typeof import('./store/session/purge')['useSessionPurgeStore']
   const useSessionSettings: typeof import('./composables/session/settings')['useSessionSettings']
+  const useSessionSettingsStore: typeof import('./store/settings/session')['useSessionSettingsStore']
   const useSessionStateCleaner: typeof import('./composables/logout')['useSessionStateCleaner']
   const useSessionStorage: typeof import('@vueuse/core')['useSessionStorage']
+  const useSessionStore: typeof import('./store/session/index')['useSessionStore']
   const useSettings: typeof import('./composables/settings')['useSettings']
+  const useSettingsStore: typeof import('./store/settings/index')['useSettingsStore']
   const useShare: typeof import('@vueuse/core')['useShare']
   const useSlots: typeof import('vue')['useSlots']
   const useSorted: typeof import('@vueuse/core')['useSorted']
   const useSpeechRecognition: typeof import('@vueuse/core')['useSpeechRecognition']
   const useSpeechSynthesis: typeof import('@vueuse/core')['useSpeechSynthesis']
+  const useStakingStore: typeof import('./store/staking/index')['useStakingStore']
+  const useStatisticsStore: typeof import('./store/statistics/index')['useStatisticsStore']
+  const useStatusStore: typeof import('./store/status')['useStatusStore']
   const useStatusUpdater: typeof import('./composables/status')['useStatusUpdater']
   const useStepper: typeof import('@vueuse/core')['useStepper']
   const useStorage: typeof import('@vueuse/core')['useStorage']
@@ -307,7 +383,11 @@ declare global {
   const useSupported: typeof import('@vueuse/core')['useSupported']
   const useSupportedChains: typeof import('./composables/info/chains')['useSupportedChains']
   const useSupportedChainsApi: typeof import('./composables/api/info/chains')['useSupportedChainsApi']
+  const useSushiswapStore: typeof import('./store/defi/sushiswap/index')['useSushiswapStore']
   const useSwipe: typeof import('@vueuse/core')['useSwipe']
+  const useSyncStore: typeof import('./store/session/sync-store')['useSyncStore']
+  const useTagStore: typeof import('./store/session/tags')['useTagStore']
+  const useTaskStore: typeof import('./store/tasks/index')['useTaskStore']
   const useTemplateRefsList: typeof import('@vueuse/core')['useTemplateRefsList']
   const useTextDirection: typeof import('@vueuse/core')['useTextDirection']
   const useTextSelection: typeof import('@vueuse/core')['useTextSelection']
@@ -329,10 +409,15 @@ declare global {
   const useTokenDetection: typeof import('./composables/balances/token-detection')['useTokenDetection']
   const useTooltip: typeof import('./composables/graphs')['useTooltip']
   const useTradeFilters: typeof import('./composables/filters/trades')['useTradeFilters']
+  const useTradeStore: typeof import('./store/history/trades')['useTradeStore']
+  const useTransactionEventTypeData: typeof import('./composables/history/tx-event-type')['useTransactionEventTypeData']
   const useTransactionFilter: typeof import('./composables/filters/transactions')['useTransactionFilter']
   const useTransactionQueryStatus: typeof import('./composables/history/transactions/query-status')['useTransactionQueryStatus']
+  const useTransactionStore: typeof import('./store/history/transactions')['useTransactionStore']
   const useTransition: typeof import('@vueuse/core')['useTransition']
   const useTrunc: typeof import('@vueuse/math')['useTrunc']
+  const useTxQueryStatusStore: typeof import('./store/history/query-status')['useTxQueryStatusStore']
+  const useUniswapStore: typeof import('./store/defi/uniswap')['useUniswapStore']
   const useUrlSearchParams: typeof import('@vueuse/core')['useUrlSearchParams']
   const useUserMedia: typeof import('@vueuse/core')['useUserMedia']
   const useVModel: typeof import('@vueuse/core')['useVModel']
@@ -341,13 +426,16 @@ declare global {
   const useVibrate: typeof import('@vueuse/core')['useVibrate']
   const useVirtualList: typeof import('@vueuse/core')['useVirtualList']
   const useWakeLock: typeof import('@vueuse/core')['useWakeLock']
+  const useWatchersStore: typeof import('./store/session/watchers')['useWatchersStore']
   const useWebNotification: typeof import('@vueuse/core')['useWebNotification']
   const useWebSocket: typeof import('@vueuse/core')['useWebSocket']
   const useWebWorker: typeof import('@vueuse/core')['useWebWorker']
   const useWebWorkerFn: typeof import('@vueuse/core')['useWebWorkerFn']
+  const useWebsocketStore: typeof import('./store/websocket')['useWebsocketStore']
   const useWindowFocus: typeof import('@vueuse/core')['useWindowFocus']
   const useWindowScroll: typeof import('@vueuse/core')['useWindowScroll']
   const useWindowSize: typeof import('@vueuse/core')['useWindowSize']
+  const useYearnStore: typeof import('./store/defi/yearn/index')['useYearnStore']
   const watch: typeof import('vue')['watch']
   const watchArray: typeof import('@vueuse/core')['watchArray']
   const watchAtMost: typeof import('@vueuse/core')['watchAtMost']
@@ -376,6 +464,8 @@ declare module 'vue' {
     readonly $toRef: UnwrapRef<typeof import('vue/macros')['$toRef']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly SettingLocation: UnwrapRef<typeof import('./composables/settings')['SettingLocation']>
+    readonly StoreResetPlugin: UnwrapRef<typeof import('./store/plugins')['StoreResetPlugin']>
+    readonly StoreTrackPlugin: UnwrapRef<typeof import('./store/plugins')['StoreTrackPlugin']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
@@ -409,6 +499,7 @@ declare module 'vue' {
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
+    readonly getStatus: UnwrapRef<typeof import('./store/status')['getStatus']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
@@ -465,6 +556,7 @@ declare module 'vue' {
     readonly refIsTruthy: UnwrapRef<typeof import('./composables/ref')['refIsTruthy']>
     readonly refThrottled: UnwrapRef<typeof import('@vueuse/core')['refThrottled']>
     readonly refWithControl: UnwrapRef<typeof import('@vueuse/core')['refWithControl']>
+    readonly resetState: UnwrapRef<typeof import('./store/plugins')['resetState']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveDirective: UnwrapRef<typeof import('vue')['resolveDirective']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>
@@ -473,9 +565,11 @@ declare module 'vue' {
     readonly set: UnwrapRef<typeof import('@vueuse/shared')['set']>
     readonly setActivePinia: UnwrapRef<typeof import('pinia')['setActivePinia']>
     readonly setMapStoreSuffix: UnwrapRef<typeof import('pinia')['setMapStoreSuffix']>
+    readonly setStatus: UnwrapRef<typeof import('./store/status')['setStatus']>
     readonly shallowReactive: UnwrapRef<typeof import('vue')['shallowReactive']>
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
+    readonly storePiniaPlugins: UnwrapRef<typeof import('./store/debug')['storePiniaPlugins']>
     readonly storeToRefs: UnwrapRef<typeof import('pinia')['storeToRefs']>
     readonly syncRef: UnwrapRef<typeof import('@vueuse/core')['syncRef']>
     readonly syncRefs: UnwrapRef<typeof import('@vueuse/core')['syncRefs']>
@@ -486,6 +580,7 @@ declare module 'vue' {
     readonly toReactive: UnwrapRef<typeof import('@vueuse/core')['toReactive']>
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
+    readonly transactionEventProtocolData: UnwrapRef<typeof import('./composables/history/protocol-data')['transactionEventProtocolData']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly tryOnBeforeMount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeMount']>
     readonly tryOnBeforeUnmount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeUnmount']>
@@ -495,14 +590,22 @@ declare module 'vue' {
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
     readonly unrefElement: UnwrapRef<typeof import('@vueuse/core')['unrefElement']>
     readonly until: UnwrapRef<typeof import('@vueuse/core')['until']>
+    readonly useAaveStore: UnwrapRef<typeof import('./store/defi/aave/index')['useAaveStore']>
     readonly useAbs: UnwrapRef<typeof import('@vueuse/math')['useAbs']>
+    readonly useAccountBalancesStore: UnwrapRef<typeof import('./store/blockchain/accountbalances/index')['useAccountBalancesStore']>
     readonly useAccountDetails: UnwrapRef<typeof import('./composables/balances/account-details')['useAccountDetails']>
     readonly useAccountDialog: UnwrapRef<typeof import('./composables/accounts/dialog')['useAccountDialog']>
     readonly useAccountLoading: UnwrapRef<typeof import('./composables/accounts/loading')['useAccountLoading']>
     readonly useAccountManagement: UnwrapRef<typeof import('./composables/user/account')['useAccountManagement']>
+    readonly useAccountMigrationStore: UnwrapRef<typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']>
+    readonly useAccountingSettingsStore: UnwrapRef<typeof import('./store/settings/accounting')['useAccountingSettingsStore']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
+    readonly useAddressesNamesStore: UnwrapRef<typeof import('./store/blockchain/accounts/addresses-names')['useAddressesNamesStore']>
+    readonly useAggregatedBalancesStore: UnwrapRef<typeof import('./store/balances/aggregated')['useAggregatedBalancesStore']>
+    readonly useAggregatedBlockchainBalancesStore: UnwrapRef<typeof import('./store/blockchain/balances/aggregated')['useAggregatedBlockchainBalancesStore']>
     readonly useAnimation: UnwrapRef<typeof import('./composables/user/animations')['useAnimation']>
     readonly useAppNavigation: UnwrapRef<typeof import('./composables/navigation')['useAppNavigation']>
+    readonly useAreaVisibilityStore: UnwrapRef<typeof import('./store/session/visibility')['useAreaVisibilityStore']>
     readonly useArrayEvery: UnwrapRef<typeof import('@vueuse/core')['useArrayEvery']>
     readonly useArrayFilter: UnwrapRef<typeof import('@vueuse/core')['useArrayFilter']>
     readonly useArrayFind: UnwrapRef<typeof import('@vueuse/core')['useArrayFind']>
@@ -513,30 +616,53 @@ declare module 'vue' {
     readonly useArrayReduce: UnwrapRef<typeof import('@vueuse/core')['useArrayReduce']>
     readonly useArraySome: UnwrapRef<typeof import('@vueuse/core')['useArraySome']>
     readonly useArrayUnique: UnwrapRef<typeof import('@vueuse/core')['useArrayUnique']>
+    readonly useAssetCacheStore: UnwrapRef<typeof import('./store/assets/asset-cache')['useAssetCacheStore']>
     readonly useAssetFilter: UnwrapRef<typeof import('./composables/filters/assets')['useAssetFilter']>
+    readonly useAssetInfoRetrievalStore: UnwrapRef<typeof import('./store/assets/retrieval')['useAssetInfoRetrievalStore']>
     readonly useAssetMovementFilters: UnwrapRef<typeof import('./composables/filters/asset-movement')['useAssetMovementFilters']>
+    readonly useAssetMovements: UnwrapRef<typeof import('./store/history/asset-movements')['useAssetMovements']>
+    readonly useAssets: UnwrapRef<typeof import('./store/assets/index')['useAssets']>
+    readonly useAssociatedLocationsStore: UnwrapRef<typeof import('./store/history/associated-locations')['useAssociatedLocationsStore']>
     readonly useAsyncQueue: UnwrapRef<typeof import('@vueuse/core')['useAsyncQueue']>
     readonly useAsyncState: UnwrapRef<typeof import('@vueuse/core')['useAsyncState']>
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
     readonly useAutoLogin: UnwrapRef<typeof import('./composables/user/account')['useAutoLogin']>
     readonly useAverage: UnwrapRef<typeof import('@vueuse/math')['useAverage']>
     readonly useBackendManagement: UnwrapRef<typeof import('./composables/backend')['useBackendManagement']>
+    readonly useBackendMessagesStore: UnwrapRef<typeof import('./store/backend-messages')['useBackendMessagesStore']>
+    readonly useBalancePricesStore: UnwrapRef<typeof import('./store/balances/prices')['useBalancePricesStore']>
+    readonly useBalancerStore: UnwrapRef<typeof import('./store/defi/balancer/index')['useBalancerStore']>
+    readonly useBalancesBreakdownStore: UnwrapRef<typeof import('./store/balances/breakdown')['useBalancesBreakdownStore']>
+    readonly useBalancesStore: UnwrapRef<typeof import('./store/balances/index')['useBalancesStore']>
     readonly useBase64: UnwrapRef<typeof import('@vueuse/core')['useBase64']>
     readonly useBattery: UnwrapRef<typeof import('@vueuse/core')['useBattery']>
     readonly useBlockchainAccountsApi: UnwrapRef<typeof import('./composables/api/accounts')['useBlockchainAccountsApi']>
+    readonly useBlockchainAccountsStore: UnwrapRef<typeof import('./store/blockchain/accounts/index')['useBlockchainAccountsStore']>
+    readonly useBlockchainBalancesStore: UnwrapRef<typeof import('./store/blockchain/balances/index')['useBlockchainBalancesStore']>
+    readonly useBlockchainStore: UnwrapRef<typeof import('./store/blockchain/index')['useBlockchainStore']>
+    readonly useBlockchainTokensStore: UnwrapRef<typeof import('./store/blockchain/tokens')['useBlockchainTokensStore']>
     readonly useBlockie: UnwrapRef<typeof import('./composables/accounts/blockie')['useBlockie']>
     readonly useBluetooth: UnwrapRef<typeof import('@vueuse/core')['useBluetooth']>
     readonly useBreakpoints: UnwrapRef<typeof import('@vueuse/core')['useBreakpoints']>
     readonly useBroadcastChannel: UnwrapRef<typeof import('@vueuse/core')['useBroadcastChannel']>
     readonly useBrowserLocation: UnwrapRef<typeof import('@vueuse/core')['useBrowserLocation']>
+    readonly useBtcAccountBalancesStore: UnwrapRef<typeof import('./store/blockchain/accountbalances/btc')['useBtcAccountBalancesStore']>
+    readonly useBtcAccountsStore: UnwrapRef<typeof import('./store/blockchain/accounts/btc')['useBtcAccountsStore']>
+    readonly useBtcBalancesStore: UnwrapRef<typeof import('./store/blockchain/balances/btc')['useBtcBalancesStore']>
     readonly useCached: UnwrapRef<typeof import('@vueuse/core')['useCached']>
     readonly useCeil: UnwrapRef<typeof import('@vueuse/math')['useCeil']>
+    readonly useChainAccountBalancesStore: UnwrapRef<typeof import('./store/blockchain/accountbalances/chain')['useChainAccountBalancesStore']>
+    readonly useChainBalancesStore: UnwrapRef<typeof import('./store/blockchain/balances/chains')['useChainBalancesStore']>
+    readonly useChainsAccountsStore: UnwrapRef<typeof import('./store/blockchain/accounts/chains')['useChainsAccountsStore']>
     readonly useClamp: UnwrapRef<typeof import('@vueuse/math')['useClamp']>
     readonly useClearableMessages: UnwrapRef<typeof import('./composables/settings')['useClearableMessages']>
     readonly useClipboard: UnwrapRef<typeof import('@vueuse/core')['useClipboard']>
     readonly useCloned: UnwrapRef<typeof import('@vueuse/core')['useCloned']>
     readonly useColorMode: UnwrapRef<typeof import('@vueuse/core')['useColorMode']>
+    readonly useCompoundStore: UnwrapRef<typeof import('./store/defi/compound/index')['useCompoundStore']>
     readonly useConfirmDialog: UnwrapRef<typeof import('@vueuse/core')['useConfirmDialog']>
+    readonly useConfirmStore: UnwrapRef<typeof import('./store/confirm')['useConfirmStore']>
+    readonly useCostBasisMethod: UnwrapRef<typeof import('./composables/reports')['useCostBasisMethod']>
     readonly useCounter: UnwrapRef<typeof import('@vueuse/core')['useCounter']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVar: UnwrapRef<typeof import('@vueuse/core')['useCssVar']>
@@ -551,6 +677,8 @@ declare module 'vue' {
     readonly useDebounce: UnwrapRef<typeof import('@vueuse/core')['useDebounce']>
     readonly useDebounceFn: UnwrapRef<typeof import('@vueuse/core')['useDebounceFn']>
     readonly useDebouncedRefHistory: UnwrapRef<typeof import('@vueuse/core')['useDebouncedRefHistory']>
+    readonly useDefiStore: UnwrapRef<typeof import('./store/defi/index')['useDefiStore']>
+    readonly useDefiSupportedProtocolsStore: UnwrapRef<typeof import('./store/defi/protocols/index')['useDefiSupportedProtocolsStore']>
     readonly useDeviceMotion: UnwrapRef<typeof import('@vueuse/core')['useDeviceMotion']>
     readonly useDeviceOrientation: UnwrapRef<typeof import('@vueuse/core')['useDeviceOrientation']>
     readonly useDevicePixelRatio: UnwrapRef<typeof import('@vueuse/core')['useDevicePixelRatio']>
@@ -564,10 +692,15 @@ declare module 'vue' {
     readonly useElementHover: UnwrapRef<typeof import('@vueuse/core')['useElementHover']>
     readonly useElementSize: UnwrapRef<typeof import('@vueuse/core')['useElementSize']>
     readonly useElementVisibility: UnwrapRef<typeof import('@vueuse/core')['useElementVisibility']>
+    readonly useEth2StakingStore: UnwrapRef<typeof import('./store/staking/eth2')['useEth2StakingStore']>
+    readonly useEthAccountBalancesStore: UnwrapRef<typeof import('./store/blockchain/accountbalances/eth')['useEthAccountBalancesStore']>
+    readonly useEthAccountsStore: UnwrapRef<typeof import('./store/blockchain/accounts/eth')['useEthAccountsStore']>
+    readonly useEthBalancesStore: UnwrapRef<typeof import('./store/blockchain/balances/eth')['useEthBalancesStore']>
     readonly useEventBus: UnwrapRef<typeof import('@vueuse/core')['useEventBus']>
     readonly useEventListener: UnwrapRef<typeof import('@vueuse/core')['useEventListener']>
     readonly useEventSource: UnwrapRef<typeof import('@vueuse/core')['useEventSource']>
     readonly useEvmNodesApi: UnwrapRef<typeof import('./composables/api/settings/evm-nodes-api')['useEvmNodesApi']>
+    readonly useExchangeBalancesStore: UnwrapRef<typeof import('./store/balances/exchanges')['useExchangeBalancesStore']>
     readonly useEyeDropper: UnwrapRef<typeof import('@vueuse/core')['useEyeDropper']>
     readonly useFavicon: UnwrapRef<typeof import('@vueuse/core')['useFavicon']>
     readonly useFetch: UnwrapRef<typeof import('@vueuse/core')['useFetch']>
@@ -578,14 +711,19 @@ declare module 'vue' {
     readonly useFocusWithin: UnwrapRef<typeof import('@vueuse/core')['useFocusWithin']>
     readonly useFooterProps: UnwrapRef<typeof import('./composables/datatable.common')['useFooterProps']>
     readonly useFps: UnwrapRef<typeof import('@vueuse/core')['useFps']>
+    readonly useFrontendSettingsStore: UnwrapRef<typeof import('./store/settings/frontend')['useFrontendSettingsStore']>
     readonly useFullscreen: UnwrapRef<typeof import('@vueuse/core')['useFullscreen']>
     readonly useGamepad: UnwrapRef<typeof import('@vueuse/core')['useGamepad']>
+    readonly useGeneralSettingsStore: UnwrapRef<typeof import('./store/settings/general')['useGeneralSettingsStore']>
     readonly useGeolocation: UnwrapRef<typeof import('@vueuse/core')['useGeolocation']>
     readonly useGraph: UnwrapRef<typeof import('./composables/graphs')['useGraph']>
+    readonly useHistoryEventTypeData: UnwrapRef<typeof import('./composables/history/event-data')['useHistoryEventTypeData']>
     readonly useHistoryIgnoringApi: UnwrapRef<typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']>
+    readonly useHistoryStore: UnwrapRef<typeof import('./store/history/index')['useHistoryStore']>
     readonly useI18n: UnwrapRef<typeof import('vue-i18n-composable')['useI18n']>
     readonly useIdle: UnwrapRef<typeof import('@vueuse/core')['useIdle']>
     readonly useIgnore: UnwrapRef<typeof import('./composables/history')['useIgnore']>
+    readonly useIgnoredAssetsStore: UnwrapRef<typeof import('./store/assets/ignored')['useIgnoredAssetsStore']>
     readonly useImage: UnwrapRef<typeof import('@vueuse/core')['useImage']>
     readonly useInfiniteScroll: UnwrapRef<typeof import('@vueuse/core')['useInfiniteScroll']>
     readonly useInterop: UnwrapRef<typeof import('./composables/electron-interop')['useInterop']>
@@ -593,17 +731,25 @@ declare module 'vue' {
     readonly useInterval: UnwrapRef<typeof import('@vueuse/core')['useInterval']>
     readonly useIntervalFn: UnwrapRef<typeof import('@vueuse/core')['useIntervalFn']>
     readonly useKeyModifier: UnwrapRef<typeof import('@vueuse/core')['useKeyModifier']>
+    readonly useKrakenStakingEventTypes: UnwrapRef<typeof import('./composables/staking/kraken-events')['useKrakenStakingEventTypes']>
     readonly useKrakenStakingFilter: UnwrapRef<typeof import('./composables/filters/kraken-staking')['useKrakenStakingFilter']>
+    readonly useKrakenStakingStore: UnwrapRef<typeof import('./store/staking/kraken')['useKrakenStakingStore']>
     readonly useLastChanged: UnwrapRef<typeof import('@vueuse/core')['useLastChanged']>
     readonly useLastLanguage: UnwrapRef<typeof import('./composables/session/language')['useLastLanguage']>
+    readonly useLedgerActionData: UnwrapRef<typeof import('./composables/history/ledger-actions')['useLedgerActionData']>
+    readonly useLedgerActionStore: UnwrapRef<typeof import('./store/history/ledger-actions')['useLedgerActionStore']>
     readonly useLedgerActionsFilter: UnwrapRef<typeof import('./composables/filters/ledger-actions')['useLedgerActionsFilter']>
     readonly useLink: UnwrapRef<typeof import('vue-router/composables')['useLink']>
     readonly useLinks: UnwrapRef<typeof import('./composables/links')['useLinks']>
     readonly useLiquidityPosition: UnwrapRef<typeof import('./composables/defi')['useLiquidityPosition']>
+    readonly useLiquityStore: UnwrapRef<typeof import('./store/defi/liquity/index')['useLiquityStore']>
     readonly useLocalStorage: UnwrapRef<typeof import('@vueuse/core')['useLocalStorage']>
     readonly useLocationInfo: UnwrapRef<typeof import('./composables/balances')['useLocationInfo']>
     readonly useMagicKeys: UnwrapRef<typeof import('@vueuse/core')['useMagicKeys']>
+    readonly useMainStore: UnwrapRef<typeof import('./store/main')['useMainStore']>
+    readonly useMakerDaoStore: UnwrapRef<typeof import('./store/defi/makerdao/index')['useMakerDaoStore']>
     readonly useManualAssetBalances: UnwrapRef<typeof import('./composables/balances/manual')['useManualAssetBalances']>
+    readonly useManualBalancesStore: UnwrapRef<typeof import('./store/balances/manual')['useManualBalancesStore']>
     readonly useManualRefHistory: UnwrapRef<typeof import('@vueuse/core')['useManualRefHistory']>
     readonly useMath: UnwrapRef<typeof import('@vueuse/math')['useMath']>
     readonly useMax: UnwrapRef<typeof import('@vueuse/math')['useMax']>
@@ -612,8 +758,10 @@ declare module 'vue' {
     readonly useMemoize: UnwrapRef<typeof import('@vueuse/core')['useMemoize']>
     readonly useMemory: UnwrapRef<typeof import('@vueuse/core')['useMemory']>
     readonly useMessageHandling: UnwrapRef<typeof import('./composables/message-handling')['useMessageHandling']>
+    readonly useMessageStore: UnwrapRef<typeof import('./store/message')['useMessageStore']>
     readonly useMin: UnwrapRef<typeof import('@vueuse/math')['useMin']>
     readonly useModules: UnwrapRef<typeof import('./composables/session/modules')['useModules']>
+    readonly useMonitorStore: UnwrapRef<typeof import('./store/monitor')['useMonitorStore']>
     readonly useMounted: UnwrapRef<typeof import('@vueuse/core')['useMounted']>
     readonly useMouse: UnwrapRef<typeof import('@vueuse/core')['useMouse']>
     readonly useMouseInElement: UnwrapRef<typeof import('@vueuse/core')['useMouseInElement']>
@@ -622,12 +770,16 @@ declare module 'vue' {
     readonly useNavigatorLanguage: UnwrapRef<typeof import('@vueuse/core')['useNavigatorLanguage']>
     readonly useNetwork: UnwrapRef<typeof import('@vueuse/core')['useNetwork']>
     readonly useNewlyDetectedTokens: UnwrapRef<typeof import('./composables/assets/newly-detected-tokens')['useNewlyDetectedTokens']>
+    readonly useNftsStore: UnwrapRef<typeof import('./store/assets/nft')['useNftsStore']>
+    readonly useNonFungibleBalancesStore: UnwrapRef<typeof import('./store/balances/non-fungible')['useNonFungibleBalancesStore']>
+    readonly useNotificationsStore: UnwrapRef<typeof import('./store/notifications/index')['useNotificationsStore']>
     readonly useNow: UnwrapRef<typeof import('@vueuse/core')['useNow']>
     readonly useObjectUrl: UnwrapRef<typeof import('@vueuse/core')['useObjectUrl']>
     readonly useOffsetPagination: UnwrapRef<typeof import('@vueuse/core')['useOffsetPagination']>
     readonly useOnline: UnwrapRef<typeof import('@vueuse/core')['useOnline']>
     readonly usePageLeave: UnwrapRef<typeof import('@vueuse/core')['usePageLeave']>
     readonly useParallax: UnwrapRef<typeof import('@vueuse/core')['useParallax']>
+    readonly usePeriodicStore: UnwrapRef<typeof import('./store/session/periodic')['usePeriodicStore']>
     readonly usePermission: UnwrapRef<typeof import('@vueuse/core')['usePermission']>
     readonly usePointer: UnwrapRef<typeof import('@vueuse/core')['usePointer']>
     readonly usePointerSwipe: UnwrapRef<typeof import('@vueuse/core')['usePointerSwipe']>
@@ -639,12 +791,16 @@ declare module 'vue' {
     readonly usePreferredReducedMotion: UnwrapRef<typeof import('@vueuse/core')['usePreferredReducedMotion']>
     readonly usePremium: UnwrapRef<typeof import('./composables/premium')['usePremium']>
     readonly usePremiumReminder: UnwrapRef<typeof import('./composables/premium')['usePremiumReminder']>
+    readonly usePremiumStore: UnwrapRef<typeof import('./store/session/premium')['usePremiumStore']>
     readonly usePrivacyMode: UnwrapRef<typeof import('./composables/privacy')['usePrivacyMode']>
     readonly useProjection: UnwrapRef<typeof import('@vueuse/math')['useProjection']>
     readonly useProxy: UnwrapRef<typeof import('./composables/common')['useProxy']>
+    readonly usePurgeStore: UnwrapRef<typeof import('./store/history/purge')['usePurgeStore']>
+    readonly useQueriedAddressesStore: UnwrapRef<typeof import('./store/session/queried-addresses')['useQueriedAddressesStore']>
     readonly useRafFn: UnwrapRef<typeof import('@vueuse/core')['useRafFn']>
     readonly useRefHistory: UnwrapRef<typeof import('@vueuse/core')['useRefHistory']>
     readonly useRefresh: UnwrapRef<typeof import('./composables/balances/refresh')['useRefresh']>
+    readonly useReportsStore: UnwrapRef<typeof import('./store/reports/index')['useReportsStore']>
     readonly useResizeObserver: UnwrapRef<typeof import('@vueuse/core')['useResizeObserver']>
     readonly useRound: UnwrapRef<typeof import('@vueuse/math')['useRound']>
     readonly useRoute: UnwrapRef<typeof import('vue-router/composables')['useRoute']>
@@ -655,15 +811,23 @@ declare module 'vue' {
     readonly useScroll: UnwrapRef<typeof import('@vueuse/core')['useScroll']>
     readonly useScrollLock: UnwrapRef<typeof import('@vueuse/core')['useScrollLock']>
     readonly useSectionLoading: UnwrapRef<typeof import('./composables/common')['useSectionLoading']>
+    readonly useSessionAuthStore: UnwrapRef<typeof import('./store/session/auth')['useSessionAuthStore']>
+    readonly useSessionPurgeStore: UnwrapRef<typeof import('./store/session/purge')['useSessionPurgeStore']>
     readonly useSessionSettings: UnwrapRef<typeof import('./composables/session/settings')['useSessionSettings']>
+    readonly useSessionSettingsStore: UnwrapRef<typeof import('./store/settings/session')['useSessionSettingsStore']>
     readonly useSessionStateCleaner: UnwrapRef<typeof import('./composables/logout')['useSessionStateCleaner']>
     readonly useSessionStorage: UnwrapRef<typeof import('@vueuse/core')['useSessionStorage']>
+    readonly useSessionStore: UnwrapRef<typeof import('./store/session/index')['useSessionStore']>
     readonly useSettings: UnwrapRef<typeof import('./composables/settings')['useSettings']>
+    readonly useSettingsStore: UnwrapRef<typeof import('./store/settings/index')['useSettingsStore']>
     readonly useShare: UnwrapRef<typeof import('@vueuse/core')['useShare']>
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useSorted: UnwrapRef<typeof import('@vueuse/core')['useSorted']>
     readonly useSpeechRecognition: UnwrapRef<typeof import('@vueuse/core')['useSpeechRecognition']>
     readonly useSpeechSynthesis: UnwrapRef<typeof import('@vueuse/core')['useSpeechSynthesis']>
+    readonly useStakingStore: UnwrapRef<typeof import('./store/staking/index')['useStakingStore']>
+    readonly useStatisticsStore: UnwrapRef<typeof import('./store/statistics/index')['useStatisticsStore']>
+    readonly useStatusStore: UnwrapRef<typeof import('./store/status')['useStatusStore']>
     readonly useStatusUpdater: UnwrapRef<typeof import('./composables/status')['useStatusUpdater']>
     readonly useStepper: UnwrapRef<typeof import('@vueuse/core')['useStepper']>
     readonly useStorage: UnwrapRef<typeof import('@vueuse/core')['useStorage']>
@@ -673,7 +837,11 @@ declare module 'vue' {
     readonly useSupported: UnwrapRef<typeof import('@vueuse/core')['useSupported']>
     readonly useSupportedChains: UnwrapRef<typeof import('./composables/info/chains')['useSupportedChains']>
     readonly useSupportedChainsApi: UnwrapRef<typeof import('./composables/api/info/chains')['useSupportedChainsApi']>
+    readonly useSushiswapStore: UnwrapRef<typeof import('./store/defi/sushiswap/index')['useSushiswapStore']>
     readonly useSwipe: UnwrapRef<typeof import('@vueuse/core')['useSwipe']>
+    readonly useSyncStore: UnwrapRef<typeof import('./store/session/sync-store')['useSyncStore']>
+    readonly useTagStore: UnwrapRef<typeof import('./store/session/tags')['useTagStore']>
+    readonly useTaskStore: UnwrapRef<typeof import('./store/tasks/index')['useTaskStore']>
     readonly useTemplateRefsList: UnwrapRef<typeof import('@vueuse/core')['useTemplateRefsList']>
     readonly useTextDirection: UnwrapRef<typeof import('@vueuse/core')['useTextDirection']>
     readonly useTextSelection: UnwrapRef<typeof import('@vueuse/core')['useTextSelection']>
@@ -695,10 +863,15 @@ declare module 'vue' {
     readonly useTokenDetection: UnwrapRef<typeof import('./composables/balances/token-detection')['useTokenDetection']>
     readonly useTooltip: UnwrapRef<typeof import('./composables/graphs')['useTooltip']>
     readonly useTradeFilters: UnwrapRef<typeof import('./composables/filters/trades')['useTradeFilters']>
+    readonly useTradeStore: UnwrapRef<typeof import('./store/history/trades')['useTradeStore']>
+    readonly useTransactionEventTypeData: UnwrapRef<typeof import('./composables/history/tx-event-type')['useTransactionEventTypeData']>
     readonly useTransactionFilter: UnwrapRef<typeof import('./composables/filters/transactions')['useTransactionFilter']>
     readonly useTransactionQueryStatus: UnwrapRef<typeof import('./composables/history/transactions/query-status')['useTransactionQueryStatus']>
+    readonly useTransactionStore: UnwrapRef<typeof import('./store/history/transactions')['useTransactionStore']>
     readonly useTransition: UnwrapRef<typeof import('@vueuse/core')['useTransition']>
     readonly useTrunc: UnwrapRef<typeof import('@vueuse/math')['useTrunc']>
+    readonly useTxQueryStatusStore: UnwrapRef<typeof import('./store/history/query-status')['useTxQueryStatusStore']>
+    readonly useUniswapStore: UnwrapRef<typeof import('./store/defi/uniswap')['useUniswapStore']>
     readonly useUrlSearchParams: UnwrapRef<typeof import('@vueuse/core')['useUrlSearchParams']>
     readonly useUserMedia: UnwrapRef<typeof import('@vueuse/core')['useUserMedia']>
     readonly useVModel: UnwrapRef<typeof import('@vueuse/core')['useVModel']>
@@ -707,13 +880,16 @@ declare module 'vue' {
     readonly useVibrate: UnwrapRef<typeof import('@vueuse/core')['useVibrate']>
     readonly useVirtualList: UnwrapRef<typeof import('@vueuse/core')['useVirtualList']>
     readonly useWakeLock: UnwrapRef<typeof import('@vueuse/core')['useWakeLock']>
+    readonly useWatchersStore: UnwrapRef<typeof import('./store/session/watchers')['useWatchersStore']>
     readonly useWebNotification: UnwrapRef<typeof import('@vueuse/core')['useWebNotification']>
     readonly useWebSocket: UnwrapRef<typeof import('@vueuse/core')['useWebSocket']>
     readonly useWebWorker: UnwrapRef<typeof import('@vueuse/core')['useWebWorker']>
     readonly useWebWorkerFn: UnwrapRef<typeof import('@vueuse/core')['useWebWorkerFn']>
+    readonly useWebsocketStore: UnwrapRef<typeof import('./store/websocket')['useWebsocketStore']>
     readonly useWindowFocus: UnwrapRef<typeof import('@vueuse/core')['useWindowFocus']>
     readonly useWindowScroll: UnwrapRef<typeof import('@vueuse/core')['useWindowScroll']>
     readonly useWindowSize: UnwrapRef<typeof import('@vueuse/core')['useWindowSize']>
+    readonly useYearnStore: UnwrapRef<typeof import('./store/defi/yearn/index')['useYearnStore']>
     readonly watch: UnwrapRef<typeof import('vue')['watch']>
     readonly watchArray: UnwrapRef<typeof import('@vueuse/core')['watchArray']>
     readonly watchAtMost: UnwrapRef<typeof import('@vueuse/core')['watchAtMost']>

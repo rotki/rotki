@@ -2,15 +2,6 @@ import { type Balance, type HasBalance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Eth2Validators } from '@rotki/common/lib/staking/eth2';
 import { type ComputedRef } from 'vue';
-import {
-  type AccountWithBalance,
-  type AccountWithBalanceAndSharedOwnership,
-  type AssetBreakdown,
-  type BlockchainAccountWithBalance
-} from '@/store/balances/types';
-import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
-import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Writeable } from '@/types';
 import { type AccountAssetBalances } from '@/types/balances';
 import {
@@ -29,6 +20,12 @@ import {
 import { zeroBalance } from '@/utils/bignumbers';
 import { assetSum, balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
+import {
+  type AccountWithBalance,
+  type AccountWithBalanceAndSharedOwnership,
+  type AssetBreakdown,
+  type BlockchainAccountWithBalance
+} from '@/types/accounts';
 
 function addLoopringBreakdown(
   loopring: AccountAssetBalances,

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Currency, useCurrencies } from '@/types/currencies';
 
 const { currencies } = useCurrencies();

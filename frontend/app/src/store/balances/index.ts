@@ -1,21 +1,12 @@
 import { type MaybeRef } from '@vueuse/core';
 import { useBalancesApi } from '@/services/balances';
-import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useManualBalancesStore } from '@/store/balances/manual';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { type AllBalancePayload } from '@/store/balances/types';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useBlockchainBalancesStore } from '@/store/blockchain/balances';
-import { useNotificationsStore } from '@/store/notifications';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTasks } from '@/store/tasks';
 import { CURRENCY_USD } from '@/types/currencies';
 import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { One } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
+import { type AllBalancePayload } from '@/types/accounts';
 
 export const useBalancesStore = defineStore('balances', () => {
   const { updatePrices: updateManualPrices, fetchManualBalances } =
@@ -31,7 +22,7 @@ export const useBalancesStore = defineStore('balances', () => {
   const { assetPrice, fetchPrices, fetchExchangeRates, exchangeRate } =
     priceStore;
   const { notify } = useNotificationsStore();
-  const { isTaskRunning, addTask } = useTasks();
+  const { isTaskRunning, addTask } = useTaskStore();
   const { tc } = useI18n();
   const { currencySymbol, currency } = storeToRefs(useGeneralSettingsStore());
 

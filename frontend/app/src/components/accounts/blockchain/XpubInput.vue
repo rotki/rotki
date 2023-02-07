@@ -3,7 +3,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { type XpubPayload } from '@/store/balances/types';
 import { trimOnPaste } from '@/utils/event';
 import {
   XpubPrefix,
@@ -14,6 +13,7 @@ import {
 } from '@/utils/xpub';
 import { type ValidationErrors } from '@/types/api/errors';
 import { type BtcChains } from '@/types/blockchain/chains';
+import { type XpubPayload } from '@/types/accounts';
 
 const props = defineProps<{
   disabled: boolean;

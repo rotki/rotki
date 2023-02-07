@@ -7,10 +7,8 @@ import MakerDaoVaultCollateral from '@/components/defi/loan/loans/makerdao/Maker
 import MakerDaoVaultDebtDetails from '@/components/defi/loan/loans/makerdao/MakerDaoVaultDebtDetails.vue';
 import MakerDaoVaultLiquidation from '@/components/defi/loan/loans/makerdao/MakerDaoVaultLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
-
 import { VaultEventsList } from '@/premium/premium';
-import { usePremiumStore } from '@/store/session/premium';
-import { useSessionSettingsStore } from '@/store/settings/session';
+
 import {
   type MakerDAOVaultEvent,
   type MakerDAOVaultModel

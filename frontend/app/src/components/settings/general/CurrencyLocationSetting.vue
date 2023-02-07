@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { CurrencyLocation } from '@/types/currency-location';
 
 const currencyLocation = ref<CurrencyLocation>(CurrencyLocation.AFTER);

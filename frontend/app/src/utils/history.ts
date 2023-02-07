@@ -1,10 +1,4 @@
 import {
-  transactionEventProtocolData,
-  transactionEventTypeMapping,
-  useTransactionEventTypeData
-} from '@/store/history/consts';
-import { type ActionDataEntry } from '@/store/types';
-import {
   HistoryEventSubType,
   HistoryEventType,
   TransactionEventProtocol,
@@ -14,9 +8,12 @@ import { isValidEthAddress } from '@/utils/text';
 import { type EthTransactionEventEntry } from '@/types/history/tx';
 import { uniqueStrings } from '@/utils/data';
 import { type PaginationRequestPayload } from '@/types/common';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type EntryMeta, type EntryWithMeta } from '@/types/history/meta';
 import { type Collection } from '@/types/collection';
+import { transactionEventTypeMapping } from '@/data/transaction-event-mapping';
+import { useTransactionEventTypeData } from '@/composables/history/tx-event-type';
+import { transactionEventProtocolData } from '@/composables/history/protocol-data';
+import { type ActionDataEntry } from '@/types/action';
 
 export const getEventType = (event: {
   eventType?: string | null;

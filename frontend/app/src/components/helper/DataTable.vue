@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type PropType, useListeners } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const props = defineProps({
   sortDesc: { required: false, type: Boolean, default: true },

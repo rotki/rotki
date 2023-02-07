@@ -5,10 +5,10 @@ import AaveLending from '@/components/defi/loan/loans/AaveLending.vue';
 import CompoundLending from '@/components/defi/loan/loans/CompoundLending.vue';
 import LiquityLending from '@/components/defi/loan/loans/LiquityLending.vue';
 import MakerDaoVaultLoan from '@/components/defi/loan/loans/MakerDaoVaultLoan.vue';
-import { type LiquityLoan } from '@/store/defi/liquity/types';
-import { type AaveLoan } from '@/store/defi/types';
+import { type AaveLoan } from '@/types/defi/lending';
 import { type CompoundLoan } from '@/types/defi/compound';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
+import { type LiquityLoan } from '@/types/defi/liquity';
 
 type Loan = MakerDAOVaultModel | AaveLoan | CompoundLoan | LiquityLoan;
 

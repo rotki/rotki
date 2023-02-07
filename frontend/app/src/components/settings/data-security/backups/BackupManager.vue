@@ -6,12 +6,10 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';
 import DatabaseInfoDisplay from '@/components/settings/data-security/backups/DatabaseInfoDisplay.vue';
 import { useBackupApi } from '@/services/backup';
-import { useNotificationsStore } from '@/store/notifications';
 import { type DatabaseInfo, type UserDbBackup } from '@/types/backup';
 import { getFilepath } from '@/utils/backups';
 import { size } from '@/utils/data';
 import { logger } from '@/utils/logging';
-import { useConfirmStore } from '@/store/confirm';
 
 const isSameEntry = (firstDb: UserDbBackup, secondDb: UserDbBackup) => {
   return (

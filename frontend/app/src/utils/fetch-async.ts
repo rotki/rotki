@@ -1,12 +1,10 @@
 import { Severity } from '@rotki/common/lib/messages';
 import * as logger from 'loglevel';
 import { type Ref } from 'vue';
-import { useNotificationsStore } from '@/store/notifications';
-import { useTasks } from '@/store/tasks';
-import { type FetchData } from '@/store/typing';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import { type FetchData } from '@/types/fetch';
 
 export async function fetchDataAsync<T extends TaskMeta, R>(
   data: FetchData<T, R>,
@@ -19,7 +17,7 @@ export async function fetchDataAsync<T extends TaskMeta, R>(
     logger.debug(`module ${data.requires.module} inactive or not premium`);
     return;
   }
-  const { awaitTask, isTaskRunning } = useTasks();
+  const { awaitTask, isTaskRunning } = useTaskStore();
 
   const task = data.task;
   const { getStatus, setStatus } = useStatusUpdater(task.section);

@@ -1,7 +1,7 @@
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
-import { type StatusPayload } from '@/store/types';
 import { Section, Status, defiSections } from '@/types/status';
+import { type StatusPayload } from '@/types/action';
 
 const isLoading = (status: MaybeRef<Status>): boolean =>
   get(status) === Status.LOADING ||

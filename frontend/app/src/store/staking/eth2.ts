@@ -7,9 +7,6 @@ import {
 import { omitBy } from 'lodash';
 import isEqual from 'lodash/isEqual';
 import { useEth2Api } from '@/services/staking/eth2';
-import { useNotificationsStore } from '@/store/notifications';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useTasks } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -42,7 +39,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
   const stats = ref<Eth2DailyStats>(defaultStats());
   const pagination = ref<Eth2DailyStatsPayload>(defaultPagination());
   const premium = usePremium();
-  const { awaitTask, isTaskRunning } = useTasks();
+  const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { t, tc } = useI18n();
 

@@ -3,7 +3,6 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { type PropType } from 'vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type LocationDataSnapshotPayload } from '@/types/snapshots';
 
 const props = defineProps({

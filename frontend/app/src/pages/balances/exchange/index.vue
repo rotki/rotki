@@ -5,13 +5,10 @@ import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow
 import AssetBalances from '@/components/AssetBalances.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Routes } from '@/router/routes';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useTasks } from '@/store/tasks';
 import { type SupportedExchange } from '@/types/exchanges';
 import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
-import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 
 const props = defineProps({
   exchange: {
@@ -22,7 +19,7 @@ const props = defineProps({
 });
 
 const { exchange } = toRefs(props);
-const { isTaskRunning } = useTasks();
+const { isTaskRunning } = useTaskStore();
 const store = useExchangeBalancesStore();
 const { connectedExchanges } = storeToRefs(useAssociatedLocationsStore());
 
