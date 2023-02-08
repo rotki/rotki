@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { type TradeLocationData } from '@/types/trades';
+import { type TradeLocationData } from '@/types/history/trade/trade-location';
 
 const props = defineProps({
   item: {

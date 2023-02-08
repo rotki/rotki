@@ -1,6 +1,5 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
-import { useAssetMovementsApi } from '@/services/history/asset-movements';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { type SupportedExchange } from '@/types/exchanges';
 import { type EntryWithMeta } from '@/types/history/meta';
@@ -10,11 +9,10 @@ import {
   type AssetMovementEntry,
   type AssetMovementRequestPayload
 } from '@/types/history/movements';
-import { type TradeLocation } from '@/types/history/trade-location';
+import { type TradeLocation } from '@/types/history/trade/trade-location';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { useTradeLocations } from '@/types/trades';
 import {
   defaultCollectionState,
   mapCollectionResponse

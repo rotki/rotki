@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { type Tag } from '@/types/user';
+import { type Tag } from '@/types/tags';
 
 defineProps({
   tag: { required: true, type: Object as PropType<Tag> },

@@ -5,9 +5,9 @@ import { type DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { bigNumberSum } from '@/filters';
 import { getSortItems } from '@/utils/assets';
-import { isEvmNativeToken } from '@/types/assets';
+import { isEvmNativeToken } from '@/types/asset';
+import { bigNumberSum } from '@/utils/calculation';
 
 const props = withDefaults(
   defineProps<{

@@ -3,13 +3,13 @@ import { get, set } from '@vueuse/core';
 import sortBy from 'lodash/sortBy';
 import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
-import { BalanceType } from '@/services/balances/types';
-import { type BtcAccountData } from '@/services/types-api';
 import { type BtcBalances } from '@/types/blockchain/balances';
 import { useCurrencies } from '@/types/currencies';
 import { SupportedExchange } from '@/types/exchanges';
 import { bigNumberify, zeroBalance } from '@/utils/bignumbers';
 import '../../i18n';
+import { BalanceType } from '@/types/balances';
+import { type BtcAccountData } from '@/types/blockchain/accounts';
 
 describe('store::balances/aggregated', () => {
   beforeEach(() => {

@@ -1,5 +1,4 @@
 import { type ComputedRef, type Ref } from 'vue';
-import { ProtocolVersion } from '@/services/defi/consts';
 import {
   DEPOSIT,
   type YearnVaultAsset,
@@ -15,8 +14,8 @@ import { TaskType } from '@/types/task-type';
 import { isEvmIdentifier } from '@/utils/assets';
 import { zeroBalance } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
-import { useYearnApi } from '@/services/defi/yearn';
 import { isLoading } from '@/utils/status';
+import { ProtocolVersion } from '@/types/defi';
 
 export const useYearnStore = defineStore('defi/yearn', () => {
   const vaultsBalances: Ref<YearnVaultsBalances> = ref({});

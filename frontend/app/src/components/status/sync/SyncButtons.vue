@@ -3,7 +3,7 @@ import {
   SYNC_DOWNLOAD,
   SYNC_UPLOAD,
   type SyncAction
-} from '@/services/types-api';
+} from '@/types/session/sync';
 
 defineProps({
   pending: { required: true, type: Boolean }

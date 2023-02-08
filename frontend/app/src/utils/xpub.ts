@@ -1,4 +1,4 @@
-import { XpubKeyType, type XpubPayload } from '@/types/accounts';
+import { XpubKeyType, type XpubPayload } from '@/types/blockchain/accounts';
 
 export enum XpubPrefix {
   P2TR = 'p2tr',

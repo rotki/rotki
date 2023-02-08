@@ -1,7 +1,4 @@
 import { type ComputedRef } from 'vue';
-import { useExchangeApi } from '@/services/balances/exchanges';
-import { useUsersApi } from '@/services/session/users.api';
-import { useSettingsApi } from '@/services/settings/settings-api';
 import { type Exchange } from '@/types/exchanges';
 import { type SupportedLanguage } from '@/types/frontend-settings';
 import {

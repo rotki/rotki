@@ -43,3 +43,23 @@ export const calculatePercentage = (
     : value.div(divider).multipliedBy(100);
   return percentage.toFixed(2);
 };
+
+export function bigNumberSum(value: BigNumber[]): BigNumber {
+  return value.reduce(
+    (previousValue, currentValue) => previousValue.plus(currentValue),
+    Zero
+  );
+}
+
+export function aggregateTotal(
+  balances: any[],
+  mainCurrency: string,
+  exchangeRate: BigNumber
+): BigNumber {
+  return balances.reduce((previousValue, currentValue) => {
+    if (currentValue.asset === mainCurrency) {
+      return previousValue.plus(currentValue.amount);
+    }
+    return previousValue.plus(currentValue.usdValue.multipliedBy(exchangeRate));
+  }, Zero);
+}

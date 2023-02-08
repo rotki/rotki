@@ -3,12 +3,12 @@ import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type PropType, type Ref, useListeners } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import ConflictRow from '@/components/status/update/ConflictRow.vue';
+import { type Writeable } from '@/types';
 import {
+  type AssetUpdateConflictResult,
   type ConflictResolution,
   type ConflictResolutionStrategy
-} from '@/services/assets/types';
-import { type Writeable } from '@/types';
-import { type AssetUpdateConflictResult } from '@/types/assets';
+} from '@/types/asset';
 import { uniqueStrings } from '@/utils/data';
 
 const props = defineProps({

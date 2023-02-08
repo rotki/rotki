@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { BalanceType } from '@/services/balances/types';
+import { BalanceType } from '@/types/balances';
 
 defineProps({
   value: {

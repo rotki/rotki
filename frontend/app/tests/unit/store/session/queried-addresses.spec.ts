@@ -1,12 +1,11 @@
 import { createPinia, setActivePinia } from 'pinia';
-import { useQueriedAddressApi } from '@/services/session/queried-addresses-api';
+import { Module } from '@/types/modules';
 import {
   type QueriedAddressPayload,
   type QueriedAddresses
-} from '@/services/session/types';
-import { Module } from '@/types/modules';
+} from '@/types/session';
 
-vi.mock('@/services/session/queried-addresses-api', () => ({
+vi.mock('@/composables/api/session/queried-addresses', () => ({
   useQueriedAddressApi: vi.fn().mockReturnValue({})
 }));
 

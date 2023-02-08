@@ -3,7 +3,6 @@ import { type BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { type PropType } from 'vue';
-import { bigNumberSum } from '@/filters';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
   type BalanceSnapshot,
@@ -12,6 +11,7 @@ import {
 import { assert } from '@/utils/assertions';
 import { One, Zero, bigNumberify } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
+import { bigNumberSum } from '@/utils/calculation';
 
 const props = defineProps({
   value: {

@@ -4,9 +4,8 @@ import {
   Eth2Deposits,
   Eth2Details
 } from '@rotki/common/lib/staking/eth2';
-import { omitBy } from 'lodash';
+import omitBy from 'lodash/omitBy';
 import isEqual from 'lodash/isEqual';
-import { useEth2Api } from '@/services/staking/eth2';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';

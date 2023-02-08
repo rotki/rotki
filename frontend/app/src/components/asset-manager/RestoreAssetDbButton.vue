@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { useAssetsApi } from '@/services/assets';
 
 defineProps({
   dropdown: {

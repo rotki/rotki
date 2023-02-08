@@ -1,4 +1,3 @@
-import { api } from '@/services/rotkehlchen-api';
 import { type PremiumCredentialsPayload } from '@/types/session';
 import { type ActionStatus } from '@/types/action';
 
@@ -10,6 +9,8 @@ export const usePremiumStore = defineStore('session/premium', () => {
   const showComponents = computed(() => {
     return get(premium) && get(componentsReady);
   });
+
+  const api = usePremiumCredentialsApi();
 
   const setup = async ({
     apiKey,

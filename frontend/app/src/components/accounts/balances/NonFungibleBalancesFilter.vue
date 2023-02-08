@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { type IgnoredAssetsHandlingType } from '@/types/assets';
+import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { type NonFungibleBalance } from '@/types/nfbalances';
 
 defineProps({

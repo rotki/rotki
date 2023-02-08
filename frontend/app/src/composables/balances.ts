@@ -1,10 +1,9 @@
 import { type MaybeRef } from '@vueuse/core';
 import { getIdentifierFromSymbolMap } from '@rotki/common/lib/data';
 import { Routes } from '@/router/routes';
-import { useAssetIconApi } from '@/services/assets/icon-api';
-import { type TradeLocationData, useTradeLocations } from '@/types/trades';
 import { assert } from '@/utils/assertions';
 import { isBlockchain } from '@/types/blockchain/chains';
+import { type TradeLocationData } from '@/types/history/trade/trade-location';
 
 export const useLocationInfo = () => {
   const { tradeLocations } = useTradeLocations();

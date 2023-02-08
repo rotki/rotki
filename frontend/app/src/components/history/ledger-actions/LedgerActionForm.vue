@@ -11,8 +11,8 @@ import {
   type LedgerAction,
   type LedgerActionEntry,
   type NewLedgerAction
-} from '@/types/history/ledger-actions';
-import { LedgerActionType } from '@/types/ledger-actions';
+} from '@/types/history/ledger-action/ledger-actions';
+import { LedgerActionType } from '@/types/history/ledger-action/ledger-actions-type';
 import { Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 

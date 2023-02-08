@@ -1,5 +1,4 @@
-import { type Watcher, type WatcherTypes } from '@/services/session/types';
-import { useWatchersApi } from '@/services/session/watchers-api';
+import { type Watcher, type WatcherTypes } from '@/types/session';
 
 export const useWatchersStore = defineStore('session/watchers', () => {
   const watchers = ref<Watcher<WatcherTypes>[]>([]);

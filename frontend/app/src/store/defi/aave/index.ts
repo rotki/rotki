@@ -7,7 +7,6 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { balanceSum } from '@/utils/calculation';
 import { logger } from '@/utils/logging';
-import { useAaveApi } from '@/services/defi/aave';
 import { isLoading } from '@/utils/status';
 
 export const useAaveStore = defineStore('defi/aave', () => {

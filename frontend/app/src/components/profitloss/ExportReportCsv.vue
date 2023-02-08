@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { api } from '@/services/rotkehlchen-api';
-import { useReportsApi } from '@/services/reports';
 
 defineProps({
   icon: {

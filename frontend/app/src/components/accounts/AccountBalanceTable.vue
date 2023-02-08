@@ -5,16 +5,6 @@ import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 import { type ComputedRef, type Ref, useListeners } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import AccountGroupHeader from '@/components/accounts/AccountGroupHeader.vue';
-import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
-import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
-import TokenDetection from '@/components/accounts/blockchain/TokenDetection.vue';
-import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import RowAppend from '@/components/helper/RowAppend.vue';
-import RowExpander from '@/components/helper/RowExpander.vue';
-import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { bigNumberSum } from '@/filters';
 import { type Properties } from '@/types';
 import { chainSection } from '@/types/blockchain';
 import { Section } from '@/types/status';
@@ -22,12 +12,12 @@ import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import { Zero, zeroBalance } from '@/utils/bignumbers';
 import { isTokenChain } from '@/types/blockchain/chains';
-import { balanceSum } from '@/utils/calculation';
+import { balanceSum, bigNumberSum } from '@/utils/calculation';
 import {
   type BlockchainAccountWithBalance,
   type XpubAccountWithBalance,
   type XpubPayload
-} from '@/types/accounts';
+} from '@/types/blockchain/accounts';
 
 const props = withDefaults(
   defineProps<{

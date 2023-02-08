@@ -1,7 +1,6 @@
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef, type Ref } from 'vue';
-import { useBlockchainBalanceApi } from '@/services/balances/blockchain';
 import { AccountAssetBalances, type AssetBalances } from '@/types/balances';
 import {
   type BlockchainAssetBalances,
@@ -45,7 +44,7 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrievalStore();
-  const { queryLoopringBalances } = useBlockchainBalanceApi();
+  const { queryLoopringBalances } = useBlockchainBalancesApi();
   const { tc } = useI18n();
 
   const getLoopringAssetBalances = (

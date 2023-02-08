@@ -1,8 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { useAddressesNamesApi } from '@/services/blockchain/addresses-names';
 import { FrontendSettings } from '@/types/frontend-settings';
 
-vi.mock('@/services/blockchain/addresses-names', () => ({
+vi.mock('@/composables/api/blockchain/addresses-names', () => ({
   useAddressesNamesApi: vi.fn().mockReturnValue({
     getEnsNamesTask: vi.fn().mockResolvedValue(1),
     getEnsNames: vi.fn().mockResolvedValue([]),

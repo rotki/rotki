@@ -2,7 +2,7 @@
 import { type BigNumber } from '@rotki/common';
 import { type PropType } from 'vue';
 import { Unit, toUnit } from '@/utils/calculation';
-import { type EthTransactionEntry } from '@/types/history/tx';
+import { type EthTransactionEntry } from '@/types/history/tx/tx';
 
 const props = defineProps({
   transaction: {

@@ -12,7 +12,6 @@ import {
   SUPPORTED_EXCHANGES,
   SupportedExchange
 } from '@/types/exchanges';
-import { useTradeLocations } from '@/types/trades';
 import { trimOnPaste } from '@/utils/event';
 
 const props = defineProps({

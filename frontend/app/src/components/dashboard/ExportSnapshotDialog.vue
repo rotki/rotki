@@ -4,7 +4,6 @@ import { type Message } from '@rotki/common/lib/messages';
 import dayjs from 'dayjs';
 import EditSnapshotDialog from '@/components/dashboard/EditSnapshotDialog.vue';
 import { api } from '@/services/rotkehlchen-api';
-import { useSnapshotApi } from '@/services/settings/snapshot-api';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { downloadFileByUrl } from '@/utils/download';
 

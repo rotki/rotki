@@ -3,8 +3,7 @@ import { type DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
 import TagCreator from '@/components/tags/TagCreator.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { defaultTag } from '@/types/tags';
-import { type Tag } from '@/types/user';
+import { type Tag, defaultTag } from '@/types/tags';
 
 defineProps({
   dialog: { required: false, type: Boolean, default: false }

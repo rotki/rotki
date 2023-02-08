@@ -10,15 +10,14 @@ import DashboardExpandableTable from '@/components/dashboard/DashboardExpandable
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { aggregateTotal } from '@/filters';
 import { type Nullable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
 import { type DashboardTableType } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { getSortItems } from '@/utils/assets';
 import { One } from '@/utils/bignumbers';
-import { calculatePercentage } from '@/utils/calculation';
-import { isEvmNativeToken } from '@/types/assets';
+import { aggregateTotal, calculatePercentage } from '@/utils/calculation';
+import { isEvmNativeToken } from '@/types/asset';
 
 const props = defineProps({
   loading: { required: false, type: Boolean, default: false },

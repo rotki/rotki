@@ -1,6 +1,5 @@
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
-import { useLedgerActionsApi } from '@/services/history/ledger-actions';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { type SupportedExchange } from '@/types/exchanges';
 import {
@@ -9,13 +8,12 @@ import {
   type LedgerActionEntry,
   type LedgerActionRequestPayload,
   type NewLedgerAction
-} from '@/types/history/ledger-actions';
+} from '@/types/history/ledger-action/ledger-actions';
 import { type EntryWithMeta } from '@/types/history/meta';
-import { type TradeLocation } from '@/types/history/trade-location';
+import { type TradeLocation } from '@/types/history/trade/trade-location';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { useTradeLocations } from '@/types/trades';
 import {
   defaultCollectionState,
   mapCollectionResponse

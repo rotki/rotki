@@ -1,8 +1,4 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  type BtcAccountData,
-  type GeneralAccountData
-} from '@/services/types-api';
 import { type BlockchainBalances } from '@/types/blockchain/balances';
 import {
   type BtcChains,
@@ -17,8 +13,10 @@ import { startPromise } from '@/utils';
 import {
   type AccountPayload,
   type BasicBlockchainAccountPayload,
-  type BlockchainAccountPayload
-} from '@/types/accounts';
+  type BlockchainAccountPayload,
+  type BtcAccountData,
+  type GeneralAccountData
+} from '@/types/blockchain/accounts';
 
 export const useBlockchainAccountsStore = defineStore(
   'blockchain/accounts',

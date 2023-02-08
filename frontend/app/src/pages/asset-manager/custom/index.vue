@@ -4,13 +4,12 @@ import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 import CustomAssetTable from '@/components/asset-manager/CustomAssetTable.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { Routes } from '@/router/routes';
-import { useAssetManagementApi } from '@/services/assets/management-api';
 import { type Nullable } from '@/types';
 import {
   type CustomAsset,
   type CustomAssetPagination,
   defaultCustomAssetPagination
-} from '@/types/assets';
+} from '@/types/asset';
 import { convertPagination } from '@/types/pagination';
 
 const props = defineProps({

@@ -18,7 +18,6 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
 import { fetchDataAsync } from '@/utils/fetch-async';
-import { useSushiswapApi } from '@/services/defi/sushiswap';
 import { type OnError } from '@/types/fetch';
 
 export const useSushiswapStore = defineStore('defi/sushiswap', () => {

@@ -5,10 +5,9 @@ import {
   TRADE_LOCATION_BANKS,
   TRADE_LOCATION_BLOCKCHAIN
 } from '@/data/defaults';
-import { useManualBalancesApi } from '@/services/balances/manual';
-import { BalanceType } from '@/services/balances/types';
 import { type AssetPrices } from '@/types/prices';
 import { bigNumberify } from '@/utils/bignumbers';
+import { BalanceType } from '@/types/balances';
 
 vi.mock('@/store/balances/prices', () => ({
   useBalancePricesStore: vi.fn().mockReturnValue({
@@ -16,7 +15,7 @@ vi.mock('@/store/balances/prices', () => ({
   })
 }));
 
-vi.mock('@/services/balances/manual', () => ({
+vi.mock('@/composables/api/balances/manual', () => ({
   useManualBalancesApi: vi.fn().mockReturnValue({
     queryManualBalances: vi.fn().mockResolvedValue(1),
     addManualBalances: vi.fn().mockResolvedValue(1),

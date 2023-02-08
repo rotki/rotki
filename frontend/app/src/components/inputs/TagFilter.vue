@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { type Tag } from '@/types/user';
+import { type Tag } from '@/types/tags';
 
 const props = defineProps({
   value: { required: true, type: Array as PropType<string[]> },

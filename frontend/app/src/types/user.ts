@@ -6,7 +6,7 @@ import { AddressNamePriorityEnum } from '@/types/address-name-priorities';
 import { useCurrencies } from '@/types/currencies';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
 import { FrontendSettings } from '@/types/frontend-settings';
-import { LedgerActionEnum } from '@/types/ledger-actions';
+import { LedgerActionEnum } from '@/types/history/ledger-action/ledger-actions-type';
 import { ModuleEnum } from '@/types/modules';
 import { PriceOracleEnum } from '@/types/price-oracle';
 import { type ToSnakeCase } from '@/types/common';
@@ -197,36 +197,6 @@ export interface ExternalServiceKey {
   readonly name: ExternalServiceName;
   readonly apiKey: string;
 }
-
-export const Tag = z.object({
-  name: z.string(),
-  description: z.string(),
-  backgroundColor: z.string(),
-  foregroundColor: z.string(),
-  readOnly: z.boolean().default(false).optional(),
-  icon: z.string().default('').optional()
-});
-
-export type Tag = z.infer<typeof Tag>;
-
-export enum ReadOnlyTag {
-  LOOPRING = 'Loopring'
-}
-
-export const READ_ONLY_TAGS: Record<ReadOnlyTag, Tag> = {
-  [ReadOnlyTag.LOOPRING]: {
-    name: ReadOnlyTag.LOOPRING,
-    description: ReadOnlyTag.LOOPRING,
-    backgroundColor: 'C5DEF5',
-    foregroundColor: '000000',
-    readOnly: true,
-    icon: './assets/images/modules/loopring.svg'
-  }
-};
-
-export const Tags = z.record(Tag);
-
-export type Tags = z.infer<typeof Tags>;
 
 export const ExchangeRates = z.record(NumericString);
 

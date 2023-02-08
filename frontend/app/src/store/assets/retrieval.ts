@@ -1,12 +1,11 @@
 import { type AssetInfo } from '@rotki/common/lib/data';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
-import { CUSTOM_ASSET } from '@/services/assets/consts';
-import { useAssetInfoApi } from '@/services/assets/info';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@/utils/assets';
-import { type ERC20Token } from '@/types/accounts';
+import { type ERC20Token } from '@/types/blockchain/accounts';
+import { CUSTOM_ASSET } from '@/types/asset';
 
 export const useAssetInfoRetrievalStore = defineStore('assets/info', () => {
   const { erc20details } = useAssetInfoApi();

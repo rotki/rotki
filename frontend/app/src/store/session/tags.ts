@@ -1,8 +1,7 @@
 import logger from 'loglevel';
 import { type ComputedRef } from 'vue';
-import { useTagsApi } from '@/services/tags';
-import { READ_ONLY_TAGS, type Tag, type Tags } from '@/types/user';
 import { type ActionStatus } from '@/types/action';
+import { READ_ONLY_TAGS, type Tag, type Tags } from '@/types/tags';
 
 export const useTagStore = defineStore('session/tags', () => {
   const allTags = ref<Tags>({});

@@ -1,6 +1,4 @@
-import { useAssetIgnoreApi } from '@/services/assets/ignore';
-
-vi.mock('@/services/assets/ignore', () => ({
+vi.mock('@/composables/api/assets/ignore', () => ({
   useAssetIgnoreApi: vi.fn().mockReturnValue({
     getIgnoredAssets: vi.fn().mockResolvedValue([]),
     addIgnoredAssets: vi.fn().mockResolvedValue([]),

@@ -5,7 +5,6 @@ import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';
 import DatabaseInfoDisplay from '@/components/settings/data-security/backups/DatabaseInfoDisplay.vue';
-import { useBackupApi } from '@/services/backup';
 import { type DatabaseInfo, type UserDbBackup } from '@/types/backup';
 import { getFilepath } from '@/utils/backups';
 import { size } from '@/utils/data';

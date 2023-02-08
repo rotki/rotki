@@ -11,11 +11,10 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import SortingSelector from '@/components/helper/SortingSelector.vue';
 import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
-import { type AssetPriceArray } from '@/services/assets/types';
 import { type Module } from '@/types/modules';
 import { uniqueStrings } from '@/utils/data';
-import { useAssetPricesApi } from '@/services/assets/prices';
 import { type GalleryNft, type Nft, type Nfts } from '@/types/nfts';
+import { type NftPriceArray } from '@/types/prices';
 
 defineProps({
   modules: {
@@ -24,7 +23,7 @@ defineProps({
   }
 });
 
-const prices: Ref<AssetPriceArray> = ref([]);
+const prices: Ref<NftPriceArray> = ref([]);
 const priceError = ref('');
 const total = ref(0);
 const limit = ref(0);

@@ -4,10 +4,11 @@ import { type ComputedRef, type PropType } from 'vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { bigNumberSum, truncateAddress, truncationPoints } from '@/filters';
+import { truncateAddress, truncationPoints } from '@/filters';
 import { assert } from '@/utils/assertions';
 import { balanceUsdValueSum } from '@/utils/balances';
-import { type XpubAccountWithBalance } from '@/types/accounts';
+import { type XpubAccountWithBalance } from '@/types/blockchain/accounts';
+import { bigNumberSum } from '@/utils/calculation';
 
 const props = defineProps({
   group: { required: true, type: String },

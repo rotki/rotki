@@ -2,12 +2,11 @@
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import HistoricPriceForm from '@/components/price-manager/historic/HistoricPriceForm.vue';
 import HistoricPriceTable from '@/components/price-manager/historic/HistoricPriceTable.vue';
+import { type Nullable } from '@/types';
 import {
   type HistoricalPrice,
   type HistoricalPriceFormPayload
-} from '@/services/assets/types';
-import { type Nullable } from '@/types';
-import { useAssetPricesApi } from '@/services/assets/prices';
+} from '@/types/prices';
 
 const emptyPrice: () => HistoricalPriceFormPayload = () => ({
   fromAsset: '',

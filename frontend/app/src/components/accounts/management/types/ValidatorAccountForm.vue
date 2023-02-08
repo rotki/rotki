@@ -6,7 +6,7 @@ import { startPromise } from '@/utils';
 
 import Eth2Input from '@/components/accounts/blockchain/Eth2Input.vue';
 import { type ValidationErrors } from '@/types/api/errors';
-import { type BlockchainAccountWithBalance } from '@/types/accounts';
+import { type BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
 
 const validator = ref<Eth2Validator | null>(null);
 const errorMessages = ref<ValidationErrors>({});

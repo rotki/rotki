@@ -6,7 +6,7 @@ import {
   type Chains,
   type ExplorerUrls,
   explorerUrls
-} from '@/types/asset-urls';
+} from '@/types/asset/asset-urls';
 import { randomHex } from '@/utils/data';
 
 const props = withDefaults(

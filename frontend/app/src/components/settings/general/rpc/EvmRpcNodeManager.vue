@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { omit } from 'lodash';
+import omit from 'lodash/omit';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowAction from '@/components/helper/RowActions.vue';

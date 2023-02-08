@@ -1,14 +1,17 @@
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
-import { type SupportedExternalExchanges } from '@/services/balances/types';
+import {
+  SUPPORTED_EXCHANGES,
+  type SupportedExchange,
+  type SupportedExternalExchanges
+} from '@/types/exchanges';
+import { Module } from '@/types/modules';
 import {
   ALL_CENTRALIZED_EXCHANGES,
   ALL_DECENTRALIZED_EXCHANGES,
   ALL_MODULES,
-  ALL_TRANSACTIONS
-} from '@/services/session/consts';
-import { type Purgeable } from '@/services/session/types';
-import { SUPPORTED_EXCHANGES, type SupportedExchange } from '@/types/exchanges';
-import { Module } from '@/types/modules';
+  ALL_TRANSACTIONS,
+  type Purgeable
+} from '@/types/session/purge';
 
 export const useSessionPurgeStore = defineStore('session/purge', () => {
   const { purgeExchange, purgeTransactions } = usePurgeStore();

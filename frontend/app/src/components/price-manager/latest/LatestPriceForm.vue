@@ -2,8 +2,8 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { type PropType } from 'vue';
-import { type ManualPriceFormPayload } from '@/services/assets/types';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import { type ManualPriceFormPayload } from '@/types/prices';
 
 const props = defineProps({
   value: {

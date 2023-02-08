@@ -5,9 +5,9 @@ import RowActions from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { aggregateTotal } from '@/filters';
 import { type ManualBalance } from '@/types/manual-balances';
 import { One } from '@/utils/bignumbers';
+import { aggregateTotal } from '@/utils/calculation';
 
 const props = defineProps({
   title: { required: true, type: String },

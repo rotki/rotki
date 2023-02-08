@@ -1,12 +1,14 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
-import { type BtcAccountData } from '@/services/types-api';
 import { type BtcChains } from '@/types/blockchain/chains';
 import { type BlockchainMetadata } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { removeBtcTags } from '@/utils/tags';
-import { type XpubPayload } from '@/types/accounts';
+import {
+  type BtcAccountData,
+  type XpubPayload
+} from '@/types/blockchain/accounts';
 
 const defaultAccountState = (): BtcAccountData => ({
   standalone: [],

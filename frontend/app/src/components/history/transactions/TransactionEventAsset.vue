@@ -3,10 +3,10 @@ import { type Ref } from 'vue';
 import {
   TransactionEventProtocol,
   TransactionEventType
-} from '@/types/transaction';
+} from '@/types/history/tx/tx-events';
 import TransactionEventLiquityExtraData from '@/components/history/transactions/TransactionEventLiquityExtraData.vue';
 import { getEventType } from '@/utils/history';
-import { type EthTransactionEventEntry } from '@/types/history/tx';
+import { type EthTransactionEventEntry } from '@/types/history/tx/tx';
 
 const props = withDefaults(
   defineProps<{

@@ -1,7 +1,6 @@
 import { type BigNumber } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
-import { usePriceApi } from '@/services/balances/price';
 import { type Balances } from '@/types/blockchain/balances';
 import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
 import {
@@ -19,7 +18,7 @@ import { bigNumberify } from '@/utils/bignumbers';
 import { chunkArray } from '@/utils/data';
 import { convertFromTimestamp } from '@/utils/date';
 import { type ActionStatus } from '@/types/action';
-import { type FetchPricePayload } from '@/types/accounts';
+import { type FetchPricePayload } from '@/types/blockchain/accounts';
 
 export const useBalancePricesStore = defineStore('balances/prices', () => {
   const prices = ref<AssetPrices>({});

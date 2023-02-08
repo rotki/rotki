@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { groupBy } from 'lodash';
+import groupBy from 'lodash/groupBy';
 import { type DataTableHeader } from 'vuetify';
 import { zeroBalance } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';

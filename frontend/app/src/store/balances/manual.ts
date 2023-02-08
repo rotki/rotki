@@ -1,11 +1,10 @@
 import { type BigNumber } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef, type Ref } from 'vue';
-import { useManualBalancesApi } from '@/services/balances/manual';
-import { BalanceType } from '@/services/balances/types';
 import {
   type AssetBalances,
   type BalanceByLocation,
+  BalanceType,
   type LocationBalance
 } from '@/types/balances';
 import {
@@ -21,7 +20,7 @@ import { appendAssetBalance } from '@/utils/balances';
 import { sortDesc } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
 import { type ActionStatus } from '@/types/action';
-import { type AssetBreakdown } from '@/types/accounts';
+import { type AssetBreakdown } from '@/types/blockchain/accounts';
 
 export const useManualBalancesStore = defineStore('balances/manual', () => {
   const manualBalancesData: Ref<ManualBalanceWithValue[]> = ref([]);

@@ -5,9 +5,8 @@ import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useAppRoutes } from '@/router/routes';
-import { useAssetInfoApi } from '@/services/assets/info';
 import { type Exchange } from '@/types/exchanges';
-import { type TradeLocationData } from '@/types/trades';
+import { type TradeLocationData } from '@/types/history/trade/trade-location';
 
 interface SearchItem {
   value: number;

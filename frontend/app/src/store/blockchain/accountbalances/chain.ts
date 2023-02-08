@@ -7,7 +7,10 @@ import {
   getBlockchainBreakdown,
   sum
 } from '@/utils/balances';
-import { type AccountWithBalance, type AssetBreakdown } from '@/types/accounts';
+import {
+  type AccountWithBalance,
+  type AssetBreakdown
+} from '@/types/blockchain/accounts';
 
 export const useChainAccountBalancesStore = defineStore(
   'blockchain/accountbalances/chain',

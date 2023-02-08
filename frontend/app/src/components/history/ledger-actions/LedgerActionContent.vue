@@ -1,19 +1,8 @@
 <script setup lang="ts">
-import { dropRight } from 'lodash';
+import dropRight from 'lodash/dropRight';
 import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
-import NavigatorLink from '@/components/helper/NavigatorLink.vue';
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
-import TableFilter from '@/components/history/filtering/TableFilter.vue';
-import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
-import LedgerActionDetails from '@/components/history/ledger-actions/LedgerActionDetails.vue';
-import LedgerActionFormDialog from '@/components/history/ledger-actions/LedgerActionFormDialog.vue';
-import LocationDisplay from '@/components/history/LocationDisplay.vue';
 
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { Routes } from '@/router/routes';
@@ -22,8 +11,8 @@ import {
   type LedgerAction,
   type LedgerActionEntry,
   type LedgerActionRequestPayload
-} from '@/types/history/ledger-actions';
-import { type TradeLocation } from '@/types/history/trade-location';
+} from '@/types/history/ledger-action/ledger-actions';
+import { type TradeLocation } from '@/types/history/trade/trade-location';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { type TablePagination } from '@/types/pagination';

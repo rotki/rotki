@@ -11,7 +11,7 @@ import {
   type AccountWithBalance,
   type BlockchainAccountWithBalance,
   type XpubPayload
-} from '@/types/accounts';
+} from '@/types/blockchain/accounts';
 
 const props = withDefaults(
   defineProps<{

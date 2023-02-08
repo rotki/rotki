@@ -2,15 +2,14 @@ import { type MaybeRef } from '@vueuse/core';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import isEqual from 'lodash/isEqual';
 import { type ComputedRef, type Ref } from 'vue';
-import {
-  type EthDetectedTokensInfo,
-  type EvmTokensRecord
-} from '@/services/balances/types';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
-import { useBlockchainBalanceApi } from '@/services/balances/blockchain';
 import { type TokenChains, isTokenChain } from '@/types/blockchain/chains';
+import {
+  type EthDetectedTokensInfo,
+  type EvmTokensRecord
+} from '@/types/balances';
 
 const noTokens = (): EthDetectedTokensInfo => ({
   tokens: [],
@@ -30,7 +29,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const {
     fetchDetectedTokensTask,
     fetchDetectedTokens: fetchDetectedTokensCaller
-  } = useBlockchainBalanceApi();
+  } = useBlockchainBalancesApi();
 
   const fetchDetected = async (
     chain: TokenChains,

@@ -3,9 +3,9 @@ import {
   HistoryEventType,
   TransactionEventProtocol,
   type TransactionEventType
-} from '@/types/transaction';
+} from '@/types/history/tx/tx-events';
 import { isValidEthAddress } from '@/utils/text';
-import { type EthTransactionEventEntry } from '@/types/history/tx';
+import { type EthTransactionEventEntry } from '@/types/history/tx/tx';
 import { uniqueStrings } from '@/utils/data';
 import { type PaginationRequestPayload } from '@/types/common';
 import { type EntryMeta, type EntryWithMeta } from '@/types/history/meta';

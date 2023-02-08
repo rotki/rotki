@@ -18,7 +18,6 @@ import { Routes } from '@/router/routes';
 import router from '@/router';
 import { backoff } from '@/utils/backoff';
 import { uniqueStrings } from '@/utils/data';
-import { useSessionApi } from '@/services/session';
 
 export const useMessageHandling = () => {
   const { setQueryStatus } = useTxQueryStatusStore();

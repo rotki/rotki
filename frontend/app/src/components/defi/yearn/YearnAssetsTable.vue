@@ -3,8 +3,8 @@ import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
-import { ProtocolVersion } from '@/services/defi/consts';
 import { type YearnVaultAsset } from '@/types/defi/yearn';
+import { ProtocolVersion } from '@/types/defi';
 
 const props = defineProps({
   loading: { required: true, type: Boolean },

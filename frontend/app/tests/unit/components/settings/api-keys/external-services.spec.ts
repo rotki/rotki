@@ -3,12 +3,11 @@ import flushPromises from 'flush-promises';
 import { type Pinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import ExternalServices from '@/pages/settings/api-keys/external/index.vue';
-import { useExternalServicesApi } from '@/services/settings/external-services-api';
 import { type ExternalServiceKeys } from '@/types/user';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import createCustomPinia from '../../../utils/create-pinia';
 
-vi.mock('@/services/settings/external-services-api', () => ({
+vi.mock('@/composables/api/settings/external-services-api', () => ({
   useExternalServicesApi: vi.fn().mockReturnValue({
     queryExternalServices: vi.fn(),
     setExternalServices: vi.fn(),

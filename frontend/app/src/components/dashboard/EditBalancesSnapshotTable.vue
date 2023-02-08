@@ -7,8 +7,6 @@ import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBal
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RowActions from '@/components/helper/RowActions.vue';
-import { bigNumberSum } from '@/filters';
-import { BalanceType } from '@/services/balances/types';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
   type BalanceSnapshot,
@@ -18,6 +16,8 @@ import {
 import { One, Zero, bigNumberify, sortDesc } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
 import { toSentenceCase } from '@/utils/text';
+import { BalanceType } from '@/types/balances';
+import { bigNumberSum } from '@/utils/calculation';
 
 type IndexedBalanceSnapshot = BalanceSnapshot & { index: number };
 

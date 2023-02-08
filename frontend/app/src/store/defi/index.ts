@@ -3,20 +3,7 @@ import { type DefiAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
 import sortBy from 'lodash/sortBy';
 import { type ComputedRef, type Ref } from 'vue';
-import { ProtocolVersion } from '@/services/defi/consts';
-import {
-  ALL_DECENTRALIZED_EXCHANGES,
-  ALL_MODULES
-} from '@/services/session/consts';
 import { type Writeable } from '@/types';
-import {
-  AIRDROP_POAP,
-  type Airdrop,
-  type AirdropDetail,
-  type AirdropType,
-  Airdrops,
-  type PoapDelivery
-} from '@/types/airdrops';
 import {
   AllDefiProtocols,
   type DefiProtocolSummary,
@@ -37,11 +24,15 @@ import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { Zero, bigNumberify } from '@/utils/bignumbers';
+import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
-import { useDefiApi } from '@/services/defi';
 import { isLoading } from '@/utils/status';
+import { ProtocolVersion } from '@/types/defi';
+import {
+  ALL_DECENTRALIZED_EXCHANGES,
+  ALL_MODULES
+} from '@/types/session/purge';
 
 type ResetStateParams =
   | Module
@@ -49,7 +40,6 @@ type ResetStateParams =
   | typeof ALL_DECENTRALIZED_EXCHANGES;
 export const useDefiStore = defineStore('defi', () => {
   const allProtocols: Ref<AllDefiProtocols> = ref({});
-  const airdrops: Ref<Airdrops> = ref({});
 
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
@@ -66,10 +56,7 @@ export const useDefiStore = defineStore('defi', () => {
   const lendingStore = useDefiSupportedProtocolsStore();
   const { t, tc } = useI18n();
 
-  const {
-    fetchAllDefi: fetchAllDefiCaller,
-    fetchAirdrops: fetchAirdropsCaller
-  } = useDefiApi();
+  const { fetchAllDefi: fetchAllDefiCaller } = useDefiApi();
 
   const {
     vaultsBalances: yearnV1Balances,
@@ -82,45 +69,6 @@ export const useDefiStore = defineStore('defi', () => {
   const { history: compoundHistory, balances: compoundBalances } =
     storeToRefs(compoundStore);
   const { dsrHistory, dsrBalances } = storeToRefs(makerDaoStore);
-  const airdropAddresses = computed(() => Object.keys(get(airdrops)));
-
-  const airdropList = (addresses: string[]): ComputedRef<Airdrop[]> =>
-    computed(() => {
-      const result: Airdrop[] = [];
-      const data = get(airdrops);
-      for (const address in data) {
-        if (addresses.length > 0 && !addresses.includes(address)) {
-          continue;
-        }
-        const airdrop = data[address];
-        for (const source in airdrop) {
-          const element = airdrop[source];
-          if (source === AIRDROP_POAP) {
-            const details = element as PoapDelivery[];
-            result.push({
-              address,
-              source: source as AirdropType,
-              details: details.map(value => ({
-                amount: bigNumberify('1'),
-                link: value.link,
-                name: value.name,
-                event: value.event
-              }))
-            });
-          } else {
-            const { amount, asset, link } = element as AirdropDetail;
-            result.push({
-              address,
-              amount,
-              link,
-              source: source as AirdropType,
-              asset
-            });
-          }
-        }
-      }
-      return result;
-    });
 
   const defiAccounts = (
     protocols: DefiProtocol[]
@@ -555,42 +503,6 @@ export const useDefiStore = defineStore('defi', () => {
     setStatus(Status.LOADED, premiumSection);
   }
 
-  async function fetchAirdrops(refresh = false) {
-    const section = Section.DEFI_AIRDROPS;
-    const currentStatus = getStatus(section);
-
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
-      return;
-    }
-
-    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
-
-    try {
-      const { taskId } = await fetchAirdropsCaller();
-      const { result } = await awaitTask<Airdrops, TaskMeta>(
-        taskId,
-        TaskType.DEFI_AIRDROPS,
-        {
-          title: t('actions.defi.airdrops.task.title').toString()
-        }
-      );
-      set(airdrops, Airdrops.parse(result));
-    } catch (e: any) {
-      notify({
-        title: t('actions.defi.airdrops.error.title').toString(),
-        message: t('actions.defi.airdrops.error.description', {
-          error: e.message
-        }).toString(),
-        display: true
-      });
-    }
-    setStatus(Status.LOADED, section);
-  }
-
   const modules: Record<string, Function> = {
     [Module.MAKERDAO_DSR]: () => makerDaoStore.reset(Module.MAKERDAO_DSR),
     [Module.MAKERDAO_VAULTS]: () => makerDaoStore.reset(Module.MAKERDAO_VAULTS),
@@ -626,7 +538,7 @@ export const useDefiStore = defineStore('defi', () => {
 
   const reset = () => {
     set(allProtocols, {});
-    set(airdrops, {});
+    useAirdropStore().$reset();
     resetState(ALL_MODULES);
   };
 
@@ -639,13 +551,9 @@ export const useDefiStore = defineStore('defi', () => {
   return {
     allProtocols,
     overview,
-    airdrops,
-    airdropAddresses,
-    airdropList,
     defiAccounts,
     fetchDefiBalances,
     fetchAllDefi,
-    fetchAirdrops,
     resetDB,
     resetState,
     reset

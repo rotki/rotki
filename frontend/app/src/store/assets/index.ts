@@ -1,14 +1,13 @@
-import { type AssetUpdatePayload } from '@/services/assets/types';
 import {
   type ApplyUpdateResult,
   type AssetDBVersion,
   type AssetMergePayload,
   type AssetUpdateCheckResult,
+  type AssetUpdatePayload,
   type AssetUpdateResult
-} from '@/types/assets';
+} from '@/types/asset';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { useAssetsApi } from '@/services/assets';
 import { type ActionStatus } from '@/types/action';
 
 export const useAssets = defineStore('assets', () => {

@@ -1,8 +1,8 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import { type AxiosInstance, type AxiosResponse } from 'axios';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { type PendingTask } from '@/services/types-api';
 import { ApiValidationError } from '@/types/api/errors';
+import { type PendingTask } from '@/types/task';
 
 type Parser<T> = (response: AxiosResponse<ActionResult<T>>) => ActionResult<T>;
 

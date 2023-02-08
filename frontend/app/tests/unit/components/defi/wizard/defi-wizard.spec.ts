@@ -3,10 +3,9 @@ import { createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import { useSettingsApi } from '@/services/settings/settings-api';
 import { FrontendSettings } from '@/types/frontend-settings';
 
-vi.mock('@/services/settings/settings-api', () => ({
+vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
     setSettings: vi.fn()
   })

@@ -163,6 +163,12 @@ export const MissingPrice = z.object({
 
 export type MissingPrice = z.infer<typeof MissingPrice>;
 
+export interface EditableMissingPrice extends MissingPrice {
+  price: string;
+  saved: boolean;
+  useRefreshedHistoricalPrice: boolean;
+}
+
 export const ReportActionableItem = z.object({
   missingAcquisitions: z.array(MissingAcquisition),
   missingPrices: z.array(MissingPrice)

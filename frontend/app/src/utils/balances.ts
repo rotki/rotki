@@ -8,25 +8,22 @@ import {
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
-import { groupBy } from 'lodash';
-import { bigNumberSum } from '@/filters';
-import {
-  type BtcAccountData,
-  type GeneralAccountData
-} from '@/services/types-api';
+import groupBy from 'lodash/groupBy';
 import { type AssetBalances } from '@/types/balances';
 import {
   type BlockchainAssetBalances,
   type BtcBalances
 } from '@/types/blockchain/balances';
 import { NoPrice, Zero, sortDesc, zeroBalance } from '@/utils/bignumbers';
-import { assetSum, balanceSum } from '@/utils/calculation';
+import { assetSum, balanceSum, bigNumberSum } from '@/utils/calculation';
 import { getTags } from '@/utils/tags';
 import {
   type AccountWithBalance,
   type AssetBreakdown,
-  type BlockchainAccountWithBalance
-} from '@/types/accounts';
+  type BlockchainAccountWithBalance,
+  type BtcAccountData,
+  type GeneralAccountData
+} from '@/types/blockchain/accounts';
 
 export const removeZeroAssets = (entries: AssetBalances): AssetBalances => {
   const balances = { ...entries };
