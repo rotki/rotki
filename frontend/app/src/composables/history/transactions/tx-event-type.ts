@@ -1,5 +1,5 @@
 import { type ComputedRef } from 'vue';
-import { TransactionEventType } from '@/types/history/tx/tx-events';
+import { TransactionEventType } from '@rotki/common/lib/history/tx-events';
 import { type ActionDataEntry } from '@/types/action';
 
 export const useTransactionEventTypeData = createSharedComposable(() => {

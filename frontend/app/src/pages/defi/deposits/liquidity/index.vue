@@ -42,9 +42,7 @@ onMounted(() => {
       </v-btn-toggle>
     </div>
     <div>
-      <keep-alive>
-        <router-view />
-      </keep-alive>
+      <router-view />
     </div>
   </div>
 </template>

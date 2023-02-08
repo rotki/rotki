@@ -31,7 +31,6 @@ const {
   fetchEvents,
   fetchV2Balances: fetchBalances,
   uniswapV2Balances: uniswapBalances,
-  uniswapEvents,
   uniswapPoolProfit
 } = store;
 
@@ -60,15 +59,6 @@ const balances: ComputedRef<XswapBalance[]> = computed(() => {
   return pools.length === 0
     ? balances
     : balances.filter(({ address }) => pools.includes(address));
-});
-
-const events = computed(() => {
-  const addresses = get(selectedAddresses);
-  const pools = get(selectedPools);
-  const events = get(uniswapEvents(addresses));
-  return pools.length === 0
-    ? events
-    : events.filter(({ address }) => pools.includes(address));
 });
 
 const poolProfit = computed(() => {
@@ -218,8 +208,8 @@ const lpType = LpType.UNISWAP_V2;
     <uniswap-details
       v-if="premium"
       :loading="secondaryRefreshing"
-      :events="events"
       :profit="poolProfit"
+      :selected-accounts="selectedAccounts"
     />
   </div>
 </template>

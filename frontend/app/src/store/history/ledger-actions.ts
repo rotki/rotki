@@ -10,7 +10,7 @@ import {
   type NewLedgerAction
 } from '@/types/history/ledger-action/ledger-actions';
 import { type EntryWithMeta } from '@/types/history/meta';
-import { type TradeLocation } from '@/types/history/trade/trade-location';
+import { type TradeLocation } from '@/types/history/trade/location';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';

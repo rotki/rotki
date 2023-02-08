@@ -73,8 +73,6 @@ const MakerDAOVaultEvent = z.object({
   txHash: z.string()
 });
 
-export type MakerDAOVaultEvent = z.infer<typeof MakerDAOVaultEvent>;
-
 const MakerDAOVaultDetail = z.object({
   identifier: z.number().transform(arg => arg.toString()),
   creationTs: z.number(),

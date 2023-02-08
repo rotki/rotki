@@ -53,6 +53,7 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import StatisticsGraphSettings from '@/components/settings/StatisticsGraphSettings.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { logger } from '@/utils/logging';
+import TransactionContent from '@/components/history/transactions/TransactionContent.vue';
 
 /**
  * Vuetify components that are used in the premium components
@@ -132,6 +133,8 @@ export function registerComponents(): void {
   Vue.component('LpPoolIcon', LpPoolIcon);
   // Version 20 - 1.27
   Vue.component('BadgeDisplay', BadgeDisplay);
+  // Version 21 - 1.28
+  Vue.component('TransactionContent', TransactionContent);
   vuetifyRegister();
   logger.info('Components registered');
 }

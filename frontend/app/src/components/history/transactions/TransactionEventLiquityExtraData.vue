@@ -4,7 +4,7 @@ import { type AssetBalance } from '@rotki/common';
 import {
   type EthTransactionEventDetail,
   type EthTransactionEventEntry
-} from '@/types/history/tx/tx';
+} from '@/types/history/tx';
 
 const props = defineProps<{
   event: EthTransactionEventEntry;

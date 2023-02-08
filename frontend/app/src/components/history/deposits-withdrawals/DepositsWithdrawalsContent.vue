@@ -8,9 +8,9 @@ import {
   type AssetMovementEntry,
   type AssetMovementRequestPayload
 } from '@/types/history/movements';
-import { type TradeLocation } from '@/types/history/trade/trade-location';
+import { type TradeLocation } from '@/types/history/trade/location';
 import { Section } from '@/types/status';
-import { type TradeEntry } from '@/types/history/trade/trades';
+import { type TradeEntry } from '@/types/history/trade';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { type TablePagination } from '@/types/pagination';
 

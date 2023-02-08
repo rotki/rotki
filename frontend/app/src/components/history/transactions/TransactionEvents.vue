@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { type DataTableHeader } from 'vuetify';
 import {
+  HistoryEventSubType,
+  TransactionEventProtocol
+} from '@rotki/common/lib/history/tx-events';
+import {
   type EthTransactionEntry,
   type EthTransactionEventEntry,
   type EthTransactionEventWithMeta
-} from '@/types/history/tx/tx';
-import {
-  HistoryEventSubType,
-  TransactionEventProtocol
-} from '@/types/history/tx/tx-events';
+} from '@/types/history/tx';
 
 const props = withDefaults(
   defineProps<{

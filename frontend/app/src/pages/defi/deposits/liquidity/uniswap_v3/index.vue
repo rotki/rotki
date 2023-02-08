@@ -3,6 +3,10 @@ import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { LpType } from '@rotki/common/lib/defi';
 import { type XswapAsset } from '@rotki/common/lib/defi/xswap';
+import {
+  HistoryEventType,
+  TransactionEventProtocol
+} from '@rotki/common/lib/history/tx-events';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -225,6 +229,18 @@ const lpType = LpType.UNISWAP_V3;
         </card>
       </template>
     </paginated-cards>
+
+    <transaction-content
+      use-external-account-filter
+      :section-title="tc('common.events')"
+      :protocols="[TransactionEventProtocol.UNISWAP_V3]"
+      :event-types="[
+        HistoryEventType.WITHDRAWAL,
+        HistoryEventType.SPEND,
+        HistoryEventType.DEPOSIT
+      ]"
+      :external-account-filter="selectedAccounts"
+    />
   </div>
 </template>
 

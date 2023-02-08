@@ -1,6 +1,6 @@
 import { type ComputedRef, type Ref } from 'vue';
 import { type MatchedKeyword, type SearchMatcher } from '@/types/filtering';
-import { TradeType } from '@/types/history/trade/trades';
+import { TradeType } from '@/types/history/trade';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
 enum TradeFilterKeys {

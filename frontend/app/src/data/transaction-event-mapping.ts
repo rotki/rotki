@@ -2,7 +2,7 @@ import {
   HistoryEventSubType,
   HistoryEventType,
   TransactionEventType
-} from '@/types/history/tx/tx-events';
+} from '@rotki/common/lib/history/tx-events';
 
 export const transactionEventTypeMapping: Record<
   string,
@@ -62,6 +62,9 @@ export const transactionEventTypeMapping: Record<
   },
   [HistoryEventType.STAKING]: {
     [HistoryEventSubType.DEPOSIT_ASSET]: TransactionEventType.DEPOSIT,
-    [HistoryEventSubType.REWARD]: TransactionEventType.RECEIVE
+    [HistoryEventSubType.REWARD]: TransactionEventType.RECEIVE,
+    [HistoryEventSubType.RECEIVE_WRAPPED]: TransactionEventType.RECEIVE,
+    [HistoryEventSubType.REMOVE_ASSET]: TransactionEventType.RECEIVE,
+    [HistoryEventSubType.RETURN_WRAPPED]: TransactionEventType.SEND
   }
 };

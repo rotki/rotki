@@ -118,7 +118,6 @@ export const balancerApi = (): BalancerApi => {
   const { pools, addresses } = storeToRefs(store);
   return {
     balancerProfitLoss: (addresses: string[]) => store.profitLoss(addresses),
-    balancerEvents: (addresses: string[]) => store.eventList(addresses),
     balancerBalances: (addresses: string[]) =>
       store.balancerBalances(addresses),
     balancerPools: pools,
@@ -151,12 +150,11 @@ export const sushiApi = (): SushiApi => {
   const store = useSushiswapStore();
   const { addresses, pools } = toRefs(store);
 
-  const { balanceList, eventList, fetchBalances, fetchEvents, poolProfit } =
-    store;
+  const { balanceList, fetchBalances, fetchEvents, poolProfit } = store;
+
   return {
     addresses,
     pools,
-    events: eventList,
     balances: balanceList,
     poolProfit,
     fetchEvents,

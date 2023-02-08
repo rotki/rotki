@@ -5,13 +5,13 @@ import { type DataTableHeader } from 'vuetify';
 import Fragment from '@/components/helper/Fragment';
 import ExternalTradeForm from '@/components/history/ExternalTradeForm.vue';
 import { Routes } from '@/router/routes';
-import { type TradeLocation } from '@/types/history/trade/trade-location';
+import { type TradeLocation } from '@/types/history/trade/location';
 import {
   type NewTrade,
   type Trade,
   type TradeEntry,
   type TradeRequestPayload
-} from '@/types/history/trade/trades';
+} from '@/types/history/trade';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { type TablePagination } from '@/types/pagination';

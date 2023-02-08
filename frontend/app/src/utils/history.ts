@@ -3,9 +3,9 @@ import {
   HistoryEventType,
   TransactionEventProtocol,
   type TransactionEventType
-} from '@/types/history/tx/tx-events';
+} from '@rotki/common/lib/history/tx-events';
 import { isValidEthAddress } from '@/utils/text';
-import { type EthTransactionEventEntry } from '@/types/history/tx/tx';
+import { type EthTransactionEventEntry } from '@/types/history/tx';
 import { uniqueStrings } from '@/utils/data';
 import { type PaginationRequestPayload } from '@/types/common';
 import { type EntryMeta, type EntryWithMeta } from '@/types/history/meta';

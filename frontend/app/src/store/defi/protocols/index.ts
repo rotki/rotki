@@ -3,11 +3,8 @@ import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
 import {
   AaveBorrowingEventType,
-  type AaveHistoryEvents,
   type AaveHistoryTotal,
   type AaveLending,
-  type AaveLendingEvent,
-  AaveLendingEventType,
   isAaveLiquidationEvent
 } from '@rotki/common/lib/defi/aave';
 import sortBy from 'lodash/sortBy';
@@ -17,7 +14,6 @@ import {
   type AaveLoan,
   type BaseDefiBalance,
   type DefiBalance,
-  type DefiLendingHistory,
   type LoanSummary
 } from '@/types/defi/lending';
 import { type Writeable } from '@/types';
@@ -35,13 +31,6 @@ import { uniqueStrings } from '@/utils/data';
 import { type LiquityLoan } from '@/types/defi/liquity';
 import { balanceUsdValueSum } from '@/utils/balances';
 import { isLoading } from '@/utils/status';
-
-const isLendingEvent = (
-  value: AaveHistoryEvents
-): value is AaveLendingEvent => {
-  const lending: string[] = Object.values(AaveLendingEventType);
-  return lending.includes(value.eventType);
-};
 
 type NullableLoan =
   | MakerDAOVaultModel
@@ -71,162 +60,6 @@ export const useDefiSupportedProtocolsStore = defineStore(
     const { dsrHistory, dsrBalances, makerDAOVaults, makerDAOVaultDetails } =
       storeToRefs(makerDaoStore);
     const { balances: liquityBalances } = storeToRefs(liquityStore);
-
-    const lendingHistory = (
-      protocols: DefiProtocol[],
-      addresses: string[]
-    ): ComputedRef<DefiLendingHistory<DefiProtocol>[]> =>
-      computed(() => {
-        const defiLendingHistory: DefiLendingHistory<DefiProtocol>[] = [];
-        const showAll = protocols.length === 0;
-        const allAddresses = addresses.length === 0;
-        let id = 1;
-
-        if (showAll || protocols.includes(DefiProtocol.MAKERDAO_DSR)) {
-          const makerDsrHistory = get(dsrHistory);
-          for (const address of Object.keys(makerDsrHistory)) {
-            if (!allAddresses && !addresses.includes(address)) {
-              continue;
-            }
-
-            const history = makerDsrHistory[address];
-
-            for (const movement of history.movements) {
-              defiLendingHistory.push({
-                id: `${movement.txHash}-${id++}`,
-                eventType: movement.movementType,
-                protocol: DefiProtocol.MAKERDAO_DSR,
-                address,
-                asset: assetSymbolToIdentifierMap.DAI,
-                value: movement.value,
-                blockNumber: movement.blockNumber,
-                timestamp: movement.timestamp,
-                txHash: movement.txHash,
-                extras: {
-                  gainSoFar: movement.gainSoFar
-                }
-              });
-            }
-          }
-        }
-
-        if (showAll || protocols.includes(DefiProtocol.AAVE)) {
-          const perAddressAaveHistory = get(aaveHistory);
-          for (const address of Object.keys(perAddressAaveHistory)) {
-            if (!allAddresses && !addresses.includes(address)) {
-              continue;
-            }
-
-            const history = perAddressAaveHistory[address];
-
-            for (const event of history.events) {
-              if (!isLendingEvent(event)) {
-                continue;
-              }
-
-              const items = {
-                id: `${event.txHash}-${event.logIndex}`,
-                eventType: event.eventType,
-                protocol: DefiProtocol.AAVE,
-                address,
-                asset: event.asset,
-                atoken: 'atoken' in event ? event.atoken : '',
-                value: event.value,
-                blockNumber: event.blockNumber,
-                timestamp: event.timestamp,
-                txHash: event.txHash,
-                extras: {}
-              } satisfies DefiLendingHistory<typeof DefiProtocol.AAVE>;
-              defiLendingHistory.push(items);
-            }
-          }
-        }
-
-        if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
-          for (const event of get(compoundHistory).events) {
-            if (!allAddresses && !addresses.includes(event.address)) {
-              continue;
-            }
-            if (!['mint', 'redeem', 'comp'].includes(event.eventType)) {
-              continue;
-            }
-
-            const item = {
-              id: `${event.txHash}-${event.logIndex}`,
-              eventType: event.eventType,
-              protocol: DefiProtocol.COMPOUND,
-              address: event.address,
-              asset: event.asset,
-              value: event.value,
-              blockNumber: event.blockNumber,
-              timestamp: event.timestamp,
-              txHash: event.txHash,
-              extras: {
-                eventType: event.eventType,
-                asset: event.asset,
-                value: event.value,
-                toAsset: event.toAsset,
-                toValue: event.toValue,
-                realizedPnl: event.realizedPnl
-              }
-            } as DefiLendingHistory<typeof DefiProtocol.COMPOUND>;
-            defiLendingHistory.push(item);
-          }
-        }
-
-        const yearnHistory = (
-          version: ProtocolVersion = ProtocolVersion.V1
-        ): void => {
-          const isV1 = version === ProtocolVersion.V1;
-          const vaultsHistory = get(isV1 ? yearnV1History : yearnV2History);
-          for (const address in vaultsHistory) {
-            if (!allAddresses && !addresses.includes(address)) {
-              continue;
-            }
-            const history = vaultsHistory[address];
-
-            for (const vault in history) {
-              const data = history[vault];
-              if (!data || !data.events || data.events.length === 0) {
-                continue;
-              }
-              for (const event of data.events) {
-                const item = {
-                  id: `${event.txHash}-${event.logIndex}`,
-                  eventType: event.eventType,
-                  protocol: isV1
-                    ? DefiProtocol.YEARN_VAULTS
-                    : DefiProtocol.YEARN_VAULTS_V2,
-                  address,
-                  asset: event.fromAsset,
-                  value: event.fromValue,
-                  blockNumber: event.blockNumber,
-                  timestamp: event.timestamp,
-                  txHash: event.txHash,
-                  extras: {
-                    eventType: event.eventType,
-                    asset: event.fromAsset,
-                    value: event.fromValue,
-                    toAsset: event.toAsset,
-                    toValue: event.toValue,
-                    realizedPnl: event.realizedPnl
-                  }
-                } as DefiLendingHistory<typeof DefiProtocol.YEARN_VAULTS>;
-                defiLendingHistory.push(item);
-              }
-            }
-          }
-        };
-
-        if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS)) {
-          yearnHistory();
-        }
-
-        if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS_V2)) {
-          yearnHistory(ProtocolVersion.V2);
-        }
-        return sortBy(defiLendingHistory, 'timestamp').reverse();
-      });
 
     const loans = (protocols: DefiProtocol[] = []): ComputedRef<DefiLoan[]> =>
       computed(() => {
@@ -414,7 +247,6 @@ export const useDefiSupportedProtocolsStore = defineStore(
 
           const lost: Writeable<AaveHistoryTotal> = {};
           const liquidationEarned: Writeable<AaveHistoryTotal> = {};
-          const events: AaveHistoryEvents[] = [];
           if (perAddressAaveHistory[owner]) {
             const {
               totalLost,
@@ -452,20 +284,6 @@ export const useDefiSupportedProtocolsStore = defineStore(
             if (!liquidationEarned[asset] && totalEarnedLiquidations[asset]) {
               liquidationEarned[asset] = totalEarnedLiquidations[asset];
             }
-
-            events.push(
-              ...allEvents.filter(event => {
-                const isAsset: boolean = !isAaveLiquidationEvent(event)
-                  ? event.asset === asset
-                  : event.principalAsset === asset;
-                return (
-                  isAsset &&
-                  Object.values(AaveBorrowingEventType).find(
-                    eventType => eventType === event.eventType
-                  )
-                );
-              })
-            );
           }
 
           return {
@@ -484,8 +302,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
               ...lending[asset].balance
             })),
             totalLost: lost,
-            liquidationEarned,
-            events
+            liquidationEarned
           } satisfies AaveLoan;
         }
 
@@ -1066,7 +883,6 @@ export const useDefiSupportedProtocolsStore = defineStore(
       loans,
       loanSummary,
       lendingBalances,
-      lendingHistory,
       fetchLending,
       fetchBorrowing
     };

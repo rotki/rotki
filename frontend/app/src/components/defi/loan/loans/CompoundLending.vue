@@ -59,7 +59,6 @@ const { tc } = useI18n();
           />
           <compound-borrowing-details
             v-else
-            :events="loan.events"
             :owner="loan.owner"
             :assets="assets"
           />

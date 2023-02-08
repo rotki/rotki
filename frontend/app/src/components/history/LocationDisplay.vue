@@ -7,7 +7,7 @@ import { Routes } from '@/router/routes';
 import {
   type TradeLocation,
   type TradeLocationData
-} from '@/types/history/trade/trade-location';
+} from '@/types/history/trade/location';
 
 const props = defineProps({
   identifier: { required: true, type: String as PropType<TradeLocation> },

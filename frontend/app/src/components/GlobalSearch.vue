@@ -6,7 +6,7 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useAppRoutes } from '@/router/routes';
 import { type Exchange } from '@/types/exchanges';
-import { type TradeLocationData } from '@/types/history/trade/trade-location';
+import { type TradeLocationData } from '@/types/history/trade/location';
 
 interface SearchItem {
   value: number;

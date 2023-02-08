@@ -1,17 +1,11 @@
 import {
   type XswapBalance,
   XswapBalances,
-  type XswapEventDetails,
   XswapEvents,
   type XswapPoolProfit
 } from '@rotki/common/lib/defi/xswap';
 import { type ComputedRef, type Ref } from 'vue';
-import {
-  getBalances,
-  getEventDetails,
-  getPoolProfit,
-  getPools
-} from '@/utils/defi/xswap';
+import { getBalances, getPoolProfit, getPools } from '@/utils/defi/xswap';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
@@ -33,8 +27,6 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
     computed(() => getBalances(get(balances), addresses));
   const poolProfit = (addresses: string[]): ComputedRef<XswapPoolProfit[]> =>
     computed(() => getPoolProfit(get(events), addresses));
-  const eventList = (addresses: string[]): ComputedRef<XswapEventDetails[]> =>
-    computed(() => getEventDetails(get(events), addresses));
   const addresses = computed(() =>
     Object.keys(get(balances)).concat(
       Object.keys(get(events)).filter(uniqueStrings)
@@ -130,7 +122,6 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
     addresses,
     pools,
     balanceList,
-    eventList,
     poolProfit,
     fetchBalances,
     fetchEvents,

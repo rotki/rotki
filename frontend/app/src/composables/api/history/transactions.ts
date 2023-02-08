@@ -20,7 +20,7 @@ import {
   type NewEthTransactionEvent,
   type TransactionEventRequestPayload,
   type TransactionRequestPayload
-} from '@/types/history/tx/tx';
+} from '@/types/history/tx';
 import { nonEmptyProperties } from '@/utils/data';
 import { type PendingTask } from '@/types/task';
 

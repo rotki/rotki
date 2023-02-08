@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EvmChainAddress } from '@/types/history/tx/tx';
+import { EvmChainAddress } from '@/types/history/tx';
 
 export const MESSAGE_WARNING = 'warning';
 const MESSAGE_ERROR = 'error';
