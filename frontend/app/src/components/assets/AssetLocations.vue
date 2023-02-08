@@ -47,7 +47,7 @@ const getAccount = (
   computed(() =>
     item.location === Blockchain.ETH2
       ? get(getEth2Account(item.address))
-      : get(getAccountByAddress(item.address))
+      : get(getAccountByAddress(item.address, item.location))
   );
 
 const assetLocations = computed<AssetLocations>(() => {
