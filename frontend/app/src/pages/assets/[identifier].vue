@@ -6,7 +6,6 @@ import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
-
 import AssetBalances from '@/components/AssetBalances.vue';
 
 const props = defineProps({

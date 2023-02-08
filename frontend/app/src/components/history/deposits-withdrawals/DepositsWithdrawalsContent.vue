@@ -3,7 +3,6 @@ import dropRight from 'lodash/dropRight';
 import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import { Routes } from '@/router/routes';
-
 import {
   type AssetMovement,
   type AssetMovementEntry,

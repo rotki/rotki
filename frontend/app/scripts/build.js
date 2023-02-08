@@ -4,7 +4,6 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { ArgumentParser } = require('argparse');
 const { build } = require('vite');
-
 const { sharedConfig } = require('./setup');
 const OUTPUT_DIR = 'dist';
 

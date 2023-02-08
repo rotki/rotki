@@ -9,7 +9,6 @@ import { type DataTableHeader } from 'vuetify';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { CURRENCY_USD } from '@/types/currencies';
-
 import NftDetails from '@/components/helper/NftDetails.vue';
 import { isNft } from '@/utils/nft';
 import { One } from '@/utils/bignumbers';

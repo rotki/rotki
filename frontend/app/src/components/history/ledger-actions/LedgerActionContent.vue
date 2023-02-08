@@ -3,10 +3,8 @@ import dropRight from 'lodash/dropRight';
 import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import Fragment from '@/components/helper/Fragment';
-
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { Routes } from '@/router/routes';
-
 import {
   type LedgerAction,
   type LedgerActionEntry,

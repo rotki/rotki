@@ -1,6 +1,5 @@
 import { _adapters } from 'chart.js';
 import dayjs, { type QUnitType } from 'dayjs';
-
 import AdvancedFormat from 'dayjs/plugin/advancedFormat';
 import CustomParseFormat from 'dayjs/plugin/customParseFormat';
 import isoWeek from 'dayjs/plugin/isoWeek';

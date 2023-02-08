@@ -3,7 +3,6 @@ import { type ComputedRef, type Ref } from 'vue';
 import EditBalancesSnapshotTable from '@/components/dashboard/EditBalancesSnapshotTable.vue';
 import EditLocationDataSnapshotTable from '@/components/dashboard/EditLocationDataSnapshotTable.vue';
 import EditSnapshotTotal from '@/components/dashboard/EditSnapshotTotal.vue';
-
 import {
   type BalanceSnapshot,
   type LocationDataSnapshot,

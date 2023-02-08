@@ -2,9 +2,7 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
-
 import ReportPeriodSelector from '@/components/profitloss/ReportPeriodSelector.vue';
-
 import {
   type PeriodChangedEvent,
   type SelectionChangedEvent

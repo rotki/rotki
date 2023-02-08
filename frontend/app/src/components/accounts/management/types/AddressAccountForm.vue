@@ -4,7 +4,6 @@ import AccountDataInput from '@/components/accounts/management/inputs/AccountDat
 import { type Module } from '@/types/modules';
 import { startPromise } from '@/utils';
 import { deserializeApiErrorMessage } from '@/services/converters';
-
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import {

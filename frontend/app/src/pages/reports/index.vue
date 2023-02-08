@@ -6,7 +6,6 @@ import FileUpload from '@/components/import/FileUpload.vue';
 import ReportGenerator from '@/components/profitloss/ReportGenerator.vue';
 import ReportsTable from '@/components/profitloss/ReportsTable.vue';
 import { Routes } from '@/router/routes';
-
 import {
   type ProfitLossReportDebugPayload,
   type ProfitLossReportPeriod

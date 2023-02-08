@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import CreateAccountForm from '@/components/account-management/CreateAccountForm.vue';
-
 import Fragment from '@/components/helper/Fragment';
 import UpgradeProgressDisplay from '@/components/account-management/upgrade/UpgradeProgressDisplay.vue';
 

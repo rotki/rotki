@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type AssetBalance, BigNumber } from '@rotki/common';
 import { type PropType } from 'vue';
-
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
 

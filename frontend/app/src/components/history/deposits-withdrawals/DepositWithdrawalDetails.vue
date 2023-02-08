@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import MovementLinks from '@/components/history/MovementLinks.vue';
 import { type AssetMovementEntry } from '@/types/history/movements';
