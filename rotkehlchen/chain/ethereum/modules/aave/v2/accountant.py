@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterator
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry, get_tx_event_type_identifier
@@ -28,7 +28,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
             self,
             pot: 'AccountingPot',  # pylint: disable=unused-argument
             event: HistoryBaseEntry,
-            other_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            other_events: Iterator[HistoryBaseEntry],  # pylint: disable=unused-argument
     ) -> None:
         self.assets_borrowed[(string_to_evm_address(event.location_label), event.asset)] += event.balance.amount  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
 
@@ -36,7 +36,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
             self,
             pot: 'AccountingPot',
             event: HistoryBaseEntry,
-            other_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            other_events: Iterator[HistoryBaseEntry],  # pylint: disable=unused-argument
     ) -> None:
         """
         Process payback events. If the payed back amount is higher that the borrowed amount,
@@ -63,7 +63,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
             self,
             pot: 'AccountingPot',  # pylint: disable=unused-argument
             event: HistoryBaseEntry,
-            other_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            other_events: Iterator[HistoryBaseEntry],  # pylint: disable=unused-argument
     ) -> None:
         self.assets_supplied[(string_to_evm_address(event.location_label), event.asset)] += event.balance.amount  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
 
@@ -71,7 +71,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
             self,
             pot: 'AccountingPot',
             event: HistoryBaseEntry,
-            other_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            other_events: Iterator[HistoryBaseEntry],  # pylint: disable=unused-argument
     ) -> None:
         """
         Process withdrawal events. If the withdrawn amount is higher that the deposited amount,
@@ -102,7 +102,6 @@ class Aavev2Accountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='spend',
-                take=1,
                 accountant_cb=self._process_deposit,
             ),
             get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_AAVE_V2): TxEventSettings(  # noqa: E501
@@ -110,7 +109,6 @@ class Aavev2Accountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='acquisition',
-                take=1,
                 accountant_cb=self._process_withdraw,
             ),
             get_tx_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT, CPT_AAVE_V2): TxEventSettings(  # noqa: E501
@@ -118,7 +116,6 @@ class Aavev2Accountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='acquisition',
-                take=1,
                 accountant_cb=self._process_borrow,
             ),
             get_tx_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT, CPT_AAVE_V2): TxEventSettings(  # noqa: E501
@@ -126,7 +123,6 @@ class Aavev2Accountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='spend',
-                take=1,
                 accountant_cb=self._process_payback,
             ),
         }

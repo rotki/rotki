@@ -1,11 +1,11 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Iterator, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry, get_tx_event_type_identifier
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
-from rotkehlchen.chain.evm.accounting.structures import TxEventSettings, TxMultitakeTreatment
+from rotkehlchen.chain.evm.accounting.structures import TxEventSettings, TxSpecialTreatment
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.fval import FVal
@@ -27,7 +27,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
             self,
             pot: 'AccountingPot',  # pylint: disable=unused-argument
             event: HistoryBaseEntry,
-            other_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            other_events: Iterator[HistoryBaseEntry],  # pylint: disable=unused-argument
     ) -> None:
         cdp_id = event.extra_data['cdp_id']  # type: ignore  # this event should have extra data
         self.vault_balances[cdp_id] += event.balance.amount
@@ -36,7 +36,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
             self,
             pot: 'AccountingPot',  # pylint: disable=unused-argument
             event: HistoryBaseEntry,
-            other_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            other_events: Iterator[HistoryBaseEntry],  # pylint: disable=unused-argument
     ) -> None:
         cdp_id = event.extra_data['cdp_id']  # type: ignore  # this event should have extra_data
         self.vault_balances[cdp_id] -= event.balance.amount
@@ -58,7 +58,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
             self,
             pot: 'AccountingPot',  # pylint: disable=unused-argument
             event: HistoryBaseEntry,
-            other_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            other_events: Iterator[HistoryBaseEntry],  # pylint: disable=unused-argument
     ) -> None:
         address = cast(ChecksumEvmAddress, event.location_label)  # should always exist
         self.dsr_balances[address] += event.balance.amount
@@ -67,7 +67,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
             self,
             pot: 'AccountingPot',  # pylint: disable=unused-argument
             event: HistoryBaseEntry,
-            other_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            other_events: Iterator[HistoryBaseEntry],  # pylint: disable=unused-argument
     ) -> None:
         address = cast(ChecksumEvmAddress, event.location_label)  # should always exist
         self.dsr_balances[address] -= event.balance.amount
@@ -94,21 +94,18 @@ class MakerdaoAccountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='spend',
-                take=1,
             ),  # vault collateral withdraw
             get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_VAULT): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='acquisition',
-                take=1,
             ),  # payback DAI to vault
             get_tx_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT, CPT_VAULT): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='spend',
-                take=1,
                 accountant_cb=self._process_vault_dai_payback,
             ),  # generate DAI from vault
             get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.GENERATE_DEBT, CPT_VAULT): TxEventSettings(  # noqa: E501
@@ -116,7 +113,6 @@ class MakerdaoAccountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='acquisition',
-                take=1,
                 accountant_cb=self._process_vault_dai_generation,
             ),  # Deposit DAI in the DSR
             get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_DSR): TxEventSettings(  # noqa: E501
@@ -124,7 +120,6 @@ class MakerdaoAccountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='spend',
-                take=1,
                 accountant_cb=self._process_dsr_deposit,
             ),  # Withdraw DAI from the DSR
             get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_DSR): TxEventSettings(  # noqa: E501
@@ -132,7 +127,6 @@ class MakerdaoAccountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='acquisition',
-                take=1,
                 accountant_cb=self._process_dsr_withdraw,
             ),  # Migrate SAI to DAI
             get_tx_event_type_identifier(HistoryEventType.MIGRATE, HistoryEventSubType.SPEND, CPT_MIGRATION): TxEventSettings(  # noqa: E501
@@ -140,7 +134,6 @@ class MakerdaoAccountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='spend',
-                take=2,
-                multitake_treatment=TxMultitakeTreatment.SWAP,
+                special_treatment=TxSpecialTreatment.SWAP,
             ),
         }

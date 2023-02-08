@@ -19,27 +19,23 @@ class WethAccountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='spend',
-                take=1,
             ),
             get_tx_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED, CPT_WETH): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='acquisition',
-                take=1,
             ),
             get_tx_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED, CPT_WETH): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='spend',
-                take=1,
             ),
             get_tx_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.NONE, CPT_WETH): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='acquisition',
-                take=1,
             ),
         }

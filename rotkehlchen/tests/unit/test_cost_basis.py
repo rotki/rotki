@@ -8,7 +8,7 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.types import MissingAcquisition
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
-from rotkehlchen.chain.evm.accounting.structures import TxEventSettings, TxMultitakeTreatment
+from rotkehlchen.chain.evm.accounting.structures import TxEventSettings, TxSpecialTreatment
 from rotkehlchen.constants.assets import A_3CRV, A_BTC, A_ETH, A_EUR, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.settings import DBSettings
@@ -960,8 +960,7 @@ def test_swaps_taxability(accountant, taxable):
             count_entire_amount_spend=False,
             count_cost_basis_pnl=True,
             method='spend',
-            take=2,
-            multitake_treatment=TxMultitakeTreatment.SWAP,
+            special_treatment=TxSpecialTreatment.SWAP,
         ),
     )
     if taxable is True:
