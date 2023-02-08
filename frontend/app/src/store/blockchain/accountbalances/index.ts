@@ -46,10 +46,13 @@ export const useAccountBalancesStore = defineStore(
     });
 
     const getAccountByAddress = (
-      address: string
+      address: string,
+      location: string
     ): ComputedRef<GeneralAccount | undefined> =>
       computed(() => {
-        return get(accounts).find(acc => acc.address === address);
+        return get(accounts).find(
+          acc => acc.address === address && acc.chain === location
+        );
       });
 
     const getAccountsByChain = (blockchain: Blockchain): string[] => {
