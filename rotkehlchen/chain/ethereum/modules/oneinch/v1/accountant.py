@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.accounting.structures.base import get_tx_event_type_identifier
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
-from rotkehlchen.chain.evm.accounting.structures import TxEventSettings, TxMultitakeTreatment
+from rotkehlchen.chain.evm.accounting.structures import TxEventSettings, TxSpecialTreatment
 
 from ..constants import CPT_ONEINCH_V1
 
@@ -21,15 +21,13 @@ class Oneinchv1Accountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
                 method='spend',
-                take=2,
-                multitake_treatment=TxMultitakeTreatment.SWAP,
+                special_treatment=TxSpecialTreatment.SWAP,
             ),
             get_tx_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.FEE, CPT_ONEINCH_V1): TxEventSettings(  # noqa: E501
                 taxable=True,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
                 method='spend',
-                take=1,
-                multitake_treatment=None,
+                special_treatment=None,
             ),
         }

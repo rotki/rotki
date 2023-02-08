@@ -12,7 +12,7 @@ from rotkehlchen.errors.misc import ModuleLoadingError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import MessagesAggregator
 
-from .structures import TxEventSettings, TxMultitakeTreatment
+from .structures import TxEventSettings, TxSpecialTreatment
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
@@ -116,7 +116,6 @@ class EVMAccountingAggregators():
             taxable=pot.settings.include_gas_costs,
             count_entire_amount_spend=pot.settings.include_gas_costs,
             count_cost_basis_pnl=pot.settings.include_crypto2crypto,
-            take=1,
             method='spend',
         )
         spend_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.NONE)
@@ -124,7 +123,6 @@ class EVMAccountingAggregators():
             taxable=True,
             count_entire_amount_spend=True,
             count_cost_basis_pnl=True,
-            take=1,
             method='spend',
         )
         receive_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.NONE)
@@ -132,7 +130,6 @@ class EVMAccountingAggregators():
             taxable=True,
             count_entire_amount_spend=True,
             count_cost_basis_pnl=True,
-            take=1,
             method='acquisition',
         )
         deposit_key = str(HistoryEventType.DEPOSIT) + '__' + str(HistoryEventSubType.NONE)
@@ -140,7 +137,6 @@ class EVMAccountingAggregators():
             taxable=False,
             count_entire_amount_spend=False,
             count_cost_basis_pnl=False,
-            take=1,
             method='spend',
         )
         withdraw_key = str(HistoryEventType.WITHDRAWAL) + '__' + str(HistoryEventSubType.NONE)
@@ -148,7 +144,6 @@ class EVMAccountingAggregators():
             taxable=False,
             count_entire_amount_spend=False,
             count_cost_basis_pnl=False,
-            take=1,
             method='acquisition',
         )
         return result
@@ -169,7 +164,6 @@ class EVMAccountingAggregators():
             count_entire_amount_spend=True,
             count_cost_basis_pnl=True,
             method='spend',
-            take=1,
         )
         renew_key = str(HistoryEventType.RENEW) + '__' + str(HistoryEventSubType.NONE)
         result[renew_key] = TxEventSettings(
@@ -177,7 +171,6 @@ class EVMAccountingAggregators():
             count_entire_amount_spend=True,
             count_cost_basis_pnl=True,
             method='spend',
-            take=1,
         )
         swap_key = str(HistoryEventType.TRADE) + '__' + str(HistoryEventSubType.SPEND)
         result[swap_key] = TxEventSettings(
@@ -185,8 +178,7 @@ class EVMAccountingAggregators():
             count_entire_amount_spend=False,
             count_cost_basis_pnl=True,
             method='spend',
-            take=2,
-            multitake_treatment=TxMultitakeTreatment.SWAP,
+            special_treatment=TxSpecialTreatment.SWAP,
         )
         airdrop_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.AIRDROP)
         result[airdrop_key] = TxEventSettings(
@@ -195,7 +187,6 @@ class EVMAccountingAggregators():
             count_entire_amount_spend=False,
             count_cost_basis_pnl=False,
             method='acquisition',
-            take=1,
         )
         reward_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.REWARD)
         result[reward_key] = TxEventSettings(
@@ -204,7 +195,6 @@ class EVMAccountingAggregators():
             count_entire_amount_spend=False,
             count_cost_basis_pnl=False,
             method='acquisition',
-            take=1,
         )
         return result
 

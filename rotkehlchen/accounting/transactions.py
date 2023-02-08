@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Iterator
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.chain.evm.accounting.structures import TxEventSettings, TxMultitakeTreatment
+from rotkehlchen.chain.evm.accounting.structures import TxEventSettings, TxSpecialTreatment
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 
@@ -13,6 +13,26 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def history_base_entries_iterator(
+        events_iterator: Iterator[AccountingEventMixin],
+        associated_event: HistoryBaseEntry,
+) -> Iterator[HistoryBaseEntry]:
+    """
+    Takes an iterator of accounting events and transforms it into a history base entries iterator.
+    Takes associated event as an argument to be able to log it in case of errors.
+    """
+    for event in events_iterator:
+        if not isinstance(event, HistoryBaseEntry):
+            log.debug(
+                f'At accounting for tx_event {associated_event.notes} with hash '
+                f'{associated_event.event_identifier.hex()} we expected to take an additional '
+                f'event but found a non history base entry event',
+            )
+            return
+
+        yield event
 
 
 class TransactionsAccountant():
@@ -46,41 +66,22 @@ class TransactionsAccountant():
             )
             return 1
 
-        notes = event.notes if event.notes else ''
-        counter = 1
-        other_events: list[HistoryBaseEntry] = []
-        while counter < event_settings.take:
-            next_event = next(events_iterator, None)
-            if next_event is None:
-                log.debug(
-                    f'At accounting for tx_event {notes} we expected to take '
-                    f'{event_settings.take} additional events but found no more',
-                )
-                return counter
-            if not isinstance(next_event, HistoryBaseEntry):
-                log.debug(
-                    f'At accounting for tx_event {notes} we expected to take '
-                    f'{event_settings.take} additional events but found a '
-                    f'non history base entry event',
-                )
-                return counter
-
-            other_events.append(next_event)
-            counter += 1
-
         # if there is any module specific accountant functionality call it
         if event_settings.accountant_cb is not None:
             event_settings.accountant_cb(
                 pot=self.pot,
                 event=event,
-                other_events=other_events,
+                other_events=history_base_entries_iterator(events_iterator, event),
             )
 
-        if event_settings.multitake_treatment == TxMultitakeTreatment.SWAP:
+        if event_settings.special_treatment == TxSpecialTreatment.SWAP:
+            in_event = next(history_base_entries_iterator(events_iterator, event), None)
+            if in_event is None:
+                return 1
             return self._process_tx_swap(
                 timestamp=timestamp,
                 out_event=event,
-                in_event=other_events[0],
+                in_event=in_event,
                 event_settings=event_settings,
             )
 

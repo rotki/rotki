@@ -20,7 +20,6 @@ class Eth2Accountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
                 method='spend',
-                take=1,
-                multitake_treatment=None,
+                special_treatment=None,
             ),
         }
