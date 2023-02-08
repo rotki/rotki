@@ -198,7 +198,7 @@ class SubstrateManager():
         try:
             chain_metadata = self._request_chain_metadata()
         except RemoteError:
-            self.msg_aggregator.add_warning(
+            log.warning(
                 f'Unable to verify that {self.chain} node at endpoint {node_interface.url} '
                 f'is synced with the chain. Balances and other queries may be incorrect.',
             )
