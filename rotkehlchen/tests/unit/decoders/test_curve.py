@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
@@ -13,6 +13,7 @@ from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
     ChainID,
@@ -21,6 +22,7 @@ from rotkehlchen.types import (
     GeneralCacheType,
     Location,
     Timestamp,
+    TimestampMS,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -32,6 +34,7 @@ TEST_CURVE_POOLS = [
     '0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',
     '0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',
     '0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51',
+    '0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',
 ]
 
 
@@ -158,6 +161,19 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
             sequence_index=371,
             timestamp=1650276061000,
             location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=EvmToken('eip155:1/erc20:0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900'),
+            balance=Balance(amount=FVal('392698.416886553664731892'), usd_value=ZERO),
+            location_label=location_label,
+            notes='Receive 392698.416886553664731892 a3CRV after depositing in curve pool 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE',  # noqa: E501
+            counterparty=CPT_CURVE,
+            extra_data={'deposit_events_num': 2},
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=372,
+            timestamp=1650276061000,
+            location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_DAI,
@@ -176,18 +192,6 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
             balance=Balance(amount=FVal('25977.37'), usd_value=ZERO),
             location_label=location_label,
             notes='Deposit 25977.37 USDT in curve pool 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE',
-            counterparty=CPT_CURVE,
-        ), HistoryBaseEntry(
-            event_identifier=evmhash,
-            sequence_index=397,
-            timestamp=1650276061000,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-            asset=EvmToken('eip155:1/erc20:0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900'),
-            balance=Balance(amount=FVal('392698.416886553664731892'), usd_value=ZERO),
-            location_label=location_label,
-            notes='Receive 392698.416886553664731892 a3CRV after depositing in curve pool 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE',  # noqa: E501
             counterparty=CPT_CURVE,
         )]
     assert len(events) == 4
@@ -297,6 +301,19 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             sequence_index=1,
             timestamp=1650276061000,
             location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=EvmToken('eip155:1/erc20:0x06325440D014e39736583c165C2963BA99fAf14E'),
+            balance=Balance(amount=FVal('0.385232873991059423'), usd_value=ZERO),
+            location_label=location_label,
+            notes='Receive 0.385232873991059423 steCRV after depositing in curve pool 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
+            counterparty=CPT_CURVE,
+            extra_data={'deposit_events_num': 2},
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=2,
+            timestamp=1650276061000,
+            location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_ETH,
@@ -328,18 +345,6 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             location_label=location_label,
             notes='Approve 115792089237316195423570985000000000000000000000000000000000 stETH of 0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2 for spending by 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
             counterparty='0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',
-        ), HistoryBaseEntry(
-            event_identifier=evmhash,
-            sequence_index=416,
-            timestamp=1650276061000,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-            asset=EvmToken('eip155:1/erc20:0x06325440D014e39736583c165C2963BA99fAf14E'),
-            balance=Balance(amount=FVal('0.385232873991059423'), usd_value=ZERO),
-            location_label=location_label,
-            notes='Receive 0.385232873991059423 steCRV after depositing in curve pool 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
-            counterparty=CPT_CURVE,
         )]
     assert len(events) == 5
     assert events == expected_events
@@ -453,6 +458,7 @@ def test_curve_remove_liquidity(database, ethereum_transaction_decoder):
             location_label=location_label,
             notes='Return 3108.372467134893484707 linkCRV',
             counterparty=CPT_CURVE,
+            extra_data={'withdrawal_events_num': 1},
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=508,
@@ -562,24 +568,25 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
             sequence_index=1,
             timestamp=1650276061000,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.REMOVE_ASSET,
-            asset=A_ETH,
-            balance=Balance(amount=FVal('1.02930131799766041'), usd_value=ZERO),
-            location_label=location_label,
-            notes='Remove 1.02930131799766041 ETH from the curve pool',
-            counterparty=CPT_CURVE,
-        ), HistoryBaseEntry(
-            event_identifier=evmhash,
-            sequence_index=193,
-            timestamp=1650276061000,
-            location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=EvmToken('eip155:1/erc20:0x06325440D014e39736583c165C2963BA99fAf14E'),
             balance=Balance(amount=FVal('0.991695529556581896'), usd_value=ZERO),
             location_label=location_label,
             notes='Return 0.991695529556581896 steCRV',
+            counterparty=CPT_CURVE,
+            extra_data={'withdrawal_events_num': 1},
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=2,
+            timestamp=1650276061000,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('1.02930131799766041'), usd_value=ZERO),
+            location_label=location_label,
+            notes='Remove 1.02930131799766041 ETH from the curve pool',
             counterparty=CPT_CURVE,
         )]
     assert expected_events == events
@@ -749,3 +756,94 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
             counterparty=CPT_CURVE,
         )]
     assert expected_events == events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x6Bb553FFC5716782051f51b564Bb149D9946f0d2']])
+def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts):
+    _populate_curve_pools(ethereum_transaction_decoder)
+    tx_hex = deserialize_evm_tx_hash('0xe954a396a02ebbea45a1d206c9918f717c55509c8138fccc63155d0262ef4dc4 ')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1675186487000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.011180845456491718')),
+            location_label=user_address,
+            notes='Burned 0.011180845456491718 ETH for gas',
+            counterparty=CPT_GAS,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=76,
+            timestamp=TimestampMS(1675186487000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:1/erc20:0xC25a3A3b969415c80451098fa907EC722572917F'),
+            balance=Balance(amount=FVal('9.423568821947938716')),
+            location_label=user_address,
+            notes='Receive 9.423568821947938716 crvPlain3andSUSD after depositing in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',  # noqa: E501
+            counterparty='curve',
+            extra_data={'deposit_events_num': 4},
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=77,
+            timestamp=TimestampMS(1675186487000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_DAI,
+            balance=Balance(amount=FVal('10')),
+            location_label=user_address,
+            notes='Deposit 10 DAI in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',  # noqa: E501
+            counterparty=CPT_CURVE,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=77,
+            timestamp=TimestampMS(1675186487000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_USDC,
+            balance=Balance(amount=FVal('0')),
+            location_label=user_address,
+            notes='Deposit 0 USDC in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',  # noqa: E501
+            counterparty=CPT_CURVE,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=78,
+            timestamp=TimestampMS(1675186487000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_USDT,
+            balance=Balance(amount=FVal('0')),
+            location_label=user_address,
+            notes='Deposit 0 USDT in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',  # noqa: E501
+            counterparty=CPT_CURVE,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=79,
+            timestamp=TimestampMS(1675186487000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:1/erc20:0x57Ab1ec28D129707052df4dF418D58a2D46d5f51'),
+            balance=Balance(amount=FVal('0')),
+            location_label=user_address,
+            notes='Deposit 0 sUSD in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',  # noqa: E501
+            counterparty=CPT_CURVE,
+        ),
+    ]
+    assert events == expected_events
