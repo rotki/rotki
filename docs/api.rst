@@ -12167,3 +12167,54 @@ Events Details
    :statuscode 404: There is no event with the provided identifier or the event has no details to be returned.
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.
+
+
+Add EVM Transaction By Hash
+================================
+
+.. http:put:: /api/(version)/blockchains/evm/transactions/add-hash
+
+   Doing a PUT on this endpoint will add an EVM transaction to the database and associate it with the provided address.
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blockchains/evm/transactions/add-hash HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "evm_chain": "ethereum",
+        "tx_hash": "0x65d53653c584cde22e559cec4667a7278f75966360590b725d87055fb17552ba",
+        "associated_address": "0xb8553D9ee35dd23BB96fbd679E651B929821969B",
+        "async_query": true
+      }
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not.
+   :reqjson str evm_chain: The name of the evm chain for the transaction to the added e.g. ``"ethereum"``, ``"optimism"`` etc.
+   :reqjson str tx_hash: The hash of the transaction to be added.
+   :reqjson str associated_address: The address to be associated with the transaction. The address must be one that is already tracked by rotki.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true
+          "message": ""
+      }
+
+   :resjson bool result: It contains a boolean representing the status of the request.
+
+   :statuscode 200: The transaction was saved successfully.
+   :statuscode 400: Provided JSON is in some way malformed. Transaction is already present in DB. Address provided is not tracked by rotki.
+   :statuscode 404: Transaction hash not found for the specified chain.
+   :statuscode 409: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.

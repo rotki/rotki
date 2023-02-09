@@ -72,6 +72,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     DEFAULT_ADDRESS_NAME_PRIORITY,
+    EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     NON_EVM_CHAINS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_SUBSTRATE_CHAINS,
@@ -110,7 +111,7 @@ from .fields import (
     DelimitedOrNormalList,
     DerivationPathField,
     DirectoryField,
-    EthereumAddressField,
+    EvmAddressField,
     EvmChainNameField,
     EVMTransactionHashField,
     FeeField,
@@ -210,12 +211,12 @@ class DBOrderBySchema(Schema):
 
 
 class OptionalEthereumAddressSchema(Schema):
-    address = EthereumAddressField(required=False, load_default=None)
+    address = EvmAddressField(required=False, load_default=None)
     evm_chain = EvmChainNameField(required=False, load_default=ChainID.ETHEREUM)
 
 
 class RequiredEvmAddressOptionalChainSchema(Schema):
-    address = EthereumAddressField(required=True)
+    address = EvmAddressField(required=True)
     evm_chain = EvmChainNameField(
         required=False,
         limit_to=get_args(SUPPORTED_CHAIN_IDS),  # type: ignore
@@ -232,7 +233,7 @@ class RequiredEvmAddressOptionalChainSchema(Schema):
 
 
 class RequiredEvmAddressSchema(Schema):
-    address = EthereumAddressField(required=True)
+    address = EvmAddressField(required=True)
     evm_chain = EvmChainNameField(required=True)
 
 
@@ -365,7 +366,7 @@ class EvmTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
 
 class SingleEvmPendingTransactionDecodingSchema(Schema):
     evm_chain = EvmChainNameField(required=True)
-    addresses = fields.List(EthereumAddressField(), load_default=None)
+    addresses = fields.List(EvmAddressField(), load_default=None)
 
     @validates_schema
     def validate_schema(
@@ -1766,13 +1767,13 @@ class IgnoredActionsModifySchema(Schema):
 
 
 class OptionalEvmTokenInformationSchema(Schema):
-    address = EthereumAddressField(required=False)
+    address = EvmAddressField(required=False)
     evm_chain = EvmChainNameField(required=False)
     token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=False)
 
 
 class UnderlyingTokenInfoSchema(Schema):
-    address = EthereumAddressField(required=True)
+    address = EvmAddressField(required=True)
     token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=True)
     weight = FloatingPercentageField(required=True)
 
@@ -2092,7 +2093,7 @@ class QueriedAddressesSchema(Schema):
         required=True,
         validate=webargs.validate.OneOf(choices=list(AVAILABLE_MODULES_MAP.keys())),
     )
-    address = EthereumAddressField(required=True)
+    address = EvmAddressField(required=True)
 
 
 class DataImportSchema(AsyncQueryArgumentSchema):
@@ -2235,7 +2236,7 @@ class NamedOracleCacheGetSchema(AsyncQueryArgumentSchema):
 
 
 class ERC20InfoSchema(AsyncQueryArgumentSchema):
-    address = EthereumAddressField(required=True)
+    address = EvmAddressField(required=True)
 
 
 class BinanceMarketsUserSchema(Schema):
@@ -2269,7 +2270,7 @@ class ManualPriceDeleteSchema(Schema):
 
 
 class AvalancheTransactionQuerySchema(AsyncQueryArgumentSchema):
-    address = EthereumAddressField(required=True)
+    address = EvmAddressField(required=True)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
 
@@ -2468,15 +2469,15 @@ class AssetsImportingFromFormSchema(Schema):
 
 
 class ReverseEnsSchema(AsyncIgnoreCacheQueryArgumentSchema):
-    ethereum_addresses = fields.List(EthereumAddressField(), required=True)
+    ethereum_addresses = fields.List(EvmAddressField(), required=True)
 
 
 class OptionalAddressesListSchema(Schema):
-    addresses = fields.List(EthereumAddressField(required=True), load_default=None)
+    addresses = fields.List(EvmAddressField(required=True), load_default=None)
 
 
 class AddressWithOptionalBlockchainSchema(Schema):
-    address = EthereumAddressField(required=True)
+    address = EvmAddressField(required=True)
     blockchain = BlockchainField(load_default=None)
 
     @post_load()
@@ -2507,7 +2508,7 @@ class AddressbookAddressesSchema(
 
 
 class AddressbookEntrySchema(Schema):
-    address = EthereumAddressField(required=True)
+    address = EvmAddressField(required=True)
     name = fields.String(required=True)
     # Need None option here in case the user wants to update all the entries for the address.
     blockchain = BlockchainField(load_default=None)
@@ -2817,7 +2818,7 @@ class NFTFilterQuerySchema(
         DBPaginationSchema,
         DBOrderBySchema,
 ):
-    owner_addresses = fields.List(EthereumAddressField(required=True), load_default=None)
+    owner_addresses = fields.List(EvmAddressField(required=True), load_default=None)
     name = fields.String(load_default=None)
     collection_name = fields.String(load_default=None)
     ignored_assets_handling = SerializableEnumField(enum_class=IgnoredAssetsHandling, load_default=IgnoredAssetsHandling.NONE)  # noqa: E501
@@ -2867,3 +2868,44 @@ class NFTFilterQuerySchema(
 
 class EventDetailsQuerySchema(Schema):
     identifier = fields.Integer(required=True)
+
+
+class EvmTransactionHashAdditionSchema(AsyncQueryArgumentSchema):
+    evm_chain = EvmChainNameField(required=True, limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS))
+    tx_hash = EVMTransactionHashField(required=True)
+    associated_address = EvmAddressField(required=True)
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__()
+        self.db = db
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        """This validation does the following:
+        - Checks that the `tx_hash` is not present in the db for the specified `evm_chain`.
+        - Checks that the `associated_address` is tracked by rotki.
+        """
+        with self.db.conn.read_ctx() as cursor:
+            tx_count = cursor.execute(
+                'SELECT COUNT(*) FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+                (data['tx_hash'], data['evm_chain'].serialize_for_db()),
+            ).fetchone()[0]
+            if tx_count > 0:
+                raise ValidationError(
+                    message=f'tx_hash {data["tx_hash"].hex()} for {data["evm_chain"]} already present in the database',  # noqa: E501
+                    field_name='tx_hash',
+                )
+
+            accounts_count = cursor.execute(
+                'SELECT COUNT(*) FROM blockchain_accounts WHERE blockchain=? AND account=?',
+                (data['evm_chain'].to_blockchain().value, data['associated_address']),
+            ).fetchone()[0]
+            if accounts_count == 0:
+                raise ValidationError(
+                    message=f'address {data["associated_address"]} provided is not tracked by rotki for {data["evm_chain"]}',  # noqa: E501
+                    field_name='associated_address',
+                )

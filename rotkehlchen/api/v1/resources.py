@@ -67,6 +67,7 @@ from rotkehlchen.api.v1.schemas import (
     EvmAccountsPutSchema,
     EvmPendingTransactionDecodingSchema,
     EvmTransactionDecodingSchema,
+    EvmTransactionHashAdditionSchema,
     EvmTransactionPurgingSchema,
     EvmTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
@@ -188,6 +189,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     Eth2PubKey,
+    EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -2794,3 +2796,26 @@ class EventDetailsResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, identifier: int) -> Response:
         return self.rest_api.get_event_details(identifier=identifier)
+
+
+class EvmTransactionsHashResource(BaseMethodView):
+    def make_put_schema(self) -> EvmTransactionHashAdditionSchema:
+        return EvmTransactionHashAdditionSchema(
+            db=self.rest_api.rotkehlchen.data.db,
+        )
+
+    @require_loggedin_user()
+    @resource_parser.use_kwargs(make_put_schema, location='json')
+    def put(
+            self,
+            async_query: bool,
+            evm_chain: SUPPORTED_CHAIN_IDS,
+            tx_hash: EVMTxHash,
+            associated_address: ChecksumEvmAddress,
+    ) -> Response:
+        return self.rest_api.add_evm_transaction_by_hash(
+            async_query=async_query,
+            evm_chain=evm_chain,
+            tx_hash=tx_hash,
+            associated_address=associated_address,
+        )

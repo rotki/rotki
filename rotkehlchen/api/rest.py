@@ -170,6 +170,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
     EvmTokenKind,
+    EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -5009,3 +5010,58 @@ class RestAPI():
             return api_response(wrap_in_fail_result('No details found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
 
         return api_response(_wrap_in_ok_result(details), status_code=HTTPStatus.OK)
+
+    def add_evm_transaction_by_hash(
+            self,
+            async_query: bool,
+            evm_chain: SUPPORTED_CHAIN_IDS,
+            tx_hash: EVMTxHash,
+            associated_address: ChecksumEvmAddress,
+    ) -> Response:
+        """Adds an evm transaction to the DB and associates it with the address provided.
+        If successful, the transaction is then decoded.
+        """
+        if async_query is True:
+            return self._query_async(
+                command=self._add_evm_transaction_by_hash,
+                evm_chain=evm_chain,
+                tx_hash=tx_hash,
+                associated_address=associated_address,
+            )
+
+        response = self._add_evm_transaction_by_hash(
+            evm_chain=evm_chain,
+            tx_hash=tx_hash,
+            associated_address=associated_address,
+        )
+        status_code = _get_status_code_from_async_response(response)
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=status_code)
+
+    def _add_evm_transaction_by_hash(
+            self,
+            evm_chain: SUPPORTED_CHAIN_IDS,
+            tx_hash: EVMTxHash,
+            associated_address: ChecksumEvmAddress,
+    ) -> dict[str, Any]:
+        evm_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
+        try:
+            transaction, tx_receipt = evm_manager.transactions.add_transaction_by_hash(
+                tx_hash=tx_hash,
+                associated_address=associated_address,
+            )
+        except (KeyError, DeserializationError, RemoteError, sqlcipher.IntegrityError) as e:  # pylint: disable=no-member  # noqa: E501
+            if isinstance(e, sqlcipher.IntegrityError):  # pylint: disable=no-member
+                status_code = HTTPStatus.CONFLICT
+            else:
+                status_code = HTTPStatus.BAD_GATEWAY
+
+            return wrap_in_fail_result(
+                message=(
+                    f'Unable to add transaction with hash {tx_hash.hex()} for chain  '
+                    f'{evm_chain} and associated address {associated_address} due to {str(e)}'
+                ),
+                status_code=status_code,
+            )
+        evm_manager.transactions_decoder.decode_transaction(transaction=transaction, tx_receipt=tx_receipt)  # noqa: E501
+        return OK_RESULT
