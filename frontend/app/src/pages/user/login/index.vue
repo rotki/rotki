@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import LoginForm from '@/components/account-management/LoginForm.vue';
-
 import Fragment from '@/components/helper/Fragment';
 import { type LoginCredentials } from '@/types/login';
 import AssetUpdate from '@/components/status/update/AssetUpdate.vue';

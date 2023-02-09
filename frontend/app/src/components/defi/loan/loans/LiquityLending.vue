@@ -7,7 +7,6 @@ import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import LiquityCollateral from '@/components/defi/loan/loans/liquity/LiquityCollateral.vue';
 import LiquityLiquidation from '@/components/defi/loan/loans/liquity/LiquityLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
-
 import {
   HistoryEventType,
   TransactionEventProtocol

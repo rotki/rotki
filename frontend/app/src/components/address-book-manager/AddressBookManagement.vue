@@ -5,7 +5,6 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AddressBookForm from '@/components/address-book-manager/AddressBookForm.vue';
 import AddressBookTable from '@/components/address-book-manager/AddressBookTable.vue';
 import EthNamesHint from '@/components/EthNamesHint.vue';
-
 import {
   type AddressBookEntry,
   type AddressBookLocation,

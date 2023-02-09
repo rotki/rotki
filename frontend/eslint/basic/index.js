@@ -148,7 +148,8 @@ module.exports = defineConfig({
           'type'
         ],
         pathGroups: [{ pattern: '@/**', group: 'internal' }],
-        pathGroupsExcludedImportTypes: ['type']
+        pathGroupsExcludedImportTypes: ['type'],
+        'newlines-between': 'never'
       }
     ],
 

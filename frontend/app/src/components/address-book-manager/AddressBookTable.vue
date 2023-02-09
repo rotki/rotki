@@ -8,13 +8,11 @@ import { type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import RowActions from '@/components/helper/RowActions.vue';
-
 import {
   type AddressBookEntries,
   type AddressBookEntry,
   type AddressBookLocation
 } from '@/types/eth-names';
-
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 
 const addressBookDeletion = (location: Ref<AddressBookLocation>) => {

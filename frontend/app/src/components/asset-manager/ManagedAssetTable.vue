@@ -9,7 +9,6 @@ import DataTable from '@/components/helper/DataTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
-
 import {
   type AssetPagination,
   type AssetPaginationOptions,

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-
 import ModuleAddressSelector from '@/components/defi/wizard/ModuleAddressSelector.vue';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 

@@ -14,7 +14,6 @@ import NftDetails from '@/components/helper/NftDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { Routes } from '@/router/routes';
-
 import {
   DashboardTableType,
   type DashboardTablesVisibleColumns

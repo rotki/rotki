@@ -3,7 +3,6 @@ import flushPromises from 'flush-promises';
 import { setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-
 import createCustomPinia from '../../utils/create-pinia';
 
 describe('RevealableInput.vue', () => {

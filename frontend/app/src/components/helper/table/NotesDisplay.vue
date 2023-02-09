@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-
 import Fragment from '@/components/helper/Fragment';
 
 defineProps({

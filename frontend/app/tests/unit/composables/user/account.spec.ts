@@ -1,5 +1,4 @@
 import { beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
-
 import type ActionSuccess from '@/types/action';
 
 vi.mock('vue-router/composables', () => ({

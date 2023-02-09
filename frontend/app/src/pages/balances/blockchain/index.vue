@@ -4,7 +4,6 @@ import { type ComputedRef, type Ref } from 'vue';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-
 import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
 import { type BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
 

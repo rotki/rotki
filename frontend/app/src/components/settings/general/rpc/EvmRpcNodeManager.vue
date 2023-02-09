@@ -4,7 +4,6 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RpcNodeForm from '@/components/settings/general/rpc/RpcNodeForm.vue';
-
 import {
   type EvmRpcNode,
   type EvmRpcNodeList,
