@@ -2,7 +2,6 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -28,8 +27,8 @@ def data_migration_8(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressH
     # when we sync a remote database the migrations are executed but the chain_manager
     # has not been created yet
     if (chains_aggregator := getattr(rotki, 'chains_aggregator', None)) is not None:
-        # steps are: ethereum accounts + potentially write to db + update spam assets
-        progress_handler.set_total_steps(len(accounts.eth) + 2)
+        # steps are: ethereum accounts + potentially write to db
+        progress_handler.set_total_steps(len(accounts.eth) + 1)
         filtered_result = chains_aggregator.filter_active_evm_addresses(
             accounts=accounts.eth,
             progress_handler=progress_handler,
@@ -67,10 +66,5 @@ def data_migration_8(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressH
                 message_type=WSMessageType.EVM_ADDRESS_MIGRATION,
                 data=[{'evm_chain': str(x[0]), 'address': x[1]} for x in to_add_accounts],
             )
-    else:  # The only step is updating the spam assets
-        progress_handler.set_total_steps(1)
 
-    # Also update the spam assets
-    progress_handler.new_step('Update the list of spam assets')
-    update_spam_assets(db=rotki.data.db)
     log.debug('Exit data_migration_8')

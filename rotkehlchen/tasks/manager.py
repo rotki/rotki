@@ -2,18 +2,16 @@ import copy
 import logging
 import random
 from collections import defaultdict
-from typing import Callable, DefaultDict, NamedTuple
+from typing import TYPE_CHECKING, Callable, DefaultDict, NamedTuple
 
 import gevent
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     DBEqualsFilter,
@@ -26,16 +24,13 @@ from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
-from rotkehlchen.exchanges.manager import ExchangeManager
-from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
-from rotkehlchen.premium.sync import PremiumSyncManager
+from rotkehlchen.tasks.utils import should_check_data_updates
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SUPPORTED_BITCOIN_CHAINS,
@@ -48,8 +43,17 @@ from rotkehlchen.types import (
     Timestamp,
     get_args,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.aggregator import ChainsAggregator
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.updates import RotkiDataUpdater
+    from rotkehlchen.exchanges.manager import ExchangeManager
+    from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+    from rotkehlchen.greenlets.manager import GreenletManager
+    from rotkehlchen.premium.sync import PremiumSyncManager
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -81,18 +85,19 @@ class TaskManager():
     def __init__(
             self,
             max_tasks_num: int,
-            greenlet_manager: GreenletManager,
+            greenlet_manager: 'GreenletManager',
             api_task_greenlets: list[gevent.Greenlet],
-            database: DBHandler,
-            cryptocompare: Cryptocompare,
-            premium_sync_manager: Optional[PremiumSyncManager],
-            chains_aggregator: ChainsAggregator,
-            exchange_manager: ExchangeManager,
+            database: 'DBHandler',
+            cryptocompare: 'Cryptocompare',
+            premium_sync_manager: Optional['PremiumSyncManager'],
+            chains_aggregator: 'ChainsAggregator',
+            exchange_manager: 'ExchangeManager',
             deactivate_premium: Callable[[], None],
             activate_premium: Callable[[Premium], None],
             query_balances: Callable,
             update_curve_pools_cache: Callable,
-            msg_aggregator: MessagesAggregator,
+            msg_aggregator: 'MessagesAggregator',
+            data_updater: 'RotkiDataUpdater',
     ) -> None:
         self.max_tasks_num = max_tasks_num
         self.greenlet_manager = greenlet_manager
@@ -123,6 +128,7 @@ class TaskManager():
         self.msg_aggregator = msg_aggregator
         self.premium_check_retries = 0
         self.premium_sync_manager: Optional[PremiumSyncManager] = premium_sync_manager
+        self.data_updater = data_updater
 
         self.potential_tasks: list[Callable[[], Optional[list[gevent.Greenlet]]]] = [
             self._maybe_schedule_cryptocompare_query,
@@ -133,6 +139,7 @@ class TaskManager():
             self._maybe_query_missing_prices,
             self._maybe_decode_evm_transactions,
             self._maybe_check_premium_status,
+            self._maybe_check_data_updates,
             self._maybe_update_snapshot_balances,
             self._maybe_update_curve_pools,
             self._maybe_update_yearn_vaults,
@@ -585,6 +592,21 @@ class TaskManager():
             )]
 
         return None
+
+    def _maybe_check_data_updates(self) -> Optional[list[gevent.Greenlet]]:
+        """
+        Function that schedules the data update task if either there is no data update
+        cache yet or this cache is older than `DATA_UPDATES_REFRESH`
+        """
+        if should_check_data_updates(self.database) is False:
+            return None
+
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Data update task',
+            exception_is_error=True,
+            method=self.data_updater.check_for_updates,
+        )]
 
     def _schedule(self) -> None:
         """Schedules background tasks"""

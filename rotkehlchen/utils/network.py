@@ -1,13 +1,13 @@
 import json
 import logging
 from http import HTTPStatus
-from typing import Any, Callable, Union
+from typing import Any, Callable, Literal, Union, overload
 
 import gevent
 import requests
 
 from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT
-from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, QUERY_RETRY_TIMES
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -122,3 +122,40 @@ def retry_calls(
                         times,
                         e,
                     )) from e
+
+
+@overload
+def query_file(url: str, is_json: Literal[True]) -> dict[str, Any]:
+    ...
+
+
+@overload
+def query_file(url: str, is_json: Literal[False]) -> str:
+    ...
+
+
+def query_file(url: str, is_json: bool = False) -> Union[str, dict[str, Any]]:
+    """
+    Query the given file url and return the contents of the file
+    May raise:
+    - RemoteError if it was not possible to query the remote or the file is not a valid json file
+    and is_json is set to true.
+    """
+    try:
+        response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
+    except requests.exceptions.RequestException as e:
+        raise RemoteError(f'Failed to query file {url} due to: {str(e)}') from e
+
+    if response.status_code != 200:
+        raise RemoteError(
+            f'File query for {url} failed with status code '
+            f'{response.status_code} and text: {response.text}',
+        )
+
+    if is_json is True:
+        try:
+            return response.json()
+        except json.decoder.JSONDecodeError as e:
+            raise RemoteError(f'Queried file {url} is not a valid json file') from e
+
+    return response.text

@@ -4,8 +4,11 @@ import argparse
 import shutil
 import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
-from gevent import monkey  # isort:skip
+from gevent import monkey
+
+from rotkehlchen.db.dbhandler import DBHandler  # isort:skip
 monkey.patch_all()  # isort:skip
 import requests
 
@@ -95,12 +98,23 @@ def main() -> None:
         branch=args.assets_branch,
     )
     print('Applying updates...')
-    GlobalDBHandler(data_dir=target_directory, sql_vm_instructions_cb=0)
-    assets_updater = AssetsUpdater(msg_aggregator=MessagesAggregator)
-    conflicts = assets_updater.perform_update(
-        up_to_version=args.target_version,
-        conflicts=None,
-    )
+    msg_aggregator = MessagesAggregator()
+    # We need a user db since the spam assets get synced during user unlock and
+    # they touch both the global and the user DB at the same time
+    with TemporaryDirectory() as tmp_dir:
+        db = DBHandler(
+            user_data_dir=Path(tmp_dir),
+            password='123',
+            msg_aggregator=msg_aggregator,
+            initial_settings=None,
+            sql_vm_instructions_cb=0,
+        )
+        GlobalDBHandler(data_dir=target_directory, sql_vm_instructions_cb=0)
+        assets_updater = AssetsUpdater(msg_aggregator=msg_aggregator, user_db=db)
+        conflicts = assets_updater.perform_update(
+            up_to_version=args.target_version,
+            conflicts=None,
+        )
     if conflicts is not None:
         print('There were conflicts during the update. Bailing.')
         sys.exit(1)

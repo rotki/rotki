@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Literal
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.constants.resolver import (
     ETHEREUM_DIRECTIVE,
     ETHEREUM_DIRECTIVE_LENGTH,
@@ -435,7 +434,7 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - Renames the asset identifiers to use CAIPS
     """
     log.debug('Entered userdb v34->v35 upgrade')
-    progress_handler.set_total_steps(14)
+    progress_handler.set_total_steps(13)
     with db.user_write() as write_cursor:
         _clean_amm_swaps(write_cursor)
         progress_handler.new_step()
@@ -464,7 +463,4 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _reset_decoded_events(db=db, write_cursor=write_cursor)
         progress_handler.new_step()
 
-    # needs to be out of the write context as it also tries to open one underneath
-    update_spam_assets(db=db)
-    progress_handler.new_step()
     log.debug('Finished userdb v34->v35 upgrade')

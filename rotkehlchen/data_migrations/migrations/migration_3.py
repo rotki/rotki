@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 
 import filetype
 
-from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -32,8 +31,6 @@ def _validate_asset_icons(icon_manager: 'IconManager') -> None:
 def data_migration_3(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument  # noqa: E501
     """
     Migration created in 1.24
-    - Update the list of spam assets
     - Delete malformed assets icons.
     """
-    update_spam_assets(db=rotki.data.db)
     _validate_asset_icons(rotki.icon_manager)

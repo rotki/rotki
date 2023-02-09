@@ -830,6 +830,7 @@ class AssetUpdatesResource(BaseMethodView):
     delete_schema = AssetResetRequestSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
+    @require_loggedin_user()
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_assets_updates(async_query)
 

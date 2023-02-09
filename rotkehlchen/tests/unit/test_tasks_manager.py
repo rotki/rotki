@@ -8,6 +8,7 @@ from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
@@ -71,6 +72,7 @@ def fixture_task_manager(
         update_curve_pools_cache=lambda: None,
         activate_premium=lambda _: None,
         msg_aggregator=messages_aggregator,
+        data_updater=RotkiDataUpdater(msg_aggregator=messages_aggregator, user_db=database),
     )
     return task_manager
 
