@@ -1,30 +1,31 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import { api } from '@/services/rotkehlchen-api';
-import { type Watcher, type WatcherTypes } from '@/services/session/types';
+import { type Watcher, Watchers } from '@/services/session/types';
 import {
   handleResponse,
   validWithParamsSessionAndExternalService,
   validWithSessionAndExternalService
 } from '@/services/utils';
+import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 
 export const useWatchersApi = () => {
-  const watchers = async <T extends WatcherTypes>(): Promise<Watcher<T>[]> => {
-    const response = await api.instance.get<ActionResult<Watcher<T>[]>>(
+  const watchers = async (): Promise<Watchers> => {
+    const response = await api.instance.get<ActionResult<Watchers>>(
       '/watchers',
       {
         validateStatus: validWithSessionAndExternalService
       }
     );
 
-    return handleResponse(response);
+    return Watchers.parse(handleResponse(response));
   };
 
-  const addWatcher = async <T extends WatcherTypes>(
-    watchers: Omit<Watcher<T>, 'identifier'>[]
-  ): Promise<Watcher<T>[]> => {
-    const response = await api.instance.put<ActionResult<Watcher<T>[]>>(
+  const addWatcher = async (
+    watchers: Omit<Watcher, 'identifier'>[]
+  ): Promise<Watchers> => {
+    const response = await api.instance.put<ActionResult<Watchers>>(
       '/watchers',
-      { watchers },
+      axiosSnakeCaseTransformer({ watchers }),
       {
         validateStatus: validWithParamsSessionAndExternalService
       }
@@ -33,12 +34,10 @@ export const useWatchersApi = () => {
     return handleResponse(response);
   };
 
-  const editWatcher = async <T extends WatcherTypes>(
-    watchers: Watcher<T>[]
-  ): Promise<Watcher<T>[]> => {
-    const response = await api.instance.patch<ActionResult<Watcher<T>[]>>(
+  const editWatcher = async (watchers: Watchers): Promise<Watchers> => {
+    const response = await api.instance.patch<ActionResult<Watchers>>(
       '/watchers',
-      { watchers },
+      axiosSnakeCaseTransformer({ watchers }),
       {
         validateStatus: validWithParamsSessionAndExternalService
       }
@@ -47,13 +46,11 @@ export const useWatchersApi = () => {
     return handleResponse(response);
   };
 
-  const deleteWatcher = async <T extends WatcherTypes>(
-    identifiers: string[]
-  ): Promise<Watcher<T>[]> => {
-    const response = await api.instance.delete<ActionResult<Watcher<T>[]>>(
+  const deleteWatcher = async (identifiers: string[]): Promise<Watchers> => {
+    const response = await api.instance.delete<ActionResult<Watchers>>(
       '/watchers',
       {
-        data: { watchers: identifiers },
+        data: axiosSnakeCaseTransformer({ watchers: identifiers }),
         validateStatus: validWithParamsSessionAndExternalService
       }
     );
