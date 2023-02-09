@@ -506,7 +506,7 @@ class MaybeAssetField(fields.Field):
         return asset
 
 
-class EthereumAddressField(fields.Field):
+class EvmAddressField(fields.Field):
 
     @staticmethod
     def _serialize(

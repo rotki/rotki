@@ -71,6 +71,7 @@ from rotkehlchen.api.v1.resources import (
     EventDetailsResource,
     EvmAccountsResource,
     EvmPendingTransactionsDecodingResource,
+    EvmTransactionsHashResource,
     EvmTransactionsResource,
     ExchangeBalancesResource,
     ExchangeRatesResource,
@@ -265,6 +266,7 @@ URLS_V1: URLS = [
     ('/blockchains/<string:blockchain>/nodes', RpcNodesResource),
     ('/blockchains/<string:blockchain>/tokens/detect', DetectTokensResource),
     ('/blockchains/<string:blockchain>/xpub', BTCXpubResource),
+    ('/blockchains/evm/transactions/add-hash', EvmTransactionsHashResource),
     ('/blockchains/AVAX/transactions', AvalancheTransactionsResource),
     (
         '/blockchains/AVAX/transactions/<string:address>',

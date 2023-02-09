@@ -22,6 +22,7 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.structures import EvmTxReceipt
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.types import EvmTransaction
 
     from .node_inquirer import EvmNodeInquirer
 
@@ -554,3 +555,39 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                     if 'UNIQUE constraint failed: evmtx_receipts.tx_hash' not in str(e):
                         log.error(f'Failed to store transaction {entry.hex()} receipt due to {str(e)}')  # noqa: E501
                         raise  # if receipt is already added by other greenlet it's fine
+
+    def add_transaction_by_hash(
+            self,
+            tx_hash: EVMTxHash,
+            associated_address: ChecksumEvmAddress,
+    ) -> tuple['EvmTransaction', 'EvmTxReceipt']:
+        """Adds a transaction to the database by its hash and associates it with the provided address.
+
+        May raise:
+        - RemoteError if any of the remote queries fail.
+        - KeyError if there's a missing key in the tx_receipt dict.
+        - DeserializationError if there's an issue deserializing a value.
+        - pysqlcipher3.dbapi2.IntegrityError if the tx_hash is present in the db or address is not tracked.
+        """  # noqa: E501
+        dbevmtx = DBEvmTx(self.database)
+        transaction = self.evm_inquirer.get_transaction_by_hash(tx_hash)
+        receipt_data = self.evm_inquirer.get_transaction_receipt(tx_hash)
+        with self.database.user_write() as write_cursor:
+            dbevmtx.add_evm_transactions(
+                write_cursor=write_cursor,
+                evm_transactions=[transaction],
+                relevant_address=associated_address,
+            )
+            dbevmtx.add_receipt_data(
+                write_cursor=write_cursor,
+                chain_id=self.evm_inquirer.chain_id,
+                data=receipt_data,
+            )
+        with dbevmtx.db.conn.read_ctx() as cursor:
+            tx_receipt = dbevmtx.get_receipt(
+                cursor=cursor,
+                tx_hash=tx_hash,
+                chain_id=self.evm_inquirer.chain_id,
+            )
+        assert tx_receipt is not None, 'transaction receipt was added just above, so should exist'  # noqa: E501
+        return transaction, tx_receipt
