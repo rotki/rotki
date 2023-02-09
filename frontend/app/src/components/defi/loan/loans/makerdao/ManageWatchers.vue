@@ -24,7 +24,7 @@ const watchers = computed(() => {
   const { identifier } = get(vault);
   return get(loanWatchers).filter(watcher => {
     const watcherArgs = watcher.args;
-    return watcherArgs.vault_id.includes(identifier);
+    return watcherArgs.vaultId.includes(identifier);
   });
 });
 

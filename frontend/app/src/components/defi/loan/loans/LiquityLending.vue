@@ -69,29 +69,27 @@ const { tc } = useI18n();
           <loan-debt :debt="debt" :asset="debt.asset" />
         </v-col>
       </v-row>
-      <v-row no-gutters class="mt-8">
-        <v-col cols="12">
-          <premium-card
-            v-if="!premium"
-            :title="tc('liquity_lending.trove_events')"
-          />
-
-          <transaction-content
-            use-external-account-filter
-            :section-title="tc('liquity_lending.trove_events')"
-            :protocols="[TransactionEventProtocol.LIQUITY]"
-            :event-types="[
-              HistoryEventType.WITHDRAWAL,
-              HistoryEventType.SPEND,
-              HistoryEventType.DEPOSIT
-            ]"
-            :external-account-filter="{
+      <div v-if="!premium" class="mt-8">
+        <premium-card :title="tc('liquity_lending.trove_events')" />
+      </div>
+      <div v-else>
+        <transaction-content
+          use-external-account-filter
+          :section-title="tc('liquity_lending.trove_events')"
+          :protocols="[TransactionEventProtocol.LIQUITY]"
+          :event-types="[
+            HistoryEventType.WITHDRAWAL,
+            HistoryEventType.SPEND,
+            HistoryEventType.DEPOSIT
+          ]"
+          :external-account-filter="[
+            {
               address: loan.owner,
               chain: Blockchain.ETH
-            }"
-          />
-        </v-col>
-      </v-row>
+            }
+          ]"
+        />
+      </div>
     </v-col>
   </v-row>
 </template>
