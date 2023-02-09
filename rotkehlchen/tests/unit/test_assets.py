@@ -10,7 +10,6 @@ import pytest
 from eth_utils import is_checksum_address
 
 from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, FiatAsset, Nft
-from rotkehlchen.assets.spam_assets import KNOWN_EVM_SPAM_TOKENS
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import get_or_create_evm_token, symbol_to_ethereum_token
 from rotkehlchen.constants.assets import A_DAI, A_USDT
@@ -608,15 +607,6 @@ def test_get_or_create_evm_token(globaldb, database):
         chain_id=ChainID.ETHEREUM,
     ) == A_USDT
     assert cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0] == assets_num + 2
-
-
-def test_spam_assets_are_valid():
-    """Test that the information for our own list of spam assets is correct"""
-    for token_entry in KNOWN_EVM_SPAM_TOKENS:
-        assert is_checksum_address(token_entry['address'])
-        assert 'name' in token_entry
-        assert 'symbol' in token_entry
-        assert 'decimals' in token_entry
 
 
 def test_resolve_nft():

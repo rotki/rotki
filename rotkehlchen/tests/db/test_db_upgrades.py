@@ -945,7 +945,6 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
         new_ignored_assets_ids = cursor.execute('SELECT value FROM multisettings WHERE name="ignored_asset";').fetchall()  # noqa: E501
         for new_ignored_assets_id in expected_new_ignored_assets_ids:
             assert new_ignored_assets_id in new_ignored_assets_ids
-        assert len(new_ignored_assets_ids) >= 135
 
         fixed_asset_id = 'eip155:1/erc20:0xb3d608c31ACa7a1c7D6DAcec5978E5493181b67A'
         # check that history events contain a transaction with new style token identifier

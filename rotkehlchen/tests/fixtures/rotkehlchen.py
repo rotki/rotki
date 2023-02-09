@@ -102,7 +102,7 @@ def fixture_new_db_unlock_actions():
     """Overwrite actions to perform at unlock of a fresh DB. None means overwrite with nothing.
 
     Otherwise it's a sequence of actions to overwrite it with. Valid actions are:
-    ('rpc_nodes', 'spam_assets')
+    ('rpc_nodes',)
 
     Default is just to write rpc nodes in the DB
     """
@@ -185,6 +185,11 @@ def initialize_mock_rotkehlchen_instance(
     # does not run during tests
     size_patch = patch('rotkehlchen.rotkehlchen.ICONS_BATCH_SIZE', new=0)
     sleep_patch = patch('rotkehlchen.rotkehlchen.ICONS_QUERY_SLEEP', new=999999)
+    # don't perform checks for updates
+    rotki_updates_patch = patch(
+        'rotkehlchen.db.updates.RotkiDataUpdater.check_for_updates',
+        autospec=True,
+    )
 
     create_new = True
     if use_custom_database is not None:
@@ -198,6 +203,7 @@ def initialize_mock_rotkehlchen_instance(
         stack.enter_context(ksm_rpcconnect_patch)
         stack.enter_context(size_patch)
         stack.enter_context(sleep_patch)
+        stack.enter_context(rotki_updates_patch)
         if use_custom_database is not None:
             stack.enter_context(mock_db_schema_sanity_check())
 

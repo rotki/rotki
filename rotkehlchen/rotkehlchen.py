@@ -17,7 +17,6 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, CryptoAsset
-from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.balances.manual import (
     account_for_manually_tracked_asset_balances,
     get_manually_tracked_balances,
@@ -47,6 +46,7 @@ from rotkehlchen.data_import.manager import CSVDataImporter
 from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
+from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import (
@@ -165,7 +165,7 @@ class Rotkehlchen():
         self.coingecko = Coingecko()
         self.defillama = Defillama()
         self.icon_manager = IconManager(data_dir=self.data_dir, coingecko=self.coingecko)
-        self.assets_updater = AssetsUpdater(self.msg_aggregator)
+
         # Initialize the Inquirer singleton
         Inquirer(
             data_dir=self.data_dir,
@@ -220,7 +220,6 @@ class Rotkehlchen():
 
     def _perform_new_db_actions(self) -> None:
         """Actions to perform at creation of a new DB"""
-        update_spam_assets(self.data.db)
         with self.data.db.user_write() as write_cursor:
             populate_rpc_nodes_in_database(write_cursor)
 
@@ -419,6 +418,10 @@ class Rotkehlchen():
             exchange_manager=self.exchange_manager,
             chains_aggregator=self.chains_aggregator,
         )
+        self.data_updater = RotkiDataUpdater(
+            msg_aggregator=self.msg_aggregator,
+            user_db=self.data.db,
+        )
         self.task_manager = TaskManager(
             max_tasks_num=DEFAULT_MAX_TASKS_NUM,
             greenlet_manager=self.greenlet_manager,
@@ -433,6 +436,7 @@ class Rotkehlchen():
             query_balances=self.query_balances,
             update_curve_pools_cache=self.chains_aggregator.ethereum.assure_curve_cache_is_queried_and_decoder_updated,  # noqa: E501
             msg_aggregator=self.msg_aggregator,
+            data_updater=self.data_updater,
         )
 
         self.migration_manager.maybe_migrate_data()
@@ -444,6 +448,15 @@ class Rotkehlchen():
             batch_size=ICONS_BATCH_SIZE,
             sleep_time_secs=ICONS_QUERY_SLEEP,
         )
+
+        self.assets_updater = AssetsUpdater(self.msg_aggregator)
+        self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Check data updates',
+            exception_is_error=False,
+            method=self.data_updater.check_for_updates,
+        )
+
         self.user_is_logged_in = True
         log.debug('User unlocking complete')
 

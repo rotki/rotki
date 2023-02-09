@@ -9,7 +9,6 @@ from unittest.mock import _patch, patch
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
 from rotkehlchen.chain.evm.nodes import populate_rpc_nodes_in_database
@@ -165,8 +164,6 @@ def perform_new_db_unlock_actions(db: DBHandler, new_db_unlock_actions: tuple[st
     if 'rpc_nodes' in new_db_unlock_actions:
         with db.user_write() as write_cursor:
             populate_rpc_nodes_in_database(write_cursor)
-    if 'spam_assets' in new_db_unlock_actions:
-        update_spam_assets(db)
 
 
 def run_no_db_upgrades(self) -> bool:

@@ -7,7 +7,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.assets.spam_assets import KNOWN_EVM_SPAM_TOKENS
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.data_migrations.manager import (
@@ -487,24 +486,18 @@ def test_migration_8(
         assert msg['data']['target_version'] == LAST_DATA_MIGRATION
         migration = msg['data']['current_migration']
         assert migration['version'] == 8
-        assert migration['total_steps'] == (6 if step_num != 0 else 0)
+        assert migration['total_steps'] == (5 if step_num != 0 else 0)
         assert migration['current_step'] == step_num
         if 1 <= step_num <= 4:
             assert 'EVM chain activity' in migration['description']
         else:
             assert migration['description'] == description
 
-    websocket_connection.wait_until_messages_num(num=8, timeout=10)
-    assert websocket_connection.messages_num() == 8
-    for i in range(8):
+    websocket_connection.wait_until_messages_num(num=7, timeout=10)
+    assert websocket_connection.messages_num() == 7
+    for i in range(7):
         msg = websocket_connection.pop_message()
-        if i == 7:
-            assert_progress_message(
-                msg=msg,
-                step_num=6,
-                description='Update the list of spam assets',
-            )
-        elif i == 6:  # message for migrated address
+        if i == 6:  # message for migrated address
             assert msg['type'] == 'evm_address_migration'
             assert sorted(msg['data'], key=operator.itemgetter('evm_chain', 'address')) == sorted([
                 {'evm_chain': 'avalanche', 'address': ethereum_accounts[1]},
@@ -518,12 +511,6 @@ def test_migration_8(
             assert_progress_message(msg, i, None)
         else:
             assert_progress_message(msg, i, None)
-
-    # check that the spam assets have been updated
-    database = rotki.data.db
-    with database.conn.read_ctx() as cursor:
-        spam_assets = rotki.data.db.get_ignored_assets(cursor)
-    assert len(spam_assets) >= len(KNOWN_EVM_SPAM_TOKENS)
 
 
 @pytest.mark.parametrize('use_custom_database', ['data_migration_9.db'])

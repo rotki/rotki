@@ -22,12 +22,13 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.network import query_file
 
 from .handler import GlobalDBHandler, initialize_globaldb
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -99,26 +100,6 @@ def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) 
     AssetResolver().clean_memory_cache(local_asset.identifier.lower())
 
 
-def _query_file(url: str) -> str:
-    """
-    Query the given url
-    May raise:
-    - RemoteError if it was not possible to query GitHub
-    """
-    try:
-        response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
-    except requests.exceptions.RequestException as e:
-        raise RemoteError(f'Failed to query Github for {url} during assets update: {str(e)}') from e  # noqa: E501
-
-    if response.status_code != 200:
-        raise RemoteError(
-            f'Github query for {url} failed with status code '
-            f'{response.status_code} and text: {response.text}',
-        )
-
-    return response.text
-
-
 class ParsedAssetData(NamedTuple):
     identifier: str
     asset_type: AssetType
@@ -131,9 +112,9 @@ class ParsedAssetData(NamedTuple):
     forked: Optional[str]
 
 
-class AssetsUpdater():
+class AssetsUpdater:
 
-    def __init__(self, msg_aggregator: MessagesAggregator) -> None:
+    def __init__(self, msg_aggregator: 'MessagesAggregator') -> None:
         self.msg_aggregator = msg_aggregator
         self.local_assets_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)
         self.last_remote_checked_version = -1  # integer value that represents no update
@@ -643,14 +624,14 @@ class AssetsUpdater():
                 log.info('Finishing assets update. Replacing users globaldb with the updated information')  # noqa: E501
                 _replace_assets_from_db(GlobalDBHandler().conn, tmpdir / temp_db_name)
 
-            return None
+        return None
 
     def _perform_update(
             self,
             connection: 'DBConnection',
             assets_conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
             up_to_version: Optional[int],
-            updates: dict[int, dict[str, str]],
+            updates: dict[int, dict[UpdateFileType, str]],
     ) -> None:
         """
         Apply to the db the different sql updates from the `updates` argument
@@ -664,7 +645,7 @@ class AssetsUpdater():
             self._apply_single_version_update(
                 connection=connection,
                 version=version,
-                text=updates[version]['assets_file'],
+                text=updates[version][UpdateFileType.ASSETS],
                 assets_conflicts=assets_conflicts,
                 update_file_type=UpdateFileType.ASSETS,
             )
@@ -673,14 +654,14 @@ class AssetsUpdater():
                 self._apply_single_version_update(
                     connection=connection,
                     version=version,
-                    text=updates[version]['asset_collections_file'],
+                    text=updates[version][UpdateFileType.ASSET_COLLECTIONS],
                     assets_conflicts=None,
                     update_file_type=UpdateFileType.ASSET_COLLECTIONS,
                 )
                 self._apply_single_version_update(
                     connection=connection,
                     version=version,
-                    text=updates[version]['asset_collections_mappings_file'],
+                    text=updates[version][UpdateFileType.ASSET_COLLECTIONS_MAPPINGS],
                     assets_conflicts=None,
                     update_file_type=UpdateFileType.ASSET_COLLECTIONS_MAPPINGS,
                 )
@@ -697,7 +678,7 @@ class AssetsUpdater():
             local_schema_version: int,
             infojson: dict[str, Any],
             up_to_version: Optional[int],
-    ) -> dict[int, dict[str, str]]:
+    ) -> dict[int, dict[UpdateFileType, str]]:
         """
         Query the assets update repository to retrieve the pending updates before trying to
         apply them. It returns a dict that maps each version to their update files.
@@ -739,17 +720,20 @@ class AssetsUpdater():
             asset_collections_url = ASSET_COLLECTIONS_UPDATES_URL.format(branch=self.branch, version=version)  # noqa: E501
             asset_collections_mappings_url = ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL.format(branch=self.branch, version=version)  # noqa: E501
 
-            assets_file = _query_file(url=assets_url)
+            assets_file = query_file(url=assets_url, is_json=False)
             if version >= FIRST_VERSION_WITH_COLLECTIONS:
-                asset_collections_file = _query_file(url=asset_collections_url)
-                asset_collections_mappings_file = _query_file(url=asset_collections_mappings_url)
+                asset_collections_file = query_file(url=asset_collections_url, is_json=False)
+                asset_collections_mappings_file = query_file(
+                    url=asset_collections_mappings_url,
+                    is_json=False,
+                )
             else:
                 asset_collections_file, asset_collections_mappings_file = '', ''
 
             updates[version] = {
-                'assets_file': assets_file,
-                'asset_collections_file': asset_collections_file,
-                'asset_collections_mappings_file': asset_collections_mappings_file,
+                UpdateFileType.ASSETS: assets_file,
+                UpdateFileType.ASSET_COLLECTIONS: asset_collections_file,
+                UpdateFileType.ASSET_COLLECTIONS_MAPPINGS: asset_collections_mappings_file,
             }
 
             version += 1
