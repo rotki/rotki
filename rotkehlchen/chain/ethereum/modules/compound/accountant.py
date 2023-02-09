@@ -39,4 +39,12 @@ class CompoundAccountant(ModuleAccountantInterface):
                 method='acquisition',
                 take=1,
             ),
+            get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.GENERATE_DEBT, CPT_COMPOUND): TxEventSettings(  # noqa: E501
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='acquisition',
+                take=1,
+                multitake_treatment=None,
+            ),
         }

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -23,6 +23,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 MINT_COMPOUND_TOKEN = b'L \x9b_\xc8\xadPu\x8f\x13\xe2\xe1\x08\x8b\xa5jV\r\xffi\n\x1co\xef&9OL\x03\x82\x1cO'  # noqa: E501
 REDEEM_COMPOUND_TOKEN = b'\xe5\xb7T\xfb\x1a\xbb\x7f\x01\xb4\x99y\x1d\x0b\x82\n\xe3\xb6\xaf4$\xac\x1cYv\x8e\xdbS\xf4\xec1\xa9)'  # noqa: E501
+BORROW_COMPOUND = b'\x13\xedhf\xd4\xe1\xeem\xa4o\x84\\F\xd7\xe5A \x88=u\xc5\xea\x9a-\xac\xc1\xc4\xca\x89\x84\xab\x80'  # noqa: E501
+REPAY_COMPOUND = b'\x1a*"\xcb\x03M&\xd1\x85K\xdcff\xa5\xb9\x1f\xe2^\xfb\xbb]\xca\xd3\xb05Tx\xd6\xf5\xc3b\xa1'  # noqa: E501
 DISTRIBUTED_SUPPLIER_COMP = b',\xae\xcd\x17\xd0/V\xfa\x89w\x05\xdc\xc7@\xda-#|7?phoN\r\x9b\xd3\xbf\x04\x00\xeaz'  # noqa: E501
 
 
@@ -122,6 +124,34 @@ class CompoundDecoder(DecoderInterface):
         maybe_reshuffle_events(out_event=out_event, in_event=in_event, events_list=decoded_events)
         return None, []
 
+    def _decode_borrow_and_repay(
+            self,
+            tx_log: EvmTxReceiptLog,
+            decoded_events: list[HistoryBaseEntry],
+            compound_token: EvmToken,
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+        """
+        Decode borrow for compound tokens
+        """
+        underlying_token = get_crypto_asset_by_symbol(
+            symbol=compound_token.symbol[1:],
+            chain_id=compound_token.chain_id,
+        )
+        if underlying_token is None:
+            return None, []
+
+        underlying_token = cast(EvmToken, underlying_token)
+        borrowed_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
+        borrowed_amount = asset_normalized_value(borrowed_amount_raw, underlying_token)
+        for event in decoded_events:
+            # Find the transfer event which should have come before the redeeming
+            if event.event_type == HistoryEventType.RECEIVE and event.asset.identifier == underlying_token and event.balance.amount == borrowed_amount:  # noqa: E501
+                event.event_subtype = HistoryEventSubType.GENERATE_DEBT
+                event.counterparty = CPT_COMPOUND
+                event.notes = f'Borrow {borrowed_amount} {underlying_token.symbol} from compound'
+
+        return None, []
+
     def decode_compound_token_movement(
             self,
             tx_log: EvmTxReceiptLog,
@@ -134,6 +164,9 @@ class CompoundDecoder(DecoderInterface):
         if tx_log.topics[0] == MINT_COMPOUND_TOKEN:
             log.debug(f'Hash: {transaction.tx_hash.hex()}')
             return self._decode_mint(transaction=transaction, tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
+
+        if tx_log.topics[0] in (BORROW_COMPOUND, REPAY_COMPOUND):
+            return self._decode_borrow_and_repay(tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
 
         if tx_log.topics[0] == REDEEM_COMPOUND_TOKEN:
             return self._decode_redeem(tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
