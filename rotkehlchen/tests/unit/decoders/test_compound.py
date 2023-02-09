@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -5,14 +7,19 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.constants.assets import A_CDAI, A_CETH, A_COMP, A_DAI, A_ETH
+from rotkehlchen.constants.assets import A_CDAI, A_CETH, A_COMP, A_DAI, A_ETH, A_USDC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, deserialize_evm_tx_hash
+from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.db.dbhandler import DBHandler
 
 ADDY = '0x5727c0481b90a129554395937612d8b9301D6c7b'
 ADDY2 = '0x87Dd56068Af560B0D8472C4EF41CB902FCbF5ebE'
+ADDR_BORROWS = '0xD84101AE36b83E64b52AC9a61Efa4497f8FD2560'
 
 
 @pytest.mark.vcr()
@@ -190,3 +197,48 @@ def test_compound_deposit_with_comp_claim(
             counterparty=CPT_COMPOUND,
         )]
     assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [[ADDR_BORROWS]])
+def test_compound_borrow(
+        database: 'DBHandler',
+        ethereum_inquirer: 'EthereumInquirer',
+) -> None:
+    """Data taken from:
+    https://etherscan.io/tx/0x036338316a076590a496791a729d3459934a89d6eb512f765cf0e28f9eb8b50c
+    """
+    tx_hash = deserialize_evm_tx_hash('0x036338316a076590a496791a729d3459934a89d6eb512f765cf0e28f9eb8b50c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=0,
+            timestamp=TimestampMS(1578114925000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.002977007'), usd_value=ZERO),
+            location_label=ADDR_BORROWS,
+            notes='Burned 0.002977007 ETH for gas',
+            counterparty=CPT_GAS,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=9,
+            timestamp=TimestampMS(1578114925000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.GENERATE_DEBT,
+            asset=A_USDC,
+            balance=Balance(amount=FVal(1500000)),
+            location_label=ADDR_BORROWS,
+            notes='Borrow 1500000 USDC from compound',
+            counterparty=CPT_COMPOUND,
+        ),
+    ]
+    assert expected_events == events
