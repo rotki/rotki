@@ -6,7 +6,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.makerdao.sai.constants import CPT_SAI
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 POOLED_ETHER_ADDRESS = string_to_evm_address('0xf53AD2c6851052A81B42133467480961B2321C09')
-TRANSFER_TOPIC = b'\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xaa\x95+\xa7\xf1c\xc4\xa1\x16(\xf5ZM\xf5#\xb3\xef'  # noqa: E501
 PETH_BURN_EVENT_TOPIC = b'\xcc\x16\xf5\xdb\xb4\x872\x80\x81\\\x1e\xe0\x9d\xbd\x06sl\xff\xcc\x18D\x12\xcfzq\xa0\xfd\xb7]9|\xa5'  # noqa: E501
 PETH_MINT_EVENT_TOPIC = b'\x0fg\x98\xa5`y:T\xc3\xbc\xfe\x86\xa9<\xde\x1es\x08}\x94L\x0e\xa2\x05D\x13}A!9h\x85'  # noqa: E501
 MAKERDAO_SAITUB_CONTRACT = string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3')
@@ -356,7 +355,7 @@ class MakerdaosaiDecoder(DecoderInterface):
         # check for the transfer event of the liquidation to Maker SaiTap contract
         for log in all_logs:
             if (
-                log.topics[0] == TRANSFER_TOPIC and
+                log.topics[0] == ERC20_OR_ERC721_TRANSFER and
                 hex_or_bytes_to_address(log.topics[1]) == MAKERDAO_SAITUB_CONTRACT and
                 hex_or_bytes_to_address(log.topics[2]) == MAKERDAO_SAITAP_CONTRACT
             ):

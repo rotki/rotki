@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
@@ -109,7 +110,7 @@ def test_get_transaction_receipt(
                 address='0x5bEaBAEBB3146685Dd74176f68a0721F91297D37',
                 removed=False,
                 topics=[
-                    b'\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xaa\x95+\xa7\xf1c\xc4\xa1\x16(\xf5ZM\xf5#\xb3\xef',  # noqa: E501
+                    ERC20_OR_ERC721_TRANSFER,
                     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00s(*c\xf0\xe3\xd7\xe9`EuB\x0fwsa\xec\xa3\xc8j',  # noqa: E501
                     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xb6 \xf1\x93ME\x84\xdd\xa6\x99\x9e\xdc\xad\xd3)\x81)dj\xa5',  # noqa: E501
                 ]), EvmTxReceiptLog(
