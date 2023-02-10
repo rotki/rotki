@@ -150,7 +150,7 @@ class Bitpanda(ExchangeInterface):
         """Deserializes a bitpanda fiatwallets/transactions or wallets/transactions
         entry to a deposit/withdrawal
 
-        Returns None and logs error is there is a problem or simpy None if
+        Returns None and logs error if there is a problem or simply None if
         it's not a type of entry we are interested in
         """
         try:

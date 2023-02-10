@@ -18,11 +18,11 @@ from rotkehlchen.chain.ethereum.modules.convex.constants import (
     CVX_REWARDS,
     CVXCRV_REWARDS,
     REWARD_TOPICS,
-    TRANSFER_TOPIC,
     WITHDRAWAL_TOPICS,
 )
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -118,7 +118,7 @@ class ConvexDecoder(DecoderInterface):
         - WrongAssetType
         """
         if (
-            tx_log.topics[0] == TRANSFER_TOPIC and
+            tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
             tx_log.topics[1] in CONVEX_ABRAS_HEX and
             event.location_label == transaction.from_address and
             event.event_type == HistoryEventType.RECEIVE and

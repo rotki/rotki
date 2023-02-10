@@ -323,7 +323,7 @@ class Bittrex(ExchangeInterface):
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found unknown bittrex asset {e.identifier}. '
-                    f' Ignoring its balance query.',
+                    f'Ignoring its balance query.',
                 )
                 continue
             except DeserializationError as e:
