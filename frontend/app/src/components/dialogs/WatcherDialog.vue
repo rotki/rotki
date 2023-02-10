@@ -312,7 +312,7 @@ const cancel = () => {
               />
             </v-col>
             <v-col class="d-flex align-center justify-space-between" cols="2">
-              <v-btn icon @click="() => editWatcher(loadedWatchers[key])">
+              <v-btn icon @click="editWatcher(loadedWatchers[key])">
                 <v-icon small>
                   {{ existingWatchersIcon(watcher.identifier) }}
                 </v-icon>
