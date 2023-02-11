@@ -39,6 +39,7 @@ from rotkehlchen.utils.serialization import (
     deserialize_generic_asset_from_db,
 )
 
+from .migrations.manager import LAST_DATA_MIGRATION, maybe_apply_globaldb_migrations
 from .schema import DB_SCRIPT_CREATE_TABLES
 from .upgrades.manager import maybe_upgrade_globaldb
 from .utils import GLOBAL_DB_FILENAME, GLOBAL_DB_VERSION, globaldb_get_setting_value
@@ -151,13 +152,15 @@ def initialize_globaldb(
         global_dir=global_dir,
         db_filename=db_filename,
     )
-    connection.executescript(DB_SCRIPT_CREATE_TABLES)
     if is_fresh_db is True:
+        connection.executescript(DB_SCRIPT_CREATE_TABLES)
         with connection.write_ctx() as cursor:
-            cursor.execute(
+            cursor.executemany(
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                ('version', str(GLOBAL_DB_VERSION)),
+                [('version', str(GLOBAL_DB_VERSION)), ('last_data_migration', str(LAST_DATA_MIGRATION))],  # noqa: E501
             )
+    else:
+        maybe_apply_globaldb_migrations(connection)
     connection.schema_sanity_check()
     return connection, used_backup
 
