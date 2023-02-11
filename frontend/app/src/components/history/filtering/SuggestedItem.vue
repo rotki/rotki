@@ -11,19 +11,28 @@ const props = defineProps({
 
 const { suggestion } = toRefs(props);
 
+const { assetInfo } = useAssetInfoRetrievalStore();
+
 const displayValue = computed(() => {
   const item = get(suggestion);
 
   const value = item.value;
-  if (typeof value === 'string') {
+  if (!item.asset) {
     return value;
   }
 
-  if (value.evmChain) {
-    return `${value.symbol} (${value.evmChain})`;
+  let usedAsset = value;
+  if (typeof usedAsset === 'string') {
+    usedAsset = get(assetInfo(value));
   }
 
-  return value.isCustomAsset ? value.name : value.symbol;
+  if (!usedAsset) return value;
+
+  if (usedAsset.evmChain) {
+    return `${usedAsset.symbol} (${usedAsset.evmChain})`;
+  }
+
+  return usedAsset.isCustomAsset ? usedAsset.name : usedAsset.symbol;
 });
 
 const displayText = computed(() => {

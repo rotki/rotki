@@ -288,7 +288,7 @@ declare global {
   const useHistoryStore: typeof import('./store/history/index')['useHistoryStore']
   const useI18n: typeof import('vue-i18n-composable')['useI18n']
   const useIdle: typeof import('@vueuse/core')['useIdle']
-  const useIgnore: typeof import('./composables/history')['useIgnore']
+  const useIgnore: typeof import('./composables/history/index')['useIgnore']
   const useIgnoredAssetsStore: typeof import('./store/assets/ignored')['useIgnoredAssetsStore']
   const useImage: typeof import('@vueuse/core')['useImage']
   const useImportDataApi: typeof import('./composables/api/import/index')['useImportDataApi']
@@ -315,7 +315,7 @@ declare global {
   const useLiquityApi: typeof import('./composables/api/defi/liquity')['useLiquityApi']
   const useLiquityStore: typeof import('./store/defi/liquity/index')['useLiquityStore']
   const useLocalStorage: typeof import('@vueuse/core')['useLocalStorage']
-  const useLocationInfo: typeof import('./composables/balances')['useLocationInfo']
+  const useLocationInfo: typeof import('./composables/location')['useLocationInfo']
   const useMagicKeys: typeof import('@vueuse/core')['useMagicKeys']
   const useMainStore: typeof import('./store/main')['useMainStore']
   const useMakerDaoApi: typeof import('./composables/api/defi/makerdao')['useMakerDaoApi']
@@ -394,7 +394,7 @@ declare global {
   const useSessionPurgeStore: typeof import('./store/session/purge')['useSessionPurgeStore']
   const useSessionSettings: typeof import('./composables/session/settings')['useSessionSettings']
   const useSessionSettingsStore: typeof import('./store/settings/session')['useSessionSettingsStore']
-  const useSessionStateCleaner: typeof import('./composables/logout')['useSessionStateCleaner']
+  const useSessionStateCleaner: typeof import('./composables/session/logout')['useSessionStateCleaner']
   const useSessionStorage: typeof import('@vueuse/core')['useSessionStorage']
   const useSessionStore: typeof import('./store/session/index')['useSessionStore']
   const useSettings: typeof import('./composables/settings')['useSettings']
@@ -790,7 +790,7 @@ declare module 'vue' {
     readonly useHistoryStore: UnwrapRef<typeof import('./store/history/index')['useHistoryStore']>
     readonly useI18n: UnwrapRef<typeof import('vue-i18n-composable')['useI18n']>
     readonly useIdle: UnwrapRef<typeof import('@vueuse/core')['useIdle']>
-    readonly useIgnore: UnwrapRef<typeof import('./composables/history')['useIgnore']>
+    readonly useIgnore: UnwrapRef<typeof import('./composables/history/index')['useIgnore']>
     readonly useIgnoredAssetsStore: UnwrapRef<typeof import('./store/assets/ignored')['useIgnoredAssetsStore']>
     readonly useImage: UnwrapRef<typeof import('@vueuse/core')['useImage']>
     readonly useImportDataApi: UnwrapRef<typeof import('./composables/api/import/index')['useImportDataApi']>
@@ -817,7 +817,7 @@ declare module 'vue' {
     readonly useLiquityApi: UnwrapRef<typeof import('./composables/api/defi/liquity')['useLiquityApi']>
     readonly useLiquityStore: UnwrapRef<typeof import('./store/defi/liquity/index')['useLiquityStore']>
     readonly useLocalStorage: UnwrapRef<typeof import('@vueuse/core')['useLocalStorage']>
-    readonly useLocationInfo: UnwrapRef<typeof import('./composables/balances')['useLocationInfo']>
+    readonly useLocationInfo: UnwrapRef<typeof import('./composables/location')['useLocationInfo']>
     readonly useMagicKeys: UnwrapRef<typeof import('@vueuse/core')['useMagicKeys']>
     readonly useMainStore: UnwrapRef<typeof import('./store/main')['useMainStore']>
     readonly useMakerDaoApi: UnwrapRef<typeof import('./composables/api/defi/makerdao')['useMakerDaoApi']>
@@ -896,7 +896,7 @@ declare module 'vue' {
     readonly useSessionPurgeStore: UnwrapRef<typeof import('./store/session/purge')['useSessionPurgeStore']>
     readonly useSessionSettings: UnwrapRef<typeof import('./composables/session/settings')['useSessionSettings']>
     readonly useSessionSettingsStore: UnwrapRef<typeof import('./store/settings/session')['useSessionSettingsStore']>
-    readonly useSessionStateCleaner: UnwrapRef<typeof import('./composables/logout')['useSessionStateCleaner']>
+    readonly useSessionStateCleaner: UnwrapRef<typeof import('./composables/session/logout')['useSessionStateCleaner']>
     readonly useSessionStorage: UnwrapRef<typeof import('@vueuse/core')['useSessionStorage']>
     readonly useSessionStore: UnwrapRef<typeof import('./store/session/index')['useSessionStore']>
     readonly useSettings: UnwrapRef<typeof import('./composables/settings')['useSettings']>

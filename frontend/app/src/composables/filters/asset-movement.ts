@@ -1,7 +1,16 @@
 import { type ComputedRef, type Ref } from 'vue';
-import { type MatchedKeyword, type SearchMatcher } from '@/types/filtering';
+import { z } from 'zod';
+import {
+  type MatchedKeyword,
+  type SearchMatcher,
+  assetDeTransformer,
+  assetSuggestions,
+  dateDeTransformer,
+  dateTransformer,
+  dateValidator
+} from '@/types/filtering';
 import { MovementCategory } from '@/types/history/movements';
-import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
+import { getDateInputISOFormat } from '@/utils/date';
 
 enum AssetMovementFilterKeys {
   LOCATION = 'location',
@@ -32,6 +41,7 @@ export const useAssetMovementFilters = () => {
   const { associatedLocations } = storeToRefs(locationsStore);
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { assetSearch } = useAssetInfoApi();
+  const { assetInfo } = useAssetInfoRetrievalStore();
   const { tc } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(() => [
@@ -40,7 +50,8 @@ export const useAssetMovementFilters = () => {
       keyValue: AssetMovementFilterValueKeys.ASSET,
       description: tc('deposit_withdrawals.filter.asset'),
       asset: true,
-      suggestions: async (value: string) => await assetSearch(value, 5)
+      suggestions: assetSuggestions(assetSearch),
+      deTransformer: assetDeTransformer(assetInfo)
     },
     {
       key: AssetMovementFilterKeys.ACTION,
@@ -59,14 +70,9 @@ export const useAssetMovementFilters = () => {
         format: getDateInputISOFormat(get(dateInputFormat))
       }),
       suggestions: () => [],
-      validate: value => {
-        return (
-          value.length > 0 &&
-          !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-        );
-      },
-      transformer: (date: string) =>
-        convertToTimestamp(date, get(dateInputFormat)).toString()
+      validate: dateValidator(dateInputFormat),
+      transformer: dateTransformer(dateInputFormat),
+      deTransformer: dateDeTransformer(dateInputFormat)
     },
     {
       key: AssetMovementFilterKeys.END,
@@ -77,14 +83,9 @@ export const useAssetMovementFilters = () => {
       }),
       string: true,
       suggestions: () => [],
-      validate: value => {
-        return (
-          value.length > 0 &&
-          !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-        );
-      },
-      transformer: (date: string) =>
-        convertToTimestamp(date, get(dateInputFormat)).toString()
+      validate: dateValidator(dateInputFormat),
+      transformer: dateTransformer(dateInputFormat),
+      deTransformer: dateDeTransformer(dateInputFormat)
     },
     {
       key: AssetMovementFilterKeys.LOCATION,
@@ -100,9 +101,19 @@ export const useAssetMovementFilters = () => {
     set(filters, newFilters);
   };
 
+  const OptionalString = z.string().optional();
+  const RouteFilterSchema = z.object({
+    [AssetMovementFilterValueKeys.LOCATION]: OptionalString,
+    [AssetMovementFilterValueKeys.ACTION]: OptionalString,
+    [AssetMovementFilterValueKeys.ASSET]: OptionalString,
+    [AssetMovementFilterValueKeys.START]: OptionalString,
+    [AssetMovementFilterValueKeys.END]: OptionalString
+  });
+
   return {
     filters,
     matchers,
-    updateFilter
+    updateFilter,
+    RouteFilterSchema
   };
 };

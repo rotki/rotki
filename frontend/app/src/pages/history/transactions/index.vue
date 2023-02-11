@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Section } from '@/types/status';
+import { type LocationQuery } from '@/types/route';
 
 const ProgressScreen = defineAsyncComponent(
   () => import('@/components/helper/ProgressScreen.vue')
@@ -17,6 +18,14 @@ const { t } = useI18n();
 onBeforeMount(async () => {
   await fetchTransactions();
 });
+
+const router = useRouter();
+const redirect = async (query: LocationQuery) => {
+  await router.push({
+    query,
+    replace: true
+  });
+};
 </script>
 
 <template>
@@ -27,6 +36,9 @@ onBeforeMount(async () => {
     {{ t('transactions.loading_subtitle') }}
   </progress-screen>
   <div v-else>
-    <transaction-content />
+    <transaction-content
+      read-filter-from-route
+      @update:query-params="redirect($event)"
+    />
   </div>
 </template>

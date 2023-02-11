@@ -1,6 +1,15 @@
 import { type ComputedRef, type Ref } from 'vue';
-import { type MatchedKeyword, type SearchMatcher } from '@/types/filtering';
-import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
+import { z } from 'zod';
+import {
+  type MatchedKeyword,
+  type SearchMatcher,
+  assetDeTransformer,
+  assetSuggestions,
+  dateDeTransformer,
+  dateTransformer,
+  dateValidator
+} from '@/types/filtering';
+import { getDateInputISOFormat } from '@/utils/date';
 
 enum TransactionFilterKeys {
   START = 'start',
@@ -30,6 +39,7 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
   const { counterparties } = storeToRefs(useTransactionStore());
   const { txEvmChains } = useSupportedChains();
   const { assetSearch } = useAssetInfoApi();
+  const { assetInfo } = useAssetInfoRetrievalStore();
   const { tc } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(() => {
@@ -43,14 +53,9 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
           format: getDateInputISOFormat(get(dateInputFormat))
         }),
         suggestions: () => [],
-        validate: (value: string) => {
-          return (
-            value.length > 0 &&
-            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-          );
-        },
-        transformer: (date: string) =>
-          convertToTimestamp(date, get(dateInputFormat)).toString()
+        validate: dateValidator(dateInputFormat),
+        transformer: dateTransformer(dateInputFormat),
+        deTransformer: dateDeTransformer(dateInputFormat)
       },
       {
         key: TransactionFilterKeys.END,
@@ -61,21 +66,17 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
           format: getDateInputISOFormat(get(dateInputFormat))
         }),
         suggestions: () => [],
-        validate: (value: string) => {
-          return (
-            value.length > 0 &&
-            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-          );
-        },
-        transformer: (date: string) =>
-          convertToTimestamp(date, get(dateInputFormat)).toString()
+        validate: dateValidator(dateInputFormat),
+        transformer: dateTransformer(dateInputFormat),
+        deTransformer: dateDeTransformer(dateInputFormat)
       },
       {
         key: TransactionFilterKeys.ASSET,
         keyValue: TransactionFilterValueKeys.ASSET,
         description: tc('transactions.filter.asset'),
         asset: true,
-        suggestions: async (value: string) => await assetSearch(value, 5)
+        suggestions: assetSuggestions(assetSearch),
+        deTransformer: assetDeTransformer(assetInfo)
       }
     ];
 
@@ -110,9 +111,23 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
     });
   };
 
+  const OptionalString = z.string().optional();
+  const RouteFilterSchema = z.object({
+    [TransactionFilterValueKeys.START]: OptionalString,
+    [TransactionFilterValueKeys.END]: OptionalString,
+    [TransactionFilterValueKeys.ASSET]: OptionalString,
+    [TransactionFilterValueKeys.PROTOCOL]: z
+      .array(z.string())
+      .or(z.string())
+      .transform(val => (Array.isArray(val) ? val : [val]))
+      .optional(),
+    [TransactionFilterValueKeys.EVM_CHAIN]: OptionalString
+  });
+
   return {
     matchers,
     filters,
-    updateFilter
+    updateFilter,
+    RouteFilterSchema
   };
 };

@@ -54,9 +54,10 @@ const available: ComputedRef<SearchMatcher<any>[]> = computed(
 const updateSuggestion = (value: Suggestion[], index: number) => {
   set(lastSuggestion, value[index]);
   emit('suggest', {
+    index,
     key: value[index].key,
     value: value[index].value,
-    index,
+    asset: value[index].asset,
     total: value.length
   });
 };
@@ -134,10 +135,11 @@ watch([keyword, suggestion], async ([keyword, suggestion]) => {
       })
       .slice(0, 5)
       .map((a, index) => ({
-        total: suggestedItems.length,
         index,
         key: a.key,
-        value: a.value
+        value: a.value,
+        asset: typeof a.value !== 'string',
+        total: suggestedItems.length
       }))
   );
 });

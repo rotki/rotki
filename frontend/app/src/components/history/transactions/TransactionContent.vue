@@ -3,6 +3,8 @@ import { type Account, type GeneralAccount } from '@rotki/common/lib/account';
 import { type ComputedRef, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import { type BlockchainSelection } from '@rotki/common/lib/blockchain';
+import isEqual from 'lodash/isEqual';
+import isEmpty from 'lodash/isEmpty';
 import {
   type HistoryEventSubType,
   type HistoryEventType,
@@ -25,6 +27,11 @@ import { IgnoreActionType } from '@/types/history/ignored';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { type TablePagination } from '@/types/pagination';
+import {
+  type LocationQuery,
+  RouterAccountsSchema,
+  RouterPaginationOptionsSchema
+} from '@/types/route';
 
 const Fragment = defineAsyncComponent(
   () => import('@/components/helper/Fragment')
@@ -38,6 +45,7 @@ const props = withDefaults(
     externalAccountFilter?: Account[];
     useExternalAccountFilter?: boolean;
     sectionTitle?: string;
+    readFilterFromRoute?: boolean;
   }>(),
   {
     protocols: () => [],
@@ -45,18 +53,25 @@ const props = withDefaults(
     eventSubTypes: () => [],
     externalAccountFilter: () => [],
     useExternalAccountFilter: false,
-    sectionTitle: ''
+    sectionTitle: '',
+    readFilterFromRoute: false
   }
 );
 
+const emit = defineEmits<{
+  (e: 'update:query-params', params: LocationQuery): void;
+}>();
+
 const { tc } = useI18n();
+
 const {
   protocols,
   useExternalAccountFilter,
   externalAccountFilter,
   sectionTitle,
   eventTypes,
-  eventSubTypes
+  eventSubTypes,
+  readFilterFromRoute
 } = toRefs(props);
 
 const usedTitle: ComputedRef<string> = computed(() => {
@@ -129,10 +144,6 @@ const valid: Ref<boolean> = ref(false);
 const form = ref<InstanceType<typeof TransactionEventForm> | null>(null);
 
 const selected: Ref<EthTransactionEntry[]> = ref([]);
-
-const { filters, matchers, updateFilter } = useTransactionFilter(
-  get(protocols).length > 0
-);
 
 const { ignore } = useIgnore(
   {
@@ -254,20 +265,70 @@ const usedAccounts: ComputedRef<Account<BlockchainSelection>[]> = computed(
   }
 );
 
-const updatePayloadHandler = async () => {
+const route = useRoute();
+
+const { filters, matchers, updateFilter, RouteFilterSchema } =
+  useTransactionFilter(get(protocols).length > 0);
+
+// If using route filter is true, then we shouldn't move the page back to 1, but use the page param from route query instead
+const applyingRouteFilter: Ref<boolean> = ref(false);
+
+const applyRouteFilter = () => {
+  if (!get(readFilterFromRoute)) return;
+
+  const query = get(route).query;
+  const parsedOptions = RouterPaginationOptionsSchema.parse(query);
+  const parsedFilters = RouteFilterSchema.parse(query);
+  const parsedAccounts = RouterAccountsSchema.parse(query);
+  set(applyingRouteFilter, true);
+  updateFilter(parsedFilters);
+  if (parsedAccounts.accounts) {
+    set(accounts, parsedAccounts.accounts);
+  }
+  set(options, parsedOptions);
+};
+
+watch(
+  () => get(route).query?.page,
+  (page, oldPage) => {
+    if (page !== oldPage) {
+      applyRouteFilter();
+    }
+  }
+);
+
+onBeforeMount(() => {
+  applyRouteFilter();
+});
+
+const updatePayloadHandler = async (firstLoad = false) => {
   let paginationOptions = {};
+  let routerQuery = {};
+
   const optionsVal = get(options);
   if (optionsVal) {
-    const { itemsPerPage, page, sortBy, sortDesc } = optionsVal!;
+    const { itemsPerPage, page, sortBy, sortDesc } = optionsVal;
     const offset = (page - 1) * itemsPerPage;
+
+    routerQuery = {
+      itemsPerPage,
+      page,
+      sortBy,
+      sortDesc
+    };
 
     paginationOptions = {
       limit: itemsPerPage,
       offset,
-      orderByAttributes: sortBy.length > 0 ? sortBy : ['timestamp'],
+      orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
       ascending: sortDesc.map(bool => !bool)
     };
   }
+
+  routerQuery = {
+    ...routerQuery,
+    ...get(filters)
+  };
 
   const filterAccounts: EvmChainAddress[] = [];
   const usedAccountsVal = get(usedAccounts);
@@ -288,6 +349,13 @@ const updatePayloadHandler = async () => {
         });
       }
     });
+
+    routerQuery = {
+      ...routerQuery,
+      accounts: usedAccountsVal.map(
+        account => `${account.address}#${account.chain}`
+      )
+    };
   }
 
   const payload: Writeable<Partial<TransactionRequestPayload>> = {
@@ -306,41 +374,56 @@ const updatePayloadHandler = async () => {
   if (eventSubTypesVal?.length > 0) payload.eventSubtypes = eventSubTypesVal;
 
   await updateTransactionsPayload(payload);
+
+  if (!firstLoad) {
+    emit('update:query-params', routerQuery);
+  }
 };
 
 const updatePaginationHandler = async (
   newOptions: TablePagination<EthTransaction> | null
 ) => {
+  const firstLoad = !get(options) || isEmpty(get(options));
   set(options, newOptions);
-  await updatePayloadHandler();
+  await updatePayloadHandler(firstLoad);
 };
 
 const getItemClass = (item: EthTransactionEntry) =>
   item.ignoredInAccounting ? 'darken-row' : '';
 
-watch(filters, async (filter, oldValue) => {
-  if (filter === oldValue) {
-    return;
-  }
+watch(
+  [filters, usedAccounts],
+  async ([filters, usedAccounts], [oldFilters, oldAccounts]) => {
+    const filterChanged = !isEqual(filters, oldFilters);
+    const accountsChanged = !isEqual(usedAccounts, oldAccounts);
 
-  // Because the evmChain filter and the account filter can't be active
-  // at the same time we clear the account filter when the evmChain filter
-  // is set.
-  if (filter.evmChain) {
-    set(accounts, []);
-  }
+    if (!filterChanged && !accountsChanged) {
+      set(applyingRouteFilter, false);
+      return;
+    }
 
-  let newOptions = null;
-  const optionsVal = get(options);
-  if (optionsVal) {
-    newOptions = {
-      ...optionsVal,
-      page: 1
-    };
-  }
+    // Because the evmChain filter and the account filter can't be active
+    // at the same time we clear the account filter when the evmChain filter
+    // is set.
 
-  await updatePaginationHandler(newOptions);
-});
+    if (filterChanged && filters.evmChain) {
+      set(accounts, []);
+    }
+
+    if (accountsChanged && usedAccounts.length > 0) {
+      const updatedFilter = { ...get(filters) };
+      delete updatedFilter.evmChain;
+      updateFilter(updatedFilter);
+    }
+
+    if (!get(applyingRouteFilter)) {
+      setPage(1);
+    } else {
+      set(applyingRouteFilter, false);
+      await updatePayloadHandler();
+    }
+  }
+);
 
 const setPage = (page: number) => {
   const optionsVal = get(options);
@@ -348,24 +431,6 @@ const setPage = (page: number) => {
     updatePaginationHandler({ ...optionsVal, page });
   }
 };
-
-watch(usedAccounts, async accounts => {
-  if (accounts.length > 0) {
-    const updatedFilter = { ...get(filters) };
-    delete updatedFilter.evmChain;
-    updateFilter(updatedFilter);
-  }
-
-  let newOptions = null;
-  if (get(options)) {
-    newOptions = {
-      ...get(options)!,
-      page: 1
-    };
-  }
-
-  await updatePaginationHandler(newOptions);
-});
 
 const loading = isSectionLoading(Section.TX);
 const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);

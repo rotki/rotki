@@ -12,10 +12,6 @@ import { logger } from '@/utils/logging';
 import { splitSearch } from '@/utils/search';
 
 const props = defineProps<{
-  /**
-   * This provides no real two-way binding. It is only used for the removal
-   * of keys programmatically.
-   */
   matches: MatchedKeyword<any>;
   matchers: SearchMatcher<any, any>[];
 }>();
@@ -33,6 +29,7 @@ const selectedSuggestion = ref(0);
 const suggestedFilter = ref<Suggestion>({
   index: 0,
   total: 0,
+  asset: false,
   key: '',
   value: ''
 });
@@ -52,6 +49,10 @@ const removeSelection = (suggestion: Suggestion) => {
 
 const matcherForKey = (searchKey: string | undefined) => {
   return get(matchers).find(({ key }) => key === searchKey);
+};
+
+const matcherForKeyValue = (searchKey: string | undefined) => {
+  return get(matchers).find(({ keyValue }) => keyValue === searchKey);
 };
 
 const appendToSearch = (key: string) => {
@@ -77,7 +78,7 @@ function updateMatches(pairs: Suggestion[]) {
 
     const valueKey = (matcher.keyValue || matcher.key) as string;
     let transformedKeyword = '';
-    if ('validate' in matcher) {
+    if ('string' in matcher) {
       if (typeof entry.value !== 'string') {
         continue;
       }
@@ -86,8 +87,9 @@ function updateMatches(pairs: Suggestion[]) {
       } else {
         continue;
       }
-    } else if (typeof entry.value !== 'string') {
-      transformedKeyword = entry.value.identifier;
+    } else if (matcher.asset) {
+      transformedKeyword =
+        typeof entry.value !== 'string' ? entry.value.identifier : entry.value;
     }
 
     if (!transformedKeyword) {
@@ -134,12 +136,14 @@ const applySuggestion = async () => {
   } else {
     const [key, keyword] = splitSearch(get(search));
     const matcher = matcherForKey(key);
+    let asset = false;
     if (matcher) {
       let suggestedItems: (AssetInfo | string)[] = [];
       if ('string' in matcher) {
         suggestedItems = matcher.suggestions();
       } else if ('asset' in matcher) {
         suggestedItems = await matcher.suggestions(keyword);
+        asset = true;
       } else {
         logger.debug('Matcher missing asset=true or string=true', matcher);
       }
@@ -152,6 +156,7 @@ const applySuggestion = async () => {
         nextTick(() =>
           applyFilter({
             key,
+            asset,
             value: keyword,
             index: 0,
             total: 1
@@ -221,6 +226,30 @@ const selectItem = (suggestion: Suggestion) => {
     set(search, getSuggestionText(suggestion));
   });
 };
+
+onMounted(() => {
+  const newSelection: Suggestion[] = [];
+  Object.entries(get(matches)).forEach(([key, value]) => {
+    const foundMatchers = matcherForKeyValue(key);
+    if (foundMatchers && value) {
+      const values = typeof value === 'string' ? [value] : value;
+      values.forEach(value => {
+        const deTransformedValue =
+          foundMatchers.deTransformer?.(value) || value;
+        if (deTransformedValue) {
+          newSelection.push({
+            key: foundMatchers.key,
+            value: deTransformedValue,
+            asset: 'asset' in foundMatchers,
+            total: 1,
+            index: 0
+          });
+        }
+      });
+    }
+  });
+  set(selection, newSelection);
+});
 
 watch(matches, matches => {
   set(

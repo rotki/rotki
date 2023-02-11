@@ -40,6 +40,7 @@ export const useTransactionStore = defineStore('history/transactions', () => {
   const transactionsPayload: Ref<Partial<TransactionRequestPayload>> = ref(
     defaultHistoricPayloadState()
   );
+
   const fetchedTxAccounts: Ref<EvmChainAddress[]> = ref([]);
   const counterparties: Ref<string[]> = ref([]);
   const pageChanged: Ref<boolean> = ref(true);
@@ -209,9 +210,19 @@ export const useTransactionStore = defineStore('history/transactions', () => {
     if (!isEqual(get(transactionsPayload), newPayload)) {
       set(transactionsPayload, newPayload);
       set(pageChanged, true);
-      await fetchTransactions();
     }
   };
+
+  watchDebounced(
+    transactionsPayload,
+    async () => {
+      await fetchTransactions();
+    },
+    {
+      debounce: 200,
+      maxWait: 1000
+    }
+  );
 
   const addTransactionEvent = async (
     event: NewEthTransactionEvent

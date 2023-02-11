@@ -1,7 +1,16 @@
 import { type ComputedRef, type Ref } from 'vue';
-import { type MatchedKeyword, type SearchMatcher } from '@/types/filtering';
+import { z } from 'zod';
+import {
+  type MatchedKeyword,
+  type SearchMatcher,
+  assetDeTransformer,
+  assetSuggestions,
+  dateDeTransformer,
+  dateTransformer,
+  dateValidator
+} from '@/types/filtering';
 import { TradeType } from '@/types/history/trade';
-import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
+import { getDateInputISOFormat } from '@/utils/date';
 
 enum TradeFilterKeys {
   BASE = 'base',
@@ -30,6 +39,7 @@ export const useTradeFilters = () => {
   const { associatedLocations } = storeToRefs(useAssociatedLocationsStore());
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { assetSearch } = useAssetInfoApi();
+  const { assetInfo } = useAssetInfoRetrievalStore();
   const { tc } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(() => [
@@ -38,14 +48,16 @@ export const useTradeFilters = () => {
       keyValue: TradeFilterValueKeys.BASE,
       description: tc('closed_trades.filter.base_asset'),
       asset: true,
-      suggestions: async (value: string) => await assetSearch(value, 5)
+      suggestions: assetSuggestions(assetSearch),
+      deTransformer: assetDeTransformer(assetInfo)
     },
     {
       key: TradeFilterKeys.QUOTE,
       keyValue: TradeFilterValueKeys.QUOTE,
       description: tc('closed_trades.filter.quote_asset'),
       asset: true,
-      suggestions: async (value: string) => await assetSearch(value, 5)
+      suggestions: assetSuggestions(assetSearch),
+      deTransformer: assetDeTransformer(assetInfo)
     },
     {
       key: TradeFilterKeys.ACTION,
@@ -64,14 +76,9 @@ export const useTradeFilters = () => {
       hint: tc('closed_trades.filter.date_hint', 0, {
         format: getDateInputISOFormat(get(dateInputFormat))
       }),
-      validate: value => {
-        return (
-          value.length > 0 &&
-          !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-        );
-      },
-      transformer: (date: string) =>
-        convertToTimestamp(date, get(dateInputFormat)).toString()
+      validate: dateValidator(dateInputFormat),
+      transformer: dateTransformer(dateInputFormat),
+      deTransformer: dateDeTransformer(dateInputFormat)
     },
     {
       key: TradeFilterKeys.END,
@@ -82,14 +89,9 @@ export const useTradeFilters = () => {
       hint: tc('closed_trades.filter.date_hint', 0, {
         format: getDateInputISOFormat(get(dateInputFormat))
       }),
-      validate: value => {
-        return (
-          value.length > 0 &&
-          !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-        );
-      },
-      transformer: (date: string) =>
-        convertToTimestamp(date, get(dateInputFormat)).toString()
+      validate: dateValidator(dateInputFormat),
+      transformer: dateTransformer(dateInputFormat),
+      deTransformer: dateDeTransformer(dateInputFormat)
     },
     {
       key: TradeFilterKeys.LOCATION,
@@ -105,9 +107,20 @@ export const useTradeFilters = () => {
     set(filters, newFilters);
   };
 
+  const OptionalString = z.string().optional();
+  const RouteFilterSchema = z.object({
+    [TradeFilterValueKeys.BASE]: OptionalString,
+    [TradeFilterValueKeys.QUOTE]: OptionalString,
+    [TradeFilterValueKeys.ACTION]: OptionalString,
+    [TradeFilterValueKeys.START]: OptionalString,
+    [TradeFilterValueKeys.END]: OptionalString,
+    [TradeFilterValueKeys.LOCATION]: OptionalString
+  });
+
   return {
     filters,
     matchers,
-    updateFilter
+    updateFilter,
+    RouteFilterSchema
   };
 };

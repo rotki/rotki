@@ -1,25 +1,40 @@
 <script setup lang="ts">
-import { type PropType, useListeners } from 'vue';
+import { useListeners } from 'vue';
 import { type DataTableHeader } from 'vuetify';
+import { type TablePagination } from '@/types/pagination';
 
-const props = defineProps({
-  sortDesc: { required: false, type: Boolean, default: true },
-  mustSort: { required: false, type: Boolean, default: true },
-  items: { required: true, type: Array },
-  headers: { required: true, type: Array as PropType<DataTableHeader[]> },
-  expanded: { required: false, type: Array, default: () => [] },
-  itemClass: { required: false, type: [String, Function], default: () => '' },
-  hideDefaultFooter: { required: false, type: Boolean, default: false },
-  container: { required: false, type: HTMLDivElement, default: () => null },
-  loading: { required: false, type: Boolean, default: false },
-  loadingText: { required: false, type: String, default: '' }
-});
+const props = withDefaults(
+  defineProps<{
+    sortDesc?: boolean;
+    mustSort?: boolean;
+    items: any[];
+    headers: DataTableHeader[];
+    expanded?: any[];
+    itemClass?: string | Function;
+    hideDefaultFooter?: boolean;
+    container?: HTMLDivElement | null;
+    loading?: boolean;
+    loadingText?: string;
+    options?: TablePagination<any> | null;
+  }>(),
+  {
+    sortDesc: true,
+    mustSort: true,
+    expanded: () => [],
+    itemClass: '',
+    hideDefaultFooter: false,
+    container: null,
+    loading: false,
+    loadingText: '',
+    options: () => null
+  }
+);
 
 const rootAttrs = useAttrs();
 const rootListeners = useListeners();
 const frontendSettingsStore = useFrontendSettingsStore();
 const { itemsPerPage } = storeToRefs(frontendSettingsStore);
-const { container } = toRefs(props);
+const { container, options } = toRefs(props);
 
 const tableRef = ref<any>(null);
 const currentPage = ref<number>(1);
@@ -44,12 +59,16 @@ const scrollToTop = () => {
   if (!table || !wrapper) return;
 
   const tableTop = get(top);
-  if (get(container)) {
-    wrapper.scrollTop =
-      tableTop + wrapper.scrollTop - get(containerTop) - table.$el.scrollTop;
-  } else {
-    wrapper.scrollTop = tableTop + wrapper.scrollTop - 64;
-  }
+  setTimeout(() => {
+    let newScrollTop = 0;
+    if (get(container)) {
+      newScrollTop =
+        tableTop + wrapper.scrollTop - get(containerTop) - table.$el.scrollTop;
+    } else {
+      newScrollTop = tableTop + wrapper.scrollTop - 64;
+    }
+    if (wrapper.scrollTop > newScrollTop) wrapper.scrollTop = newScrollTop;
+  }, 10);
 };
 
 const pageSelectorData = (props: {
@@ -73,6 +92,14 @@ const pageSelectorData = (props: {
 };
 
 const { tc } = useI18n();
+
+onMounted(() => {
+  const optionsVal = get(options);
+  if (!optionsVal) return;
+
+  if (optionsVal.page) set(currentPage, optionsVal.page);
+  if (optionsVal.itemsPerPage) onItemsPerPageChange(optionsVal.itemsPerPage);
+});
 </script>
 
 <template>
@@ -91,6 +118,7 @@ const { tc } = useI18n();
     :hide-default-footer="hideDefaultFooter"
     :loading="loading"
     :loading-text="loadingText"
+    :options="options"
     v-on="rootListeners"
     @update:items-per-page="onItemsPerPageChange($event)"
     @update:page="scrollToTop"
@@ -135,12 +163,12 @@ const { tc } = useI18n();
 
     <template
       v-if="!hideDefaultFooter"
-      #top="{ pagination, options, updateOptions }"
+      #top="{ pagination, options: opt, updateOptions }"
     >
       <v-data-footer
         v-bind="footerProps"
         :pagination="pagination"
-        :options="options"
+        :options="opt"
         @update:options="updateOptions"
       >
         <template #page-text="footerPageTextProps">
