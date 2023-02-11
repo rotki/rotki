@@ -23,6 +23,7 @@ import {
 import { defaultOptions } from '@/utils/history';
 import { type Collection } from '@/types/collection';
 import { defaultCollectionState } from '@/utils/collection';
+import { SavedFilterLocation } from '@/types/filtering';
 
 const props = withDefaults(
   defineProps<{
@@ -269,6 +270,7 @@ onMounted(async () => {
     newLedgerAction();
     await router.replace({ query: {} });
   } else {
+    await fetchData();
     await refreshLedgerActions();
   }
 });
@@ -397,6 +399,7 @@ watch(loading, async (isLoading, wasLoading) => {
               <table-filter
                 :matches="filters"
                 :matchers="matchers"
+                :location="SavedFilterLocation.HISTORY_LEDGER_ACTIONS"
                 @update:matches="setFilter($event)"
               />
             </div>

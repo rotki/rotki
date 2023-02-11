@@ -62,7 +62,8 @@ describe('settings:utils', () => {
       nftsInNetValue: true,
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour:
-        BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES
+        BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
+      savedFilters: {}
     });
   });
 });

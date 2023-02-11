@@ -392,6 +392,7 @@
     "useRound": true,
     "useRoute": true,
     "useRouter": true,
+    "useSavedFilter": true,
     "useScramble": true,
     "useScreenOrientation": true,
     "useScreenSafeArea": true,

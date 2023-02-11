@@ -22,6 +22,10 @@ import {
 } from '@/types/frontend-settings';
 import { assert } from '@/utils/assertions';
 import { type ActionStatus } from '@/types/action';
+import {
+  type BaseSuggestion,
+  type SavedFilterLocation
+} from '@/types/filtering';
 
 export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const settings = reactive(FrontendSettings.parse({}));
@@ -102,6 +106,10 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   );
   const blockchainRefreshButtonBehaviour: ComputedRef<BlockchainRefreshButtonBehaviour> =
     computed(() => settings.blockchainRefreshButtonBehaviour);
+
+  const savedFilters: ComputedRef<{
+    [key in SavedFilterLocation]?: BaseSuggestion[][];
+  }> = computed(() => settings.savedFilters);
 
   const api = useSettingsApi();
 
@@ -188,6 +196,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     versionUpdateCheckFrequency,
     enableAliasNames,
     blockchainRefreshButtonBehaviour,
+    savedFilters,
     updateSetting,
     update
   };

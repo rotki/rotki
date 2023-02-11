@@ -100,7 +100,7 @@ const close = () => {
     </div>
     <template #buttons>
       <v-spacer />
-      <v-btn color="primary" class="px-6" @click="close">
+      <v-btn color="primary" depressed class="px-4" @click="close">
         {{ t('common.actions.close') }}
       </v-btn>
     </template>

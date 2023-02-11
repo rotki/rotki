@@ -24,6 +24,7 @@ import { type Collection } from '@/types/collection';
 import { defaultCollectionState } from '@/utils/collection';
 import { assert } from '@/utils/assertions';
 import { defaultOptions } from '@/utils/history';
+import { SavedFilterLocation } from '@/types/filtering';
 
 const props = withDefaults(
   defineProps<{
@@ -330,6 +331,7 @@ onMounted(async () => {
     newExternalTrade();
     await router.replace({ query: {} });
   } else {
+    await fetchData();
     await refreshTrades();
   }
 });
@@ -464,6 +466,7 @@ watch(loading, async (isLoading, wasLoading) => {
               <table-filter
                 :matches="filters"
                 :matchers="matchers"
+                :location="SavedFilterLocation.HISTORY_TRADES"
                 @update:matches="setFilter($event)"
               />
             </div>
