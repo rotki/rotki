@@ -19,6 +19,7 @@ from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
 from rotkehlchen.types import Price, Timestamp
 
 if TYPE_CHECKING:
+    from rotkehlchen.globaldb.migrations.manager import MigrationRecord
     from rotkehlchen.utils.upgrades import UpgradeRecord
 
 
@@ -47,6 +48,18 @@ def fixture_globaldb_upgrades() -> list['UpgradeRecord']:
     return UPGRADES_LIST
 
 
+@pytest.fixture(name='globaldb_migrations')
+def fixture_globaldb_migrations() -> list['MigrationRecord']:
+    return []
+
+
+@pytest.fixture(name='run_globaldb_migrations')
+def fixture_run_globaldb_migrations() -> bool:
+    """Run the given globalDB migrations list or not.
+    If not then last_migration_version is never written in the DB"""
+    return True
+
+
 def create_globaldb(
         data_directory,
         sql_vm_instructions_cb,
@@ -63,26 +76,35 @@ def create_globaldb(
 
 
 def _initialize_fixture_globaldb(
-        globaldb_version,
+        custom_globaldb,
         tmpdir_factory,
         sql_vm_instructions_cb: int,
         reload_user_assets,
         target_globaldb_version,
         globaldb_upgrades,
+        globaldb_migrations,
+        run_globaldb_migrations,
 ) -> GlobalDBHandler:
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
     AssetResolver().clean_memory_cache()
     root_dir = Path(__file__).resolve().parent.parent.parent
-    if globaldb_version is None:  # no specific version -- normal test
+    if custom_globaldb is None:  # no specific version -- normal test
         source_db_path = root_dir / 'data' / 'global.db'
     else:
-        source_db_path = root_dir / 'tests' / 'data' / f'v{globaldb_version}_global.db'
+        source_db_path = root_dir / 'tests' / 'data' / custom_globaldb
     new_data_dir = Path(tmpdir_factory.mktemp('test_data_dir'))
     new_global_dir = new_data_dir / 'global_data'
     new_global_dir.mkdir(parents=True, exist_ok=True)
     copyfile(source_db_path, new_global_dir / 'global.db')
     with ExitStack() as stack:
+        stack.enter_context(
+            patch('rotkehlchen.globaldb.migrations.manager.MIGRATIONS_LIST', globaldb_migrations),
+        )
+        if run_globaldb_migrations is False:
+            stack.enter_context(
+                patch('rotkehlchen.globaldb.handler.maybe_apply_globaldb_migrations', side_effect=lambda *args: None),  # noqa: E501
+            )
         if reload_user_assets is False:
             stack.enter_context(
                 patch('rotkehlchen.globaldb.upgrades.manager.UPGRADES_LIST', globaldb_upgrades),
@@ -105,36 +127,42 @@ def fixture_session_globaldb(
         session_sql_vm_instructions_cb,
 ):
     return _initialize_fixture_globaldb(
-        globaldb_version=None,
+        custom_globaldb=None,
         tmpdir_factory=tmpdir_factory,
         sql_vm_instructions_cb=session_sql_vm_instructions_cb,
         reload_user_assets=True,
         target_globaldb_version=GLOBAL_DB_VERSION,
         globaldb_upgrades=[],
+        globaldb_migrations=[],
+        run_globaldb_migrations=True,
     )
 
 
 @pytest.fixture(name='globaldb')
 def fixture_globaldb(
-        globaldb_version,
+        custom_globaldb,
         tmpdir_factory,
         sql_vm_instructions_cb,
         reload_user_assets,
         target_globaldb_version,
         globaldb_upgrades,
+        globaldb_migrations,
+        run_globaldb_migrations,
 ):
     return _initialize_fixture_globaldb(
-        globaldb_version=globaldb_version,
+        custom_globaldb=custom_globaldb,
         tmpdir_factory=tmpdir_factory,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
         reload_user_assets=reload_user_assets,
         target_globaldb_version=target_globaldb_version,
         globaldb_upgrades=globaldb_upgrades,
+        globaldb_migrations=globaldb_migrations,
+        run_globaldb_migrations=run_globaldb_migrations,
     )
 
 
-@pytest.fixture(name='globaldb_version')
-def fixture_globaldb_version() -> Optional[int]:
+@pytest.fixture(name='custom_globaldb')
+def fixture_custom_globaldb() -> Optional[int]:
     return None
 
 

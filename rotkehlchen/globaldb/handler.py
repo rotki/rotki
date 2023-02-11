@@ -152,6 +152,7 @@ def initialize_globaldb(
         global_dir=global_dir,
         db_filename=db_filename,
     )
+    connection.executescript('PRAGMA foreign_keys=on;')
     if is_fresh_db is True:
         connection.executescript(DB_SCRIPT_CREATE_TABLES)
         with connection.write_ctx() as cursor:

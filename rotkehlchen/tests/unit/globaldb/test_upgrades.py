@@ -38,7 +38,7 @@ def _count_sql_file_sentences(file_name: str, skip_statements: int = 0):
     """
     insertions_made = 0
     skipped_statements = 0
-    dir_path = Path(__file__).resolve().parent.parent.parent
+    dir_path = Path(__file__).resolve().parent.parent.parent.parent
     with open(dir_path / 'data' / file_name) as f:
         insertions_made = 0
         line = ' '
@@ -61,9 +61,9 @@ def _count_sql_file_sentences(file_name: str, skip_statements: int = 0):
 
 
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
-@pytest.mark.parametrize('globaldb_version', [2])
-@pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
+@pytest.mark.parametrize('target_globaldb_version', [2])
 def test_upgrade_v2_v3(globaldb):
     """Test globalDB upgrade v2->v3"""
     # Check the state before upgrading
@@ -178,7 +178,7 @@ def test_upgrade_v2_v3(globaldb):
 
 
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
-@pytest.mark.parametrize('globaldb_version', [3])
+@pytest.mark.parametrize('custom_globaldb', ['v3_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [3])
 @pytest.mark.parametrize('reload_user_assets', [False])
 def test_upgrade_v3_v4(globaldb):
@@ -190,7 +190,7 @@ def test_upgrade_v3_v4(globaldb):
             'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name IN (?, ?)',
             ('contract_abi', 'contract_data'),
         )
-        assert cursor.fetchone()[0] == 2
+        assert cursor.fetchone()[0] == 0
         cursor.execute('SELECT COUNT(*) from evm_tokens WHERE protocol="yearn-v1"')
         assert cursor.fetchone()[0] == YEARN_V1_ASSETS_IN_V3
 
@@ -209,8 +209,8 @@ def test_upgrade_v3_v4(globaldb):
             'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name IN (?, ?)',
             ('contract_abi', 'contract_data'),
         )
-        expected_contracts_length = 93 - 1 + 1 + 3 + 1  # len(eth_contracts) + 1 in dxdao file -1 by removing multicall1 + 3 the new optimism contracts + by adding liquity staking  # noqa: E501
         assert cursor.fetchone()[0] == 2
+        expected_contracts_length = 93 - 1 + 1 + 3 + 1  # len(eth_contracts) + 1 in dxdao file -1 by removing multicall1 + 3 the new optimism contracts + by adding liquity staking  # noqa: E501
         cursor.execute('SELECT COUNT(*) FROM contract_data')
         assert cursor.fetchone()[0] == expected_contracts_length
 
@@ -289,7 +289,7 @@ def test_upgrade_v3_v4(globaldb):
         assert cursor.fetchone()[0] == YEARN_V1_ASSETS_IN_V3
 
 
-@pytest.mark.parametrize('globaldb_version', [2])
+@pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])
 def test_unfinished_upgrades(globaldb: GlobalDBHandler):
@@ -304,7 +304,7 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler):
 
     # Add a backup
     backup_path = globaldb._data_directory / 'global_data' / f'{ts_now()}_global_db_v2.backup'  # type: ignore  # _data_directory is definitely not null here  # noqa: E501
-    shutil.copy(Path(__file__).parent.parent / 'data' / 'v2_global.db', backup_path)
+    shutil.copy(Path(__file__).parent.parent.parent / 'data' / 'v2_global.db', backup_path)
     backup_connection = DBConnection(
         path=str(backup_path),
         connection_type=DBConnectionType.GLOBAL,
@@ -322,7 +322,7 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler):
 
 
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
-@pytest.mark.parametrize('globaldb_version', [2])
+@pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])
 def test_applying_all_upgrade(globaldb):

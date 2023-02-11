@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection
 
 
-ilk_mapping = {  # ilk to (token_address, join address)
+ilk_mapping = {  # ilk to (underlying_asset, join address)
     'BAT-A': ('eip155:1/erc20:0x0D8775F648430679A709E98d2b0Cb6250d2887EF', '0x3D0B1912B66114d4096F48A8CEe3A56C231772cA'),  # noqa: E501
     'ETH-A': ('ETH', '0x2F0b23f53734252Bda2277357e97e1517d6B042A'),
     'ETH-B': ('ETH', '0x08638eF1A205bE6762A8b935F5da9b700Cf7322c'),

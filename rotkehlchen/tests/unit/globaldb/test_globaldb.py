@@ -125,7 +125,7 @@ def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb
     # may have cached results from a discarded database
     AssetResolver().clean_memory_cache()
     version = 9999999999
-    root_dir = Path(__file__).resolve().parent.parent.parent
+    root_dir = Path(__file__).resolve().parent.parent.parent.parent
     source_db_path = root_dir / 'tests' / 'data' / f'v{version}_global.db'
     new_data_dir = Path(tmpdir_factory.mktemp('test_data_dir'))
     new_global_dir = new_data_dir / 'global_data'
@@ -668,7 +668,7 @@ def test_global_db_restore(globaldb, database):
     assert r.fetchall() == user_db_cursor.fetchall()
 
     # Check that the number of assets is the expected
-    root_dir = Path(__file__).resolve().parent.parent.parent
+    root_dir = Path(__file__).resolve().parent.parent.parent.parent
     builtin_database = root_dir / 'data' / 'global.db'
     conn = sqlite3.connect(builtin_database)
     cursor_clean_db = conn.cursor()
@@ -820,7 +820,7 @@ def test_global_db_reset(globaldb, database):
     assert EvmToken('eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302').name != '1inch boi'  # noqa: E501
 
     # Check that the number of assets is the expected
-    root_dir = Path(__file__).resolve().parent.parent.parent
+    root_dir = Path(__file__).resolve().parent.parent.parent.parent
     builtin_database = root_dir / 'data' / 'global.db'
     conn = sqlite3.connect(builtin_database)
     cursor_clean_db = conn.cursor()
