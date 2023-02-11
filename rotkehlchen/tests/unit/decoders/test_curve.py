@@ -761,6 +761,7 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
 @pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [['0x6Bb553FFC5716782051f51b564Bb149D9946f0d2']])
 def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts):
+    """Check the case for a pool where multiple deposit events appear in the transaction"""
     _populate_curve_pools(ethereum_transaction_decoder)
     tx_hex = deserialize_evm_tx_hash('0xe954a396a02ebbea45a1d206c9918f717c55509c8138fccc63155d0262ef4dc4 ')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)

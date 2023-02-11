@@ -1,7 +1,8 @@
 import logging
-from typing import TYPE_CHECKING, Iterator, Literal
-from rotkehlchen.accounting.mixins.event import AccountingEventType
+from collections.abc import Iterator
+from typing import TYPE_CHECKING, Literal
 
+from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry, get_tx_event_type_identifier
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
@@ -26,7 +27,7 @@ class CurveAccountant(ModuleAccountantInterface):
             other_events: Iterator[HistoryBaseEntry],  # pylint: disable=unused-argument
     ) -> None:
         """
-        Process a deposits and withdrawals from Curve. There are multiple events that we have to
+        Process deposits and withdrawals from Curve. There are multiple events that we have to
         consume from the iterator.
         """
         method: Literal['acquisition', 'spend']
@@ -40,16 +41,16 @@ class CurveAccountant(ModuleAccountantInterface):
 
         if events_to_consume is None:
             log.debug(
-                f'Could not find the number of events to consume for curve deposit/withdrawal'
-                f' transaction {event.serialized_event_identifier}',
+                f'Could not find the number of events to consume for a curve deposit/withdrawal '
+                f'transaction {event.serialized_event_identifier}',
             )
             return
 
         # Consume the events
-        for _ in range(events_to_consume):
+        for idx in range(events_to_consume):
             next_event = next(other_events, None)
             if next_event is None:
-                log.debug('Could not find the event to consume for curve deposit/withdrawal')
+                log.debug(f'Could not consume event nr. {idx} for curve deposit/withdrawal')
                 return
 
             if next_event.balance.amount == ZERO:

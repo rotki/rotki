@@ -56,8 +56,8 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     def _decode_curve_remove_events(
             self,
-            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
+            tx_log: EvmTxReceiptLog,
             decoded_events: list[HistoryBaseEntry],
             user_address: ChecksumEvmAddress,
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
@@ -116,8 +116,9 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         # etc.
         if return_event is None or len(withdrawal_events) == 0:
             log.debug(
-                f'Expected to see receive pool token event and deposit events for a curve pool, '
-                f'but have not found. User address: {user_address}',
+                f'Expected to see a receive pool token event and deposit events for a curve pool, '
+                f'but have not found them. Tx_hash: {transaction.tx_hash.hex()} '
+                f'User address: {user_address}',
             )
             return None, []
 
@@ -130,6 +131,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     def _decode_curve_deposit_events(
             self,
+            transaction: EvmTransaction,
             tx_log: EvmTxReceiptLog,
             decoded_events: list[HistoryBaseEntry],
             user_address: ChecksumEvmAddress,
@@ -205,8 +207,9 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         # etc.
         if receive_event is None or len(deposit_events) == 0:
             log.debug(
-                f'Expected to see receive pool token event and deposit events for a curve pool, '
-                f'but have not found. User address: {user_address}',
+                f'Expected to see a receive pool token event and deposit events for a curve pool, '
+                f'but have not found them. Tx_hash: {transaction.tx_hash.hex()} '
+                f'User address: {user_address}',
             )
             return None, []
 
@@ -246,6 +249,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         ):
             user_address = hex_or_bytes_to_address(tx_log.topics[1])
             return self._decode_curve_deposit_events(
+                transaction=transaction,
                 tx_log=tx_log,
                 decoded_events=decoded_events,
                 user_address=user_address,

@@ -1,5 +1,6 @@
+from collections.abc import Iterator
 from enum import Enum
-from typing import TYPE_CHECKING, Iterator, Literal, NamedTuple, Optional, Protocol
+from typing import TYPE_CHECKING, Literal, NamedTuple, Optional, Protocol
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 
@@ -24,7 +25,7 @@ class AccountantCallback(Protocol):
         ...
 
 
-class TxSpecialTreatment(Enum):
+class TxAccountingTreatment(Enum):
     SWAP = 0
 
 
@@ -34,5 +35,5 @@ class TxEventSettings(NamedTuple):
     count_entire_amount_spend: bool
     count_cost_basis_pnl: bool
     method: Literal['acquisition', 'spend']
-    special_treatment: Optional[TxSpecialTreatment] = None
+    accounting_treatment: Optional[TxAccountingTreatment] = None
     accountant_cb: Optional[AccountantCallback] = None

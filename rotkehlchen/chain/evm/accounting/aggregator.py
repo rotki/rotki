@@ -3,8 +3,8 @@ import logging
 import pkgutil
 from types import ModuleType
 from typing import TYPE_CHECKING, Union
-from rotkehlchen.accounting.ledger_actions import LedgerActionType
 
+from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.constants import MODULES_PACKAGE, MODULES_PREFIX_LENGTH
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -12,7 +12,7 @@ from rotkehlchen.errors.misc import ModuleLoadingError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import MessagesAggregator
 
-from .structures import TxEventSettings, TxSpecialTreatment
+from .structures import TxAccountingTreatment, TxEventSettings
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
@@ -178,7 +178,7 @@ class EVMAccountingAggregators():
             count_entire_amount_spend=False,
             count_cost_basis_pnl=True,
             method='spend',
-            special_treatment=TxSpecialTreatment.SWAP,
+            accounting_treatment=TxAccountingTreatment.SWAP,
         )
         airdrop_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.AIRDROP)
         result[airdrop_key] = TxEventSettings(

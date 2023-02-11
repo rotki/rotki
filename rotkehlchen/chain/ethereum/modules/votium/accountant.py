@@ -21,6 +21,6 @@ class VotiumAccountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='acquisition',
-                special_treatment=None,
+                accounting_treatment=None,
             ),
         }

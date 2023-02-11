@@ -1,4 +1,3 @@
-# Some utility timestamps. They are used for mocked prices.
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
