@@ -91,3 +91,13 @@ def patch_for_globaldb_upgrade_to(stack: ExitStack, version: Literal[2, 3]) -> E
         ),
     )
     return stack
+
+
+def patch_for_globaldb_migrations(stack: ExitStack, new_list: list) -> ExitStack:
+    stack.enter_context(
+        patch(
+            'rotkehlchen.globaldb.migrations.manager.MIGRATIONS_LIST',
+            new_list,
+        ),
+    )
+    return stack

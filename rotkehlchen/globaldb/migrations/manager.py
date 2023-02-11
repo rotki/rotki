@@ -19,10 +19,10 @@ class MigrationRecord(NamedTuple):
     function: Callable[['DBConnection'], None]
 
 
-MIGRATION_LIST = [
+MIGRATIONS_LIST = [
     MigrationRecord(version=1, function=globaldb_data_migration_1),
 ]
-LAST_DATA_MIGRATION = len(MIGRATION_LIST)
+LAST_DATA_MIGRATION = len(MIGRATIONS_LIST)
 
 
 def maybe_apply_globaldb_migrations(connection: 'DBConnection') -> None:
@@ -35,7 +35,7 @@ def maybe_apply_globaldb_migrations(connection: 'DBConnection') -> None:
         return  # fresh DB? Should not happen here
 
     current_migration = last_migration
-    for migration in MIGRATION_LIST:
+    for migration in MIGRATIONS_LIST:
         if current_migration < migration.version:
             try:
                 migration.function(connection)

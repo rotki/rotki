@@ -1,6 +1,7 @@
 import json
 from typing import Optional
 from unittest.mock import patch
+
 import pytest
 
 from rotkehlchen.assets.types import AssetData, AssetType
@@ -11,7 +12,6 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY, AssetsUpdater, UpdateFileType
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
-
 
 VALID_ASSET_MAPPINGS = """INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "ETH");
     *
