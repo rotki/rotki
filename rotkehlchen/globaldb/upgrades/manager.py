@@ -39,7 +39,9 @@ def maybe_upgrade_globaldb(
     """Maybe upgrade the global DB.
 
     Returns True if this is a fresh DB. In that
-    case the caller should make sure to input the latest version in the settings.
+    case the caller should make sure to input the latest version
+    and also the latest migration in the settings.
+
     In all other cases returns False"""
 
     try:
