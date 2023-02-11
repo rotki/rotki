@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.accounting.structures.base import get_tx_event_type_identifier
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
-from rotkehlchen.chain.evm.accounting.structures import TxEventSettings, TxSpecialTreatment
+from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment, TxEventSettings
 
 from .constants import CPT_PICKLE
 
@@ -21,13 +21,13 @@ class PickleAccountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='spend',
-                special_treatment=TxSpecialTreatment.SWAP,
+                accounting_treatment=TxAccountingTreatment.SWAP,
             ),
             get_tx_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED, CPT_PICKLE): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='spend',
-                special_treatment=TxSpecialTreatment.SWAP,
+                accounting_treatment=TxAccountingTreatment.SWAP,
             ),
         }

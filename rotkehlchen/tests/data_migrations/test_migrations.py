@@ -543,11 +543,15 @@ def test_migration_9(database) -> None:
         cursor.execute('SELECT COUNT(*) from location WHERE location IN ("f", "g") ')
         assert cursor.fetchone()[0] == 0
         cursor.execute('SELECT COUNT(*) from history_events')
-        assert cursor.fetchone()[0] == 237
+        total_history_events = cursor.fetchone()[0]
+        assert total_history_events == 242
         cursor.execute('SELECT location from history_events')
         assert all([x[0] == 'J'] for x in cursor)
         cursor.execute('SELECT COUNT(*) from history_events_mappings WHERE name="chain_id"')
-        assert cursor.fetchone()[0] == 237
+        assert cursor.fetchone()[0] == total_history_events
+        cursor.execute('SELECT COUNT(*) from history_events WHERE counterparty="curve"')
+        curve_events = cursor.fetchone()[0]
+        assert curve_events == 5
 
     migration_patch = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
@@ -565,7 +569,7 @@ def test_migration_9(database) -> None:
         cursor.execute('SELECT COUNT(*) from location WHERE location IN ("f", "g") ')
         assert cursor.fetchone()[0] == 2
         cursor.execute('SELECT COUNT(*) from history_events')
-        assert cursor.fetchone()[0] == 237
+        assert cursor.fetchone()[0] == total_history_events - curve_events
         cursor.execute('SELECT location from history_events')
         assert all([x[0] in ('f', 'g')] for x in cursor)
         cursor.execute('SELECT COUNT(*) from history_events_mappings WHERE name="chain_id"')

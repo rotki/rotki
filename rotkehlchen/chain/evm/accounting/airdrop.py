@@ -33,7 +33,7 @@ class BaseAirdropsAccountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='acquisition',
-                special_treatment=None,
+                accounting_treatment=None,
             )
             for counterparty in self.airdrops_list
         }

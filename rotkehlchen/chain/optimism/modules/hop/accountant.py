@@ -20,6 +20,6 @@ class HopAccountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
                 method='spend',
-                special_treatment=None,
+                accounting_treatment=None,
             ),
         }

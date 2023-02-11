@@ -1,11 +1,12 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Iterator, cast
+from collections.abc import Iterator
+from typing import TYPE_CHECKING, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry, get_tx_event_type_identifier
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
-from rotkehlchen.chain.evm.accounting.structures import TxEventSettings, TxSpecialTreatment
+from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment, TxEventSettings
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.fval import FVal
@@ -134,6 +135,6 @@ class MakerdaoAccountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='spend',
-                special_treatment=TxSpecialTreatment.SWAP,
+                accounting_treatment=TxAccountingTreatment.SWAP,
             ),
         }

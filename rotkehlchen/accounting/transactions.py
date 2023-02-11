@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Iterator
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.chain.evm.accounting.structures import TxEventSettings, TxSpecialTreatment
+from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment, TxEventSettings
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 
@@ -25,7 +25,7 @@ def history_base_entries_iterator(
     """
     for event in events_iterator:
         if not isinstance(event, HistoryBaseEntry):
-            log.debug(
+            log.error(
                 f'At accounting for tx_event {associated_event.notes} with hash '
                 f'{associated_event.event_identifier.hex()} we expected to take an additional '
                 f'event but found a non history base entry event',
@@ -74,9 +74,13 @@ class TransactionsAccountant():
                 other_events=history_base_entries_iterator(events_iterator, event),
             )
 
-        if event_settings.special_treatment == TxSpecialTreatment.SWAP:
+        if event_settings.accounting_treatment == TxAccountingTreatment.SWAP:
             in_event = next(history_base_entries_iterator(events_iterator, event), None)
             if in_event is None:
+                log.error(
+                    f'Tried to process accounting swap but could not find the in '
+                    f'event for {event}',
+                )
                 return 1
             return self._process_tx_swap(
                 timestamp=timestamp,
