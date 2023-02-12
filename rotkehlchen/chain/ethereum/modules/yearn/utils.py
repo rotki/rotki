@@ -11,6 +11,11 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.globaldb.cache import (
+    globaldb_delete_general_cache,
+    globaldb_get_general_cache_values,
+    globaldb_set_general_cache_values,
+)
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -52,9 +57,11 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
     # get from the cache the number of vaults processed in the last execution of this function.
     # If it was the same number of vaults this response has then we don't need to take
     # action since vaults are not removed from their API response.
-    yearn_api_cache: list[str] = GlobalDBHandler().get_general_cache_values(
-        key_parts=[GeneralCacheType.YEARN_VAULTS],
-    )
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        yearn_api_cache: list[str] = globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=[GeneralCacheType.YEARN_VAULTS],
+        )
     if len(yearn_api_cache) == 1 and int(yearn_api_cache[0]) == len(data):
         logging.debug(
             f'Previous query of yearn vaults returned {yearn_api_cache[0]} vaults and last API '
@@ -63,7 +70,7 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
         )
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             # update the timestamp of the last time this vaults were queried
-            GlobalDBHandler().set_general_cache_values(
+            globaldb_set_general_cache_values(
                 write_cursor=write_cursor,
                 key_parts=[GeneralCacheType.YEARN_VAULTS],
                 values=[yearn_api_cache[0]],
@@ -127,11 +134,11 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         # Delete the old value cached and store in the cache the amount of vaults
         # processed in this response.
-        GlobalDBHandler().delete_general_cache(
+        globaldb_delete_general_cache(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.YEARN_VAULTS],
         )
-        GlobalDBHandler().set_general_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.YEARN_VAULTS],
             values=[str(len(data))],

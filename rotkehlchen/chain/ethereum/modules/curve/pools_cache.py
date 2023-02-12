@@ -11,6 +11,11 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.misc import NotERC20Conformant
+from rotkehlchen.globaldb.cache import (
+    globaldb_delete_general_cache,
+    globaldb_get_general_cache_values,
+    globaldb_set_general_cache_values,
+)
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -43,15 +48,19 @@ IGNORED_CURVE_POOLS = {'0x066B6e1E93FA7dcd3F0Eb7f8baC7D5A747CE0BF9'}
 def read_curve_pools() -> set[ChecksumEvmAddress]:
     """Reads globaldb cache and returns a set of all known curve pools' addresses.
     Doesn't raise anything unless cache entries were inserted incorrectly."""
-    curve_pools_lp_tokens = GlobalDBHandler().get_general_cache_values(
-        key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
-    )
-    curve_pools = set()
-    for lp_token_addr in curve_pools_lp_tokens:
-        pool_addr = GlobalDBHandler().get_general_cache_values(
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token_addr],
-        )[0]
-        curve_pools.add(string_to_evm_address(pool_addr))
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        curve_pools_lp_tokens = globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+        )
+        curve_pools = set()
+        for lp_token_addr in curve_pools_lp_tokens:
+            pool_addr = globaldb_get_general_cache_values(
+                cursor=cursor,
+                key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token_addr],
+            )[0]
+            curve_pools.add(string_to_evm_address(pool_addr))
+
     return curve_pools
 
 
@@ -160,39 +169,41 @@ def save_curve_pools_to_cache(
     """Receives data about curve pools and saves lp tokens, pool addresses and
     pool coins in cache."""
     # First, clear all curve pools related cache entries in the global DB
-    curve_lp_tokens = GlobalDBHandler().get_general_cache_values(
+    curve_lp_tokens = globaldb_get_general_cache_values(
+        cursor=write_cursor,
         key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
     )
     for lp_token in curve_lp_tokens:
-        pool_addr = GlobalDBHandler().get_general_cache_values(
+        pool_addr = globaldb_get_general_cache_values(
+            cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token],
         )[0]
-        GlobalDBHandler().delete_general_cache(
+        globaldb_delete_general_cache(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_addr],
         )
-        GlobalDBHandler().delete_general_cache(
+        globaldb_delete_general_cache(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token],
         )
-    GlobalDBHandler().delete_general_cache(
+    globaldb_delete_general_cache(
         write_cursor=write_cursor,
         key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
     )
     # Then, read the new pool mappings and save them in the global DB cache
-    GlobalDBHandler().set_general_cache_values(
+    globaldb_set_general_cache_values(
         write_cursor=write_cursor,
         key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
         values=pools_mapping.keys(),  # keys of pools_mapping are lp tokens
     )
     for lp_token_address, pool_info in pools_mapping.items():
         pool_address, coins, _underlying_coins = pool_info
-        GlobalDBHandler().set_general_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token_address],
             values=[pool_address],
         )
-        GlobalDBHandler().set_general_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_address],
             values=coins,
