@@ -27,6 +27,7 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import (
@@ -360,17 +361,17 @@ def test_find_curve_lp_token_price(inquirer_defi, ethereum_manager):
     identifier = ethaddress_to_identifier(lp_token_address)
     inquirer_defi.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        GlobalDBHandler().set_general_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
             values=[lp_token_address],
         )
-        GlobalDBHandler().set_general_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token_address],
             values=[pool_address],
         )
-        GlobalDBHandler().set_general_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_address],
             values=[

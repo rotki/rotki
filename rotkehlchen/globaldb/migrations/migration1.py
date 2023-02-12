@@ -1,6 +1,7 @@
 import json
 from typing import TYPE_CHECKING
 
+from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.types import GeneralCacheType
 
 if TYPE_CHECKING:
@@ -45,9 +46,6 @@ def globaldb_data_migration_1(conn: 'DBConnection') -> None:
     - Removes old setting last_assets_json_version (if existing)
     - Adds a makerdao vault types cache
     """
-    # TODO: Terrible hack for import. Solve circular imports here properly
-    from rotkehlchen.globaldb.handler import GlobalDBHandler  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
-
     with conn.write_ctx() as write_cursor:
         # Write the ilk registry contract
         write_cursor.execute(
@@ -65,7 +63,7 @@ def globaldb_data_migration_1(conn: 'DBConnection') -> None:
 
         # Add a makerdao vault types cache
         for ilk, info in ilk_mapping.items():
-            GlobalDBHandler.set_general_cache_values(
+            globaldb_set_general_cache_values(
                 write_cursor=write_cursor,
                 key_parts=(GeneralCacheType.MAKERDAO_VAULT_ILK, ilk),
                 values=(json.dumps(info, separators=(',', ':')),),
