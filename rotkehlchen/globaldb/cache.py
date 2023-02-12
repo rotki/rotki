@@ -45,6 +45,16 @@ def globaldb_get_general_cache_values(
     return [entry[0] for entry in cursor]
 
 
+def globaldb_get_general_cache_values_like(
+        cursor: DBCursor,
+        key_parts: Iterable[Union[str, GeneralCacheType]],
+) -> list[str]:
+    """Function to read globaldb cache. Returns all the values that start with key."""
+    cache_key = _compute_cache_key(key_parts)
+    cursor.execute('SELECT value FROM general_cache WHERE key=?', (cache_key,))
+    return [entry[0] for entry in cursor]
+
+
 def globaldb_get_general_cache_last_queried_ts(
         cursor: DBCursor,
         key_parts: Iterable[Union[str, GeneralCacheType]],

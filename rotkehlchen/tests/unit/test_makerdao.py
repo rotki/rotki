@@ -5,11 +5,7 @@ import pytest
 from web3 import Web3
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
-    MakerdaoVault,
-    MakerdaoVaults,
-    create_collateral_type_mapping,
-)
+from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault, MakerdaoVaults
 from rotkehlchen.constants.assets import A_BAT, A_DAI, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
@@ -154,11 +150,10 @@ def test_get_vault_balance(
     assert vault.get_balance() == expected_result
 
 
-def test_vault_types(makerdao_vaults):
-    collateral_type_mapping = create_collateral_type_mapping()
-    assert len(collateral_type_mapping) == len(makerdao_vaults.gemjoin_mapping)
-    assert set(collateral_type_mapping.keys()) == set(makerdao_vaults.gemjoin_mapping.keys())
-    for collateral_type, asset in collateral_type_mapping.items():
+def test_create_collateral_type_mappings(makerdao_vaults):
+    assert len(makerdao_vaults.collateral_type_mapping) == len(makerdao_vaults.gemjoin_mapping)
+    assert set(makerdao_vaults.collateral_type_mapping.keys()) == set(makerdao_vaults.gemjoin_mapping.keys())  # noqa: E501
+    for collateral_type, asset in makerdao_vaults.collateral_type_mapping.items():
         if collateral_type == 'PAXUSD-A':
             assert asset.identifier == ethaddress_to_identifier('0x8E870D67F660D95d5be530380D0eC0bd388289E1')  # PAX # noqa: E501
             continue

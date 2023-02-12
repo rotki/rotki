@@ -204,7 +204,6 @@ def _check_vault_details_values(details, total_interest_owed_list: list[Optional
 
 
 @requires_env([TestEnvironment.NIGHTLY])
-@flaky(max_runs=3, min_passes=1)  # some makerdao vault tests take long time and may time out
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_1]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -225,7 +224,7 @@ def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
         vaults = wait_for_async_task_with_result(
             rotkehlchen_api_server,
             task_id,
-            timeout=ASYNC_TASK_WAIT_TIMEOUT * 1.5,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 3,
         )
     else:
         vaults = assert_proper_response_with_result(response)
@@ -241,7 +240,7 @@ def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
         details = wait_for_async_task_with_result(
             rotkehlchen_api_server,
             task_id,
-            timeout=ASYNC_TASK_WAIT_TIMEOUT * 1.5,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 3,
         )
     else:
         details = assert_proper_response_with_result(response)

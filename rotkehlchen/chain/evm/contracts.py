@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.chain.evm.types import WeightedNode
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -146,7 +147,7 @@ class EvmContracts(Generic[T]):
         self.chain_id = chain_id
 
     def contract_or_none(self, name: str) -> Optional[EvmContract]:
-        """Gets details of an evm contract from the contracts json file
+        """Gets details of an evm contract from the globalDB by name
 
         Returns None if missing
         """
@@ -167,6 +168,28 @@ class EvmContracts(Generic[T]):
             deployed_block=result[2] if result[2] else 0,
         )
 
+    def contract_by_address(
+            self,
+            cursor: 'DBCursor',
+            address: ChecksumEvmAddress,
+    ) -> Optional[EvmContract]:
+        """Returns contract data by address if found"""
+        cursor.execute(
+            'SELECT contract_abi.value, contract_data.deployed_block FROM '
+            'contract_data LEFT JOIN contract_abi ON contract_data.abi=contract_abi.id'
+            ' WHERE contract_data.chain_id=? AND contract_data.address=?',
+            (self.chain_id.serialize_for_db(), address),
+        )
+        result = cursor.fetchone()
+        if result is None:
+            return None
+
+        return EvmContract(
+            address=address,
+            abi=json.loads(result[0]),  # not handling json error -- assuming DB consistency
+            deployed_block=result[1] if result[1] else 0,
+        )
+
     @overload
     def contract(self: 'EvmContracts[Literal[ChainID.ETHEREUM]]', name: 'ETHEREUM_KNOWN_CONTRACTS') -> EvmContract:  # noqa: E501
         ...
@@ -176,7 +199,7 @@ class EvmContracts(Generic[T]):
         ...
 
     def contract(self, name: str) -> EvmContract:
-        """Gets details of an evm contract from the contracts json file
+        """Gets details of an evm contract from the global DB by name
 
         Missing contract is a programming error and should never happen.
         """
