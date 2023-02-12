@@ -1,12 +1,10 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.modules.makerdao.constants import (
-    UNIQUE_TOKENS_COLLATERAL_TYPES_MAPPING,
-)
+from rotkehlchen.chain.ethereum.modules.makerdao.cache import ilk_cache_foreach
 from rotkehlchen.chain.evm.tokens import EvmTokens
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_DAI, A_WETH
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_WETH
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
@@ -49,19 +47,22 @@ class EthereumTokens(EvmTokens):
             database=database,
             evm_inquirer=ethereum_inquirer,
         )
-        # Add Maker tokens
-        self.tokens_for_proxies = [asset.resolve_to_evm_token() for asset in UNIQUE_TOKENS_COLLATERAL_TYPES_MAPPING.values()]  # noqa: E501
-        self.tokens_for_proxies.append(A_DAI.resolve_to_evm_token())
-        self.tokens_for_proxies.append(A_WETH.resolve_to_evm_token())  # WETH is also used
+        # Add Makerdao vault collateral tokens
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            tokens_for_proxies_set = {x for _, x, _ in ilk_cache_foreach(cursor) if x != A_ETH}
+        tokens_for_proxies_set.add(A_DAI.resolve_to_evm_token())
+        tokens_for_proxies_set.add(A_WETH.resolve_to_evm_token())  # WETH is also used
         # Add aave tokens
-        self.tokens_for_proxies += GlobalDBHandler().get_evm_tokens(
+        tokens_for_proxies_set |= set(GlobalDBHandler().get_evm_tokens(
             chain_id=ChainID.ETHEREUM,
             protocol='aave',
-        )
-        self.tokens_for_proxies += GlobalDBHandler().get_evm_tokens(
+        ))
+        tokens_for_proxies_set |= set(GlobalDBHandler().get_evm_tokens(
             chain_id=ChainID.ETHEREUM,
             protocol='aave-v2',
-        )
+        ))
+        # We ignore A_ETH so all other ones should be tokens
+        self.tokens_for_proxies: list[EvmToken] = list(tokens_for_proxies_set)  # type: ignore
 
     # -- methods that need to be implemented per chain
     def _get_token_exceptions(self) -> list[ChecksumEvmAddress]:
