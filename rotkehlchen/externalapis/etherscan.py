@@ -1,3 +1,4 @@
+import json
 import logging
 from abc import ABCMeta
 from json.decoder import JSONDecodeError
@@ -32,6 +33,7 @@ from rotkehlchen.types import (
     ExternalService,
     SupportedBlockchain,
     Timestamp,
+    deserialize_evm_tx_hash,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_int, set_user_agent
@@ -100,6 +102,30 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             self,
             module: str,
             action: Literal[
+                'getcontractcreation',
+            ],
+            options: Optional[dict[str, Any]] = None,
+            timeout: Optional[tuple[int, int]] = None,
+    ) -> Optional[list[dict[str, Any]]]:
+        ...
+
+    @overload
+    def _query(  # pylint: disable=no-self-use
+            self,
+            module: str,
+            action: Literal[
+                'getabi',
+            ],
+            options: Optional[dict[str, Any]] = None,
+            timeout: Optional[tuple[int, int]] = None,
+    ) -> Optional[str]:
+        ...
+
+    @overload
+    def _query(  # pylint: disable=no-self-use
+            self,
+            module: str,
+            action: Literal[
                 'eth_getBlockByNumber',
                 'eth_getTransactionReceipt',
                 'eth_getTransactionByHash',
@@ -132,7 +158,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             action: str,
             options: Optional[dict[str, Any]] = None,
             timeout: Optional[tuple[int, int]] = None,
-    ) -> Union[list[dict[str, Any]], str, list[EvmTransaction], dict[str, Any]]:
+    ) -> Union[list[dict[str, Any]], str, list[EvmTransaction], dict[str, Any], None]:
         """Queries etherscan
 
         May raise:
@@ -199,6 +225,9 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             try:
                 result = json_ret.get('result', None)
                 if result is None:
+                    if action in ('getcontractcreation',):
+                        return None  # no result is valid in those calls
+
                     raise RemoteError(
                         f'Unexpected format of {self.chain} Etherscan response for request {response.url}. '  # noqa: E501
                         f'Missing a result in response. Response was: {response.text}',
@@ -208,18 +237,21 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 status = int(json_ret.get('status', 1))
 
                 if status != 1:
-                    if status == 0 and 'rate limit reached' in result:
-                        log.debug(
-                            f'Got response: {response.text} from {self.chain} etherscan.'
-                            f' Will backoff for {backoff} seconds.',
-                        )
-                        gevent.sleep(backoff)
-                        # Continue increasing backoff until limit is reached.
-                        # If limit is reached then keep sleeping with the limit.
-                        # Etherscan will let the query go through eventually
-                        if backoff * 2 < backoff_limit:
-                            backoff = backoff * 2
-                        continue
+                    if status == 0:
+                        if result == 'Contract source code not verified':
+                            return None
+                        if 'rate limit reached' in result:
+                            log.debug(
+                                f'Got response: {response.text} from {self.chain} etherscan.'
+                                f' Will backoff for {backoff} seconds.',
+                            )
+                            gevent.sleep(backoff)
+                            # Continue increasing backoff until limit is reached.
+                            # If limit is reached then keep sleeping with the limit.
+                            # Etherscan will let the query go through eventually
+                            if backoff * 2 < backoff_limit:
+                                backoff = backoff * 2
+                            continue
 
                     transaction_endpoint_and_none_found = (
                         status == 0 and
@@ -548,3 +580,41 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             ) from e
 
         return number
+
+    def get_contract_creation_hash(self, address: ChecksumEvmAddress) -> Optional[EVMTxHash]:
+        """Get the contract creation block from etherscan for the given address.
+
+        Returns `None` if the address is not a contract.
+
+        May raise:
+        - RemoteError in case of problems contacting etherscan.
+        """
+        options = {'contractaddresses': address}
+        result = self._query(
+            module='contract',
+            action='getcontractcreation',
+            options=options,
+        )
+        return deserialize_evm_tx_hash(result[0]['txHash']) if result is not None else None
+
+    def get_contract_abi(self, address: ChecksumEvmAddress) -> Optional[str]:
+        """Get the contract abi from etherscan for the given address if verified.
+
+        Returns `None` if the address is not a verified contract.
+
+        May raise:
+        - RemoteError in case of problems contacting etherscan
+        """
+        options = {'address': address}
+        result = self._query(
+            module='contract',
+            action='getabi',
+            options=options,
+        )
+        if result is None:
+            return None
+
+        try:
+            return json.loads(result)
+        except json.JSONDecodeError:
+            return None

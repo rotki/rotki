@@ -1102,6 +1102,20 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
         return decoded_contract_info
 
+    def get_contract_deployed_block(self, address: ChecksumEvmAddress) -> Optional[int]:
+        """Get the deployed block of a contract
+
+        Returns None if the address is not a contract.
+
+        May raise:
+        - RemoteError: in case of a problem contacting chain/nodes/remotes"""
+        deployed_hash = self.etherscan.get_contract_creation_hash(address)
+        if deployed_hash is None:
+            return None
+
+        transaction = self.get_transaction_by_hash(deployed_hash)
+        return transaction.block_number
+
     # -- methods to be implemented by child classes --
 
     @abstractmethod

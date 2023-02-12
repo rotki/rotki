@@ -1,3 +1,4 @@
+import json
 import os
 from unittest.mock import patch
 
@@ -11,6 +12,7 @@ from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
+from rotkehlchen.globaldb.migrations.migration1 import ILK_REGISTRY_ABI
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
@@ -38,10 +40,12 @@ def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, s
 
     # Test with etherscan API key
     api_key = os.environ.get('ETHERSCAN_API_KEY', None)
-    if api_key:
-        db.add_external_service_credentials(credentials=[  # pylint: disable=no-value-for-parameter
-            ExternalServiceApiCredentials(service=ExternalService.ETHERSCAN, api_key=api_key),
-        ])
+    if not api_key:
+        api_key = '8JT7WQBB2VQP5C3416Y8X3S8GBA3CVZKP4'
+
+    db.add_external_service_credentials(credentials=[  # pylint: disable=no-value-for-parameter
+        ExternalServiceApiCredentials(service=ExternalService.ETHERSCAN, api_key=api_key),
+    ])
     etherscan = EthereumEtherscan(database=db, msg_aggregator=function_scope_messages_aggregator)
     return etherscan
 
@@ -180,3 +184,13 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
             value='327600000000000000000',
         ),
     ]
+
+
+def test_etherscan_get_contract_abi(temp_etherscan):
+    """Test the contract abi fetching from etherscan
+
+    TODO: Mock it with vcr.py
+    """
+    abi = temp_etherscan.get_contract_abi('0x5a464C28D19848f44199D003BeF5ecc87d090F87')
+    assert abi == json.loads(ILK_REGISTRY_ABI)
+    assert temp_etherscan.get_contract_abi('0x9531C059098e3d194fF87FebB587aB07B30B1306') is None
