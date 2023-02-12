@@ -304,3 +304,12 @@ def test_get_blocknumber_by_time_subgraph(ethereum_inquirer):
 def test_get_blocknumber_by_time_etherscan(ethereum_inquirer):
     """Queries etherscan for known block times"""
     _test_get_blocknumber_by_time(ethereum_inquirer, True)
+
+
+def test_get_contract_deployed_block(ethereum_inquirer):
+    """Test that getting deployed block of a contract address works
+
+    TODO: Mock it with vcr.py
+    """
+    assert ethereum_inquirer.get_contract_deployed_block('0x5a464C28D19848f44199D003BeF5ecc87d090F87') == 12251871  # noqa: E501
+    assert ethereum_inquirer.get_contract_deployed_block('0x9531C059098e3d194fF87FebB587aB07B30B1306') is None  # noqa: E501
