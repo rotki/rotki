@@ -20,9 +20,12 @@ if TYPE_CHECKING:
 ADDY = '0x5727c0481b90a129554395937612d8b9301D6c7b'
 ADDY2 = '0x87Dd56068Af560B0D8472C4EF41CB902FCbF5ebE'
 ADDR_BORROWS = '0xD84101AE36b83E64b52AC9a61Efa4497f8FD2560'
+ADDR_BORROWS_ETH = '0x8492aBE1c9918d5df6c4Fe39Afa9803e52E4698b'
+ADDR_REPAYS = '0x9760Bf25166F764f616fF067332c2bDDbf54Dadd'
+ADDR_REPAYS_ETH = '0x18c42014Fb0aeD3E35515eb45DF8498Af67773a4'
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_compound_ether_deposit(database, ethereum_inquirer):
     """Data taken from:
@@ -75,7 +78,7 @@ def test_compound_ether_deposit(database, ethereum_inquirer):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_compound_ether_withdraw(database, ethereum_inquirer):
     """Data taken from:
@@ -199,7 +202,7 @@ def test_compound_deposit_with_comp_claim(
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDR_BORROWS]])
 def test_compound_borrow(
         database: 'DBHandler',
@@ -238,6 +241,153 @@ def test_compound_borrow(
             balance=Balance(amount=FVal(1500000)),
             location_label=ADDR_BORROWS,
             notes='Borrow 1500000 USDC from compound',
+            counterparty=CPT_COMPOUND,
+        ),
+    ]
+    assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[ADDR_REPAYS]])
+def test_compound_payback(
+        database: 'DBHandler',
+        ethereum_inquirer: 'EthereumInquirer',
+) -> None:
+    """Data taken from:
+    https://etherscan.io/tx/0x000da925508a1a2f322f6fb74592baf9a75bb9f971cb3a72a5deb0526d39757d
+    """
+    tx_hash = deserialize_evm_tx_hash('0x000da925508a1a2f322f6fb74592baf9a75bb9f971cb3a72a5deb0526d39757d')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=0,
+            timestamp=TimestampMS(1605818798000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.0037086'), usd_value=ZERO),
+            location_label=ADDR_REPAYS,
+            notes='Burned 0.0037086 ETH for gas',
+            counterparty=CPT_GAS,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=246,
+            timestamp=TimestampMS(1605818798000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_COMP,
+            balance=Balance(amount=FVal('1.209128558800877907')),
+            location_label=ADDR_REPAYS,
+            notes='Collect 1.209128558800877907 COMP from compound',
+            counterparty=CPT_COMPOUND,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=248,
+            timestamp=TimestampMS(1605818798000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+            asset=A_USDC,
+            balance=Balance(amount=FVal(11637.762191)),
+            location_label=ADDR_REPAYS,
+            notes='Repay 11637.762191 USDC to compound',
+            counterparty=CPT_COMPOUND,
+        ),
+    ]
+    assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[ADDR_BORROWS_ETH]])
+def test_compound_borrow_eth(
+        database: 'DBHandler',
+        ethereum_inquirer: 'EthereumInquirer',
+) -> None:
+    """Data taken from:
+    https://etherscan.io/tx/0x00035065f364453ca4585ab5d4ee7dacc59a3f7acc305644c334fdfff3a2527f
+    """
+    tx_hash = deserialize_evm_tx_hash('0x00035065f364453ca4585ab5d4ee7dacc59a3f7acc305644c334fdfff3a2527f')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=0,
+            timestamp=TimestampMS(1581618106000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.001882176'), usd_value=ZERO),
+            location_label=ADDR_BORROWS_ETH,
+            notes='Burned 0.001882176 ETH for gas',
+            counterparty=CPT_GAS,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=1,
+            timestamp=TimestampMS(1581618106000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.GENERATE_DEBT,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(0.1)),
+            location_label=ADDR_BORROWS_ETH,
+            notes='Borrow 0.1 ETH from compound',
+            counterparty=CPT_COMPOUND,
+        ),
+    ]
+    assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[ADDR_REPAYS_ETH]])
+def test_compound_repays_eth(
+        database: 'DBHandler',
+        ethereum_inquirer: 'EthereumInquirer',
+) -> None:
+    """Data taken from:
+    https://etherscan.io/tx/0x0007416c8caa441ce07c61dbf2455b3068d21d9bffbfbbfca9f1016d7c3ca33f
+    """
+    tx_hash = deserialize_evm_tx_hash('0x0007416c8caa441ce07c61dbf2455b3068d21d9bffbfbbfca9f1016d7c3ca33f')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=0,
+            timestamp=TimestampMS(1590532744000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.003931524'), usd_value=ZERO),
+            location_label=ADDR_REPAYS_ETH,
+            notes='Burned 0.003931524 ETH for gas',
+            counterparty=CPT_GAS,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=1,
+            timestamp=TimestampMS(1590532744000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(0.2)),
+            location_label=ADDR_REPAYS_ETH,
+            notes='Repay 0.2 ETH to compound',
             counterparty=CPT_COMPOUND,
         ),
     ]
