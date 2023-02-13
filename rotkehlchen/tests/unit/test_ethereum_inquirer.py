@@ -5,6 +5,7 @@ from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.errors.misc import EventNotInABI
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_FULL_TEST_PARAMETERS,
@@ -289,6 +290,21 @@ def test_get_log_and_receipt_etherscan_bad_tx_index(
         call_order=call_order,
     )
     assert all(x['transactionIndex'] == 0 for x in result['logs'])
+
+    # Test that trying to query an event name that doesnot exist raises EventNotInABI
+    argument_filters = {
+        'from': ZERO_ADDRESS,
+        'to': '0xbA215F7BE6c620dA3F8240B82741eaF3C5f5D786',
+    }
+    with pytest.raises(EventNotInABI):
+        events = ethereum_inquirer.get_logs(
+            contract_address='0xFC4B8ED459e00e5400be803A9BB3954234FD50e3',
+            abi=ethereum_inquirer.contracts.abi('ATOKEN'),
+            event_name='I_DONT_EXIST',
+            argument_filters=argument_filters,
+            from_block=10773651,
+            to_block=10773653,
+        )
 
 
 def _test_get_blocknumber_by_time(ethereum_inquirer, etherscan):

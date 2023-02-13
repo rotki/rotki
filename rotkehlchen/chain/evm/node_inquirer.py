@@ -31,7 +31,12 @@ from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants import ONE
-from rotkehlchen.errors.misc import BlockchainQueryError, NotERC721Conformant, RemoteError
+from rotkehlchen.errors.misc import (
+    BlockchainQueryError,
+    EventNotInABI,
+    NotERC721Conformant,
+    RemoteError,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
@@ -756,10 +761,16 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     ) -> list[dict[str, Any]]:
         """Queries logs of an evm contract
         May raise:
+
+        - EventNotInABI if the given event is not in the ABI
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result
         """
-        event_abi = find_matching_event_abi(abi=abi, event_name=event_name)
+        try:
+            event_abi = find_matching_event_abi(abi=abi, event_name=event_name)
+        except ValueError as e:
+            raise EventNotInABI from e
+
         _, filter_args = construct_event_filter_params(
             event_abi=event_abi,
             abi_codec=Web3().codec,
@@ -768,6 +779,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             fromBlock=from_block,
             toBlock=to_block,
         )
+
         if event_abi['anonymous']:
             # web3.py does not handle the anonymous events correctly and adds the first topic
             filter_args['topics'] = filter_args['topics'][1:]

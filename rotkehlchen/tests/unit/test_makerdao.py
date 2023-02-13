@@ -1,18 +1,28 @@
 from collections import defaultdict
-from contextlib import nullcontext
+from contextlib import ExitStack, nullcontext
 
 import pytest
 from web3 import Web3
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
+    ilk_cache_foreach,
+    query_ilk_registry_and_maybe_update_cache,
+)
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault, MakerdaoVaults
-from rotkehlchen.constants.assets import A_BAT, A_DAI, A_ETH
+from rotkehlchen.constants.assets import A_BAT, A_DAI, A_ETH, A_USDC
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.migrations.manager import (
+    MIGRATIONS_LIST,
+    maybe_apply_globaldb_migrations,
+)
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.blockchain import get_web3_from_inquirer, set_web3_in_inquirer
+from rotkehlchen.tests.utils.constants import A_GNO
 from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_migrations
 from rotkehlchen.tests.utils.makerdao import VaultTestData, create_web3_mock
 
 
@@ -150,12 +160,86 @@ def test_get_vault_balance(
     assert vault.get_balance() == expected_result
 
 
-def test_create_collateral_type_mappings(makerdao_vaults):
-    assert len(makerdao_vaults.collateral_type_mapping) == len(makerdao_vaults.gemjoin_mapping)
-    assert set(makerdao_vaults.collateral_type_mapping.keys()) == set(makerdao_vaults.gemjoin_mapping.keys())  # noqa: E501
-    for collateral_type, asset in makerdao_vaults.collateral_type_mapping.items():
-        if collateral_type == 'PAXUSD-A':
-            assert asset.identifier == ethaddress_to_identifier('0x8E870D67F660D95d5be530380D0eC0bd388289E1')  # PAX # noqa: E501
-            continue
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('run_globaldb_migrations', [False])
+@pytest.mark.parametrize('custom_globaldb', ['v4_global_before_migration1.db'])
+def test_query_ilk_registry_and_update_cache(globaldb, ethereum_inquirer):
+    """Test at the state of the global DB going from 1.27.0 to 1.27.1 when ilk cache is introduced
 
-        assert asset.symbol.lower() == collateral_type.split('-')[0].lower()
+    - Apply the migration so the ilk registry abi is there
+    - Query the ilk registry and populate the ilk cache
+    - Test that all went fine and that all new data is in the DB
+
+    This also tests that ilk_cache_foreach works properly and iterates everything in the DB
+
+    TODO: This should be mocked with vcr.py for the state of ilk registry at the time
+    of mocking
+    """
+    with ExitStack() as stack:
+        patch_for_globaldb_migrations(stack, [MIGRATIONS_LIST[0]])
+        maybe_apply_globaldb_migrations(globaldb.conn)
+
+    query_ilk_registry_and_maybe_update_cache(ethereum_inquirer)
+
+    def assert_new_join_collateral(
+            asset: Asset,
+            join_address: str,
+            expected_identifier: str,
+            expected_join_address: str,
+            expected_abi_entry: tuple[str, str],
+    ) -> None:
+        assert asset.identifier == expected_identifier
+        assert join_address == expected_join_address
+        with globaldb.conn.read_ctx() as other_cursor:
+            contract = ethereum_inquirer.contracts.contract_by_address(
+                cursor=other_cursor,
+                address=join_address,
+            )
+            assert contract.address == expected_join_address
+            for entry in contract.abi:
+                if entry['type'] == expected_abi_entry[0] and entry['name'] == expected_abi_entry[1]:  # noqa: E501
+                    break
+            else:
+                raise AssertionError(
+                    f'abi should have an {expected_abi_entry[0]} entry with '
+                    f'name {expected_abi_entry[1]}',
+                )
+
+    count = 0
+    got_gno = got_reth = got_wsteth = got_crv = got_comp = False
+    with globaldb.conn.read_ctx() as cursor:
+        for ilk, ilk_class, asset, join_address in ilk_cache_foreach(cursor):
+            assert ilk_class in range(1, 5)
+            count += 1
+            # check some known ones
+            if ilk == 'ETH-A':
+                assert asset == A_ETH
+                assert join_address == '0x2F0b23f53734252Bda2277357e97e1517d6B042A'
+                assert ilk_class == 1
+            elif ilk == 'USDC-B':
+                assert asset == A_USDC
+                assert join_address == '0x2600004fd1585f7270756DDc88aD9cfA10dD0428'
+                assert ilk_class == 1
+            elif ilk == 'GNO-A':  # was not in 1.27
+                assert_new_join_collateral(asset, join_address, A_GNO.identifier, '0x7bD3f01e24E0f0838788bC8f573CEA43A80CaBB5', ('event', 'LogNote'))  # noqa: E501
+                got_gno = True
+                assert ilk_class == 1
+            elif ilk == 'RETH-A':  # was not in 1.27
+                assert_new_join_collateral(asset, join_address, 'eip155:1/erc20:0xae78736Cd615f374D3085123A210448E74Fc6393', '0xC6424e862f1462281B0a5FAc078e4b63006bDEBF', ('event', 'LogNote'))  # noqa: E501
+                got_reth = True
+                assert ilk_class == 1
+            elif ilk == 'WSTETH-A':  # was not in 1.27
+                assert_new_join_collateral(asset, join_address, 'eip155:1/erc20:0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0', '0x10CD5fbe1b404B7E19Ef964B63939907bdaf42E2', ('event', 'LogNote'))  # noqa: E501
+                got_wsteth = True
+                assert ilk_class == 1
+            elif ilk == 'CRVV1ETHSTETH-A':  # not in 1.27 but has cropjoin adapter via proxy
+                assert_new_join_collateral(asset, join_address, 'eip155:1/erc20:0x06325440D014e39736583c165C2963BA99fAf14E', '0x82D8bfDB61404C796385f251654F6d7e92092b5D', ('function', 'implementation'))  # noqa: E501
+                got_crv = True
+                assert ilk_class == 1
+            elif ilk == 'DIRECT-COMPV2-DAI':  # not in 1.27 but has D3MHub adapter
+                assert_new_join_collateral(asset, join_address, 'eip155:1/erc20:0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643', '0x12F36cdEA3A28C35aC8C6Cc71D9265c17C74A27F', ('event', 'Exit'))  # noqa: E501
+                got_comp = True
+                assert ilk_class == 4
+
+        assert count == 59
+        assert got_gno == got_wsteth == got_reth == got_crv == got_comp is True

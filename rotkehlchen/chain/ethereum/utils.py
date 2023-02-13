@@ -155,7 +155,7 @@ def ethaddress_to_asset(address: ChecksumEvmAddress) -> Optional[CryptoAsset]:
     return asset
 
 
-def should_update_protocol_cache(cache_key: GeneralCacheType) -> bool:
+def should_update_protocol_cache(cache_key: GeneralCacheType, *args: str) -> bool:
     """
     Checks if the last time the cache_key was queried is far enough to trigger
     the process of querying it again.
@@ -163,6 +163,6 @@ def should_update_protocol_cache(cache_key: GeneralCacheType) -> bool:
     with GlobalDBHandler().conn.read_ctx() as cursor:
         last_update_ts = globaldb_get_general_cache_last_queried_ts_by_key(
             cursor=cursor,
-            key_parts=[cache_key],
+            key_parts=[cache_key, *args],
         )
     return ts_now() - last_update_ts >= ETH_PROTOCOLS_CACHE_REFRESH

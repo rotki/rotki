@@ -47,22 +47,18 @@ class EthereumTokens(EvmTokens):
             database=database,
             evm_inquirer=ethereum_inquirer,
         )
-        # Add Makerdao vault collateral tokens
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            tokens_for_proxies_set = {x for _, x, _ in ilk_cache_foreach(cursor) if x != A_ETH}
-        tokens_for_proxies_set.add(A_DAI.resolve_to_evm_token())
-        tokens_for_proxies_set.add(A_WETH.resolve_to_evm_token())  # WETH is also used
+        self.tokens_for_proxies_set = set()
+        self.tokens_for_proxies_set.add(A_DAI.resolve_to_evm_token())
+        self.tokens_for_proxies_set.add(A_WETH.resolve_to_evm_token())  # WETH is also used
         # Add aave tokens
-        tokens_for_proxies_set |= set(GlobalDBHandler().get_evm_tokens(
+        self.tokens_for_proxies_set |= set(GlobalDBHandler().get_evm_tokens(
             chain_id=ChainID.ETHEREUM,
             protocol='aave',
         ))
-        tokens_for_proxies_set |= set(GlobalDBHandler().get_evm_tokens(
+        self.tokens_for_proxies_set |= set(GlobalDBHandler().get_evm_tokens(
             chain_id=ChainID.ETHEREUM,
             protocol='aave-v2',
         ))
-        # We ignore A_ETH so all other ones should be tokens
-        self.tokens_for_proxies: list[EvmToken] = list(tokens_for_proxies_set)  # type: ignore
 
     # -- methods that need to be implemented per chain
     def _get_token_exceptions(self) -> list[ChecksumEvmAddress]:
@@ -79,9 +75,15 @@ class EthereumTokens(EvmTokens):
 
     def maybe_detect_proxies_tokens(self, addresses: list[ChecksumEvmAddress]) -> None:
         """Detect tokens for proxies that are owned by the given addresses"""
+        # Add Makerdao vault collateral tokens
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            ilk_collaterals = {x for _, _, x, _ in ilk_cache_foreach(cursor) if x != A_ETH}
+
+        # We ignore A_ETH so all other ones should be tokens
+        tokens_for_proxies: list[EvmToken] = list(self.tokens_for_proxies_set | ilk_collaterals)  # type: ignore[operator]  # noqa: E501
         proxies_mapping = self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()
         proxies_to_use = {k: v for k, v in proxies_mapping.items() if k in addresses}
         self._detect_tokens(
             addresses=list(proxies_to_use.values()),
-            tokens_to_check=self.tokens_for_proxies,
+            tokens_to_check=tokens_for_proxies,
         )
