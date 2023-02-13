@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -10,7 +10,8 @@ from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import ActionItem
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
-from rotkehlchen.constants.assets import A_COMP
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.assets import A_COMP, A_ETH
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction
@@ -18,9 +19,16 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import COMPTROLLER_PROXY_ADDRESS, CPT_COMPOUND
 
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import CryptoAsset
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.user_messages import MessagesAggregator
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+MAXIMILLION_ADDR = string_to_evm_address('0xf859A1AD94BcF445A406B892eF0d3082f4174088')
 MINT_COMPOUND_TOKEN = b'L \x9b_\xc8\xadPu\x8f\x13\xe2\xe1\x08\x8b\xa5jV\r\xffi\n\x1co\xef&9OL\x03\x82\x1cO'  # noqa: E501
 REDEEM_COMPOUND_TOKEN = b'\xe5\xb7T\xfb\x1a\xbb\x7f\x01\xb4\x99y\x1d\x0b\x82\n\xe3\xb6\xaf4$\xac\x1cYv\x8e\xdbS\xf4\xec1\xa9)'  # noqa: E501
 BORROW_COMPOUND = b'\x13\xedhf\xd4\xe1\xeem\xa4o\x84\\F\xd7\xe5A \x88=u\xc5\xea\x9a-\xac\xc1\xc4\xca\x89\x84\xab\x80'  # noqa: E501
@@ -29,6 +37,19 @@ DISTRIBUTED_SUPPLIER_COMP = b',\xae\xcd\x17\xd0/V\xfa\x89w\x05\xdc\xc7@\xda-#|7?
 
 
 class CompoundDecoder(DecoderInterface):
+
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+    ) -> None:
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
+        self.eth = A_ETH.resolve_to_crypto_asset()
 
     def _decode_mint(
             self,
@@ -131,24 +152,52 @@ class CompoundDecoder(DecoderInterface):
             compound_token: EvmToken,
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """
-        Decode borrow for compound tokens
+        Decode borrow and repayments for compound tokens
         """
-        underlying_token = get_crypto_asset_by_symbol(
-            symbol=compound_token.symbol[1:],
-            chain_id=compound_token.chain_id,
-        )
-        if underlying_token is None:
-            return None, []
+        underlying_token_symbol = compound_token.symbol[1:]
+        underlying_asset: Optional['CryptoAsset']
 
-        underlying_token = cast(EvmToken, underlying_token)
-        borrowed_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
-        borrowed_amount = asset_normalized_value(borrowed_amount_raw, underlying_token)
+        if underlying_token_symbol == self.eth.symbol:
+            underlying_asset = self.eth
+        else:
+            underlying_asset = get_crypto_asset_by_symbol(
+                symbol=compound_token.symbol[1:],
+                chain_id=compound_token.chain_id,
+            )  # type: ignore[assignment]  # it fails to detect that it will be a cryptoasset
+            if underlying_asset is not None:
+                underlying_asset = cast(EvmToken, underlying_asset)
+            else:
+                return None, []
+
+        if tx_log.topics[0] == BORROW_COMPOUND:
+            amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
+            payer = None
+        else:
+            # is a repayment
+            amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
+            payer = hex_or_bytes_to_address(tx_log.data[0:32])
+
+        amount = asset_normalized_value(amount_raw, underlying_asset)
         for event in decoded_events:
             # Find the transfer event which should have come before the redeeming
-            if event.event_type == HistoryEventType.RECEIVE and event.asset.identifier == underlying_token and event.balance.amount == borrowed_amount:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.asset.identifier == underlying_asset and event.balance.amount == amount:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
                 event.counterparty = CPT_COMPOUND
-                event.notes = f'Borrow {borrowed_amount} {underlying_token.symbol} from compound'
+                event.notes = f'Borrow {amount} {underlying_asset.symbol} from compound'
+            elif event.event_type == HistoryEventType.RECEIVE and event.location_label == payer and event.asset == A_COMP and event.counterparty == COMPTROLLER_PROXY_ADDRESS:  # noqa: E501
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.counterparty = CPT_COMPOUND
+                event.notes = f'Collect {event.balance.amount} COMP from compound'
+            elif (
+                event.event_type == HistoryEventType.SPEND and event.balance.amount == amount and  # noqa: E501
+                (
+                    (underlying_asset == self.eth and event.counterparty == MAXIMILLION_ADDR) or  # noqa: E501
+                    (event.location_label == payer and event.counterparty == compound_token.evm_address)  # noqa: E501
+                )
+            ):
+                event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
+                event.counterparty = CPT_COMPOUND
+                event.notes = f'Repay {amount} {underlying_asset.symbol} to compound'
 
         return None, []
 
