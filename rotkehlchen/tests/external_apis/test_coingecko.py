@@ -44,7 +44,7 @@ def test_asset_data(session_coingecko):
         identifier='yearn-finance',
         symbol='yfi',
         name='yearn.finance',
-        image_url='https://assets.coingecko.com/coins/images/11849/small/yfi-192x192.png?1598325330',  # noqa: E501
+        image_url='https://assets.coingecko.com/coins/images/11849/small/yearn-finance-yfi.png?1676174746',  # noqa: E501
     )
     data = session_coingecko.asset_data(A_YFI.resolve_to_asset_with_oracles().to_coingecko())
     assert_coin_data_same(data, expected_data, compare_description=False)
