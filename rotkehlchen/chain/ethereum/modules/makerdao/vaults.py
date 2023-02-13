@@ -14,10 +14,9 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_norma
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import EventNotInABI, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -27,7 +26,7 @@ from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, shift_num_right_by, ts_now
 
-from .cache import ilk_cache_foreach
+from .cache import collateral_type_to_join_contract, collateral_type_to_underlying_asset
 from .constants import MAKERDAO_REQUERY_PERIOD, WAD
 
 if TYPE_CHECKING:
@@ -159,7 +158,6 @@ class MakerdaoVaults(HasDSProxy):
         self.ilk_to_stability_fee: dict[bytes, FVal] = {}
         self.vault_details: list[MakerdaoVaultDetails] = []
 
-        self.create_collateral_type_mappings()
         self.dai = A_DAI.resolve_to_evm_token()
         self.makerdao_jug = self.ethereum.contracts.contract('MAKERDAO_JUG')
         self.makerdao_vat = self.ethereum.contracts.contract('MAKERDAO_VAT')
@@ -174,20 +172,6 @@ class MakerdaoVaults(HasDSProxy):
         self.ethereum.proxies_inquirer.reset_last_query_ts()
         self.last_vault_mapping_query_ts = 0
         self.last_vault_details_query_ts = 0
-
-    def create_collateral_type_mappings(self) -> None:
-        """Creates the collateral type mappings by reading the ilk cache from global DB"""
-        self.collateral_type_mapping = {}
-        self.gemjoin_mapping = {}
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            for ilk, underlying_asset, join_address in ilk_cache_foreach(cursor):
-                join_contract = self.ethereum.contracts.contract_by_address(cursor, join_address)
-                if join_contract is None:
-                    log.error(f'Did not find join contract for Ilk {ilk} and address {join_address}. Skipping')  # noqa: E501
-                    continue
-
-                self.collateral_type_mapping[ilk] = underlying_asset
-                self.gemjoin_mapping[ilk] = join_contract
 
     def get_stability_fee(self, ilk: bytes) -> FVal:
         """If we already know the current stability_fee for ilk return it. If not query it"""
@@ -207,7 +191,7 @@ class MakerdaoVaults(HasDSProxy):
             ilk: bytes,
     ) -> Optional[MakerdaoVault]:
         collateral_type = ilk.split(b'\0', 1)[0].decode()
-        asset = self.collateral_type_mapping.get(collateral_type, None)
+        asset = collateral_type_to_underlying_asset(collateral_type)
         if asset is None:
             self.msg_aggregator.add_warning(
                 f'Detected vault with collateral_type {collateral_type}. That '
@@ -302,8 +286,8 @@ class MakerdaoVaults(HasDSProxy):
             argument_filters=argument_filters,
         )
         frob_event_tx_hashes = [x['transactionHash'] for x in frob_events]
-
-        gemjoin = self.gemjoin_mapping.get(vault.collateral_type, None)
+        # ethereum is EthereumInquirer here
+        gemjoin = collateral_type_to_join_contract(vault.collateral_type, ethereum=self.ethereum)  # type: ignore[arg-type]  # noqa: E501
         if gemjoin is None:
             self.msg_aggregator.add_warning(
                 f'Unknown makerdao vault collateral type detected {vault.collateral_type}.'
@@ -321,13 +305,27 @@ class MakerdaoVaults(HasDSProxy):
             # arg1 being the urn so we skip: 'usr': proxy,
             'arg1': address_to_bytes32(urn),
         }
-        events = self.ethereum.get_logs(
-            contract_address=gemjoin.address,
-            abi=gemjoin.abi,
-            event_name='LogNote',
-            argument_filters=argument_filters,
-            from_block=gemjoin.deployed_block,
-        )
+        try:
+            events = self.ethereum.get_logs(
+                contract_address=gemjoin.address,
+                abi=gemjoin.abi,
+                event_name='LogNote',
+                argument_filters=argument_filters,
+                from_block=gemjoin.deployed_block,
+            )
+        except EventNotInABI:
+            # for now let's ignore any non-gemjoin abis. The join adapters can unfortunately
+            # have various ABIs. For example
+            #  CRVV1ETHSTETH-A having something called "CropJoin":
+            # https://etherscan.io/address/0x82D8bfDB61404C796385f251654F6d7e92092b5D#code
+            #  DIRECT-COMPV2-DAI having a "D3MHub":
+            # https://etherscan.io/address/0x12F36cdEA3A28C35aC8C6Cc71D9265c17C74A27F/advanced#code
+            log.warning(
+                f'Ignoring events for vault with collateral type {vault.collateral_type} '
+                f'due to not having LogNote in ABI',
+            )
+            return None
+
         # all subsequent deposits should have the proxy as a usr
         # but for non-migrated CDPS the previous query would also work
         # so in those cases we will have the first deposit 2 times

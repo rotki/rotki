@@ -2,14 +2,16 @@ import copy
 import logging
 import random
 from collections import defaultdict
-from typing import Callable, DefaultDict, NamedTuple
+from typing import TYPE_CHECKING, Callable, DefaultDict, NamedTuple
 
 import gevent
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
+from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
+    query_ilk_registry_and_maybe_update_cache,
+)
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.constants.assets import A_USD
@@ -51,6 +53,9 @@ from rotkehlchen.types import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
+if TYPE_CHECKING:
+    from rotkehlchen.chain.aggregator import ChainsAggregator
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -86,7 +91,7 @@ class TaskManager():
             database: DBHandler,
             cryptocompare: Cryptocompare,
             premium_sync_manager: Optional[PremiumSyncManager],
-            chains_aggregator: ChainsAggregator,
+            chains_aggregator: 'ChainsAggregator',
             exchange_manager: ExchangeManager,
             deactivate_premium: Callable[[], None],
             activate_premium: Callable[[Premium], None],
@@ -136,6 +141,7 @@ class TaskManager():
             self._maybe_update_snapshot_balances,
             self._maybe_update_curve_pools,
             self._maybe_update_yearn_vaults,
+            self._maybe_update_ilk_cache,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -582,6 +588,18 @@ class TaskManager():
                 exception_is_error=True,
                 method=self.query_yearn_vaults,
                 db=self.database,
+            )]
+
+        return None
+
+    def _maybe_update_ilk_cache(self) -> Optional[list[gevent.Greenlet]]:
+        if should_update_protocol_cache(GeneralCacheType.MAKERDAO_VAULT_ILK, 'ETH-A') is True:
+            return [self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name='Update ilk cache',
+                exception_is_error=True,
+                method=query_ilk_registry_and_maybe_update_cache,
+                ethereum=self.chains_aggregator.ethereum.node_inquirer,
             )]
 
         return None

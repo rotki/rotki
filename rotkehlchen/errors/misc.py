@@ -66,6 +66,10 @@ class BlockchainQueryError(Exception):
     """
 
 
+class EventNotInABI(Exception):
+    """Raised when trying to query an event and that is not found in the ABI"""
+
+
 class DBSchemaError(Exception):
     """May be raised during database sanity check"""
 

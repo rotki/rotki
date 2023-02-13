@@ -50,7 +50,11 @@ from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import (
-    EthSyncError, GreenletKilledError, InputError, RemoteError, SystemPermissionError,
+    EthSyncError,
+    GreenletKilledError,
+    InputError,
+    RemoteError,
+    SystemPermissionError,
 )
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.beaconchain import BeaconChain

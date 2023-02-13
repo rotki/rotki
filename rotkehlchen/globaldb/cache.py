@@ -19,6 +19,23 @@ def _compute_cache_key(key_parts: Iterable[Union[str, GeneralCacheType]]) -> str
     return cache_key
 
 
+def globaldb_set_general_cache_values_at_ts(
+        write_cursor: DBCursor,
+        key_parts: Iterable[Union[str, GeneralCacheType]],
+        values: Iterable[str],
+        timestamp: Timestamp,
+) -> None:
+    """Function to update cache in globaldb. Inserts all values paired with the cache key.
+    If any entry exists, overwrites it."""
+    cache_key = _compute_cache_key(key_parts)
+    tuples = [(cache_key, value, timestamp) for value in values]
+    write_cursor.executemany(
+        'INSERT OR REPLACE INTO general_cache '
+        '(key, value, last_queried_ts) VALUES (?, ?, ?)',
+        tuples,
+    )
+
+
 def globaldb_set_general_cache_values(
         write_cursor: DBCursor,
         key_parts: Iterable[Union[str, GeneralCacheType]],
@@ -26,12 +43,12 @@ def globaldb_set_general_cache_values(
 ) -> None:
     """Function to update cache in globaldb. Inserts all values paired with the cache key.
     If any entry exists, overwrites it. The timestamp is always the current time."""
-    cache_key = _compute_cache_key(key_parts)
-    tuples = [(cache_key, value, ts_now()) for value in values]
-    write_cursor.executemany(
-        'INSERT OR REPLACE INTO general_cache '
-        '(key, value, last_queried_ts) VALUES (?, ?, ?)',
-        tuples,
+    timestamp = ts_now()
+    globaldb_set_general_cache_values_at_ts(
+        write_cursor=write_cursor,
+        key_parts=key_parts,
+        values=values,
+        timestamp=timestamp,
     )
 
 
