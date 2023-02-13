@@ -20,5 +20,11 @@ export const supportedLanguages = [
     identifier: SupportedLanguage.DE,
     label: 'German',
     countries: ['de']
+  },
+  {
+    identifier: SupportedLanguage.CN,
+    label: 'China',
+    countries: ['cn']
   }
+
 ];
