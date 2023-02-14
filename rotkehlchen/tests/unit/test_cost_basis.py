@@ -855,7 +855,7 @@ def test_accounting_average_cost_basis(accountant):
     assert manager.current_amount == current_amount == FVal(2)
 
     # Step 4. Add a spend with negative pnl
-    add_spend(pot, amount=FVal(1.5), price=FVal(10))  # Sell 1.5 ETH for $40  pnl: 1.5 * (10 - 20) = -$15  # noqa: E501
+    add_spend(pot, amount=FVal(1.5), price=FVal(10))  # Sell 1.5 ETH for $10  pnl: 1.5 * (10 - 20) = -$15  # noqa: E501
     assert events[3].pnl.taxable == events[3].taxable_amount * (events[3].price - current_total_acb / current_amount) == FVal(-15)  # noqa: E501
     current_total_acb *= (current_amount - events[3].taxable_amount) / current_amount  # total acb: 40 * (2 - 1.5) / 2 = $10  # noqa: E501
     current_amount -= events[3].taxable_amount  # 0.5
@@ -903,7 +903,9 @@ def test_accounting_average_cost_basis(accountant):
     assert manager.current_amount == current_amount == FVal(0.5)
 
     # Step 10. Try to spend more than the remaining amount
-    add_spend(pot, amount=FVal(0.6), price=FVal(5))  # Sell 0.6 ETH for $5  pnl: 0.5 * (5 - 10) + (0.1 * 5 <-- amount that has no matching acquisition) = -$2  # noqa: E501
+    add_spend(pot, amount=FVal(0.6), price=FVal(5))  # Sell 0.6 ETH for $5
+    # pnl -> pnl_for_known_acquisition + pnl_for_rest_uses_full_price_as_profit
+    # pnl -> 0.5*5 - (5/0.5)*0.5 + 0.1 * 5 = -2$
     assert len(cost_basis.missing_acquisitions) == 1
     missing_acquisition = cost_basis.missing_acquisitions[0]
     assert missing_acquisition.found_amount == current_amount == FVal(0.5)
@@ -912,7 +914,7 @@ def test_accounting_average_cost_basis(accountant):
     assert manager.current_total_acb == ZERO
     assert manager.current_amount == ZERO
 
-    # Step 11. Try to spend when remaining amount is zero
+    # Step 11. Try to spend when remaining amount is 0 (missing acquisition counts all as profit)
     add_spend(pot, amount=FVal(0.5), price=FVal(5))  # Sell 0.5 ETH for $5  pnl: 0.5 * 5 = $2.5  # noqa: E501
     assert len(cost_basis.missing_acquisitions) == 2
     missing_acquisition = cost_basis.missing_acquisitions[1]
