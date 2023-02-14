@@ -10,6 +10,7 @@ from enum import auto
 from http import HTTPStatus
 from json import JSONDecodeError
 from pathlib import Path
+from subprocess import PIPE, Popen
 from typing import TYPE_CHECKING, Any, Optional
 
 import py
@@ -241,7 +242,21 @@ def vcr_cassette_dir(request: pytest.FixtureRequest) -> str:
             log.debug('VCR setup completed')
         else:
             log.debug('Pulling information for VCR cassettes')
-            os.popen(f'cd {tests_caching_dir} && git pull').read()
+            current_branch = os.environ.get('VCR_BRANCH')
+            if current_branch is None:
+                current_branch = os.popen('git rev-parse --abbrev-ref HEAD').read().rstrip('\n')
+            checkout_proc = Popen(f'cd {tests_caching_dir} && git checkout {current_branch} && git pull', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
+            _, stderr = checkout_proc.communicate(timeout=10)
+
+            if (
+                len(stderr) != 0 and
+                b'Already on' not in stderr and
+                b'Switched to branch' not in stderr
+            ):
+                default_branch = os.environ.get('DEFAULT_VCR_BRANCH', 'develop')
+                log.error(f'Could not find branch {current_branch} in {tests_caching_dir}. Defaulting to {default_branch}')  # noqa: E501
+                checkout_proc = Popen(f'cd {tests_caching_dir} && git switch -f {default_branch} && git pull', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
+                checkout_proc.wait()
 
     cassette_dir = get_cassette_dir(request)
     return str(base_dir / cassette_dir)
