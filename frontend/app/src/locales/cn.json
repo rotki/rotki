@@ -59,68 +59,68 @@
       "title": "添加账号"
     },
     "labels": {
-      "addresses": "Addresses",
-      "addresses_entries": "no entries | {count} unique entry | {count} unique entries",
-      "addresses_hint": "Insert multiple comma separated addresses",
-      "blockchain": "Choose blockchain",
+      "addresses": "地址",
+      "addresses_entries": "无条目 | {count} 个唯一条目 | {count} 个唯一条目",
+      "addresses_hint": "插入多个逗号分隔的地址",
+      "blockchain": "选择区块链",
       "btc": {
-        "derivation_path": "Derivation Path",
-        "derivation_path_hint": "Optional",
+        "derivation_path": "推导路径",
+        "derivation_path_hint": "可选",
         "xpub": "XPUB"
       },
-      "multiple": "Add multiple addresses"
+      "multiple": "添加多个地址"
     },
     "validation": {
-      "address_non_empty": "The address cannot be empty",
-      "xpub_non_empty": "The XPUB field cannot be empty"
+      "address_non_empty": "地址不能为空",
+      "xpub_non_empty": "XPUB 字段不能为空"
     }
   },
   "account_group_header": {
-    "copy_tooltip": "Copy the xpub to the clipboard",
-    "delete_tooltip": "Delete the entry and all the accounts underneath it",
-    "derivation_path": "Derivation Path",
-    "edit_tooltip": "Edit the label and tags of the xpub",
-    "standalone": "Standalone",
+    "copy_tooltip": "将 xpub 复制到剪贴板",
+    "delete_tooltip": "删除条目及其下的所有帐户",
+    "derivation_path": "推导路径",
+    "edit_tooltip": "编辑 xpub 的标签和标记",
+    "standalone": "独立",
     "xpub": "xpub:"
   },
   "account_management": {
-    "about_tooltip": "Show the application's about modal",
+    "about_tooltip": "显示应用程序的关于模式",
     "creation": {
-      "error": "Account creation failed"
+      "error": "帐户创建失败"
     }
   },
   "account_settings": {
     "cost_basis_method_settings": {
       "labels": {
-        "acb": "Average Cost Basis",
-        "fifo": "First In, First Out",
-        "hifo": "Highest In, First Out",
-        "lifo": "Last In, First Out"
+        "acb": "平均成本基础",
+        "fifo": "先进先出",
+        "hifo": "高进先出",
+        "lifo": "后进先出"
       }
     },
     "csv_export_settings": {
       "labels": {
-        "export_csv_formulas": "Should formulas be exported as part of the PnL CSV?",
-        "have_csv_summary": "Should summary of all events be included in the all events CSV export?"
+        "export_csv_formulas": "公式应该作为 PnL CSV 的一部分导出吗？",
+        "have_csv_summary": "所有事件的摘要都应该包含在所有事件的 CSV 导出中吗？"
       },
-      "title": "CSV Export Settings"
+      "title": "CSV 导出设置"
     },
     "messages": {
-      "account_for_assets_movements": "Error setting account for assets movements: {message}",
+      "account_for_assets_movements": "为资产移动设置账户时出错：{message}",
       "cost_basis": {
-        "disabled": "Successfully disabled past cost basis calculation",
-        "enabled": "Successfully enabled past cost basis calculation",
-        "error": "Failed to change cost basis calculation: {message}"
+        "disabled": "已成功禁用过去的成本基础计算",
+        "enabled": "成功启用过去成本基础计算",
+        "error": "无法更改成本基础计算：{message}"
       },
       "cost_basis_method": {
-        "error": "Failed to change cost basis method to {method}: {message}",
-        "success": "Successfully change cost basis method to {method}"
+        "error": "无法将成本基础方法更改为{method}: {message}",
+        "success": "成功将成本基础方法更改为 {method}"
       },
-      "crypto_to_crypto": "Error setting crypto to crypto: {message}",
+      "crypto_to_crypto": "将加密设置为加密时出错：{message}",
       "eth_staking_taxable_after_withdrawal": {
-        "disabled": "Successfully disabled eth staking taxable after withdrawal setting",
-        "enabled": "Successfully enabled eth staking taxable after withdrawal setting",
-        "error": "Failed to change eth staking taxable after withdrawal setting: {message}"
+        "disabled": "成功禁用提现设置后应纳税的eth staking",
+        "enabled": "成功启用 eth staking taxable after withdrawal 设置",
+        "error": "提款后无法更改应纳税的 eth 质押设置： {message}"
       },
       "export_csv_formulas": "Error setting the option to include formulas in CSV export: {message}",
       "gas_costs": "Error setting Ethereum gas costs: {message}",
