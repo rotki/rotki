@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from enum import Enum
 from typing import TYPE_CHECKING, Literal, NamedTuple, Optional, Protocol
 
@@ -13,12 +14,18 @@ class AccountantCallback(Protocol):
             self,
             pot: 'AccountingPot',
             event: 'HistoryBaseEntry',
-            other_events: list['HistoryBaseEntry'],
+            other_events: Iterator['HistoryBaseEntry'],
     ) -> None:
+        """
+        Callback to be called by the accounting module.
+        If the callback expects more than 1 events, it is supposed to iterate over the
+        `other_events` iterator to get them.
+        Note that events consumed by the callback from the iterator will not be re-processed later.
+        """
         ...
 
 
-class TxMultitakeTreatment(Enum):
+class TxAccountingTreatment(Enum):
     SWAP = 0
 
 
@@ -27,7 +34,6 @@ class TxEventSettings(NamedTuple):
     taxable: bool
     count_entire_amount_spend: bool
     count_cost_basis_pnl: bool
-    take: int
     method: Literal['acquisition', 'spend']
-    multitake_treatment: Optional[TxMultitakeTreatment] = None
+    accounting_treatment: Optional[TxAccountingTreatment] = None
     accountant_cb: Optional[AccountantCallback] = None

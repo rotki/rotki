@@ -2,7 +2,6 @@
 import { type Balance } from '@rotki/common';
 import { type PropType } from 'vue';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 
 defineProps({
@@ -18,23 +17,11 @@ defineProps({
 });
 
 const { tc } = useI18n();
-const assetPadding = 4;
 </script>
 <template>
   <stat-card :title="tc('loan_debt.title')" :class="$style.debt">
     <loan-row :title="tc('loan_debt.outstanding_debt')">
-      <amount-display
-        :asset-padding="assetPadding"
-        :value="debt.amount"
-        :asset="asset"
-      />
-    </loan-row>
-    <loan-row :medium="false">
-      <amount-display
-        :asset-padding="assetPadding"
-        :value="debt.usdValue"
-        fiat-currency="USD"
-      />
+      <balance-display :asset="asset" :value="debt" />
     </loan-row>
     <slot />
   </stat-card>

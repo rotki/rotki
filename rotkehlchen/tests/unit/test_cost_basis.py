@@ -8,13 +8,50 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.types import MissingAcquisition
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
-from rotkehlchen.chain.evm.accounting.structures import TxEventSettings, TxMultitakeTreatment
+from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment, TxEventSettings
 from rotkehlchen.constants.assets import A_3CRV, A_BTC, A_ETH, A_EUR, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address, make_random_bytes
 from rotkehlchen.types import CostBasisMethod, Location, Timestamp, make_evm_tx_hash
+
+
+def add_acquisition(pot, amount, asset=A_ETH, price=ONE, taxable=False):
+    """
+    Util function to add an acquisition to an accounting pot.
+    Timestamp doesn't matter here since we provide `given_price`, but has to be big enough so that
+    `handle_prefork_acquisitions` is not called.
+    """
+    pot.add_acquisition(
+        event_type=AccountingEventType.TRANSACTION_EVENT,
+        notes='Test',
+        location=Location.BLOCKCHAIN,
+        timestamp=Timestamp(1675483017),
+        asset=asset,
+        amount=amount,
+        taxable=taxable,
+        given_price=price,
+    )
+
+
+def add_spend(pot, amount, asset=A_ETH, price=ONE, taxable=True):
+    """
+    Util function to add a spend event to an accounting pot.
+    Timestamp doesn't matter here since we provide `given_price`, but has to be big enough so that
+    `handle_prefork_acquisitions` is not called.
+    """
+    pot.add_spend(
+        event_type=AccountingEventType.TRANSACTION_EVENT,
+        notes='Test',
+        location=Location.BLOCKCHAIN,
+        timestamp=Timestamp(1675483017),
+        asset=asset,
+        amount=amount,
+        taxable=taxable,
+        given_price=price,
+        count_entire_amount_spend=False,
+    )
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
@@ -786,136 +823,106 @@ def test_missing_acquisitions(accountant):
 
 
 def test_accounting_average_cost_basis(accountant):
-    """
-    Test data is gotten from:
-    https://www.adjustedcostbase.ca/blog/how-to-calculate-adjusted-cost-base-acb-and-capital-gains/
-    """
-    asset = A_ETH
-    cost_basis = accountant.pots[0].cost_basis
+    """Test various scenarios in average cost basis calculation"""
+    pot = accountant.pots[0]
+    events = pot.processed_events
+    cost_basis = pot.cost_basis
     cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.ACB))
-    asset_events = cost_basis.get_events(asset)
+    manager = cost_basis.get_events(A_ETH).acquisitions_manager
 
-    # check that the average cost basis is calculated properly
-    # whenever a spend happens after an acquisition
-    assert asset_events.acquisitions_manager.remaining_amount == ZERO
-    event1 = AssetAcquisitionEvent(
-        amount=FVal(100),
-        timestamp=1,
-        rate=FVal(50),
-        index=1,
-    )
-    asset_events.acquisitions_manager.add_acquisition(event1)
-    assert asset_events.acquisitions_manager.remaining_amount == FVal(100)
-    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(5000)
-    cost_basis_result = asset_events.acquisitions_manager.calculate_spend_cost_basis(
-        spending_amount=FVal(50),
-        spending_asset=asset,
-        timestamp=0,
-        missing_acquisitions=cost_basis.missing_acquisitions,
-        used_acquisitions=asset_events.used_acquisitions,
-        settings=cost_basis.settings,
-        timestamp_to_date=cost_basis.timestamp_to_date,
-        average_cost_basis=asset_events.acquisitions_manager.current_average_cost_basis,
-    )
-    assert asset_events.acquisitions_manager.remaining_amount == FVal(50)
-    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(2500)
-    assert cost_basis_result.taxable_bought_cost == FVal(2500)
-    assert cost_basis_result.is_complete is True
+    # Step 1. Add an acquisition
+    add_acquisition(pot, amount=FVal(2), price=FVal(10))  # Buy 2 ETH for $10  total acb: $20
+    assert events[0].pnl.taxable == ZERO  # No profit for acquisitions
+    current_total_acb = events[0].price * events[0].free_amount
+    current_amount = events[0].free_amount  # 2
+    assert manager.current_total_acb == current_total_acb == FVal(20)
+    assert manager.current_amount == current_amount == FVal(2)
 
-    # repeat the above process again to see that it works as expected
-    # and the average cost basis calculated is correct.
-    asset_events.acquisitions_manager.add_acquisition(AssetAcquisitionEvent(
-        amount=FVal(50),
-        timestamp=3,
-        rate=FVal(130),
-        index=3,
-    ))
-    assert asset_events.acquisitions_manager.remaining_amount == FVal(100)
-    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(9000)
-    cost_basis_result = asset_events.acquisitions_manager.calculate_spend_cost_basis(
-        spending_amount=FVal(40),
-        spending_asset=asset,
-        timestamp=0,
-        missing_acquisitions=cost_basis.missing_acquisitions,
-        used_acquisitions=asset_events.used_acquisitions,
-        settings=cost_basis.settings,
-        timestamp_to_date=cost_basis.timestamp_to_date,
-        average_cost_basis=asset_events.acquisitions_manager.current_average_cost_basis,
-    )
-    assert asset_events.acquisitions_manager.remaining_amount == FVal(60)
-    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(5400)
-    assert cost_basis_result.taxable_bought_cost == FVal(5400)
-    assert cost_basis_result.is_complete is True
+    # Step 2. Add a spend with positive pnl
+    add_spend(pot, amount=FVal(1), price=FVal(15))  # Sell 1 ETH for $15  pnl: 1 * (15 - 10) = $5
+    assert events[1].pnl.taxable == events[1].taxable_amount * (events[1].price - current_total_acb / current_amount) == FVal(5)  # noqa: E501
+    current_total_acb *= (current_amount - events[1].taxable_amount) / current_amount  # total acb: 20 * (2 - 1) / 2 = $10  # noqa: E501
+    current_amount -= events[1].taxable_amount  # 1
+    assert manager.current_total_acb == current_total_acb == FVal(10)
+    assert manager.current_amount == current_amount == FVal(1)
 
-    # reset the cost basis and
-    # now see that having two consecutive acquisitions followed by a spend
-    # and see that the average cost basis calculated is correct.
-    cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.ACB))
-    asset_events = cost_basis.get_events(asset)
-    assert asset_events.acquisitions_manager.remaining_amount == ZERO
-    event3 = AssetAcquisitionEvent(
-        amount=FVal(1),
-        timestamp=3,
-        rate=FVal(100),
-        index=3,
-    )
-    event4 = AssetAcquisitionEvent(
-        amount=FVal(1),
-        timestamp=4,
-        rate=FVal(200),
-        index=4,
-    )
-    asset_events.acquisitions_manager.add_acquisition(event3)
-    assert asset_events.acquisitions_manager.remaining_amount == FVal(1)
-    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(100)
-    asset_events.acquisitions_manager.add_acquisition(event4)
-    assert asset_events.acquisitions_manager.remaining_amount == FVal(2)
-    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(300)
-    cost_basis_result = asset_events.acquisitions_manager.calculate_spend_cost_basis(
-        spending_amount=FVal(0.5),
-        spending_asset=asset,
-        timestamp=0,
-        missing_acquisitions=cost_basis.missing_acquisitions,
-        used_acquisitions=asset_events.used_acquisitions,
-        settings=cost_basis.settings,
-        timestamp_to_date=cost_basis.timestamp_to_date,
-        average_cost_basis=asset_events.acquisitions_manager.current_average_cost_basis,
-    )
-    assert asset_events.acquisitions_manager.remaining_amount == FVal(1.5)
-    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(225)
-    assert cost_basis_result.is_complete is True
-    assert cost_basis_result.taxable_bought_cost == FVal(225)
-    asset_events.acquisitions_manager.add_acquisition(AssetAcquisitionEvent(
-        amount=FVal(0.5),
-        timestamp=5,
-        rate=FVal(500),
-        index=5,
-    ))
-    assert asset_events.acquisitions_manager.remaining_amount == FVal(2)
-    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(475)
+    # Step 3. Add another acquisition
+    add_acquisition(pot, amount=FVal(1), price=FVal(30))  # Buy 1 ETH for $30  total acb: 10 + 1 * 30 = $40  # noqa: E501
+    assert events[2].pnl.taxable == ZERO  # No profit for acquisitions
+    current_total_acb += events[2].price * events[2].free_amount
+    current_amount += events[2].free_amount  # 2
+    assert manager.current_total_acb == current_total_acb == FVal(40)
+    assert manager.current_amount == current_amount == FVal(2)
 
-    # see that using more than the available acquisitions adds a MissingAcquisition
-    assert asset_events.acquisitions_manager.calculate_spend_cost_basis(
-        spending_amount=FVal(3.5),
-        spending_asset=asset,
-        timestamp=0,
-        missing_acquisitions=cost_basis.missing_acquisitions,
-        used_acquisitions=asset_events.used_acquisitions,
-        settings=cost_basis.settings,
-        timestamp_to_date=cost_basis.timestamp_to_date,
-        average_cost_basis=asset_events.acquisitions_manager.current_average_cost_basis,
-    ).is_complete is False
-    assert asset_events.acquisitions_manager.remaining_amount == ZERO
-    # it is negative due to the missing acquisition.
-    assert asset_events.acquisitions_manager.current_average_cost_basis == FVal(-356.25)
-    assert cost_basis.missing_acquisitions == [
-        MissingAcquisition(
-            asset=asset,
-            time=0,
-            found_amount=FVal(2),
-            missing_amount=FVal(1.5),
-        ),
-    ]
+    # Step 4. Add a spend with negative pnl
+    add_spend(pot, amount=FVal(1.5), price=FVal(10))  # Sell 1.5 ETH for $10  pnl: 1.5 * (10 - 20) = -$15  # noqa: E501
+    assert events[3].pnl.taxable == events[3].taxable_amount * (events[3].price - current_total_acb / current_amount) == FVal(-15)  # noqa: E501
+    current_total_acb *= (current_amount - events[3].taxable_amount) / current_amount  # total acb: 40 * (2 - 1.5) / 2 = $10  # noqa: E501
+    current_amount -= events[3].taxable_amount  # 0.5
+    assert manager.current_total_acb == current_total_acb == FVal(10)
+    assert manager.current_amount == current_amount == FVal(0.5)
+
+    # Step 5. Add another acquisition
+    add_acquisition(pot, amount=FVal(3), price=FVal(20))  # Buy 3 ETH for $20  total acb: 10 + 3 * 20 = $70  # noqa: E501
+    assert events[4].pnl.taxable == ZERO  # No profit for acquisitions
+    current_total_acb += events[4].price * events[4].free_amount
+    current_amount += events[4].free_amount  # 3.5
+    assert manager.current_total_acb == current_total_acb == FVal(70)
+    assert manager.current_amount == current_amount == FVal(3.5)
+
+    # Step 6. Add a spend after a sequence of acquisitions and spends
+    add_spend(pot, amount=FVal(2), price=FVal(30))  # Sell 2 ETH for $30  pnl: 2 * (30 - 20) = $20
+    assert events[5].pnl.taxable == events[5].taxable_amount * (events[5].price - current_total_acb / current_amount) == FVal(20)  # noqa: E501
+    current_total_acb *= (current_amount - events[5].taxable_amount) / current_amount  # total acb: 70 * (3.5 - 2) / 3.5 = $30 # noqa: E501
+    current_amount -= events[5].taxable_amount  # 1.5
+    assert manager.current_total_acb == current_total_acb == FVal(30)
+    assert manager.current_amount == current_amount == FVal(1.5)
+
+    # Step 7. Check that spending up the entire remaining amount works.
+    add_spend(pot, amount=FVal(1.5), price=FVal(10))  # Sell 1.5 ETH for $10 pnl: 1.5*10 - (30/1.5)*1.5 = -$15 # noqa: E501
+    assert events[6].pnl.taxable == events[6].taxable_amount * (events[6].price - current_total_acb / current_amount) == FVal(-15)  # noqa: E501
+    current_total_acb *= (current_amount - events[6].taxable_amount) / current_amount  # total acb: 30 * (1.5 - 1.5) / 1.5 = $0  # noqa: E501
+    current_amount -= events[6].taxable_amount  # 0
+    assert manager.current_total_acb == current_total_acb == ZERO
+    assert manager.current_amount == current_amount == ZERO
+
+    # Step 8. Add one more acquisition
+    add_acquisition(pot, amount=FVal(1), price=FVal(10))  # Buy 1 ETH for $10  total acb: 0 + 1 * 10 = $10  # noqa: E501
+    assert events[7].pnl.taxable == ZERO  # No profit for acquisitions
+    current_total_acb += events[7].price * events[7].free_amount
+    current_amount += events[7].free_amount  # 1
+    assert manager.current_total_acb == current_total_acb == FVal(10)
+    assert manager.current_amount == current_amount == FVal(1)
+
+    # Step 9. Check that negative pnl is correctly handled
+    add_spend(pot, amount=FVal(0.5), price=FVal(5))  # Sell 0.5 ETH for $5  pnl: 0.5 * (5 - 10) = -$2.5  # noqa: E501
+    assert events[8].pnl.taxable == events[8].taxable_amount * (events[8].price - current_total_acb / current_amount) == FVal(-2.5)  # noqa: E501
+    current_total_acb *= (current_amount - events[8].taxable_amount) / current_amount  # total acb: 10 * (1 - 0.5) / 1 = $5  # noqa: E501
+    current_amount -= events[8].taxable_amount  # 0.5
+    assert manager.current_total_acb == current_total_acb == FVal(5)
+    assert manager.current_amount == current_amount == FVal(0.5)
+
+    # Step 10. Try to spend more than the remaining amount
+    add_spend(pot, amount=FVal(0.6), price=FVal(5))  # Sell 0.6 ETH for $5
+    # pnl -> pnl_for_known_acquisition + pnl_for_rest_uses_full_price_as_profit
+    # pnl -> 0.5*5 - (5/0.5)*0.5 + 0.1 * 5 = -2$
+    assert len(cost_basis.missing_acquisitions) == 1
+    missing_acquisition = cost_basis.missing_acquisitions[0]
+    assert missing_acquisition.found_amount == current_amount == FVal(0.5)
+    assert missing_acquisition.missing_amount == events[9].taxable_amount - current_amount == FVal(0.1)  # 0.6 - 0.5  # noqa: E501
+    assert events[9].pnl.taxable == missing_acquisition.found_amount * (events[9].price - current_total_acb / current_amount) + missing_acquisition.missing_amount * events[9].price == FVal(-2)  # noqa: E501
+    assert manager.current_total_acb == ZERO
+    assert manager.current_amount == ZERO
+
+    # Step 11. Try to spend when remaining amount is 0 (missing acquisition counts all as profit)
+    add_spend(pot, amount=FVal(0.5), price=FVal(5))  # Sell 0.5 ETH for $5  pnl: 0.5 * 5 = $2.5  # noqa: E501
+    assert len(cost_basis.missing_acquisitions) == 2
+    missing_acquisition = cost_basis.missing_acquisitions[1]
+    assert missing_acquisition.found_amount == ZERO
+    assert missing_acquisition.missing_amount == events[10].taxable_amount == FVal(0.5)
+    assert events[10].pnl.taxable == missing_acquisition.missing_amount * events[10].price == FVal(2.5)  # noqa: E501
+    assert manager.current_total_acb == ZERO
+    assert manager.current_amount == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [{
@@ -960,8 +967,7 @@ def test_swaps_taxability(accountant, taxable):
             count_entire_amount_spend=False,
             count_cost_basis_pnl=True,
             method='spend',
-            take=2,
-            multitake_treatment=TxMultitakeTreatment.SWAP,
+            accounting_treatment=TxAccountingTreatment.SWAP,
         ),
     )
     if taxable is True:

@@ -7,6 +7,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
@@ -56,12 +57,14 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     def _decode_curve_remove_events(
             self,
-            tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
+            tx_log: EvmTxReceiptLog,
             decoded_events: list[HistoryBaseEntry],
             user_address: ChecksumEvmAddress,
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """Decode information related to withdrawing assets from curve pools"""
+        withdrawal_events: list[HistoryBaseEntry] = []
+        return_event: Optional[HistoryBaseEntry] = None
         for event in decoded_events:
             try:
                 crypto_asset = event.asset.resolve_to_crypto_asset()
@@ -79,6 +82,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_CURVE
                 event.notes = f'Remove {event.balance.amount} {crypto_asset.symbol} from the curve pool'  # noqa: E501
+                withdrawal_events.append(event)
             elif (  # Withdraw send wrapped
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -92,6 +96,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = CPT_CURVE
                 event.notes = f'Return {event.balance.amount} {crypto_asset.symbol}'
+                return_event = event
             elif (  # Withdraw receive asset
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -103,15 +108,38 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_CURVE
                 event.notes = f'Remove {event.balance.amount} {crypto_asset.symbol} from the curve pool {tx_log.address}'  # noqa: E501
+                withdrawal_events.append(event)
+
+        # Make sure that the order is the following:
+        # 1. Return pool token event
+        # 2. Withdrawal 1
+        # 3. Withdrawal 2
+        # etc.
+        if return_event is None or len(withdrawal_events) == 0:
+            log.debug(
+                f'Expected to see a receive pool token event and deposit events for a curve pool, '
+                f'but have not found them. Tx_hash: {transaction.tx_hash.hex()} '
+                f'User address: {user_address}',
+            )
+            return None, []
+
+        return_event.extra_data = {'withdrawal_events_num': len(withdrawal_events)}  # for accounting  # noqa: E501
+        previous_event = return_event
+        for event in withdrawal_events:
+            maybe_reshuffle_events(previous_event, event, decoded_events)
+            previous_event = event
         return None, []
 
     def _decode_curve_deposit_events(
             self,
+            transaction: EvmTransaction,
             tx_log: EvmTxReceiptLog,
             decoded_events: list[HistoryBaseEntry],
             user_address: ChecksumEvmAddress,
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """Decode information related to depositing assets in curve pools"""
+        deposit_events: list[HistoryBaseEntry] = []
+        receive_event: Optional[HistoryBaseEntry] = None
         for event in decoded_events:
             try:
                 crypto_asset = event.asset.resolve_to_crypto_asset()
@@ -129,6 +157,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_CURVE
                 event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in curve pool'  # noqa: E501
+                deposit_events.append(event)
             elif (  # deposit give asset
                 (
                     event.event_type == HistoryEventType.SPEND and
@@ -148,6 +177,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in curve pool'  # noqa: E501
                 if tx_log.address in self.curve_pools:
                     event.notes += f' {tx_log.address}'
+                deposit_events.append(event)
             elif (  # Deposit receive pool token
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -158,6 +188,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = CPT_CURVE
                 event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} after depositing in curve pool {tx_log.address}'  # noqa: E501
+                receive_event = event
             elif (  # deposit give asset
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -168,7 +199,26 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_CURVE
                 event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in curve pool {tx_log.address}'  # noqa: E501
+                deposit_events.append(event)
 
+        # Make sure that the order is the following:
+        # 1. Receive pool token event
+        # 2. Deposit 1
+        # 3. Deposit 2
+        # etc.
+        if receive_event is None or len(deposit_events) == 0:
+            log.debug(
+                f'Expected to see a receive pool token event and deposit events for a curve pool, '
+                f'but have not found them. Tx_hash: {transaction.tx_hash.hex()} '
+                f'User address: {user_address}',
+            )
+            return None, []
+
+        receive_event.extra_data = {'deposit_events_num': len(deposit_events)}  # for accounting
+        previous_event = receive_event
+        for event in deposit_events:
+            maybe_reshuffle_events(previous_event, event, decoded_events)
+            previous_event = event
         return None, []
 
     def _decode_curve_events(
@@ -200,6 +250,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         ):
             user_address = hex_or_bytes_to_address(tx_log.topics[1])
             return self._decode_curve_deposit_events(
+                transaction=transaction,
                 tx_log=tx_log,
                 decoded_events=decoded_events,
                 user_address=user_address,

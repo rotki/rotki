@@ -58,7 +58,7 @@ const creation = computed(() => {
 const header = computed(() => {
   const makerVault = get(vault);
   return {
-    identifier: scrambleData ? '-' : makerVault.identifier,
+    identifier: get(scrambleData) ? '-' : makerVault.identifier,
     collateralType: makerVault.collateralType
   };
 });

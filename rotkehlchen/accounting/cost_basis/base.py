@@ -204,7 +204,8 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
                 at_taxfree_period = acquisition_event.timestamp + settings.taxfree_after_period < timestamp  # noqa: E501
 
             if remaining_sold_amount < acquisition_event.remaining_amount:
-                acquisition_cost = acquisition_event.rate * remaining_sold_amount if average_cost_basis is None else average_cost_basis  # noqa: E501
+                acquisition_rate = acquisition_event.rate if average_cost_basis is None else average_cost_basis  # noqa: E501
+                acquisition_cost = acquisition_rate * remaining_sold_amount
 
                 taxable = True
                 if at_taxfree_period:
@@ -236,7 +237,8 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
                 break
 
             remaining_sold_amount -= acquisition_event.remaining_amount
-            acquisition_cost = acquisition_event.rate * acquisition_event.remaining_amount if average_cost_basis is None else average_cost_basis  # noqa: E501
+            acquisition_rate = acquisition_event.rate if average_cost_basis is None else average_cost_basis  # noqa: E501
+            acquisition_cost = acquisition_rate * acquisition_event.remaining_amount
             taxable = True
             if at_taxfree_period:
                 taxfree_amount += acquisition_event.remaining_amount
@@ -339,15 +341,24 @@ class HIFOCostBasisMethod(BaseCostBasisMethod):
 class AverageCostBasisMethod(BaseCostBasisMethod):
     """
     Accounting in Average Cost Basis(ACB) method.
-    https://www.investopedia.com/terms/a/averagecostbasismethod.asp
-    """
+
+    This accounting method is used for several jurisdictions. The examples are:
+        1. For Canada: https://www.canada.ca/content/dam/cra-arc/formspubs/pub/t4037/t4037-22e.pdf, page 23
+        2. For UK: https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/877369/HS284_Example_3_2020.pdf
+
+    Also an overall explanation of the method can be found here:
+        https://www.investopedia.com/terms/a/averagecostbasismethod.asp
+
+    For more details and explanations go here:
+        https://github.com/rotki/rotki/issues/5561#issuecomment-1423338938
+    """  # noqa: E501
     def __init__(self) -> None:
         super().__init__()
         self._count = ZERO
         # keeps track of the amount of the asset remaining after every acquisition or spend
-        self.remaining_amount = ZERO
-        # the average cost basis of last event(buy/sell) that occurred
-        self.current_average_cost_basis = ZERO
+        self.current_amount = ZERO
+        # the current total cost basis of the asset
+        self.current_total_acb = ZERO
 
     def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
         """
@@ -363,13 +374,18 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
             self._acquisitions_heap,
             AssetAcquisitionHeapElement(self._count, acquisition),
         )
-        self.current_average_cost_basis += (acquisition.rate * acquisition.amount)
-        self.remaining_amount += acquisition.amount
+        self.current_total_acb += acquisition.amount * acquisition.rate
+        self.current_amount += acquisition.amount
         self._count += 1
 
     def consume_result(self, used_amount: FVal) -> None:
-        """Same as its parent function but also deducts `used_amount` from `remaining_amount`."""
-        self.remaining_amount -= used_amount
+        """
+        Same as its parent function but also deducts `used_amount` from `current_amount`.
+        `current_amount` is guaranteed to be greater than zero since `consume_result` is
+        supposed to be called under `processing_iterator`.
+        """
+        self.current_total_acb *= (self.current_amount - used_amount) / self.current_amount  # noqa: E501
+        self.current_amount -= used_amount
         super().consume_result(used_amount)
 
     def calculate_spend_cost_basis(
@@ -383,31 +399,25 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
             timestamp_to_date: Callable[[Timestamp], str],
             average_cost_basis: Optional[FVal] = None,  # pylint: disable=unused-argument
     ) -> 'CostBasisInfo':
-        """
-        Calculates the cost basis of the spend using the average cost basis method.
-
-        Formula is taken from:
-        https://www.adjustedcostbase.ca/blog/how-to-calculate-adjusted-cost-base-acb-and-capital-gains/
-        """
-        if self.remaining_amount == ZERO:
+        """Calculates the cost basis of the spend using the average cost basis method."""
+        if self.current_amount == ZERO:
             missing_acquisitions.append(
                 MissingAcquisition(
                     asset=spending_asset,
                     time=timestamp,
-                    found_amount=self.remaining_amount,
+                    found_amount=self.current_amount,
                     missing_amount=spending_amount,
                 ),
             )
 
             return CostBasisInfo(
-                taxable_amount=ZERO,
+                taxable_amount=spending_amount,
                 taxable_bought_cost=ZERO,
                 taxfree_bought_cost=ZERO,
                 matched_acquisitions=[],
                 is_complete=False,
             )
 
-        self.current_average_cost_basis *= ((self.remaining_amount - spending_amount) / self.remaining_amount)  # noqa: E501
         return super().calculate_spend_cost_basis(
             spending_amount=spending_amount,
             spending_asset=spending_asset,
@@ -416,7 +426,11 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
             used_acquisitions=used_acquisitions,
             settings=settings,
             timestamp_to_date=timestamp_to_date,
-            average_cost_basis=self.current_average_cost_basis,
+            # Important note: calculation of the average cost basis of the current event has to
+            # happen before calling `consume_result`. For correct results `current_total_acb` and
+            # `current_amount` have to be used before applying the effect of the event that is
+            # being processed.
+            average_cost_basis=self.current_total_acb / self.current_amount,
         )
 
 

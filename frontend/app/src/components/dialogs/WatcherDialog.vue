@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { type PropType, type Ref } from 'vue';
+import { type ComputedRef, type PropType, type Ref } from 'vue';
+import cloneDeep from 'lodash/cloneDeep';
 import {
   type Watcher,
   type WatcherOpTypes,
-  type WatcherType,
-  type WatcherTypes
+  WatcherType
 } from '@/types/session';
 
 const props = defineProps({
@@ -23,12 +23,12 @@ const props = defineProps({
   },
   preselectWatcherType: {
     required: false,
-    type: String as PropType<WatcherTypes>,
+    type: String as PropType<typeof WatcherType>,
     default: null
   },
   existingWatchers: {
     required: false,
-    type: Array as PropType<Watcher<WatcherType>[]>,
+    type: Array as PropType<Watcher[]>,
     default: () => []
   }
 });
@@ -37,7 +37,7 @@ const emit = defineEmits(['cancel']);
 
 const { display, preselectWatcherType, existingWatchers, watcherContentId } =
   toRefs(props);
-const watcherType: Ref<WatcherTypes | null> = ref(null);
+const watcherType: Ref<typeof WatcherType | null> = ref(null);
 const watcherOperation: Ref<WatcherOpTypes | null> = ref(null);
 const watcherValue: Ref<string | null> = ref(null);
 const validationMessage: Ref<string> = ref('');
@@ -50,16 +50,18 @@ const store = useWatchersStore();
 const { watchers } = storeToRefs(store);
 const { addWatchers, editWatchers, deleteWatchers } = store;
 
-const loadedWatchers = computed(() => {
+const loadedWatchers: ComputedRef<Watcher[]> = computed(() => {
   const id = get(watcherContentId)?.toString();
-  return get(watchers).filter(watcher => watcher.args.vault_id === id);
+  return cloneDeep(get(watchers)).filter(
+    watcher => watcher.args.vaultId === id
+  );
 });
 
 const watcherTypes = computed(() => [
   {
     text: tc('watcher_dialog.types.make_collateralization_ratio'),
-    type: 'makervault_collateralization_ratio',
-    value: 'makervault_collateralization_ratio'
+    type: WatcherType,
+    value: WatcherType
   }
 ]);
 
@@ -136,12 +138,12 @@ const addWatcher = async () => {
     return;
   }
 
-  const watcherData: Omit<Watcher<WatcherType>, 'identifier'> = {
+  const watcherData: Omit<Watcher, 'identifier'> = {
     type,
     args: {
       ratio: value,
       op: operation,
-      vault_id: contentId.toString()
+      vaultId: contentId.toString()
     }
   };
 
@@ -157,7 +159,7 @@ const addWatcher = async () => {
   }
 };
 
-const editWatcher = async (watcher: Watcher<WatcherType>) => {
+const editWatcher = async (watcher: Watcher) => {
   const edit = get(existingWatchersEdit);
   if (!edit[watcher.identifier]) {
     // If we're not in edit mode, just go into edit mode

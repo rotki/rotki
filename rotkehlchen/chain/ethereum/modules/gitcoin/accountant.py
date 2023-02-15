@@ -22,8 +22,7 @@ class GitcoinAccountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
                 method='spend',
-                take=1,
-                multitake_treatment=None,
+                accounting_treatment=None,
             ),
             get_tx_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.DONATE, CPT_GITCOIN): TxEventSettings(  # noqa: E501
                 taxable=True,
@@ -31,7 +30,6 @@ class GitcoinAccountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
                 method='acquisition',
-                take=1,
-                multitake_treatment=None,
+                accounting_treatment=None,
             ),
         }

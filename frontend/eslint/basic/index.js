@@ -157,7 +157,7 @@ module.exports = defineConfig({
     'no-unused-vars': 'warn',
     'no-constant-condition': 'warn',
     'no-debugger': 'warn',
-    'no-console': ['warn', { allow: ['warn', 'error'] }],
+    'no-console': ['error', { allow: ['warn', 'error'] }],
     'no-restricted-syntax': [
       'error',
       // 'ForInStatement', TODO: Enable in the future

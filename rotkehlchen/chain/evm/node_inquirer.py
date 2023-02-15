@@ -406,7 +406,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 return False, message
 
             if not synchronized:
-                self.etherscan.msg_aggregator.add_warning(
+                log.warning(
                     f'We could not verify that {self.chain_name} node {node} is '
                     'synchronized with the network. Balances and other queries '
                     'may be incorrect.',

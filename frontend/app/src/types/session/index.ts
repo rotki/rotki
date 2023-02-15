@@ -49,25 +49,31 @@ export interface SessionSettings {
   animationsEnabled: boolean;
 }
 
-export type WatcherType = 'makervault_collateralization_ratio';
-export type WatcherTypes = WatcherType;
-export type WatcherOpTypes = 'lt' | 'le' | 'gt' | 'ge';
+export const WatcherType = 'makervault_collateralization_ratio';
 
-export interface Watcher<T extends WatcherTypes> {
-  readonly identifier: string;
-  readonly type: T;
-  readonly args: WatcherArgs[T];
-}
+export const WatcherOpTypes = z.enum(['lt', 'le', 'gt', 'ge']);
+export type WatcherOpTypes = z.infer<typeof WatcherOpTypes>;
 
-interface MakerVaultCollateralizationRatio {
-  ratio: string;
-  op: WatcherOpTypes;
-  vault_id: string;
-}
+export const BaseWatcher = z.object({
+  identifier: z.string()
+});
 
-interface WatcherArgs {
-  readonly makervault_collateralization_ratio: MakerVaultCollateralizationRatio;
-}
+export const MakerVaultCollateralizationRatioArgs = z.object({
+  ratio: z.string(),
+  op: WatcherOpTypes,
+  vaultId: z.string()
+});
+
+export const MakerVaultCollateralizationRatioWatcher = BaseWatcher.extend({
+  type: z.literal(WatcherType),
+  args: MakerVaultCollateralizationRatioArgs
+});
+
+export const Watcher = MakerVaultCollateralizationRatioWatcher;
+export type Watcher = z.infer<typeof Watcher>;
+
+export const Watchers = z.array(Watcher);
+export type Watchers = z.infer<typeof Watchers>;
 
 export type QueriedAddresses = {
   readonly [module in Module]?: string[];

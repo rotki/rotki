@@ -26,5 +26,4 @@ export const supportedLanguages = [
     label: 'China',
     countries: ['cn']
   }
-
 ];

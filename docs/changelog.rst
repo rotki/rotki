@@ -5,9 +5,13 @@ Changelog
 * :release:`1.28.0`
 * :bug:`5491` Show original manual latest price asset in manual balance form.
 
+* :bug:`-` Fixes bug where Maker Vault Collateralization Ratio can't be edited in watcher form.
+* :bug:`-` Fixes bug where wrong account label was used in asset location breakdown.
 * :bug:`5560` EVM transaction events should now be properly ignored in accounting.
 * :bug:`-` Fixes bug where asset breakdown wasn't displayed correctly in the exchange balance section.
 * :bug:`-` Fixes bug where navigation bar on the left didn't expand by default.
+* :bug:`-` Fixes curve deposits and withdrawals accounting.
+* :bug:`5561` Fixes average cost basis calculation.
 
 * :release:`1.27.0 <2023-02-03>`
 * :feature:`5015` EVM assets across multiple chains will now appear together in the dashboard, with an option to break them down into their per-chain holding.

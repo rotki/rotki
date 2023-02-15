@@ -18,24 +18,14 @@ const ratio = computed(() => {
   const { collateralizationRatio } = get(vault);
   return collateralizationRatio ? collateralizationRatio : null;
 });
-
-const assetPadding = 5;
 </script>
 
 <template>
   <stat-card :title="tc('loan_collateral.title')">
     <loan-row :title="tc('loan_collateral.locked_collateral')">
-      <amount-display
-        :asset-padding="assetPadding"
-        :value="vault.collateral.amount"
+      <balance-display
         :asset="vault.collateral.asset"
-      />
-    </loan-row>
-    <loan-row>
-      <amount-display
-        :asset-padding="assetPadding"
-        :value="vault.collateral.usdValue"
-        fiat-currency="USD"
+        :value="vault.collateral"
       />
     </loan-row>
     <v-divider class="my-4" />

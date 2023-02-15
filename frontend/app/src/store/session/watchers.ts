@@ -1,12 +1,12 @@
-import { type Watcher, type WatcherTypes } from '@/types/session';
+import { type Watcher, WatcherType } from '@/types/session';
 
 export const useWatchersStore = defineStore('session/watchers', () => {
-  const watchers = ref<Watcher<WatcherTypes>[]>([]);
+  const watchers = ref<Watcher[]>([]);
 
   const { t } = useI18n();
 
   const loanWatchers = computed(() => {
-    const loanWatcherTypes = ['makervault_collateralization_ratio'];
+    const loanWatcherTypes = [WatcherType];
 
     return get(watchers).filter(watcher =>
       loanWatcherTypes.includes(watcher.type)
@@ -36,7 +36,7 @@ export const useWatchersStore = defineStore('session/watchers', () => {
   };
 
   const addWatchers = async (
-    newWatchers: Omit<Watcher<WatcherTypes>, 'identifier'>[]
+    newWatchers: Omit<Watcher, 'identifier'>[]
   ): Promise<void> => {
     set(watchers, await api.addWatcher(newWatchers));
   };
@@ -45,9 +45,7 @@ export const useWatchersStore = defineStore('session/watchers', () => {
     set(watchers, await api.deleteWatcher(identifiers));
   };
 
-  const editWatchers = async (
-    editedWatchers: Watcher<WatcherTypes>[]
-  ): Promise<void> => {
+  const editWatchers = async (editedWatchers: Watcher[]): Promise<void> => {
     set(watchers, await api.editWatcher(editedWatchers));
   };
 
