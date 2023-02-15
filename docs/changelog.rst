@@ -12,7 +12,8 @@ Changelog
 * :bug:`-` Fixes bug where navigation bar on the left didn't expand by default.
 * :bug:`-` Fixes curve deposits and withdrawals accounting.
 * :bug:`5561` Fixes average cost basis calculation.
-* :bug:`-` Fixes bug when some decoded events in transactions would disappear. 
+* :bug:`-` Fixes bug when some decoded events in transactions would disappear.
+* :bug:`-` Transactions that happened in genesis block are now properly decoded
 
 * :release:`1.27.0 <2023-02-03>`
 * :feature:`5015` EVM assets across multiple chains will now appear together in the dashboard, with an option to break them down into their per-chain holding.
