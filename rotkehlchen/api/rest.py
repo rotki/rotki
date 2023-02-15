@@ -3656,7 +3656,7 @@ class RestAPI():
                 ),
                 'received': [
                     {
-                        'asset': entry[0].identifier,
+                        'asset': entry[0],
                         'amount': entry[1],
                         'usd_value': entry[2],
                     } for entry in amounts

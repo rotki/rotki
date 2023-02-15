@@ -333,7 +333,7 @@ class DBHistoryEvents():
             self,
             cursor: 'DBCursor',
             query_filter: HistoryEventFilterQuery,
-    ) -> tuple[FVal, list[tuple[Asset, FVal, FVal]]]:
+    ) -> tuple[FVal, list[tuple[str, FVal, FVal]]]:
         """Returns the sum of the USD value at the time of acquisition and the amount received
         by asset"""
         usd_value = ZERO
@@ -359,7 +359,7 @@ class DBHistoryEvents():
         assets_amounts = []
         for row in cursor:
             try:
-                asset = Asset(row[0]).check_existence()
+                asset = row[0]  # existence is guaranteed due the foreign key relation
                 amount = deserialize_fval(
                     value=row[1],
                     name='total amount in history events stats',
@@ -371,8 +371,6 @@ class DBHistoryEvents():
                     location='get_value_stats',
                 )
                 assets_amounts.append((asset, amount, sum_of_usd_values))
-            except UnknownAsset as e:
-                log.debug(f'Found unknown asset {row[0]} in staking event. {str(e)}')
             except DeserializationError as e:
                 log.debug(f'Failed to deserialize amount {row[1]}. {str(e)}')
         return usd_value, assets_amounts
