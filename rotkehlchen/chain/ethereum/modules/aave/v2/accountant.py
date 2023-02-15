@@ -1,5 +1,6 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Iterator
+from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry, get_tx_event_type_identifier
