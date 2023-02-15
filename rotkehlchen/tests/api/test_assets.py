@@ -127,7 +127,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
 
     with rotki.data.db.conn.read_ctx() as cursor:
         # check they are there
-        assert set(rotki.data.db.get_ignored_assets(cursor)) == expected_ignored_assets
+        assert rotki.data.db.get_ignored_asset_ids(cursor) == expected_ignored_assets
         # Query for ignored assets and check that the response returns them
         response = requests.get(
             api_url_for(
@@ -150,7 +150,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
         assert assets_after_deletion == set(result)
 
         # check that the changes are reflected
-        assert set(rotki.data.db.get_ignored_assets(cursor)) == assets_after_deletion
+        assert rotki.data.db.get_ignored_asset_ids(cursor) == assets_after_deletion
         # Query for ignored assets and check that the response returns them
         response = requests.get(
             api_url_for(
@@ -237,7 +237,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
     )
     # Check that assets did not get modified
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert set(rotki.data.db.get_ignored_assets(cursor)) >= set(ignored_assets)
+        assert rotki.data.db.get_ignored_asset_ids(cursor) >= set(ignored_assets)
 
         # Test the adding an already existing asset or removing a non-existing asset is an error
         if method == 'put':
@@ -258,9 +258,10 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
             status_code=HTTPStatus.CONFLICT,
         )
         # Check that assets did not get modified
-        assert set(rotki.data.db.get_ignored_assets(cursor)) >= set(ignored_assets)
+        assert rotki.data.db.get_ignored_asset_ids(cursor) >= set(ignored_assets)
 
 
+@pytest.mark.parametrize('new_db_unlock_actions', [('spam_assets',)])
 def test_get_all_assets(rotkehlchen_api_server):
     """Test that fetching all assets returns a paginated result."""
     response = requests.post(
@@ -410,6 +411,7 @@ def test_get_all_assets(rotkehlchen_api_server):
             'symbol': 'UNI',
             'order_by_attributes': ['symbol'],
             'ascending': [False],
+            'ignored_assets_handling': 'exclude',
         },
     )
     result = assert_proper_response_with_result(response)
@@ -557,6 +559,7 @@ def test_get_assets_mappings(rotkehlchen_api_server):
     assert all([identifier in ('BTC', 'TRY') for identifier in assets])
 
 
+@pytest.mark.parametrize('new_db_unlock_actions', [('spam_assets',)])
 def test_search_assets(rotkehlchen_api_server):
     """Test that searching for assets using a keyword works."""
     response = requests.post(

@@ -522,8 +522,8 @@ def test_migration_8(
     # check that the spam assets have been updated
     database = rotki.data.db
     with database.conn.read_ctx() as cursor:
-        spam_assets = rotki.data.db.get_ignored_assets(cursor)
-    assert len(spam_assets) >= len(KNOWN_EVM_SPAM_TOKENS)
+        ignored_asset_ids = rotki.data.db.get_ignored_asset_ids(cursor)
+    assert len(ignored_asset_ids) >= len(KNOWN_EVM_SPAM_TOKENS)
 
 
 @pytest.mark.parametrize('use_custom_database', ['data_migration_9.db'])
