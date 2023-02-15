@@ -14,7 +14,7 @@ from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
@@ -441,7 +441,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         Gets the receipt from the DB if it exists. If not queries the chain for it,
         saves it in the DB and then returns it.
 
-        Also if the actual transaction does not exist in the DB it queries it and saves it there.
+        Also, if the actual transaction does not exist in the DB it queries it and saves it there.
 
         May raise:
 
@@ -458,7 +458,13 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
             )
 
         if len(result) == 0:
-            transaction = self.evm_inquirer.get_transaction_by_hash(tx_hash)
+            transaction = self.evm_inquirer.maybe_get_transaction_by_hash(tx_hash)
+            if transaction is None:
+                raise RemoteError(
+                    f'Transaction with hash {tx_hash.hex()} for '
+                    f'{self.evm_inquirer.chain_name} not found',
+                )
+
             with self.database.user_write() as write_cursor:
                 dbevmtx.add_evm_transactions(write_cursor, [transaction], relevant_address=None)
             period = TimestampOrBlockRange(
@@ -567,11 +573,17 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         - RemoteError if any of the remote queries fail.
         - KeyError if there's a missing key in the tx_receipt dict.
         - DeserializationError if there's an issue deserializing a value.
+        - InputError if the tx_hash or its receipt is not found on the blockchain.
         - pysqlcipher3.dbapi2.IntegrityError if the tx_hash is present in the db or address is not tracked.
         """  # noqa: E501
         dbevmtx = DBEvmTx(self.database)
-        transaction = self.evm_inquirer.get_transaction_by_hash(tx_hash)
-        receipt_data = self.evm_inquirer.get_transaction_receipt(tx_hash)
+        transaction = self.evm_inquirer.maybe_get_transaction_by_hash(tx_hash)
+        if transaction is None:
+            raise InputError(f'Tx receipt for {tx_hash.hex()} not found on chain.')
+        receipt_data = self.evm_inquirer.maybe_get_transaction_receipt(tx_hash)
+        if receipt_data is None:
+            raise InputError(f'Tx receipt for {tx_hash.hex()} not found on chain.')
+
         with self.database.user_write() as write_cursor:
             dbevmtx.add_evm_transactions(
                 write_cursor=write_cursor,

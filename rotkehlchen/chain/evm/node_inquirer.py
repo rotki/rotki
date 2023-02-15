@@ -2,9 +2,9 @@ import json
 import logging
 import random
 from abc import ABCMeta, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 from urllib.parse import urlparse
 
 import requests
@@ -30,7 +30,7 @@ from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
 from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+from rotkehlchen.chain.evm.types import NodeName, Web3Node, WeightedNode
 from rotkehlchen.constants import ONE
 from rotkehlchen.errors.misc import BlockchainQueryError, NotERC721Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -65,7 +65,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 def _is_synchronized(current_block: int, latest_block: int) -> tuple[bool, str]:
     """ Validate that the evm node is synchronized
-            within 20 blocks of latest block
+            within 20 blocks of the latest block
 
         Returns a tuple (results, message)
             - result: Boolean for confirmation of synchronized
@@ -161,12 +161,18 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
     The child class must implement the following methods:
     - query_highest_block
-    - have_archive
+    - _have_archive
+    - _is_pruned
     - get_blocknumber_by_time
 
     The child class may optionally implement the following:
     - logquery_block_range
     """
+    methods_that_query_past_data = (
+        '_get_transaction_receipt',
+        '_get_transaction_by_hash',
+        '_get_logs',
+    )
 
     def __init__(
             self,
@@ -188,7 +194,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         self.etherscan_node_name = etherscan_node_name
         self.contracts = contracts
         self.proxies_inquirer = EvmProxiesInquirer(node_inquirer=self)
-        self.web3_mapping: dict[NodeName, Web3] = {}
+        self.web3_mapping: dict[NodeName, Web3Node] = {}
         self.rpc_timeout = rpc_timeout
         self.chain_id: SUPPORTED_CHAIN_IDS = blockchain.to_chain_id()  # type: ignore[assignment]
         self.chain_name = self.blockchain.name.lower()
@@ -196,8 +202,6 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         self.contract_scan = self.contracts.contract('BALANCE_SCAN')
         # Multicall from MakerDAO: https://github.com/makerdao/multicall/
         self.contract_multicall = self.contracts.contract('MULTICALL2')
-        self.queried_archive_connection = False
-        self.archive_connection = False
 
         log.debug(f'Initializing {self.chain_name} inquirer. Nodes to connect {connect_at_start}')
 
@@ -210,9 +214,9 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         return len(self.web3_mapping) != 0
 
     def get_own_node_web3(self) -> Optional[Web3]:
-        for node, web3_instance in self.web3_mapping.items():
+        for node, web3node in self.web3_mapping.items():
             if node.owned:
-                return web3_instance
+                return web3node.web3_instance
         return None
 
     def get_own_node_info(self) -> Optional[NodeName]:
@@ -296,11 +300,14 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             self,
             address: ChecksumEvmAddress,
             block_number: int,
+            web3: Optional[Web3] = None,
     ) -> Optional[FVal]:
-        """Attempts to get a historical eth balance from the local own node only.
-        If there is no node or the node can't query historical balance (not archive) then
-        returns None"""
-        web3 = self.get_own_node_web3()
+        """Attempts to get the historical eth balance using the node provided.
+
+        If `web3` is None, it uses the local own node.
+        Returns None if there is no local node or node cannot query historical balance.
+        """
+        web3 = web3 if web3 is not None else self.get_own_node_web3()
         if web3 is None:
             return None
 
@@ -310,6 +317,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 requests.exceptions.RequestException,
                 BlockchainQueryError,
                 KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Happened with mycrypto's node  # noqa: E501
+                ValueError,  # noticed when fetching historical balance of pruned node. Happened with public node's node  # noqa: E501
         ):
             return None
 
@@ -412,8 +420,13 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                     'may be incorrect.',
                 )
 
+            is_pruned, is_archive = self.determine_capabilities(web3)
             log.info(f'Connected {self.chain_name} node {node} at {rpc_endpoint}')
-            self.web3_mapping[node] = web3
+            self.web3_mapping[node] = Web3Node(
+                web3_instance=web3,
+                is_pruned=is_pruned,
+                is_archive=is_archive,
+            )
             return True, ''
 
         # else
@@ -444,25 +457,34 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         If none get a result then RemoteError is raised
         """
         for weighted_node in call_order:
-            node = weighted_node.node_info
-            web3 = self.web3_mapping.get(node, None)
-            if web3 is None and node.name != self.etherscan_node_name:
+            node_info = weighted_node.node_info
+            web3node = self.web3_mapping.get(node_info, None)
+            if web3node is None and node_info.name != self.etherscan_node_name:
+                continue
+
+            if (
+                web3node is not None and
+                method.__name__ in self.methods_that_query_past_data and
+                web3node.is_pruned is True
+            ):
                 continue
 
             try:
+                web3 = web3node.web3_instance if web3node is not None else None
                 result = method(web3, **kwargs)
             except (
                 RemoteError,
                 requests.exceptions.RequestException,
                 BlockchainQueryError,
-                TransactionNotFound,
                 BlockNotFound,
                 BadResponseFormat,
                 ValueError,  # Yabir saw this happen with mew node for unavailable method at node. Since it's generic we should replace if web3 implements https://github.com/ethereum/web3.py/issues/2448  # noqa: E501
             ) as e:
-                log.warning(f'Failed to query {node} for {str(method)} due to {str(e)}')
+                log.warning(f'Failed to query {node_info} for {str(method)} due to {str(e)}')
                 # Catch all possible errors here and just try next node call
                 continue
+            except TransactionNotFound:
+                return None
 
             return result
 
@@ -631,9 +653,12 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             self,
             web3: Optional[Web3],
             tx_hash: EVMTxHash,
-    ) -> dict[str, Any]:
+    ) -> Optional[dict[str, Any]]:
         if web3 is None:
             tx_receipt = self.etherscan.get_transaction_receipt(tx_hash)
+            if tx_receipt is None:
+                return None
+
             try:
                 # Turn hex numbers to int
                 block_number = int(tx_receipt['blockNumber'], 16)
@@ -668,26 +693,45 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         tx_receipt = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
         return process_result(tx_receipt)
 
-    def get_transaction_receipt(
+    def maybe_get_transaction_receipt(
             self,
             tx_hash: EVMTxHash,
             call_order: Optional[Sequence[WeightedNode]] = None,
-    ) -> dict[str, Any]:
+    ) -> Optional[dict[str, Any]]:
         return self._query(
             method=self._get_transaction_receipt,
             call_order=call_order if call_order is not None else self.default_call_order(),
             tx_hash=tx_hash,
         )
 
+    def get_transaction_receipt(
+            self,
+            tx_hash: EVMTxHash,
+            call_order: Optional[Sequence[WeightedNode]] = None,
+    ) -> dict[str, Any]:
+        """Retrieves the transaction receipt for the tx_hash provided.
+
+        This method assumes the tx_hash is present on-chain,
+        and we are connected to at least one node that can retrieve it.
+        """
+        tx_receipt = self.maybe_get_transaction_receipt(
+            call_order=call_order if call_order is not None else self.default_call_order(),
+            tx_hash=tx_hash,
+        )
+        assert tx_receipt, 'tx receipt should exist'
+        return tx_receipt
+
     def _get_transaction_by_hash(
             self,
             web3: Optional[Web3],
             tx_hash: EVMTxHash,
-    ) -> EvmTransaction:
+    ) -> Optional[EvmTransaction]:
         if web3 is None:
             tx_data = self.etherscan.get_transaction_by_hash(tx_hash=tx_hash)
         else:
             tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
+        if tx_data is None:
+            return None
 
         try:
             transaction = deserialize_evm_transaction(
@@ -703,16 +747,33 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
         return transaction
 
-    def get_transaction_by_hash(
+    def maybe_get_transaction_by_hash(
             self,
             tx_hash: EVMTxHash,
             call_order: Optional[Sequence[WeightedNode]] = None,
-    ) -> EvmTransaction:
+    ) -> Optional[EvmTransaction]:
         return self._query(
             method=self._get_transaction_by_hash,
             call_order=call_order if call_order is not None else self.default_call_order(),
             tx_hash=tx_hash,
         )
+
+    def get_transaction_by_hash(
+            self,
+            tx_hash: EVMTxHash,
+            call_order: Optional[Sequence[WeightedNode]] = None,
+    ) -> EvmTransaction:
+        """Retrieves information about a transaction from its hash.
+
+        This method assumes the tx_hash is present on-chain,
+        and we are connected to at least 1 node that can retrieve it.
+        """
+        tx = self.maybe_get_transaction_by_hash(
+            call_order=call_order if call_order is not None else self.default_call_order(),
+            tx_hash=tx_hash,
+        )
+        assert tx, 'transaction is expected to exist'
+        return tx
 
     def get_logs(
             self,
@@ -1103,6 +1164,18 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
         return decoded_contract_info
 
+    def determine_capabilities(self, web3: Web3) -> tuple[bool, bool]:
+        """This method checks for the capabilities of an rpc node. This includes:
+        - whether it is an archive node.
+        - if the node is pruned or not.
+
+        Returns a tuple of booleans i.e. (is_pruned, is_archived)
+        """
+        is_archive = self._have_archive(web3)
+        is_pruned = self._is_pruned(web3)
+
+        return is_pruned, is_archive
+
     # -- methods to be implemented by child classes --
 
     @abstractmethod
@@ -1113,14 +1186,6 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         Returns the highest blockNumber
 
         May Raise RemoteError if querying fails
-        """
-
-    @abstractmethod
-    def have_archive(self, requery: bool = False) -> bool:
-        """
-        Checks to see if our own connected node is an archive node
-
-        If requery is True it always queries the node. Otherwise it remembers last query.
         """
 
     @abstractmethod
@@ -1139,3 +1204,11 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         decide the block range for a specific logquery.
         """
         return WEB3_LOGQUERY_BLOCK_RANGE
+
+    @abstractmethod
+    def _have_archive(self, web3: Web3) -> bool:
+        """Returns a boolean representing if node is an archive one."""
+
+    @abstractmethod
+    def _is_pruned(self, web3: Web3) -> bool:
+        """Returns a boolean representing if the node is pruned or not."""

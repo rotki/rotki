@@ -101,9 +101,20 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             self,
             module: str,
             action: Literal[
-                'eth_getBlockByNumber',
                 'eth_getTransactionReceipt',
                 'eth_getTransactionByHash',
+            ],
+            options: Optional[dict[str, Any]] = None,
+            timeout: Optional[tuple[int, int]] = None,
+    ) -> Optional[dict[str, Any]]:
+        ...
+
+    @overload
+    def _query(
+            self,
+            module: str,
+            action: Literal[
+                'eth_getBlockByNumber',
             ],
             options: Optional[dict[str, Any]] = None,
             timeout: Optional[tuple[int, int]] = None,
@@ -133,7 +144,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             action: str,
             options: Optional[dict[str, Any]] = None,
             timeout: Optional[tuple[int, int]] = None,
-    ) -> Union[list[dict[str, Any]], str, list[EvmTransaction], dict[str, Any]]:
+    ) -> Union[list[dict[str, Any]], str, list[EvmTransaction], dict[str, Any], None]:
         """Queries etherscan
 
         May raise:
@@ -200,6 +211,9 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             try:
                 result = json_ret.get('result', None)
                 if result is None:
+                    if action in ('eth_getTransactionByHash', 'eth_getTransactionReceipt'):
+                        return None
+
                     raise RemoteError(
                         f'Unexpected format of {self.chain} Etherscan response for request {response.url}. '  # noqa: E501
                         f'Missing a result in response. Response was: {response.text}',
@@ -443,7 +457,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
 
         return block_data
 
-    def get_transaction_by_hash(self, tx_hash: EVMTxHash) -> dict[str, Any]:
+    def get_transaction_by_hash(self, tx_hash: EVMTxHash) -> Optional[dict[str, Any]]:
         """
         Gets a transaction object by hash
 
@@ -464,7 +478,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         result = self._query(module='proxy', action='eth_getCode', options={'address': account})
         return result
 
-    def get_transaction_receipt(self, tx_hash: EVMTxHash) -> dict[str, Any]:
+    def get_transaction_receipt(self, tx_hash: EVMTxHash) -> Optional[dict[str, Any]]:
         """Gets the receipt for the given transaction hash
 
         May raise:

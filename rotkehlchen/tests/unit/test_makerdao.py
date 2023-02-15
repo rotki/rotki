@@ -10,12 +10,16 @@ from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
     MakerdaoVaults,
     create_collateral_type_mapping,
 )
+from rotkehlchen.chain.evm.types import Web3Node
 from rotkehlchen.constants.assets import A_BAT, A_DAI, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.tests.utils.blockchain import get_web3_from_inquirer, set_web3_in_inquirer
+from rotkehlchen.tests.utils.blockchain import (
+    get_web3_node_from_inquirer,
+    set_web3_node_in_inquirer,
+)
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.makerdao import VaultTestData, create_web3_mock
 
@@ -92,9 +96,12 @@ def fixture_makerdao_vaults(
         makerdao_test_data,
 ):
     if not use_etherscan:
-        set_web3_in_inquirer(ethereum_inquirer, Web3())
-        web3_instance = get_web3_from_inquirer(ethereum_inquirer)
-        web3_patch = create_web3_mock(web3=web3_instance, ethereum=ethereum_inquirer, test_data=makerdao_test_data)  # noqa: E501
+        set_web3_node_in_inquirer(
+            ethereum_inquirer=ethereum_inquirer,
+            web3node=Web3Node(web3_instance=Web3(), is_pruned=False, is_archive=True),
+        )
+        web3_node = get_web3_node_from_inquirer(ethereum_inquirer)
+        web3_patch = create_web3_mock(web3=web3_node.web3_instance, ethereum=ethereum_inquirer, test_data=makerdao_test_data)  # noqa: E501
     else:
         web3_patch = nullcontext()
 
@@ -115,8 +122,8 @@ def fixture_makerdao_vaults(
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('mocked_proxies', [{}])
 def test_get_vaults(makerdao_vaults, makerdao_test_data, ethereum_inquirer):
-    web3_instance = get_web3_from_inquirer(makerdao_vaults.ethereum)
-    web3_patch = create_web3_mock(web3=web3_instance, ethereum=ethereum_inquirer, test_data=makerdao_test_data)  # noqa: E501
+    web3_node = get_web3_node_from_inquirer(makerdao_vaults.ethereum)
+    web3_patch = create_web3_mock(web3=web3_node.web3_instance, ethereum=ethereum_inquirer, test_data=makerdao_test_data)  # noqa: E501
     with web3_patch:
         vaults = makerdao_vaults.get_vaults()
 

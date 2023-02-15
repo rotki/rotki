@@ -1,4 +1,5 @@
 from unittest.mock import patch
+
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
