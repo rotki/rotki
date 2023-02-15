@@ -7,7 +7,7 @@ from web3._utils.abi import get_abi_input_types, get_abi_output_types
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
-from rotkehlchen.chain.evm.types import NodeName
+from rotkehlchen.chain.evm.types import NodeName, Web3Node
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
@@ -581,8 +581,8 @@ def compare_account_data(expected: list[dict], got: list[dict]) -> None:
         assert found, msg
 
 
-def get_web3_from_inquirer(ethereum_inquirer: 'EthereumInquirer') -> Web3:
-    """Util function to simplify getting the testing web3 object from an ethereum inquirer"""
+def get_web3_node_from_inquirer(ethereum_inquirer: 'EthereumInquirer') -> Web3Node:
+    """Util function to simplify getting the testing web3 node object from an ethereum inquirer"""
     node_name = NodeName(
         name='own',
         endpoint='bla',
@@ -592,15 +592,15 @@ def get_web3_from_inquirer(ethereum_inquirer: 'EthereumInquirer') -> Web3:
     return ethereum_inquirer.web3_mapping[node_name]
 
 
-def set_web3_in_inquirer(ethereum_inquirer: 'EthereumInquirer', web3: Web3) -> None:
-    """Util function to simplify setting the testing web3 object from an ethereum inquirer"""
+def set_web3_node_in_inquirer(ethereum_inquirer: 'EthereumInquirer', web3node: Web3Node) -> None:
+    """Util function to simplify setting the testing web3 node object from an ethereum inquirer"""
     node_name = NodeName(
         name='own',
         endpoint='bla',
         owned=True,
         blockchain=SupportedBlockchain.ETHEREUM,
     )
-    ethereum_inquirer.web3_mapping[node_name] = web3
+    ethereum_inquirer.web3_mapping[node_name] = web3node
 
 
 def setup_filter_active_evm_addresses_mock(

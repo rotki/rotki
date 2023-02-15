@@ -9,6 +9,7 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_FULL_TEST_PARAMETERS,
+    ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED,
     ETHEREUM_TEST_PARAMETERS,
     wait_until_all_nodes_connected,
 )
@@ -305,3 +306,22 @@ def test_get_blocknumber_by_time_subgraph(ethereum_inquirer):
 def test_get_blocknumber_by_time_etherscan(ethereum_inquirer):
     """Queries etherscan for known block times"""
     _test_get_blocknumber_by_time(ethereum_inquirer, True)
+
+
+@pytest.mark.parametrize(*ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
+def test_ethereum_nodes_prune_and_archive_status(
+        ethereum_inquirer,
+        ethereum_manager_connect_at_start,
+):
+    """Checks that connecting to a set of ethereum nodes, the capabilities of those nodes are known and stored."""  # noqa: E501
+    wait_until_all_nodes_connected(
+        connect_at_start=ethereum_manager_connect_at_start,
+        evm_inquirer=ethereum_inquirer,
+    )
+    for node_name, web3_node in ethereum_inquirer.web3_mapping.items():
+        if node_name.endpoint == 'https://ethereum.publicnode.com':
+            assert web3_node.is_pruned
+            assert not web3_node.is_archive
+        else:
+            assert not web3_node.is_pruned
+            assert web3_node.is_archive

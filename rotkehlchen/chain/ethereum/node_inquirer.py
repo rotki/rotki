@@ -10,9 +10,16 @@ from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
 from eth_typing import BlockNumber, HexStr
 from web3 import Web3
+from web3.exceptions import TransactionNotFound
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
-from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
+from rotkehlchen.chain.ethereum.constants import (
+    ARCHIVE_NODE_CHECK_ADDRESS,
+    ARCHIVE_NODE_CHECK_BLOCK,
+    ARCHIVE_NODE_CHECK_EXPECTED_BALANCE,
+    ETHEREUM_ETHERSCAN_NODE,
+    PRUNED_NODE_CHECK_TX_HASH,
+)
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.curve.pools_cache import (
     ensure_curve_tokens_existence,
@@ -22,10 +29,13 @@ from rotkehlchen.chain.ethereum.modules.curve.pools_cache import (
 )
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import WEB3_LOGQUERY_BLOCK_RANGE, EvmNodeInquirer
-from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.errors.misc import InputError, RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors.misc import (
+    BlockchainQueryError,
+    InputError,
+    RemoteError,
+    UnableToDecryptRemoteData,
+)
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -281,17 +291,26 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
 
         return BlockNumber(block_number)
 
-    def have_archive(self, requery: bool = False) -> bool:
-        if self.queried_archive_connection and requery is False:
-            return self.archive_connection
+    def _is_pruned(self, web3: Web3) -> bool:
+        try:
+            tx = web3.eth.get_transaction(PRUNED_NODE_CHECK_TX_HASH)  # type: ignore
+        except (
+            requests.exceptions.RequestException,
+            TransactionNotFound,
+            BlockchainQueryError,
+            KeyError,
+        ):
+            tx = None
 
+        return tx is None
+
+    def _have_archive(self, web3: Web3) -> bool:
         balance = self.get_historical_balance(
-            address=string_to_evm_address('0x50532e4Be195D1dE0c2E6DfA46D9ec0a4Fee6861'),
-            block_number=87042,
+            address=ARCHIVE_NODE_CHECK_ADDRESS,
+            block_number=ARCHIVE_NODE_CHECK_BLOCK,
+            web3=web3,
         )
-        self.archive_connection = balance is not None and balance == FVal('5.1063307')
-        self.queried_archive_connection = True
-        return self.archive_connection
+        return balance == ARCHIVE_NODE_CHECK_EXPECTED_BALANCE
 
     def _get_blocknumber_by_time_from_subgraph(self, ts: Timestamp) -> int:
         """Queries Ethereum Blocks Subgraph for closest block at or before given timestamp"""

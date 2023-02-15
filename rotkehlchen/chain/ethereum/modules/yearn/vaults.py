@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from gevent.lock import Semaphore
@@ -78,6 +79,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
     YEARN_VAULTS_V2_PROTOCOL,
@@ -101,6 +103,9 @@ if TYPE_CHECKING:
     )
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class YearnVaultHistory(NamedTuple):
@@ -472,16 +477,16 @@ class YearnVaults(EthereumModule):
             tx_receipt = self.ethereum.get_transaction_receipt(tx_hash)
             deposit_index = deposit_event['logIndex']
             mint_amount = None
-            for log in tx_receipt['logs']:
+            for tx_log in tx_receipt['logs']:
                 found_event = (
-                    log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef' and  # noqa: E501
-                    log['topics'][1] == address_to_bytes32(ZERO_ADDRESS) and
-                    log['topics'][2] == address_to_bytes32(address)
+                    tx_log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef' and  # noqa: E501
+                    tx_log['topics'][1] == address_to_bytes32(ZERO_ADDRESS) and
+                    tx_log['topics'][2] == address_to_bytes32(address)
                 )
                 if found_event:
                     # found the mint log
                     mint_amount = token_normalized_value(
-                        token_amount=hexstr_to_int(log['data']),
+                        token_amount=hexstr_to_int(tx_log['data']),
                         token=vault.token,
                     )
 
@@ -558,16 +563,16 @@ class YearnVaults(EthereumModule):
             tx_receipt = self.ethereum.get_transaction_receipt(tx_hash)
             withdraw_index = withdraw_event['logIndex']
             burn_amount = None
-            for log in tx_receipt['logs']:
+            for tx_log in tx_receipt['logs']:
                 found_event = (
-                    log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef' and  # noqa: E501
-                    log['topics'][1] == address_to_bytes32(address) and
-                    log['topics'][2] == address_to_bytes32(ZERO_ADDRESS)
+                    tx_log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef' and  # noqa: E501
+                    tx_log['topics'][1] == address_to_bytes32(address) and
+                    tx_log['topics'][2] == address_to_bytes32(ZERO_ADDRESS)
                 )
                 if found_event:
                     # found the burn log
                     burn_amount = token_normalized_value(
-                        token_amount=hexstr_to_int(log['data']),
+                        token_amount=hexstr_to_int(tx_log['data']),
                         token=vault.token,
                     )
 

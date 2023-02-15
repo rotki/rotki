@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Literal, NamedTuple, Optional
 
 from eth_typing import HexAddress, HexStr
+from web3 import Web3
 
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChecksumEvmAddress, SupportedBlockchain
@@ -84,3 +85,10 @@ class WeightedNode:
 class EvmAccount(NamedTuple):
     address: ChecksumEvmAddress
     chain_id: Optional[SUPPORTED_CHAIN_IDS] = None
+
+
+class Web3Node(NamedTuple):
+    """This represents an EVM node with its capabilities."""
+    web3_instance: Web3
+    is_pruned: bool
+    is_archive: bool
