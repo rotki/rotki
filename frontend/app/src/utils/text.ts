@@ -6,7 +6,9 @@
  * toSentenceCase('this is a sentence'); // This is a sentence
  */
 export const toSentenceCase = (string: string): string => {
-  if (!string) return '';
+  if (!string) {
+    return '';
+  }
   return string[0].toUpperCase() + string.slice(1);
 };
 
@@ -126,16 +128,22 @@ export const pluralizeLastWord = (sentence: string): string => {
 };
 
 export const sanitizeAddress = (address?: string): string => {
-  if (!address) return '';
+  if (!address) {
+    return '';
+  }
   return address.replace(/[^\da-z]+/gi, '');
 };
 
 export const isValidEthAddress = (address?: string): boolean => {
-  if (!address) return false;
+  if (!address) {
+    return false;
+  }
   return !!address.match(/^0x[\dA-Fa-f]{40}$/);
 };
 
 export const isValidTxHash = (address?: string): boolean => {
-  if (!address) return false;
+  if (!address) {
+    return false;
+  }
   return !!address.match(/^0x[\dA-Fa-f]{64}$/);
 };

@@ -35,7 +35,9 @@ export const useAccountMigrationStore = defineStore(
       const addresses: Record<string, string[]> = {};
       const migrated: MigratedAddresses | null = get(migratedAddresses);
 
-      if (migrated === null || migrated.length === 0) return;
+      if (migrated === null || migrated.length === 0) {
+        return;
+      }
 
       migrated.forEach(({ address, evmChain }) => {
         if (tokenChains.includes(evmChain)) {

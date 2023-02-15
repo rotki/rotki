@@ -20,7 +20,9 @@ export function changeDateFormat(
   fromFormat: DateFormat,
   toFormat: DateFormat
 ): string {
-  if (!date) return '';
+  if (!date) {
+    return '';
+  }
 
   const seconds = date.charAt(date.length - 6) === ':';
   const timestamp = convertToTimestamp(date, fromFormat);
@@ -66,7 +68,9 @@ export function convertDateByTimezone(
   fromTimezone: string,
   toTimezone: string
 ): string {
-  if (!date) return date;
+  if (!date) {
+    return date;
+  }
 
   fromTimezone = fromTimezone || dayjs.tz.guess();
   toTimezone = toTimezone || dayjs.tz.guess();
@@ -83,7 +87,9 @@ export function convertDateByTimezone(
 }
 
 export function isValidDate(date: string, dateFormat: string): boolean {
-  if (!date) return false;
+  if (!date) {
+    return false;
+  }
   return dayjs(date, dateFormat, true).isValid();
 }
 

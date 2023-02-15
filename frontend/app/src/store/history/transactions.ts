@@ -299,7 +299,9 @@ export const useTransactionStore = defineStore('history/transactions', () => {
         evmChain: chain.evmChainName
       }));
     } else {
-      if (transactions.length === 0) return;
+      if (transactions.length === 0) {
+        return;
+      }
 
       payloads = Object.entries(groupBy(transactions, 'evmChain')).map(
         ([evmChain, item]) => ({

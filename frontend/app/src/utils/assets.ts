@@ -63,8 +63,12 @@ export const compareSymbols = (
   const keywordA = a.toLocaleLowerCase().trim();
   const keywordB = b.toLocaleLowerCase().trim();
 
-  if (keywordA === search) return -1;
-  if (keywordB === search) return 1;
+  if (keywordA === search) {
+    return -1;
+  }
+  if (keywordB === search) {
+    return 1;
+  }
 
   let rankA = levenshtein(search, keywordA);
   let rankB = levenshtein(search, keywordB);
@@ -123,12 +127,16 @@ export const getSortItems = (
 };
 
 export const isEvmIdentifier = (identifier?: string): boolean => {
-  if (!identifier) return false;
+  if (!identifier) {
+    return false;
+  }
   return identifier.startsWith('eip155');
 };
 
 export const getAddressFromEvmIdentifier = (identifier?: string): string => {
-  if (!identifier) return '';
+  if (!identifier) {
+    return '';
+  }
   return identifier.split(':')[2] ?? '';
 };
 

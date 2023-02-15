@@ -146,7 +146,9 @@ export const useAssetMovements = defineStore('history/asset-movements', () => {
 
       setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
 
-      if (!onlyLocation) await fetchOnlyCache();
+      if (!onlyLocation) {
+        await fetchOnlyCache();
+      }
 
       if (!onlyCache || onlyLocation) {
         setStatus(Status.REFRESHING);
@@ -179,7 +181,9 @@ export const useAssetMovements = defineStore('history/asset-movements', () => {
           })
         );
 
-        if (!onlyLocation) await fetchOnlyCache();
+        if (!onlyLocation) {
+          await fetchOnlyCache();
+        }
       }
 
       setStatus(

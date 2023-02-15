@@ -31,7 +31,7 @@ module.exports = defineConfig({
     '!.vitepress',
     '!.vscode'
   ],
-  plugins: ['import', 'html', 'unicorn'],
+  plugins: ['import', 'html', 'unicorn', 'unused-imports'],
   settings: {
     'import/resolver': {
       node: { extensions: ['.js', '.mjs', '.ts', '.d.ts'] }
@@ -119,6 +119,8 @@ module.exports = defineConfig({
         '@typescript-eslint/no-unused-vars': 'off',
         '@typescript-eslint/no-use-before-define': 'off',
         '@typescript-eslint/no-var-requires': 'off',
+        'unused-imports/no-unused-imports': 'off',
+        'unused-imports/no-unused-vars': 'off',
         'no-alert': 'off',
         'no-console': 'off',
         'no-restricted-imports': 'off',
@@ -174,6 +176,17 @@ module.exports = defineConfig({
         ignoreMemberSort: false,
         memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
         allowSeparatedGroups: false
+      }
+    ],
+    'unused-imports/no-unused-imports': 'error',
+    'unused-imports/no-unused-vars': [
+      'warn',
+      {
+        vars: 'all',
+        varsIgnorePattern: '^_',
+        args: 'after-used',
+        argsIgnorePattern: '^_',
+        ignoreRestSiblings: true
       }
     ],
 
@@ -267,6 +280,9 @@ module.exports = defineConfig({
     'jsonc/quote-props': 'off',
     'jsonc/quotes': 'off',
 
-    'yml/no-empty-mapping-value': 'off'
+    'yml/no-empty-mapping-value': 'off',
+
+    // extras
+    curly: 'error'
   }
 });

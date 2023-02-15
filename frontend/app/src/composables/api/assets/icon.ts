@@ -11,7 +11,9 @@ export const useAssetIconApi = () => {
       api.instance.defaults.baseURL
     }assets/icon?asset=${encodeURIComponent(identifier)}`;
 
-    if (randomString) url += `&t=${randomString}`;
+    if (randomString) {
+      url += `&t=${randomString}`;
+    }
 
     return url;
   };

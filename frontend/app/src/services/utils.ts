@@ -39,7 +39,9 @@ export const fetchExternalAsync = async (
 export function paramsSerializer(params: Record<string, any>): string {
   const list = [];
   for (const [key, value] of Object.entries(params)) {
-    if (value === null || value === undefined) continue;
+    if (value === null || value === undefined) {
+      continue;
+    }
 
     if (Array.isArray(value)) {
       list.push(`${key}=${value.join(',')}`);

@@ -61,13 +61,17 @@ export const useAddressesNamesStore = defineStore('addresses', () => {
     addresses: string[],
     forceUpdate = false
   ): Promise<void> => {
-    if (addresses.length === 0) return;
+    if (addresses.length === 0) {
+      return;
+    }
 
     const filteredAddresses = addresses
       .filter(uniqueStrings)
       .filter(isValidEthAddress);
 
-    if (filteredAddresses.length === 0) return;
+    if (filteredAddresses.length === 0) {
+      return;
+    }
 
     if (forceUpdate) {
       const taskType = TaskType.FETCH_ENS_NAMES;
@@ -107,7 +111,9 @@ export const useAddressesNamesStore = defineStore('addresses', () => {
     let payload: AddressBookSimplePayload[];
 
     if (addresses !== null && blockchain !== undefined) {
-      if (!get(isEvm(blockchain))) return;
+      if (!get(isEvm(blockchain))) {
+        return;
+      }
 
       payload = addresses.map(address => ({ address, blockchain }));
       addFetchedEntries(payload);
@@ -149,7 +155,9 @@ export const useAddressesNamesStore = defineStore('addresses', () => {
     blockchain: MaybeRef<Chains> = Blockchain.ETH
   ) =>
     computed<string | null>(() => {
-      if (!get(enableAliasNames)) return null;
+      if (!get(enableAliasNames)) {
+        return null;
+      }
 
       let chain = get(blockchain);
       if (!isBlockchain(chain)) {
@@ -162,8 +170,12 @@ export const useAddressesNamesStore = defineStore('addresses', () => {
           (item.blockchain === chain || item.blockchain === null)
       );
 
-      if (found.length === 0) return null;
-      if (found.length === 1) return found[0].name;
+      if (found.length === 0) {
+        return null;
+      }
+      if (found.length === 1) {
+        return found[0].name;
+      }
 
       return found.find(item => item.blockchain !== null)?.name ?? null;
     });

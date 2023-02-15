@@ -111,7 +111,7 @@ export default Vue.extend({
 
     // add fragment attribute on the children
     const fragment = this.$props.name;
-    if (children && children.length > 0)
+    if (children && children.length > 0) {
       children.forEach(
         child =>
           (child.data = {
@@ -119,6 +119,7 @@ export default Vue.extend({
             attrs: { fragment, ...(child.data || {}).attrs }
           })
       );
+    }
 
     return h('div', { attrs: { fragment } }, children);
   }

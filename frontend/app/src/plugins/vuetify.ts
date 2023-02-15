@@ -20,8 +20,12 @@ VSwitch.options.props.inset.default = true;
 
 // Fix scroll error issue on VOverlay
 const newShouldScroll = (el: Element, e: WheelEvent): boolean => {
-  if (el.tagName === 'BODY' || el.tagName === 'HTML') return false;
-  if (el.hasAttribute('data-app')) return false;
+  if (el.tagName === 'BODY' || el.tagName === 'HTML') {
+    return false;
+  }
+  if (el.hasAttribute('data-app')) {
+    return false;
+  }
 
   const dir = e.shiftKey || e.deltaX ? 'x' : 'y';
   const delta = dir === 'y' ? e.deltaY : e.deltaX || e.deltaY;
@@ -39,8 +43,12 @@ const newShouldScroll = (el: Element, e: WheelEvent): boolean => {
   const scrollingUp = delta < 0;
   const scrollingDown = delta > 0;
 
-  if (!alreadyAtStart && scrollingUp) return true;
-  if (!alreadyAtEnd && scrollingDown) return true;
+  if (!alreadyAtStart && scrollingUp) {
+    return true;
+  }
+  if (!alreadyAtEnd && scrollingDown) {
+    return true;
+  }
   if (alreadyAtStart || alreadyAtEnd) {
     return newShouldScroll(el.parentNode as Element, e);
   }

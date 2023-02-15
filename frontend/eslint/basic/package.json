@@ -19,6 +19,7 @@
     "eslint-plugin-jsonc": "2.5.0",
     "eslint-plugin-markdown": "3.0.0",
     "eslint-plugin-unicorn": "45.0.2",
+    "eslint-plugin-unused-imports": "2.0.0",
     "eslint-plugin-yml": "1.4.0"
   },
   "devDependencies": {
