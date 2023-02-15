@@ -129,7 +129,9 @@ export const useTradeStore = defineStore('history/trades', () => {
 
       setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
 
-      if (!onlyLocation) await fetchOnlyCache();
+      if (!onlyLocation) {
+        await fetchOnlyCache();
+      }
 
       if (!onlyCache || onlyLocation) {
         const locations = onlyLocation
@@ -156,7 +158,9 @@ export const useTradeStore = defineStore('history/trades', () => {
           );
         }
 
-        if (!onlyLocation) await fetchOnlyCache();
+        if (!onlyLocation) {
+          await fetchOnlyCache();
+        }
       }
 
       setStatus(

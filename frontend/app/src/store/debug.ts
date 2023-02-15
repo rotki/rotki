@@ -37,7 +37,9 @@ const storage = sessionStorage;
 
 const getState = (key: string) => {
   const items = storage.getItem(key);
-  if (!items) return null;
+  if (!items) {
+    return null;
+  }
 
   return JSON.parse(items, (key1, value) => {
     if (typeof value === 'string' && value.startsWith('bn::')) {

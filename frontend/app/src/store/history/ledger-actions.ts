@@ -133,7 +133,9 @@ export const useLedgerActionStore = defineStore(
 
         setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
 
-        if (!onlyLocation) await fetchOnlyCache();
+        if (!onlyLocation) {
+          await fetchOnlyCache();
+        }
 
         if (!onlyCache || onlyLocation) {
           setStatus(Status.REFRESHING);
@@ -161,7 +163,9 @@ export const useLedgerActionStore = defineStore(
             });
           });
 
-          if (!onlyLocation) await fetchOnlyCache();
+          if (!onlyLocation) {
+            await fetchOnlyCache();
+          }
         }
 
         setStatus(

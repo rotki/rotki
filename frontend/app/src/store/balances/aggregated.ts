@@ -66,13 +66,17 @@ export const useAggregatedBalancesStore = defineStore(
         const liabilitiesAsset = get(liabilities(hideIgnored)).map(
           ({ asset }) => {
             const samePrices = samePriceAssets[asset];
-            if (samePrices) additional.push(...samePrices);
+            if (samePrices) {
+              additional.push(...samePrices);
+            }
             return asset;
           }
         );
         const assets = get(balances(hideIgnored)).map(({ asset }) => {
           const samePrices = samePriceAssets[asset];
-          if (samePrices) additional.push(...samePrices);
+          if (samePrices) {
+            additional.push(...samePrices);
+          }
           return asset;
         });
 

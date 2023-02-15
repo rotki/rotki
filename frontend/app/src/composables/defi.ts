@@ -103,7 +103,9 @@ export const useLiquidityPosition = () => {
 
     const selected = data.find(({ identifier }) => identifier === get(type));
 
-    if (!selected) return concatAssets(assets);
+    if (!selected) {
+      return concatAssets(assets);
+    }
 
     return selected.name(get(assets));
   };

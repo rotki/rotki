@@ -196,7 +196,9 @@ export const useEthAccountsStore = defineStore(
             eth2Validator.publicKey === publicKey
         );
 
-        if (!validator) return undefined;
+        if (!validator) {
+          return undefined;
+        }
 
         return {
           address: validator.publicKey,

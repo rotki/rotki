@@ -19,7 +19,9 @@ export const useSupportedChains = createSharedComposable(() => {
 
   const supportedChains: Ref<SupportedChains> = asyncComputed<SupportedChains>(
     () => {
-      if (get(connected)) return fetchSupportedChains();
+      if (get(connected)) {
+        return fetchSupportedChains();
+      }
       return [];
     },
     [],

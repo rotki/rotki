@@ -98,7 +98,9 @@ export const useTaskStore = defineStore('tasks', () => {
       return !!find(get(tasks), item => {
         const sameType = item.type === type;
         const keys = Object.keys(meta);
-        if (keys.length === 0) return sameType;
+        if (keys.length === 0) {
+          return sameType;
+        }
 
         return (
           sameType &&

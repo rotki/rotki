@@ -16,7 +16,9 @@ export const useBlockie = createSharedComposable(() => {
   };
 
   const getBlockie = (address: string | null = '') => {
-    if (!address) return '';
+    if (!address) {
+      return '';
+    }
 
     const formatted = address.toLowerCase();
 

@@ -28,7 +28,9 @@ import {
 export const removeZeroAssets = (entries: AssetBalances): AssetBalances => {
   const balances = { ...entries };
   for (const asset in entries) {
-    if (balances[asset].amount.isZero()) delete balances[asset];
+    if (balances[asset].amount.isZero()) {
+      delete balances[asset];
+    }
   }
   return balances;
 };
@@ -116,8 +118,9 @@ const toSortedAndGroupedArray = <T extends Balance>(
     .filter(asset => !isIgnored(asset))
     .map(map);
 
-  if (!groupMultiChain)
+  if (!groupMultiChain) {
     return data.sort((a, b) => sortDesc(a.usdValue, b.usdValue));
+  }
 
   const groupedBalances = groupBy(data, balance => {
     const info = get(assetInfo(balance.asset));

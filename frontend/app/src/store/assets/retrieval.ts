@@ -47,7 +47,9 @@ export const useAssetInfoRetrievalStore = defineStore('assets/info', () => {
   ): ComputedRef<AssetInfo | null> =>
     computed(() => {
       const id = get(identifier);
-      if (!id) return null;
+      if (!id) {
+        return null;
+      }
 
       if (get(isPending(id))) {
         return null;
@@ -94,10 +96,14 @@ export const useAssetInfoRetrievalStore = defineStore('assets/info', () => {
   ): ComputedRef<string> =>
     computed(() => {
       const id = get(identifier);
-      if (!id) return '';
+      if (!id) {
+        return '';
+      }
 
       const symbol = get(assetInfo(id, enableAssociation))?.symbol;
-      if (symbol) return symbol;
+      if (symbol) {
+        return symbol;
+      }
 
       return '';
     });
@@ -108,10 +114,14 @@ export const useAssetInfoRetrievalStore = defineStore('assets/info', () => {
   ): ComputedRef<string> =>
     computed(() => {
       const id = get(identifier);
-      if (!id) return '';
+      if (!id) {
+        return '';
+      }
 
       const name = get(assetInfo(id, enableAssociation))?.name;
-      if (name) return name;
+      if (name) {
+        return name;
+      }
 
       return '';
     });
@@ -122,7 +132,9 @@ export const useAssetInfoRetrievalStore = defineStore('assets/info', () => {
   ): ComputedRef<string> =>
     computed(() => {
       const id = get(identifier);
-      if (!id) return '';
+      if (!id) {
+        return '';
+      }
 
       const key = get(enableAssociation)
         ? get(getAssociatedAssetIdentifier(id))

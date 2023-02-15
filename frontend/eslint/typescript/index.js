@@ -114,15 +114,8 @@ module.exports = defineConfig({
     'import/named': 'off',
 
     'no-unused-vars': 'off',
-    '@typescript-eslint/no-unused-vars': [
-      'error',
-      {
-        vars: 'all',
-        args: 'after-used',
-        ignoreRestSiblings: true,
-        argsIgnorePattern: '^_'
-      }
-    ],
+    // handled by unused-imports/no-unused-imports
+    '@typescript-eslint/no-unused-vars': 'off',
     'no-redeclare': 'off',
     '@typescript-eslint/no-redeclare': 'off',
 
