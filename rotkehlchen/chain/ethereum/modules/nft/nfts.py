@@ -379,11 +379,10 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
     def _filter_ignored_nfts(self, nfts_data: dict[ChecksumEvmAddress, list[NFT]]) -> dict[ChecksumEvmAddress, list[NFT]]:  # noqa: E501
         """Remove ignored NFTs from NFTs data."""
         with self.db.conn.read_ctx() as cursor:
-            # convert to set to allow O(1) during `in` conditional below.
-            ignored_nfts = set(self.db.get_ignored_assets(cursor=cursor, only_nfts=True))
+            ignored_nft_ids = self.db.get_ignored_asset_ids(cursor=cursor, only_nfts=True)
 
         for address, nfts in nfts_data.items():
-            nfts_data[address] = [x for x in nfts if x.token_identifier not in ignored_nfts]
+            nfts_data[address] = [x for x in nfts if x.token_identifier not in ignored_nft_ids]
 
         return nfts_data
 

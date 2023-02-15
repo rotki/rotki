@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.tokens import EvmTokens
+from rotkehlchen.chain.evm.types import asset_id_is_evm_token
 from rotkehlchen.constants.assets import A_OPTIMISM_ETH
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
@@ -20,11 +20,11 @@ class OptimismTokens(EvmTokens):
     def _get_token_exceptions(self) -> list[ChecksumEvmAddress]:
         exceptions = [A_OPTIMISM_ETH.resolve_to_evm_token().evm_address]
         with self.db.conn.read_ctx() as cursor:
-            ignored_assets = self.db.get_ignored_assets(cursor=cursor)
+            ignored_asset_ids = self.db.get_ignored_asset_ids(cursor=cursor)
 
         # TODO: Shouldn't this query be filtered in the DB?
-        for asset in ignored_assets:  # don't query for the ignored tokens
-            if asset.is_evm_token() and asset.resolve_to_evm_token().chain_id == ChainID.OPTIMISM:
-                exceptions.append(EvmToken(asset.identifier).evm_address)
+        for asset_id in ignored_asset_ids:  # don't query for the ignored tokens
+            if (evm_details := asset_id_is_evm_token(asset_id)) is not None and evm_details[0] == ChainID.OPTIMISM:  # noqa: E501
+                exceptions.append(evm_details[1])
 
         return exceptions

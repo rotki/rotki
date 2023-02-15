@@ -640,12 +640,9 @@ class DBHandler:
             (asset.identifier,),
         )
 
-    def get_ignored_assets(self, cursor: 'DBCursor', only_nfts: bool = False) -> list[Asset]:
-        """
-        Retrieve all ignored assets.
-        If `only_nfts` is True, only ignored nfts are returned.
-        """
-        assets = []
+    @staticmethod
+    def _get_ignored_asset_ids(cursor: 'DBCursor', only_nfts: bool = False) -> None:
+        """Executes a DB query to get the ignored asset identifiers. Modifies the cursor"""
         bindings = []
         query = 'SELECT value FROM multisettings WHERE name="ignored_asset" '
         if only_nfts is True:
@@ -653,25 +650,14 @@ class DBHandler:
             bindings.append(f'{NFT_DIRECTIVE}%')
         cursor.execute(query, bindings)
 
-        for asset_setting in cursor:
-            try:
-                asset = Asset(asset_setting[0]).check_existence()
-            except UnknownAsset:
-                msg = (
-                    f'Found unknown asset {asset_setting[0]} in the list of ignored '
-                    f'assets. Removing it.'
-                )
-                with self.user_write() as write_cursor:
-                    write_cursor.execute(
-                        'DELETE FROM multisettings WHERE name="ignored_asset" AND value=?;',
-                        (asset_setting[0],),
-                    )
-                self.msg_aggregator.add_warning(msg)
-                continue
+    def get_ignored_asset_ids(self, cursor: 'DBCursor', only_nfts: bool = False) -> set[str]:
+        """Gets the ignored asset ids without converting each one of them to an asset object
 
-            assets.append(asset)
-
-        return assets
+        We used to have a heavier version which converted them to an asset but removed
+        it due to unnecessary roundtrips to the global DB for each asset initialization
+        """
+        self._get_ignored_asset_ids(cursor, only_nfts)
+        return {x[0] for x in cursor}
 
     def add_to_ignored_action_ids(
             self,
@@ -1197,7 +1183,7 @@ class DBHandler:
 
         If not, or if there is no saved entry, return None.
         """
-        ignored_assets = self.get_ignored_assets(cursor)
+        ignored_asset_ids = self.get_ignored_asset_ids(cursor)
         last_queried_ts = None
         cursor.execute(
             'SELECT key, value FROM evm_accounts_details WHERE account=? AND chain_id=? AND (key=? OR key=?)',  # noqa: E501
@@ -1227,7 +1213,7 @@ class DBHandler:
                     )
                     continue
 
-                if token not in ignored_assets:
+                if token.identifier not in ignored_asset_ids:
                     returned_list.append(token)
 
         if len(returned_list) == 0 and last_queried_ts is None:
@@ -2525,7 +2511,7 @@ class DBHandler:
         The list is sorted by usd value going from higher to lower
         """
         with self.conn.read_ctx() as cursor:
-            ignored_assets = self.get_ignored_assets(cursor)
+            ignored_asset_ids = self.get_ignored_asset_ids(cursor)
             treat_eth2_as_eth = self.get_settings(cursor).treat_eth2_as_eth
             cursor.execute(
                 'SELECT timestamp, currency, amount, usd_value, category FROM timed_balances '
@@ -2546,7 +2532,7 @@ class DBHandler:
                 time = Timestamp(result[0])
                 amount = FVal(result[2])
                 usd_value = FVal(result[3])
-                if asset in ignored_assets:
+                if asset.identifier in ignored_asset_ids:
                     continue
                 # show eth & eth2 as eth in value distribution by asset
                 if treat_eth2_as_eth is True and asset in (A_ETH, A_ETH2):

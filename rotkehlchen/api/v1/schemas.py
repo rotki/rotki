@@ -1877,18 +1877,12 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        with self.db.user_write() as write_cursor, GlobalDBHandler().conn.read_ctx() as globaldb_read_cursor:  # noqa: E501
-            ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], list[str]]] = None  # noqa: E501
+        with self.db.conn.read_ctx() as cursor, GlobalDBHandler().conn.read_ctx() as globaldb_read_cursor:  # noqa: E501
+            ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], set[str]]] = None  # noqa: E501
             if data['ignored_assets_handling'] == IgnoredAssetsHandling.EXCLUDE:
-                ignored_assets_filter_params = (
-                    'NOT IN',
-                    [asset.identifier for asset in self.db.get_ignored_assets(write_cursor)],
-                )
+                ignored_assets_filter_params = ('NOT IN', self.db.get_ignored_asset_ids(cursor))
             elif data['ignored_assets_handling'] == IgnoredAssetsHandling.SHOW_ONLY:
-                ignored_assets_filter_params = (
-                    'IN',
-                    [asset.identifier for asset in self.db.get_ignored_assets(write_cursor)],
-                )
+                ignored_assets_filter_params = ('IN', self.db.get_ignored_asset_ids(cursor))
 
             if data['show_user_owned_assets_only'] is True:
                 globaldb_read_cursor.execute('SELECT asset_id FROM user_owned_assets;')
@@ -1919,16 +1913,25 @@ class AssetsSearchLevenshteinSchema(Schema):
     limit = fields.Integer(required=True)
     search_nfts = fields.Boolean(load_default=False)
 
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__()
+        self.db = db
+
     @post_load
     def make_levenshtein_search_query(  # pylint: disable=no-self-use
             self,
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
+        ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], set[str]]] = None
+        with self.db.conn.read_ctx() as cursor:
+            # do not check ignored asssets at search
+            ignored_assets_filter_params = ('NOT IN', self.db.get_ignored_asset_ids(cursor))
         filter_query = LevenshteinFilterQuery.make(
             and_op=True,
             substring_search=data['value'].strip().casefold(),
             chain_id=data['evm_chain'],
+            ignored_assets_filter_params=ignored_assets_filter_params,
         )
         return {
             'filter_query': filter_query,
@@ -1946,12 +1949,20 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
     evm_chain = EvmChainNameField(load_default=None)
     return_exact_matches = fields.Boolean(load_default=False)
 
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__()
+        self.db = db
+
     @post_load
     def make_assets_search_query(  # pylint: disable=no-self-use
             self,
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
+        ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], set[str]]] = None
+        with self.db.conn.read_ctx() as cursor:
+            # do not check ignored asssets at search
+            ignored_assets_filter_params = ('NOT IN', self.db.get_ignored_asset_ids(cursor))
         filter_query = AssetsFilterQuery.make(
             and_op=True,
             order_by_rules=create_order_by_rules_list(data=data, default_order_by_field='name'),
@@ -1961,6 +1972,8 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
             search_column=data['search_column'],
             return_exact_matches=data['return_exact_matches'],
             chain_id=data['evm_chain'],
+            identifier_column_name='assets.identifier',
+            ignored_assets_filter_params=ignored_assets_filter_params,
         )
         return {'filter_query': filter_query}
 
@@ -2832,18 +2845,12 @@ class NFTFilterQuerySchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], list[str]]] = None  # noqa: E501
+        ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], set[str]]] = None  # noqa: E501
         with self.db.conn.read_ctx() as cursor:
             if data['ignored_assets_handling'] == IgnoredAssetsHandling.EXCLUDE:
-                ignored_assets_filter_params = (
-                    'NOT IN',
-                    [asset.identifier for asset in self.db.get_ignored_assets(cursor)],
-                )
+                ignored_assets_filter_params = ('NOT IN', self.db.get_ignored_asset_ids(cursor))
             elif data['ignored_assets_handling'] == IgnoredAssetsHandling.SHOW_ONLY:
-                ignored_assets_filter_params = (
-                    'IN',
-                    [asset.identifier for asset in self.db.get_ignored_assets(cursor)],
-                )
+                ignored_assets_filter_params = ('IN', self.db.get_ignored_asset_ids(cursor))
 
         filter_query = NFTFilterQuery.make(
             order_by_rules=create_order_by_rules_list(

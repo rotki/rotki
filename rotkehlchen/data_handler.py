@@ -132,16 +132,18 @@ class DataHandler():
         self.password = password
         return user_data_dir
 
-    def add_ignored_assets(self, assets: list[Asset]) -> tuple[Optional[list[Asset]], str]:
+    def add_ignored_assets(self, assets: list[Asset]) -> tuple[Optional[set[str]], str]:
         """Adds ignored assets to the DB.
 
         If any of the given assets is already in the DB the function does nothing
         and returns an error message.
+
+        Returns the ignored asset identifiers after addition for success and `None`, msg for error
         """
         with self.db.conn.read_ctx() as cursor:
-            ignored_assets = self.db.get_ignored_assets(cursor)
+            ignored_asset_ids = self.db.get_ignored_asset_ids(cursor)
             for asset in assets:
-                if asset in ignored_assets:
+                if asset.identifier in ignored_asset_ids:
                     msg = f'{asset.identifier} is already in ignored assets'
                     return None, msg
 
@@ -149,18 +151,20 @@ class DataHandler():
                 for asset in assets:
                     self.db.add_to_ignored_assets(write_cursor=write_cursor, asset=asset)
 
-            return self.db.get_ignored_assets(cursor), ''
+            return self.db.get_ignored_asset_ids(cursor), ''
 
-    def remove_ignored_assets(self, assets: list[Asset]) -> tuple[Optional[list[Asset]], str]:
+    def remove_ignored_assets(self, assets: list[Asset]) -> tuple[Optional[set[str]], str]:
         """Removes ignored assets from the DB.
 
         If any of the given assets is not in the DB the call function does nothing
         and returns an error message.
+
+        Returns the ignored asset identifiers after removal for success and `None`, msg for error
         """
         with self.db.conn.read_ctx() as cursor:
-            ignored_assets = self.db.get_ignored_assets(cursor)
+            ignored_asset_ids = self.db.get_ignored_asset_ids(cursor)
             for asset in assets:
-                if asset not in ignored_assets:
+                if asset.identifier not in ignored_asset_ids:
                     msg = f'{asset.identifier} is not in ignored assets'
                     return None, msg
 
@@ -168,7 +172,7 @@ class DataHandler():
                 for asset in assets:
                     self.db.remove_from_ignored_assets(write_cursor=write_cursor, asset=asset)
 
-            return self.db.get_ignored_assets(cursor), ''
+            return self.db.get_ignored_asset_ids(cursor), ''
 
     def get_users(self) -> dict[str, str]:
         """Returns a dict with all users in the system.

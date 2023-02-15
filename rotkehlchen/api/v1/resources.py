@@ -751,17 +751,20 @@ class AssetsMappingResource(BaseMethodView):
 
 
 class AssetsSearchResource(BaseMethodView):
-    post_schema = AssetsSearchByColumnSchema()
 
-    @use_kwargs(post_schema, location='json')
+    def make_post_schema(self) -> AssetsSearchByColumnSchema:
+        return AssetsSearchByColumnSchema(db=self.rest_api.rotkehlchen.data.db)
+
+    @resource_parser.use_kwargs(make_post_schema, location='json')
     def post(self, filter_query: AssetsFilterQuery) -> Response:
         return self.rest_api.search_assets(filter_query)
 
 
 class AssetsSearchLevenshteinResource(BaseMethodView):
-    post_schema = AssetsSearchLevenshteinSchema()
+    def make_post_schema(self) -> AssetsSearchLevenshteinSchema:
+        return AssetsSearchLevenshteinSchema(db=self.rest_api.rotkehlchen.data.db)
 
-    @use_kwargs(post_schema, location='json')
+    @resource_parser.use_kwargs(make_post_schema, location='json')
     def post(
             self,
             filter_query: LevenshteinFilterQuery,
