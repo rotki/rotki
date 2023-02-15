@@ -122,83 +122,83 @@
         "enabled": "成功启用 eth staking taxable after withdrawal 设置",
         "error": "提款后无法更改应纳税的 eth 质押设置： {message}"
       },
-      "export_csv_formulas": "Error setting the option to include formulas in CSV export: {message}",
-      "gas_costs": "Error setting Ethereum gas costs: {message}",
-      "have_csv_summary": "Error setting the option to include summary in CSV export: {message}",
-      "tax_free": "Tax free period {enabled}",
-      "tax_free_period": "Tax free period set to {period} days"
+      "export_csv_formulas": "设置在 CSV 导出中包含公式的选项时出错: {message}",
+      "gas_costs": "设置以太坊 gas 成本时出错: {message}",
+      "have_csv_summary": "设置在 CSV 导出中包含摘要的选项时出错: {message}",
+      "tax_free": "免税期 {enabled}",
+      "tax_free_period": "免税期设置为 {period} 天"
     },
     "validation": {
-      "tax_free_days": "Please enter the number of days",
-      "tax_free_days_gt_zero": "The number of days cannot be negative or zero"
+      "tax_free_days": "请输入天数",
+      "tax_free_days_gt_zero": "天数不能为负数或零"
     }
   },
   "account_settings_display": {
-    "account_asset_movement": "Account asset movement fees were taken into account:",
-    "cost_basis_method": "Cost basis method:",
-    "crypto2crypto": "Crypto to crypto trades were taken into account:",
-    "days": "{days} days",
-    "eth_staking_taxable_after_withdrawal_enabled": "ETH staking events are omitted until withdrawals are enabled",
-    "gas_costs": "Gas costs were taken into account:",
-    "past_cost_basis": "Past cost basis was calculated during the report creation:",
-    "profit_currency": "Profit Currency",
-    "subtitle": "These accounting setting were used during the report creation",
-    "tax_free_period": "There was a tax free period:",
-    "title": "Accounting Settings"
+    "account_asset_movement": "考虑了账户资产变动费用:",
+    "cost_basis_method": "成本基础方法:",
+    "crypto2crypto": "加密到加密交易被考虑在内:",
+    "days": "{days} 天",
+    "eth_staking_taxable_after_withdrawal_enabled": "在启用提款之前，ETH 质押事件将被忽略",
+    "gas_costs": "考虑了 Gas 成本:",
+    "past_cost_basis": "过去的成本基础是在报告创建期间计算的:",
+    "profit_currency": "盈利货币",
+    "subtitle": "这些会计设置是在创建报告时使用的",
+    "tax_free_period": "有一个免税期:",
+    "title": "会计设置"
   },
   "accounting_settings": {
     "labels": {
-      "account_for_assets_movements": "Take into account assets movements fees",
-      "calculate_past_cost_basis": "Calculate past cost basis when creating the report",
-      "cost_basis_method": "Cost basis method",
-      "crypto_to_crypto": "Take into account crypto to crypto trades",
-      "eth_staking_taxable_after_withdrawal": "Should omit ETH staking events from accounting until withdrawals are enabled",
-      "gas_costs": "Take into account Ethereum gas costs",
-      "tax_free": "Is there a tax free period?",
-      "tax_free_period": "Tax free after how many days"
+      "account_for_assets_movements": "考虑资产移动费用",
+      "calculate_past_cost_basis": "创建报告时计算过去的成本基础",
+      "cost_basis_method": "成本基础法",
+      "crypto_to_crypto": "考虑加密到加密交易",
+      "eth_staking_taxable_after_withdrawal": "在启用提款之前，应该从会计中忽略 ETH 质押事件",
+      "gas_costs": "考虑以太坊 gas 成本",
+      "tax_free": "有免税期吗？",
+      "tax_free_period": "多少天后免税"
     },
-    "title": "Trade Settings"
+    "title": "交易设置"
   },
 
   "address_account_form": {
-    "label": "Add to all supported EVM chains",
-    "hint": "When checked this address will be tracked for all supported evm chains (Ethereum, Optimism etc)"
+    "label": "添加到所有支持的 EVM 链",
+    "hint": "当检查时，将跟踪此地址的所有支持的EVM链(Ethereum, Optimism 等)"
   },
   "actions": {
     "add_eth2_validator": {
       "error": {
-        "description": "There was an error while adding the Eth 2 validator {id}: {message}",
-        "title": "Adding ETH2 validator"
+        "description": "添加 Eth 2 验证器 {id}: {message} 时出错",
+        "title": "添加 ETH2 验证器"
       },
       "task": {
-        "description": "Adding ETH2 validator",
-        "title": "Adding validator: {id}"
+        "description": "添加 ETH2 验证器",
+        "title": "添加验证器：{id}"
       }
     },
     "asset_movements": {
-      "all_exchanges": "all exchanges",
+      "all_exchanges": "所有交易所",
       "error": {
-        "description": "Failed query for {exchange}: {error}",
-        "title": "Deposits & withdrawals for {exchange}"
+        "description": "{exchange} 查询失败：{error}",
+        "title": "{exchange} 的存款和取款"
       },
       "task": {
-        "description": "Retrieving deposits & withdrawals for {exchange}",
-        "title": "Deposits & withdrawals"
+        "description": "检索{exchange}的存款和取款",
+        "title": "存取款"
       }
     },
     "assets": {
       "erc20": {
         "error": {
-          "description": "There was an error while retrieving token details: {message}",
-          "title": "Retrieving token details for {address}"
+          "description": "检索token详细信息时出错: {message}",
+          "title": "正在检索 {address} 的token详细信息"
         },
         "task": {
-          "title": "Retrieving token details for {address}"
+          "title": "正在检索 {address} 的token详细信息"
         }
       },
       "update": {
         "error": {
-          "description": "The asset database update failed: {message}"
+          "description": "资产数据库更新失败：{message}"
         },
         "task": {
           "title": "Updating assets database"
