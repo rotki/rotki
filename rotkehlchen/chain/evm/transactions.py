@@ -8,12 +8,13 @@ from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
+from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
@@ -200,7 +201,6 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 start_ts=start_ts,
                 end_ts=end_ts,
             )
-
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying {self.evm_inquirer.chain_name} transactions for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
@@ -455,16 +455,44 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 has_premium=True,  # we don't need any limiting here
             )
 
-        if len(result) == 0:
+        if tx_hash == GENESIS_HASH:
+            # For each tracked account, query to see if it had any transactions in the
+            # genesis block. We check this even if there already is a 0x0..0 transaction in the db
+            # in order to be sure that genesis transactions are queried for all accounts.
+            with self.database.conn.read_ctx() as cursor:
+                accounts_data = self.database.get_blockchain_account_data(
+                    cursor=cursor,
+                    blockchain=self.evm_inquirer.chain_id.to_blockchain(),
+                )
+                for data in accounts_data:
+                    self._get_transactions_for_range(
+                        address=data.address,
+                        start_ts=Timestamp(0),
+                        end_ts=Timestamp(0),
+                    )
+
+            # Check whether the genesis tx was added
+            with self.database.conn.read_ctx() as cursor:
+                added_tx = dbevmtx.get_evm_transactions(
+                    cursor=cursor,
+                    filter_=EvmTransactionsFilterQuery.make(tx_hash=GENESIS_HASH, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
+                    has_premium=True,  # we don't need any limiting here
+                )
+            if len(added_tx) == 0:
+                raise InputError(
+                    f'There is no tracked {str(self.evm_inquirer.chain_id)} address that '
+                    f'would have a genesis transaction',
+                )
+        elif len(result) == 0:  # normal functionality
             transaction = self.evm_inquirer.get_transaction_by_hash(tx_hash)
             with self.database.user_write() as write_cursor:
-                dbevmtx.add_evm_transactions(write_cursor, [transaction], relevant_address=None)
+                dbevmtx.add_evm_transactions(write_cursor, [transaction], relevant_address=None)  # noqa: E501
             period = TimestampOrBlockRange(
                 range_type='blocks',
                 from_value=transaction.block_number,
                 to_value=transaction.block_number,
             )
-            if transaction.to_address is not None:  # internal transactions only through contracts
+            if transaction.to_address is not None:  # internal transactions only through contracts  # noqa: E501
                 self._query_and_save_internal_transactions_for_range(
                     address=None,  # get all internal transactions for the parent hash
                     period=period,

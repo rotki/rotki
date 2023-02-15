@@ -27,6 +27,7 @@ from web3.types import BlockIdentifier, FilterParams
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
+from rotkehlchen.chain.evm.constants import FAKE_GENESIS_TX_RECEIPT, GENESIS_HASH
 from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
@@ -631,6 +632,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             web3: Optional[Web3],
             tx_hash: EVMTxHash,
     ) -> dict[str, Any]:
+        if tx_hash == GENESIS_HASH:
+            return FAKE_GENESIS_TX_RECEIPT
         if web3 is None:
             tx_receipt = self.etherscan.get_transaction_receipt(tx_hash)
             try:
