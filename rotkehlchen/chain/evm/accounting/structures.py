@@ -22,7 +22,6 @@ class AccountantCallback(Protocol):
         `other_events` iterator to get them.
         Note that events consumed by the callback from the iterator will not be re-processed later.
         """
-        ...
 
 
 class TxAccountingTreatment(Enum):
