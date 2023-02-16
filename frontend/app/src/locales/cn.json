@@ -201,66 +201,66 @@
           "description": "资产数据库更新失败：{message}"
         },
         "task": {
-          "title": "Updating assets database"
+          "title": "更新资产数据库"
         }
       },
       "versions": {
         "error": {
-          "description": "The asset database update check failed: {message}"
+          "description": "资产数据库更新检查失败：{message}"
         },
         "task": {
-          "title": "Checking for asset database updates"
+          "title": "检查资产数据库更新"
         }
       }
     },
     "balances": {
       "all_balances": {
         "error": {
-          "message": "Failed to fetch all balances: {message}",
-          "title": "Querying all Balances"
+          "message": "获取所有余额失败：{message}",
+          "title": "查询所有余额"
         },
         "task": {
-          "title": "Query All Balances"
+          "title": "查询所有余额"
         }
       },
       "blockchain": {
         "error": {
-          "description": "Error at querying blockchain balances: {error}",
-          "title": "Querying blockchain balances"
+          "description": "查询区块链余额时出错：{error}",
+          "title": "查询区块链余额"
         },
         "task": {
-          "title": "Query {chain} balances"
+          "title": "查询 {chain} 余额"
         }
       },
       "blockchain_account_removal": {
         "error": {
-          "description": "Failed to remove the account: {error}",
-          "title": "Removing {count} {blockchain} account(s)"
+          "description": "删除账户失败：{error}",
+          "title": "删除 {count} {blockchain} 个帐户"
         },
         "task": {
-          "description": "{count} accounts are being removed",
-          "title": "Removing {blockchain} account"
+          "description": "{count} 个账户正在被删除",
+          "title": "删除 {blockchain} 帐户"
         }
       },
       "blockchain_accounts_add": {
         "error": {
-          "description": "Failed to add {addresses} new {blockchain} accounts: {error}",
-          "failed_list_description": "Failed to add {addresses} new {blockchain} accounts. Please check again if these account(s) are valid:\n {list}",
-          "title": "Adding {blockchain} accounts"
+          "description": "无法添加 {addresses} 个新的 {blockchain} 账户： {error}",
+          "failed_list_description": "无法添加 {addresses} 个新的 {blockchain} 账户。请再次检查这些账户是否有效：\n {list}",
+          "title": "添加 {blockchain} 账户"
         },
         "no_new": {
-          "description": "The selected addresses are already tracked by rotki",
-          "title": "Adding {blockchain} accounts"
+          "description": "所选地址已被 rotki 跟踪",
+          "title": "添加 {blockchain} 账户"
         },
         "task": {
-          "description": "Adding {address}",
-          "title": "Adding {blockchain} account"
+          "description": "添加 {address}",
+          "title": "添加 {blockchain} 账户"
         }
       },
       "create_oracle_cache": {
-        "already_running": "Task is already running",
-        "failed": "Failed while creating a cache entry from {fromAsset} to {toAsset} on source: {error}",
-        "task": "Creating cache entry from {fromAsset} to {toAsset} on {source}"
+        "already_running": "任务已经在运行",
+        "failed": "在源上创建从 {fromAsset} 到 {toAsset} 的缓存条目时失败：{error}",
+        "task": "在 {source} 上创建从 {fromAsset} 到 {toAsset} 的缓存条目"
       },
       "detect_tokens": {
         "task": {
