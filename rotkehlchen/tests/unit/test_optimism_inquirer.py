@@ -4,6 +4,11 @@ from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.optimism import OPTIMISM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED
 
 
+@pytest.mark.vcr(
+    match_on=['uri', 'method', 'raw_body'],
+    filter_query_parameters=['apikey'],
+    allow_playback_repeats=True,
+)
 @pytest.mark.parametrize(*OPTIMISM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
 def test_optimism_nodes_prune_and_archive_status(
         optimism_manager_connect_at_start,
@@ -29,3 +34,5 @@ def test_optimism_nodes_prune_and_archive_status(
             assert web3_node.is_archive
         else:
             raise AssertionError(f'Unknown node {node_name} encountered.')
+
+    assert len(optimism_inquirer.web3_mapping) == len(optimism_manager_connect_at_start)
