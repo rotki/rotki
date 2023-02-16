@@ -2713,6 +2713,15 @@ class RestAPI():
             addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity'),
         )
 
+    def get_liquity_stats(self, async_query: bool) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module_name='liquity',
+            method='get_stats',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity'),
+        )
+
     def _watcher_query(
             self,
             method: Literal['GET', 'PUT', 'PATCH', 'DELETE'],
@@ -3642,7 +3651,12 @@ class RestAPI():
                 events.append(staking_event)
 
             entries_total = history_events_db.get_history_events_count(cursor=cursor, query_filter=table_filter)  # noqa: E501
-            usd_value, amounts = history_events_db.get_value_stats(cursor=cursor, query_filter=value_filter)  # noqa: E501
+            value_query_filters, value_bindings = value_filter.prepare(with_pagination=False, with_order=False)  # noqa: E501
+            usd_value, amounts = history_events_db.get_value_stats(
+                cursor=cursor,
+                query_filters=value_query_filters,
+                bindings=value_bindings,
+            )
 
             result = {
                 'events': events,

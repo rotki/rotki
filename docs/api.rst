@@ -7529,6 +7529,156 @@ Getting Liquity stability pool infomration
    :statuscode 500: Internal rotki error.
 
 
+Getting Liquity staking information
+=============================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/liquity/stats
+
+   Doing a GET on the liquity stats resource will return the statistics for staking in the stability pool and the LQTY staking service.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint requires a premium account.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/liquity/stats HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "global_stats": {
+            "total_usd_gains_stability_pool": "41902.74041824219",
+            "total_usd_gains_stacking": "190.09104568340678",
+            "total_deposited_stability_pool": "1915600.7290263602",
+            "total_withdrawn_stability_pool": "914454.5094041774",
+            "total_deposited_stability_pool_usd_value": "0.0",
+            "total_withdrawn_stability_pool_usd_value": "0.0",
+            "staking_gains": [
+              {
+                "asset": "ETH",
+                "amount": "0.19015022103888912",
+                "usd_value": "23.001055387590114"
+              },
+              {
+                "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
+                "amount": "168.7710091203543",
+                "usd_value": "167.08999029581668"
+              },
+              {
+                "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
+                "amount": "1445.7823568041297",
+                "usd_value": "0.0"
+              }
+            ],
+            "stability_pool_gains": [
+              {
+                "asset": "ETH",
+                "amount": "14.0767134582469",
+                "usd_value": "31051.389153894255"
+              },
+              {
+                "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
+                "amount": "11887.091269011284",
+                "usd_value": "10851.35126434794"
+              }
+            ]
+          },
+          "by_address": {
+            "0xF662f831361c8Ab48d807f7753eb3d641be25d24": {
+              "total_usd_gains_stability_pool": "0.0",
+              "total_usd_gains_stacking": "0.0",
+              "total_deposited_stability_pool": "1519146.7290263602",
+              "total_withdrawn_stability_pool": "914454.5094041774",
+              "total_deposited_stability_pool_usd_value": "0.0",
+              "total_withdrawn_stability_pool_usd_value": "0.0",
+              "staking_gains": [
+                {
+                  "asset": "ETH",
+                  "amount": "0.18236022449762773",
+                  "usd_value": "0.0"
+                },
+                {
+                  "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
+                  "amount": "2.23017071973649",
+                  "usd_value": "0.0"
+                },
+                {
+                  "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
+                  "amount": "1445.7823568041297",
+                  "usd_value": "0.0"
+                }
+              ],
+              "stability_pool_gains": [
+                {
+                  "asset": "ETH",
+                  "amount": "1.7820064710306824",
+                  "usd_value": "0.0"
+                },
+                {
+                  "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
+                  "amount": "7646.741845927703",
+                  "usd_value": "0.0"
+                }
+              ]
+            },
+            "0xbB8311c7bAD518f0D8f907Cad26c5CcC85a06dC4": {
+              "total_usd_gains_stability_pool": "41902.74041824219",
+              "total_usd_gains_stacking": "190.09104568340678",
+              "total_deposited_stability_pool": "396454.0",
+              "total_withdrawn_stability_pool": "0",
+              "total_deposited_stability_pool_usd_value": "0.0",
+              "total_withdrawn_stability_pool_usd_value": "0",
+              "staking_gains": [
+                {
+                  "asset": "ETH",
+                  "amount": "0.007789996541261418",
+                  "usd_value": "23.001055387590114"
+                },
+                {
+                  "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
+                  "amount": "166.54083840061782",
+                  "usd_value": "167.08999029581668"
+                }
+              ],
+              "stability_pool_gains": [
+                {
+                  "asset": "ETH",
+                  "amount": "12.294706987216218",
+                  "usd_value": "31051.389153894255"
+                },
+                {
+                  "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
+                  "amount": "4240.34942308358",
+                  "usd_value": "10851.35126434794"
+                }
+              ]
+            }
+          }
+        },
+        "message": ""
+      }
+
+   :resjson object result: A mapping of the amount and value of LQTY staked in the protocol.
+
+   :statuscode 200: Liquity staking stats successfully queried.
+   :statuscode 409: User is not logged in or Liquity module is not activated.
+   :statuscode 500: Internal rotki error.
+
+
 Getting Uniswap balances
 ==============================
 
