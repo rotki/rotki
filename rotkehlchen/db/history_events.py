@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -332,12 +332,12 @@ class DBHistoryEvents():
     def get_value_stats(
             self,
             cursor: 'DBCursor',
-            query_filter: HistoryEventFilterQuery,
+            query_filters: str,
+            bindings: list[Any],
     ) -> tuple[FVal, list[tuple[str, FVal, FVal]]]:
         """Returns the sum of the USD value at the time of acquisition and the amount received
         by asset"""
         usd_value = ZERO
-        query_filters, bindings = query_filter.prepare(with_pagination=False, with_order=False)
         try:
             query = 'SELECT SUM(CAST(usd_value AS REAL)) FROM history_events ' + query_filters
             result = cursor.execute(query, bindings).fetchone()[0]  # count(*) always returns
