@@ -118,7 +118,7 @@ def make_ethereum_event(
         event_subtype: HistoryEventSubType = HistoryEventSubType.NONE,
 ) -> HistoryBaseEntry:
     if tx_hash is None:
-        tx_hash = make_random_bytes(42)
+        tx_hash = make_random_bytes(32)
     return HistoryBaseEntry(
         event_identifier=tx_hash,
         sequence_index=index,
