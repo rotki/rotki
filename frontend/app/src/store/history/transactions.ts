@@ -6,6 +6,7 @@ import { type EntryWithMeta } from '@/types/history/meta';
 import {
   type EthTransaction,
   type EthTransactionEntry,
+  type EthTransactionEvent,
   type EvmChainAddress,
   type NewEthTransactionEvent,
   type TransactionHashAndEvmChainPayload,
@@ -26,6 +27,7 @@ import {
 } from '@/utils/history';
 import { startPromise } from '@/utils';
 import { type ActionStatus } from '@/types/action';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 
 export const useTransactionStore = defineStore('history/transactions', () => {
   const counterparties: Ref<string[]> = ref([]);
@@ -105,11 +107,11 @@ export const useTransactionStore = defineStore('history/transactions', () => {
   };
 
   const refreshTransactions = async (userInitiated = false): Promise<void> => {
-    const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
+    const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(
       Section.TX
     );
 
-    if (!(userInitiated || isFirstLoad()) || loading()) {
+    if (fetchDisabled(userInitiated)) {
       logger.info('skipping transaction refresh');
       return;
     }
@@ -162,29 +164,35 @@ export const useTransactionStore = defineStore('history/transactions', () => {
 
   const addTransactionEvent = async (
     event: NewEthTransactionEvent
-  ): Promise<ActionStatus> => {
+  ): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
-    let message = '';
+    let message: ValidationErrors | string = '';
     try {
       await addTransactionEventCaller(event);
       success = true;
     } catch (e: any) {
       message = e.message;
+      if (e instanceof ApiValidationError) {
+        message = e.getValidationErrors(event);
+      }
     }
 
     return { success, message };
   };
 
   const editTransactionEvent = async (
-    event: NewEthTransactionEvent
-  ): Promise<ActionStatus> => {
+    event: EthTransactionEvent
+  ): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
-    let message = '';
+    let message: ValidationErrors | string = '';
     try {
       await editTransactionEventCaller(event);
       success = true;
     } catch (e: any) {
       message = e.message;
+      if (e instanceof ApiValidationError) {
+        message = e.getValidationErrors(event);
+      }
     }
 
     return { success, message };

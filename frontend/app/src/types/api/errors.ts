@@ -1,3 +1,4 @@
+import isEmpty from 'lodash/isEmpty';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
 
@@ -27,6 +28,9 @@ export class ApiValidationError extends Error {
       }
     }
 
-    return errors;
+    if (!isEmpty(errors)) {
+      return errors;
+    }
+    return this.message;
   }
 }

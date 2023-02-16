@@ -13,9 +13,9 @@ const props = defineProps({
 
 const { isTaskRunning } = useTaskStore();
 const { refreshPrices } = useBalancesStore();
-const { isSectionRefreshing } = useSectionLoading();
+const { isLoading } = useStatusStore();
 
-const refreshing = isSectionRefreshing(Section.PRICES);
+const refreshing = isLoading(Section.PRICES);
 
 const loadingData = computed<boolean>(() => {
   return (

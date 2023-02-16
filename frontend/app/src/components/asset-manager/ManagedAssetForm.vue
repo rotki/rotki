@@ -11,7 +11,6 @@ import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenMa
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import HelpLink from '@/components/helper/HelpLink.vue';
-import { deserializeApiErrorMessage } from '@/services/converters';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import {
   isValidEthAddress,
@@ -21,6 +20,7 @@ import {
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
 import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
+import { ApiValidationError } from '@/types/api/errors';
 
 function time(t: string): number | undefined {
   return t ? convertToTimestamp(t) : undefined;
@@ -249,14 +249,18 @@ const save = async () => {
     await get(assetIconFormRef)?.saveIcon(newIdentifier);
     return true;
   } catch (e: any) {
-    const message = deserializeApiErrorMessage(e.message) as any;
-    if (!message) {
+    let errors = e.message;
+    if (e instanceof ApiValidationError) {
+      errors = e.getValidationErrors({});
+    }
+
+    if (typeof errors === 'string') {
       setMessage({
         title: tc('asset_form.underlying_tokens'),
-        description: e.message
+        description: errors
       });
     } else {
-      handleError(message);
+      handleError(errors);
     }
 
     return false;

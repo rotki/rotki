@@ -275,6 +275,9 @@ onMounted(async () => {
   }
 });
 
+const { isLoading: isSectionLoading } = useStatusStore();
+const loading = isSectionLoading(Section.LEDGER_ACTIONS);
+
 const { show } = useConfirmStore();
 
 const showDeleteConfirmation = () => {
@@ -286,8 +289,6 @@ const showDeleteConfirmation = () => {
     deleteLedgerActionHandler
   );
 };
-
-const loading = isSectionLoading(Section.LEDGER_ACTIONS);
 
 const getItemClass = (item: LedgerActionEntry) => {
   return item.ignoredInAccounting ? 'darken-row' : '';
@@ -340,7 +341,7 @@ watch(loading, async (isLoading, wasLoading) => {
 
 <template>
   <fragment>
-    <card outlined-body>
+    <card class="mt-8" outlined-body>
       <v-btn
         v-if="!locationOverview"
         absolute

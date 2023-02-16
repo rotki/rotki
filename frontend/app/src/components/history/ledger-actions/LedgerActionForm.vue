@@ -4,17 +4,15 @@ import { helpers, required, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import { convertKeys } from '@/services/axios-tranformers';
-import { deserializeApiErrorMessage } from '@/services/converters';
 import { type Writeable } from '@/types';
 import {
   type LedgerAction,
-  type LedgerActionEntry,
   type NewLedgerAction
 } from '@/types/history/ledger-action/ledger-actions';
 import { LedgerActionType } from '@/types/history/ledger-action/ledger-actions-type';
 import { Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+import { toMessages } from '@/utils/validation-errors';
 
 const props = withDefaults(
   defineProps<{
@@ -160,16 +158,9 @@ const setEditMode = () => {
   set(id, ledgerAction.identifier);
 };
 
-const ledgerActionStore = useLedgerActionStore();
-const { addLedgerAction, editLedgerAction } = ledgerActionStore;
+const { setMessage } = useMessageStore();
 
-const saveData = async (ledgerAction: NewLedgerAction | LedgerActionEntry) => {
-  if ('identifier' in ledgerAction) {
-    return await editLedgerAction(ledgerAction);
-  }
-
-  return await addLedgerAction(ledgerAction);
-};
+const { addLedgerAction, editLedgerAction } = useLedgerActionStore();
 
 const save = async (): Promise<boolean> => {
   const numericAmount = get(bigNumberifyFromRef(amount));
@@ -190,8 +181,8 @@ const save = async (): Promise<boolean> => {
   const idVal = get(id);
 
   const result = !idVal
-    ? await saveData(ledgerActionPayload)
-    : await saveData({ ...ledgerActionPayload, identifier: idVal });
+    ? await addLedgerAction(ledgerActionPayload)
+    : await editLedgerAction({ ...ledgerActionPayload, identifier: idVal });
 
   if (result.success) {
     reset();
@@ -199,12 +190,14 @@ const save = async (): Promise<boolean> => {
   }
 
   if (result.message) {
-    set(
-      errorMessages,
-      convertKeys(deserializeApiErrorMessage(result.message) ?? {}, true, false)
-    );
-
-    await get(v$).$validate();
+    if (typeof result.message === 'string') {
+      setMessage({
+        description: result.message
+      });
+    } else {
+      set(errorMessages, result.message);
+      await get(v$).$validate();
+    }
   }
 
   return false;
@@ -242,8 +235,9 @@ defineExpose({
       required
       outlined
       data-cy="location"
-      :error-messages="v$.location.$errors.map(e => e.$message)"
+      :error-messages="toMessages(v$.location)"
       :label="tc('common.location')"
+      @blur="v$.location.$touch()"
     />
 
     <date-time-picker
@@ -273,7 +267,8 @@ defineExpose({
           outlined
           required
           data-cy="asset"
-          :error-messages="v$.asset.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.asset)"
+          @blur="v$.asset.$touch()"
         />
       </v-col>
 
@@ -281,10 +276,11 @@ defineExpose({
         <amount-input
           v-model="amount"
           outlined
-          :error-messages="v$.amount.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.amount)"
           required
           data-cy="amount"
           :label="tc('common.amount')"
+          @blur="v$.amount.$touch()"
         />
       </v-col>
 
@@ -298,7 +294,8 @@ defineExpose({
           item-text="label"
           required
           data-cy="action-type"
-          :error-messages="errorMessages['actionType']"
+          :error-messages="toMessages(v$.actionType)"
+          @blur="v$.actionType.$touch()"
         />
       </v-col>
     </v-row>
@@ -318,7 +315,8 @@ defineExpose({
           data-cy="rate"
           :hint="tc('ledger_action_form.rate.hint')"
           :label="tc('ledger_action_form.rate.label')"
-          :error-messages="v$.rate.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.rate)"
+          @blur="v$.rate.$touch()"
         />
       </v-col>
       <v-col cols="12" md="4">
@@ -329,7 +327,8 @@ defineExpose({
           :hint="tc('ledger_action_form.rate_asset.hint')"
           persistent-hint
           data-cy="rate-asset"
-          :error-messages="v$.rateAsset.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.rateAsset)"
+          @blur="v$.rateAsset.$touch()"
         />
       </v-col>
     </v-row>

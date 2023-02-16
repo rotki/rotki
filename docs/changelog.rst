@@ -2,11 +2,12 @@
 Changelog
 =========
 
+* :feature:`5588` Users will now be able to save and restore used filters in the history section.
 * :feature:`5587` Forward/Backward navigation for filters/pagination (using mouse buttons) will now be possible in the history section.
 * :feature:`5569` It is now possible to detect when an evm address is used in other chains and start tracking it. Also a background task runs periodically that performs this check.
 * :bug:`5491` Show original manual latest price asset in manual balance form.
 * :bug:`-` Fixed a bug where token balance detection for EVM tokens with many addresses may not have worked properly.
-* :bug:`-` Fixed a bug where an error message is not showen when some input in the UI is filled with an incorrect value.
+* :bug:`-` Fixed a bug where an error message is not showed when some input in the UI is filled with an incorrect value.
 * :feature:`5576` Added support for WSTETH, RETH, GNO and other collateral type makerdao vaults. Also added code to autodetect new collateral type makerdao vaults in the future (so long as ABI stays the same).
 * :bug:`-` Fixes bug where Maker Vault Collateralization Ratio can't be edited in watcher form.
 * :bug:`-` Fixes bug where wrong account label was used in asset location breakdown.

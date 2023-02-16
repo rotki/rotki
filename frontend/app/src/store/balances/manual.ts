@@ -21,6 +21,7 @@ import { sortDesc } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
 import { type ActionStatus } from '@/types/action';
 import { type AssetBreakdown } from '@/types/blockchain/accounts';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 
 export const useManualBalancesStore = defineStore('balances/manual', () => {
   const manualBalancesData: Ref<ManualBalanceWithValue[]> = ref([]);
@@ -187,7 +188,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
 
   const addManualBalance = async (
     balance: Omit<ManualBalance, 'id'>
-  ): Promise<ActionStatus> => {
+  ): Promise<ActionStatus<ValidationErrors | string>> => {
     try {
       const taskType = TaskType.MANUAL_BALANCES_ADD;
       const { taskId } = await addManualBalances([balance]);
@@ -205,16 +206,21 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       };
     } catch (e: any) {
       logger.error(e);
+
+      let messages = e.message;
+      if (e instanceof ApiValidationError) {
+        messages = e.getValidationErrors(balance);
+      }
       return {
         success: false,
-        message: e.message
+        message: messages
       };
     }
   };
 
   const editManualBalance = async (
     balance: ManualBalance
-  ): Promise<ActionStatus> => {
+  ): Promise<ActionStatus<ValidationErrors | string>> => {
     try {
       const taskType = TaskType.MANUAL_BALANCES_EDIT;
       const { taskId } = await editManualBalances([balance]);
@@ -232,9 +238,14 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       };
     } catch (e: any) {
       logger.error(e);
+
+      let message = e.message;
+      if (e instanceof ApiValidationError) {
+        message = e.getValidationErrors(balance);
+      }
       return {
         success: false,
-        message: e.message
+        message
       };
     }
   };

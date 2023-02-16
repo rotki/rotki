@@ -6,7 +6,6 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { toProfitLossModel } from '@/utils/defi';
-import { isLoading } from '@/utils/status';
 
 const defaultCompoundHistory = (): CompoundHistory => ({
   events: [],
@@ -20,13 +19,16 @@ export const useCompoundStore = defineStore('defi/compound', () => {
   const balances: Ref<CompoundBalances> = ref({});
   const history: Ref<CompoundHistory> = ref(defaultCompoundHistory());
 
-  const { resetStatus } = useStatusUpdater(Section.DEFI_COMPOUND_BALANCES);
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { activeModules } = useModules();
   const premium = usePremium();
   const { tc } = useI18n();
   const { fetchCompoundBalances, fetchCompoundHistory } = useCompoundApi();
+
+  const { resetStatus, setStatus, fetchDisabled } = useStatusUpdater(
+    Section.DEFI_COMPOUND_BALANCES
+  );
 
   const rewards = computed(() => toProfitLossModel(get(history).rewards));
   const interestProfit = computed(() =>
@@ -42,18 +44,12 @@ export const useCompoundStore = defineStore('defi/compound', () => {
       return;
     }
 
-    const section = Section.DEFI_COMPOUND_BALANCES;
-    const currentStatus = getStatus(section);
-
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
+    if (fetchDisabled(refresh)) {
       return;
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
+    setStatus(newStatus);
 
     try {
       const taskType = TaskType.DEFI_COMPOUND_BALANCES;
@@ -75,7 +71,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
         display: true
       });
     }
-    setStatus(Status.LOADED, section);
+    setStatus(Status.LOADED);
   };
 
   const fetchHistory = async (refresh = false): Promise<void> => {
@@ -84,12 +80,8 @@ export const useCompoundStore = defineStore('defi/compound', () => {
     }
 
     const section = Section.DEFI_COMPOUND_HISTORY;
-    const currentStatus = getStatus(section);
 
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
+    if (fetchDisabled(refresh, section)) {
       return;
     }
 
@@ -128,7 +120,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
   const reset = (): void => {
     set(balances, {});
     set(history, defaultCompoundHistory());
-    resetStatus(Section.DEFI_COMPOUND_BALANCES);
+    resetStatus();
     resetStatus(Section.DEFI_COMPOUND_HISTORY);
   };
 

@@ -10,7 +10,7 @@ import { Section } from '@/types/status';
 const modules = [Module.LIQUITY];
 const { isModuleEnabled } = useModules();
 const { fetchStaking, fetchPools } = useLiquityStore();
-const { shouldShowLoadingScreen } = useSectionLoading();
+const { shouldShowLoadingScreen } = useStatusStore();
 const moduleEnabled = isModuleEnabled(modules[0]);
 const loading = shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING);
 const premium = usePremium();

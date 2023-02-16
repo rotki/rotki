@@ -178,7 +178,7 @@ export const useEthAccountBalancesStore = defineStore(
         return accounts;
       });
 
-    const { shouldShowLoadingScreen } = useSectionLoading();
+    const { shouldShowLoadingScreen } = useStatusStore();
 
     const loopringSum: ComputedRef<HasBalance[]> = computed(() => {
       const balances: Record<string, HasBalance> = {};

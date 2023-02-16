@@ -31,11 +31,8 @@ const location = computed<TradeLocationData>(() =>
     </v-row>
     <location-value-row class="mt-8" :identifier="identifier" />
     <location-assets class="mt-8" :identifier="identifier" />
-    <closed-trades :location-overview="identifier" class="mt-8" />
-    <deposits-withdrawals-content
-      :location-overview="identifier"
-      class="mt-8"
-    />
-    <ledger-action-content :location-overview="identifier" class="mt-8" />
+    <closed-trades :location-overview="identifier" />
+    <deposits-withdrawals-content :location-overview="identifier" />
+    <ledger-action-content :location-overview="identifier" />
   </v-container>
 </template>

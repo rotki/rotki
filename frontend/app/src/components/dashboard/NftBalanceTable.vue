@@ -27,13 +27,13 @@ const { totalNetWorthUsd } = storeToRefs(statistics);
 const balancesStore = useNonFungibleBalancesStore();
 const { balances } = storeToRefs(balancesStore);
 const { fetchNonFungibleBalances, updateRequestPayload } = balancesStore;
-const { isSectionRefreshing } = useSectionLoading();
+const { isLoading } = useStatusStore();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { tc } = useI18n();
 
 const group = DashboardTableType.NFT;
-const loading = isSectionRefreshing(Section.NON_FUNGIBLE_BALANCES);
+const loading = isLoading(Section.NON_FUNGIBLE_BALANCES);
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[group];

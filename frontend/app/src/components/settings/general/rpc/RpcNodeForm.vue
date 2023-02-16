@@ -4,6 +4,7 @@ import { between, required, requiredIf } from '@vuelidate/validators';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import isEmpty from 'lodash/isEmpty';
 import { type EvmRpcNode, getPlaceholderNode } from '@/types/settings';
+import { toMessages } from '@/utils/validation-errors';
 
 const { t, tc } = useI18n();
 
@@ -32,7 +33,10 @@ const rules = {
   weight: { required, between: between(0, 100) }
 };
 
-const v$ = useVuelidate(rules, state, { $externalResults: errorMessages });
+const v$ = useVuelidate(rules, state, {
+  $autoDirty: true,
+  $externalResults: errorMessages
+});
 
 watch(errorMessages, errors => {
   if (!isEmpty(errors)) {
@@ -74,7 +78,7 @@ watch(state, state => {
       data-cy="node-name"
       :disabled="isEtherscan"
       :label="tc('common.name')"
-      :error-messages="v$.name.$errors.map(e => e.$message)"
+      :error-messages="toMessages(v$.name)"
       @blur="v$.name.$touch()"
     />
     <v-text-field
@@ -82,7 +86,7 @@ watch(state, state => {
       outlined
       data-cy="node-endpoint"
       :disabled="isEtherscan"
-      :error-messages="v$.endpoint.$errors.map(e => e.$message)"
+      :error-messages="toMessages(v$.endpoint)"
       :label="tc('rpc_node_form.endpoint')"
       @blur="v$.endpoint.$touch()"
     />
@@ -92,7 +96,7 @@ watch(state, state => {
         <v-slider
           :value="state.weight"
           :disabled="state.owned"
-          :error-messages="v$.weight.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.weight)"
           :label="tc('rpc_node_form.weight')"
           min="0"
           max="100"
@@ -108,7 +112,7 @@ watch(state, state => {
         <amount-input
           :disabled="state.owned"
           :value="state.weight.toString()"
-          :error-messages="v$.weight.$errors.map(() => '')"
+          :error-messages="toMessages(v$.weight).length > 0 ? [''] : []"
           outlined
           hide-details
           :class="$style.input"

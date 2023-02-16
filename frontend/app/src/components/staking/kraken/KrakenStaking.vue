@@ -8,8 +8,8 @@ import { Section } from '@/types/status';
 const store = useKrakenStakingStore();
 const { load, updatePagination } = store;
 const { events } = toRefs(store);
-const { isSectionRefreshing } = useSectionLoading();
-const loading = isSectionRefreshing(Section.STAKING_KRAKEN);
+const { isLoading } = useStatusStore();
+const loading = isLoading(Section.STAKING_KRAKEN);
 
 const refresh = () => load(true);
 </script>

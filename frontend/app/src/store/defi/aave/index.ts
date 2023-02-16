@@ -7,7 +7,6 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { balanceSum } from '@/utils/calculation';
 import { logger } from '@/utils/logging';
-import { isLoading } from '@/utils/status';
 
 export const useAaveStore = defineStore('defi/aave', () => {
   const balances: Ref<AaveBalances> = ref({});
@@ -20,6 +19,10 @@ export const useAaveStore = defineStore('defi/aave', () => {
   const { tc } = useI18n();
 
   const { fetchAaveBalances, fetchAaveHistory } = useAaveApi();
+
+  const { resetStatus, setStatus, fetchDisabled } = useStatusUpdater(
+    Section.DEFI_AAVE_BALANCES
+  );
 
   const aaveTotalEarned = (addresses: string[]) =>
     computed(() => {
@@ -54,18 +57,12 @@ export const useAaveStore = defineStore('defi/aave', () => {
     if (!get(activeModules).includes(Module.AAVE)) {
       return;
     }
-    const section = Section.DEFI_AAVE_BALANCES;
-    const currentStatus = getStatus(section);
-
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
+    if (fetchDisabled(refresh)) {
       return;
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
+    setStatus(newStatus);
 
     try {
       const taskType = TaskType.AAVE_BALANCES;
@@ -94,7 +91,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
       });
     }
 
-    setStatus(Status.LOADED, section);
+    setStatus(Status.LOADED);
   };
 
   const fetchHistory = async (payload: {
@@ -104,15 +101,12 @@ export const useAaveStore = defineStore('defi/aave', () => {
     if (!get(activeModules).includes(Module.AAVE) || !get(premium)) {
       return;
     }
+
     const section = Section.DEFI_AAVE_HISTORY;
-    const currentStatus = getStatus(section);
     const refresh = payload?.refresh;
     const reset = payload?.reset;
 
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
+    if (fetchDisabled(!!refresh, section)) {
       return;
     }
 
@@ -151,10 +145,9 @@ export const useAaveStore = defineStore('defi/aave', () => {
   };
 
   const reset = () => {
-    const { resetStatus } = useStatusUpdater(Section.DEFI_AAVE_BALANCES);
     set(balances, {});
     set(history, {});
-    resetStatus(Section.DEFI_AAVE_BALANCES);
+    resetStatus();
     resetStatus(Section.DEFI_AAVE_HISTORY);
   };
 

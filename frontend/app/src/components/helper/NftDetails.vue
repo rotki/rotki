@@ -37,7 +37,7 @@ const name: ComputedRef<string | null> = computed(() => {
   return data?.name || get(collectionName);
 });
 
-const { shouldShowLoadingScreen: isLoading } = useSectionLoading();
+const { isLoading } = useStatusStore();
 const loading = isLoading(Section.NON_FUNGIBLE_BALANCES);
 
 const { isPending } = useAssetCacheStore();

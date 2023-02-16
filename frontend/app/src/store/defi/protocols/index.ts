@@ -30,7 +30,6 @@ import { Zero, zeroBalance } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 import { type LiquityLoan } from '@/types/defi/liquity';
 import { balanceUsdValueSum } from '@/utils/balances';
-import { isLoading } from '@/utils/status';
 
 type NullableLoan =
   | MakerDAOVaultModel
@@ -60,6 +59,8 @@ export const useDefiSupportedProtocolsStore = defineStore(
     const { dsrHistory, dsrBalances, makerDAOVaults, makerDAOVaultDetails } =
       storeToRefs(makerDaoStore);
     const { balances: liquityBalances } = storeToRefs(liquityStore);
+
+    const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_LENDING);
 
     const loans = (protocols: DefiProtocol[] = []): ComputedRef<DefiLoan[]> =>
       computed(() => {
@@ -507,28 +508,20 @@ export const useDefiSupportedProtocolsStore = defineStore(
       });
 
     const fetchLending = async (refresh = false): Promise<void> => {
-      const isPremium = get(premium);
-      const section = Section.DEFI_LENDING;
-      const premiumSection = Section.DEFI_LENDING_HISTORY;
-      const currentStatus = getStatus(section);
-
       const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
 
-      if (
-        !isLoading(currentStatus) ||
-        (currentStatus === Status.LOADED && refresh)
-      ) {
-        setStatus(newStatus, section);
+      if (!fetchDisabled(refresh)) {
+        setStatus(newStatus);
 
         await Promise.allSettled([
           makerDaoStore.fetchDSRBalances(refresh).then(() => {
-            setStatus(Status.PARTIALLY_LOADED, section);
+            setStatus(Status.PARTIALLY_LOADED);
           }),
           aaveStore.fetchBalances(refresh).then(() => {
-            setStatus(Status.PARTIALLY_LOADED, section);
+            setStatus(Status.PARTIALLY_LOADED);
           }),
           compoundStore.fetchBalances(refresh).then(() => {
-            setStatus(Status.PARTIALLY_LOADED, section);
+            setStatus(Status.PARTIALLY_LOADED);
           }),
           yearnStore
             .fetchBalances({
@@ -536,7 +529,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
               version: ProtocolVersion.V1
             })
             .then(() => {
-              setStatus(Status.PARTIALLY_LOADED, section);
+              setStatus(Status.PARTIALLY_LOADED);
             }),
           yearnStore
             .fetchBalances({
@@ -544,20 +537,16 @@ export const useDefiSupportedProtocolsStore = defineStore(
               version: ProtocolVersion.V2
             })
             .then(() => {
-              setStatus(Status.PARTIALLY_LOADED, section);
+              setStatus(Status.PARTIALLY_LOADED);
             })
         ]);
 
-        setStatus(Status.LOADED, section);
+        setStatus(Status.LOADED);
       }
 
-      const currentPremiumStatus = getStatus(premiumSection);
-
-      if (
-        !isPremium ||
-        isLoading(currentPremiumStatus) ||
-        (currentPremiumStatus === Status.LOADED && !refresh)
-      ) {
+      const isPremium = get(premium);
+      const premiumSection = Section.DEFI_LENDING_HISTORY;
+      if (!isPremium || fetchDisabled(refresh, premiumSection)) {
         return;
       }
 
@@ -582,14 +571,9 @@ export const useDefiSupportedProtocolsStore = defineStore(
 
     const fetchBorrowing = async (refresh = false): Promise<void> => {
       const section = Section.DEFI_BORROWING;
-      const premiumSection = Section.DEFI_BORROWING_HISTORY;
-      const currentStatus = getStatus(section);
       const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
 
-      if (
-        !isLoading(currentStatus) ||
-        (currentStatus === Status.LOADED && refresh)
-      ) {
+      if (!fetchDisabled(refresh, section)) {
         setStatus(newStatus, section);
         await Promise.all([
           makerDaoStore.fetchMakerDAOVaults(refresh).then(() => {
@@ -609,13 +593,10 @@ export const useDefiSupportedProtocolsStore = defineStore(
         setStatus(Status.LOADED, section);
       }
 
-      const currentPremiumStatus = getStatus(premiumSection);
+      const isPremium = get(premium);
+      const premiumSection = Section.DEFI_BORROWING_HISTORY;
 
-      if (
-        !get(premium) ||
-        isLoading(currentPremiumStatus) ||
-        (currentPremiumStatus === Status.LOADED && !refresh)
-      ) {
+      if (!isPremium || fetchDisabled(refresh, premiumSection)) {
         return;
       }
 

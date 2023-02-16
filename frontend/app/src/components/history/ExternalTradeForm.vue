@@ -3,8 +3,6 @@ import { BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
-import { convertKeys } from '@/services/axios-tranformers';
-import { deserializeApiErrorMessage } from '@/services/converters';
 import { type Writeable } from '@/types';
 import {
   type NewTrade,
@@ -15,6 +13,7 @@ import { TaskType } from '@/types/task-type';
 import { Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useTradeStore } from '@/store/history/trades';
+import { toMessages } from '@/utils/validation-errors';
 
 const props = withDefaults(
   defineProps<{
@@ -23,7 +22,7 @@ const props = withDefaults(
   }>(),
   {
     value: false,
-    edit: null
+    edit: () => null
   }
 );
 
@@ -61,8 +60,6 @@ const feeCurrencyInput = ref<any>(null);
 const { assetSymbol } = useAssetInfoRetrievalStore();
 const baseSymbol = assetSymbol(base);
 const quoteSymbol = assetSymbol(quote);
-
-const { addExternalTrade, editExternalTrade } = useTradeStore();
 
 const rules = {
   baseAsset: {
@@ -190,6 +187,10 @@ const setEditMode = () => {
   set(id, trade.tradeId);
 };
 
+const { setMessage } = useMessageStore();
+
+const { addExternalTrade, editExternalTrade } = useTradeStore();
+
 const save = async (): Promise<boolean> => {
   const amount = get(numericAmount);
   const fee = get(numericFee);
@@ -209,9 +210,10 @@ const save = async (): Promise<boolean> => {
     tradeType: get(type)
   };
 
-  const result = !get(id)
+  const identifier = get(id);
+  const result = !identifier
     ? await addExternalTrade(tradePayload)
-    : await editExternalTrade({ ...tradePayload, tradeId: get(id) });
+    : await editExternalTrade({ ...tradePayload, tradeId: identifier });
 
   if (result.success) {
     reset();
@@ -219,12 +221,14 @@ const save = async (): Promise<boolean> => {
   }
 
   if (result.message) {
-    set(
-      errorMessages,
-      convertKeys(deserializeApiErrorMessage(result.message) ?? {}, true, false)
-    );
-
-    await get(v$).$validate();
+    if (typeof result.message === 'string') {
+      setMessage({
+        description: result.message
+      });
+    } else {
+      set(errorMessages, result.message);
+      await get(v$).$validate();
+    }
   }
 
   return false;
@@ -375,9 +379,10 @@ onMounted(() => {
                   outlined
                   required
                   data-cy="base-asset"
-                  :error-messages="v$.baseAsset.$errors.map(e => e.$message)"
+                  :error-messages="toMessages(v$.baseAsset)"
                   :hint="t('external_trade_form.base_asset.hint')"
                   :label="t('external_trade_form.base_asset.label')"
+                  @blur="v$.baseAsset.$touch()"
                 />
               </v-col>
               <v-col cols="12" md="6" class="d-flex flex-row align-center">
@@ -389,9 +394,10 @@ onMounted(() => {
                   required
                   outlined
                   data-cy="quote-asset"
-                  :error-messages="v$.quoteAsset.$errors.map(e => e.$message)"
+                  :error-messages="toMessages(v$.quoteAsset)"
                   :hint="t('external_trade_form.quote_asset.hint')"
                   :label="t('external_trade_form.quote_asset.label')"
+                  @blur="v$.quoteAsset.$touch()"
                 />
               </v-col>
             </v-row>
@@ -400,11 +406,12 @@ onMounted(() => {
                 v-model="amount"
                 required
                 outlined
-                :error-messages="v$.amount.$errors.map(e => e.$message)"
+                :error-messages="toMessages(v$.amount)"
                 data-cy="amount"
                 :label="t('common.amount')"
                 persistent-hint
                 :hint="t('external_trade_form.amount.hint')"
+                @blur="v$.amount.$touch()"
               />
               <div
                 :class="`external-trade-form__grouped-amount-input d-flex ${
@@ -429,12 +436,13 @@ onMounted(() => {
                   }`"
                   filled
                   persistent-hint
+                  @blur="v$.rate.$touch()"
                 />
                 <amount-input
                   ref="quoteAmountInput"
                   v-model="quoteAmount"
                   :disabled="selectedCalculationInput !== 'quoteAmount'"
-                  :error-messages="v$.quoteAmount.$errors.map(e => e.$message)"
+                  :error-messages="toMessages(v$.quoteAmount)"
                   data-cy="quote-amount"
                   :hide-details="selectedCalculationInput !== 'quoteAmount'"
                   :class="`${
@@ -444,6 +452,7 @@ onMounted(() => {
                   }`"
                   :label="t('external_trade_form.quote_amount.label')"
                   filled
+                  @blur="v$.quoteAmount.$touch()"
                 />
                 <v-btn
                   class="external-trade-form__grouped-amount-input__swap-button"
@@ -536,7 +545,7 @@ onMounted(() => {
               :required="!!feeCurrency"
               :label="t('external_trade_form.fee.label')"
               :hint="t('external_trade_form.fee.hint')"
-              :error-messages="v$.fee.$errors.map(e => e.$message)"
+              :error-messages="toMessages(v$.fee)"
               @input="triggerFeeValidator"
             />
           </v-col>
@@ -550,7 +559,7 @@ onMounted(() => {
               :label="t('external_trade_form.fee_currency.label')"
               :hint="t('external_trade_form.fee_currency.hint')"
               :required="!!fee"
-              :error-messages="v$.feeCurrency.$errors.map(e => e.$message)"
+              :error-messages="toMessages(v$.feeCurrency)"
               @input="triggerFeeValidator"
             />
           </v-col>

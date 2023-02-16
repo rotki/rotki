@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredUnless } from '@vuelidate/validators';
+import { toMessages } from '@/utils/validation-errors';
 
 defineProps({
   value: { required: true, type: Boolean }
@@ -118,12 +119,13 @@ const v$ = useVuelidate(
         <v-text-field
           v-model="source"
           :label="t('merge_dialog.source.label')"
-          :error-messages="v$.source.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.source)"
           outlined
           :disabled="pending"
           persistent-hint
           :hint="t('merge_dialog.source_hint')"
           @focus="clearErrors"
+          @blur="v$.source.$touch()"
         />
         <v-row align="center" justify="center" class="my-4">
           <v-col cols="auto">
@@ -133,10 +135,11 @@ const v$ = useVuelidate(
         <asset-select
           v-model="target"
           outlined
-          :error-messages="v$.target.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.target)"
           :label="tc('merge_dialog.target.label')"
           :disabled="pending"
           @focus="clearErrors"
+          @blur="v$.target.$touch()"
         />
       </v-form>
     </card>

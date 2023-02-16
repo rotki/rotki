@@ -14,8 +14,8 @@ import { TaskType } from '@/types/task-type';
 import { isEvmIdentifier } from '@/utils/assets';
 import { zeroBalance } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
-import { isLoading } from '@/utils/status';
 import { ProtocolVersion } from '@/types/defi';
+import { useStatusUpdater } from '@/composables/status';
 
 export const useYearnStore = defineStore('defi/yearn', () => {
   const vaultsBalances: Ref<YearnVaultsBalances> = ref({});
@@ -30,6 +30,10 @@ export const useYearnStore = defineStore('defi/yearn', () => {
   const premium = usePremium();
   const { t } = useI18n();
   const { fetchYearnVaultsBalances, fetchYearnVaultsHistory } = useYearnApi();
+
+  const { setStatus, fetchDisabled } = useStatusUpdater(
+    Section.DEFI_YEARN_VAULTS_BALANCES
+  );
 
   const yearnVaultsProfit = (
     addresses: string[],
@@ -167,12 +171,8 @@ export const useYearnStore = defineStore('defi/yearn', () => {
     const section = isV1
       ? Section.DEFI_YEARN_VAULTS_BALANCES
       : Section.DEFI_YEARN_VAULTS_V2_BALANCES;
-    const currentStatus = getStatus(section);
 
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
+    if (fetchDisabled(refresh, section)) {
       return;
     }
 
@@ -237,12 +237,8 @@ export const useYearnStore = defineStore('defi/yearn', () => {
     const section = isV1
       ? Section.DEFI_YEARN_VAULTS_HISTORY
       : Section.DEFI_YEARN_VAULTS_V2_HISTORY;
-    const currentStatus = getStatus(section);
 
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
+    if (fetchDisabled(!!refresh, section)) {
       return;
     }
 

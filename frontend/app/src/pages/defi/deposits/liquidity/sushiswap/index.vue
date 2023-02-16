@@ -13,12 +13,12 @@ const modules: Module[] = [Module.SUSHISWAP];
 
 const { fetchBalances, fetchEvents } = useSushiswapStore();
 const { isModuleEnabled } = useModules();
-const { shouldShowLoadingScreen, isSectionRefreshing } = useSectionLoading();
+const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 const premium = usePremium();
 const { tc } = useI18n();
 
-const primaryRefreshing = isSectionRefreshing(section);
-const secondaryRefreshing = isSectionRefreshing(secondSection);
+const primaryRefreshing = isLoading(section);
+const secondaryRefreshing = isLoading(secondSection);
 const loading = shouldShowLoadingScreen(section);
 const isEnabled = isModuleEnabled(modules[0]);
 

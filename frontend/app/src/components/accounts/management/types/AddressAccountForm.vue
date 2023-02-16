@@ -3,13 +3,13 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
 import { type Module } from '@/types/modules';
 import { startPromise } from '@/utils';
-import { deserializeApiErrorMessage } from '@/services/converters';
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import {
   type BlockchainAccountPayload,
   type BlockchainAccountWithBalance
 } from '@/types/blockchain/accounts';
+import { ApiValidationError } from '@/types/api/errors';
 
 const props = defineProps<{ blockchain: Blockchain }>();
 
@@ -84,15 +84,24 @@ const save = async () => {
       }
     }
   } catch (e: any) {
-    set(errorMessages, deserializeApiErrorMessage(e.message) || {});
+    let errors = e.message;
 
-    await setMessage({
-      description: tc('account_form.error.description', 0, {
-        error: e.message
-      }).toString(),
-      title: tc('account_form.error.title'),
-      success: false
-    });
+    if (e instanceof ApiValidationError) {
+      errors = e.getValidationErrors({});
+    }
+
+    if (typeof errors === 'string') {
+      setMessage({
+        description: tc('account_form.error.description', 0, {
+          error: errors
+        }).toString(),
+        title: tc('account_form.error.title'),
+        success: false
+      });
+    } else {
+      set(errorMessages, errors);
+    }
+
     return false;
   } finally {
     set(pending, false);

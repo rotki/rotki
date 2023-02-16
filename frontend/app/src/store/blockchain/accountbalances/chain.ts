@@ -42,7 +42,7 @@ export const useChainAccountBalancesStore = defineStore(
       );
     });
 
-    const { shouldShowLoadingScreen } = useSectionLoading();
+    const { shouldShowLoadingScreen } = useStatusStore();
     const chainTotals: ComputedRef<BlockchainTotal[]> = computed(() => {
       return [
         {

@@ -11,21 +11,18 @@ import {
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import { convertKeys } from '@/services/axios-tranformers';
-import { deserializeApiErrorMessage } from '@/services/converters';
 import { type Writeable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
   type EthTransactionEntry,
   type EthTransactionEvent,
-  type EthTransactionEventEntry,
   type NewEthTransactionEvent
 } from '@/types/history/tx';
 import { TaskType } from '@/types/task-type';
 import { One, Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useEventTypeData } from '@/utils/history';
-import { type ActionStatus } from '@/types/action';
+import { toMessages } from '@/utils/validation-errors';
 
 const props = defineProps({
   value: { required: false, type: Boolean, default: false },
@@ -38,20 +35,12 @@ const props = defineProps({
     required: false,
     type: Object as PropType<EthTransactionEntry | null>,
     default: null
-  },
-  saveData: {
-    required: true,
-    type: Function as PropType<
-      (
-        event: NewEthTransactionEvent | EthTransactionEventEntry
-      ) => Promise<ActionStatus>
-    >
   }
 });
 
 const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
 const { t } = useI18n();
-const { edit, transaction, saveData } = toRefs(props);
+const { edit, transaction } = toRefs(props);
 
 const input = (valid: boolean) => emit('input', valid);
 
@@ -147,7 +136,10 @@ const v$ = useVuelidate(
     eventType,
     eventSubtype
   },
-  { $externalResults: errorMessages }
+  {
+    $autoDirty: true,
+    $externalResults: errorMessages
+  }
 );
 
 const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
@@ -210,6 +202,8 @@ const setEditMode = async () => {
 
 const { setMessage } = useMessageStore();
 
+const { editTransactionEvent, addTransactionEvent } = useTransactionStore();
+
 const save = async (): Promise<boolean> => {
   const numericAmount = get(bigNumberifyFromRef(amount));
   const numericFiatValue = get(bigNumberifyFromRef(fiatValue));
@@ -236,12 +230,12 @@ const save = async (): Promise<boolean> => {
     counterparty: get(counterparty) ? get(counterparty) : undefined
   };
 
-  const save = get(saveData);
-  const result = !get(identifier)
-    ? await save(transactionEventPayload)
-    : await save({
+  const id = get(identifier);
+  const result = !id
+    ? await addTransactionEvent(transactionEventPayload)
+    : await editTransactionEvent({
         ...transactionEventPayload,
-        identifier: get(identifier)!
+        identifier: id
       });
 
   if (result.success) {
@@ -250,14 +244,13 @@ const save = async (): Promise<boolean> => {
   }
 
   if (result.message) {
-    const errorFields = deserializeApiErrorMessage(result.message);
-    if (errorFields) {
-      set(errorMessages, convertKeys(errorFields, true, false));
-      await get(v$).$validate();
-    } else {
+    if (typeof result.message === 'string') {
       setMessage({
         description: result.message
       });
+    } else {
+      set(errorMessages, result.message);
+      await get(v$).$validate();
     }
   }
 
@@ -349,7 +342,7 @@ defineExpose({
       outlined
       data-cy="location"
       :label="t('common.location')"
-      :error-messages="v$.location.$errors.map(e => e.$message)"
+      :error-messages="toMessages(v$.location)"
       @blur="v$.location.$touch()"
     />
 
@@ -380,7 +373,7 @@ defineExpose({
           outlined
           required
           data-cy="asset"
-          :error-messages="v$.asset.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.asset)"
           @blur="v$.asset.$touch()"
         />
       </v-col>
@@ -392,7 +385,7 @@ defineExpose({
           required
           data-cy="amount"
           :label="t('common.amount')"
-          :error-messages="v$.amount.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.amount)"
           @blur="v$.amount.$touch()"
         />
       </v-col>
@@ -409,7 +402,7 @@ defineExpose({
               symbol: currencySymbol
             })
           "
-          :error-messages="v$.usdValue.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.usdValue)"
           @blur="v$.usdValue.$touch()"
         >
           <template #append>
@@ -434,7 +427,7 @@ defineExpose({
           item-value="identifier"
           item-text="label"
           data-cy="eventType"
-          :error-messages="v$.eventType.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.eventType)"
           @blur="v$.eventType.$touch()"
         />
       </v-col>
@@ -448,7 +441,7 @@ defineExpose({
           item-value="identifier"
           item-text="label"
           data-cy="eventSubtype"
-          :error-messages="v$.eventSubtype.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.eventSubtype)"
           @blur="v$.eventSubtype.$touch()"
         />
       </v-col>
@@ -469,7 +462,7 @@ defineExpose({
           integer
           data-cy="sequenceIndex"
           :label="t('transactions.events.form.sequence_index.label')"
-          :error-messages="v$.sequenceIndex.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.sequenceIndex)"
           @blur="v$.sequenceIndex.$touch()"
         />
       </v-col>

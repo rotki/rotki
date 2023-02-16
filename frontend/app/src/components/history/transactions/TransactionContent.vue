@@ -16,7 +16,6 @@ import {
   type EthTransactionEntry,
   type EthTransactionEventEntry,
   type EvmChainAddress,
-  type NewEthTransactionEvent,
   type TransactionRequestPayload
 } from '@/types/history/tx';
 import { Section } from '@/types/status';
@@ -30,7 +29,6 @@ import {
   RouterPaginationOptionsSchema
 } from '@/types/route';
 import { type Collection } from '@/types/collection';
-import { type ActionStatus } from '@/types/action';
 import { assert } from '@/utils/assertions';
 import { defaultOptions } from '@/utils/history';
 import { SavedFilterLocation } from '@/types/filtering';
@@ -106,8 +104,6 @@ const {
   fetchTransactions,
   refreshTransactions,
   fetchTransactionEvents,
-  addTransactionEvent,
-  editTransactionEvent,
   deleteTransactionEvent
 } = useTransactionStore();
 
@@ -254,21 +250,6 @@ const confirmSave = async () => {
   }
 };
 
-const saveData = async (
-  event: NewEthTransactionEvent | EthTransactionEventEntry
-) => {
-  let status: ActionStatus;
-  if ('identifier' in event) {
-    status = await editTransactionEvent(event);
-  } else {
-    status = await addTransactionEvent(event);
-  }
-  if (status.success) {
-    await fetchData();
-  }
-  return status;
-};
-
 const options: Ref<TablePagination<EthTransaction>> = ref(defaultOptions());
 const accounts: Ref<GeneralAccount[]> = ref([]);
 
@@ -411,7 +392,9 @@ const setFilter = (newFilter: UnwrapRef<typeof filters>) => {
   updateFilter(newFilter);
 };
 
+const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.TX);
+
 const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
 const { isAllFinished } = toRefs(useTxQueryStatusStore());
 
@@ -741,7 +724,6 @@ watch(loading, async (isLoading, wasLoading) => {
         v-model="valid"
         :transaction="selectedTransaction"
         :edit="editableItem"
-        :save-data="saveData"
       />
     </big-dialog>
   </div>

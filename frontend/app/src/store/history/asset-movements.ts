@@ -75,11 +75,10 @@ export const useAssetMovements = defineStore('history/asset-movements', () => {
     userInitiated = false,
     location?: SupportedExchange
   ): Promise<void> => {
-    const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
-      Section.ASSET_MOVEMENT
-    );
+    const { setStatus, isFirstLoad, resetStatus, fetchDisabled } =
+      useStatusUpdater(Section.ASSET_MOVEMENT);
 
-    if (!(userInitiated || isFirstLoad()) || loading()) {
+    if (fetchDisabled(userInitiated)) {
       logger.info('skipping asset movement refresh');
       return;
     }

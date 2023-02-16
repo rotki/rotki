@@ -99,14 +99,7 @@ export const useEthAccountsStore = defineStore(
         logger.error(e);
         let message = e.message;
         if (e instanceof ApiValidationError) {
-          const errors = e.getValidationErrors(payload);
-          if (typeof errors !== 'string') {
-            return {
-              success: false,
-              message: errors
-            };
-          }
-          message = errors;
+          message = e.getValidationErrors(payload);
         }
 
         return {
@@ -139,14 +132,7 @@ export const useEthAccountsStore = defineStore(
         logger.error(e);
         let message = e.message;
         if (e instanceof ApiValidationError) {
-          const errors = e.getValidationErrors(payload);
-          if (typeof errors !== 'string') {
-            return {
-              success: false,
-              message: errors
-            };
-          }
-          message = errors;
+          message = e.getValidationErrors(payload);
         }
 
         return {

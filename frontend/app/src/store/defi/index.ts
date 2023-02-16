@@ -27,7 +27,6 @@ import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
-import { isLoading } from '@/utils/status';
 import { ProtocolVersion } from '@/types/defi';
 import {
   ALL_DECENTRALIZED_EXCHANGES,
@@ -38,6 +37,7 @@ type ResetStateParams =
   | Module
   | typeof ALL_MODULES
   | typeof ALL_DECENTRALIZED_EXCHANGES;
+
 export const useDefiStore = defineStore('defi', () => {
   const allProtocols: Ref<AllDefiProtocols> = ref({});
 
@@ -159,6 +159,10 @@ export const useDefiStore = defineStore('defi', () => {
 
       return Object.values(accounts);
     });
+
+  const { getStatus, loading, setStatus, fetchDisabled } = useStatusUpdater(
+    Section.DEFI_OVERVIEW
+  );
 
   const overview: ComputedRef<DefiProtocolSummary[]> = computed(() => {
     const shouldDisplay = (summary: DefiProtocolSummary) => {
@@ -325,7 +329,7 @@ export const useDefiStore = defineStore('defi', () => {
       }
     }
 
-    const overviewStatus = getStatus(Section.DEFI_OVERVIEW);
+    const overviewStatus = getStatus();
     if (
       overviewStatus === Status.LOADED ||
       overviewStatus === Status.REFRESHING
@@ -392,12 +396,8 @@ export const useDefiStore = defineStore('defi', () => {
 
   const fetchDefiBalances = async (refresh: boolean) => {
     const section = Section.DEFI_BALANCES;
-    const currentStatus = getStatus(section);
 
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
+    if (fetchDisabled(refresh, section)) {
       return;
     }
 
@@ -429,19 +429,14 @@ export const useDefiStore = defineStore('defi', () => {
   };
 
   async function fetchAllDefi(refresh = false) {
-    const section = Section.DEFI_OVERVIEW;
-    const currentStatus = getStatus(section);
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
+    if (fetchDisabled(refresh)) {
       return;
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
+    setStatus(newStatus);
     await fetchDefiBalances(refresh);
-    setStatus(Status.PARTIALLY_LOADED, section);
+    setStatus(Status.PARTIALLY_LOADED);
 
     await Promise.allSettled([
       aaveStore.fetchBalances(refresh),
@@ -459,14 +454,13 @@ export const useDefiStore = defineStore('defi', () => {
       liquityStore.fetchBalances(refresh)
     ]);
 
-    setStatus(Status.LOADED, section);
+    setStatus(Status.LOADED);
   }
 
   async function resetDB(protocols: DefiProtocol[]) {
     const premiumSection = Section.DEFI_LENDING_HISTORY;
-    const currentPremiumStatus = getStatus(premiumSection);
 
-    if (!get(premium) || isLoading(currentPremiumStatus)) {
+    if (!get(premium) || loading(premiumSection)) {
       return;
     }
 

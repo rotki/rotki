@@ -2,13 +2,13 @@
 import { type BigNumber } from '@rotki/common';
 import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import { deserializeApiErrorMessage } from '@/services/converters';
 import { type EditableMissingPrice, type MissingPrice } from '@/types/reports';
 import {
   type HistoricalPrice,
   type HistoricalPriceDeletePayload,
   type HistoricalPriceFormPayload
 } from '@/types/prices';
+import { ApiValidationError } from '@/types/api/errors';
 
 const props = defineProps({
   items: { required: true, type: Array as PropType<MissingPrice[]> },
@@ -97,8 +97,11 @@ const updatePrice = async (item: EditableMissingPrice) => {
       await deleteHistoricalPrice(payload);
     }
   } catch (e: any) {
-    const message = deserializeApiErrorMessage(e.message) as any;
-    const errorMessage = message ? message.price[0] : e.message;
+    let errorMessage = e.message;
+    if (e instanceof ApiValidationError) {
+      const errors = e.getValidationErrors({ price: '' });
+      errorMessage = typeof errors === 'string' ? e.message : errors.price[0];
+    }
 
     set(errorMessages, {
       ...get(errorMessages),

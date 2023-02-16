@@ -19,16 +19,26 @@ export const useStatusUpdater = (section: Section, ignore = false) => {
     });
   };
 
-  const loading = () => isLoading(getStatus(section));
-  const isFirstLoad = () => get(getStatus(section)) === Status.NONE;
+  const loading = (otherSection?: Section) =>
+    get(isLoading(otherSection ?? section));
+
+  const isFirstLoad = (otherSection?: Section) =>
+    get(getStatus(otherSection ?? section)) === Status.NONE;
+
+  const fetchDisabled = (refresh: boolean, otherSection?: Section) => {
+    return !(isFirstLoad(otherSection) || refresh) || loading(otherSection);
+  };
+
   const getSectionStatus = (otherSection?: Section) => {
     return get(getStatus(otherSection ?? section));
   };
+
   return {
     loading,
     isFirstLoad,
     setStatus: updateStatus,
     getStatus: getSectionStatus,
+    fetchDisabled,
     resetStatus
   };
 };
