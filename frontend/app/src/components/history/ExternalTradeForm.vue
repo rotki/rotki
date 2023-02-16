@@ -12,7 +12,7 @@ import {
   type Trade,
   type TradeEntry,
   type TradeType
-} from '@/types/history/trade/trades';
+} from '@/types/history/trade';
 import { TaskType } from '@/types/task-type';
 import { Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';

@@ -9,7 +9,7 @@ import { type ComputedRef, type Ref } from 'vue';
 import {
   HistoryEventType,
   TransactionEventProtocol
-} from '@/types/history/tx/tx-events';
+} from '@rotki/common/lib/history/tx-events';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TransactionContent from '@/components/history/transactions/TransactionContent.vue';
 import LiquityPools from '@/components/staking/liquity/LiquityPools.vue';

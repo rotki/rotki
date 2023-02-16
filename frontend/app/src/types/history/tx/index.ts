@@ -71,6 +71,7 @@ export interface TransactionRequestPayload
   readonly asset?: string;
   readonly protocols?: string | string[];
   readonly eventTypes?: string | string[];
+  readonly eventSubtypes?: string | string[];
   readonly evmChain?: string;
 }
 

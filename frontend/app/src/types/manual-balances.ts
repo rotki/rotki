@@ -1,6 +1,6 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { TradeLocation } from '@/types/history/trade/trade-location';
+import { TradeLocation } from '@/types/history/trade/location';
 import { BalanceType } from '@/types/balances';
 
 export const ManualBalance = z.object({

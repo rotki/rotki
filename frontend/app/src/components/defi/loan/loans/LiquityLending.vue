@@ -2,15 +2,16 @@
 import { type AssetBalance, type BigNumber } from '@rotki/common';
 import { type ComputedRef, type PropType } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import {
+  HistoryEventSubType,
+  HistoryEventType,
+  TransactionEventProtocol
+} from '@rotki/common/lib/history/tx-events';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import LiquityCollateral from '@/components/defi/loan/loans/liquity/LiquityCollateral.vue';
 import LiquityLiquidation from '@/components/defi/loan/loans/liquity/LiquityLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
-import {
-  HistoryEventType,
-  TransactionEventProtocol
-} from '@/types/history/tx/tx-events';
 import { type LiquityLoan } from '@/types/defi/liquity';
 
 const props = defineProps({
@@ -80,6 +81,12 @@ const { tc } = useI18n();
             HistoryEventType.WITHDRAWAL,
             HistoryEventType.SPEND,
             HistoryEventType.DEPOSIT
+          ]"
+          :event-sub-types="[
+            HistoryEventSubType.DEPOSIT_ASSET,
+            HistoryEventSubType.REMOVE_ASSET,
+            HistoryEventSubType.GENERATE_DEBT,
+            HistoryEventSubType.PAYBACK_DEBT
           ]"
           :external-account-filter="[
             {

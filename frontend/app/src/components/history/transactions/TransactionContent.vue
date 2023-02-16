@@ -4,9 +4,10 @@ import { type ComputedRef, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import { type BlockchainSelection } from '@rotki/common/lib/blockchain';
 import {
+  type HistoryEventSubType,
   type HistoryEventType,
   type TransactionEventProtocol
-} from '@/types/history/tx/tx-events';
+} from '@rotki/common/lib/history/tx-events';
 import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
 import { type Writeable } from '@/types';
 import {
@@ -16,7 +17,7 @@ import {
   type EvmChainAddress,
   type NewEthTransactionEvent,
   type TransactionRequestPayload
-} from '@/types/history/tx/tx';
+} from '@/types/history/tx';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { getCollectionData } from '@/utils/collection';
@@ -33,6 +34,7 @@ const props = withDefaults(
   defineProps<{
     protocols?: TransactionEventProtocol[];
     eventTypes?: HistoryEventType[];
+    eventSubTypes?: HistoryEventSubType[];
     externalAccountFilter?: Account[];
     useExternalAccountFilter?: boolean;
     sectionTitle?: string;
@@ -40,6 +42,7 @@ const props = withDefaults(
   {
     protocols: () => [],
     eventTypes: () => [],
+    eventSubTypes: () => [],
     externalAccountFilter: () => [],
     useExternalAccountFilter: false,
     sectionTitle: ''
@@ -52,7 +55,8 @@ const {
   useExternalAccountFilter,
   externalAccountFilter,
   sectionTitle,
-  eventTypes
+  eventTypes,
+  eventSubTypes
 } = toRefs(props);
 
 const usedTitle: ComputedRef<string> = computed(() => {
@@ -297,6 +301,9 @@ const updatePayloadHandler = async () => {
 
   const eventTypesVal = get(eventTypes);
   if (eventTypesVal?.length > 0) payload.eventTypes = eventTypesVal;
+
+  const eventSubTypesVal = get(eventSubTypes);
+  if (eventSubTypesVal?.length > 0) payload.eventSubtypes = eventSubTypesVal;
 
   await updateTransactionsPayload(payload);
 };

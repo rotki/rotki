@@ -23,7 +23,7 @@ import {
 import {
   type TradeLocation,
   type TradeLocationData
-} from '@/types/history/trade/trade-location';
+} from '@/types/history/trade/location';
 import { assert } from '@/utils/assertions';
 
 export const useTradeLocations = createSharedComposable(() => {

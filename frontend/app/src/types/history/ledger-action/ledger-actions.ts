@@ -3,7 +3,7 @@ import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { type PaginationRequestPayload } from '@/types/common';
 import { EntryMeta } from '@/types/history/meta';
-import { TradeLocation } from '@/types/history/trade/trade-location';
+import { TradeLocation } from '@/types/history/trade/location';
 import { LedgerActionEnum } from '@/types/history/ledger-action/ledger-actions-type';
 
 export const LedgerAction = z.object({

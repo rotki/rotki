@@ -5,7 +5,7 @@ import {
   validStatus,
   validWithSessionStatus
 } from '@/services/utils';
-import { type TradeLocation } from '@/types/history/trade/trade-location';
+import { type TradeLocation } from '@/types/history/trade/location';
 import { ReportProgress } from '@/types/reports';
 
 export const useHistoryApi = () => {

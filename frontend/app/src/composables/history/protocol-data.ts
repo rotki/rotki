@@ -1,4 +1,4 @@
-import { TransactionEventProtocol } from '@/types/history/tx/tx-events';
+import { TransactionEventProtocol } from '@rotki/common/lib/history/tx-events';
 import { type ActionDataEntry } from '@/types/action';
 
 export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [
@@ -20,6 +20,13 @@ export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [
     identifier: TransactionEventProtocol.BADGER,
     label: 'badger',
     image: './assets/images/defi/badger.png'
+  },
+  {
+    identifier: TransactionEventProtocol.BALANCER,
+    label: 'badger',
+    image: './assets/images/defi/balancer.svg',
+    matcher: (identifier: string): boolean =>
+      identifier.toLowerCase().startsWith('balancer')
   },
   {
     identifier: TransactionEventProtocol.COMPOUND,
@@ -147,7 +154,9 @@ export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [
   {
     identifier: TransactionEventProtocol.YEARN,
     label: 'Yearn',
-    image: './assets/images/defi/yearn_vaults.svg'
+    image: './assets/images/defi/yearn_vaults.svg',
+    matcher: (identifier: string): boolean =>
+      identifier.toLowerCase().startsWith('yearn')
   },
   {
     identifier: TransactionEventProtocol.ZKSYNC,

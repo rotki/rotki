@@ -4,12 +4,10 @@ import { type AssetInfo } from '../data';
 import { type LpType, type ProfitLossModel } from '../defi';
 import {
   type BalancerBalance,
-  type BalancerEvent,
   type BalancerProfitLoss
 } from '../defi/balancer';
 import {
   type XswapBalance,
-  type XswapEventDetails,
   type XswapPool,
   type XswapPoolProfit
 } from '../defi/xswap';
@@ -70,7 +68,6 @@ export interface CompoundApi {
 
 export interface BalancerApi {
   balancerProfitLoss: (addresses: string[]) => Ref<BalancerProfitLoss[]>;
-  balancerEvents: (addresses: string[]) => Ref<BalancerEvent[]>;
   balancerBalances: (addresses: string[]) => Ref<BalancerBalance[]>;
   balancerPools: Ref<XswapPool[]>;
   balancerAddresses: Ref<string[]>;
@@ -80,7 +77,6 @@ export interface BalancerApi {
 
 export interface SushiApi {
   balances: (addresses: string[]) => Ref<XswapBalance[]>;
-  events: (addresses: string[]) => Ref<XswapEventDetails[]>;
   poolProfit: (addresses: string[]) => Ref<XswapPoolProfit[]>;
   addresses: Ref<string[]>;
   pools: Ref<XswapPool[]>;

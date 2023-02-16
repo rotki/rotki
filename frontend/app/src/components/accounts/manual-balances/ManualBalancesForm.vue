@@ -9,7 +9,7 @@ import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { type TradeLocation } from '@/types/history/trade/trade-location';
+import { type TradeLocation } from '@/types/history/trade/location';
 import { type ManualBalance } from '@/types/manual-balances';
 import { startPromise } from '@/utils';
 import { bigNumberify } from '@/utils/bignumbers';

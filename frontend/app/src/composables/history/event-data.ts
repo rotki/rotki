@@ -2,7 +2,7 @@ import { type ComputedRef } from 'vue';
 import {
   HistoryEventSubType,
   HistoryEventType
-} from '@/types/history/tx/tx-events';
+} from '@rotki/common/lib/history/tx-events';
 import { type ActionDataEntry } from '@/types/action';
 
 export const useHistoryEventTypeData = createSharedComposable(() => {

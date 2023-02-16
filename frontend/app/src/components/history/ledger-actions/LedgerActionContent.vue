@@ -10,7 +10,7 @@ import {
   type LedgerActionEntry,
   type LedgerActionRequestPayload
 } from '@/types/history/ledger-action/ledger-actions';
-import { type TradeLocation } from '@/types/history/trade/trade-location';
+import { type TradeLocation } from '@/types/history/trade/location';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { type TablePagination } from '@/types/pagination';

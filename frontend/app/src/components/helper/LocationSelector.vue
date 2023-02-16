@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type PropType, useListeners } from 'vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
-import { type TradeLocationData } from '@/types/history/trade/trade-location';
+import { type TradeLocationData } from '@/types/history/trade/location';
 
 const props = defineProps({
   value: { required: false, type: String, default: '' },

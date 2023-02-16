@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { type ComputedRef, type PropType } from 'vue';
+import {
+  HistoryEventSubType,
+  HistoryEventType,
+  TransactionEventProtocol
+} from '@rotki/common/lib/history/tx-events';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import MakerDaoVaultCollateral from '@/components/defi/loan/loans/makerdao/MakerDaoVaultCollateral.vue';
 import MakerDaoVaultDebtDetails from '@/components/defi/loan/loans/makerdao/MakerDaoVaultDebtDetails.vue';
 import MakerDaoVaultLiquidation from '@/components/defi/loan/loans/makerdao/MakerDaoVaultLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
-import { VaultEventsList } from '@/premium/premium';
-import {
-  type MakerDAOVaultEvent,
-  type MakerDAOVaultModel
-} from '@/types/defi/maker';
+import { type MakerDAOVaultModel } from '@/types/defi/maker';
 import { Zero } from '@/utils/bignumbers';
 
 const props = defineProps({
@@ -24,12 +26,7 @@ const props = defineProps({
 const { vault } = toRefs(props);
 const { scrambleData } = storeToRefs(useSessionSettingsStore());
 const { premium } = storeToRefs(usePremiumStore());
-const { openUrl } = useInterop();
 const { tc } = useI18n();
-
-const openLink = (url: string) => {
-  openUrl(url);
-};
 
 const totalInterestOwed: ComputedRef<BigNumber> = computed(() => {
   const makerVault = get(vault);
@@ -39,22 +36,6 @@ const totalInterestOwed: ComputedRef<BigNumber> = computed(() => {
   return Zero;
 });
 
-const events: ComputedRef<MakerDAOVaultEvent[] | undefined> = computed(() => {
-  const makerVault = get(vault);
-  if ('totalInterestOwed' in makerVault) {
-    return makerVault.events;
-  }
-  return undefined;
-});
-
-const creation = computed(() => {
-  const makerVault = get(vault);
-  if ('totalInterestOwed' in makerVault) {
-    return makerVault.creationTs;
-  }
-  return undefined;
-});
-
 const header = computed(() => {
   const makerVault = get(vault);
   return {
@@ -62,6 +43,8 @@ const header = computed(() => {
     collateralType: makerVault.collateralType
   };
 });
+
+const chain = Blockchain.ETH;
 </script>
 
 <template>
@@ -87,21 +70,35 @@ const header = computed(() => {
           </loan-debt>
         </v-col>
       </v-row>
-      <v-row class="mt-8" no-gutters>
+      <v-row v-if="!premium" class="mt-8" no-gutters>
         <v-col cols="12">
           <premium-card
             v-if="!premium"
             :title="tc('maker_dao_vault_loan.borrowing_history')"
           />
-          <vault-events-list
-            v-else
-            :asset="vault.collateral.asset"
-            :events="events"
-            :creation="creation"
-            @open-link="openLink($event)"
-          />
         </v-col>
       </v-row>
+      <div v-else>
+        <transaction-content
+          :section-title="tc('common.events')"
+          :protocols="[
+            TransactionEventProtocol.MAKERDAO,
+            TransactionEventProtocol.MAKERDAO_VAULT
+          ]"
+          :event-types="[
+            HistoryEventType.WITHDRAWAL,
+            HistoryEventType.SPEND,
+            HistoryEventType.DEPOSIT
+          ]"
+          :event-sub-types="[
+            HistoryEventSubType.DEPOSIT_ASSET,
+            HistoryEventSubType.REMOVE_ASSET,
+            HistoryEventSubType.PAYBACK_DEBT
+          ]"
+          :use-external-account-filter="true"
+          :external-account-filter="[{ chain, address: vault.owner }]"
+        />
+      </div>
     </v-col>
   </v-row>
 </template>

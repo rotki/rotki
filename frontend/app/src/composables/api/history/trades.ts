@@ -14,7 +14,7 @@ import {
   type Trade,
   TradeCollectionResponse,
   type TradeRequestPayload
-} from '@/types/history/trade/trades';
+} from '@/types/history/trade';
 import { type PendingTask } from '@/types/task';
 
 export const useTradesApi = () => {

@@ -3,7 +3,7 @@ import { type Ref } from 'vue';
 import groupBy from 'lodash/groupBy';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { type EntryWithMeta } from '@/types/history/meta';
-import { type TradeRequestPayload } from '@/types/history/trade/trades';
+import { type TradeRequestPayload } from '@/types/history/trade';
 import {
   type EthTransaction,
   EthTransactionCollectionResponse,
@@ -12,7 +12,7 @@ import {
   type NewEthTransactionEvent,
   type TransactionHashAndEvmChainPayload,
   type TransactionRequestPayload
-} from '@/types/history/tx/tx';
+} from '@/types/history/tx';
 import { Section, Status } from '@/types/status';
 import {
   BackendCancelledTaskError,

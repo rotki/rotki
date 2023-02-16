@@ -44,7 +44,6 @@ const symbol = asyncComputed(() => assetSymbol(get(loan).asset));
           <aave-borrowing-details
             v-else
             :loading="aaveHistoryLoading"
-            :events="loan.events"
             :owner="loan.owner"
             :total-lost="loan.totalLost"
             :liquidation-earned="loan.liquidationEarned"
