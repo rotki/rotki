@@ -47,6 +47,7 @@ async function merge() {
       ...get(errorMessages),
       result.message ?? t('merge_dialog.error').toString()
     ]);
+    get(v$).$validate();
   }
   set(pending, false);
 }

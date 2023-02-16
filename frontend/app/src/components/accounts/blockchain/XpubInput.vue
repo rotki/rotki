@@ -3,6 +3,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
+import isEmpty from 'lodash/isEmpty';
 import { type XpubPayload } from '@/store/balances/types';
 import { trimOnPaste } from '@/utils/event';
 import {
@@ -22,7 +23,9 @@ const props = defineProps<{
   blockchain: BtcChains;
 }>();
 
-const emit = defineEmits(['update:xpub']);
+const emit = defineEmits<{
+  (e: 'update:xpub', event: XpubPayload | null): void;
+}>();
 
 const { t, tc } = useI18n();
 
@@ -129,6 +132,12 @@ const v$ = useVuelidate(
     $externalResults: errorMessages
   }
 );
+
+watch(errorMessages, errors => {
+  if (!isEmpty(errors)) {
+    get(v$).$validate();
+  }
+});
 </script>
 
 <template>

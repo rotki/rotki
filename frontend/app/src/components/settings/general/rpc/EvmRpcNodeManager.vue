@@ -71,6 +71,7 @@ const save = async () => {
       await api.addEvmNode(omit(node, 'identifier'));
     }
     await loadNodes();
+    clear();
   } catch (e: any) {
     const chainProp = get(chain);
     const errorTitle = editing
@@ -104,7 +105,6 @@ const save = async () => {
     }
   } finally {
     set(loading, false);
-    clear();
   }
 };
 

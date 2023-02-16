@@ -2507,11 +2507,17 @@
     },
     "rate": {
       "hint": "[Optional] Custom rate of the action. If not given the rate for the asset at the given time will be used.",
-      "label": "Rate"
+      "label": "Rate",
+      "validation": {
+        "non_empty": "The rate cannot be empty when rate asset is inputted"
+      }
     },
     "rate_asset": {
       "hint": "[Optional] The asset used for the rate",
-      "label": "Rate asset"
+      "label": "Rate asset",
+      "validation": {
+        "non_empty": "The rate asset cannot be empty when asset is inputted"
+      }
     }
   },
   "ledger_action_settings": {
