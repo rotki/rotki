@@ -90,7 +90,17 @@ ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED = (
     [
         (
             PRUNED_AND_NOT_ARCHIVED_NODE,
-            ETHERSCAN_AND_INFURA_AND_ALCHEMY[1][1][0][0],
+            WeightedNode(
+                node_info=NodeName(
+                    name='Infura',
+                    endpoint='https://mainnet.infura.io/v3/a6b269b6e5ad44ed943e9fff244dfe25',
+                    owned=True,
+                    blockchain=SupportedBlockchain.ETHEREUM,
+                ),
+                active=True,
+                weight=ONE,
+            ),
+            ETHEREUM_ETHERSCAN_NODE,
             ETHERSCAN_AND_INFURA_AND_ALCHEMY[1][2][0][0],
         ),
     ],

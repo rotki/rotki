@@ -1,5 +1,6 @@
 import json
 import random
+from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -15,6 +16,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_async_response,
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
@@ -243,3 +245,22 @@ def test_evm_transaction_hash_addition(rotkehlchen_api_server: 'APIServer') -> N
         },
     )
     assert_error_response(response, f'address {random_address} provided is not tracked by rotki for {chain_id.to_name()}')  # noqa: E501
+
+    # use a tx_hash that does not exist on-chain
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'evmtransactionshashresource',
+        ), json={
+            'async_query': is_async_query,
+            'evm_chain': chain_id.to_name(),
+            'tx_hash': random_tx_hash,
+            'associated_address': ADDY,
+        },
+    )
+    if is_async_query:
+        task_id = assert_ok_async_response(response)  # type: ignore[unreachable]
+        response_data = wait_for_async_task(rotkehlchen_api_server, task_id)
+        assert_error_async_response(response_data, f'{random_tx_hash} not found on chain.', status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
+    else:
+        assert_error_response(response, f'{random_tx_hash} not found on chain.', status_code=HTTPStatus.NOT_FOUND)  # noqa: E501

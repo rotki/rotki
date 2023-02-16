@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
@@ -308,6 +310,7 @@ def test_get_blocknumber_by_time_etherscan(ethereum_inquirer):
     _test_get_blocknumber_by_time(ethereum_inquirer, True)
 
 
+@pytest.mark.vcr(match_on=['uri', 'method', 'raw_body'], allow_playback_repeats=True)
 @pytest.mark.parametrize(*ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
 def test_ethereum_nodes_prune_and_archive_status(
         ethereum_inquirer,
@@ -325,3 +328,84 @@ def test_ethereum_nodes_prune_and_archive_status(
         else:
             assert not web3_node.is_pruned
             assert web3_node.is_archive
+
+    # excluding etherscan
+    assert len(ethereum_inquirer.web3_mapping) == len(ethereum_manager_connect_at_start) - 1
+
+
+@pytest.mark.vcr(
+    match_on=['uri', 'method', 'raw_body'],
+    allow_playback_repeats=True,
+    filter_query_parameters=['apikey'],
+)
+@pytest.mark.parametrize(*ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
+def test_get_pruned_nodes_behaviour_in_txn_queries(
+        ethereum_inquirer,
+        ethereum_manager_connect_at_start,
+):
+    wait_until_all_nodes_connected(
+        connect_at_start=ethereum_manager_connect_at_start,
+        evm_inquirer=ethereum_inquirer,
+    )
+    # ensure the pruned node comes first in the call order.
+    call_order = ethereum_manager_connect_at_start
+    random_evm_tx_hash = deserialize_evm_tx_hash('0x12ef63b6b8a863c028023374e5fb7a30a8b05559072ead2684084c58abbbeb6d')  # noqa: E501
+    tx = ethereum_inquirer.maybe_get_transaction_by_hash(random_evm_tx_hash, call_order)
+    receipt = ethereum_inquirer.maybe_get_transaction_receipt(random_evm_tx_hash, call_order)
+    assert not tx and not receipt, 'transaction does not exist on-chain'
+
+    # now, try retrieving an old transaction and see that the pruned node isn't called at all.
+    # https://etherscan.io/tx/0x5958b93e28657cb34777c5b706b36bf6c72c9d0d704473163ba18cb14ba5a77a
+    txn_hash = deserialize_evm_tx_hash('0x5958b93e28657cb34777c5b706b36bf6c72c9d0d704473163ba18cb14ba5a77a')  # noqa: E501
+
+    tx_or_tx_receipt_calls = 0
+
+    def mock_get_tx_or_tx_receipt(web3, tx_hash):
+        nonlocal tx_or_tx_receipt_calls
+        assert tx_hash == txn_hash
+        assert not web3 or web3.manager.provider.endpoint_uri != 'https://ethereum.publicnode.com'
+        tx_or_tx_receipt_calls += 1
+
+    get_tx_patch = patch.object(ethereum_inquirer, '_get_transaction_by_hash', side_effect=mock_get_tx_or_tx_receipt, autospec=True)  # noqa: E501
+    get_tx_receipt_patch = patch.object(ethereum_inquirer, '_get_transaction_receipt', side_effect=mock_get_tx_or_tx_receipt, autospec=True)  # noqa: E501
+    with get_tx_patch, get_tx_receipt_patch:
+        ethereum_inquirer.maybe_get_transaction_by_hash(txn_hash, call_order)
+        ethereum_inquirer.maybe_get_transaction_receipt(txn_hash, call_order)
+        assert tx_or_tx_receipt_calls == 2
+
+    # now reduce the rpc to just a pruned node & etherscan and see that etherscan is called.
+    pruned_node_and_etherscan = [
+        ethereum_manager_connect_at_start[0],
+        ethereum_manager_connect_at_start[2],
+    ]
+    call_order = pruned_node_and_etherscan
+    ethereum_inquirer.connect_to_multiple_nodes(pruned_node_and_etherscan)
+    wait_until_all_nodes_connected(
+        connect_at_start=pruned_node_and_etherscan,
+        evm_inquirer=ethereum_inquirer,
+    )
+    assert len(ethereum_inquirer.web3_mapping) == 1
+
+    etherscan_tx_or_tx_receipt_calls = 0
+
+    def mock_etherscan_get_tx(tx_hash):
+        nonlocal etherscan_tx_or_tx_receipt_calls
+        assert tx_hash == txn_hash
+        etherscan_tx_or_tx_receipt_calls += 1
+
+    etherscan_get_tx_patch = patch.object(
+        ethereum_inquirer.etherscan,
+        'get_transaction_by_hash',
+        side_effect=mock_etherscan_get_tx,
+        autospec=True,
+    )
+    etherscan_get_tx_receipt_patch = patch.object(
+        ethereum_inquirer.etherscan,
+        'get_transaction_receipt',
+        side_effect=mock_etherscan_get_tx,
+        autospec=True,
+    )
+    with etherscan_get_tx_patch, etherscan_get_tx_receipt_patch:
+        ethereum_inquirer.maybe_get_transaction_by_hash(txn_hash, call_order)
+        ethereum_inquirer.maybe_get_transaction_receipt(txn_hash, call_order)
+        assert etherscan_tx_or_tx_receipt_calls == 2
