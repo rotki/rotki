@@ -578,7 +578,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
             extra_data={'withdrawal_events_num': 1},
         ), HistoryBaseEntry(
             event_identifier=evmhash,
-            sequence_index=2,
+            sequence_index=193,
             timestamp=1650276061000,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -811,7 +811,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
-            sequence_index=77,
+            sequence_index=78,
             timestamp=TimestampMS(1675186487000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -823,7 +823,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
-            sequence_index=78,
+            sequence_index=79,
             timestamp=TimestampMS(1675186487000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -835,7 +835,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
-            sequence_index=79,
+            sequence_index=80,
             timestamp=TimestampMS(1675186487000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
