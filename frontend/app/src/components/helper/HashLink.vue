@@ -1,14 +1,13 @@
 ﻿<script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { truncateAddress } from '@/filters';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import {
   type Chains,
   type ExplorerUrls,
   explorerUrls
 } from '@/types/asset-urls';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 
 const props = withDefaults(
   defineProps<{
@@ -40,10 +39,7 @@ const props = withDefaults(
 );
 
 const { text, baseUrl, chain, tx } = toRefs(props);
-
-const sessionSettingsStore = useSessionSettingsStore();
-const { scrambleData, shouldShowAmount } = storeToRefs(sessionSettingsStore);
-const { scrambleHex } = sessionSettingsStore;
+const { scrambleData, shouldShowAmount, scrambleHex } = useScramble();
 
 const { explorers } = storeToRefs(useFrontendSettingsStore());
 const { dark } = useTheme();

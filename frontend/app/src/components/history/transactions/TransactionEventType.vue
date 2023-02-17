@@ -3,7 +3,6 @@ import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type ActionDataEntry } from '@/store/types';
 import { getEventCounterpartyData, useEventTypeData } from '@/utils/history';
 import { type EthTransactionEventEntry } from '@/types/history/tx';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 const props = defineProps<{
   event: EthTransactionEventEntry;
@@ -19,9 +18,7 @@ const attrs = computed<ActionDataEntry>(() => {
   return getEventTypeData(get(event));
 });
 
-const sessionSettingsStore = useSessionSettingsStore();
-const { scrambleData } = storeToRefs(sessionSettingsStore);
-const { scrambleHex } = sessionSettingsStore;
+const { scrambleData, scrambleHex } = useScramble();
 
 const counterparty = computed<ActionDataEntry | null>(() => {
   return getEventCounterpartyData(

@@ -107,12 +107,12 @@ export const getEventCounterpartyData = (
     };
   }
 
-  const scrambled = scrambler ? scrambler(counterparty) : counterparty;
+  const counterpartyAddress = scrambler?.(counterparty) ?? counterparty;
 
   return {
     identifier: '',
-    label: scrambled,
-    image: getBlockie(scrambled)
+    label: counterpartyAddress,
+    image: getBlockie(counterpartyAddress)
   };
 };
 

@@ -2,7 +2,6 @@
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { truncateAddress, truncationPoints } from '@/filters';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 const { t } = useI18n();
 
@@ -12,12 +11,9 @@ const props = defineProps<{
 
 const { account } = toRefs(props);
 const { currentBreakpoint } = useTheme();
-
-const sessionSettingsStore = useSessionSettingsStore();
-const { scrambleData, shouldShowAmount } = storeToRefs(sessionSettingsStore);
-const { scrambleHex } = sessionSettingsStore;
-
+const { scrambleData, shouldShowAmount, scrambleHex } = useScramble();
 const { addressNameSelector } = useAddressesNamesStore();
+
 const aliasName = computed<string | null>(() => {
   if (get(scrambleData)) {
     return null;
