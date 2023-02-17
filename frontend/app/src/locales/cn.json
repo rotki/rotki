@@ -264,144 +264,144 @@
       },
       "detect_tokens": {
         "task": {
-          "description": "Fetch detected tokens for {address} ({chain})",
-          "title": "Fetch detected tokens"
+          "description": "为 {address} ({chain}) 获取检测到的token",
+          "title": "获取检测到的token"
         }
       },
       "exchange_balances": {
         "error": {
-          "message": "Failed to query {location} balances: {error}",
-          "title": "{location} balance query"
+          "message": "无法查询 {location} 余额：{error}",
+          "title": "{location}余额查询"
         },
         "task": {
-          "title": "Retrieving {location} balances"
+          "title": "检索{location}余额"
         }
       },
       "exchange_rates": {
         "error": {
-          "message": "Failed fetching exchange rates: {message}",
-          "title": "Exchange Rates"
+          "message": "获取汇率失败： {message}",
+          "title": "汇率"
         },
         "task": {
-          "title": "Exchange Rates"
+          "title": "汇率"
         }
       },
       "exchange_removal": {
-        "description": "The removal of {exchange} failed due to: {error}",
-        "title": "Exchange removal"
+        "description": "删除 {exchange} 失败，原因是：{error}",
+        "title": "交易所移除"
       },
       "exchange_setup": {
-        "description": "The setup of {exchange} failed due to: {error}",
-        "title": "Exchange setup"
+        "description": "{exchange} 设置失败，原因是：{error}",
+        "title": "交易所设置"
       },
       "historic_fetch_price": {
         "task": {
-          "description": "Fetching rate from {fromAsset} to {toAsset} on {date}",
-          "title": "Fetching conversion rate"
+          "description": "在 {date} 从 {fromAsset} 获取利率到 {toAsset}",
+          "title": "获取转化率"
         }
       },
       "loopring": {
         "error": {
-          "description": "Querying Loopring balances failed: {error}",
-          "title": "Querying Loopring balances"
+          "description": "查询路印协议余额失败：{error}",
+          "title": "查询路印协议余额"
         },
         "task": {
-          "title": "Querying Loopring balances"
+          "title": "查询路印协议余额"
         }
       },
       "manual_balances": {
         "error": {
-          "message": "Failed: {message}",
-          "title": "Retrieving manual balances"
+          "message": "失败： {message}",
+          "title": "检索手动余额"
         }
       },
       "manual_delete": {
         "error": {
-          "title": "Deleting Manual Balance"
+          "title": "删除手动余额"
         }
       },
       "xpub_removal": {
         "error": {
-          "description": "Failed to remove {xpub}: {error}",
-          "title": "Xpub Removal"
+          "description": "无法删除 {xpub}：{error}",
+          "title": "Xpub 移除"
         },
         "task": {
           "description": "{xpub}",
-          "title": "Removing xpub"
+          "title": "删除 xpub"
         }
       }
     },
     "defi": {
       "aave_balances": {
         "error": {
-          "description": "Failed to retrieve Aave balances: {error}",
-          "title": "Aave balances"
+          "description": "无法检索 Aave 余额： {error}",
+          "title": "Aave 余额"
         },
         "task": {
-          "title": "Querying Aave balances"
+          "title": "查询 Aave 余额"
         }
       },
       "aave_history": {
         "error": {
-          "description": "Failed to retrieve Aave history: {error}",
-          "title": "Aave history"
+          "description": "无法检索 Aave 历史：{error}",
+          "title": "Aave 历史"
         },
         "task": {
-          "title": "Querying Aave history"
+          "title": "查询Aave历史"
         }
       },
       "airdrops": {
         "error": {
-          "description": "Failed to retrieve airdrops: {error}",
-          "title": "Airdrops"
+          "description": "获取空投失败： {error}",
+          "title": "空投"
         },
         "task": {
-          "title": "Querying airdrops"
+          "title": "查询空投"
         }
       },
       "balancer_balances": {
         "error": {
-          "description": "Failed to query Balancer balances: {message}",
-          "title": "Querying Balancer balances"
+          "description": "无法查询 Balancer 余额： {message}",
+          "title": "查询Balancer余额"
         },
         "task": {
-          "title": "Querying Balancer balances"
+          "title": "查询Balancer余额"
         }
       },
       "balancer_events": {
         "error": {
-          "description": "Failed to query Balancer events: {message}",
-          "title": "Querying Balancer events"
+          "description": "无法查询 Balancer 事件： {message}",
+          "title": "查询Balancer事件"
         },
         "task": {
-          "title": "Querying Balancer events"
+          "title": "查询Balancer事件"
         }
       },
       "balances": {
         "error": {
-          "description": "Failed to retrieve DeFi balances: {error}",
-          "title": "DeFi Balances"
+          "description": "获取 DeFi 余额失败：{error}",
+          "title": "DeFi 余额"
         },
         "task": {
-          "title": "Querying DeFi balances"
+          "title": "查询DeFi余额"
         }
       },
       "compound": {
         "error": {
-          "description": "Failed to retrieve Compound balances: {error}",
-          "title": "Compound Balances"
+          "description": "无法检索 Compound 余额：{error}",
+          "title": "Compound 余额"
         },
         "task": {
-          "title": "Querying Compound balances"
+          "title": "查询 Compound 余额"
         }
       },
       "compound_history": {
         "error": {
-          "description": "Failed to retrieve Compound history: {error}",
-          "title": "Compound History"
+          "description": "无法检索 Compound 历史: {error}",
+          "title": "Compound 历史"
         },
         "task": {
-          "title": "Querying Compound history"
+          "title": "查询 Compound 历史"
         }
       },
       "dsr_balances": {
