@@ -50,12 +50,12 @@ const { dark } = useTheme();
 
 const { addressNameSelector } = useAddressesNamesStore();
 
-const ethName = computed<string | null>(() => {
-  if (!get(scrambleData) || get(tx)) {
-    return get(addressNameSelector(text, chain));
+const aliasName = computed<string | null>(() => {
+  if (get(scrambleData) || get(tx)) {
+    return null;
   }
 
-  return null;
+  return get(addressNameSelector(text, chain));
 });
 
 const displayText = computed<string>(() => {
@@ -132,7 +132,7 @@ const { getBlockie } = useBlockie();
             v-bind="attrs"
             v-on="on"
           >
-            <span v-if="ethName">{{ ethName }}</span>
+            <span v-if="aliasName">{{ aliasName }}</span>
             <span v-else>
               {{ truncateAddress(displayText, truncateLength) }}
             </span>

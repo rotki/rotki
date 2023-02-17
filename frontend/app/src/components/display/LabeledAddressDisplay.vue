@@ -19,6 +19,10 @@ const { scrambleData, shouldShowAmount } = storeToRefs(
 
 const { addressNameSelector } = useAddressesNamesStore();
 const aliasName = computed<string | null>(() => {
+  if (get(scrambleData)) {
+    return null;
+  }
+
   const { address, chain } = get(account);
   return get(addressNameSelector(address, chain));
 });
