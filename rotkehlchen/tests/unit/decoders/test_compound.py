@@ -107,7 +107,7 @@ def test_compound_ether_withdraw(database, ethereum_inquirer):
             counterparty=CPT_COMPOUND,
         ), HistoryBaseEntry(
             event_identifier=tx_hash,
-            sequence_index=2,
+            sequence_index=50,
             timestamp=1598813490000,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,

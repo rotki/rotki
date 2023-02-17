@@ -4,6 +4,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
+from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_USDT
@@ -11,6 +12,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
+from rotkehlchen.tests.utils.factories import make_ethereum_event
 from rotkehlchen.types import ChainID, EvmTransaction, Location, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
@@ -489,3 +491,22 @@ def test_eth_deposit(
             extra_data=None,
         ),
     ]
+
+
+def test_maybe_reshuffle_events():
+    """
+    Tests that `maybe_reshuffle_events` works correctly.
+    Especially tests that there are no duplicated indices produced.
+    """
+    event_a = make_ethereum_event(1)
+    event_b = make_ethereum_event(2)
+    event_c = make_ethereum_event(3)
+    events = [event_a, event_b, event_c]
+
+    maybe_reshuffle_events(event_c, event_a)
+    assert events == [event_a, event_b, event_c]  # no change since we just swap indices
+    assert [event.sequence_index for event in events] == [3, 2, 1]  # indices swapped
+
+    maybe_reshuffle_events(event_c, event_a, events)
+    assert events == [event_c, event_b, event_a]  # events were sorted before swapping indices
+    assert [event.sequence_index for event in events] == [1, 3, 2]  # indices swapped
