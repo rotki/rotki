@@ -2,9 +2,7 @@
 Changelog
 =========
 
-* :release:`1.28.0`
 * :bug:`5491` Show original manual latest price asset in manual balance form.
-
 * :bug:`-` Fixes bug where Maker Vault Collateralization Ratio can't be edited in watcher form.
 * :bug:`-` Fixes bug where wrong account label was used in asset location breakdown.
 * :bug:`5560` EVM transaction events should now be properly ignored in accounting.
