@@ -2067,6 +2067,7 @@
       "refresh": "Set the automatic refresh period",
       "refresh_enabled": "Enabled",
       "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.",
+      "scramble_multiplier": "Scramble multiplier",
       "show_graph_range_selector": "Show graph range selector for line chart",
       "zero_based": "Use zero as the lowest y-axis value for the graphs",
       "zero_based_hint": "By default the lowest value is the minimum in the selected period"
@@ -2076,6 +2077,7 @@
       "alias_names": "Alias name for addresses",
       "graph_basis": "Graph basis",
       "include_nfts": "Include NFTs in graphs and total amounts",
+      "scramble_multiplier": "Multiplier number used when scrambling balances. This will affects amount and fiat value.",
       "query": "Periodic status query",
       "refresh": "Automatic balance refresh",
       "show_graph_range_selector": "Show graph range selector"

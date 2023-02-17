@@ -1,15 +1,13 @@
 ﻿<script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { truncateAddress } from '@/filters';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import {
   type Chains,
   type ExplorerUrls,
   explorerUrls
 } from '@/types/asset-urls';
-import { randomHex } from '@/utils/data';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 
 const props = withDefaults(
   defineProps<{
@@ -41,29 +39,28 @@ const props = withDefaults(
 );
 
 const { text, baseUrl, chain, tx } = toRefs(props);
+const { scrambleData, shouldShowAmount, scrambleHex } = useScramble();
 
-const { scrambleData, shouldShowAmount } = storeToRefs(
-  useSessionSettingsStore()
-);
 const { explorers } = storeToRefs(useFrontendSettingsStore());
 const { dark } = useTheme();
 
 const { addressNameSelector } = useAddressesNamesStore();
 
-const ethName = computed<string | null>(() => {
-  if (!get(scrambleData) || get(tx)) {
-    return get(addressNameSelector(text, chain));
+const aliasName = computed<string | null>(() => {
+  if (get(scrambleData) || get(tx)) {
+    return null;
   }
 
-  return null;
+  return get(addressNameSelector(text, chain));
 });
 
 const displayText = computed<string>(() => {
+  const textVal = get(text);
   if (!get(scrambleData)) {
-    return get(text);
+    return textVal;
   }
-  const length = get(tx) ? 64 : 40;
-  return randomHex(length);
+
+  return scrambleHex(textVal);
 });
 
 const base = computed<string>(() => {
@@ -132,7 +129,7 @@ const { getBlockie } = useBlockie();
             v-bind="attrs"
             v-on="on"
           >
-            <span v-if="ethName">{{ ethName }}</span>
+            <span v-if="aliasName">{{ aliasName }}</span>
             <span v-else>
               {{ truncateAddress(displayText, truncateLength) }}
             </span>

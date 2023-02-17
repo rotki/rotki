@@ -227,6 +227,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       <template #item.usdPrice="{ item }">
         <amount-display
           v-if="item.usdPrice && item.usdPrice.gte(0)"
+          no-scramble
           show-currency="symbol"
           :price-asset="item.asset"
           :price-of-asset="item.usdPrice"

@@ -77,15 +77,3 @@ export const size = (bytes: number): string => {
   const symbol = 'KMGTPEZY'[i - 1] || '';
   return `${bytes.toFixed(2)}  ${symbol}B`;
 };
-
-export function randomHex(characters = 40): string {
-  let hex = '';
-  for (let i = 0; i < characters - 2; i++) {
-    const randByte = Number.parseInt(
-      (Math.random() * 16).toString(),
-      10
-    ).toString(16);
-    hex += randByte;
-  }
-  return `0x${hex}ff`;
-}

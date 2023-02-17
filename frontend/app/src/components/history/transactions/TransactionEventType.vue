@@ -18,8 +18,13 @@ const attrs = computed<ActionDataEntry>(() => {
   return getEventTypeData(get(event));
 });
 
+const { scrambleData, scrambleHex } = useScramble();
+
 const counterparty = computed<ActionDataEntry | null>(() => {
-  return getEventCounterpartyData(get(event));
+  return getEventCounterpartyData(
+    get(event),
+    get(scrambleData) ? scrambleHex : undefined
+  );
 });
 
 const { t } = useI18n();

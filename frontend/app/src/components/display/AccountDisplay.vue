@@ -6,8 +6,6 @@ import {
 } from '@rotki/common/lib/blockchain';
 import { truncateAddress } from '@/filters';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { randomHex } from '@/utils/data';
 
 const AssetIcon = defineAsyncComponent(
   () => import('@/components/helper/display/icons/AssetIcon.vue')
@@ -26,17 +24,15 @@ const props = withDefaults(
 );
 
 const { account, useAliasName } = toRefs(props);
-const { scrambleData, shouldShowAmount } = storeToRefs(
-  useSessionSettingsStore()
-);
-
+const { scrambleData, shouldShowAmount, scrambleHex } = useScramble();
 const { addressNameSelector } = useAddressesNamesStore();
 
 const address = computed<string>(() => {
+  const address = get(account).address;
   if (!get(scrambleData)) {
-    return get(account).address;
+    return address;
   }
-  return randomHex();
+  return scrambleHex(address);
 });
 
 const aliasName = computed<string | null>(() => {
