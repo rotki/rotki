@@ -8,6 +8,7 @@ import {
   minValue,
   requiredUnless
 } from '@vuelidate/validators';
+import isEmpty from 'lodash/isEmpty';
 import { type Eth2Validator } from '@/types/balances';
 import { type ValidationErrors } from '@/types/api/errors';
 
@@ -20,6 +21,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:validator', validator: Eth2Validator | null): void;
 }>();
+
 const { validator, errorMessages } = toRefs(props);
 const validatorIndex = ref('');
 const publicKey = ref('');
@@ -61,6 +63,12 @@ const v$ = useVuelidate(
     $externalResults: errorMessages
   }
 );
+
+watch(errorMessages, errors => {
+  if (!isEmpty(errors)) {
+    get(v$).$validate();
+  }
+});
 
 onMounted(() => updateProperties(validator.value));
 

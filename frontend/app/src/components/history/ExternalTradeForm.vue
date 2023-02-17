@@ -72,13 +72,13 @@ const baseSymbol = assetSymbol(base);
 const quoteSymbol = assetSymbol(quote);
 
 const rules = {
-  base: {
+  baseAsset: {
     required: helpers.withMessage(
       t('external_trade_form.validation.non_empty_base').toString(),
       required
     )
   },
-  quote: {
+  quoteAsset: {
     required: helpers.withMessage(
       t('external_trade_form.validation.non_empty_quote').toString(),
       required
@@ -119,8 +119,8 @@ const rules = {
 const v$ = useVuelidate(
   rules,
   {
-    base,
-    quote,
+    baseAsset: base,
+    quoteAsset: quote,
     amount,
     rate,
     quoteAmount,
@@ -231,6 +231,8 @@ const save = async (): Promise<boolean> => {
       errorMessages,
       convertKeys(deserializeApiErrorMessage(result.message) ?? {}, true, false)
     );
+
+    await get(v$).$validate();
   }
 
   return false;
@@ -289,6 +291,7 @@ const fetchPrice = async () => {
     set(errorMessages, {
       rate: [t('external_trade_form.rate_not_found').toString()]
     });
+    await get(v$).rate.$validate();
     useTimeoutFn(() => {
       set(errorMessages, {});
     }, 4000);
@@ -351,7 +354,6 @@ onMounted(() => {
               persistent-hint
               :hint="t('external_trade_form.date.hint')"
               :error-messages="errorMessages['timestamp']"
-              @focus="delete errorMessages['timestamp']"
             />
             <div data-cy="type">
               <v-radio-group
@@ -381,10 +383,9 @@ onMounted(() => {
                   outlined
                   required
                   data-cy="base-asset"
-                  :error-messages="v$.base.$errors.map(e => e.$message)"
+                  :error-messages="v$.baseAsset.$errors.map(e => e.$message)"
                   :hint="t('external_trade_form.base_asset.hint')"
                   :label="t('external_trade_form.base_asset.label')"
-                  @focus="delete errorMessages['baseAsset']"
                 />
               </v-col>
               <v-col cols="12" md="6" class="d-flex flex-row align-center">
@@ -396,10 +397,9 @@ onMounted(() => {
                   required
                   outlined
                   data-cy="quote-asset"
-                  :error-messages="v$.quote.$errors.map(e => e.$message)"
+                  :error-messages="v$.quoteAsset.$errors.map(e => e.$message)"
                   :hint="t('external_trade_form.quote_asset.hint')"
                   :label="t('external_trade_form.quote_asset.label')"
-                  @focus="delete errorMessages['quoteAsset']"
                 />
               </v-col>
             </v-row>
@@ -413,7 +413,6 @@ onMounted(() => {
                 :label="t('common.amount')"
                 persistent-hint
                 :hint="t('external_trade_form.amount.hint')"
-                @focus="delete errorMessages['amount']"
               />
               <div
                 :class="`external-trade-form__grouped-amount-input d-flex ${
@@ -438,7 +437,6 @@ onMounted(() => {
                   }`"
                   filled
                   persistent-hint
-                  @focus="delete errorMessages['rate']"
                 />
                 <amount-input
                   ref="quoteAmountInput"
@@ -454,7 +452,6 @@ onMounted(() => {
                   }`"
                   :label="t('external_trade_form.quote_amount.label')"
                   filled
-                  @focus="delete errorMessages['quote_amount']"
                 />
                 <v-btn
                   class="external-trade-form__grouped-amount-input__swap-button"
@@ -548,7 +545,6 @@ onMounted(() => {
               :label="t('external_trade_form.fee.label')"
               :hint="t('external_trade_form.fee.hint')"
               :error-messages="v$.fee.$errors.map(e => e.$message)"
-              @focus="delete errorMessages['fee']"
               @input="triggerFeeValidator"
             />
           </v-col>
@@ -563,7 +559,6 @@ onMounted(() => {
               :hint="t('external_trade_form.fee_currency.hint')"
               :required="!!fee"
               :error-messages="v$.feeCurrency.$errors.map(e => e.$message)"
-              @focus="delete errorMessages['feeCurrency']"
               @input="triggerFeeValidator"
             />
           </v-col>
@@ -577,7 +572,6 @@ onMounted(() => {
           persistent-hint
           :hint="t('external_trade_form.link.hint')"
           :error-messages="errorMessages['link']"
-          @focus="delete errorMessages['link']"
         />
         <v-textarea
           v-model="notes"
@@ -589,7 +583,6 @@ onMounted(() => {
           persistent-hint
           :hint="t('external_trade_form.notes.hint')"
           :error-messages="errorMessages['notes']"
-          @focus="delete errorMessages['notes']"
         />
       </v-col>
     </v-row>

@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { type PropType, type Ref } from 'vue';
+import { type PropType, type Ref, useListeners } from 'vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
@@ -166,6 +166,8 @@ onMounted(async () => {
 watch(value, async () => {
   await checkValue();
 });
+
+const listeners = useListeners();
 </script>
 
 <template>
@@ -193,6 +195,7 @@ watch(value, async () => {
     :outlined="outlined"
     no-filter
     :class="outlined ? 'asset-select--outlined' : null"
+    v-on="listeners"
     @input="input"
     @blur="blur"
   >
