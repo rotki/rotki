@@ -9,7 +9,6 @@ import {
   type ExplorerUrls,
   explorerUrls
 } from '@/types/asset-urls';
-import { randomHex } from '@/utils/data';
 
 const props = withDefaults(
   defineProps<{
@@ -42,9 +41,10 @@ const props = withDefaults(
 
 const { text, baseUrl, chain, tx } = toRefs(props);
 
-const { scrambleData, shouldShowAmount } = storeToRefs(
-  useSessionSettingsStore()
-);
+const sessionSettingsStore = useSessionSettingsStore();
+const { scrambleData, shouldShowAmount } = storeToRefs(sessionSettingsStore);
+const { scrambleHex } = sessionSettingsStore;
+
 const { explorers } = storeToRefs(useFrontendSettingsStore());
 const { dark } = useTheme();
 
@@ -59,11 +59,12 @@ const aliasName = computed<string | null>(() => {
 });
 
 const displayText = computed<string>(() => {
+  const textVal = get(text);
   if (!get(scrambleData)) {
-    return get(text);
+    return textVal;
   }
-  const length = get(tx) ? 64 : 40;
-  return randomHex(length);
+
+  return scrambleHex(textVal);
 });
 
 const base = computed<string>(() => {

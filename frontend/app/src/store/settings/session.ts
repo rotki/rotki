@@ -51,6 +51,31 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
     settings.animationsEnabled = enabled;
   };
 
+  const alphaNumerics =
+    '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+  const scrambleHex = (hex: string): string => {
+    const isEth = hex.startsWith('0x');
+    const multiplier = get(scrambleMultiplier) * 100;
+
+    const trimmedHex = isEth ? hex.slice(2).toUpperCase() : hex;
+
+    return (
+      (isEth ? '0x' : '') +
+      trimmedHex
+        .split('')
+        .map(char => {
+          const index = alphaNumerics.indexOf(char);
+          if (index === -1) return char;
+          return alphaNumerics.charAt(
+            Math.floor(index * multiplier * 100) %
+              (isEth ? 16 : alphaNumerics.length)
+          );
+        })
+        .join('')
+    );
+  };
+
   const update = (sessionSettings: Partial<SessionSettings>): ActionStatus => {
     Object.assign(settings, sessionSettings);
     return {
@@ -66,6 +91,7 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
     shouldShowAmount,
     shouldShowPercentage,
     scrambleMultiplier,
+    scrambleHex,
     setAnimationsEnabled,
     update
   };
