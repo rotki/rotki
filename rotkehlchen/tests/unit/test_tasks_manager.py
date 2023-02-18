@@ -321,8 +321,16 @@ def test_update_snapshot_balances(task_manager):
         raise AssertionError(f'Update snapshot balances was not completed within {timeout} seconds') from e  # noqa: E501
 
 
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('run_globaldb_migrations', [False])
+@pytest.mark.parametrize('custom_globaldb', ['v4_global_before_migration1.db'])
 def test_update_curve_pools(task_manager):
-    """Check that task for curve pools cache update is scheduled properly."""
+    """
+    Check that task for curve pools cache update is scheduled properly.
+
+    Using an old globalDB which does not contain updated pools so that the task is
+    executed.
+    """
     task_manager.potential_tasks = [task_manager._maybe_update_curve_pools]
     query_balances_patch = patch.object(
         task_manager,

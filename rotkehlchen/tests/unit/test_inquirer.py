@@ -330,25 +330,10 @@ def test_price_underlying_tokens(inquirer, globaldb):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_find_uniswap_v2_lp_token_price(inquirer, globaldb, ethereum_manager):
+def test_find_uniswap_v2_lp_token_price(inquirer, ethereum_manager):
     address = '0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'
     identifier = ethaddress_to_identifier(address)
     inquirer.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
-    token = EvmToken.initialize(
-        address=address,
-        chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
-        decimals=18,
-        name='Uniswap LINK/ETH',
-        symbol='UNI-V2',
-        protocol='UNI-V2',
-    )
-    globaldb.add_asset(
-        asset_id=identifier,
-        asset_type=AssetType.EVM_TOKEN,
-        data=token,
-    )
-
     price = inquirer.find_uniswap_v2_lp_price(EvmToken(identifier))
     assert price is not None
 

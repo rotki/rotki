@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.freeze_time('2022-12-29 10:10:00 GMT')
 def test_query_transactions(rotkehlchen_api_server: 'APIServer'):
     """Test that querying the evm transactions endpoint for an address with
     transactions in multiple chains works fine.

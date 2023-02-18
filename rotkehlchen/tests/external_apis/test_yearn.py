@@ -1,5 +1,6 @@
 import datetime
 
+import pytest
 from freezegun import freeze_time
 
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
@@ -13,8 +14,14 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, ChainID, GeneralCacheType
 
 
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('run_globaldb_migrations', [False])
+@pytest.mark.parametrize('custom_globaldb', ['v4_global_before_migration1.db'])
 def test_yearn_api(database):
-    """Test that vaults are queried correctly"""
+    """Test that vaults are queried correctly
+
+    Since they are already in the globalDB we check with an older globalDB
+    """
     with GlobalDBHandler().conn.read_ctx() as cursor:
         state_before = globaldb_get_general_cache_values(
             cursor=cursor,

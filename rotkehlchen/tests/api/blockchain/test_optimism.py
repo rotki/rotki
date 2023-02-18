@@ -3,7 +3,7 @@ import random
 import pytest
 import requests
 
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -21,6 +21,9 @@ TEST_ADDY = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_add_optimism_blockchain_account(rotkehlchen_api_server):
     """Test adding an optimism account when there is none in the db
     works as expected and that balances are returned and tokens are detected.
@@ -86,17 +89,19 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server):
 
     assert result[TEST_ADDY]['last_update_timestamp'] >= now
     tokens = result[TEST_ADDY]['tokens']
-    optimism_op = evm_address_to_identifier(
-        address='0x4200000000000000000000000000000000000042',
-        chain_id=ChainID.OPTIMISM,
-        token_type=EvmTokenKind.ERC20,
-    )
-    optimism_aoptusdc = evm_address_to_identifier(
-        address='0x625E7708f30cA75bfd92586e17077590C60eb4cD',
-        chain_id=ChainID.OPTIMISM,
-        token_type=EvmTokenKind.ERC20,
-    )
-    assert tokens == [optimism_op, optimism_aoptusdc]
+    optimism_tokens = [
+        evm_address_to_identifier(
+            address=x,
+            chain_id=ChainID.OPTIMISM,
+            token_type=EvmTokenKind.ERC20,
+        ) for x in [
+            '0x4200000000000000000000000000000000000042',  # OP token
+            '0x625E7708f30cA75bfd92586e17077590C60eb4cD',  # aOPTUSDC
+            '0x026B623Eb4AaDa7de37EF25256854f9235207178',  # spam token
+            '0x15992f382D8c46d667B10DC8456dc36651Af1452',  # spam token
+        ]
+    ]
+    assert set(tokens) == set(optimism_tokens)
 
     # and query balances again to see tokens also appear
     response = requests.get(
@@ -122,16 +127,16 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server):
     # Check per account
     account_balances = result['per_account']['OPTIMISM'][TEST_ADDY]
     assert 'liabilities' in account_balances
-    assert len(account_balances['assets']) == 3
-    for asset_id in ('ETH', optimism_op, optimism_aoptusdc):
+    assert len(account_balances['assets']) == len(optimism_tokens) + 1
+    for asset_id in ('ETH', *optimism_tokens):
         asset = account_balances['assets'][asset_id]
         assert FVal(asset['amount']) >= ZERO
         assert FVal(asset['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    assert len(result['totals']['assets']) == 3
-    for asset_id in ('ETH', optimism_op, optimism_aoptusdc):
+    assert len(result['totals']['assets']) == len(optimism_tokens) + 1
+    for asset_id in ('ETH', *optimism_tokens):
         asset = result['totals']['assets'][asset_id]
         assert FVal(asset['amount']) >= ZERO
         assert FVal(asset['usd_value']) >= ZERO

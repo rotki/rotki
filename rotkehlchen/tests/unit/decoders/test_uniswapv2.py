@@ -683,7 +683,6 @@ def test_uniswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transactio
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=ADDY_3)  # noqa: E501
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
-    assert len(events) == 4
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -709,6 +708,18 @@ def test_uniswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transactio
             location_label=ADDY_3,
             notes='Remove 0.005839327781368506 ETH from uniswap-v2 LP 0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=33,
+            timestamp=TimestampMS(1672784687000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset='eip155:1/erc20:0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc',
+            balance=Balance(amount=FVal('9.6176228659E-8')),
+            location_label=ADDY_3,
+            notes='Approve 0.000000096176228659 UNI-V2 of 0x65fc65C639467423Bf19801a59FCfd62f0F29777 for spending by 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',  # noqa: E501
+            counterparty='0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
         ), HistoryBaseEntry(
             event_identifier=evmhash,
             sequence_index=34,
