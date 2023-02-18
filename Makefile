@@ -1,4 +1,4 @@
-COMMON_LINT_PATHS = rotkehlchen/ setup.py package.py
+COMMON_LINT_PATHS = rotkehlchen/ package.py
 TOOLS_LINT_PATH = tools/
 ALL_LINT_PATHS = $(COMMON_LINT_PATHS) $(TOOLS_LINT_PATH)
 ISORT_PARAMS = --ignore-whitespace --skip-glob '*/node_modules/*' $(ALL_LINT_PATHS)

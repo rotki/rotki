@@ -38,7 +38,7 @@ RUN if [ "$TARGETARCH" != "amd64" ]; then \
       pip install pyinstaller==${PYINSTALLER_VERSION}; \
     fi
 
-RUN pip install --no-use-pep517 -e . && \
+RUN sed "s/fallback_version.*/fallback_version = \"$PACKAGE_FALLBACK_VERSION\"/" -i pyproject.toml && pip install . && \
     python -c "import sys;from rotkehlchen.db.misc import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
     PYTHONOPTIMIZE=2 pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec
 
