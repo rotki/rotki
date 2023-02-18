@@ -1,3 +1,46 @@
+[build-system]
+requires = ["setuptools==67.3.2", "setuptools-scm==7.1.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rotkehlchen"
+authors = [
+    {name = "Rotki Solutions GmbH", email = "info@rotki.com"},
+]
+description = "Acccounting, asset management and tax report helper for cryptocurrencies"
+readme = "README.md"
+requires-python = ">=3.9"
+keywords = ["accounting tax-report", "portfolio asset-management", "cryptocurrencies"]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Topic :: Utilities",
+]
+license = {file = "LICENSE.md"}
+dynamic = ["dependencies", "version"]
+
+[project.urls]
+homepage = "https://rotki.com"
+documentation = "https://rotki.readthedocs.io/en/stable/"
+repository = "https://github.com/rotki/rotki"
+changelog = "https://github.com/rotki/rotki/blob/develop/docs/changelog.rst"
+
+[tool.setuptools.packages.find]
+where = ["."]  # list of folders that contain the packages (["."] by default)
+include = ["rotkehlchen*"]
+
+[project.scripts]
+rotkehlchen = "rotkehlchen.__main__:main"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools_scm]
+fallback_version = "1.27.0"
+
+[tool.setuptools.package-data]
+"rotkehlchen.data" = ["*"]
+"rotkehlchen.chain" = ["ethereum/modules/dxdaomesa/data/contracts.json"]
+
 # -- Mypy config section --
 
 [tool.mypy]
