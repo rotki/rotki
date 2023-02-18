@@ -974,8 +974,16 @@ def test_asset_deletion(globaldb):
     )
 
 
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('run_globaldb_migrations', [False])
+@pytest.mark.parametrize('custom_globaldb', ['v4_global_before_migration1.db'])
 def test_general_cache(globaldb):
-    """Test that cache in the globaldb works properly. Tests insertion, deletion and reading."""
+    """
+    Test that cache in the globaldb works properly. Tests insertion, deletion and reading.
+
+    Used an older globalDB that is not pre-populated so that CURVE_POOLTOKENS and
+    other flags are simpler to test.
+    """
 
     ts_test_start = ts_now()
     with globaldb.conn.write_ctx() as write_cursor:
