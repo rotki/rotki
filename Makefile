@@ -56,4 +56,11 @@ create-cassettes:
 	RECORD_CASSETTES=true python pytestgeventwrapper.py -m vcr rotkehlchen/tests
 
 create-cassette:
-	RECORD_CASSETTES=true python pytestgeventwrapper.py -m vcr $(TEST)
+	RECORD_CASSETTES=true python pytestgeventwrapper.py -m vcr $(filter-out $@,$(MAKECMDGOALS))
+
+
+
+# A macro to catch extra makefile arguments and use them elsewhere
+# https://stackoverflow.com/a/6273809/110395
+%:
+	@:
