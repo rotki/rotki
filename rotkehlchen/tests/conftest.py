@@ -235,7 +235,7 @@ def vcr_cassette_dir(request: pytest.FixtureRequest) -> str:
 
         # verify that the cassettes are present locally and up to date
         if (tests_caching_dir / '.git').exists() is False:
-            cmd = f'git clone https://github.com/rotki/test-caching.git {tests_caching_dir}'
+            cmd = f'git clone https://github.com/rotki/test-caching.git "{tests_caching_dir}"'
             log.debug(f'Cloning test caching repo to {tests_caching_dir}')
             # wait until the command finishes
             os.popen(cmd).read()
@@ -245,7 +245,7 @@ def vcr_cassette_dir(request: pytest.FixtureRequest) -> str:
             current_branch = os.environ.get('VCR_BRANCH')
             if current_branch is None:
                 current_branch = os.popen('git rev-parse --abbrev-ref HEAD').read().rstrip('\n')
-            checkout_proc = Popen(f'cd {tests_caching_dir} && git checkout {current_branch} && git pull', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
+            checkout_proc = Popen(f'cd "{tests_caching_dir}" && git checkout {current_branch} && git pull', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
             _, stderr = checkout_proc.communicate(timeout=10)
 
             if (
@@ -255,7 +255,7 @@ def vcr_cassette_dir(request: pytest.FixtureRequest) -> str:
             ):
                 default_branch = os.environ.get('DEFAULT_VCR_BRANCH', 'develop')
                 log.error(f'Could not find branch {current_branch} in {tests_caching_dir}. Defaulting to {default_branch}')  # noqa: E501
-                checkout_proc = Popen(f'cd {tests_caching_dir} && git switch -f {default_branch} && git pull', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
+                checkout_proc = Popen(f'cd "{tests_caching_dir}" && git switch -f {default_branch} && git pull', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
                 checkout_proc.wait()
 
     cassette_dir = get_cassette_dir(request)
