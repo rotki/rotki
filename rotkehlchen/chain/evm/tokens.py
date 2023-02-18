@@ -61,7 +61,7 @@ DetectedTokensType = dict[
 OTHER_MAX_TOKEN_CHUNK_LENGTH = 590
 
 # maximum 32-bytes arguments in one call to a contract (either tokensBalance or multicall)
-ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT = 122
+ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT = 110
 
 # this is a number of arguments that a pure tokensBalance contract occupies when is added
 # to multicall. In total, it occupies (7 + number of tokens passed) arguments.
@@ -328,7 +328,7 @@ class EvmTokens(metaclass=ABCMeta):
         - BadFunctionCallOutput if a local node is used and the contract for the
           token has no code. That means the chain is not synced
         """
-        addresses_to_balances: dict[ChecksumEvmAddress, dict[EvmToken, FVal]] = {}
+        addresses_to_balances: dict[ChecksumEvmAddress, dict[EvmToken, FVal]] = defaultdict(dict)
         all_tokens = set()
         addresses_to_tokens: dict[ChecksumEvmAddress, list[EvmToken]] = {}
         chunk_size, call_order = self._get_chunk_size_call_order()
@@ -350,16 +350,18 @@ class EvmTokens(metaclass=ABCMeta):
             chunk_length=chunk_size,
         )
         for chunk in multicall_chunks:
-            addresses_to_balances.update(self._get_multicall_token_balances(
+            new_balances = self._get_multicall_token_balances(
                 chunk=chunk,
                 call_order=call_order,
-            ))
+            )
+            for address, balances in new_balances.items():
+                addresses_to_balances[address].update(balances)
 
         token_usd_price: dict[EvmToken, Price] = {}
         for token in all_tokens:
             token_usd_price[token] = Inquirer.find_usd_price(asset=token)
 
-        return addresses_to_balances, token_usd_price
+        return dict(addresses_to_balances), token_usd_price
 
     # -- methods to be implemented by child classes
     @abstractmethod
