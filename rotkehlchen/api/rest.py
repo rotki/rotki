@@ -2100,6 +2100,36 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=status_code)
 
+    def _refresh_evm_accounts(self) -> dict[str, Any]:
+        try:
+            self.rotkehlchen.chains_aggregator.detect_evm_accounts()
+        except EthSyncError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        return OK_RESULT
+
+    def refresh_evm_accounts(self, async_query: bool) -> Response:
+        """
+        Check whether already added addresses have activity in other evm chains and if they do,
+        start tracking them in those chains too.
+        """
+        if async_query is True:
+            return self._query_async(command=self._refresh_evm_accounts)
+
+        response = self._refresh_evm_accounts()
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(process_result(result_dict), status_code=status_code)
+
     def get_blockchain_accounts(self, blockchain: SupportedBlockchain) -> Response:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             data = self.rotkehlchen.get_blockchain_account_data(cursor, blockchain)

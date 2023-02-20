@@ -9006,6 +9006,43 @@ Adding EVM accounts to all EVM chains
    :statuscode 500: Internal rotki error
    :statuscode 502: Remote error occured when attempted to connect to an Avalanche or Polkadot node and only if it's the first account added. Check message for details.
 
+
+.. http:post:: /api/(version)/blockchains/evm/accounts
+
+   Doing a POST on the EVM accounts endpoint will re-detect evm accounts on all supported chains. Rotki will go through already added addresses and for each address, if it is an EOA (not a smart contract) and has activity on some chain, will add it to that chain.
+
+   .. note::
+     This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/blockchains/evm/accounts HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true,
+        "message": ""
+      }
+
+   :resjson bool result: true in case of success, null otherwise.
+   :statuscode 200: Accounts successfully added
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: User is not logged in. Node that was queried is not synchronized.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: Remote error occured.
+
+
 Adding blockchain accounts
 ===========================
 

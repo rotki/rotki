@@ -1417,6 +1417,8 @@ class PeriodicDataResource(BaseMethodView):
 
 class EvmAccountsResource(BaseMethodView):
 
+    post_schema = AsyncQueryArgumentSchema()
+
     def make_put_schema(self) -> EvmAccountsPutSchema:
         return EvmAccountsPutSchema(
             self.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
@@ -1440,6 +1442,11 @@ class EvmAccountsResource(BaseMethodView):
             account_data=account_data,
             async_query=async_query,
         )
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(self, async_query: bool) -> Response:
+        return self.rest_api.refresh_evm_accounts(async_query=async_query)
 
 
 class BlockchainsAccountsResource(BaseMethodView):

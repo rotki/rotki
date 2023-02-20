@@ -125,23 +125,30 @@ The messages sent by rotki when a user is logging in and a db upgrade is happeni
 - ``target_version``: The target migration version. When this will have been reached and finished, the migrations will end.
 
 
-EVM Addresses Migrations
-============================
+EVM Accounts Detection
+=======================
 
-At the user DB migrations when a new evm chain is introduced rotki will do a migration that will add any addresses used in mainnet to the new evm chain. At the same time it needs to notify the frontend that new evm chain/ evm address combination was added at migration so the frontend can do extra actions such as detecting tokens. The message is simple and just contains the list of migrated addresses if any.
+If there are new evm accounts detected (due to a data migration, user-initiated detection, periodic detection, etc.) then the frontend will be notified of any new EVM accounts that were detected. This is done via the following message.
 
 ::
 
     {
-        "type": "evm_address_migration",
-        "data": [{
-            "evm_chain": "optimism",
-            "address": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12"
-        }, {
-            "evm_chain": "optimism",
-            "address": "0xFeebabE6b0418eC13b30aAdF129F5DcDd4f70CeA"
-        }]
+        "type": "evm_accounts_detection",
+        "data": [
+            {
+                "address": "0x4bBa290826C253BD854121346c370a9886d1bC26",
+                "evm_chain": "optimism"
+            },
+            {
+                "address": "0x4bBa290826C253BD854121346c370a9886d1bC26",
+                "evm_chain": "avalanche"
+            }
+        ]
     }
+
+
+- ``address``: Address of an account.
+- ``evm_chain``: Chain of an account.
 
 
 EVM Token Detection
@@ -150,9 +157,6 @@ EVM Token Detection
 While we are processing EVM transactions new tokens may be detected and added to the database. Some of them can be spam tokens. Using this message we can let the frontend know which tokens are detected. Then they can in turn allow the user to see an aggregated list of all detected tokens and using that list, easily mark spam assets if any.
 
 This also contains two optional, mutually excluse keys. If one exists the other shold not. But also both can be missing.
-
-- ``"seen_tx_hash"``: A transaction hash in the same chain as the token in which the token was first seen.
-- ``"seen_description"``: A description of the action in which the token was first seen and added to the DB. For example, querying curve pools, querying yearn pools etc.
 
 ::
 
@@ -173,3 +177,7 @@ This also contains two optional, mutually excluse keys. If one exists the other 
             "seen_description": "Querying curve pools"
         }
     }
+
+
+- ``seen_tx_hash``: A transaction hash in the same chain as the token in which the token was first seen.
+- ``seen_description``: A description of the action in which the token was first seen and added to the DB. For example, querying curve pools, querying yearn pools etc.

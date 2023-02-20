@@ -8,10 +8,12 @@ import gevent
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.chain.aggregator import LAST_EVM_ACCOUNTS_DETECT_KEY
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH, EVM_ACCOUNTS_DETECTION_REFRESH
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     DBEqualsFilter,
@@ -20,6 +22,7 @@ from rotkehlchen.db.filtering import (
     HistoryEventFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.updates import LAST_DATA_UPDATES_KEY
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
@@ -30,7 +33,8 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
-from rotkehlchen.tasks.utils import should_check_data_updates
+from rotkehlchen.premium.sync import PremiumSyncManager
+from rotkehlchen.tasks.utils import should_run_periodic_task
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SUPPORTED_BITCOIN_CHAINS,
@@ -52,7 +56,6 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.manager import ExchangeManager
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.greenlets.manager import GreenletManager
-    from rotkehlchen.premium.sync import PremiumSyncManager
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -143,6 +146,7 @@ class TaskManager():
             self._maybe_update_snapshot_balances,
             self._maybe_update_curve_pools,
             self._maybe_update_yearn_vaults,
+            self._maybe_detect_evm_accounts,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -598,7 +602,7 @@ class TaskManager():
         Function that schedules the data update task if either there is no data update
         cache yet or this cache is older than `DATA_UPDATES_REFRESH`
         """
-        if should_check_data_updates(self.database) is False:
+        if should_run_periodic_task(self.database, LAST_DATA_UPDATES_KEY, DATA_UPDATES_REFRESH) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(
@@ -606,6 +610,21 @@ class TaskManager():
             task_name='Data update task',
             exception_is_error=True,
             method=self.data_updater.check_for_updates,
+        )]
+
+    def _maybe_detect_evm_accounts(self) -> Optional[list[gevent.Greenlet]]:
+        """
+        Function that schedules the EVM accounts detection task if there has been more than
+        EVM_ACCOUNTS_DETECTION_REFRESH seconds since the last time it ran.
+        """
+        if should_run_periodic_task(self.database, LAST_EVM_ACCOUNTS_DETECT_KEY, EVM_ACCOUNTS_DETECTION_REFRESH) is False:  # noqa: E501
+            return None
+
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Detect EVM accounts',
+            exception_is_error=True,
+            method=self.chains_aggregator.detect_evm_accounts,
         )]
 
     def _schedule(self) -> None:

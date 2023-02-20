@@ -603,15 +603,16 @@ def set_web3_node_in_inquirer(ethereum_inquirer: 'EthereumInquirer', web3node: W
     ethereum_inquirer.web3_mapping[node_name] = web3node
 
 
-def setup_filter_active_evm_addresses_mock(
+def setup_evm_addresses_activity_mock(
         stack: 'ExitStack',
         chains_aggregator: 'ChainsAggregator',
-        contract_addresses: list[ChecksumEvmAddress],
+        eth_contract_addresses: list[ChecksumEvmAddress],
+        ethereum_addresses: list[ChecksumEvmAddress],
         avalanche_addresses: list[ChecksumEvmAddress],
         optimism_addresses: list[ChecksumEvmAddress],
 ) -> 'ExitStack':
     def mock_ethereum_get_code(account):
-        if account in contract_addresses:
+        if account in eth_contract_addresses:
             return '0xsomecode'
         return '0x'
 
@@ -627,6 +628,11 @@ def setup_filter_active_evm_addresses_mock(
 
     def mock_optimism_has_activity(account):
         if account in optimism_addresses:
+            return True
+        return False
+
+    def mock_ethereum_has_activity(account):
+        if account in ethereum_addresses:
             return True
         return False
 
@@ -649,5 +655,10 @@ def setup_filter_active_evm_addresses_mock(
         chains_aggregator.optimism.node_inquirer.etherscan,
         'has_activity',
         side_effect=mock_optimism_has_activity,
+    ))
+    stack.enter_context(patch.object(
+        chains_aggregator.ethereum.node_inquirer.etherscan,
+        'has_activity',
+        side_effect=mock_ethereum_has_activity,
     ))
     return stack

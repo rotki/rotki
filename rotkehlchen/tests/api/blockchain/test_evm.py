@@ -18,7 +18,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR
-from rotkehlchen.tests.utils.blockchain import setup_filter_active_evm_addresses_mock
+from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import SupportedBlockchain
@@ -227,10 +227,11 @@ def test_add_multievm_accounts(rotkehlchen_api_server):
     assert_proper_response(response)
 
     with ExitStack() as stack:
-        setup_filter_active_evm_addresses_mock(
+        setup_evm_addresses_activity_mock(
             stack=stack,
             chains_aggregator=rotki.chains_aggregator,
-            contract_addresses=[contract_account],
+            eth_contract_addresses=[contract_account],
+            ethereum_addresses=[contract_account, common_account],
             avalanche_addresses=[common_account],
             optimism_addresses=[common_account],
         )
