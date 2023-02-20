@@ -21,6 +21,7 @@ export const useAccountMigrationStore = defineStore(
 
     const { canRequestData } = storeToRefs(useSessionAuthStore());
     const { txEvmChains, getChain } = useSupportedChains();
+    const { fetchAccounts } = useBlockchainStore();
 
     const { tc } = useI18n();
     const { notify } = useNotificationsStore();
@@ -53,8 +54,10 @@ export const useAccountMigrationStore = defineStore(
       const notifications: Notification[] = [];
       for (const chain in addresses) {
         const chainAddresses = addresses[chain];
+        const blockchain = getChain(chain);
         promises.push(
-          useTokenDetection(getChain(chain)).detectTokens(chainAddresses)
+          fetchAccounts(blockchain),
+          useTokenDetection(blockchain).detectTokens(chainAddresses)
         );
         notifications.push({
           title: tc(

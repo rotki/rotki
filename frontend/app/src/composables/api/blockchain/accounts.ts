@@ -280,9 +280,24 @@ export const useBlockchainAccountsApi = () => {
     return EvmAccountsResult.parse(handleResponse(response));
   };
 
+  const detectEvmAccounts = async (): Promise<PendingTask> => {
+    const response = await api.instance.post<ActionResult<PendingTask>>(
+      '/blockchains/evm/accounts',
+      axiosSnakeCaseTransformer({
+        asyncQuery: true
+      }),
+      {
+        validateStatus: validWithSessionAndExternalService
+      }
+    );
+
+    return handleResponse(response);
+  };
+
   return {
     addBlockchainAccount,
     addEvmAccount,
+    detectEvmAccounts,
     removeBlockchainAccount,
     editBlockchainAccount,
     editBtcAccount,
