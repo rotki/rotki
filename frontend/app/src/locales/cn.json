@@ -322,7 +322,7 @@
       },
       "xpub_removal": {
         "error": {
-          "description": "无法删除 {xpub}：{error}",
+          "description": "无法删除 {xpub}: {error}",
           "title": "Xpub 移除"
         },
         "task": {
@@ -406,118 +406,118 @@
       },
       "dsr_balances": {
         "error": {
-          "description": "Failed to retrieve DSR balances: {error}",
-          "title": "DSR Balances"
+          "description": "获取 DSR 余额失败： {error}",
+          "title": "DSR 余额"
         },
         "task": {
-          "title": "Querying DSR Balances"
+          "title": "查询DSR余额"
         }
       },
       "dsr_history": {
         "error": {
-          "description": "Failed to retrieve DSR history: {error}",
-          "title": "DSR History"
+          "description": "无法检索 DSR 历史记录： {error}",
+          "title": "DSR 历史"
         },
         "task": {
-          "title": "Querying DSR History"
+          "title": "查询DSR历史"
         }
       },
       "liquity": {
         "task": {
-          "title": "Querying Liquity Balances"
+          "title": "查询流动性余额"
         }
       },
       "liquity_balances": {
         "error": {
-          "description": "Failed to retrieve Liquity balances: {message}",
-          "title": "Liquity Balances"
+          "description": "无法检索流动性余额： {message}",
+          "title": "流动性余额"
         }
       },
       "liquity_pools": {
         "error": {
-          "description": "Failed to query Liquity Pools: {message}",
-          "title": "Liquity Pools"
+          "description": "查询流动性池失败： {message}",
+          "title": "流动资金池"
         },
         "task": {
-          "title": "Querying Liquity Pools"
+          "title": "查询流动性池"
         }
       },
       "liquity_staking": {
         "error": {
-          "description": "Failed to retrieve liquity staking: {message}",
-          "title": "Liquity staking"
+          "description": "无法检索流动性质押： {message}",
+          "title": "流动性质押"
         },
         "task": {
-          "title": "Querying Liquity staking"
+          "title": "查询流动性质押"
         }
       },
       "makerdao_vault_details": {
         "error": {
-          "description": "Failed to retrieve MakerDAO Vault details: {error}",
-          "title": "MakerDAO Vault details"
+          "description": "无法检索 MakerDAO 金库 详细信息： {error}",
+          "title": "MakerDAO 金库 详细信息"
         },
         "task": {
-          "title": "Querying MakerDAO Vault details"
+          "title": "查询 MakerDAO 金库 详细信息"
         }
       },
       "makerdao_vaults": {
         "error": {
-          "description": "Failed to retrieve MakerDAO Vaults: {error}",
-          "title": "MakerDAO Vaults"
+          "description": "无法检索 MakerDAO 金库： {error}",
+          "title": "MakerDAO 金库"
         },
         "task": {
-          "title": "Querying MakerDAO Vaults"
+          "title": "查询 MakerDAO 金库"
         }
       },
       "sushiswap_balances": {
         "error": {
-          "description": "Failed to query Sushiswap balances: {message}",
-          "title": "Sushiswap balances"
+          "description": "无法查询 Sushiswap 余额： {message}",
+          "title": "Sushiswap 余额"
         },
         "task": {
-          "title": "Querying Sushiswap balances"
+          "title": "查询 Sushiswap 余额"
         }
       },
       "sushiswap_events": {
         "error": {
-          "description": "Failed to query Sushiswap events: {message}",
-          "title": "Sushiswap events"
+          "description": "无法查询 Sushiswap 事件： {message}",
+          "title": "Sushiswap 事件"
         },
         "task": {
-          "title": "Querying Sushiswap events"
+          "title": "查询Sushiswap事件"
         }
       },
       "uniswap": {
         "error": {
-          "description": "Failed to retrieve Uniswap V{v} balances: {error}",
-          "title": "Uniswap V{v} balances"
+          "description": "无法检索 Uniswap V{v} 余额：{error}",
+          "title": "Uniswap V{v} 余额"
         },
         "task": {
-          "title": "Querying Uniswap V{v} balances"
+          "title": "查询 Uniswap V{v} 余额"
         }
       },
       "uniswap_events": {
         "error": {
-          "description": "Failed to retrieve Uniswap events: {error}",
-          "title": "Querying Uniswap events"
+          "description": "无法检索 Uniswap 事件：{error}",
+          "title": "查询Uniswap事件"
         },
         "task": {
-          "title": "Querying Uniswap events"
+          "title": "查询Uniswap事件"
         }
       },
       "yearn_vaults": {
         "error": {
-          "description": "Failed to retrieve yearn.finance Vaults {version} balances: {error}",
-          "title": "yearn.finance Vaults {version} balances"
+          "description": "无法检索 yearn.finance 金库 {version} 余额：{error}",
+          "title": "yearn.finance 金库 {version} 余额"
         },
         "task": {
-          "title": "Querying yearn.finance Vaults {version} balances"
+          "title": "查询 yearn.finance 金库 {version} 余额"
         }
       },
       "yearn_vaults_history": {
         "error": {
-          "description": "Failed to retrieve yearn.finance Vaults {version} history: {error}",
-          "title": "yearn.finance Vaults {version} history"
+          "description": "无法检索 yearn.finance Vaults {version} 历史：{error}",
+          "title": "yearn.finance 金库 {version} 历史"
         },
         "task": {
           "title": "Querying yearn.finance Vaults {version} history"
