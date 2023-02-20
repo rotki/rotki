@@ -411,6 +411,7 @@ class TradesQuerySchema(
     to_timestamp = TimestampField(load_default=ts_now)
     trade_type = SerializableEnumField(enum_class=TradeType, load_default=None)
     location = LocationField(load_default=None)
+    include_ignored_trades = fields.Boolean(load_default=True)
 
     def __init__(
             self,
@@ -481,6 +482,7 @@ class TradesQuerySchema(
             'async_query': data['async_query'],
             'only_cache': data['only_cache'],
             'filter_query': filter_query,
+            'include_ignored_trades': data['include_ignored_trades'],
         }
 
 
