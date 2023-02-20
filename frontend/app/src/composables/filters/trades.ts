@@ -3,10 +3,10 @@ import { z } from 'zod';
 import {
   type MatchedKeyword,
   type SearchMatcher,
-  assetDeTransformer,
+  assetDeserializer,
   assetSuggestions,
-  dateDeTransformer,
-  dateTransformer,
+  dateDeserializer,
+  dateSerializer,
   dateValidator
 } from '@/types/filtering';
 import { TradeType } from '@/types/history/trade';
@@ -42,66 +42,70 @@ export const useTradeFilters = () => {
   const { assetInfo } = useAssetInfoRetrievalStore();
   const { tc } = useI18n();
 
-  const matchers: ComputedRef<Matcher[]> = computed(() => [
-    {
-      key: TradeFilterKeys.BASE,
-      keyValue: TradeFilterValueKeys.BASE,
-      description: tc('closed_trades.filter.base_asset'),
-      asset: true,
-      suggestions: assetSuggestions(assetSearch),
-      deTransformer: assetDeTransformer(assetInfo)
-    },
-    {
-      key: TradeFilterKeys.QUOTE,
-      keyValue: TradeFilterValueKeys.QUOTE,
-      description: tc('closed_trades.filter.quote_asset'),
-      asset: true,
-      suggestions: assetSuggestions(assetSearch),
-      deTransformer: assetDeTransformer(assetInfo)
-    },
-    {
-      key: TradeFilterKeys.ACTION,
-      keyValue: TradeFilterValueKeys.ACTION,
-      description: tc('closed_trades.filter.trade_type'),
-      string: true,
-      suggestions: () => TradeType.options,
-      validate: type => (TradeType.options as string[]).includes(type)
-    },
-    {
-      key: TradeFilterKeys.START,
-      keyValue: TradeFilterValueKeys.START,
-      description: tc('closed_trades.filter.start_date'),
-      string: true,
-      suggestions: () => [],
-      hint: tc('closed_trades.filter.date_hint', 0, {
-        format: getDateInputISOFormat(get(dateInputFormat))
-      }),
-      validate: dateValidator(dateInputFormat),
-      transformer: dateTransformer(dateInputFormat),
-      deTransformer: dateDeTransformer(dateInputFormat)
-    },
-    {
-      key: TradeFilterKeys.END,
-      keyValue: TradeFilterValueKeys.END,
-      description: tc('closed_trades.filter.end_date'),
-      string: true,
-      suggestions: () => [],
-      hint: tc('closed_trades.filter.date_hint', 0, {
-        format: getDateInputISOFormat(get(dateInputFormat))
-      }),
-      validate: dateValidator(dateInputFormat),
-      transformer: dateTransformer(dateInputFormat),
-      deTransformer: dateDeTransformer(dateInputFormat)
-    },
-    {
-      key: TradeFilterKeys.LOCATION,
-      keyValue: TradeFilterValueKeys.LOCATION,
-      description: tc('closed_trades.filter.location'),
-      string: true,
-      suggestions: () => get(associatedLocations),
-      validate: location => get(associatedLocations).includes(location as any)
-    }
-  ]);
+  const matchers: ComputedRef<Matcher[]> = computed(
+    () =>
+      [
+        {
+          key: TradeFilterKeys.BASE,
+          keyValue: TradeFilterValueKeys.BASE,
+          description: tc('closed_trades.filter.base_asset'),
+          asset: true,
+          suggestions: assetSuggestions(assetSearch),
+          deserializer: assetDeserializer(assetInfo)
+        },
+        {
+          key: TradeFilterKeys.QUOTE,
+          keyValue: TradeFilterValueKeys.QUOTE,
+          description: tc('closed_trades.filter.quote_asset'),
+          asset: true,
+          suggestions: assetSuggestions(assetSearch),
+          deserializer: assetDeserializer(assetInfo)
+        },
+        {
+          key: TradeFilterKeys.ACTION,
+          keyValue: TradeFilterValueKeys.ACTION,
+          description: tc('closed_trades.filter.trade_type'),
+          string: true,
+          suggestions: () => TradeType.options,
+          validate: type => (TradeType.options as string[]).includes(type)
+        },
+        {
+          key: TradeFilterKeys.START,
+          keyValue: TradeFilterValueKeys.START,
+          description: tc('closed_trades.filter.start_date'),
+          string: true,
+          suggestions: () => [],
+          hint: tc('closed_trades.filter.date_hint', 0, {
+            format: getDateInputISOFormat(get(dateInputFormat))
+          }),
+          validate: dateValidator(dateInputFormat),
+          serializer: dateSerializer(dateInputFormat),
+          deserializer: dateDeserializer(dateInputFormat)
+        },
+        {
+          key: TradeFilterKeys.END,
+          keyValue: TradeFilterValueKeys.END,
+          description: tc('closed_trades.filter.end_date'),
+          string: true,
+          suggestions: () => [],
+          hint: tc('closed_trades.filter.date_hint', 0, {
+            format: getDateInputISOFormat(get(dateInputFormat))
+          }),
+          validate: dateValidator(dateInputFormat),
+          serializer: dateSerializer(dateInputFormat),
+          deserializer: dateDeserializer(dateInputFormat)
+        },
+        {
+          key: TradeFilterKeys.LOCATION,
+          keyValue: TradeFilterValueKeys.LOCATION,
+          description: tc('closed_trades.filter.location'),
+          string: true,
+          suggestions: () => get(associatedLocations),
+          validate: location =>
+            get(associatedLocations).includes(location as any)
+        }
+      ] satisfies Matcher[]
+  );
 
   const updateFilter = (newFilters: Filters) => {
     set(filters, newFilters);

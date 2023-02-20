@@ -83,7 +83,7 @@ function updateMatches(pairs: Suggestion[]) {
         continue;
       }
       if (matcher.validate(entry.value)) {
-        transformedKeyword = matcher.transformer?.(entry.value) || entry.value;
+        transformedKeyword = matcher.serializer?.(entry.value) || entry.value;
       } else {
         continue;
       }
@@ -227,39 +227,41 @@ const selectItem = (suggestion: Suggestion) => {
   });
 };
 
-onMounted(() => {
+const restoreSelection = (matches: MatchedKeyword<any>): void => {
   const newSelection: Suggestion[] = [];
-  Object.entries(get(matches)).forEach(([key, value]) => {
+  Object.entries(matches).forEach(([key, value]) => {
     const foundMatchers = matcherForKeyValue(key);
-    if (foundMatchers && value) {
-      const values = typeof value === 'string' ? [value] : value;
-      values.forEach(value => {
-        const deTransformedValue =
-          foundMatchers.deTransformer?.(value) || value;
-        if (deTransformedValue) {
-          newSelection.push({
-            key: foundMatchers.key,
-            value: deTransformedValue,
-            asset: 'asset' in foundMatchers,
-            total: 1,
-            index: 0
-          });
-        }
-      });
+
+    if (!(foundMatchers && value)) {
+      return;
     }
+
+    const values = typeof value === 'string' ? [value] : value;
+
+    values.forEach(value => {
+      const deserializedValue = foundMatchers.deserializer?.(value) || value;
+      if (!deserializedValue) {
+        return;
+      }
+      newSelection.push({
+        key: foundMatchers.key,
+        value: deserializedValue,
+        asset: 'asset' in foundMatchers,
+        total: 1,
+        index: 0
+      });
+    });
   });
+
   set(selection, newSelection);
+};
+
+onMounted(() => {
+  restoreSelection(get(matches));
 });
 
 watch(matches, matches => {
-  set(
-    selection,
-    get(selection).filter(s => {
-      const key = s.key;
-      const matcher = get(matchers).find(x => x.key === key);
-      return matcher && matches[matcher.keyValue];
-    })
-  );
+  restoreSelection(matches);
 });
 </script>
 

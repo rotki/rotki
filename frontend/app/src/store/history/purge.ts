@@ -6,7 +6,6 @@ export const usePurgeStore = defineStore('history/purge', () => {
   const { fetchTrades } = useTradeStore();
   const { fetchAssetMovements } = useAssetMovements();
   const { fetchLedgerActions } = useLedgerActionStore();
-  const { fetchTransactions } = useTransactionStore();
 
   const purgeHistoryLocation = async (
     exchange: SupportedExchange
@@ -35,7 +34,6 @@ export const usePurgeStore = defineStore('history/purge', () => {
   const purgeTransactions = async (): Promise<void> => {
     const { resetStatus } = useStatusUpdater(Section.TX);
     resetStatus();
-    await fetchTransactions();
   };
 
   return {

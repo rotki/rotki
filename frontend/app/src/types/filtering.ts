@@ -19,14 +19,14 @@ interface StringSuggestionMatcher<K, KV = void> extends BaseMatcher<K, KV> {
   readonly string: true;
   readonly suggestions: StringSuggestion;
   readonly validate: (value: string) => boolean;
-  readonly transformer?: (value: string) => string;
-  readonly deTransformer?: (value: string) => string;
+  readonly serializer?: (value: string) => string;
+  readonly deserializer?: (value: string) => string;
 }
 
 interface AssetSuggestionMatcher<K, KV = void> extends BaseMatcher<K, KV> {
   readonly asset: true;
   readonly suggestions: AssetSuggestion;
-  readonly deTransformer?: (value: string) => AssetInfoWithId | null;
+  readonly deserializer?: (value: string) => AssetInfoWithId | null;
 }
 
 export type SearchMatcher<K, KV = void> =
@@ -50,7 +50,7 @@ export const assetSuggestions =
   async (value: string) =>
     await assetSearch(value, 5);
 
-export const assetDeTransformer =
+export const assetDeserializer =
   (assetInfo: (identifier: string) => ComputedRef<AssetInfo | null>) =>
   (identifier: string): AssetInfoWithId | null => {
     const asset = get(assetInfo(identifier));
@@ -72,10 +72,10 @@ export const dateValidator =
     );
   };
 
-export const dateTransformer =
+export const dateSerializer =
   (dateInputFormat: Ref<DateFormat>) => (date: string) =>
     convertToTimestamp(date, get(dateInputFormat)).toString();
 
-export const dateDeTransformer =
+export const dateDeserializer =
   (dateInputFormat: Ref<DateFormat>) => (timestamp: string) =>
     convertFromTimestamp(parseInt(timestamp), true, get(dateInputFormat));

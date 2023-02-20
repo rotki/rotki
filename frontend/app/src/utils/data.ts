@@ -33,7 +33,7 @@ export const uniqueObjects = <T>(
 export const nonEmptyProperties = <T extends object>(
   object: T,
   removeEmptyString = false
-): Partial<T> => {
+): Partial<NonNullable<T>> => {
   const partial: Partial<T> = {};
   const keys = Object.keys(object);
   if (object instanceof BigNumber) {

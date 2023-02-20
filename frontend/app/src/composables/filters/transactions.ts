@@ -3,10 +3,10 @@ import { z } from 'zod';
 import {
   type MatchedKeyword,
   type SearchMatcher,
-  assetDeTransformer,
+  assetDeserializer,
   assetSuggestions,
-  dateDeTransformer,
-  dateTransformer,
+  dateDeserializer,
+  dateSerializer,
   dateValidator
 } from '@/types/filtering';
 import { getDateInputISOFormat } from '@/utils/date';
@@ -54,8 +54,8 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
         }),
         suggestions: () => [],
         validate: dateValidator(dateInputFormat),
-        transformer: dateTransformer(dateInputFormat),
-        deTransformer: dateDeTransformer(dateInputFormat)
+        serializer: dateSerializer(dateInputFormat),
+        deserializer: dateDeserializer(dateInputFormat)
       },
       {
         key: TransactionFilterKeys.END,
@@ -67,8 +67,8 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
         }),
         suggestions: () => [],
         validate: dateValidator(dateInputFormat),
-        transformer: dateTransformer(dateInputFormat),
-        deTransformer: dateDeTransformer(dateInputFormat)
+        serializer: dateSerializer(dateInputFormat),
+        deserializer: dateDeserializer(dateInputFormat)
       },
       {
         key: TransactionFilterKeys.ASSET,
@@ -76,7 +76,7 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
         description: tc('transactions.filter.asset'),
         asset: true,
         suggestions: assetSuggestions(assetSearch),
-        deTransformer: assetDeTransformer(assetInfo)
+        deserializer: assetDeserializer(assetInfo)
       }
     ];
 
