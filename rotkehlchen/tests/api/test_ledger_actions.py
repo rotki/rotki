@@ -105,7 +105,7 @@ def test_add_and_query_ledger_actions(rotkehlchen_api_server, start_with_valid_p
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     with rotki.data.db.conn.read_ctx() as cursor:
         result = rotki.data.db.get_ignored_action_ids(cursor, None)
-    assert result == {ActionType.LEDGER_ACTION: [str(a['identifier']) for a in actions[0:2][::-1]]}
+    assert result == {ActionType.LEDGER_ACTION: {str(a['identifier']) for a in actions[0:2][::-1]}}
 
     # Now filter by location with json body
     response = requests.get(

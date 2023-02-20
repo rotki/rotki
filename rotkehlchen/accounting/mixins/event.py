@@ -44,7 +44,7 @@ class AccountingEventMixin(metaclass=ABCMeta):
         """Get a unique identifier from an accounting event"""
 
     @abstractmethod
-    def should_ignore(self, ignored_ids_mapping: dict['ActionType', list[str]]) -> bool:
+    def should_ignore(self, ignored_ids_mapping: dict['ActionType', set[str]]) -> bool:
         """Returns whether this event should be ignored due to user settings"""
 
     @abstractmethod

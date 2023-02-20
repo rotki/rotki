@@ -265,7 +265,7 @@ class ValidatorDailyStats(AccountingEventMixin):
     def get_assets(self) -> list['Asset']:
         return [A_ETH, A_ETH2]
 
-    def should_ignore(self, ignored_ids_mapping: dict[ActionType, list[str]]) -> bool:
+    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
         return False
 
     def process(

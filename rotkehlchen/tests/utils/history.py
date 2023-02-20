@@ -1192,7 +1192,9 @@ def assert_pnl_debug_import(filepath: Path, database: DBHandler) -> None:
         pnl_debug_json = json.load(f)
 
     settings_from_file = pnl_debug_json['settings']
-    ignored_actions_ids_from_file = pnl_debug_json['ignored_events_ids']
+    ignored_actions_ids_from_file = {}
+    for action_type, values in pnl_debug_json['ignored_events_ids'].items():
+        ignored_actions_ids_from_file[action_type] = set(values)
 
     with database.conn.read_ctx() as cursor:
         settings_from_db = database.get_settings(cursor=cursor).serialize()

@@ -274,12 +274,12 @@ class HistoryBaseEntry(AccountingEventMixin):
     def get_accounting_event_type() -> AccountingEventType:
         return AccountingEventType.HISTORY_BASE_ENTRY
 
-    def should_ignore(self, ignored_ids_mapping: dict[ActionType, list[str]]) -> bool:
+    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
         serialized_event_identifier = self.serialized_event_identifier
         if not serialized_event_identifier.startswith('0x'):
             return False
 
-        ignored_ids = ignored_ids_mapping.get(ActionType.EVM_TRANSACTION, [])
+        ignored_ids = ignored_ids_mapping.get(ActionType.EVM_TRANSACTION, set())
         result = f'{self.location.to_chain_id()}{serialized_event_identifier}' in ignored_ids
         return result
 

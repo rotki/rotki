@@ -750,7 +750,7 @@ class RestAPI():
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.TRADE)
-            ignored_ids = mapping.get(ActionType.TRADE, [])
+            ignored_ids = mapping.get(ActionType.TRADE, set())
             entries_result = []
             for entry in trades_result:
                 is_trade_ignored = entry['trade_id'] in ignored_ids
@@ -902,7 +902,7 @@ class RestAPI():
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.ASSET_MOVEMENT)  # noqa: E501
-            ignored_ids = mapping.get(ActionType.ASSET_MOVEMENT, [])
+            ignored_ids = mapping.get(ActionType.ASSET_MOVEMENT, set())
             entries_result = []
             for entry in serialized_movements:
                 entries_result.append({
@@ -952,7 +952,7 @@ class RestAPI():
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.LEDGER_ACTION)  # noqa: E501
-            ignored_ids = mapping.get(ActionType.LEDGER_ACTION, [])
+            ignored_ids = mapping.get(ActionType.LEDGER_ACTION, set())
             entries_result = []
             for action in actions:
                 entries_result.append({
@@ -3380,7 +3380,7 @@ class RestAPI():
 
             if len(transactions) != 0:
                 mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.EVM_TRANSACTION)  # noqa: E501
-                ignored_ids = mapping.get(ActionType.EVM_TRANSACTION, [])
+                ignored_ids = mapping.get(ActionType.EVM_TRANSACTION, set())
                 entries_result = []
                 dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
                 asset = None
