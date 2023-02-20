@@ -218,7 +218,7 @@ class Accountant():
             end_ts: Timestamp,
             prev_time: Timestamp,
             db_settings: DBSettings,
-            ignored_ids_mapping: dict[ActionType, list[str]],
+            ignored_ids_mapping: dict[ActionType, set[str]],
     ) -> tuple[int, Timestamp]:
         """Processes each individual event and returns a tuple with processing information:
         - How many events were consumed (0 to indicate we finished processing)

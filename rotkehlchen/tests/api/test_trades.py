@@ -66,7 +66,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges, start_with_valid_pr
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     with rotki.data.db.conn.read_ctx() as cursor:
         result = rotki.data.db.get_ignored_action_ids(cursor, None)
-    assert set(result[ActionType.TRADE]) == set(binance_ids)
+    assert result[ActionType.TRADE] == set(binance_ids)
 
     def assert_okay(response):
         """Helper function to run next query and its assertion twice"""

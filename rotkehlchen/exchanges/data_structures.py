@@ -173,8 +173,8 @@ class AssetMovement(AccountingEventMixin):
     def get_assets(self) -> list[Asset]:
         return [self.asset, self.fee_asset]
 
-    def should_ignore(self, ignored_ids_mapping: dict[ActionType, list[str]]) -> bool:
-        return self.identifier in ignored_ids_mapping.get(ActionType.ASSET_MOVEMENT, [])
+    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
+        return self.identifier in ignored_ids_mapping.get(ActionType.ASSET_MOVEMENT, set())
 
     def process(
             self,
@@ -343,8 +343,8 @@ class Trade(AccountingEventMixin):
     def get_assets(self) -> list[Asset]:
         return [self.base_asset, self.quote_asset]
 
-    def should_ignore(self, ignored_ids_mapping: dict[ActionType, list[str]]) -> bool:
-        return self.identifier in ignored_ids_mapping.get(ActionType.TRADE, [])
+    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
+        return self.identifier in ignored_ids_mapping.get(ActionType.TRADE, set())
 
     def process(
             self,
@@ -566,7 +566,7 @@ class MarginPosition(AccountingEventMixin):
     def get_assets(self) -> list[Asset]:
         return [self.pl_currency]
 
-    def should_ignore(self, ignored_ids_mapping: dict[ActionType, list[str]]) -> bool:
+    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
         return False
 
     def process(
@@ -658,7 +658,7 @@ class Loan(AccountingEventMixin):
     def get_identifier(self) -> str:
         return 'loan_' + str(self.close_time)
 
-    def should_ignore(self, ignored_ids_mapping: dict[ActionType, list[str]]) -> bool:
+    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
         return False
 
     def get_assets(self) -> list[Asset]:

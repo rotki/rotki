@@ -49,14 +49,14 @@ def _populate_ignored_actions(rotkehlchen_api_server) -> dict[str, list[str]]:
         result = rotki.data.db.get_ignored_action_ids(cursor, None)
     serialized_result = {k.serialize(): v for k, v in result.items()}
     assert serialized_result == {
-        'trade': ['1', '2', '3'],
-        'asset_movement': ['1', '4', '5', '7'],
-        'evm_transaction': [
+        'trade': {'1', '2', '3'},
+        'asset_movement': {'1', '4', '5', '7'},
+        'evm_transaction': {
             '10x9c7096c0a2a5e1b8bcf444a6929881af55d83fb0b713ad3f7f0028006ff9ec53',
             '10x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
             '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
-        ],
-        'ledger_action': ['1', '2', '3'],
+        },
+        'ledger_action': {'1', '2', '3'},
     }
     return serialized_result
 
@@ -141,12 +141,12 @@ def test_remove_ignored_actions(rotkehlchen_api_server):
         result = rotki.data.db.get_ignored_action_ids(cursor, None)
     serialized_result = {k.serialize(): v for k, v in result.items()}
     assert serialized_result == {
-        'asset_movement': ['4', '5'],
-        'ledger_action': ['1', '2', '3'],
-        'evm_transaction': [
+        'asset_movement': {'4', '5'},
+        'ledger_action': {'1', '2', '3'},
+        'evm_transaction': {
             '10x9c7096c0a2a5e1b8bcf444a6929881af55d83fb0b713ad3f7f0028006ff9ec53',
             '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
-        ],
+        },
     }
 
 

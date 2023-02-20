@@ -104,7 +104,7 @@ class DefiEvent(AccountingEventMixin):
         """DefiEvent should be eventually deleted. Will not be called from accounting"""
         raise AssertionError('Should never be called')
 
-    def should_ignore(self, ignored_ids_mapping: dict['ActionType', list[str]]) -> bool:
+    def should_ignore(self, ignored_ids_mapping: dict['ActionType', set[str]]) -> bool:
         """DefiEvent should be eventually deleted. Will not be called from accounting"""
         raise AssertionError('Should never be called')
 

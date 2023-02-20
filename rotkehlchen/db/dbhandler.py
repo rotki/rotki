@@ -700,7 +700,7 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             action_type: Optional[ActionType],
-    ) -> dict[ActionType, list[str]]:
+    ) -> dict[ActionType, set[str]]:
         query = 'SELECT type, identifier from ignored_actions'
         tuples: tuple
         if action_type is None:
@@ -711,9 +711,9 @@ class DBHandler:
             tuples = (action_type.serialize_for_db(),)
 
         cursor.execute(query, tuples)
-        mapping = defaultdict(list)
+        mapping = defaultdict(set)
         for entry in cursor:
-            mapping[ActionType.deserialize_from_db(entry[0])].append(entry[1])
+            mapping[ActionType.deserialize_from_db(entry[0])].add(entry[1])
 
         return mapping
 
