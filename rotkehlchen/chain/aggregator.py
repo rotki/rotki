@@ -1,4 +1,5 @@
 import logging
+import typing
 from collections import defaultdict
 from collections.abc import Iterator
 from importlib import import_module
@@ -8,11 +9,11 @@ from typing import (
     Any,
     Callable,
     DefaultDict,
+    Final,
     Literal,
     Optional,
     TypeVar,
     cast,
-    get_args,
     overload,
 )
 
@@ -20,8 +21,9 @@ from gevent.lock import Semaphore
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
-from rotkehlchen.chain.accounts import BlockchainAccounts
+from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.bitcoin.bch import get_bitcoin_cash_addresses_balances
 from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
@@ -129,6 +131,8 @@ def _module_name_to_class(module_name: ModuleName) -> type[EthereumModule]:
 
 
 DEFI_BALANCES_REQUERY_SECONDS = 600
+
+LAST_EVM_ACCOUNTS_DETECT_KEY: Final = 'last_evm_accounts_detect_ts'
 
 # Mapping to token symbols to ignore. True means all
 DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
@@ -1286,72 +1290,164 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     ) -> 'EvmManager':  # type ignore below due to inability to understand limitation
         return self.get_chain_manager(chain_id.to_blockchain())  # type: ignore[arg-type]
 
-    def filter_active_evm_addresses(
+    def is_contract(self, address: ChecksumEvmAddress, chain: SUPPORTED_EVM_CHAINS) -> bool:
+        return self.get_chain_manager(chain).node_inquirer.get_code(address) != '0x'
+
+    def check_single_address_activity(
             self,
-            accounts: list[ChecksumEvmAddress],
-            progress_handler: Optional['ProgressUpdater'] = None,
+            address: ChecksumEvmAddress,
+            chains: list[SUPPORTED_EVM_CHAINS],
+    ) -> list[SUPPORTED_EVM_CHAINS]:
+        """Checks whether address is active in the given chains. Returns a list of active chains"""
+        active_chains = []
+        for chain in chains:
+            chain_manager = self.get_chain_manager(chain)
+            if chain == SupportedBlockchain.AVALANCHE:
+                # just check balance and nonce in avalanche
+                has_activity = (
+                    chain_manager.w3.eth.get_transaction_count(address) != 0 or
+                    chain_manager.get_avax_balance(address) != ZERO
+                )
+                if has_activity is False:
+                    continue
+            elif chain_manager.node_inquirer.etherscan.has_activity(address) is False:  # noqa: E501
+                continue
+
+            active_chains.append(chain)
+
+        return active_chains
+
+    def track_evm_address(
+            self,
+            address: ChecksumEvmAddress,
+            chains: list[SUPPORTED_EVM_CHAINS],
+    ) -> list[SUPPORTED_EVM_CHAINS]:
+        """
+        Track address for the chains provided. If the address is already tracked on a
+        chain, skips this chain. Returns a list of chains where the address was added successfully.
+        """
+        added_chains = []
+        for chain in chains:
+            try:
+                self.modify_blockchain_accounts(
+                    blockchain=chain,
+                    accounts=[address],
+                    append_or_remove='append',
+                )
+            except InputError:
+                log.debug(f'Not adding {address} to {chain} since it already exists')
+                continue
+
+            added_chains.append(chain)
+
+        return added_chains
+
+    def check_chains_and_add_accounts(
+            self,
+            account: ChecksumEvmAddress,
+            chains: list[SUPPORTED_EVM_CHAINS],
     ) -> list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]]:
         """
-        Counting ethereum mainnet as the main chain we check if the account is a contract
-        in mainnet. If not, for all supported evm chains we check if there is any
-        transactions/activity for the account in the chain.
-
-        If progress_handler is given then provide updates to the frontend about the progress.
-
-        Returns a list of tuples of the address and the chain it was active in
-
-        May raise:
-        - RemoteError if any of the calls fail
+        Accepts an account and a list of chains to check activity in. For each chain checks whether
+        the account is active there and if it is, starts tracking it. Returns a list of tuples
+        (chain, account) for each chain where the account was added in.
         """
-        filtered_accounts = []
-        for account in accounts:
-            if progress_handler is not None:
-                progress_handler.new_step(f'Checking {account} EVM chain activity')
-            chains: list[SUPPORTED_EVM_CHAINS]
-            if self.ethereum.node_inquirer.get_code(account) != '0x':
-                log.debug(f'Not adding {account} to all evm chains as it is a mainnet contract')
-                chains = [SupportedBlockchain.ETHEREUM]
-            else:  # weird that mypy does not regognize the get_args here properly
-                chains = get_args(SUPPORTED_EVM_CHAINS)  # type: ignore[assignment]
+        active_chains = self.check_single_address_activity(
+            address=account,
+            chains=chains,
+        )
+        new_tracked_chains = self.track_evm_address(account, active_chains)
 
-            for chain in chains:
-                chain_manager = self.get_chain_manager(chain)
-                if chain == SupportedBlockchain.AVALANCHE:
-                    # just check balance and nonce in avalanche
-                    has_activity = (
-                        chain_manager.w3.eth.get_transaction_count(account) != 0 or
-                        chain_manager.get_avax_balance(account) != ZERO
-                    )
-                    if has_activity is False:
-                        continue
-                elif chain == SupportedBlockchain.OPTIMISM and chain_manager.node_inquirer.etherscan.has_activity(account) is False:  # noqa: E501
-                    continue
-                # else can only be ethereum so add it unconditionally
-                filtered_accounts.append((chain, account))
-
-        return filtered_accounts
+        return [(chain, account) for chain in new_tracked_chains]
 
     def add_accounts_to_all_evm(
             self,
             accounts: list[ChecksumEvmAddress],
     ) -> list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]]:
-        """Adds each account for all evm chains depending on our filter.
+        """Adds each account for all evm chain if it is not a contract in ethereum mainnet.
 
         Returns a list of tuples of the address and the chain it was added in.
         """
-        filtered_accounts = self.filter_active_evm_addresses(accounts)
-        added_accounts = []
-        for chain, account in filtered_accounts:
-            try:
-                self.modify_blockchain_accounts(
-                    blockchain=chain,
-                    accounts=[account],
-                    append_or_remove='append',
+        added_accounts: list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]] = []
+        # Distinguish between contracts and EOAs
+        for account in accounts:
+            if self.is_contract(account, SupportedBlockchain.ETHEREUM):
+                added_chains = self.track_evm_address(account, [SupportedBlockchain.ETHEREUM])
+                if len(added_chains) == 1:  # Is always either 1 or 0 since is only for ethereum
+                    added_accounts.append((SupportedBlockchain.ETHEREUM, account))
+            else:
+                chains_to_check = []
+                for chain in typing.get_args(SUPPORTED_EVM_CHAINS):
+                    if account not in self.accounts.get(chain):
+                        chains_to_check.append(chain)
+
+                added_accounts += self.check_chains_and_add_accounts(
+                    account=account,
+                    chains=chains_to_check,
                 )
-            except InputError:
-                log.debug(f'Not adding {account} to {chain} since it already exists')
+
+        return added_accounts
+
+    def detect_evm_accounts(
+            self,
+            progress_handler: Optional['ProgressUpdater'] = None,
+    ) -> list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]]:
+        """
+        Detects user's EVM accounts on different chains and adds them to the tracked accounts.
+        1. Iterates through already added addresses
+        2. For each address, assuming it's not a contract, checks which chains it's already in
+        3. Get the rest of the chains, and check activity. If active in any of them it tracks the
+        address for that chain.
+
+        Returns a list of tuples of (chain, address) for the freshly detected accounts.
+        """
+        current_accounts: dict[ChecksumEvmAddress, list[SUPPORTED_EVM_CHAINS]] = defaultdict(list)
+        chain: SUPPORTED_EVM_CHAINS
+        for chain in typing.get_args(SUPPORTED_EVM_CHAINS):
+            chain_accounts = self.accounts.get(chain)
+            for account in chain_accounts:
+                current_accounts[account].append(chain)
+
+        all_evm_chains = set(typing.get_args(SUPPORTED_EVM_CHAINS))
+        added_accounts: list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]] = []
+        for account, chains in current_accounts.items():
+            if progress_handler is not None:
+                progress_handler.new_step(f'Checking {account} EVM chain activity')
+
+            if self.is_contract(account, SupportedBlockchain.ETHEREUM):
+                continue  # do not check ethereum mainnet contracts
+
+            chains_to_check = list(all_evm_chains - set(chains))
+            if len(chains_to_check) == 0:
                 continue
-            added_accounts.append((chain, account))
+
+            added_accounts += self.check_chains_and_add_accounts(account, chains_to_check)
+
+        if progress_handler is not None:
+            progress_handler.new_step('Potentially write migrated addresses to the DB')
+
+        with self.database.user_write() as write_cursor:
+            self.database.add_blockchain_accounts(
+                write_cursor=write_cursor,
+                account_data=[
+                    BlockchainAccountData(chain, account)
+                    for chain, account in added_accounts
+                ],  # not duplicating label and tags as it's chain specific
+            )
+
+        self.msg_aggregator.add_message(
+            message_type=WSMessageType.EVM_ACCOUNTS_DETECTION,
+            data=[
+                {'evm_chain': str(chain), 'address': address}
+                for chain, address in added_accounts
+            ],
+        )
+
+        with self.database.user_write() as cursor:
+            cursor.execute(  # remember last time evm addresses were detected
+                'INSERT OR REPLACE INTO settings (name, value) VALUES (?, ?)',
+                (LAST_EVM_ACCOUNTS_DETECT_KEY, str(ts_now())),
+            )
 
         return added_accounts
 

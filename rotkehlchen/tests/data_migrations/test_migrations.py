@@ -18,7 +18,7 @@ from rotkehlchen.data_migrations.manager import (
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.icons import IconManager
-from rotkehlchen.tests.utils.blockchain import setup_filter_active_evm_addresses_mock
+from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, Location, SupportedBlockchain, TradeType
@@ -460,10 +460,11 @@ def test_migration_8(
     optimism_addresses = [ethereum_accounts[2], ethereum_accounts[3]]
 
     with ExitStack() as stack:
-        setup_filter_active_evm_addresses_mock(
+        setup_evm_addresses_activity_mock(
             stack=stack,
             chains_aggregator=rotki.chains_aggregator,
-            contract_addresses=[ethereum_accounts[0]],
+            eth_contract_addresses=[ethereum_accounts[0]],
+            ethereum_addresses=[],
             avalanche_addresses=avalanche_addresses,
             optimism_addresses=optimism_addresses,
         )
@@ -498,7 +499,7 @@ def test_migration_8(
     for i in range(7):
         msg = websocket_connection.pop_message()
         if i == 6:  # message for migrated address
-            assert msg['type'] == 'evm_address_migration'
+            assert msg['type'] == 'evm_accounts_detection'
             assert sorted(msg['data'], key=operator.itemgetter('evm_chain', 'address')) == sorted([
                 {'evm_chain': 'avalanche', 'address': ethereum_accounts[1]},
                 {'evm_chain': 'avalanche', 'address': ethereum_accounts[3]},

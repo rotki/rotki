@@ -2,7 +2,7 @@ import json
 import logging
 import sys
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 import requests
 
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-LAST_DATA_UPDATES_KEY = 'last_data_updates_ts'
+LAST_DATA_UPDATES_KEY: Final = 'last_data_updates_ts'
 SPAM_ASSETS_URL = 'https://raw.githubusercontent.com/rotki/data/{branch}/updates/spam_assets/assets_v{version}.json'  # noqa: E501
 
 
