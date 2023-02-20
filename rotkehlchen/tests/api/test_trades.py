@@ -1145,3 +1145,83 @@ def test_query_trades_associated_locations(rotkehlchen_api_server_with_exchanges
     result = assert_proper_response_with_result(response)
     result = result['entries']
     assert len(result) == 0
+
+
+def test_ignoring_trades(rotkehlchen_api_server):
+    """Check that ignoring trades filter works as expected."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    trades = [Trade(
+        timestamp=Timestamp(1596429934),
+        location=Location.EXTERNAL,
+        base_asset=A_WETH,
+        quote_asset=A_EUR,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('1')),
+        rate=Price(FVal('320')),
+        fee=Fee(ZERO),
+        fee_currency=A_EUR,
+        link='',
+        notes='',
+    ), Trade(
+        timestamp=Timestamp(1596429934),
+        location=Location.KRAKEN,
+        base_asset=A_WETH,
+        quote_asset=A_EUR,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('1')),
+        rate=Price(FVal('320')),
+        fee=Fee(ZERO),
+        fee_currency=A_EUR,
+        link='',
+        notes='',
+    ), Trade(
+        timestamp=Timestamp(1596429934),
+        location=Location.BISQ,
+        base_asset=A_WETH,
+        quote_asset=A_EUR,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('1')),
+        rate=Price(FVal('320')),
+        fee=Fee(ZERO),
+        fee_currency=A_EUR,
+        link='',
+        notes='',
+    )]
+    trade_to_ignore = trades[0].identifier
+
+    # populate db with trades
+    with rotki.data.db.user_write() as cursor:
+        rotki.data.db.add_trades(cursor, trades)
+
+    # ignore a trade
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ignoredactionsresource',
+        ), json={'action_type': 'trade', 'data': [trade_to_ignore]},
+    )
+    assert_simple_ok_response(response)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        result = rotki.data.db.get_ignored_action_ids(cursor, None)
+    assert result[ActionType.TRADE] == {trade_to_ignore}
+
+    # now fetch trades and check for the behaviour of the filter
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tradesresource',
+        ), json={'include_ignored_trades': 'True'},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == len(trades)
+    assert trade_to_ignore in {entry['entry']['trade_id'] for entry in result['entries']}
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tradesresource',
+        ), json={'include_ignored_trades': 'False'},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == len(trades) - 1
+    assert trade_to_ignore not in {entry['entry']['trade_id'] for entry in result['entries']}

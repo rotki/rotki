@@ -929,11 +929,13 @@ class TradesResource(BaseMethodView):
             async_query: bool,
             only_cache: bool,
             filter_query: TradesFilterQuery,
+            include_ignored_trades: bool,
     ) -> Response:
         return self.rest_api.get_trades(
             async_query=async_query,
             only_cache=only_cache,
             filter_query=filter_query,
+            include_ignored_trades=include_ignored_trades,
         )
 
     @require_loggedin_user()

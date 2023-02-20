@@ -732,6 +732,7 @@ class RestAPI():
             self,
             only_cache: bool,
             filter_query: TradesFilterQuery,
+            include_ignored_trades: bool,
     ) -> dict[str, Any]:
         try:
             trades, filter_total_found = self.rotkehlchen.events_historian.query_trades(
@@ -752,8 +753,12 @@ class RestAPI():
             ignored_ids = mapping.get(ActionType.TRADE, [])
             entries_result = []
             for entry in trades_result:
+                is_trade_ignored = entry['trade_id'] in ignored_ids
+                if include_ignored_trades is False and is_trade_ignored is True:
+                    continue
+
                 entries_result.append(
-                    {'entry': entry, 'ignored_in_accounting': entry['trade_id'] in ignored_ids},
+                    {'entry': entry, 'ignored_in_accounting': is_trade_ignored},
                 )
 
             result = {
@@ -773,17 +778,20 @@ class RestAPI():
             async_query: bool,
             only_cache: bool,
             filter_query: TradesFilterQuery,
+            include_ignored_trades: bool,
     ) -> Response:
         if async_query is True:
             return self._query_async(
                 command=self._get_trades,
                 only_cache=only_cache,
                 filter_query=filter_query,
+                include_ignored_trades=include_ignored_trades,
             )
 
         response = self._get_trades(
             only_cache=only_cache,
             filter_query=filter_query,
+            include_ignored_trades=include_ignored_trades,
         )
         status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}
