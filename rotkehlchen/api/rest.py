@@ -243,17 +243,27 @@ def api_response(
     return response
 
 
+def make_response_from_dict(response_data: dict[str, Any]) -> Response:
+    result = response_data.get('result')
+    message = response_data.get('message', '')
+    status_code = response_data.get('status_code', HTTPStatus.OK)
+    return api_response(
+        result=process_result(_wrap_in_result(result=result, message=message)),
+        status_code=status_code,
+    )
+
+
 def async_api_call() -> Callable:
     """
     This is a decorator that should be used with endpoints that can be called asynchronously.
-    It accepts `async_query` argument to determine whether to call asynchronously or not.
-    Defaults to synchronous mode.
+    It reads `async_query` argument from the wrapped function to determine whether to call
+    asynchronously or not. Defaults to synchronous mode.
 
     Endpoints that it wraps must return a dictionary with result, message and optionally a
     status code.
     This decorator reads the dictionary and transforms it to a Reponse object.
     """
-    def wrapper(func: Callable) -> Callable:
+    def wrapper(func: Callable[..., dict[str, Any]]) -> Callable[..., Response]:
         def inner(rest_api: 'RestAPI', async_query: bool = False, **kwargs: Any) -> Response:
             response: dict[str, Any]
             if async_query is True:
@@ -263,9 +273,7 @@ def async_api_call() -> Callable:
                 )
 
             response = func(rest_api, **kwargs)
-            status_code = response.get('status_code', HTTPStatus.OK)
-            result_dict = {'result': response['result'], 'message': response['message']}
-            return api_response(process_result(result_dict), status_code=status_code)
+            return make_response_from_dict(response)
 
         return inner
     return wrapper
@@ -284,7 +292,7 @@ class RestAPI():
         self.task_id = 0
         self.task_results: dict[int, Any] = {}
         self.trade_schema = TradeSchema()
-        self.import_tmp_files: DefaultDict[FileStorage, Path] = defaultdict()
+        self._import_tmp_files: DefaultDict[FileStorage, Path] = defaultdict()
 
     # - Private functions not exposed to the API
     def _new_task_id(self) -> int:
@@ -334,7 +342,7 @@ class RestAPI():
 
     def _do_query_async(self, command: Callable, task_id: int, **kwargs: Any) -> None:
         log.debug(f'Async task with task id {task_id} started')
-        result = command(**kwargs)
+        result = command(self, **kwargs)
         self._write_task_result(task_id, result)
 
     def _query_async(self, command: Callable, **kwargs: Any) -> Response:
@@ -431,7 +439,13 @@ class RestAPI():
         }
         return api_response(result=result_dict, status_code=HTTPStatus.NOT_FOUND)
 
-    def _get_exchange_rates(self, given_currencies: list[AssetWithOracles]) -> dict[str, Any]:
+    @async_api_call()
+    def get_exchange_rates(self, given_currencies: list[AssetWithOracles]) -> dict[str, Any]:
+        if len(given_currencies) == 0:
+            return wrap_in_fail_result(
+                message='Empty list of currencies provided',
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
         currencies = given_currencies
         fiat_currencies: list[FiatAsset] = []
         asset_rates = {}
@@ -452,27 +466,8 @@ class RestAPI():
 
         return _wrap_in_ok_result(process_result(asset_rates))
 
-    def get_exchange_rates(
-            self,
-            given_currencies: list[AssetWithOracles],
-            async_query: bool,
-    ) -> Response:
-        if len(given_currencies) == 0:
-            return api_response(
-                wrap_in_fail_result('Empty list of currencies provided'),
-                status_code=HTTPStatus.BAD_REQUEST,
-            )
-
-        if async_query is True:
-            return self._query_async(
-                command=self._get_exchange_rates,
-                given_currencies=given_currencies,
-            )
-
-        response_result = self._get_exchange_rates(given_currencies)
-        return api_response(result=response_result, status_code=HTTPStatus.OK)
-
-    def _query_all_balances(
+    @async_api_call()
+    def query_all_balances(
             self,
             save_data: bool,
             ignore_errors: bool,
@@ -484,31 +479,6 @@ class RestAPI():
             ignore_cache=ignore_cache,
         )
         return {'result': result, 'message': ''}
-
-    def query_all_balances(
-            self,
-            save_data: bool,
-            ignore_errors: bool,
-            async_query: bool,
-            ignore_cache: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._query_all_balances,
-                save_data=save_data,
-                ignore_errors=ignore_errors,
-                ignore_cache=ignore_cache,
-            )
-
-        response = self._query_all_balances(
-            save_data=save_data,
-            ignore_errors=ignore_errors,
-            ignore_cache=ignore_cache,
-        )
-        return api_response(
-            _wrap_in_result(process_result(response['result']), response['message']),
-            HTTPStatus.OK,
-        )
 
     def _return_external_services_response(self) -> Response:
         credentials_list = self.rotkehlchen.data.db.get_all_external_service_credentials()
@@ -638,7 +608,8 @@ class RestAPI():
 
         return {'result': result, 'message': error_msg, 'status_code': status_code}
 
-    def _query_exchange_balances(self, location: Optional[Location], ignore_cache: bool) -> dict[str, Any]:  # noqa: E501
+    @async_api_call()
+    def query_exchange_balances(self, location: Optional[Location], ignore_cache: bool) -> dict[str, Any]:  # noqa: E501
         if location is None:
             # Query all exchanges
             return self._query_all_exchange_balances(ignore_cache=ignore_cache)
@@ -669,28 +640,6 @@ class RestAPI():
             'status_code': HTTPStatus.OK,
         }
 
-    def query_exchange_balances(
-            self,
-            location: Optional[Location],
-            async_query: bool,
-            ignore_cache: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._query_exchange_balances,
-                location=location,
-                ignore_cache=ignore_cache,
-            )
-
-        response = self._query_exchange_balances(location=location, ignore_cache=ignore_cache)
-        balances = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-        if balances is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
-
     def get_supported_chains(self) -> Response:
         result = []
         for blockchain in SupportedBlockchain:
@@ -707,7 +656,8 @@ class RestAPI():
 
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    def _query_blockchain_balances(
+    @async_api_call()
+    def query_blockchain_balances(
             self,
             blockchain: Optional[SupportedBlockchain],
             ignore_cache: bool,
@@ -731,28 +681,8 @@ class RestAPI():
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
-    def query_blockchain_balances(
-            self,
-            blockchain: Optional[SupportedBlockchain],
-            async_query: bool,
-            ignore_cache: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._query_blockchain_balances,
-                blockchain=blockchain,
-                ignore_cache=ignore_cache,
-            )
-
-        response = self._query_blockchain_balances(
-            blockchain=blockchain,
-            ignore_cache=ignore_cache,
-        )
-        status_code = _get_status_code_from_async_response(response)
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=status_code)
-
-    def _get_trades(
+    @async_api_call()
+    def get_trades(
             self,
             only_cache: bool,
             filter_query: TradesFilterQuery,
@@ -796,30 +726,6 @@ class RestAPI():
             }
 
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
-
-    def get_trades(
-            self,
-            async_query: bool,
-            only_cache: bool,
-            filter_query: TradesFilterQuery,
-            include_ignored_trades: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._get_trades,
-                only_cache=only_cache,
-                filter_query=filter_query,
-                include_ignored_trades=include_ignored_trades,
-            )
-
-        response = self._get_trades(
-            only_cache=only_cache,
-            filter_query=filter_query,
-            include_ignored_trades=include_ignored_trades,
-        )
-        status_code = _get_status_code_from_async_response(response)
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=status_code)
 
     def add_trade(
             self,
@@ -905,7 +811,8 @@ class RestAPI():
 
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
-    def _get_asset_movements(
+    @async_api_call()
+    def get_asset_movements(
             self,
             filter_query: AssetMovementsFilterQuery,
             only_cache: bool,
@@ -943,28 +850,8 @@ class RestAPI():
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
-    def get_asset_movements(
-            self,
-            filter_query: AssetMovementsFilterQuery,
-            async_query: bool,
-            only_cache: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._get_asset_movements,
-                filter_query=filter_query,
-                only_cache=only_cache,
-            )
-
-        response = self._get_asset_movements(
-            filter_query=filter_query,
-            only_cache=only_cache,
-        )
-        result_dict = {'result': response['result'], 'message': response['message']}
-        status_code = _get_status_code_from_async_response(response)
-        return api_response(process_result(result_dict), status_code=status_code)
-
-    def _get_ledger_actions(
+    @async_api_call()
+    def get_ledger_actions(
             self,
             filter_query: LedgerActionsFilterQuery,
             only_cache: bool,
@@ -993,27 +880,6 @@ class RestAPI():
 
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
 
-    def get_ledger_actions(
-            self,
-            filter_query: LedgerActionsFilterQuery,
-            async_query: bool,
-            only_cache: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._get_ledger_actions,
-                filter_query=filter_query,
-                only_cache=only_cache,
-            )
-
-        response = self._get_ledger_actions(
-            filter_query=filter_query,
-            only_cache=only_cache,
-        )
-        status_code = _get_status_code_from_async_response(response)
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=status_code)
-
     def add_ledger_action(self, action: LedgerAction) -> Response:
         db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
         with self.rotkehlchen.data.db.user_write() as cursor:
@@ -1033,12 +899,10 @@ class RestAPI():
             return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
 
         # Success - return all ledger actions after the edit
-        response = self._get_ledger_actions(
+        return self.get_ledger_actions(
             filter_query=LedgerActionsFilterQuery.make(),
             only_cache=True,
         )
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
     def delete_ledger_actions(self, identifiers: list[int]) -> Response:
         db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
@@ -1160,7 +1024,8 @@ class RestAPI():
         result_dict = _wrap_in_ok_result(result)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def _create_new_user(
+    @async_api_call()
+    def create_new_user(
             self,
             name: str,
             password: str,
@@ -1241,42 +1106,8 @@ class RestAPI():
             'status_code': HTTPStatus.OK,
         }
 
-    def create_new_user(
-            self,
-            async_query: bool,
-            name: str,
-            password: str,
-            premium_api_key: str,
-            premium_api_secret: str,
-            sync_database: bool,
-            initial_settings: Optional[ModifiableDBSettings],
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._create_new_user,
-                name=name,
-                password=password,
-                premium_api_key=premium_api_key,
-                premium_api_secret=premium_api_secret,
-                sync_database=sync_database,
-                initial_settings=initial_settings,
-            )
-
-        response = self._create_new_user(
-            name=name,
-            password=password,
-            premium_api_key=premium_api_key,
-            premium_api_secret=premium_api_secret,
-            sync_database=sync_database,
-            initial_settings=initial_settings,
-        )
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-        result_dict = _wrap_in_result(result=result, message=msg)
-        return api_response(result_dict, status_code=status_code)
-
-    def _user_login(
+    @async_api_call()
+    def user_login(
             self,
             name: str,
             password: str,
@@ -1337,32 +1168,6 @@ class RestAPI():
             'exchanges': exchanges,
             'settings': settings,
         })
-
-    def user_login(
-            self,
-            async_query: bool,
-            name: str,
-            password: str,
-            sync_approval: Literal['yes', 'no', 'unknown'],
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._user_login,
-                name=name,
-                password=password,
-                sync_approval=sync_approval,
-            )
-
-        response = self._user_login(
-            name=name,
-            password=password,
-            sync_approval=sync_approval,
-        )
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-        result_dict = _wrap_in_result(result=result, message=msg)
-        return api_response(result_dict, status_code=status_code)
 
     def user_logout(self, name: str) -> Response:
         result_dict: dict[str, Any] = {'result': None, 'message': ''}
@@ -1810,7 +1615,8 @@ class RestAPI():
         result = {'warnings': warnings, 'errors': errors}
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    def _process_history(
+    @async_api_call()
+    def process_history(
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
@@ -1821,30 +1627,8 @@ class RestAPI():
         )
         return {'result': report_id, 'message': error_or_empty}
 
-    def process_history(
-            self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            async_query: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._process_history,
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-            )
-
-        response = self._process_history(
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-        result_dict = _wrap_in_result(result=result, message=msg)
-        return api_response(result_dict, status_code=status_code)
-
-    def _get_history_debug(
+    @async_api_call()
+    def get_history_debug(
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
@@ -1879,41 +1663,18 @@ class RestAPI():
             return OK_RESULT
         return _wrap_in_ok_result(debug_info)
 
-    def get_history_debug(
-            self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            directory_path: Optional[Path],
-            async_query: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._get_history_debug,
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-                directory_path=directory_path,
-            )
-
-        response = self._get_history_debug(
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-            directory_path=directory_path,
-        )
-        status_code = _get_status_code_from_async_response(response)
-        result_dict = _wrap_in_result(result=response['result'], message=response['message'])
-        return api_response(result_dict, status_code=status_code)
-
     if getattr(sys, 'frozen', False) is False:
+        @async_api_call()
         def _import_history_debug(self, filepath: Union[FileStorage, Path]) -> dict[str, Any]:
             """Imports the PnL debug data for processing and report generation"""
             json_importer = DebugHistoryImporter(self.rotkehlchen.data.db)
             if isinstance(filepath, Path):
                 success, msg, data = json_importer.import_history_debug(filepath=filepath)
             else:
-                tmpfilepath = self.import_tmp_files[filepath]
+                tmpfilepath = self._import_tmp_files[filepath]
                 success, msg, data = json_importer.import_history_debug(filepath=tmpfilepath)
                 tmpfilepath.unlink(missing_ok=True)
-                del self.import_tmp_files[filepath]
+                del self._import_tmp_files[filepath]
 
             if success is False:
                 return wrap_in_fail_result(
@@ -1935,18 +1696,9 @@ class RestAPI():
             if isinstance(filepath, FileStorage):
                 _, tmpfilepath = tempfile.mkstemp()
                 filepath.save(tmpfilepath)
-                self.import_tmp_files[filepath] = Path(tmpfilepath)
+                self._import_tmp_files[filepath] = Path(tmpfilepath)
 
-            if async_query is True:
-                return self._query_async(
-                    command=self._import_history_debug,
-                    filepath=filepath,
-                )
-
-            response = self._import_history_debug(filepath=filepath)
-            status_code = _get_status_code_from_async_response(response)
-            result_dict = _wrap_in_result(response['result'], response['message'])
-            return api_response(result_dict, status_code=status_code)
+            return self._import_history_debug(async_query=async_query, filepath=filepath)  # type: ignore[unexpected-keyword-arg]  # mypy doesn't see the async decorator is expected  # noqa: E501
 
     def get_history_actionable_items(self) -> Response:
         pot = self.rotkehlchen.accountant.pots[0]
@@ -1998,7 +1750,8 @@ class RestAPI():
         result = process_result(data)
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    def _add_xpub(
+    @async_api_call()
+    def add_xpub(
             self,
             xpub_data: 'XpubData',
     ) -> dict[str, Any]:
@@ -2014,30 +1767,8 @@ class RestAPI():
         # success
         return OK_RESULT
 
-    def add_xpub(
-            self,
-            xpub_data: 'XpubData',
-            async_query: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._add_xpub,
-                xpub_data=xpub_data,
-            )
-
-        response = self._add_xpub(xpub_data=xpub_data)
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=status_code)
-
-    def _delete_xpub(
+    @async_api_call()
+    def delete_xpub(
             self,
             xpub_data: 'XpubData',
     ) -> dict[str, Any]:
@@ -2052,29 +1783,6 @@ class RestAPI():
 
         # success
         return OK_RESULT
-
-    def delete_xpub(
-            self,
-            xpub_data: 'XpubData',
-            async_query: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._delete_xpub,
-                xpub_data=xpub_data,
-            )
-
-        response = self._delete_xpub(xpub_data=xpub_data)
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=status_code)
 
     def edit_xpub(
             self,
@@ -2093,7 +1801,8 @@ class RestAPI():
 
         return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
 
-    def _add_evm_accounts(
+    @async_api_call()
+    def add_evm_accounts(
             self,
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
     ) -> dict[str, Any]:
@@ -2109,30 +1818,8 @@ class RestAPI():
             result[chain.value].append(address)
         return _wrap_in_ok_result(result)
 
-    def add_evm_accounts(
-            self,
-            account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
-            async_query: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._add_evm_accounts,
-                account_data=account_data,
-            )
-
-        response = self._add_evm_accounts(account_data=account_data)
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=status_code)
-
-    def _refresh_evm_accounts(self) -> dict[str, Any]:
+    @async_api_call()
+    def refresh_evm_accounts(self) -> dict[str, Any]:
         try:
             self.rotkehlchen.chains_aggregator.detect_evm_accounts()
         except EthSyncError as e:
@@ -2142,64 +1829,49 @@ class RestAPI():
 
         return OK_RESULT
 
-    def refresh_evm_accounts(self, async_query: bool) -> Response:
-        """
-        Check whether already added addresses have activity in other evm chains and if they do,
-        start tracking them in those chains too.
-        """
-        if async_query is True:
-            return self._query_async(command=self._refresh_evm_accounts)
-
-        response = self._refresh_evm_accounts()
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=status_code)
-
     def get_blockchain_accounts(self, blockchain: SupportedBlockchain) -> Response:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             data = self.rotkehlchen.get_blockchain_account_data(cursor, blockchain)
         return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
 
     @overload
-    def _add_single_blockchain_accounts(
+    def add_single_blockchain_accounts(
             self,
+            async_query: bool,
             chain: SUPPORTED_EVM_CHAINS,
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
-    ) -> dict[str, Any]:
+    ) -> Response:
         ...
 
     @overload
-    def _add_single_blockchain_accounts(
+    def add_single_blockchain_accounts(
             self,
+            async_query: bool,
             chain: SUPPORTED_SUBSTRATE_CHAINS,
             account_data: list[SingleBlockchainAccountData[SubstrateAddress]],
-    ) -> dict[str, Any]:
+    ) -> Response:
         ...
 
     @overload
-    def _add_single_blockchain_accounts(
+    def add_single_blockchain_accounts(
             self,
+            async_query: bool,
             chain: SUPPORTED_BITCOIN_CHAINS,
             account_data: list[SingleBlockchainAccountData[BTCAddress]],
-    ) -> dict[str, Any]:
+    ) -> Response:
         ...
 
     @overload
-    def _add_single_blockchain_accounts(
+    def add_single_blockchain_accounts(
             self,
+            async_query: bool,
             chain: SupportedBlockchain,
             account_data: list[SingleBlockchainAccountData],
-    ) -> dict[str, Any]:
+    ) -> Response:
         ...
 
-    def _add_single_blockchain_accounts(
+    @async_api_call()
+    def add_single_blockchain_accounts(
             self,
             chain: SupportedBlockchain,
             account_data: list[SingleBlockchainAccountData],
@@ -2221,67 +1893,6 @@ class RestAPI():
         # would have failed otherwise
         added_addresses = [x.address for x in account_data]
         return _wrap_in_ok_result(added_addresses)
-
-    @overload
-    def add_single_blockchain_accounts(
-            self,
-            chain: SUPPORTED_EVM_CHAINS,
-            account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
-            async_query: bool,
-    ) -> Response:
-        ...
-
-    @overload
-    def add_single_blockchain_accounts(
-            self,
-            chain: SUPPORTED_SUBSTRATE_CHAINS,
-            account_data: list[SingleBlockchainAccountData[SubstrateAddress]],
-            async_query: bool,
-    ) -> Response:
-        ...
-
-    @overload
-    def add_single_blockchain_accounts(
-            self,
-            chain: SUPPORTED_BITCOIN_CHAINS,
-            account_data: list[SingleBlockchainAccountData[BTCAddress]],
-            async_query: bool,
-    ) -> Response:
-        ...
-
-    @overload
-    def add_single_blockchain_accounts(
-            self,
-            chain: SupportedBlockchain,
-            account_data: list[SingleBlockchainAccountData],
-            async_query: bool,
-    ) -> Response:
-        ...
-
-    def add_single_blockchain_accounts(
-            self,
-            chain: SupportedBlockchain,
-            account_data: list[SingleBlockchainAccountData],
-            async_query: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._add_single_blockchain_accounts,
-                chain=chain,
-                account_data=account_data,
-            )
-
-        response = self._add_single_blockchain_accounts(chain=chain, account_data=account_data)
-        result = response['result']  # pylint: disable=unsubscriptable-object
-        msg = response['message']  # pylint: disable=unsubscriptable-object
-        status_code = _get_status_code_from_async_response(response)
-
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=status_code)
 
     def edit_single_blockchain_accounts(
             self,
@@ -2305,7 +1916,8 @@ class RestAPI():
 
         return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
 
-    def _remove_single_blockchain_accounts(
+    @async_api_call()
+    def remove_single_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
@@ -2329,31 +1941,6 @@ class RestAPI():
 
         return _wrap_in_ok_result(balances_update.serialize())
 
-    def remove_single_blockchain_accounts(
-            self,
-            blockchain: SupportedBlockchain,
-            accounts: ListOfBlockchainAddresses,
-            async_query: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._remove_single_blockchain_accounts,
-                blockchain=blockchain,
-                accounts=accounts,
-            )
-
-        response = self._remove_single_blockchain_accounts(blockchain=blockchain, accounts=accounts)  # noqa: E501
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=status_code)
-
     def _get_manually_tracked_balances(self) -> dict[str, Any]:
         db_entries = get_manually_tracked_balances(db=self.rotkehlchen.data.db, balance_type=None)
         balances = process_result(
@@ -2363,6 +1950,10 @@ class RestAPI():
 
         )
         return _wrap_in_ok_result(balances)
+
+    @async_api_call()
+    def get_manually_tracked_balances(self) -> dict[str, Any]:
+        return self._get_manually_tracked_balances()
 
     @overload
     def _modify_manually_tracked_balances(  # pylint: disable=unused-argument
@@ -2397,61 +1988,32 @@ class RestAPI():
 
         return self._get_manually_tracked_balances()
 
-    def get_manually_tracked_balances(self, async_query: bool) -> Response:
-        if async_query is True:
-            return self._query_async(command=self._get_manually_tracked_balances)
-
-        result = self._get_manually_tracked_balances()
-        return api_response(result, status_code=HTTPStatus.OK)
-
-    def _manually_tracked_balances_api_query(
-            self,
-            async_query: bool,
-            function: Union[
-                Callable[['DBHandler', list[ManuallyTrackedBalance]], None],
-                Callable[['DBHandler', list[int]], None],
-            ],
-            data_or_ids: Union[list[ManuallyTrackedBalance], list[int]],
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._modify_manually_tracked_balances,
-                function=function,
-                data_or_ids=data_or_ids,
-            )
-        result = self._modify_manually_tracked_balances(function, data_or_ids)  # type: ignore
-        status_code = _get_status_code_from_async_response(result)
-        return api_response(result, status_code=status_code)
-
+    @async_api_call()
     def add_manually_tracked_balances(
             self,
-            async_query: bool,
             data: list[ManuallyTrackedBalance],
-    ) -> Response:
-        return self._manually_tracked_balances_api_query(
-            async_query=async_query,
+    ) -> dict[str, Any]:
+        return self._modify_manually_tracked_balances(
             function=add_manually_tracked_balances,
             data_or_ids=data,
         )
 
+    @async_api_call()
     def edit_manually_tracked_balances(
             self,
-            async_query: bool,
             data: list[ManuallyTrackedBalance],
-    ) -> Response:
-        return self._manually_tracked_balances_api_query(
-            async_query=async_query,
+    ) -> dict[str, Any]:
+        return self._modify_manually_tracked_balances(
             function=edit_manually_tracked_balances,
             data_or_ids=data,
         )
 
+    @async_api_call()
     def remove_manually_tracked_balances(
             self,
-            async_query: bool,
             ids: list[int],
-    ) -> Response:
-        return self._manually_tracked_balances_api_query(
-            async_query=async_query,
+    ) -> dict[str, Any]:
+        return self._modify_manually_tracked_balances(
             function=remove_manually_tracked_balances,
             data_or_ids=ids,
         )
@@ -2552,6 +2114,7 @@ class RestAPI():
     def ping() -> Response:
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
+    @async_api_call()
     def _import_data(
             self,
             source: DataImportSource,
@@ -2565,14 +2128,14 @@ class RestAPI():
                 **kwargs,
             )
         else:
-            tmpfilepath = self.import_tmp_files[filepath]
+            tmpfilepath = self._import_tmp_files[filepath]
             success, msg = self.rotkehlchen.data_importer.import_csv(
                 source=source,
                 filepath=tmpfilepath,
                 **kwargs,
             )
             tmpfilepath.unlink(missing_ok=True)
-            del self.import_tmp_files[filepath]
+            del self._import_tmp_files[filepath]
 
         if success is False:
             return wrap_in_fail_result(
@@ -2584,30 +2147,25 @@ class RestAPI():
 
     def import_data(
             self,
+            async_query: bool,
             source: DataImportSource,
             filepath: Union[FileStorage, Path],
-            async_query: bool,
             **kwargs: Any,
     ) -> Response:
-        if not isinstance(filepath, Path):
+        if isinstance(filepath, FileStorage):
             _, tmpfilepath = tempfile.mkstemp()
             filepath.save(tmpfilepath)
-            self.import_tmp_files[filepath] = Path(tmpfilepath)
+            self._import_tmp_files[filepath] = Path(tmpfilepath)
 
-        if async_query is True:
-            return self._query_async(
-                command=self._import_data,
-                source=source,
-                filepath=filepath,
-                **kwargs,
-            )
+        return self._import_data(
+            async_query=async_query,
+            source=source,
+            filepath=filepath,
+            **kwargs,
+        )
 
-        response = self._import_data(source=source, filepath=filepath, **kwargs)
-        status_code = _get_status_code_from_async_response(response)
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(result_dict, status_code=status_code)
-
-    def _get_eth2_stake_deposits(self) -> dict[str, Any]:
+    @async_api_call()
+    def get_eth2_stake_deposits(self) -> dict[str, Any]:
         try:
             result = self.rotkehlchen.chains_aggregator.get_eth2_staking_deposits()
         except RemoteError as e:
@@ -2617,22 +2175,8 @@ class RestAPI():
 
         return {'result': process_result_list([x.serialize() for x in result]), 'message': ''}
 
-    def get_eth2_stake_deposits(self, async_query: bool) -> Response:
-        if async_query is True:
-            return self._query_async(command=self._get_eth2_stake_deposits)
-
-        response = self._get_eth2_stake_deposits()
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=status_code)
-
-    def _get_eth2_stake_details(self) -> dict[str, Any]:
+    @async_api_call()
+    def get_eth2_stake_details(self) -> dict[str, Any]:
         try:
             result = self.rotkehlchen.chains_aggregator.get_eth2_staking_details()
         except RemoteError as e:
@@ -2646,22 +2190,8 @@ class RestAPI():
             'message': '',
         }
 
-    def get_eth2_stake_details(self, async_query: bool) -> Response:
-        if async_query is True:
-            return self._query_async(command=self._get_eth2_stake_details)
-
-        response = self._get_eth2_stake_details()
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=status_code)
-
-    def _get_eth2_daily_stats(
+    @async_api_call()
+    def get_eth2_daily_stats(
             self,
             filter_query: Eth2DailyStatsFilterQuery,
             only_cache: bool,
@@ -2686,30 +2216,6 @@ class RestAPI():
             }
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
 
-    def get_eth2_daily_stats(
-            self,
-            filter_query: Eth2DailyStatsFilterQuery,
-            async_query: bool,
-            only_cache: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._get_eth2_daily_stats,
-                filter_query=filter_query,
-                only_cache=only_cache,
-            )
-
-        response = self._get_eth2_daily_stats(filter_query=filter_query, only_cache=only_cache)
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=status_code)
-
     def get_eth2_validators(self) -> Response:
         try:
             validators = self.rotkehlchen.chains_aggregator.get_eth2_validators()
@@ -2732,7 +2238,8 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
-    def _add_eth2_validator(
+    @async_api_call()
+    def add_eth2_validator(
             self,
             validator_index: Optional[int],
             public_key: Optional[Eth2PubKey],
@@ -2747,38 +2254,11 @@ class RestAPI():
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
         except PremiumPermissionError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.UNAUTHORIZED}  # noqa: E501
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.UNAUTHORIZED}
         except (InputError, ModuleInactive) as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
         return {'result': True, 'message': ''}
-
-    def add_eth2_validator(
-            self,
-            validator_index: Optional[int],
-            public_key: Optional[Eth2PubKey],
-            ownership_proportion: FVal,
-            async_query: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._add_eth2_validator,
-                validator_index=validator_index,
-                public_key=public_key,
-                ownership_proportion=ownership_proportion,
-            )
-
-        response = self._add_eth2_validator(
-            validator_index=validator_index,
-            public_key=public_key,
-            ownership_proportion=ownership_proportion,
-        )
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def edit_eth2_validator(self, validator_index: int, ownership_proportion: FVal) -> Response:
         try:
@@ -2812,7 +2292,8 @@ class RestAPI():
 
         return api_response(result, status_code=status_code)
 
-    def _get_defi_balances(self) -> dict[str, Any]:
+    @async_api_call()
+    def get_defi_balances(self) -> dict[str, Any]:
         """
         This returns the typical async response dict but with the
         extra status code argument for errors
@@ -2826,22 +2307,8 @@ class RestAPI():
 
         return {'result': process_result(balances), 'message': ''}
 
-    def get_defi_balances(self, async_query: bool) -> Response:
-        if async_query is True:
-            return self._query_async(command=self._get_defi_balances)
-
-        response = self._get_defi_balances()
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=status_code)
-
-    def _get_ethereum_airdrops(self) -> dict[str, Any]:
+    @async_api_call()
+    def get_ethereum_airdrops(self) -> dict[str, Any]:
         try:
             data = check_airdrops(
                 addresses=self.rotkehlchen.chains_aggregator.accounts.eth,
@@ -2853,21 +2320,6 @@ class RestAPI():
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.INSUFFICIENT_STORAGE)
 
         return _wrap_in_ok_result(process_result(data))
-
-    def get_ethereum_airdrops(self, async_query: bool) -> Response:
-        if async_query is True:
-            return self._query_async(command=self._get_ethereum_airdrops)
-
-        response = self._get_ethereum_airdrops()
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=status_code)
 
     def get_rpc_nodes(self, blockchain: SupportedBlockchain) -> Response:
         nodes = self.rotkehlchen.data.db.get_rpc_nodes(blockchain=blockchain)
@@ -2969,69 +2421,42 @@ class RestAPI():
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
-    def _api_query_for_eth_module(
-            self,
-            async_query: bool,
-            module_name: ModuleName,
-            method: str,
-            query_specific_balances_before: Optional[list[str]],
-            **kwargs: Any,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._eth_module_query,
-                module_name=module_name,
-                method=method,
-                query_specific_balances_before=query_specific_balances_before,
-                **kwargs,
-            )
-
-        response = self._eth_module_query(
-            module_name=module_name,
-            method=method,
-            query_specific_balances_before=query_specific_balances_before,
-            **kwargs,
-        )
-        result_dict = {'result': response['result'], 'message': response['message']}
-        status_code = _get_status_code_from_async_response(response)
-        return api_response(process_result(result_dict), status_code=status_code)
-
-    def get_makerdao_dsr_balance(self, async_query: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    @async_api_call()
+    def get_makerdao_dsr_balance(self) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='makerdao_dsr',
             method='get_current_dsr',
             query_specific_balances_before=None,
         )
 
-    def get_makerdao_dsr_history(self, async_query: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    @async_api_call()
+    def get_makerdao_dsr_history(self) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='makerdao_dsr',
             method='get_historical_dsr',
             query_specific_balances_before=None,
         )
 
-    def get_makerdao_vaults(self, async_query: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    @async_api_call()
+    def get_makerdao_vaults(self) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='makerdao_vaults',
             method='get_vaults',
             query_specific_balances_before=None,
         )
 
-    def get_makerdao_vault_details(self, async_query: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    @async_api_call()
+    def get_makerdao_vault_details(self) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='makerdao_vaults',
             method='get_vault_details',
             query_specific_balances_before=None,
         )
 
-    def get_aave_balances(self, async_query: bool) -> Response:
+    @async_api_call()
+    def get_aave_balances(self) -> dict[str, Any]:
         # Once that has ran we can be sure that defi_balances mapping is populated
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+        return self._eth_module_query(
             module_name='aave',
             method='get_balances',
             # We need to query defi balances before since defi_balances must be populated
@@ -3042,15 +2467,14 @@ class RestAPI():
             given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
         )
 
+    @async_api_call()
     def get_aave_history(
             self,
-            async_query: bool,
             reset_db_data: bool,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    ) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='aave',
             method='get_history',
             # We need to query defi balances before since defi_balances must be populated
@@ -3065,10 +2489,10 @@ class RestAPI():
             given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
         )
 
-    def get_compound_balances(self, async_query: bool) -> Response:
+    @async_api_call()
+    def get_compound_balances(self) -> dict[str, Any]:
         # Once that has ran we can be sure that defi_balances mapping is populated
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+        return self._eth_module_query(
             module_name='compound',
             method='get_balances',
             # We need to query defi balances before since defi_balances must be populated
@@ -3079,15 +2503,14 @@ class RestAPI():
             given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
         )
 
+    @async_api_call()
     def get_compound_history(
             self,
-            async_query: bool,
             reset_db_data: bool,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    ) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='compound',
             method='get_history',
             # We need to query defi balances before since defi_balances must be populated
@@ -3102,10 +2525,10 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    def get_yearn_vaults_balances(self, async_query: bool) -> Response:
+    @async_api_call()
+    def get_yearn_vaults_balances(self) -> dict[str, Any]:
         # Once that has ran we can be sure that defi_balances mapping is populated
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+        return self._eth_module_query(
             module_name='yearn_vaults',
             method='get_balances',
             # We need to query defi balances before since defi_balances must be populated
@@ -3116,10 +2539,10 @@ class RestAPI():
             given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
         )
 
-    def get_yearn_vaults_v2_balances(self, async_query: bool) -> Response:
+    @async_api_call()
+    def get_yearn_vaults_v2_balances(self) -> dict[str, Any]:
         # Once that has ran we can be sure that defi_balances mapping is populated
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+        return self._eth_module_query(
             module_name='yearn_vaults_v2',
             method='get_balances',
             # We need to query defi balances before since eth balances must be populated
@@ -3130,15 +2553,14 @@ class RestAPI():
             given_eth_balances=lambda: self.rotkehlchen.chains_aggregator.balances.eth,
         )
 
+    @async_api_call()
     def get_yearn_vaults_history(
             self,
-            async_query: bool,
             reset_db_data: bool,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    ) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='yearn_vaults',
             method='get_history',
             # We need to query defi balances before since defi_balances must be populated
@@ -3153,15 +2575,14 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
+    @async_api_call()
     def get_yearn_vaults_v2_history(
             self,
-            async_query: bool,
             reset_db_data: bool,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    ) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='yearn_vaults_v2',
             method='get_history',
             query_specific_balances_before=['defi'],
@@ -3177,33 +2598,32 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    def get_uniswap_balances(self, async_query: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    @async_api_call()
+    def get_uniswap_balances(self) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='uniswap',
             method='get_balances',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('uniswap'),
         )
 
-    def get_uniswap_v3_balances(self, async_query: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    @async_api_call()
+    def get_uniswap_v3_balances(self) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='uniswap',
             method='get_v3_balances',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('uniswap'),
         )
 
+    @async_api_call()
     def get_uniswap_events_history(
             self,
-            async_query: bool,
             reset_db_data: bool,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    ) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='uniswap',
             method='get_events_history',
             query_specific_balances_before=None,
@@ -3213,24 +2633,23 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    def get_sushiswap_balances(self, async_query: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    @async_api_call()
+    def get_sushiswap_balances(self) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='sushiswap',
             method='get_balances',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('sushiswap'),
         )
 
+    @async_api_call()
     def get_sushiswap_events_history(
             self,
-            async_query: bool,
             reset_db_data: bool,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    ) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='sushiswap',
             method='get_events_history',
             query_specific_balances_before=None,
@@ -3240,33 +2659,32 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    def get_loopring_balances(self, async_query: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    @async_api_call()
+    def get_loopring_balances(self) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='loopring',
             method='get_balances',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('loopring'),
         )
 
-    def get_balancer_balances(self, async_query: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    @async_api_call()
+    def get_balancer_balances(self) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='balancer',
             method='get_balances',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('balancer'),
         )
 
+    @async_api_call()
     def get_balancer_events_history(
             self,
-            async_query: bool,
             reset_db_data: bool,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    ) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='balancer',
             method='get_events_history',
             query_specific_balances_before=None,
@@ -3276,37 +2694,37 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    def get_dill_balance(self, async_query: bool) -> Response:
+    @async_api_call()
+    def get_dill_balance(self) -> dict[str, Any]:
         addresses = self.rotkehlchen.chains_aggregator.queried_addresses_for_module('pickle_finance')  # noqa: E501
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+        return self._eth_module_query(
             module_name='pickle_finance',
             method='get_dill_balances',
             query_specific_balances_before=['defi'],
             addresses=addresses,
         )
 
-    def get_liquity_troves(self, async_query: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    @async_api_call()
+    def get_liquity_troves(self) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='liquity',
             method='get_positions',
             query_specific_balances_before=None,
             addresses_list=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity'),  # noqa: E501
         )
 
-    def get_liquity_staked(self, async_query: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    @async_api_call()
+    def get_liquity_staked(self) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='liquity',
             method='liquity_staking_balances',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity'),
         )
 
-    def get_liquity_stability_pool_positions(self, async_query: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    @async_api_call()
+    def get_liquity_stability_pool_positions(self) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='liquity',
             method='get_stability_pool_balances',
             query_specific_balances_before=None,
@@ -3360,7 +2778,8 @@ class RestAPI():
         )
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def _get_evm_transactions(
+    @async_api_call()
+    def get_evm_transactions(
             self,
             only_cache: bool,
             filter_query: EvmTransactionsFilterQuery,
@@ -3459,38 +2878,8 @@ class RestAPI():
 
         return {'result': result, 'message': message, 'status_code': status_code}
 
-    def get_evm_transactions(
-            self,
-            async_query: bool,
-            only_cache: bool,
-            filter_query: EvmTransactionsFilterQuery,
-            event_params: dict[str, Any],
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._get_evm_transactions,
-                only_cache=only_cache,
-                filter_query=filter_query,
-                event_params=event_params,
-            )
-
-        response = self._get_evm_transactions(
-            only_cache=only_cache,
-            filter_query=filter_query,
-            event_params=event_params,
-        )
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=status_code)
-
-    def _decode_evm_transactions(
+    @async_api_call()
+    def decode_evm_transactions(
             self,
             ignore_cache: bool,
             data: list[EvmTransactionDecodingApiData],
@@ -3535,35 +2924,22 @@ class RestAPI():
 
         return {'result': result, 'message': message, 'status_code': status_code}
 
-    def decode_evm_transactions(
-            self,
-            async_query: bool,
-            ignore_cache: bool,
-            data: list[EvmTransactionDecodingApiData],
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._decode_evm_transactions,
-                ignore_cache=ignore_cache,
-                data=data,
-            )
-
-        response = self._decode_evm_transactions(ignore_cache=ignore_cache, data=data)
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=status_code)
-
-    def _decode_pending_evm_transactions(
+    @async_api_call()
+    def decode_pending_evm_transactions(
             self,
             data: list[EvmPendingTransactionDecodingApiData],
     ) -> dict[str, Any]:
+        """
+        This method should be called after querying ethereum transactions and does the following:
+        - Query missing receipts
+        - Decode ethereum transactions
+
+        It can be a slow process and this is why it is important to set the list of addresses
+        queried per module that need to be decoded.
+
+        This logic is executed by the frontend in pages where the set of transactions needs to be
+        up to date, for example, the liquity module.
+        """
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
         result = {}
         for entry in data:
@@ -3587,34 +2963,6 @@ class RestAPI():
             'message': '',
             'status_code': HTTPStatus.OK,
         }
-
-    def decode_pending_evm_transactions(
-            self,
-            async_query: bool,
-            data: list[EvmPendingTransactionDecodingApiData],
-    ) -> Response:
-        """
-        This method should be called after querying ethereum transactions and does the following:
-        - Query missing receipts
-        - Decode ethereum transactions
-
-        It can be a slow process and this is why it is important to set the list of addresses
-        queried per module that need to be decoded.
-
-        This logic is executed by the frontend in pages where the set of transactions needs to be
-        up to date, for example, the liquity module.
-        """
-        if async_query is True:
-            return self._query_async(
-                command=self._decode_pending_evm_transactions,
-                data=data,
-            )
-
-        response = self._decode_pending_evm_transactions(data)
-        status_code = _get_status_code_from_async_response(response)
-        result_dict = _wrap_in_result(result=response['result'], message=response['message'])
-
-        return api_response(result_dict, status_code=status_code)
 
     def get_asset_icon(
             self,
@@ -3674,7 +3022,8 @@ class RestAPI():
             )
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def _get_current_assets_price(
+    @async_api_call()
+    def get_current_assets_price(
             self,
             assets: list[AssetWithNameAndType],
             target_asset: Asset,
@@ -3717,29 +3066,6 @@ class RestAPI():
         }
         return _wrap_in_ok_result(process_result(result))
 
-    def get_current_assets_price(
-            self,
-            assets: list[AssetWithNameAndType],
-            target_asset: Asset,
-            ignore_cache: bool,
-            async_query: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._get_current_assets_price,
-                assets=assets,
-                target_asset=target_asset,
-                ignore_cache=ignore_cache,
-            )
-
-        response = self._get_current_assets_price(
-            assets=assets,
-            target_asset=target_asset,
-            ignore_cache=ignore_cache,
-        )
-        status_code = _get_status_code_from_async_response(response)
-        return api_response(_wrap_in_ok_result(response['result']), status_code=status_code)
-
     @staticmethod
     def _get_historical_assets_price(
             assets_timestamp: list[tuple[Asset, Timestamp]],
@@ -3776,27 +3102,19 @@ class RestAPI():
         }
         return _wrap_in_ok_result(process_result(result))
 
+    @async_api_call()
     def get_historical_assets_price(
             self,
             assets_timestamp: list[tuple[Asset, Timestamp]],
             target_asset: Asset,
-            async_query: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._get_historical_assets_price,
-                assets_timestamp=assets_timestamp,
-                target_asset=target_asset,
-            )
-
-        response = self._get_historical_assets_price(
+    ) -> dict[str, Any]:
+        return self._get_historical_assets_price(
             assets_timestamp=assets_timestamp,
             target_asset=target_asset,
         )
-        status_code = _get_status_code_from_async_response(response)
-        return api_response(_wrap_in_ok_result(response['result']), status_code=status_code)
 
-    def _sync_data(self, action: Literal['upload', 'download']) -> dict[str, Any]:
+    @async_api_call()
+    def sync_data(self, action: Literal['upload', 'download']) -> dict[str, Any]:
         try:
             success, msg = self.rotkehlchen.premium_sync_manager.sync_data(action)
         except RemoteError as e:
@@ -3810,22 +3128,8 @@ class RestAPI():
                 return wrap_in_fail_result(msg, status_code=HTTPStatus.BAD_GATEWAY)
             return _wrap_in_result(success, message=msg)
 
-    def sync_data(
-            self,
-            async_query: bool,
-            action: Literal['upload', 'download'],
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._sync_data,
-                action=action,
-            )
-
-        result_dict = self._sync_data(action)
-        status_code = _get_status_code_from_async_response(result_dict)
-        return api_response(result_dict, status_code=status_code)
-
-    def _create_oracle_cache(
+    @async_api_call()
+    def create_oracle_cache(
             self,
             oracle: HistoricalPriceOracle,
             from_asset: AssetWithOracles,
@@ -3840,39 +3144,6 @@ class RestAPI():
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
 
         return _wrap_in_ok_result(True)
-
-    def create_oracle_cache(
-            self,
-            oracle: HistoricalPriceOracle,
-            from_asset: AssetWithOracles,
-            to_asset: AssetWithOracles,
-            purge_old: bool,
-            async_query: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._create_oracle_cache,
-                oracle=oracle,
-                from_asset=from_asset,
-                to_asset=to_asset,
-                purge_old=purge_old,
-            )
-
-        response = self._create_oracle_cache(
-            oracle=oracle,
-            from_asset=from_asset,
-            to_asset=to_asset,
-            purge_old=purge_old,
-        )
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=status_code)
 
     @staticmethod
     def delete_oracle_cache(
@@ -3894,17 +3165,9 @@ class RestAPI():
         result['status_code'] = HTTPStatus.OK
         return result
 
-    def get_oracle_cache(self, oracle: HistoricalPriceOracle, async_query: bool) -> Response:
-        if async_query is True:
-            return self._query_async(command=self._get_oracle_cache, oracle=oracle)
-
-        response = self._get_oracle_cache(oracle=oracle)
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=status_code)
+    @async_api_call()
+    def get_oracle_cache(self, oracle: HistoricalPriceOracle) -> dict[str, Any]:
+        return self._get_oracle_cache(oracle)
 
     @staticmethod
     def get_supported_oracles() -> Response:
@@ -3916,7 +3179,8 @@ class RestAPI():
         result_dict = _wrap_in_ok_result(data)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def _get_token_info(self, address: ChecksumEvmAddress) -> dict[str, Any]:
+    @async_api_call()
+    def get_token_info(self, address: ChecksumEvmAddress) -> dict[str, Any]:
         eth_manager = self.rotkehlchen.chains_aggregator.ethereum
         try:
             info = eth_manager.node_inquirer.get_erc20_contract_info(address=address)
@@ -3927,28 +3191,8 @@ class RestAPI():
             )
         return _wrap_in_ok_result(info)
 
-    def get_token_information(
-            self,
-            token_address: ChecksumEvmAddress,
-            async_query: bool,
-    ) -> Response:
-
-        if async_query is True:
-            return self._query_async(command=self._get_token_info, address=token_address)
-
-        response = self._get_token_info(token_address)
-
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # Success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=status_code)
-
-    def _get_assets_updates(self) -> dict[str, Any]:
+    @async_api_call()
+    def get_assets_updates(self) -> dict[str, Any]:
         try:
             local, remote, new_changes = self.rotkehlchen.assets_updater.check_for_updates()
         except RemoteError as e:
@@ -3956,17 +3200,8 @@ class RestAPI():
 
         return _wrap_in_ok_result({'local': local, 'remote': remote, 'new_changes': new_changes})
 
-    def get_assets_updates(self, async_query: bool) -> Response:
-        if async_query is True:
-            return self._query_async(command=self._get_assets_updates)
-
-        response = self._get_assets_updates()
-        return api_response(
-            result={'result': response['result'], 'message': response['message']},
-            status_code=response.get('status_code', HTTPStatus.OK),
-        )
-
-    def _perform_assets_updates(
+    @async_api_call()
+    def perform_assets_updates(
             self,
             up_to_version: Optional[int],
             conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
@@ -3986,25 +3221,6 @@ class RestAPI():
             'message': 'Found conflicts during assets upgrade',
             'status_code': HTTPStatus.CONFLICT,
         }
-
-    def perform_assets_updates(
-            self,
-            async_query: bool,
-            up_to_version: Optional[int],
-            conflicts: Optional[dict[Asset, Literal['remote', 'local']]],
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._perform_assets_updates,
-                up_to_version=up_to_version,
-                conflicts=conflicts,
-            )
-
-        response = self._perform_assets_updates(up_to_version, conflicts)
-        return api_response(
-            result={'result': response['result'], 'message': response['message']},
-            status_code=response.get('status_code', HTTPStatus.OK),
-        )
 
     def get_all_binance_pairs(self, location: Location) -> Response:
         try:
@@ -4101,7 +3317,8 @@ class RestAPI():
             status_code=HTTPStatus.CONFLICT,
         )
 
-    def _get_avalanche_transactions(
+    @async_api_call()
+    def get_avalanche_transactions(
             self,
             address: ChecksumEvmAddress,
             from_timestamp: Timestamp,
@@ -4114,18 +3331,10 @@ class RestAPI():
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
             )
-        except RemoteError as e:
-            return {
-                'result': [],
-                'message': f'{str(e)}',
-                'status_code': HTTPStatus.BAD_GATEWAY,
-            }
+        except RemoteError:
+            return wrap_in_fail_result(message='Not found.', status_code=HTTPStatus.NOT_FOUND)
         if response is None:
-            return {
-                'result': [],
-                'message': 'Not found.',
-                'status_code': HTTPStatus.NOT_FOUND,
-            }
+            return wrap_in_fail_result(message='Not found.', status_code=HTTPStatus.NOT_FOUND)
 
         entries_result = []
         for transaction in response:
@@ -4135,47 +3344,11 @@ class RestAPI():
             'entries': entries_result,
             'entries_found': len(entries_result),
         }
-        msg = ''
-        return {'result': result, 'message': msg, 'status_code': HTTPStatus.OK}
+        return _wrap_in_ok_result(result)
 
-    def get_avalanche_transactions(
-            self,
-            async_query: bool,
-            address: ChecksumEvmAddress,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._get_avalanche_transactions,
-                address=address,
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-            )
-
-        response = self._get_avalanche_transactions(
-            address=address,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
-        result = response['result']
-        if len(result) == 0:
-            return api_response(
-                wrap_in_fail_result('Not found.'),
-                status_code=HTTPStatus.NOT_FOUND,
-            )
-
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=status_code)
-
-    def get_nfts(self, async_query: bool, ignore_cache: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    @async_api_call()
+    def get_nfts(self, ignore_cache: bool) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='nfts',
             method='get_all_info',
             query_specific_balances_before=None,
@@ -4183,7 +3356,8 @@ class RestAPI():
             ignore_cache=ignore_cache,
         )
 
-    def _get_nfts_balances(
+    @async_api_call()
+    def get_nfts_balances(
             self,
             filter_query: NFTFilterQuery,
             ignore_cache: bool,
@@ -4209,24 +3383,6 @@ class RestAPI():
             query_specific_balances_before=None,
             filter_query=filter_query,
         )
-
-    def get_nfts_balances(
-            self,
-            async_query: bool,
-            ignore_cache: bool,
-            filter_query: NFTFilterQuery,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._get_nfts_balances,
-                ignore_cache=ignore_cache,
-                filter_query=filter_query,
-            )
-
-        response = self._get_nfts_balances(ignore_cache=ignore_cache, filter_query=filter_query)
-        status_code = _get_status_code_from_async_response(response)
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=status_code)
 
     def get_manual_latest_prices(
             self,
@@ -4262,9 +3418,9 @@ class RestAPI():
 
         return api_response(_wrap_in_ok_result(prices_information), status_code=HTTPStatus.OK)
 
-    def get_nfts_with_price(self, lps_handling: NftLpHandling) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=False,
+    @async_api_call()
+    def get_nfts_with_price(self, lps_handling: NftLpHandling) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='nfts',
             method='get_nfts_with_price',
             query_specific_balances_before=None,
@@ -4278,8 +3434,7 @@ class RestAPI():
             price: Price,
     ) -> Response:
         if from_asset.is_nft():
-            return self._api_query_for_eth_module(
-                async_query=False,
+            module_query_result = self._eth_module_query(
                 module_name='nfts',
                 method='add_nft_with_price',
                 query_specific_balances_before=None,
@@ -4287,6 +3442,7 @@ class RestAPI():
                 to_asset=to_asset,
                 price=price,
             )
+            return make_response_from_dict(module_query_result)
         try:
             pairs_to_invalidate = GlobalDBHandler().add_manual_latest_price(
                 from_asset=from_asset,
@@ -4294,36 +3450,30 @@ class RestAPI():
                 price=price,
             )
         except InputError as e:
-            return api_response(
-                result=wrap_in_fail_result(message=str(e)),
-                status_code=HTTPStatus.CONFLICT,
-            )
+            return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
         Inquirer().remove_cache_prices_for_asset(pairs_to_invalidate)
 
-        return api_response(result=OK_RESULT)
+        return api_response(OK_RESULT)
 
     def delete_manual_latest_price(
             self,
             asset: Asset,
     ) -> Response:
         if asset.is_nft():
-            return self._api_query_for_eth_module(
-                async_query=False,
+            module_query_result = self._eth_module_query(
                 module_name='nfts',
                 method='delete_price_for_nft',
                 query_specific_balances_before=None,
                 asset=asset,
             )
+            return make_response_from_dict(module_query_result)
         try:
             pairs_to_invalidate = GlobalDBHandler().delete_manual_latest_price(asset=asset)
         except InputError as e:
-            return api_response(
-                result=wrap_in_fail_result(message=str(e)),
-                status_code=HTTPStatus.CONFLICT,
-            )
+            return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
         Inquirer().remove_cache_prices_for_asset(pairs_to_invalidate)
 
-        return api_response(result=OK_RESULT)
+        return api_response(OK_RESULT)
 
     def get_database_info(self) -> Response:
         globaldb_schema_version = GlobalDBHandler().get_schema_version()
@@ -4445,7 +3595,8 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
-    def _query_kraken_staking_events(
+    @async_api_call()
+    def query_kraken_staking_events(
             self,
             only_cache: bool,
             query_filter: HistoryEventFilterQuery,
@@ -4531,30 +3682,6 @@ class RestAPI():
             }
 
         return {'result': result, 'message': message, 'status_code': HTTPStatus.OK}
-
-    def query_kraken_staking_events(
-            self,
-            query_filter: HistoryEventFilterQuery,
-            value_filter: HistoryEventFilterQuery,
-            only_cache: bool,
-            async_query: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._query_kraken_staking_events,
-                only_cache=only_cache,
-                query_filter=query_filter,
-                value_filter=value_filter,
-            )
-
-        response = self._query_kraken_staking_events(
-            only_cache=only_cache,
-            query_filter=query_filter,
-            value_filter=value_filter,
-        )
-        status_code = _get_status_code_from_async_response(response)
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=status_code)
 
     def get_user_added_assets(self, path: Optional[Path]) -> Response:
         """
@@ -4716,7 +3843,8 @@ class RestAPI():
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def _get_ens_mappings(
+    @async_api_call()
+    def get_ens_mappings(
             self,
             addresses: list[ChecksumEvmAddress],
             ignore_cache: bool,
@@ -4732,27 +3860,6 @@ class RestAPI():
             return wrap_in_fail_result(message=str(e), status_code=HTTPStatus.CONFLICT)
 
         return {'result': mappings_to_send, 'message': '', 'status_code': HTTPStatus.OK}
-
-    def get_ens_mappings(
-            self,
-            addresses: list[ChecksumEvmAddress],
-            ignore_cache: bool,
-            async_query: bool,
-    ) -> Response:
-        if async_query is True:
-            return self._query_async(
-                command=self._get_ens_mappings,
-                addresses=addresses,
-                ignore_cache=ignore_cache,
-            )
-
-        response = self._get_ens_mappings(
-            addresses=addresses,
-            ignore_cache=ignore_cache,
-        )
-        status_code = _get_status_code_from_async_response(response)
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=status_code)
 
     def import_user_snapshot(
             self,
@@ -4867,12 +3974,17 @@ class RestAPI():
         )
         return api_response(_wrap_in_ok_result(process_result_list(mappings)))
 
-    def _detect_evm_tokens(
+    @async_api_call()
+    def detect_evm_tokens(
             self,
             only_cache: bool,
-            addresses: list[ChecksumEvmAddress],
-            manager: EvmManager,
+            addresses: Optional[list[ChecksumEvmAddress]],
+            blockchain: SUPPORTED_EVM_CHAINS,
     ) -> dict[str, Any]:
+        manager: EvmManager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)
+        if addresses is None:
+            addresses = self.rotkehlchen.chains_aggregator.accounts.get(blockchain)
+
         try:
             account_tokens_info = manager.tokens.detect_tokens(
                 only_cache=only_cache,
@@ -4892,33 +4004,6 @@ class RestAPI():
             'message': '',
             'status_code': HTTPStatus.OK,
         }
-
-    def detect_evm_tokens(
-            self,
-            async_query: bool,
-            only_cache: bool,
-            addresses: Optional[list[ChecksumEvmAddress]],
-            blockchain: SUPPORTED_EVM_CHAINS,
-    ) -> Response:
-        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)
-        if addresses is None:
-            addresses = self.rotkehlchen.chains_aggregator.accounts.get(blockchain)
-        if async_query is True:
-            return self._query_async(
-                command=self._detect_evm_tokens,
-                only_cache=only_cache,
-                addresses=addresses,
-                manager=manager,
-            )
-
-        response = self._detect_evm_tokens(
-            only_cache=only_cache,
-            addresses=addresses,
-            manager=manager,
-        )
-        status_code = _get_status_code_from_async_response(response)
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=status_code)
 
     def get_config_arguments(self) -> Response:
         config = {
@@ -5039,39 +4124,17 @@ class RestAPI():
 
         return api_response(_wrap_in_ok_result(details), status_code=HTTPStatus.OK)
 
+    @async_api_call()
     def add_evm_transaction_by_hash(
-            self,
-            async_query: bool,
-            evm_chain: SUPPORTED_CHAIN_IDS,
-            tx_hash: EVMTxHash,
-            associated_address: ChecksumEvmAddress,
-    ) -> Response:
-        """Adds an evm transaction to the DB and associates it with the address provided.
-        If successful, the transaction is then decoded.
-        """
-        if async_query is True:
-            return self._query_async(
-                command=self._add_evm_transaction_by_hash,
-                evm_chain=evm_chain,
-                tx_hash=tx_hash,
-                associated_address=associated_address,
-            )
-
-        response = self._add_evm_transaction_by_hash(
-            evm_chain=evm_chain,
-            tx_hash=tx_hash,
-            associated_address=associated_address,
-        )
-        status_code = _get_status_code_from_async_response(response)
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=status_code)
-
-    def _add_evm_transaction_by_hash(
             self,
             evm_chain: SUPPORTED_CHAIN_IDS,
             tx_hash: EVMTxHash,
             associated_address: ChecksumEvmAddress,
     ) -> dict[str, Any]:
+        """
+        Adds an evm transaction to the DB and associates it with the address provided.
+        If successful, the transaction is then decoded.
+        """
         evm_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
         try:
             transaction, tx_receipt = evm_manager.transactions.add_transaction_by_hash(
