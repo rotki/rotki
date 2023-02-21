@@ -283,6 +283,7 @@ declare global {
   const useGeolocation: typeof import('@vueuse/core')['useGeolocation']
   const useGraph: typeof import('./composables/graphs')['useGraph']
   const useHistoryApi: typeof import('./composables/api/history/index')['useHistoryApi']
+  const useHistoryAutoRefresh: typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']
   const useHistoryEventTypeData: typeof import('./composables/history/event-data')['useHistoryEventTypeData']
   const useHistoryIgnoringApi: typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']
   const useHistoryStore: typeof import('./store/history/index')['useHistoryStore']
@@ -448,7 +449,6 @@ declare global {
   const useToggle: typeof import('@vueuse/core')['useToggle']
   const useTokenDetection: typeof import('./composables/balances/token-detection')['useTokenDetection']
   const useTooltip: typeof import('./composables/graphs')['useTooltip']
-  const useTradeAutoRefresh: typeof import('./composables/history/trades/auto-refresh')['useTradeAutoRefresh']
   const useTradeFilters: typeof import('./composables/filters/trades')['useTradeFilters']
   const useTradeLocations: typeof import('./composables/history/trade-locations')['useTradeLocations']
   const useTradeStore: typeof import('./store/history/trades')['useTradeStore']
@@ -786,6 +786,7 @@ declare module 'vue' {
     readonly useGeolocation: UnwrapRef<typeof import('@vueuse/core')['useGeolocation']>
     readonly useGraph: UnwrapRef<typeof import('./composables/graphs')['useGraph']>
     readonly useHistoryApi: UnwrapRef<typeof import('./composables/api/history/index')['useHistoryApi']>
+    readonly useHistoryAutoRefresh: UnwrapRef<typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']>
     readonly useHistoryEventTypeData: UnwrapRef<typeof import('./composables/history/event-data')['useHistoryEventTypeData']>
     readonly useHistoryIgnoringApi: UnwrapRef<typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']>
     readonly useHistoryStore: UnwrapRef<typeof import('./store/history/index')['useHistoryStore']>
@@ -951,7 +952,6 @@ declare module 'vue' {
     readonly useToggle: UnwrapRef<typeof import('@vueuse/core')['useToggle']>
     readonly useTokenDetection: UnwrapRef<typeof import('./composables/balances/token-detection')['useTokenDetection']>
     readonly useTooltip: UnwrapRef<typeof import('./composables/graphs')['useTooltip']>
-    readonly useTradeAutoRefresh: UnwrapRef<typeof import('./composables/history/trades/auto-refresh')['useTradeAutoRefresh']>
     readonly useTradeFilters: UnwrapRef<typeof import('./composables/filters/trades')['useTradeFilters']>
     readonly useTradeLocations: UnwrapRef<typeof import('./composables/history/trade-locations')['useTradeLocations']>
     readonly useTradeStore: UnwrapRef<typeof import('./store/history/trades')['useTradeStore']>

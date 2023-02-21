@@ -376,7 +376,7 @@ const fetchData = async (): Promise<void> => {
   await execute(0, pageParams);
 };
 
-useTradeAutoRefresh(() => fetchData());
+useHistoryAutoRefresh(() => fetchData());
 
 watch(pageParams, async (params, op) => {
   if (isEqual(params, op)) {
