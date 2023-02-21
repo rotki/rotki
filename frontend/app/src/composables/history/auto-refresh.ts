@@ -1,4 +1,4 @@
-export const useTradeAutoRefresh = (refresh: () => Promise<void>) => {
+export const useHistoryAutoRefresh = (refresh: () => Promise<void>) => {
   const { refreshPeriod } = storeToRefs(useFrontendSettingsStore());
   const period = computed(() => get(refreshPeriod) * 60 * 1000);
 

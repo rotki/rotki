@@ -176,7 +176,6 @@
       }
     },
     "asset_movements": {
-      "all_exchanges": "所有交易所",
       "error": {
         "description": "{exchange} 查询失败：{error}",
         "title": "{exchange} 的存款和取款"
@@ -1734,7 +1733,6 @@
     },
     "label": "asset movements",
     "loading": "Please wait while your asset movements are getting loaded...",
-    "loading_subtitle": "The loading of asset movements might take a while depending on the amount of exchanges, and actions you performed on these exchanges.",
     "refresh_tooltip": "Refresh deposits & withdrawals",
     "selected": "{count} item(s) selected",
     "title": "Deposits & Withdrawals"
