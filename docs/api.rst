@@ -10337,6 +10337,9 @@ Data imports
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
+   
+   .. note::
+      If you want to provide a stream of data instead of a path, you can call POST on this endpoint and provide the stream in `filepath` variable.
 
 
    **Example Request**:

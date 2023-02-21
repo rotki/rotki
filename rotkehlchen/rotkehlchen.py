@@ -7,7 +7,7 @@ import os
 import time
 from collections import defaultdict
 from pathlib import Path
-from types import MethodType
+from types import FunctionType
 from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union, cast, overload
 
 import gevent
@@ -193,8 +193,8 @@ class Rotkehlchen():
             for greenlet in self.api_task_greenlets:
                 is_evm_tx_greenlet = (
                     len(greenlet.args) >= 1 and
-                    isinstance(greenlet.args[0], MethodType) and
-                    greenlet.args[0].__func__.__qualname__ == 'RestAPI._get_evm_transactions'
+                    isinstance(greenlet.args[0], FunctionType) and
+                    greenlet.args[0].__qualname__ == 'RestAPI.get_evm_transactions'
                 )
                 if (
                         is_evm_tx_greenlet and

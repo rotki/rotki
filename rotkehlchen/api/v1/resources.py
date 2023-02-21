@@ -1501,7 +1501,7 @@ class BlockchainsAccountsResource(BaseMethodView):
                 tags=entry['tags'],
             ) for entry in accounts
         ]
-        return self.rest_api.add_single_blockchain_accounts(  # type: ignore[call-overload]  # mypy doesn't see async_query argument in overloads  # noqa: E501
+        return self.rest_api.add_single_blockchain_accounts(
             chain=blockchain,
             account_data=account_data,
             async_query=async_query,
