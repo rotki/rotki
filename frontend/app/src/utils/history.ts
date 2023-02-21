@@ -12,6 +12,7 @@ import { type EntryMeta, type EntryWithMeta } from '@/types/history/meta';
 import { type Collection } from '@/types/collection';
 import { transactionEventTypeMapping } from '@/data/transaction-event-mapping';
 import { type ActionDataEntry } from '@/types/action';
+import { type TablePagination } from '@/types/pagination';
 
 export const getEventType = (event: {
   eventType?: string | null;
@@ -145,5 +146,17 @@ export const defaultHistoricPayloadState = <
     offset: 0,
     orderByAttributes: ['timestamp' as keyof T],
     ascending: [false]
+  };
+};
+
+export const defaultOptions = <T extends Object>(
+  orderBy?: keyof T
+): TablePagination<T> => {
+  const { itemsPerPage } = useFrontendSettingsStore();
+  return {
+    page: 1,
+    itemsPerPage,
+    sortBy: orderBy ? [orderBy] : ['timestamp' as keyof T],
+    sortDesc: [true]
   };
 };

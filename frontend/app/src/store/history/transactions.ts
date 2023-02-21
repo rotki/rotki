@@ -75,8 +75,6 @@ export const useTransactionStore = defineStore('history/transactions', () => {
       }).toString()
     };
 
-    setStatus(get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED);
-
     try {
       await awaitTask<
         CollectionResponse<EntryWithMeta<EthTransaction>>,
@@ -98,6 +96,10 @@ export const useTransactionStore = defineStore('history/transactions', () => {
           display: true
         });
       }
+    } finally {
+      setStatus(
+        get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
+      );
     }
     return false;
   };

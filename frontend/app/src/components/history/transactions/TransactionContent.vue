@@ -33,6 +33,7 @@ import {
 import { type Collection } from '@/types/collection';
 import { type ActionStatus } from '@/types/action';
 import { assert } from '@/utils/assertions';
+import { defaultOptions } from '@/utils/history';
 
 const props = withDefaults(
   defineProps<{
@@ -66,10 +67,6 @@ const {
   eventSubTypes,
   readFilterFromRoute
 } = toRefs(props);
-
-const transactions: Ref<Collection<EthTransactionEntry>> = ref(
-  defaultCollectionState()
-);
 
 const usedTitle: ComputedRef<string> = computed(() => {
   return get(sectionTitle) || tc('transactions.title');
@@ -114,17 +111,6 @@ const {
   deleteTransactionEvent
 } = useTransactionStore();
 
-const { data } = getCollectionData<EthTransactionEntry>(transactions);
-
-const redecodeEvents = async (all = false) => {
-  const txHashes = all ? null : get(data);
-  await fetchTransactionEvents(txHashes, true);
-};
-
-const forceRedecodeEvents = async (transaction: EthTransactionEntry) => {
-  await fetchTransactionEvents([transaction], true);
-};
-
 const dialogTitle: Ref<string> = ref('');
 const openDialog: Ref<boolean> = ref(false);
 const editableItem: Ref<EthTransactionEventEntry | null> = ref(null);
@@ -139,10 +125,32 @@ const form = ref<InstanceType<typeof TransactionEventForm> | null>(null);
 
 const selected: Ref<EthTransactionEntry[]> = ref([]);
 
-const fetchTransactionPage = async () => {
-  if (isDefined(pageParams)) {
-    set(transactions, await fetchTransactions(pageParams));
+const {
+  state: transactions,
+  isLoading,
+  execute
+} = useAsyncState<Collection<EthTransactionEntry>>(
+  args => fetchTransactions(args),
+  defaultCollectionState(),
+  {
+    delay: 0,
+    resetOnExecute: false
   }
+);
+
+const { data } = getCollectionData<EthTransactionEntry>(transactions);
+
+const redecodeEvents = async (all = false) => {
+  const txHashes = all ? null : get(data);
+  await fetchTransactionEvents(txHashes, true);
+};
+
+const forceRedecodeEvents = async (transaction: EthTransactionEntry) => {
+  await fetchTransactionEvents([transaction], true);
+};
+
+const fetchData = async () => {
+  await execute(0, pageParams);
 };
 
 const { ignore } = useIgnore(
@@ -154,7 +162,7 @@ const { ignore } = useIgnore(
     })
   },
   selected,
-  fetchTransactionPage
+  fetchData
 );
 
 const toggleIgnore = async (item: EthTransactionEntry) => {
@@ -220,7 +228,7 @@ const deleteEventHandler = async () => {
     if (!success) {
       return;
     }
-    await fetchTransactionPage();
+    await fetchData();
   }
 
   set(eventToDelete, null);
@@ -256,12 +264,12 @@ const saveData = async (
     status = await addTransactionEvent(event);
   }
   if (status.success) {
-    await fetchTransactionPage();
+    await fetchData();
   }
   return status;
 };
 
-const options: Ref<TablePagination<EthTransaction> | null> = ref(null);
+const options: Ref<TablePagination<EthTransaction>> = ref(defaultOptions());
 const accounts: Ref<GeneralAccount[]> = ref([]);
 
 const usedAccounts: ComputedRef<Account<BlockchainSelection>[]> = computed(
@@ -339,28 +347,22 @@ const filteredAccounts: ComputedRef<EvmChainAddress[]> = computed(() => {
   return filterAccounts;
 });
 
-const pageParams: ComputedRef<TransactionRequestPayload | null> = computed(
-  () => {
-    if (!isDefined(options)) {
-      return null;
-    }
+const pageParams: ComputedRef<TransactionRequestPayload> = computed(() => {
+  const { itemsPerPage, page, sortBy, sortDesc } = get(options);
+  const offset = (page - 1) * itemsPerPage;
 
-    const { itemsPerPage, page, sortBy, sortDesc } = get(options);
-    const offset = (page - 1) * itemsPerPage;
-
-    return {
-      protocols: get(protocols),
-      eventTypes: get(eventTypes),
-      eventSubtypes: get(eventSubTypes),
-      ...(get(filters) as TransactionRequestPayload),
-      limit: itemsPerPage,
-      offset,
-      orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
-      ascending: sortDesc.map(bool => !bool),
-      accounts: get(filteredAccounts)
-    };
-  }
-);
+  return {
+    protocols: get(protocols),
+    eventTypes: get(eventTypes),
+    eventSubtypes: get(eventSubTypes),
+    ...(get(filters) as Partial<TransactionRequestPayload>),
+    limit: itemsPerPage,
+    offset,
+    orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
+    ascending: sortDesc.map(bool => !bool),
+    accounts: get(filteredAccounts)
+  };
+});
 
 const getItemClass = (item: EthTransactionEntry) =>
   item.ignoredInAccounting ? 'darken-row' : '';
@@ -388,7 +390,7 @@ watch(
       updateFilter(updatedFilter);
     }
 
-    if ((filterChanged || accountsChanged) && isDefined(options)) {
+    if (filterChanged || accountsChanged) {
       set(options, { ...get(options), page: 1 });
     }
   }
@@ -396,9 +398,7 @@ watch(
 
 const setPage = (page: number) => {
   set(userAction, true);
-  if (isDefined(options)) {
-    set(options, { ...get(options), page });
-  }
+  set(options, { ...get(options), page });
 };
 
 const setOptions = (newOptions: TablePagination<EthTransaction>) => {
@@ -415,7 +415,7 @@ const loading = isSectionLoading(Section.TX);
 const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
 const { isAllFinished } = toRefs(useTxQueryStatusStore());
 
-const { pause, resume, isActive } = useIntervalFn(fetchTransactionPage, 10000);
+const { pause, resume, isActive } = useIntervalFn(fetchData, 10000);
 
 watch(
   [loading, eventTaskLoading, isAllFinished],
@@ -457,7 +457,7 @@ watch(pageParams, async (params, op) => {
   if (isEqual(params, op)) {
     return;
   }
-  if (get(userAction)) {
+  if (get(userAction) && get(readFilterFromRoute)) {
     // Route should only be updated on user action otherwise it messes with
     // forward navigation.
     await router.push({
@@ -466,7 +466,7 @@ watch(pageParams, async (params, op) => {
     set(userAction, false);
   }
 
-  await fetchTransactionPage();
+  await fetchData();
 });
 
 onUnmounted(() => {
@@ -496,6 +496,12 @@ const { txEvmChains, getEvmChainName, getChain } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
 
 onMounted(async () => refreshTransactions());
+
+watch(loading, async (isLoading, wasLoading) => {
+  if (!isLoading && wasLoading) {
+    await fetchData();
+  }
+});
 </script>
 
 <template>
@@ -570,7 +576,7 @@ onMounted(async () => refreshTransactions());
             :expanded="data"
             :headers="tableHeaders"
             :items="data"
-            :loading="loading || eventTaskLoading"
+            :loading="isLoading"
             :options="options"
             :server-items-length="itemLength"
             :single-select="false"

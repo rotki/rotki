@@ -1,43 +1,27 @@
-import isEqual from 'lodash/isEqual';
-import { type Ref } from 'vue';
+import { type MaybeRef } from '@vueuse/core';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { type SupportedExchange } from '@/types/exchanges';
 import { type EntryWithMeta } from '@/types/history/meta';
-import { type TradeLocation } from '@/types/history/trade/location';
 import {
   type NewTrade,
   type Trade,
-  TradeCollectionResponse,
   type TradeEntry,
   type TradeRequestPayload
 } from '@/types/history/trade';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import {
-  defaultCollectionState,
-  mapCollectionResponse
-} from '@/utils/collection';
+import { mapCollectionResponse } from '@/utils/collection';
 import { logger } from '@/utils/logging';
-import {
-  defaultHistoricPayloadState,
-  mapCollectionEntriesWithMeta
-} from '@/utils/history';
+import { mapCollectionEntriesWithMeta } from '@/utils/history';
 import { type ActionStatus } from '@/types/action';
 
 export const useTradeStore = defineStore('history/trades', () => {
-  const trades: Ref<Collection<TradeEntry>> = ref(
-    defaultCollectionState<TradeEntry>()
-  );
-
-  const tradesPayload: Ref<Partial<TradeRequestPayload>> = ref(
-    defaultHistoricPayloadState<Trade>()
-  );
-
   const locationsStore = useAssociatedLocationsStore();
   const { fetchAssociatedLocations } = locationsStore;
   const { connectedExchanges } = storeToRefs(locationsStore);
   const { exchangeName } = useTradeLocations();
+  const { awaitTask } = useTaskStore();
   const { tc } = useI18n();
   const { notify } = useNotificationsStore();
 
@@ -49,136 +33,91 @@ export const useTradeStore = defineStore('history/trades', () => {
     deleteExternalTrade: deleteExternalTradeCaller
   } = useTradesApi();
 
-  const fetchTrades = async (
-    refresh = false,
-    onlyLocation?: SupportedExchange
-  ): Promise<void> => {
-    const { awaitTask, isTaskRunning } = useTaskStore();
-    const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
-      Section.TRADES,
-      !!onlyLocation
-    );
+  const syncTradesTask = async (
+    location: SupportedExchange
+  ): Promise<boolean> => {
     const taskType = TaskType.TRADES;
 
-    const fetchTradesHandler = async (
-      onlyCache: boolean,
-      parameters?: Partial<TradeRequestPayload>
-    ): Promise<Collection<TradeEntry>> => {
-      const defaults: TradeRequestPayload = {
-        limit: 0,
-        offset: 0,
-        ascending: [false],
-        orderByAttributes: ['timestamp'],
-        onlyCache
-      };
+    const defaults: TradeRequestPayload = {
+      limit: 0,
+      offset: 0,
+      ascending: [false],
+      orderByAttributes: ['timestamp'],
+      onlyCache: false,
+      location
+    };
 
-      const payload: TradeRequestPayload = Object.assign(
-        defaults,
-        parameters ?? get(tradesPayload)
-      );
-
-      if (onlyCache) {
-        const result = await getTrades(payload);
-        return mapCollectionEntriesWithMeta<Trade>(
-          mapCollectionResponse(result)
-        );
-      }
-
-      const { taskId } = await getTradesTask(payload);
-      const location = parameters?.location ?? '';
-      const exchange = location
-        ? exchangeName(location as TradeLocation)
-        : tc('actions.trades.all_exchanges');
-      const taskMeta = {
-        title: tc('actions.trades.task.title'),
-        description: tc('actions.trades.task.description', undefined, {
-          exchange
-        }),
-        location
-      };
-
-      const { result } = await awaitTask<
-        CollectionResponse<EntryWithMeta<Trade>>,
-        TaskMeta
-      >(taskId, taskType, taskMeta, true);
-
-      setStatus(
-        get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
-      );
-
-      const parsedResult = TradeCollectionResponse.parse(result);
-      return mapCollectionEntriesWithMeta<Trade>(
-        mapCollectionResponse(parsedResult)
-      );
+    const { taskId } = await getTradesTask(defaults);
+    const exchange = exchangeName(location);
+    const taskMeta = {
+      title: tc('actions.trades.task.title'),
+      description: tc('actions.trades.task.description', undefined, {
+        exchange
+      }),
+      location
     };
 
     try {
-      const firstLoad = isFirstLoad();
-      const onlyCache = firstLoad ? false : !refresh;
-      if ((get(isTaskRunning(taskType)) || loading()) && !onlyCache) {
-        return;
-      }
-
-      if (firstLoad || refresh) {
-        await fetchAssociatedLocations();
-      }
-
-      const fetchOnlyCache = async (): Promise<void> => {
-        set(trades, await fetchTradesHandler(true));
-      };
-
-      setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
-
-      if (!onlyLocation) {
-        await fetchOnlyCache();
-      }
-
-      if (!onlyCache || onlyLocation) {
-        const locations = onlyLocation
-          ? [onlyLocation]
-          : get(connectedExchanges).map(x => x.location);
-
-        if (locations.length > 0) {
-          await Promise.all(
-            locations.map(async location => {
-              const exchange = exchangeName(location as TradeLocation);
-              await fetchTradesHandler(false, { location }).catch(error => {
-                notify({
-                  title: tc('actions.trades.error.title', undefined, {
-                    exchange
-                  }),
-                  message: tc('actions.trades.error.description', undefined, {
-                    exchange,
-                    error
-                  }),
-                  display: true
-                });
-              });
-            })
-          );
-        }
-
-        if (!onlyLocation) {
-          await fetchOnlyCache();
-        }
-      }
-
-      setStatus(
-        get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
+      await awaitTask<CollectionResponse<EntryWithMeta<Trade>>, TaskMeta>(
+        taskId,
+        taskType,
+        taskMeta,
+        true
       );
-    } catch (e) {
+      return true;
+    } catch (e: any) {
+      notify({
+        title: tc('actions.trades.error.title', 0, {
+          exchange
+        }),
+        message: tc('actions.trades.error.description', 0, {
+          exchange,
+          error: e.message
+        }),
+        display: true
+      });
+    }
+
+    return false;
+  };
+
+  const refreshTrades = async (
+    userInitiated = false,
+    location?: SupportedExchange
+  ): Promise<void> => {
+    const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
+      Section.TRADES
+    );
+
+    if (!(userInitiated || isFirstLoad()) || loading()) {
+      logger.info('skipping trade refresh');
+      return;
+    }
+
+    await fetchAssociatedLocations();
+    const locations = location
+      ? [location]
+      : get(connectedExchanges).map(x => x.location);
+
+    try {
+      setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING);
+      await Promise.all(locations.map(syncTradesTask));
+      await fetchAssociatedLocations();
+      setStatus(Status.LOADED);
+    } catch (e: any) {
       logger.error(e);
       resetStatus();
     }
   };
 
-  const updateTradesPayload = async (
-    newPayload: Partial<TradeRequestPayload>
-  ): Promise<void> => {
-    if (!isEqual(get(tradesPayload), newPayload)) {
-      set(tradesPayload, newPayload);
-      await fetchTrades();
-    }
+  const fetchTrades = async (
+    payload: MaybeRef<TradeRequestPayload>
+  ): Promise<Collection<TradeEntry>> => {
+    const result = await getTrades({
+      ...get(payload),
+      onlyCache: true
+    });
+    return mapCollectionEntriesWithMeta<Trade>(mapCollectionResponse(result));
   };
 
   const addExternalTrade = async (trade: NewTrade): Promise<ActionStatus> => {
@@ -191,8 +130,7 @@ export const useTradeStore = defineStore('history/trades', () => {
       message = e.message;
     }
 
-    await Promise.all([fetchAssociatedLocations(), fetchTrades()]);
-
+    await fetchAssociatedLocations();
     return { success, message };
   };
 
@@ -208,7 +146,7 @@ export const useTradeStore = defineStore('history/trades', () => {
       message = e.message;
     }
 
-    await Promise.all([fetchAssociatedLocations(), fetchTrades()]);
+    await fetchAssociatedLocations();
     return { success, message };
   };
 
@@ -223,14 +161,12 @@ export const useTradeStore = defineStore('history/trades', () => {
       message = e.message;
     }
 
-    await Promise.all([fetchAssociatedLocations(), fetchTrades()]);
+    await fetchAssociatedLocations();
     return { success, message };
   };
 
   return {
-    trades,
-    tradesPayload,
-    updateTradesPayload,
+    refreshTrades,
     fetchTrades,
     addExternalTrade,
     editExternalTrade,

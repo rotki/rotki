@@ -16,10 +16,6 @@ const { identifier } = toRefs(props);
 
 const { getLocation } = useLocationInfo();
 
-const tradeStore = useTradeStore();
-const { updateTradesPayload } = tradeStore;
-const { trades } = storeToRefs(tradeStore);
-
 const assetMovementStore = useAssetMovements();
 const { updateAssetMovementsPayload } = assetMovementStore;
 const { assetMovements } = storeToRefs(assetMovementStore);
@@ -35,14 +31,9 @@ const location = computed<TradeLocationData>(() =>
 onBeforeMount(async () => {
   const payload = { location: get(identifier) };
   await Promise.allSettled([
-    updateTradesPayload(payload),
     updateAssetMovementsPayload(payload),
     updateLedgerActionsPayload(payload)
   ]);
-});
-
-const showTrades = computed<boolean>(() => {
-  return get(isSectionLoading(Section.TRADES)) || get(trades)?.data.length > 0;
 });
 
 const showAssetMovements = computed<boolean>(() => {
@@ -71,9 +62,7 @@ const showLedgerActions = computed<boolean>(() => {
     </v-row>
     <location-value-row class="mt-8" :identifier="identifier" />
     <location-assets class="mt-8" :identifier="identifier" />
-    <div v-if="showTrades" class="mt-8">
-      <closed-trades :location-overview="identifier" />
-    </div>
+    <closed-trades :location-overview="identifier" class="mt-8" />
     <div v-if="showAssetMovements" class="mt-8">
       <deposits-withdrawals-content :location-overview="identifier" />
     </div>

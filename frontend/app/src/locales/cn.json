@@ -771,7 +771,6 @@
       }
     },
     "trades": {
-      "all_exchanges": "all exchanges",
       "error": {
         "description": "Failed query for {exchange}: {error}",
         "title": "Trades for {exchange}"
@@ -3725,8 +3724,7 @@
     "visible_timeframes": "Visible Timeframes"
   },
   "trade_history": {
-    "loading": "Please wait while your trades are getting loaded...",
-    "loading_subtitle": "The loading of trades might take a while depending on the amount of exchanges, and actions you performed on these exchanges."
+    "loading": "Please wait while your trades are getting loaded..."
   },
   "trade_location": {
     "banks": "Banks",

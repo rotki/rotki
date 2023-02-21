@@ -3,40 +3,34 @@ import { BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
-import { type PropType } from 'vue';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { type Writeable } from '@/types';
 import {
   type NewTrade,
   type Trade,
-  type TradeEntry,
   type TradeType
 } from '@/types/history/trade';
 import { TaskType } from '@/types/task-type';
 import { Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
-import { type ActionStatus } from '@/types/action';
+import { useTradeStore } from '@/store/history/trades';
 
-const props = defineProps({
-  value: { required: false, type: Boolean, default: false },
-  edit: {
-    required: false,
-    type: Object as PropType<Trade | null>,
-    default: null
-  },
-  saveData: {
-    required: true,
-    type: Function as PropType<
-      (trade: NewTrade | TradeEntry) => Promise<ActionStatus>
-    >
+const props = withDefaults(
+  defineProps<{
+    value?: boolean;
+    edit?: Trade | null;
+  }>(),
+  {
+    value: false,
+    edit: null
   }
-});
+);
 
 const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
 
 const { t } = useI18n();
-const { edit, saveData } = toRefs(props);
+const { edit } = toRefs(props);
 
 const input = (valid: boolean) => emit('input', valid);
 
@@ -67,6 +61,8 @@ const feeCurrencyInput = ref<any>(null);
 const { assetSymbol } = useAssetInfoRetrievalStore();
 const baseSymbol = assetSymbol(base);
 const quoteSymbol = assetSymbol(quote);
+
+const { addExternalTrade, editExternalTrade } = useTradeStore();
 
 const rules = {
   base: {
@@ -213,10 +209,9 @@ const save = async (): Promise<boolean> => {
     tradeType: get(type)
   };
 
-  const save = get(saveData);
   const result = !get(id)
-    ? await save(tradePayload)
-    : await save({ ...tradePayload, tradeId: get(id) });
+    ? await addExternalTrade(tradePayload)
+    : await editExternalTrade({ ...tradePayload, tradeId: get(id) });
 
   if (result.success) {
     reset();
