@@ -183,7 +183,7 @@ def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
             assert binance_asset in UNSUPPORTED_BINANCE_ASSETS
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
-                f'Found unknown asset {e.identifier} in binance. '
+                f'Found unknown asset {e.identifier} with symbol {binance_asset} in binance. '
                 f'Support for it has to be added',
             ))
 

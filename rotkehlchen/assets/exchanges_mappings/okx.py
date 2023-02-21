@@ -25,7 +25,6 @@ WORLD_TO_OKX = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0x43f11c02439e2736800433b4594994Bd43Cd066D'): 'FLOKI',  # noqa: E501
     strethaddress_to_identifier('0xf8C3527CC04340b208C854E985240c02F7B7793f'): 'FRONT',  # noqa: E501
     strethaddress_to_identifier('0xD0352a019e9AB9d757776F532377aAEbd36Fd541'): 'FSN',
-    strethaddress_to_identifier('0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA'): 'GALA',  # noqa: E501
     strethaddress_to_identifier('0x3F382DbD960E3a9bbCeaE22651E88158d2791550'): 'GHST',  # noqa: E501
     strethaddress_to_identifier('0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF'): 'IMX',
     strethaddress_to_identifier('0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32'): 'LDO',
@@ -43,9 +42,7 @@ WORLD_TO_OKX = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0xfB5c6815cA3AC72Ce9F5006869AE67f18bF77006'): 'PSTAKE',  # noqa: E501
     strethaddress_to_identifier('0x557B933a7C2c45672B610F8954A3deB39a51A8Ca'): 'REVV',  # noqa: E501
     strethaddress_to_identifier('0xaf9f549774ecEDbD0966C52f250aCc548D3F36E5'): 'RFUEL',  # noqa: E501
-    strethaddress_to_identifier('0x3845badAde8e6dFF049820680d1F14bD3903a5d0'): 'SAND',   # noqa: E501
     strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',    # noqa: E501
-    strethaddress_to_identifier('0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F'): 'SNX',
     'SOL-2': 'SOL',
     strethaddress_to_identifier('0x090185f2135308BaD17527004364eBcC2D37e5F6'): 'SPELL',  # noqa: E501
     strethaddress_to_identifier('0x6F87D756DAf0503d08Eb8993686c7Fc01Dc44fB1'): 'TRADE',  # noqa: E501
@@ -60,4 +57,5 @@ WORLD_TO_OKX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PICKLE',  # noqa: E501
     evm_address_to_identifier('0x4C2e59D098DF7b6cBaE0848d66DE2f8A4889b9C3', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FODL',  # noqa: E501
     evm_address_to_identifier('0xEB9A4B185816C354dB92DB09cC3B50bE60b901b6', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ORS',  # noqa: E501
+    evm_address_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'REP',  # noqa: E501
 }

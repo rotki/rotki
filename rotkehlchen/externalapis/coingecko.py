@@ -340,6 +340,29 @@ DELISTED_ASSETS = {
     'COIN',
     'WNDR',
     'DESO',
+    strethaddress_to_identifier('0x1A0F2aB46EC630F9FD638029027b552aFA64b94c'),
+    strethaddress_to_identifier('0x84F7c44B6Fed1080f647E354D552595be2Cc602F'),
+    strethaddress_to_identifier('0x923108a439C4e8C2315c4f6521E5cE95B44e9B4c'),
+    strethaddress_to_identifier('0x4270bb238f6DD8B1c3ca01f96CA65b2647c06D3C'),
+    strethaddress_to_identifier('0x60c68a87bE1E8a84144b543AAcfA77199cd3d024'),
+    strethaddress_to_identifier('0xB70835D7822eBB9426B56543E391846C107bd32C'),
+    strethaddress_to_identifier('0x9AF839687F6C94542ac5ece2e317dAAE355493A1'),
+    strethaddress_to_identifier('0x23Ccc43365D9dD3882eab88F43d515208f832430'),
+    strethaddress_to_identifier('0x5d48F293BaED247A2D0189058bA37aa238bD4725'),
+    strethaddress_to_identifier('0xF88951D7B676798705fd3a362ba5B1DBca2B233b'),
+    strethaddress_to_identifier('0x4824A7b64E3966B0133f4f4FFB1b9D6bEb75FFF7'),
+    strethaddress_to_identifier('0x840fe75ABfaDc0F2d54037829571B2782e919ce4'),
+    strethaddress_to_identifier('0x23Ccc43365D9dD3882eab88F43d515208f832430'),
+    strethaddress_to_identifier('0x23Ccc43365D9dD3882eab88F43d515208f832430'),
+    strethaddress_to_identifier('0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC'),
+    evm_address_to_identifier(address='0x6cd871fb811224aa23B6bF1646177CdFe5106416', chain_id=ChainID.BINANCE, token_type=EvmTokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x7786B28826e2DDA4dBe344bE66A0bFbfF3d3362f', chain_id=ChainID.BINANCE, token_type=EvmTokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x11C0c93035d1302083eB09841042cFa582839A8C', chain_id=ChainID.BINANCE, token_type=EvmTokenKind.ERC20),  # noqa: E501
+    strethaddress_to_identifier('0xC12D1c73eE7DC3615BA4e37E4ABFdbDDFA38907E'),
+    'SILK',
+    'CRT',
+    'EAC',
+    strethaddress_to_identifier('0xb8919522331C59f5C16bDfAA6A121a6E03A91F62'),
 }
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [

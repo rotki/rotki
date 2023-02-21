@@ -67,7 +67,7 @@ def test_kucoin_exchange_assets_are_known(mock_kucoin):
             assert symbol in unsupported_assets
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
-                f'Found unknown asset {e.identifier} in kucoin. '
+                f'Found unknown asset {e.identifier} with symbol {symbol} in kucoin. '
                 f'Support for it has to be added',
             ))
 
