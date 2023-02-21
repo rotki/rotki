@@ -25,6 +25,7 @@ export const useCustomAssetFilter = (suggestions: MaybeRef<string[]>) => {
       key: CustomAssetFilterKeys.NAME,
       keyValue: CustomAssetFilterValueKeys.NAME,
       description: tc('assets.filter.name'),
+      string: true,
       suggestions: () => [],
       hint: tc('assets.filter.name_hint'),
       validate: () => true
@@ -33,6 +34,7 @@ export const useCustomAssetFilter = (suggestions: MaybeRef<string[]>) => {
       key: CustomAssetFilterKeys.CUSTOM_ASSET_TYPE,
       keyValue: CustomAssetFilterValueKeys.CUSTOM_ASSET_TYPE,
       description: tc('assets.filter.type'),
+      string: true,
       suggestions: () => get(suggestions),
       hint: tc('assets.filter.type_hint'),
       validate: (value: string) => get(suggestions).includes(value)

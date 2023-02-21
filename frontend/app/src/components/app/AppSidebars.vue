@@ -9,7 +9,7 @@ const PinnedSidebar = defineAsyncComponent(
   () => import('@/components/PinnedSidebar.vue')
 );
 const UserNotesSidebar = defineAsyncComponent(
-  () => import('@/components/UserNotesSidebar.vue')
+  () => import('@/components/notes/UserNotesSidebar.vue')
 );
 
 const {

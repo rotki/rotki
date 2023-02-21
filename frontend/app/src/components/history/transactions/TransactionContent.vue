@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { type Account, type GeneralAccount } from '@rotki/common/lib/account';
-import { type ComputedRef, type Ref } from 'vue';
+import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import { type BlockchainSelection } from '@rotki/common/lib/blockchain';
+import isEqual from 'lodash/isEqual';
 import {
   type HistoryEventSubType,
   type HistoryEventType,
   type TransactionEventProtocol
 } from '@rotki/common/lib/history/tx-events';
 import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
-import { type Writeable } from '@/types';
 import {
   type EthTransaction,
   type EthTransactionEntry,
@@ -20,15 +20,19 @@ import {
 } from '@/types/history/tx';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import { getCollectionData } from '@/utils/collection';
+import { defaultCollectionState, getCollectionData } from '@/utils/collection';
 import { IgnoreActionType } from '@/types/history/ignored';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { type TablePagination } from '@/types/pagination';
-
-const Fragment = defineAsyncComponent(
-  () => import('@/components/helper/Fragment')
-);
+import {
+  type LocationQuery,
+  RouterAccountsSchema,
+  RouterPaginationOptionsSchema
+} from '@/types/route';
+import { type Collection } from '@/types/collection';
+import { type ActionStatus } from '@/types/action';
+import { assert } from '@/utils/assertions';
 
 const props = withDefaults(
   defineProps<{
@@ -38,6 +42,7 @@ const props = withDefaults(
     externalAccountFilter?: Account[];
     useExternalAccountFilter?: boolean;
     sectionTitle?: string;
+    readFilterFromRoute?: boolean;
   }>(),
   {
     protocols: () => [],
@@ -45,19 +50,26 @@ const props = withDefaults(
     eventSubTypes: () => [],
     externalAccountFilter: () => [],
     useExternalAccountFilter: false,
-    sectionTitle: ''
+    sectionTitle: '',
+    readFilterFromRoute: false
   }
 );
 
 const { tc } = useI18n();
+
 const {
   protocols,
   useExternalAccountFilter,
   externalAccountFilter,
   sectionTitle,
   eventTypes,
-  eventSubTypes
+  eventSubTypes,
+  readFilterFromRoute
 } = toRefs(props);
+
+const transactions: Ref<Collection<EthTransactionEntry>> = ref(
+  defaultCollectionState()
+);
 
 const usedTitle: ComputedRef<string> = computed(() => {
   return get(sectionTitle) || tc('transactions.title');
@@ -91,19 +103,16 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-const transactionStore = useTransactionStore();
-const { transactions } = storeToRefs(transactionStore);
-
 const { isTaskRunning } = useTaskStore();
 
 const {
   fetchTransactions,
+  refreshTransactions,
   fetchTransactionEvents,
-  updateTransactionsPayload,
   addTransactionEvent,
   editTransactionEvent,
   deleteTransactionEvent
-} = transactionStore;
+} = useTransactionStore();
 
 const { data } = getCollectionData<EthTransactionEntry>(transactions);
 
@@ -130,9 +139,11 @@ const form = ref<InstanceType<typeof TransactionEventForm> | null>(null);
 
 const selected: Ref<EthTransactionEntry[]> = ref([]);
 
-const { filters, matchers, updateFilter } = useTransactionFilter(
-  get(protocols).length > 0
-);
+const fetchTransactionPage = async () => {
+  if (isDefined(pageParams)) {
+    set(transactions, await fetchTransactions(pageParams));
+  }
+};
 
 const { ignore } = useIgnore(
   {
@@ -143,7 +154,7 @@ const { ignore } = useIgnore(
     })
   },
   selected,
-  fetchTransactions
+  fetchTransactionPage
 );
 
 const toggleIgnore = async (item: EthTransactionEntry) => {
@@ -196,20 +207,22 @@ const promptForDelete = ({
 };
 
 const deleteEventHandler = async () => {
-  if (get(transactionToIgnore)) {
-    set(selected, [get(transactionToIgnore)]);
+  const txToIgnore = get(transactionToIgnore);
+  if (txToIgnore) {
+    set(selected, [txToIgnore]);
     await ignore(true);
   }
 
-  if (get(eventToDelete)?.identifier) {
-    const { success } = await deleteTransactionEvent(
-      get(eventToDelete)!.identifier!
-    );
+  const id = get(eventToDelete)?.identifier;
 
+  if (id) {
+    const { success } = await deleteTransactionEvent(id);
     if (!success) {
       return;
     }
+    await fetchTransactionPage();
   }
+
   set(eventToDelete, null);
   set(transactionToIgnore, null);
   set(confirmationTitle, '');
@@ -236,10 +249,16 @@ const confirmSave = async () => {
 const saveData = async (
   event: NewEthTransactionEvent | EthTransactionEventEntry
 ) => {
+  let status: ActionStatus;
   if ('identifier' in event) {
-    return await editTransactionEvent(event);
+    status = await editTransactionEvent(event);
+  } else {
+    status = await addTransactionEvent(event);
   }
-  return await addTransactionEvent(event);
+  if (status.success) {
+    await fetchTransactionPage();
+  }
+  return status;
 };
 
 const options: Ref<TablePagination<EthTransaction> | null> = ref(null);
@@ -254,124 +273,149 @@ const usedAccounts: ComputedRef<Account<BlockchainSelection>[]> = computed(
   }
 );
 
-const updatePayloadHandler = async () => {
-  let paginationOptions = {};
-  const optionsVal = get(options);
-  if (optionsVal) {
-    const { itemsPerPage, page, sortBy, sortDesc } = optionsVal!;
-    const offset = (page - 1) * itemsPerPage;
+const route = useRoute();
 
-    paginationOptions = {
-      limit: itemsPerPage,
-      offset,
-      orderByAttributes: sortBy.length > 0 ? sortBy : ['timestamp'],
-      ascending: sortDesc.map(bool => !bool)
-    };
+const { filters, matchers, updateFilter, RouteFilterSchema } =
+  useTransactionFilter(get(protocols).length > 0);
+
+const applyRouteFilter = () => {
+  if (!get(readFilterFromRoute)) return;
+
+  const query = get(route).query;
+  const parsedOptions = RouterPaginationOptionsSchema.parse(query);
+  const parsedFilters = RouteFilterSchema.parse(query);
+  const parsedAccounts = RouterAccountsSchema.parse(query);
+
+  updateFilter(parsedFilters);
+
+  if (parsedAccounts.accounts) {
+    set(accounts, parsedAccounts.accounts);
+  }
+
+  set(options, {
+    ...get(options),
+    ...parsedOptions
+  });
+};
+
+watch(route, () => {
+  set(userAction, false);
+  applyRouteFilter();
+});
+
+onBeforeMount(() => {
+  applyRouteFilter();
+});
+
+const userAction = ref(false);
+const router = useRouter();
+
+const filteredAccounts: ComputedRef<EvmChainAddress[]> = computed(() => {
+  const accounts = get(usedAccounts);
+
+  if (accounts.length === 0) {
+    return [];
   }
 
   const filterAccounts: EvmChainAddress[] = [];
-  const usedAccountsVal = get(usedAccounts);
-  if (usedAccountsVal.length > 0) {
-    usedAccountsVal.forEach(account => {
-      if (account.chain === 'ALL') {
-        const chains = get(txEvmChains);
-        chains.forEach(chain => {
-          filterAccounts.push({
-            address: account.address,
-            evmChain: chain.evmChainName
-          });
-        });
-      } else {
+
+  accounts.forEach(account => {
+    if (account.chain === 'ALL') {
+      const chains = get(txEvmChains);
+      chains.forEach(chain => {
         filterAccounts.push({
           address: account.address,
-          evmChain: getEvmChainName(account.chain)!
+          evmChain: chain.evmChainName
         });
-      }
-    });
+      });
+    } else {
+      filterAccounts.push({
+        address: account.address,
+        evmChain: getEvmChainName(account.chain)!
+      });
+    }
+  });
+
+  return filterAccounts;
+});
+
+const pageParams: ComputedRef<TransactionRequestPayload | null> = computed(
+  () => {
+    if (!isDefined(options)) {
+      return null;
+    }
+
+    const { itemsPerPage, page, sortBy, sortDesc } = get(options);
+    const offset = (page - 1) * itemsPerPage;
+
+    return {
+      protocols: get(protocols),
+      eventTypes: get(eventTypes),
+      eventSubtypes: get(eventSubTypes),
+      ...(get(filters) as TransactionRequestPayload),
+      limit: itemsPerPage,
+      offset,
+      orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
+      ascending: sortDesc.map(bool => !bool),
+      accounts: get(filteredAccounts)
+    };
   }
-
-  const payload: Writeable<Partial<TransactionRequestPayload>> = {
-    ...(get(filters) as Partial<TransactionRequestPayload>),
-    ...paginationOptions,
-    accounts: filterAccounts
-  };
-
-  const protocolsVal = get(protocols);
-  if (protocolsVal?.length > 0) payload.protocols = protocolsVal;
-
-  const eventTypesVal = get(eventTypes);
-  if (eventTypesVal?.length > 0) payload.eventTypes = eventTypesVal;
-
-  const eventSubTypesVal = get(eventSubTypes);
-  if (eventSubTypesVal?.length > 0) payload.eventSubtypes = eventSubTypesVal;
-
-  await updateTransactionsPayload(payload);
-};
-
-const updatePaginationHandler = async (
-  newOptions: TablePagination<EthTransaction> | null
-) => {
-  set(options, newOptions);
-  await updatePayloadHandler();
-};
+);
 
 const getItemClass = (item: EthTransactionEntry) =>
   item.ignoredInAccounting ? 'darken-row' : '';
 
-watch(filters, async (filter, oldValue) => {
-  if (filter === oldValue) {
-    return;
-  }
+watch(
+  [filters, usedAccounts],
+  async ([filters, usedAccounts], [oldFilters, oldAccounts]) => {
+    const filterChanged = !isEqual(filters, oldFilters);
+    const accountsChanged = !isEqual(usedAccounts, oldAccounts);
 
-  // Because the evmChain filter and the account filter can't be active
-  // at the same time we clear the account filter when the evmChain filter
-  // is set.
-  if (filter.evmChain) {
-    set(accounts, []);
-  }
+    if (!(filterChanged || accountsChanged)) {
+      return;
+    }
 
-  let newOptions = null;
-  const optionsVal = get(options);
-  if (optionsVal) {
-    newOptions = {
-      ...optionsVal,
-      page: 1
-    };
-  }
+    // Because the evmChain filter and the account filter can't be active
+    // at the same time we clear the account filter when the evmChain filter
+    // is set.
+    if (filterChanged && filters.evmChain) {
+      set(accounts, []);
+    }
 
-  await updatePaginationHandler(newOptions);
-});
+    if (accountsChanged && usedAccounts.length > 0) {
+      const updatedFilter = { ...get(filters) };
+      delete updatedFilter.evmChain;
+      updateFilter(updatedFilter);
+    }
+
+    if ((filterChanged || accountsChanged) && isDefined(options)) {
+      set(options, { ...get(options), page: 1 });
+    }
+  }
+);
 
 const setPage = (page: number) => {
-  const optionsVal = get(options);
-  if (optionsVal) {
-    updatePaginationHandler({ ...optionsVal, page });
+  set(userAction, true);
+  if (isDefined(options)) {
+    set(options, { ...get(options), page });
   }
 };
 
-watch(usedAccounts, async accounts => {
-  if (accounts.length > 0) {
-    const updatedFilter = { ...get(filters) };
-    delete updatedFilter.evmChain;
-    updateFilter(updatedFilter);
-  }
+const setOptions = (newOptions: TablePagination<EthTransaction>) => {
+  set(userAction, true);
+  set(options, newOptions);
+};
 
-  let newOptions = null;
-  if (get(options)) {
-    newOptions = {
-      ...get(options)!,
-      page: 1
-    };
-  }
-
-  await updatePaginationHandler(newOptions);
-});
+const setFilter = (newFilter: UnwrapRef<typeof filters>) => {
+  set(userAction, true);
+  updateFilter(newFilter);
+};
 
 const loading = isSectionLoading(Section.TX);
 const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
 const { isAllFinished } = toRefs(useTxQueryStatusStore());
 
-const { pause, resume, isActive } = useIntervalFn(fetchTransactions, 10000);
+const { pause, resume, isActive } = useIntervalFn(fetchTransactionPage, 10000);
 
 watch(
   [loading, eventTaskLoading, isAllFinished],
@@ -391,6 +435,39 @@ watch(
     }
   }
 );
+
+const getQuery = (): LocationQuery => {
+  const opts = get(options);
+  assert(opts);
+  const { itemsPerPage, page, sortBy, sortDesc } = opts;
+
+  return {
+    itemsPerPage: itemsPerPage.toString(),
+    page: page.toString(),
+    sortBy,
+    sortDesc: sortDesc.map(x => x.toString()),
+    ...get(filters),
+    accounts: get(usedAccounts).map(
+      account => `${account.address}#${account.chain}`
+    )
+  };
+};
+
+watch(pageParams, async (params, op) => {
+  if (isEqual(params, op)) {
+    return;
+  }
+  if (get(userAction)) {
+    // Route should only be updated on user action otherwise it messes with
+    // forward navigation.
+    await router.push({
+      query: getQuery()
+    });
+    set(userAction, false);
+  }
+
+  await fetchTransactionPage();
+});
 
 onUnmounted(() => {
   pause();
@@ -417,16 +494,18 @@ const showDeleteConfirmation = () => {
 
 const { txEvmChains, getEvmChainName, getChain } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
+
+onMounted(async () => refreshTransactions());
 </script>
 
 <template>
-  <fragment>
+  <div>
     <card class="mt-8" outlined-body>
       <template #title>
         <refresh-button
           :loading="loading"
           :tooltip="tc('transactions.refresh_tooltip')"
-          @refresh="fetchTransactions(true)"
+          @refresh="refreshTransactions(true)"
         />
         {{ usedTitle }}
       </template>
@@ -467,6 +546,7 @@ const txChains = useArrayMap(txEvmChains, x => x.id);
                     no-padding
                     multichain
                     flat
+                    @input="userAction = true"
                   />
                 </div>
               </v-col>
@@ -477,7 +557,7 @@ const txChains = useArrayMap(txEvmChains, x => x.id);
               <table-filter
                 :matches="filters"
                 :matchers="matchers"
-                @update:matches="updateFilter($event)"
+                @update:matches="setFilter($event)"
               />
             </div>
           </v-col>
@@ -496,7 +576,7 @@ const txChains = useArrayMap(txEvmChains, x => x.id);
             :single-select="false"
             :item-class="getItemClass"
             :class="$style.table"
-            @update:options="updatePaginationHandler($event)"
+            @update:options="setOptions($event)"
           >
             <template #item.ignoredInAccounting="{ item, isMobile }">
               <div v-if="item.ignoredInAccounting" class="pl-4">
@@ -654,7 +734,7 @@ const txChains = useArrayMap(txEvmChains, x => x.id);
         :save-data="saveData"
       />
     </big-dialog>
-  </fragment>
+  </div>
 </template>
 <style module lang="scss">
 .table {

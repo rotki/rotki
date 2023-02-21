@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import UserNotesList from '@/components/UserNotesList.vue';
 import { useAppRoutes } from '@/router/routes';
 
 const { t } = useI18n();

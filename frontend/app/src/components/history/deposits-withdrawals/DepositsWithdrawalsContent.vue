@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import dropRight from 'lodash/dropRight';
-import { type PropType, type Ref } from 'vue';
+import { type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
+import isEqual from 'lodash/isEqual';
+import isEmpty from 'lodash/isEmpty';
 import { Routes } from '@/router/routes';
 import {
   type AssetMovement,
@@ -13,20 +15,28 @@ import { Section } from '@/types/status';
 import { type TradeEntry } from '@/types/history/trade';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { type TablePagination } from '@/types/pagination';
+import {
+  type LocationQuery,
+  RouterPaginationOptionsSchema
+} from '@/types/route';
 
-const props = defineProps({
-  locationOverview: {
-    required: false,
-    type: String as PropType<TradeLocation | ''>,
-    default: ''
+const props = withDefaults(
+  defineProps<{
+    locationOverview?: TradeLocation;
+    readFilterFromRoute?: boolean;
+  }>(),
+  {
+    locationOverview: '',
+    readFilterFromRoute: false
   }
-});
+);
 
 const emit = defineEmits<{
   (e: 'fetch', refresh: boolean): void;
+  (e: 'update:query-params', params: LocationQuery): void;
 }>();
 
-const { locationOverview } = toRefs(props);
+const { locationOverview, readFilterFromRoute } = toRefs(props);
 
 const selected: Ref<AssetMovementEntry[]> = ref([]);
 const expanded: Ref<TradeEntry[]> = ref([]);
@@ -90,25 +100,53 @@ const assetMovementStore = useAssetMovements();
 const { assetMovements } = storeToRefs(assetMovementStore);
 const { updateAssetMovementsPayload } = assetMovementStore;
 
-const fetch = (refresh = false) => emit('fetch', refresh);
+const route = useRoute();
 
-const { ignore } = useIgnore(
-  {
-    actionType: IgnoreActionType.MOVEMENTS,
-    toData: (item: AssetMovementEntry) => item.identifier
-  },
-  selected,
-  fetch
+const { filters, matchers, updateFilter, RouteFilterSchema } =
+  useAssetMovementFilters();
+
+// If using route filter is true, then we shouldn't move the page back to 1, but use the page param from route query instead
+const applyingRouteFilter: Ref<boolean> = ref(false);
+
+const applyRouteFilter = () => {
+  if (!get(readFilterFromRoute)) return;
+
+  const query = get(route).query;
+  const parsedOptions = RouterPaginationOptionsSchema.parse(query);
+  const parsedFilters = RouteFilterSchema.parse(query);
+  set(applyingRouteFilter, true);
+  updateFilter(parsedFilters);
+  set(options, parsedOptions);
+};
+
+watch(
+  () => get(route).query?.page,
+  (page, oldPage) => {
+    if (page !== oldPage) {
+      applyRouteFilter();
+    }
+  }
 );
-const { filters, matchers, updateFilter } = useAssetMovementFilters();
-const loading = isSectionLoading(Section.ASSET_MOVEMENT);
 
-const updatePayloadHandler = async () => {
+onBeforeMount(() => {
+  applyRouteFilter();
+});
+
+const updatePayloadHandler = async (firstLoad = false) => {
   let paginationOptions = {};
+  let routerQuery = {};
+
   const optionsVal = get(options);
   if (optionsVal) {
-    const { itemsPerPage, page, sortBy, sortDesc } = get(options)!;
+    const { itemsPerPage, page, sortBy, sortDesc } = optionsVal;
     const offset = (page - 1) * itemsPerPage;
+
+    routerQuery = {
+      itemsPerPage,
+      page,
+      sortBy,
+      sortDesc
+    };
 
     paginationOptions = {
       limit: itemsPerPage,
@@ -118,6 +156,11 @@ const updatePayloadHandler = async () => {
         sortDesc.length > 1 ? dropRight(sortDesc).map(bool => !bool) : [false]
     };
   }
+
+  routerQuery = {
+    ...routerQuery,
+    ...get(filters)
+  };
 
   if (get(locationOverview)) {
     filters.value.location = get(locationOverview) as TradeLocation;
@@ -129,33 +172,32 @@ const updatePayloadHandler = async () => {
   };
 
   await updateAssetMovementsPayload(payload);
+
+  if (!firstLoad) {
+    emit('update:query-params', routerQuery);
+  }
 };
 
 const updatePaginationHandler = async (
   newOptions: TablePagination<AssetMovement> | null
 ) => {
+  const firstLoad = !get(options) || isEmpty(get(options));
   set(options, newOptions);
-  await updatePayloadHandler();
+  await updatePayloadHandler(firstLoad);
 };
 
-const getClass = (item: AssetMovementEntry) => {
-  return item.ignoredInAccounting ? 'darken-row' : '';
-};
-
-watch(filters, async (filter, oldValue) => {
-  if (filter === oldValue) {
+watch(filters, async (filters, oldFilters) => {
+  if (isEqual(filters, oldFilters)) {
+    set(applyingRouteFilter, false);
     return;
   }
-  let newOptions = null;
-  const optionsVal = get(options);
-  if (optionsVal) {
-    newOptions = {
-      ...optionsVal,
-      page: 1
-    };
-  }
 
-  await updatePaginationHandler(newOptions);
+  if (!get(applyingRouteFilter)) {
+    setPage(1);
+  } else {
+    set(applyingRouteFilter, false);
+    await updatePayloadHandler();
+  }
 });
 
 const setPage = (page: number) => {
@@ -163,6 +205,23 @@ const setPage = (page: number) => {
   if (optionsVal) {
     updatePaginationHandler({ ...optionsVal, page });
   }
+};
+
+const fetch = (refresh = false) => emit('fetch', refresh);
+
+const { ignore } = useIgnore(
+  {
+    actionType: IgnoreActionType.MOVEMENTS,
+    toData: (item: AssetMovementEntry) => item.identifier
+  },
+  selected,
+  fetch
+);
+
+const loading = isSectionLoading(Section.ASSET_MOVEMENT);
+
+const getItemClass = (item: AssetMovementEntry) => {
+  return item.ignoredInAccounting ? 'darken-row' : '';
 };
 
 const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS;
@@ -227,7 +286,7 @@ const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS;
           single-expand
           multi-sort
           :must-sort="false"
-          :item-class="getClass"
+          :item-class="getItemClass"
           @update:options="updatePaginationHandler($event)"
         >
           <template #item.ignoredInAccounting="{ item, isMobile }">

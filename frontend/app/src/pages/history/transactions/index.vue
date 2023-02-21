@@ -1,32 +1,3 @@
-<script setup lang="ts">
-import { Section } from '@/types/status';
-
-const ProgressScreen = defineAsyncComponent(
-  () => import('@/components/helper/ProgressScreen.vue')
-);
-const TransactionContent = defineAsyncComponent(
-  () => import('@/components/history/transactions/TransactionContent.vue')
-);
-const { fetchTransactions } = useTransactionStore();
-
-const { shouldShowLoadingScreen } = useSectionLoading();
-const loading = shouldShowLoadingScreen(Section.TX);
-
-const { t } = useI18n();
-
-onBeforeMount(async () => {
-  await fetchTransactions();
-});
-</script>
-
 <template>
-  <progress-screen v-if="loading">
-    <template #message>
-      {{ t('transactions.loading') }}
-    </template>
-    {{ t('transactions.loading_subtitle') }}
-  </progress-screen>
-  <div v-else>
-    <transaction-content />
-  </div>
+  <transaction-content read-filter-from-route />
 </template>

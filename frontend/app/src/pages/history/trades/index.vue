@@ -2,6 +2,7 @@
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
 import { Section } from '@/types/status';
+import { type LocationQuery } from '@/types/route';
 
 const { refreshPeriod } = storeToRefs(useFrontendSettingsStore());
 const { fetchTrades } = useTradeStore();
@@ -32,6 +33,14 @@ const { shouldShowLoadingScreen } = useSectionLoading();
 const loading = shouldShowLoadingScreen(Section.TRADES);
 
 const { t } = useI18n();
+
+const router = useRouter();
+const redirect = async (query: LocationQuery) => {
+  await router.push({
+    query,
+    replace: true
+  });
+};
 </script>
 
 <template>
@@ -42,6 +51,10 @@ const { t } = useI18n();
     {{ t('trade_history.loading_subtitle') }}
   </progress-screen>
   <div v-else class="mt-8">
-    <closed-trades @fetch="fetchTrades" />
+    <closed-trades
+      read-filter-from-route
+      @fetch="fetchTrades"
+      @update:query-params="redirect($event)"
+    />
   </div>
 </template>

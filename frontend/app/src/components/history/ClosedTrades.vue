@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import dropRight from 'lodash/dropRight';
-import { type PropType, type Ref } from 'vue';
+import isEmpty from 'lodash/isEmpty';
+import { type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
+import isEqual from 'lodash/isEqual';
 import Fragment from '@/components/helper/Fragment';
 import ExternalTradeForm from '@/components/history/ExternalTradeForm.vue';
 import { Routes } from '@/router/routes';
@@ -15,18 +17,28 @@ import {
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { type TablePagination } from '@/types/pagination';
+import {
+  type LocationQuery,
+  RouterPaginationOptionsSchema
+} from '@/types/route';
 
-const props = defineProps({
-  locationOverview: {
-    required: false,
-    type: String as PropType<TradeLocation | ''>,
-    default: ''
+const props = withDefaults(
+  defineProps<{
+    locationOverview?: TradeLocation;
+    readFilterFromRoute?: boolean;
+  }>(),
+  {
+    locationOverview: '',
+    readFilterFromRoute: false
   }
-});
+);
 
-const emit = defineEmits(['fetch']);
+const emit = defineEmits<{
+  (e: 'fetch', refresh: boolean): void;
+  (e: 'update:query-params', params: LocationQuery): void;
+}>();
 
-const { locationOverview } = toRefs(props);
+const { locationOverview, readFilterFromRoute } = toRefs(props);
 
 const selected: Ref<TradeEntry[]> = ref([]);
 const options: Ref<TablePagination<Trade> | null> = ref(null);
@@ -40,14 +52,7 @@ const expanded: Ref<TradeEntry[]> = ref([]);
 const valid: Ref<boolean> = ref(false);
 const form: Ref<InstanceType<typeof ExternalTradeForm> | null> = ref(null);
 
-const pageRoute = Routes.HISTORY_TRADES;
-
-const { filters, matchers, updateFilter } = useTradeFilters();
-const router = useRouter();
-const route = useRoute();
 const { tc } = useI18n();
-
-const loading = isSectionLoading(Section.TRADES);
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const overview = get(locationOverview);
@@ -233,13 +238,54 @@ const saveData = async (trade: NewTrade | TradeEntry) => {
   return await addExternalTrade(trade as NewTrade);
 };
 
-const updatePayloadHandler = async () => {
+const router = useRouter();
+const route = useRoute();
+
+const { filters, matchers, updateFilter, RouteFilterSchema } =
+  useTradeFilters();
+
+// If using route filter is true, then we shouldn't move the page back to 1, but use the page param from route query instead
+const applyingRouteFilter: Ref<boolean> = ref(false);
+
+const applyRouteFilter = () => {
+  if (!get(readFilterFromRoute)) return;
+
+  const query = get(route).query;
+  const parsedOptions = RouterPaginationOptionsSchema.parse(query);
+  const parsedFilters = RouteFilterSchema.parse(query);
+  set(applyingRouteFilter, true);
+  updateFilter(parsedFilters);
+  set(options, parsedOptions);
+};
+
+watch(
+  () => get(route).query?.page,
+  (page, oldPage) => {
+    if (page !== oldPage) {
+      applyRouteFilter();
+    }
+  }
+);
+
+onBeforeMount(() => {
+  applyRouteFilter();
+});
+
+const updatePayloadHandler = async (firstLoad = false) => {
   let paginationOptions = {};
+  let routerQuery = {};
 
   const optionsVal = get(options);
   if (optionsVal) {
     const { itemsPerPage, page, sortBy, sortDesc } = optionsVal;
     const offset = (page - 1) * itemsPerPage;
+
+    routerQuery = {
+      itemsPerPage,
+      page,
+      sortBy,
+      sortDesc
+    };
 
     paginationOptions = {
       limit: itemsPerPage,
@@ -249,6 +295,11 @@ const updatePayloadHandler = async () => {
         sortDesc.length > 1 ? dropRight(sortDesc).map(bool => !bool) : [false]
     };
   }
+
+  routerQuery = {
+    ...routerQuery,
+    ...get(filters)
+  };
 
   if (get(locationOverview)) {
     filters.value.location = get(locationOverview) as TradeLocation;
@@ -260,33 +311,32 @@ const updatePayloadHandler = async () => {
   };
 
   await updateTradesPayload(payload);
+
+  if (!firstLoad) {
+    emit('update:query-params', routerQuery);
+  }
 };
 
 const updatePaginationHandler = async (
   newOptions: TablePagination<Trade> | null
 ) => {
+  const firstLoad = !get(options) || isEmpty(get(options));
   set(options, newOptions);
-  await updatePayloadHandler();
+  await updatePayloadHandler(firstLoad);
 };
 
-const getClass = (item: TradeEntry) => {
-  return item.ignoredInAccounting ? 'darken-row' : '';
-};
-
-watch(filters, async (filters, oldValue) => {
-  if (filters === oldValue) {
+watch(filters, async (filters, oldFilters) => {
+  if (isEqual(filters, oldFilters)) {
+    set(applyingRouteFilter, false);
     return;
   }
-  let newOptions = null;
-  const optionsVal = get(options);
-  if (optionsVal) {
-    newOptions = {
-      ...optionsVal,
-      page: 1
-    };
-  }
 
-  await updatePaginationHandler(newOptions);
+  if (!get(applyingRouteFilter)) {
+    setPage(1);
+  } else {
+    set(applyingRouteFilter, false);
+    await updatePayloadHandler();
+  }
 });
 
 const setPage = (page: number) => {
@@ -327,6 +377,13 @@ const showDeleteConfirmation = () => {
     deleteTradeHandler
   );
 };
+
+const loading = isSectionLoading(Section.TRADES);
+const getItemClass = (item: TradeEntry) => {
+  return item.ignoredInAccounting ? 'darken-row' : '';
+};
+
+const pageRoute = Routes.HISTORY_TRADES;
 </script>
 
 <template>
@@ -410,7 +467,7 @@ const showDeleteConfirmation = () => {
             class="closed-trades"
             :single-select="false"
             :show-select="!locationOverview"
-            :item-class="getClass"
+            :item-class="getItemClass"
             item-key="tradeId"
             show-expand
             single-expand

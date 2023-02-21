@@ -2,6 +2,7 @@
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import LedgerActionContent from '@/components/history/ledger-actions/LedgerActionContent.vue';
 import { Section } from '@/types/status';
+import { type LocationQuery } from '@/types/route';
 
 const { fetchLedgerActions } = useLedgerActionStore();
 
@@ -13,6 +14,14 @@ const { shouldShowLoadingScreen } = useSectionLoading();
 const loading = shouldShowLoadingScreen(Section.LEDGER_ACTIONS);
 
 const { t } = useI18n();
+
+const router = useRouter();
+const redirect = async (query: LocationQuery) => {
+  await router.push({
+    query,
+    replace: true
+  });
+};
 </script>
 
 <template>
@@ -22,9 +31,11 @@ const { t } = useI18n();
     </template>
     {{ t('ledger_actions.loading_subtitle') }}
   </progress-screen>
-  <div v-else>
-    <div class="mt-8">
-      <ledger-action-content @fetch="fetchLedgerActions" />
-    </div>
+  <div v-else class="mt-8">
+    <ledger-action-content
+      read-filter-from-route
+      @fetch="fetchLedgerActions"
+      @update:query-params="redirect($event)"
+    />
   </div>
 </template>

@@ -23,7 +23,7 @@ const PinnedIndicator = defineAsyncComponent(
   () => import('@/components/PinnedIndicator.vue')
 );
 const UserNotesIndicator = defineAsyncComponent(
-  () => import('@/components/UserNotesIndicator.vue')
+  () => import('@/components/notes/UserNotesIndicator.vue')
 );
 const BackButton = defineAsyncComponent(
   () => import('@/components/helper/BackButton.vue')
@@ -47,12 +47,6 @@ const smAndUp = computed(() => get(currentBreakpoint).smAndUp);
 const { darkModeEnabled } = useDarkMode();
 const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar } =
   storeToRefs(useAreaVisibilityStore());
-
-const route = useRoute();
-const canNavigateBack = computed(() => {
-  const canNavigateBack = get(route).meta?.canNavigateBack ?? false;
-  return canNavigateBack && window.history.length > 1;
-});
 </script>
 
 <template>
@@ -60,7 +54,7 @@ const canNavigateBack = computed(() => {
     <div class="d-flex overflow-hidden">
       <sync-indicator />
       <global-search v-if="smAndUp" />
-      <back-button :can-navigate-back="canNavigateBack" />
+      <back-button />
     </div>
     <v-spacer />
     <div class="d-flex overflow-hidden fill-height align-center">
