@@ -564,7 +564,6 @@
       }
     },
     "ledger_actions": {
-      "all_exchanges": "all exchanges",
       "error": {
         "description": "Failed query for {exchange}: {error}",
         "title": "Ledger actions for {exchange}"
@@ -2519,7 +2518,6 @@
     },
     "label": "ledger actions",
     "loading": "Please wait while your ledger actions are getting loaded...",
-    "loading_subtitle": "The loading of ledger actions might take a while depending on the number of actions you performed.",
     "refresh_tooltip": "Refresh your ledger actions",
     "selected": "{count} item(s) selected",
     "title": "Ledger Actions"

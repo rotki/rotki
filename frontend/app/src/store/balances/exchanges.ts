@@ -39,7 +39,6 @@ export const useExchangeBalancesStore = defineStore(
     const { awaitTask, isTaskRunning, metadata } = useTaskStore();
     const { notify } = useNotificationsStore();
     const { setMessage } = useMessageStore();
-    const { purgeHistoryLocation } = usePurgeStore();
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrievalStore();
     const { isAssetIgnored } = useIgnoredAssetsStore();
     const { assetPrice } = useBalancePricesStore();
@@ -207,8 +206,6 @@ export const useExchangeBalancesStore = defineStore(
           }
         }
 
-        await purgeHistoryLocation(exchange.location);
-
         return success;
       } catch (e: any) {
         setMessage({
@@ -321,9 +318,6 @@ export const useExchangeBalancesStore = defineStore(
           location: exchange.location,
           ignoreCache: false
         });
-        //await refreshPrices({ ignoreCache: false });
-
-        await purgeHistoryLocation(exchange.location);
 
         return success;
       } catch (e: any) {

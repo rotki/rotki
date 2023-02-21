@@ -20,6 +20,7 @@ withDefaults(
 const emit = defineEmits<{
   (e: 'update:open', open: boolean): void;
   (e: 'reset-edit'): void;
+  (e: 'saved'): void;
 }>();
 
 const valid: Ref<boolean> = ref(false);
@@ -36,6 +37,7 @@ const confirmSave = async () => {
     const success = await get(form)?.save();
     if (success) {
       clearDialog();
+      emit('saved');
     }
   }
 };

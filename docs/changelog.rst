@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :release:`1.28.0`
+* :feature:`5587` Forward/Backward navigation for filters/pagination (using mouse buttons) will now be possible in the history section.
 * :feature:`5569` It is now possible to detect when an evm address is used in other chains and start tracking it. Also a background task runs periodically that performs this check.
 * :bug:`5491` Show original manual latest price asset in manual balance form.
 * :bug:`-` Fixes bug where Maker Vault Collateralization Ratio can't be edited in watcher form.
