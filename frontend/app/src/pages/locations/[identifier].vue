@@ -5,7 +5,6 @@ import LedgerActionContent from '@/components/history/ledger-actions/LedgerActio
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import LocationAssets from '@/components/locations/LocationAssets.vue';
 import LocationValueRow from '@/components/locations/LocationValueRow.vue';
-import { Section } from '@/types/status';
 import { type TradeLocationData } from '@/types/history/trade/location';
 
 const props = defineProps({
@@ -16,25 +15,9 @@ const { identifier } = toRefs(props);
 
 const { getLocation } = useLocationInfo();
 
-const ledgerActionStore = useLedgerActionStore();
-const { updateLedgerActionsPayload } = ledgerActionStore;
-const { ledgerActions } = storeToRefs(ledgerActionStore);
-
 const location = computed<TradeLocationData>(() =>
   getLocation(get(identifier))
 );
-
-onBeforeMount(async () => {
-  const payload = { location: get(identifier) };
-  await Promise.allSettled([updateLedgerActionsPayload(payload)]);
-});
-
-const showLedgerActions = computed<boolean>(() => {
-  return (
-    get(isSectionLoading(Section.LEDGER_ACTIONS)) ||
-    get(ledgerActions)?.data.length > 0
-  );
-});
 </script>
 <template>
   <v-container class="pb-12">
@@ -53,8 +36,6 @@ const showLedgerActions = computed<boolean>(() => {
       :location-overview="identifier"
       class="mt-8"
     />
-    <div v-if="showLedgerActions" class="mt-8">
-      <ledger-action-content :location-overview="identifier" />
-    </div>
+    <ledger-action-content :location-overview="identifier" class="mt-8" />
   </v-container>
 </template>

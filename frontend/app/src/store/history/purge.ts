@@ -3,14 +3,6 @@ import { Section } from '@/types/status';
 import { ALL_CENTRALIZED_EXCHANGES } from '@/types/session/purge';
 
 export const usePurgeStore = defineStore('history/purge', () => {
-  const { fetchLedgerActions } = useLedgerActionStore();
-
-  const purgeHistoryLocation = async (
-    exchange: SupportedExchange
-  ): Promise<void> => {
-    await Promise.allSettled([fetchLedgerActions(true, exchange)]);
-  };
-
   const purgeExchange = async (
     exchange: SupportedExchange | typeof ALL_CENTRALIZED_EXCHANGES
   ): Promise<void> => {
@@ -20,8 +12,6 @@ export const usePurgeStore = defineStore('history/purge', () => {
       resetStatus();
       resetStatus(Section.ASSET_MOVEMENT);
       resetStatus(Section.LEDGER_ACTIONS);
-    } else {
-      await purgeHistoryLocation(exchange);
     }
   };
 
@@ -32,7 +22,6 @@ export const usePurgeStore = defineStore('history/purge', () => {
 
   return {
     purgeExchange,
-    purgeHistoryLocation,
     purgeTransactions
   };
 });
