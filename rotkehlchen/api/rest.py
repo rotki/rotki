@@ -211,10 +211,6 @@ def _wrap_in_result(result: Any, message: str) -> dict[str, Any]:
     return {'result': result, 'message': message}
 
 
-def _get_status_code_from_async_response(response: dict[str, Any], default: HTTPStatus = HTTPStatus.OK) -> HTTPStatus:  # noqa: E501
-    return response.get('status_code', default)
-
-
 def wrap_in_fail_result(message: str, status_code: Optional[HTTPStatus] = None) -> dict[str, Any]:
     result: dict[str, Any] = {'result': None, 'message': message}
     if status_code:
@@ -245,6 +241,34 @@ def api_response(
             }),
     )
     return response
+
+
+def async_api_call() -> Callable:
+    """
+    This is a decorator that should be used with endpoints that can be called asynchronously.
+    It accepts `async_query` argument to determine whether to call asynchronously or not.
+    Defaults to synchronous mode.
+
+    Endpoints that it wraps must return a dictionary with result, message and optionally a
+    status code.
+    This decorator reads the dictionary and transforms it to a Reponse object.
+    """
+    def wrapper(func: Callable) -> Callable:
+        def inner(rest_api: 'RestAPI', async_query: bool = False, **kwargs: Any) -> Response:
+            response: dict[str, Any]
+            if async_query is True:
+                return rest_api._query_async(
+                    command=func,
+                    **kwargs,
+                )
+
+            response = func(rest_api, **kwargs)
+            status_code = response.get('status_code', HTTPStatus.OK)
+            result_dict = {'result': response['result'], 'message': response['message']}
+            return api_response(process_result(result_dict), status_code=status_code)
+
+        return inner
+    return wrapper
 
 
 class RestAPI():
