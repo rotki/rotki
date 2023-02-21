@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import dropRight from 'lodash/dropRight';
-import isEmpty from 'lodash/isEmpty';
-import { type Ref } from 'vue';
+import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import isEqual from 'lodash/isEqual';
 import Fragment from '@/components/helper/Fragment';
@@ -9,7 +8,6 @@ import ExternalTradeForm from '@/components/history/ExternalTradeForm.vue';
 import { Routes } from '@/router/routes';
 import { type TradeLocation } from '@/types/history/trade/location';
 import {
-  type NewTrade,
   type Trade,
   type TradeEntry,
   type TradeRequestPayload
@@ -21,6 +19,10 @@ import {
   type LocationQuery,
   RouterPaginationOptionsSchema
 } from '@/types/route';
+import { type Collection } from '@/types/collection';
+import { defaultCollectionState } from '@/utils/collection';
+import { assert } from '@/utils/assertions';
+import { defaultOptions } from '@/utils/history';
 
 const props = withDefaults(
   defineProps<{
@@ -33,15 +35,10 @@ const props = withDefaults(
   }
 );
 
-const emit = defineEmits<{
-  (e: 'fetch', refresh: boolean): void;
-  (e: 'update:query-params', params: LocationQuery): void;
-}>();
-
 const { locationOverview, readFilterFromRoute } = toRefs(props);
 
 const selected: Ref<TradeEntry[]> = ref([]);
-const options: Ref<TablePagination<Trade> | null> = ref(null);
+const options: Ref<TablePagination<Trade>> = ref(defaultOptions());
 const dialogTitle: Ref<string> = ref('');
 const dialogSubtitle: Ref<string> = ref('');
 const openDialog: Ref<boolean> = ref(false);
@@ -51,8 +48,31 @@ const confirmationMessage: Ref<string> = ref('');
 const expanded: Ref<TradeEntry[]> = ref([]);
 const valid: Ref<boolean> = ref(false);
 const form: Ref<InstanceType<typeof ExternalTradeForm> | null> = ref(null);
+const userAction: Ref<boolean> = ref(false);
 
 const { tc } = useI18n();
+
+const pageParams: ComputedRef<TradeRequestPayload> = computed(() => {
+  const { itemsPerPage, page, sortBy, sortDesc } = get(options);
+  const offset = (page - 1) * itemsPerPage;
+
+  const selectedFilters = get(filters);
+  const overview = get(locationOverview);
+  if (overview) {
+    selectedFilters.location = overview;
+  }
+
+  return {
+    ...(selectedFilters as Partial<TradeRequestPayload>),
+    limit: itemsPerPage,
+    offset,
+    orderByAttributes: sortBy && sortBy.length > 0 ? sortBy : ['timestamp'],
+    ascending:
+      sortDesc && sortDesc.length > 1
+        ? dropRight(sortDesc).map(bool => !bool)
+        : [false]
+  };
+});
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const overview = get(locationOverview);
@@ -125,17 +145,23 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
   return headers;
 });
 
-const tradeStore = useTradeStore();
 const assetInfoRetrievalStore = useAssetInfoRetrievalStore();
 const { assetSymbol } = assetInfoRetrievalStore;
-const { trades } = storeToRefs(tradeStore);
+
+const { deleteExternalTrade, fetchTrades, refreshTrades } = useTradeStore();
 
 const {
-  addExternalTrade,
-  editExternalTrade,
-  deleteExternalTrade,
-  updateTradesPayload
-} = tradeStore;
+  isLoading,
+  state: trades,
+  execute
+} = useAsyncState<Collection<TradeEntry>>(
+  args => fetchTrades(args),
+  defaultCollectionState(),
+  {
+    resetOnExecute: false,
+    delay: 0
+  }
+);
 
 const newExternalTrade = () => {
   set(dialogTitle, tc('closed_trades.dialog.add.title'));
@@ -213,29 +239,28 @@ const deleteTradeHandler = async () => {
     selected,
     selectedVal.filter(trade => !ids.includes(trade.tradeId))
   );
+
+  await fetchData();
 };
 
 const clearDialog = () => {
-  get(form)?.reset();
+  if (isDefined(form)) {
+    get(form).reset();
+  }
 
   set(openDialog, false);
   set(editableItem, null);
 };
 
 const confirmSave = async () => {
-  if (get(form)) {
-    const success = await get(form)?.save();
-    if (success) {
-      clearDialog();
-    }
+  if (!isDefined(form)) {
+    return;
   }
-};
-
-const saveData = async (trade: NewTrade | TradeEntry) => {
-  if ((trade as TradeEntry).tradeId) {
-    return await editExternalTrade(trade as TradeEntry);
+  const success = await get(form).save();
+  if (success) {
+    await fetchData();
+    clearDialog();
   }
-  return await addExternalTrade(trade as NewTrade);
 };
 
 const router = useRouter();
@@ -244,109 +269,48 @@ const route = useRoute();
 const { filters, matchers, updateFilter, RouteFilterSchema } =
   useTradeFilters();
 
-// If using route filter is true, then we shouldn't move the page back to 1, but use the page param from route query instead
-const applyingRouteFilter: Ref<boolean> = ref(false);
-
 const applyRouteFilter = () => {
   if (!get(readFilterFromRoute)) return;
 
   const query = get(route).query;
   const parsedOptions = RouterPaginationOptionsSchema.parse(query);
   const parsedFilters = RouteFilterSchema.parse(query);
-  set(applyingRouteFilter, true);
+
   updateFilter(parsedFilters);
   set(options, parsedOptions);
 };
 
-watch(
-  () => get(route).query?.page,
-  (page, oldPage) => {
-    if (page !== oldPage) {
-      applyRouteFilter();
-    }
-  }
-);
+watch(route, () => {
+  set(userAction, false);
+  applyRouteFilter();
+});
 
 onBeforeMount(() => {
   applyRouteFilter();
 });
 
-const updatePayloadHandler = async (firstLoad = false) => {
-  let paginationOptions = {};
-  let routerQuery = {};
-
-  const optionsVal = get(options);
-  if (optionsVal) {
-    const { itemsPerPage, page, sortBy, sortDesc } = optionsVal;
-    const offset = (page - 1) * itemsPerPage;
-
-    routerQuery = {
-      itemsPerPage,
-      page,
-      sortBy,
-      sortDesc
-    };
-
-    paginationOptions = {
-      limit: itemsPerPage,
-      offset,
-      orderByAttributes: sortBy.length > 0 ? sortBy : ['timestamp'],
-      ascending:
-        sortDesc.length > 1 ? dropRight(sortDesc).map(bool => !bool) : [false]
-    };
-  }
-
-  routerQuery = {
-    ...routerQuery,
-    ...get(filters)
-  };
-
-  if (get(locationOverview)) {
-    filters.value.location = get(locationOverview) as TradeLocation;
-  }
-
-  const payload: Partial<TradeRequestPayload> = {
-    ...(get(filters) as Partial<TradeRequestPayload>),
-    ...paginationOptions
-  };
-
-  await updateTradesPayload(payload);
-
-  if (!firstLoad) {
-    emit('update:query-params', routerQuery);
-  }
-};
-
-const updatePaginationHandler = async (
-  newOptions: TablePagination<Trade> | null
-) => {
-  const firstLoad = !get(options) || isEmpty(get(options));
-  set(options, newOptions);
-  await updatePayloadHandler(firstLoad);
-};
-
 watch(filters, async (filters, oldFilters) => {
   if (isEqual(filters, oldFilters)) {
-    set(applyingRouteFilter, false);
     return;
   }
 
-  if (!get(applyingRouteFilter)) {
-    setPage(1);
-  } else {
-    set(applyingRouteFilter, false);
-    await updatePayloadHandler();
-  }
+  set(options, { ...get(options), page: 1 });
 });
 
 const setPage = (page: number) => {
-  const optionsVal = get(options);
-  if (optionsVal) {
-    updatePaginationHandler({ ...optionsVal, page });
-  }
+  set(userAction, true);
+  set(options, { ...get(options), page });
 };
 
-const fetch = (refresh = false) => emit('fetch', refresh);
+const setOptions = (newOptions: TablePagination<Trade>) => {
+  set(userAction, true);
+  set(options, newOptions);
+};
+
+const setFilter = (newFilter: UnwrapRef<typeof filters>) => {
+  set(userAction, true);
+  updateFilter(newFilter);
+};
 
 const { ignore } = useIgnore(
   {
@@ -354,7 +318,7 @@ const { ignore } = useIgnore(
     toData: (item: TradeEntry) => item.tradeId
   },
   selected,
-  fetch
+  () => fetchData()
 );
 
 onMounted(async () => {
@@ -363,6 +327,8 @@ onMounted(async () => {
   if (query.add) {
     newExternalTrade();
     await router.replace({ query: {} });
+  } else {
+    await refreshTrades();
   }
 });
 
@@ -374,7 +340,7 @@ const showDeleteConfirmation = () => {
       title: tc('closed_trades.confirmation.title'),
       message: get(confirmationMessage)
     },
-    deleteTradeHandler
+    () => deleteTradeHandler()
   );
 };
 
@@ -384,6 +350,55 @@ const getItemClass = (item: TradeEntry) => {
 };
 
 const pageRoute = Routes.HISTORY_TRADES;
+
+const getQuery = (): LocationQuery => {
+  const opts = get(options);
+  assert(opts);
+  const { itemsPerPage, page, sortBy, sortDesc } = opts;
+
+  const selectedFilters = get(filters);
+
+  const overview = get(locationOverview);
+  if (overview) {
+    selectedFilters.location = overview;
+  }
+
+  return {
+    itemsPerPage: itemsPerPage.toString(),
+    page: page.toString(),
+    sortBy,
+    sortDesc: sortDesc.map(x => x.toString()),
+    ...selectedFilters
+  };
+};
+
+const fetchData = async (): Promise<void> => {
+  await execute(0, pageParams);
+};
+
+useTradeAutoRefresh(() => fetchData());
+
+watch(pageParams, async (params, op) => {
+  if (isEqual(params, op)) {
+    return;
+  }
+  if (get(userAction) && get(readFilterFromRoute)) {
+    // Route should only be updated on user action otherwise it messes with
+    // forward navigation.
+    await router.push({
+      query: getQuery()
+    });
+    set(userAction, false);
+  }
+
+  await fetchData();
+});
+
+watch(loading, async (isLoading, wasLoading) => {
+  if (!isLoading && wasLoading) {
+    await fetchData();
+  }
+});
 </script>
 
 <template>
@@ -407,7 +422,7 @@ const pageRoute = Routes.HISTORY_TRADES;
           v-if="!locationOverview"
           :loading="loading"
           :tooltip="tc('closed_trades.refresh_tooltip')"
-          @refresh="fetch(true)"
+          @refresh="refreshTrades(true)"
         />
         <navigator-link :to="{ path: pageRoute }" :enabled="!!locationOverview">
           {{ tc('closed_trades.title') }}
@@ -447,7 +462,7 @@ const pageRoute = Routes.HISTORY_TRADES;
               <table-filter
                 :matches="filters"
                 :matchers="matchers"
-                @update:matches="updateFilter($event)"
+                @update:matches="setFilter($event)"
               />
             </div>
           </v-col>
@@ -461,7 +476,8 @@ const pageRoute = Routes.HISTORY_TRADES;
             :expanded.sync="expanded"
             :headers="tableHeaders"
             :items="data"
-            :loading="loading"
+            :loading="isLoading"
+            :loading-text="tc('trade_history.loading')"
             :options="options"
             :server-items-length="itemLength"
             class="closed-trades"
@@ -473,7 +489,7 @@ const pageRoute = Routes.HISTORY_TRADES;
             single-expand
             multi-sort
             :must-sort="false"
-            @update:options="updatePaginationHandler($event)"
+            @update:options="setOptions($event)"
           >
             <template #item.ignoredInAccounting="{ item, isMobile }">
               <div v-if="item.ignoredInAccounting">
@@ -583,12 +599,7 @@ const pageRoute = Routes.HISTORY_TRADES;
       @confirm="confirmSave()"
       @cancel="clearDialog()"
     >
-      <external-trade-form
-        ref="form"
-        v-model="valid"
-        :edit="editableItem"
-        :save-data="saveData"
-      />
+      <external-trade-form ref="form" v-model="valid" :edit="editableItem" />
     </big-dialog>
   </fragment>
 </template>

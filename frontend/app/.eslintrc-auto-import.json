@@ -447,6 +447,7 @@
     "useToggle": true,
     "useTokenDetection": true,
     "useTooltip": true,
+    "useTradeAutoRefresh": true,
     "useTradeFilters": true,
     "useTradeLocations": true,
     "useTradeStore": true,

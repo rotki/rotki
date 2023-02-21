@@ -4,6 +4,8 @@ import { defineConfig } from 'cypress';
 const group = process.env.GROUP ? `${process.env.GROUP}/` : '';
 
 export default defineConfig({
+  viewportWidth: 1280,
+  viewportHeight: 720,
   e2e: {
     baseUrl: 'http://localhost:22230',
     fixturesFolder: 'tests/e2e/fixtures',

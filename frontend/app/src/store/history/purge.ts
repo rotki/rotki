@@ -3,7 +3,6 @@ import { Section } from '@/types/status';
 import { ALL_CENTRALIZED_EXCHANGES } from '@/types/session/purge';
 
 export const usePurgeStore = defineStore('history/purge', () => {
-  const { fetchTrades } = useTradeStore();
   const { fetchAssetMovements } = useAssetMovements();
   const { fetchLedgerActions } = useLedgerActionStore();
 
@@ -11,7 +10,6 @@ export const usePurgeStore = defineStore('history/purge', () => {
     exchange: SupportedExchange
   ): Promise<void> => {
     await Promise.allSettled([
-      fetchTrades(true, exchange),
       fetchAssetMovements(true, exchange),
       fetchLedgerActions(true, exchange)
     ]);
