@@ -91,7 +91,7 @@ pids[commonProcesses.pid] = COMMON;
 if (noElectron) {
   logger.info('Starting python backend');
   const backendProcess = spawn(
-    'python -m rotkehlchen --rest-api-port 4242 --websockets-api-port 4244 --api-cors http://localhost:8080 --loglevel debug --max-size-in-mb-all-logs 120',
+    'python -m rotkehlchen --rest-api-port 4242 --api-cors http://localhost:8080,http://127.0.0.1:8080 --loglevel debug --max-size-in-mb-all-logs 120',
     {
       shell: true,
       stdio: [process.stdin]
@@ -106,6 +106,7 @@ if (noElectron) {
   });
 
   pids[BACKEND.pid] = BACKEND;
+  console.log(BACKEND);
   subprocesses.push(backendProcess);
 }
 
