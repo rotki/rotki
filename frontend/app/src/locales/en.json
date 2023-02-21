@@ -3911,8 +3911,6 @@
     },
     "ignore": "Ignore Tx in Accounting",
     "label": "transactions",
-    "loading": "Please wait while your transactions are getting loaded...",
-    "loading_subtitle": "The loading of transactions might take a while depending on the number of actions you performed.",
     "query_status": {
       "date_range": "Querying {status} for {address} between {start} and {end}",
       "done_date_range": "Done querying all transactions for {address} between {start} and {end}",

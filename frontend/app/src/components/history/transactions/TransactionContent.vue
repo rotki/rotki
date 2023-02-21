@@ -207,20 +207,22 @@ const promptForDelete = ({
 };
 
 const deleteEventHandler = async () => {
-  if (get(transactionToIgnore)) {
-    set(selected, [get(transactionToIgnore)]);
+  const txToIgnore = get(transactionToIgnore);
+  if (txToIgnore) {
+    set(selected, [txToIgnore]);
     await ignore(true);
   }
 
-  if (get(eventToDelete)?.identifier) {
-    const { success } = await deleteTransactionEvent(
-      get(eventToDelete)!.identifier!
-    );
+  const id = get(eventToDelete)?.identifier;
 
+  if (id) {
+    const { success } = await deleteTransactionEvent(id);
     if (!success) {
       return;
     }
+    await fetchTransactionPage();
   }
+
   set(eventToDelete, null);
   set(transactionToIgnore, null);
   set(confirmationTitle, '');
@@ -347,15 +349,15 @@ const pageParams: ComputedRef<TransactionRequestPayload | null> = computed(
     const offset = (page - 1) * itemsPerPage;
 
     return {
+      protocols: get(protocols),
+      eventTypes: get(eventTypes),
+      eventSubtypes: get(eventSubTypes),
       ...(get(filters) as TransactionRequestPayload),
       limit: itemsPerPage,
       offset,
       orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
       ascending: sortDesc.map(bool => !bool),
-      accounts: get(filteredAccounts),
-      protocols: get(protocols),
-      eventTypes: get(eventTypes),
-      eventSubtypes: get(eventSubTypes)
+      accounts: get(filteredAccounts)
     };
   }
 );
@@ -544,6 +546,7 @@ onMounted(async () => refreshTransactions());
                     no-padding
                     multichain
                     flat
+                    @input="userAction = true"
                   />
                 </div>
               </v-col>
