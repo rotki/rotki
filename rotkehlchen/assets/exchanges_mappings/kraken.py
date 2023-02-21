@@ -60,7 +60,6 @@ WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0xba100000625a3754423978a60c9317c58a424e3D'): 'BAL',
     'KSM': 'KSM',
     strethaddress_to_identifier('0xD533a949740bb3306d119CC777fa900bA034cd52'): 'CRV',
-    strethaddress_to_identifier('0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F'): 'SNX',
     'FIL': 'FIL',
     strethaddress_to_identifier('0xa117000000f279D81A1D3cc75430fAA017FA5A2e'): 'ANT',
     'KEEP': 'KEEP',
@@ -76,7 +75,6 @@ WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0x3F382DbD960E3a9bbCeaE22651E88158d2791550'): 'GHST',
     strethaddress_to_identifier('0x8290333ceF9e6D528dD5618Fb97a76f268f3EDD4'): 'ANKR',
     strethaddress_to_identifier('0x58b6A8A3302369DAEc383334672404Ee733aB239'): 'LPT',
-    strethaddress_to_identifier('0x3845badAde8e6dFF049820680d1F14bD3903a5d0'): 'SAND',
     strethaddress_to_identifier('0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C'): 'BNT',
     strethaddress_to_identifier('0xF629cBd94d3791C9250152BD8dfBDF380E2a3B9c'): 'ENJ',
     'MINA': 'MINA',
@@ -138,7 +136,6 @@ WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0x7420B4b9a0110cdC71fB720908340C03F9Bc03EC'): 'JASMY',
     strethaddress_to_identifier('0x0996bFb5D057faa237640E2506BE7B4f9C46de0B'): 'RNDR',
     strethaddress_to_identifier('0x4a220E6096B25EADb88358cb44068A3248254675'): 'QNT',
-    strethaddress_to_identifier('0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA'): 'GALA',
     strethaddress_to_identifier('0xfB5c6815cA3AC72Ce9F5006869AE67f18bF77006'): 'PSTAKE',
     strethaddress_to_identifier('0x4d224452801ACEd8B2F0aebE155379bb5D594381'): 'APE',
     strethaddress_to_identifier('0x69af81e73A73B40adF4f3d4223Cd9b1ECE623074'): 'MASK',
@@ -223,4 +220,7 @@ WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     'FLR': 'FLR',
     evm_address_to_identifier('0x467719aD09025FcC6cF6F8311755809d45a5E5f3', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WAXL',  # noqa: E501
     evm_address_to_identifier('0xb3999F658C0391d94A37f7FF328F3feC942BcADC', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'HFT',  # noqa: E501
+    evm_address_to_identifier('0x8dAEBADE922dF735c38C80C7eBD708Af50815fAa', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TBTC',  # noqa: E501
+    evm_address_to_identifier('0x5283D291DBCF85356A21bA090E6db59121208b44', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BLUR',  # noqa: E501
+    'HDX': 'HDX',
 }

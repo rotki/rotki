@@ -25,13 +25,9 @@ WORLD_TO_COINBASE_PRO = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0xEcE83617Db208Ad255Ad4f45Daf81E25137535bb'): 'INV',
     strethaddress_to_identifier('0xa117000000f279D81A1D3cc75430fAA017FA5A2e'): 'ANT',
     evm_address_to_identifier('0xe28b3B32B6c345A34Ff64674606124Dd5Aceca30', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'INJ',  # noqa: E501
-    evm_address_to_identifier('0x3845badAde8e6dFF049820680d1F14bD3903a5d0', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SAND',  # noqa: E501
     evm_address_to_identifier('0x0D8775F648430679A709E98d2b0Cb6250d2887EF', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BAT',  # noqa: E501
-    evm_address_to_identifier('0xc00e94Cb662C3520282E6f5717214004A7f26888', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'COMP',  # noqa: E501
-    evm_address_to_identifier('0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'GALA',  # noqa: E501
     evm_address_to_identifier('0x491604c0FDF08347Dd1fa4Ee062a822A5DD06B5D', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CTSI',  # noqa: E501
     evm_address_to_identifier('0x3472A5A71965499acd81997a54BBA8D852C6E53d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BADGER',  # noqa: E501
-    evm_address_to_identifier('0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SNX',  # noqa: E501
     evm_address_to_identifier('0x6c28AeF8977c9B773996d0e8376d2EE379446F2f', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'QUICK',  # noqa: E501
     evm_address_to_identifier('0xba5BDe662c17e2aDFF1075610382B9B691296350', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RARE',  # noqa: E501
     evm_address_to_identifier('0xc770EEfAd204B5180dF6a14Ee197D99d808ee52d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FOX',  # noqa: E501
@@ -39,10 +35,8 @@ WORLD_TO_COINBASE_PRO = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x6531f133e6DeeBe7F2dcE5A0441aA7ef330B4e53', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TIME',  # noqa: E501
     evm_address_to_identifier('0x9E32b13ce7f2E80A01932B42553652E053D6ed8e', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'METIS',  # noqa: E501
     evm_address_to_identifier('0xF5581dFeFD8Fb0e4aeC526bE659CFaB1f8c781dA', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'HOPR',  # noqa: E501
-    evm_address_to_identifier('0xD533a949740bb3306d119CC777fa900bA034cd52', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CRV',  # noqa: E501
     evm_address_to_identifier('0x6810e776880C02933D47DB1b9fc05908e5386b96', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'GNO',  # noqa: E501
     evm_address_to_identifier('0x4Fabb145d64652a948d72533023f6E7A623C7C53', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BUSD',  # noqa: E501
-    evm_address_to_identifier('0x090185f2135308BaD17527004364eBcC2D37e5F6', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SPELL',  # noqa: E501
     evm_address_to_identifier('0x8f8221aFbB33998d8584A2B05749bA73c37a938a', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'REQ',  # noqa: E501
     evm_address_to_identifier('0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RAI',  # noqa: E501
     evm_address_to_identifier('0x0996bFb5D057faa237640E2506BE7B4f9C46de0B', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RNDR',  # noqa: E501
@@ -78,4 +72,5 @@ WORLD_TO_COINBASE_PRO = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x467719aD09025FcC6cF6F8311755809d45a5E5f3', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WAXL',  # noqa: E501
     evm_address_to_identifier('0xB0c7a3Ba49C7a6EaBa6cD4a96C55a1391070Ac9A', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MAGIC',  # noqa: E501
     evm_address_to_identifier('0x9534ad65fb398E27Ac8F4251dAe1780B989D136e', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PYR',  # noqa: E501
+    evm_address_to_identifier('0x467719aD09025FcC6cF6F8311755809d45a5E5f3', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'AXL',  # noqa: E501
 }

@@ -77,12 +77,8 @@ WORLD_TO_BITTREX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x33D0568941C0C64ff7e0FB4fbA0B11BD37deEd9f', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RAMP',  # noqa: E501
     evm_address_to_identifier('0x459086F2376525BdCebA5bDDA135e4E9d3FeF5bf', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RENBTC',  # noqa: E501
     evm_address_to_identifier('0xaaAEBE6Fe48E54f431b0C390CfaF0b017d09D42d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CEL',  # noqa: E501
-    evm_address_to_identifier('0xD533a949740bb3306d119CC777fa900bA034cd52', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CRV',  # noqa: E501
-    evm_address_to_identifier('0xc00e94Cb662C3520282E6f5717214004A7f26888', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'COMP',  # noqa: E501
-    evm_address_to_identifier('0xD533a949740bb3306d119CC777fa900bA034cd52', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CRV',  # noqa: E501
     evm_address_to_identifier('0x0AbdAce70D3790235af448C88547603b945604ea', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'DNT',  # noqa: E501
     evm_address_to_identifier('0x3432B6A60D23Ca0dFCa7761B7ab56459D9C964D0', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FXS',  # noqa: E501
-    evm_address_to_identifier('0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'GALA',  # noqa: E501
     evm_address_to_identifier('0x6810e776880C02933D47DB1b9fc05908e5386b96', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'GNO',  # noqa: E501
     evm_address_to_identifier('0x6fB3e0A217407EFFf7Ca062D46c26E5d60a14d69', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'IOTX',  # noqa: E501
     evm_address_to_identifier('0xEe9801669C6138E84bD50dEB500827b776777d28', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'O3',  # noqa: E501
@@ -94,8 +90,6 @@ WORLD_TO_BITTREX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x557B933a7C2c45672B610F8954A3deB39a51A8Ca', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'REVV',  # noqa: E501
     evm_address_to_identifier('0xD291E7a03283640FDc51b121aC401383A46cC623', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RGT',  # noqa: E501
     evm_address_to_identifier('0x0996bFb5D057faa237640E2506BE7B4f9C46de0B', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RNDR',  # noqa: E501
-    evm_address_to_identifier('0x3845badAde8e6dFF049820680d1F14bD3903a5d0', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SAND',  # noqa: E501
-    evm_address_to_identifier('0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SNX',  # noqa: E501
     evm_address_to_identifier('0x8CE9137d39326AD0cD6491fb5CC0CbA0e089b6A9', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SXP',  # noqa: E501
     evm_address_to_identifier('0x340D2bdE5Eb28c1eed91B2f790723E3B160613B7', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'VEE',  # noqa: E501
     evm_address_to_identifier('0x1b793E49237758dBD8b752AFC9Eb4b329d5Da016', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'VITE',  # noqa: E501
@@ -152,4 +146,5 @@ WORLD_TO_BITTREX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x99D8a9C45b2ecA8864373A26D1459e3Dff1e17F3', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MIM',  # noqa: E501
     'META': 'METADIUM',
     'NLG': 'MUNT',
+    evm_address_to_identifier('0xc56c2b7e71B54d38Aab6d52E94a04Cbfa8F604fA', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ZUSD',  # noqa: E501
 }

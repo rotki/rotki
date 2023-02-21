@@ -1,9 +1,13 @@
+import warnings as test_warnings
 from unittest.mock import patch
+
+import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_USD, A_USDC
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.coinbase import Coinbase, trade_from_conversion
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
@@ -1040,3 +1044,17 @@ def test_asset_conversion_choosing_fee_asset():
         link='id_of_trade',
     )
     assert trade == expected_trade
+
+
+def test_coverage_of_products():
+    """Test that we can process all assets from coinbase"""
+    data = requests.get('https://api.exchange.coinbase.com/currencies')
+    for coin in data.json():
+        try:
+            # Make sure all products can be processed
+            asset_from_coinbase(coin['id'])
+        except UnknownAsset as e:
+            test_warnings.warn(UserWarning(
+                f'Found unknown asset {e.identifier} with symbol {coin["id"]} in Coinbase. '
+                f'Support for it has to be added',
+            ))

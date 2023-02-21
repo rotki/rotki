@@ -20,7 +20,7 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.types import ChainID, EvmTokenKind
+from rotkehlchen.types import SPAM_PROTOCOL, ChainID, EvmTokenKind
 
 
 def test_unknown_asset():
@@ -242,12 +242,42 @@ def test_cryptocompare_asset_support(cryptocompare):
         'eip155:56/erc20:0x9df90628D40c72F85137e8cEE09dde353a651266',  # noqa: E501 mechaverse but cc has merit circle
         'ALT',  # aptos launch but cc has alitas
         strethaddress_to_identifier('0x329cf160F30D21006bCD24b67EAde561E54CDE4c'),  # noqa: E501 carecoin but cc has carebit
+        strethaddress_to_identifier('0xf5dF66B06DFf95226F1e8834EEbe4006420D295F'),  # noqa: E501 alpaca markets but cc has alpaca finance
+        strethaddress_to_identifier('0x602Eb0D99A5e3e76D1510372C4d2020e12EaEa8a'),  # noqa: E501 Trident in cc but we have T
+        strethaddress_to_identifier('0x332E824e46FcEeB9E59ba9491B80d3e6d42B0B59'),  # noqa: E501 cheesfry but cc has cheese
+        strethaddress_to_identifier('0xDE12c7959E1a72bbe8a5f7A1dc8f8EeF9Ab011B3'),  # noqa: E501 dei but cc has deimos
+        strethaddress_to_identifier('0x8b921e618dD3Fa5a199b0a8B7901f5530D74EF27'),  # noqa: E501 QabbalahBit but cc has project quantum
+        strethaddress_to_identifier('0xC285B7E09A4584D027E5BC36571785B515898246'),  # noqa: E501 coin98 but cc has carbon
+        strethaddress_to_identifier('0xc56c2b7e71B54d38Aab6d52E94a04Cbfa8F604fA'),  # noqa: E501 z.com but cc has zusd
+        strethaddress_to_identifier('0x9F77BA354889BF6eb5c275d4AC101e9547f15AdB'),  # noqa: E501 black box token but cc has bitbook
+        strethaddress_to_identifier('0x5E5d9aEeC4a6b775a175b883DCA61E4297c14Ecb'),  # noqa: E501 florin but cc has flare
+        strethaddress_to_identifier('0x178E029173417b1F9C8bC16DCeC6f697bC323746'),  # noqa: E501 fiat stable pool but cc has fud finance
+        strethaddress_to_identifier('0x6BC08509B36A98E829dFfAD49Fde5e412645d0a3'),  # noqa: E501 woofwoof but cc has shibance token
+        strethaddress_to_identifier('0x865377367054516e17014CcdED1e7d814EDC9ce4'),  # noqa: E501 we have dolla stable coin but cc has a differen dolla
+        strethaddress_to_identifier('0xBEA0000029AD1c77D3d5D23Ba2D8893dB9d1Efab'),  # noqa: E501 cc has a different bean than us
+        # assets that match the one in coingecko and are not the ones locally
+        strethaddress_to_identifier('0x68037790A0229e9Ce6EaA8A99ea92964106C4703'),
+        strethaddress_to_identifier('0x69e8b9528CABDA89fe846C67675B5D73d463a916'),
+        strethaddress_to_identifier('0x2370f9d504c7a6E775bf6E14B3F12846b594cD53'),
+        strethaddress_to_identifier('0x0a5E677a6A24b2F1A2Bf4F3bFfC443231d2fDEc8'),
+        strethaddress_to_identifier('0xDC59ac4FeFa32293A95889Dc396682858d52e5Db'),
+        strethaddress_to_identifier('0x6BeA7CFEF803D1e3d5f7C0103f7ded065644e197'),
+        strethaddress_to_identifier('0x4104b135DBC9609Fc1A9490E61369036497660c8'),
+        strethaddress_to_identifier('0x9C4A4204B79dd291D6b6571C5BE8BbcD0622F050'),
+        strethaddress_to_identifier('0x559eBC30b0E58a45Cc9fF573f77EF1e5eb1b3E18'),
+        strethaddress_to_identifier('0x45fDb1b92a649fb6A64Ef1511D3Ba5Bf60044838'),
+        strethaddress_to_identifier('0x3236A63c21Fc524a51001ea2627697fDcA86E897'),
+        strethaddress_to_identifier('0xd7C9F0e536dC865Ae858b0C0453Fe76D13c3bEAc'),
+        strethaddress_to_identifier('0x6967299e9F3d5312740Aa61dEe6E9ea658958e31'),
+        'eip155:42161/erc20:0x602Eb0D99A5e3e76D1510372C4d2020e12EaEa8a',
+        'KON',
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
             asset_data.cryptocompare == '' and
             asset_data.symbol in cc_assets and
-            asset_data.identifier not in exceptions
+            asset_data.identifier not in exceptions and
+            asset_data.protocol != SPAM_PROTOCOL
         )
         if potential_support:
             msg = (
@@ -530,14 +560,56 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
         evm_address_to_identifier(address='0xc46F2004006d4C770346f60a7BaA3f1Cc67dFD1c', chain_id=ChainID.GNOSIS, token_type=EvmTokenKind.ERC20),  # noqa: E501
         # peth from maker but congecko has another PETH
         strethaddress_to_identifier('0xf53AD2c6851052A81B42133467480961B2321C09'),
+        # alpaca markets but coingecko has alpaca finance
+        strethaddress_to_identifier('0xf5dF66B06DFf95226F1e8834EEbe4006420D295F'),
+        # blizzard dao but coingecko has blizzard
+        strethaddress_to_identifier('0xbb97a6449A6f5C53b7e696c8B5b6E6A53CF20143'),
+        # peth from makerdao but a different one in coignecko
+        strethaddress_to_identifier('0x836A808d4828586A69364065A1e064609F5078c7'),
+        # stakeit but coingecko has stake (xdai)
+        strethaddress_to_identifier('0x836A808d4828586A69364065A1e064609F5078c7'),
+        # iron bank dai but coingecko has instadapp-dai
+        strethaddress_to_identifier('0x8e595470Ed749b85C6F7669de83EAe304C2ec68F'),
+        # iron bank usdc but coingecko has instadapp-usdc
+        strethaddress_to_identifier('0x76Eb2FE28b36B3ee97F3Adae0C69606eeDB2A37c'),
+        # iron bank btc but coingecko has interest bearing bitcoin
+        strethaddress_to_identifier('0xc4E15973E6fF2A35cC804c2CF9D2a1b817a8b40F'),
+        # fryUSD but coingecko has fuse dollar
+        strethaddress_to_identifier('0x42ef9077d8e79689799673ae588E046f8832CB95'),
+        # vanadium dollar but coingecko has version
+        strethaddress_to_identifier('0xEe95CD26291fd1ad5d94bCeD4027e396a20d1F38'),
+        # cheesefry but coingecko has cheese
+        strethaddress_to_identifier('0x332E824e46FcEeB9E59ba9491B80d3e6d42B0B59'),
+        # florin but coingecko has flare
+        strethaddress_to_identifier('0x5E5d9aEeC4a6b775a175b883DCA61E4297c14Ecb'),
+        # wrapped omi but coingecko has wrapped ecomi
+        strethaddress_to_identifier('0x04969cD041C0cafB6AC462Bd65B536A5bDB3A670'),
+        # fiat stable pool but coingecko has fud aavegochi
+        strethaddress_to_identifier('0x178E029173417b1F9C8bC16DCeC6f697bC323746'),
+        # titanium dollar but coingecko hash treshold
+        strethaddress_to_identifier('0x6967299e9F3d5312740Aa61dEe6E9ea658958e31'),
+        # we have transfercoin but coingecko has tradix
+        'TX',
+        # pear but we have one  with a different address
+        strethaddress_to_identifier('0x46cD37F057dC78f6Cd2a4eB89BF9F991fB81BaAb'),
+        # tokens that don't match the addresses in coingecko
+        strethaddress_to_identifier('0x45fDb1b92a649fb6A64Ef1511D3Ba5Bf60044838'),
+        strethaddress_to_identifier('0x69e8b9528CABDA89fe846C67675B5D73d463a916'),
+        strethaddress_to_identifier('0xDC59ac4FeFa32293A95889Dc396682858d52e5Db'),
+        strethaddress_to_identifier('0x6BeA7CFEF803D1e3d5f7C0103f7ded065644e197'),
+        strethaddress_to_identifier('0xcaDC0acd4B445166f12d2C07EAc6E2544FbE2Eef'),
+        strethaddress_to_identifier('0x559eBC30b0E58a45Cc9fF573f77EF1e5eb1b3E18'),
+        strethaddress_to_identifier('0x8b921e618dD3Fa5a199b0a8B7901f5530D74EF27'),
+        strethaddress_to_identifier('0xBEA0000029AD1c77D3d5D23Ba2D8893dB9d1Efab'),
+        strethaddress_to_identifier('0x9F77BA354889BF6eb5c275d4AC101e9547f15AdB'),
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier
-        if identifier in DELISTED_ASSETS:
-            # delisted assets won't be in the mapping
-            continue
-
-        if asset_data.asset_type == AssetType.FIAT:
+        if (
+            identifier in DELISTED_ASSETS or  # delisted assets won't be in the mapping
+            asset_data.asset_type == AssetType.FIAT or
+            asset_data.protocol == SPAM_PROTOCOL
+        ):
             continue
 
         found = True

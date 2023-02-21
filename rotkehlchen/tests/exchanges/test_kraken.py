@@ -110,6 +110,10 @@ def test_coverage_of_kraken_balances(kraken):
     got_assets.remove('SCRT21.S')
     got_assets.remove('KAVA21.S')
     got_assets.remove('ATOM21.S')
+    got_assets.remove('SOL03.S')
+    got_assets.remove('FLOW14.S')
+    got_assets.remove('MATIC04.S')
+    got_assets.remove('KSM07.S')
 
     diff = expected_assets.symmetric_difference(got_assets)
     if len(diff) != 0:
