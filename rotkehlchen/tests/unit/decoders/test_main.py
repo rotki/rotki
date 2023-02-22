@@ -41,6 +41,7 @@ def test_decoders_initialization(ethereum_transaction_decoder):
         'Airdrops',
         'Balancer',
         'Compound',
+        'Cowswap',
         'Curve',
         'Dxdaomesa',
         'Ens',
@@ -106,6 +107,7 @@ def test_decoders_initialization(ethereum_transaction_decoder):
         'balancer-v2',
         'optimism',
         'eth2',
+        'cowswap',
     }
 
 
