@@ -15,8 +15,10 @@ from rotkehlchen.chain.evm.nodes import populate_rpc_nodes_in_database
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.types import (
+    SPAM_PROTOCOL,
     ApiKey,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -164,6 +166,19 @@ def perform_new_db_unlock_actions(db: DBHandler, new_db_unlock_actions: tuple[st
     if 'rpc_nodes' in new_db_unlock_actions:
         with db.user_write() as write_cursor:
             populate_rpc_nodes_in_database(write_cursor)
+    if 'spam_assets' in new_db_unlock_actions:
+        with (
+            GlobalDBHandler().conn.read_ctx() as globaldb_cursor,
+            db.user_write() as user_write_cursor,
+        ):
+            spam_assets_ids = globaldb_cursor.execute(
+                'SELECT identifier FROM evm_tokens WHERE protocol=?',
+                (SPAM_PROTOCOL,),
+            )
+            user_write_cursor.executemany(
+                'INSERT INTO multisettings(name, value) VALUES(?, ?)',
+                [('ignored_asset', asset_identifier[0]) for asset_identifier in spam_assets_ids],
+            )
 
 
 def run_no_db_upgrades(self) -> bool:
