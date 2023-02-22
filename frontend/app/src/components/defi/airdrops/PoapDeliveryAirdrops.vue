@@ -25,7 +25,7 @@ const events = [
   'yfi_og'
 ] as const;
 
-type EventType = typeof events[number];
+type EventType = (typeof events)[number];
 
 const { t } = useI18n();
 

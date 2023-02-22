@@ -9,6 +9,7 @@ import {
   type HistoryEventType,
   type TransactionEventProtocol
 } from '@rotki/common/lib/history/tx-events';
+import { type MaybeRef } from '@vueuse/core';
 import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
 import {
   type EthTransaction,
@@ -129,14 +130,14 @@ const {
   state: transactions,
   isLoading,
   execute
-} = useAsyncState<Collection<EthTransactionEntry>>(
-  args => fetchTransactions(args),
-  defaultCollectionState(),
-  {
-    delay: 0,
-    resetOnExecute: false
-  }
-);
+} = useAsyncState<
+  Collection<EthTransactionEntry>,
+  MaybeRef<TransactionRequestPayload>[]
+>(args => fetchTransactions(args), defaultCollectionState(), {
+  immediate: false,
+  delay: 0,
+  resetOnExecute: false
+});
 
 const { data } = getCollectionData<EthTransactionEntry>(transactions);
 

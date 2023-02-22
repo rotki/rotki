@@ -150,7 +150,7 @@ export const CONFLICT_RESOLUTION = [RESOLVE_REMOTE, RESOLVE_LOCAL] as const;
 export const EVM_TOKEN = 'evm token';
 export const CUSTOM_ASSET = 'custom asset';
 
-export type ConflictResolutionStrategy = typeof CONFLICT_RESOLUTION[number];
+export type ConflictResolutionStrategy = (typeof CONFLICT_RESOLUTION)[number];
 
 export interface AssetUpdatePayload {
   readonly resolution?: ConflictResolution;

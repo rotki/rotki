@@ -4,7 +4,7 @@ export const DialogType = {
   INFO: 'info'
 } as const;
 
-export type DialogType = typeof DialogType[keyof typeof DialogType];
+export type DialogType = (typeof DialogType)[keyof typeof DialogType];
 
 export interface DialogTheme {
   readonly icon: string;

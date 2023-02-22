@@ -33,7 +33,7 @@ const SupportedExchangeType = z.nativeEnum(SupportedExchange);
 
 export const SUPPORTED_EXCHANGES = Object.values(SupportedExchange);
 
-export type SupportedExternalExchanges = typeof EXTERNAL_EXCHANGES[number];
+export type SupportedExternalExchanges = (typeof EXTERNAL_EXCHANGES)[number];
 
 export const Exchange = z.object({
   location: SupportedExchangeType,

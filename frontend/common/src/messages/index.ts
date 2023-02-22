@@ -16,7 +16,7 @@ export const NotificationCategory = {
 } as const;
 
 export type NotificationCategory =
-  typeof NotificationCategory[keyof typeof NotificationCategory];
+  (typeof NotificationCategory)[keyof typeof NotificationCategory];
 
 export interface Message {
   readonly title: string;

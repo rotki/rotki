@@ -16,7 +16,7 @@ export const PURGABLE = [
   ...Object.values(Module)
 ];
 
-export type Purgeable = typeof PURGABLE[number];
+export type Purgeable = (typeof PURGABLE)[number];
 
 export interface PurgeParams {
   readonly source: Purgeable;

@@ -3,6 +3,7 @@ import dropRight from 'lodash/dropRight';
 import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import isEqual from 'lodash/isEqual';
+import { type MaybeRef } from '@vueuse/core';
 import Fragment from '@/components/helper/Fragment';
 import ExternalTradeForm from '@/components/history/ExternalTradeForm.vue';
 import { Routes } from '@/router/routes';
@@ -154,10 +155,11 @@ const {
   isLoading,
   state: trades,
   execute
-} = useAsyncState<Collection<TradeEntry>>(
+} = useAsyncState<Collection<TradeEntry>, MaybeRef<TradeRequestPayload>[]>(
   args => fetchTrades(args),
   defaultCollectionState(),
   {
+    immediate: false,
     resetOnExecute: false,
     delay: 0
   }
