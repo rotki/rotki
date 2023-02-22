@@ -2,6 +2,7 @@
 import useVuelidate from '@vuelidate/core';
 import { between, required, requiredIf } from '@vuelidate/validators';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
+import isEmpty from 'lodash/isEmpty';
 import { type EvmRpcNode, getPlaceholderNode } from '@/types/settings';
 
 const { t, tc } = useI18n();
@@ -23,15 +24,21 @@ const emit = defineEmits<{
   (e: 'update:valid', valid: boolean): void;
 }>();
 
-const { chain, value, errorMessages } = toRefs(props);
+const { chain, value, errorMessages, isEtherscan } = toRefs(props);
 const state = reactive<EvmRpcNode>(getPlaceholderNode(get(chain)));
 const rules = {
   name: { required },
-  endpoint: { required: requiredIf(() => state.name !== 'etherscan') },
+  endpoint: { required: requiredIf(logicNot(isEtherscan)) },
   weight: { required, between: between(0, 100) }
 };
 
 const v$ = useVuelidate(rules, state, { $externalResults: errorMessages });
+
+watch(errorMessages, errors => {
+  if (!isEmpty(errors)) {
+    get(v$).$validate();
+  }
+});
 
 const updateState = (selectedNode: EvmRpcNode): void => {
   state.identifier = selectedNode.identifier;

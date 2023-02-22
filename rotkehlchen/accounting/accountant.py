@@ -232,7 +232,7 @@ class Accountant():
         or with reading the response returned by the server
         """
         with self.db.conn.read_ctx() as cursor:
-            ignored_assets = self.db.get_ignored_assets(cursor)
+            ignored_asset_ids = self.db.get_ignored_asset_ids(cursor)
         event = next(events_iterator, None)
         if event is None:
             return 0, prev_time
@@ -270,7 +270,7 @@ class Accountant():
             )
             return 1, prev_time
 
-        if any(x in ignored_assets for x in event_assets):
+        if any(x.identifier in ignored_asset_ids for x in event_assets):
             log.debug(
                 'Ignoring event with ignored asset',
                 event_type=event.get_accounting_event_type(),

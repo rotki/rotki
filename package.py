@@ -14,7 +14,11 @@ from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Literal, Optional
 from zipfile import ZipFile
 
+from setuptools_scm import get_version
+
 from packaging import version
+
+rotki_version = get_version()
 
 pyinstaller_version = os.environ.get('PYINSTALLER_VERSION', '5.7.0')
 BACKEND_PREFIX = 'rotki-core'
@@ -75,16 +79,7 @@ class Environment:
         if self.is_mac():
             os.environ.setdefault('ONEFILE', '0')
 
-        python_bin = 'python3'
-        if self.is_windows():
-            python_bin = 'python'
-
-        self.rotki_version = subprocess.check_output(
-            f'{python_bin} setup.py --version',
-            shell=True,
-            encoding='utf8',
-        ).strip()
-
+        self.rotki_version = rotki_version
         if os.environ.get('ROTKI_VERSION') is None:
             os.environ.setdefault('ROTKI_VERSION', self.rotki_version)
 
@@ -976,7 +971,7 @@ class BackendBuilder:
         # This flag only works with the patched version of pip.
         # https://github.com/kelsos/pip/tree/patched
         os.environ.setdefault('PIP_FORCE_MACOS_UNIVERSAL2', '1')
-        self.pip_install('-e .', use_pep_517=False)
+        self.pip_install('.', use_pep_517=True)
         os.environ.pop('PIP_FORCE_MACOS_UNIVERSAL2', None)
 
         if github_ref is not None:

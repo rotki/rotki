@@ -12,51 +12,17 @@ from rotkehlchen.constants.assets import A_DAI, A_ETH, A_LINK, A_USDC, A_USDT
 from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
     ChainID,
     EvmInternalTransaction,
     EvmTransaction,
-    GeneralCacheType,
     Location,
     Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-
-TEST_CURVE_POOLS = [
-    '0xDeBF20617708857ebe4F679508E7b7863a8A8EeE',
-    '0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',
-    '0xF178C0b5Bb7e7aBF4e12A4838C7b7c5bA2C623c0',
-    '0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',
-    '0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',
-    '0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51',
-    '0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',
-]
-
-
-def _populate_curve_pools(evm_tx_decoder):
-    with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        for pool_address in TEST_CURVE_POOLS:
-            # whatever since lp tokens are not used in curve decoder
-            lp_token_address = make_evm_address()
-            GlobalDBHandler().set_general_cache_values(
-                write_cursor=write_cursor,
-                key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
-                values=[lp_token_address],
-            )
-            GlobalDBHandler().set_general_cache_values(
-                write_cursor=write_cursor,
-                key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token_address],
-                values=[pool_address],
-            )
-
-    curve_decoder = evm_tx_decoder.decoders['Curve']
-    new_mappings = curve_decoder.reload_data()
-    evm_tx_decoder.rules.address_mappings.update(new_mappings)
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x57bF3B0f29E37619623994071C9e12091919675c']])  # noqa: E501
@@ -65,7 +31,6 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
     https://etherscan.io/tx/0x523b7df8e168315e97a836a3d516d639908814785d7df1ef1745de3e55501982
     tests that a deposit for the aave pool in curve works correctly
     """
-    _populate_curve_pools(ethereum_transaction_decoder)
     tx_hex = '0x523b7df8e168315e97a836a3d516d639908814785d7df1ef1745de3e55501982'
     location_label = '0x57bF3B0f29E37619623994071C9e12091919675c'
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -205,7 +170,6 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
     This tests uses the steth/eth pool to verify that deposits including transfer of ETH work
     properly
     """
-    _populate_curve_pools(ethereum_transaction_decoder)
     tx_hex = '0x51c052c8fb60f092f98ffc3cab6340c7c5348ee3b339582feba1c17cbd97ea56'
     location_label = '0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2'
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -356,7 +320,6 @@ def test_curve_remove_liquidity(database, ethereum_transaction_decoder):
     https://etherscan.io/tx/0xd63dccdbebeede3a1f50b97c0a8592255203a0559880b80377daa39f915741b0
     This tests uses the link pool to verify that withdrawals are correctly decoded
     """
-    _populate_curve_pools(ethereum_transaction_decoder)
     tx_hex = '0xd63dccdbebeede3a1f50b97c0a8592255203a0559880b80377daa39f915741b0'
     location_label = '0xDf9f0AE722A3919fE7f9cC8805773ef142007Ca6'
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -482,7 +445,6 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
     This tests uses the steth pool to verify that withdrawals are correctly decoded when an
     internal transaction is made for eth transfers
     """
-    _populate_curve_pools(ethereum_transaction_decoder)
     tx_hex = '0x30bb99f3e34fb1fbcf009320af7e290caf18b04b207319e15aa8ffbf645f4ad9'
     location_label = '0xa8005630caE7b7d2AFADD38FD3B3040d13cbE2BC'
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -578,7 +540,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
             extra_data={'withdrawal_events_num': 1},
         ), HistoryBaseEntry(
             event_identifier=evmhash,
-            sequence_index=2,
+            sequence_index=193,
             timestamp=1650276061000,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -599,7 +561,6 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
     This tests uses the steth pool to verify that withdrawals are correctly decoded when an
     internal transaction is made for eth transfers
     """
-    _populate_curve_pools(ethereum_transaction_decoder)
     tx_hex = '0xd8832abcf4773abe24d8cda5581fb53bfb3850c535c1956d1d120a72a4ebcbd8'
     location_label = '0x2fac74A3a04B031F240923621a578724C40678af'
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -762,7 +723,6 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
 @pytest.mark.parametrize('ethereum_accounts', [['0x6Bb553FFC5716782051f51b564Bb149D9946f0d2']])
 def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts):
     """Check the case for a pool where multiple deposit events appear in the transaction"""
-    _populate_curve_pools(ethereum_transaction_decoder)
     tx_hex = deserialize_evm_tx_hash('0xe954a396a02ebbea45a1d206c9918f717c55509c8138fccc63155d0262ef4dc4 ')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
@@ -811,7 +771,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
-            sequence_index=77,
+            sequence_index=78,
             timestamp=TimestampMS(1675186487000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -823,7 +783,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
-            sequence_index=78,
+            sequence_index=79,
             timestamp=TimestampMS(1675186487000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -835,7 +795,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
             event_identifier=evmhash,
-            sequence_index=79,
+            sequence_index=80,
             timestamp=TimestampMS(1675186487000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,

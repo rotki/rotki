@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any, Generic, Literal, NamedTuple, Optional, TypeVar, Union, cast
 
@@ -1071,7 +1072,8 @@ class AssetsFilterQuery(DBFilterQuery):
             identifiers: Optional[list[str]] = None,
             return_exact_matches: bool = False,
             chain_id: Optional[ChainID] = None,
-            ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], list[str]]] = None,  # noqa: E501
+            identifier_column_name: str = 'identifier',
+            ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], Iterable[str]]] = None,  # noqa: E501
     ) -> 'AssetsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('name', True)]
@@ -1120,15 +1122,15 @@ class AssetsFilterQuery(DBFilterQuery):
         if identifiers is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,
-                column='identifier',
+                column=identifier_column_name,
                 values=identifiers,
             ))
         if ignored_assets_filter_params is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,
-                column='identifier',
+                column=identifier_column_name,
                 operator=ignored_assets_filter_params[0],
-                values=ignored_assets_filter_params[1],
+                values=list(ignored_assets_filter_params[1]),
             ))
         if chain_id is not None:
             filters.append(DBEqualsFilter(
@@ -1197,7 +1199,7 @@ class NFTFilterQuery(DBFilterQuery):
             owner_addresses: Optional[list[str]] = None,
             name: Optional[str] = None,
             collection_name: Optional[str] = None,
-            ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], list[str]]] = None,  # noqa: E501
+            ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], Iterable[str]]] = None,  # noqa: E501
             lps_handling: NftLpHandling = NftLpHandling.ALL_NFTS,
             nft_id: Optional[str] = None,
             last_price_asset: Optional[Asset] = None,
@@ -1235,7 +1237,7 @@ class NFTFilterQuery(DBFilterQuery):
                 and_op=True,
                 column='identifier',
                 operator=ignored_assets_filter_params[0],
-                values=ignored_assets_filter_params[1],
+                values=list(ignored_assets_filter_params[1]),
             ))
         if lps_handling != NftLpHandling.ALL_NFTS:
             filters.append(DBEqualsFilter(
@@ -1321,6 +1323,7 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
             and_op: bool = True,
             substring_search: str = '',  # substring is always required for levenstein
             chain_id: Optional[ChainID] = None,
+            ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], Iterable[str]]] = None,  # noqa: E501
     ) -> 'LevenshteinFilterQuery':
         filter_query = LevenshteinFilterQuery(
             and_op=and_op,
@@ -1366,6 +1369,15 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
                 value=chain_id.serialize_for_db(),
             )
             filters.append((new_filter, 'assets'))
+
+        if ignored_assets_filter_params is not None:
+            ignored_assets_filter = DBMultiStringFilter(
+                and_op=True,
+                column='assets.identifier',
+                operator=ignored_assets_filter_params[0],
+                values=list(ignored_assets_filter_params[1]),
+            )
+            filters.append((ignored_assets_filter, 'assets'))
 
         filter_query.filters = filters
         return filter_query

@@ -384,6 +384,7 @@ declare global {
   const useRound: typeof import('@vueuse/math')['useRound']
   const useRoute: typeof import('vue-router/composables')['useRoute']
   const useRouter: typeof import('vue-router/composables')['useRouter']
+  const useScramble: typeof import('./composables/scramble')['useScramble']
   const useScreenOrientation: typeof import('@vueuse/core')['useScreenOrientation']
   const useScreenSafeArea: typeof import('@vueuse/core')['useScreenSafeArea']
   const useScriptTag: typeof import('@vueuse/core')['useScriptTag']
@@ -887,6 +888,7 @@ declare module 'vue' {
     readonly useRound: UnwrapRef<typeof import('@vueuse/math')['useRound']>
     readonly useRoute: UnwrapRef<typeof import('vue-router/composables')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('vue-router/composables')['useRouter']>
+    readonly useScramble: UnwrapRef<typeof import('./composables/scramble')['useScramble']>
     readonly useScreenOrientation: UnwrapRef<typeof import('@vueuse/core')['useScreenOrientation']>
     readonly useScreenSafeArea: UnwrapRef<typeof import('@vueuse/core')['useScreenSafeArea']>
     readonly useScriptTag: UnwrapRef<typeof import('@vueuse/core')['useScriptTag']>

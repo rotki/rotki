@@ -64,7 +64,8 @@ export const useEventTypeData = createSharedComposable(() => {
 const { getBlockie } = useBlockie();
 
 export const getEventCounterpartyData = (
-  event: EthTransactionEventEntry
+  event: EthTransactionEventEntry,
+  scrambler?: (hex: string) => string
 ): ActionDataEntry | null => {
   const { counterparty } = event;
 
@@ -102,10 +103,12 @@ export const getEventCounterpartyData = (
     };
   }
 
+  const counterpartyAddress = scrambler?.(counterparty) ?? counterparty;
+
   return {
     identifier: '',
-    label: counterparty,
-    image: getBlockie(counterparty)
+    label: counterpartyAddress,
+    image: getBlockie(counterpartyAddress)
   };
 };
 

@@ -32,6 +32,8 @@ def maybe_reshuffle_events(
 
     # If given, check the events list to make sure events are consecutive
     if events_list is not None:
+        # Sort by sequence index to avoid getting duplicate indices further down the line
+        events_list.sort(key=lambda event: event.sequence_index)
         events_num = len(events_list)
         for idx, event in enumerate(events_list):
             if event == out_event:

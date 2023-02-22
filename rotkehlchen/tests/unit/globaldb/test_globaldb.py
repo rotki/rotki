@@ -19,6 +19,12 @@ from rotkehlchen.db.filtering import CustomAssetsFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.globaldb.cache import (
+    globaldb_delete_general_cache,
+    globaldb_get_general_cache_last_queried_ts,
+    globaldb_get_general_cache_values,
+    globaldb_set_general_cache_values,
+)
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount
@@ -125,7 +131,7 @@ def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb
     # may have cached results from a discarded database
     AssetResolver().clean_memory_cache()
     version = 9999999999
-    root_dir = Path(__file__).resolve().parent.parent.parent
+    root_dir = Path(__file__).resolve().parent.parent.parent.parent
     source_db_path = root_dir / 'tests' / 'data' / f'v{version}_global.db'
     new_data_dir = Path(tmpdir_factory.mktemp('test_data_dir'))
     new_global_dir = new_data_dir / 'global_data'
@@ -668,7 +674,7 @@ def test_global_db_restore(globaldb, database):
     assert r.fetchall() == user_db_cursor.fetchall()
 
     # Check that the number of assets is the expected
-    root_dir = Path(__file__).resolve().parent.parent.parent
+    root_dir = Path(__file__).resolve().parent.parent.parent.parent
     builtin_database = root_dir / 'data' / 'global.db'
     conn = sqlite3.connect(builtin_database)
     cursor_clean_db = conn.cursor()
@@ -820,7 +826,7 @@ def test_global_db_reset(globaldb, database):
     assert EvmToken('eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302').name != '1inch boi'  # noqa: E501
 
     # Check that the number of assets is the expected
-    root_dir = Path(__file__).resolve().parent.parent.parent
+    root_dir = Path(__file__).resolve().parent.parent.parent.parent
     builtin_database = root_dir / 'data' / 'global.db'
     conn = sqlite3.connect(builtin_database)
     cursor_clean_db = conn.cursor()
@@ -968,91 +974,111 @@ def test_asset_deletion(globaldb):
     )
 
 
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('run_globaldb_migrations', [False])
+@pytest.mark.parametrize('custom_globaldb', ['v4_global_before_migration1.db'])
 def test_general_cache(globaldb):
-    """Test that cache in the globaldb works properly. Tests insertion, deletion and reading."""
+    """
+    Test that cache in the globaldb works properly. Tests insertion, deletion and reading.
+
+    Used an older globalDB that is not pre-populated so that CURVE_POOLTOKENS and
+    other flags are simpler to test.
+    """
 
     ts_test_start = ts_now()
     with globaldb.conn.write_ctx() as write_cursor:
         # write some values
-        globaldb.set_general_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
             values=['abc'],
         )
-        globaldb.set_general_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
             values=['xyz', 'klm'],
         )
-        globaldb.set_general_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '123'],
             values=['abc', 'klm'],
         )
-        globaldb.set_general_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '456'],
             values=['def', 'klm'],
         )
 
-    # check that we can read saved values
-    values_0 = globaldb.get_general_cache_values(
-        key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
-    )
-    assert values_0 == ['abc']
-    values_1 = globaldb.get_general_cache_values(
-        key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
-    )
-    assert values_1 == ['klm', 'xyz']
-    values_2 = globaldb.get_general_cache_values(
-        key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '123'],
-    )
-    assert values_2 == ['abc', 'klm']
-    values_3 = globaldb.get_general_cache_values(
-        key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '456'],
-    )
-    assert values_3 == ['def', 'klm']
-    values_4 = globaldb.get_general_cache_values(
-        key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, 'NO VALUE'],
-    )
-    assert len(values_4) == 0
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        # check that we can read saved values
+        values_0 = globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+        )
+        assert values_0 == ['abc']
+        values_1 = globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
+        )
+        assert values_1 == ['klm', 'xyz']
+        values_2 = globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '123'],
+        )
+        assert values_2 == ['abc', 'klm']
+        values_3 = globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '456'],
+        )
+        assert values_3 == ['def', 'klm']
+        values_4 = globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, 'NO VALUE'],
+        )
+        assert len(values_4) == 0
 
-    # check that timestamps were saved properly
-    ts_test_end = ts_now()
-    last_queried_ts_0 = globaldb.get_general_cache_last_queried_ts(
-        key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
-        value='xyz',
-    )
-    assert ts_test_end >= last_queried_ts_0 >= ts_test_start
-    last_queried_ts_1 = globaldb.get_general_cache_last_queried_ts(
-        key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
-        value='NON-EXISTENT',
-    )
-    assert last_queried_ts_1 is None
+        # check that timestamps were saved properly
+        ts_test_end = ts_now()
+        last_queried_ts_0 = globaldb_get_general_cache_last_queried_ts(
+            cursor=cursor,
+            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
+            value='xyz',
+        )
+        assert ts_test_end >= last_queried_ts_0 >= ts_test_start
+        last_queried_ts_1 = globaldb_get_general_cache_last_queried_ts(
+            cursor=cursor,
+            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
+            value='NON-EXISTENT',
+        )
+        assert last_queried_ts_1 is None
 
     # check that deletion works properly
     with globaldb.conn.write_ctx() as write_cursor:
-        globaldb.delete_general_cache(
+        globaldb_delete_general_cache(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '123'],
         )
-        values_5 = globaldb.get_general_cache_values(
+        values_5 = globaldb_get_general_cache_values(
+            cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '123'],
         )
         assert len(values_5) == 0
-        values_6 = globaldb.get_general_cache_values(
+        values_6 = globaldb_get_general_cache_values(
+            cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '456'],
         )
         assert len(values_6) == 2   # should have not been touched by the deletion above
-        globaldb.delete_general_cache(
+        globaldb_delete_general_cache(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '456'],
         )
-        values_7 = globaldb.get_general_cache_values(
+        values_7 = globaldb_get_general_cache_values(
+            cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '456'],
         )
         assert len(values_7) == 0
-        values_8 = globaldb.get_general_cache_values(
+        values_8 = globaldb_get_general_cache_values(
+            cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
         )
         assert values_8 == values_1

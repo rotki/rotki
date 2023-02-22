@@ -10,6 +10,9 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.aggregator import LAST_EVM_ACCOUNTS_DETECT_KEY
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
+from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
+    query_ilk_registry_and_maybe_update_cache,
+)
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.constants.assets import A_USD
@@ -147,6 +150,7 @@ class TaskManager():
             self._maybe_update_curve_pools,
             self._maybe_update_yearn_vaults,
             self._maybe_detect_evm_accounts,
+            self._maybe_update_ilk_cache,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -626,6 +630,18 @@ class TaskManager():
             exception_is_error=True,
             method=self.chains_aggregator.detect_evm_accounts,
         )]
+
+    def _maybe_update_ilk_cache(self) -> Optional[list[gevent.Greenlet]]:
+        if should_update_protocol_cache(GeneralCacheType.MAKERDAO_VAULT_ILK, 'ETH-A') is True:
+            return [self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name='Update ilk cache',
+                exception_is_error=True,
+                method=query_ilk_registry_and_maybe_update_cache,
+                ethereum=self.chains_aggregator.ethereum.node_inquirer,
+            )]
+
+        return None
 
     def _schedule(self) -> None:
         """Schedules background tasks"""

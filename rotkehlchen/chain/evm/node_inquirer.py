@@ -28,11 +28,17 @@ from web3.types import BlockIdentifier, FilterParams
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
+from rotkehlchen.chain.evm.constants import FAKE_GENESIS_TX_RECEIPT, GENESIS_HASH
 from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
 from rotkehlchen.chain.evm.types import NodeName, Web3Node, WeightedNode
 from rotkehlchen.constants import ONE
-from rotkehlchen.errors.misc import BlockchainQueryError, NotERC721Conformant, RemoteError
+from rotkehlchen.errors.misc import (
+    BlockchainQueryError,
+    EventNotInABI,
+    NotERC721Conformant,
+    RemoteError,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
@@ -654,6 +660,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             web3: Optional[Web3],
             tx_hash: EVMTxHash,
     ) -> Optional[dict[str, Any]]:
+        if tx_hash == GENESIS_HASH:
+            return FAKE_GENESIS_TX_RECEIPT
         if web3 is None:
             tx_receipt = self.etherscan.get_transaction_receipt(tx_hash)
             if tx_receipt is None:
@@ -818,10 +826,16 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     ) -> list[dict[str, Any]]:
         """Queries logs of an evm contract
         May raise:
+
+        - EventNotInABI if the given event is not in the ABI
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result
         """
-        event_abi = find_matching_event_abi(abi=abi, event_name=event_name)
+        try:
+            event_abi = find_matching_event_abi(abi=abi, event_name=event_name)
+        except ValueError as e:
+            raise EventNotInABI from e
+
         _, filter_args = construct_event_filter_params(
             event_abi=event_abi,
             abi_codec=Web3().codec,
@@ -830,6 +844,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             fromBlock=from_block,
             toBlock=to_block,
         )
+
         if event_abi['anonymous']:
             # web3.py does not handle the anonymous events correctly and adds the first topic
             filter_args['topics'] = filter_args['topics'][1:]
@@ -1175,6 +1190,20 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         is_pruned = self._is_pruned(web3)
 
         return is_pruned, is_archive
+
+    def get_contract_deployed_block(self, address: ChecksumEvmAddress) -> Optional[int]:
+        """Get the deployed block of a contract
+
+        Returns None if the address is not a contract.
+
+        May raise:
+        - RemoteError: in case of a problem contacting chain/nodes/remotes"""
+        deployed_hash = self.etherscan.get_contract_creation_hash(address)
+        if deployed_hash is None:
+            return None
+
+        transaction = self.get_transaction_by_hash(deployed_hash)
+        return transaction.block_number
 
     # -- methods to be implemented by child classes --
 

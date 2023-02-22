@@ -1,7 +1,7 @@
 import logging
 import os
 import random
-from typing import Any
+from typing import Any, Optional, cast
 
 import gevent
 
@@ -396,21 +396,32 @@ def get_decoded_events_of_transaction(
         evm_inquirer: EthereumInquirer,
         database: DBHandler,
         tx_hash: EVMTxHash,
+        transactions: Optional[EvmTransactions] = None,
 ) -> tuple[list[HistoryBaseEntry], EVMTransactionDecoder]:
     """A convenience function to ask get transaction, receipt and decoded event for a tx_hash
 
+    It also accepts `transactions` in case the caller whants to apply some mocks (like call_count)
+    on that object.
+
     Returns the list of decoded events and the EVMTransactionDecoder
     """
-    transactions: EvmTransactions
     if evm_inquirer.chain_id == ChainID.ETHEREUM:
-        transactions = EthereumTransactions(ethereum_inquirer=evm_inquirer, database=database)
+        if transactions is None:
+            transactions = EthereumTransactions(ethereum_inquirer=evm_inquirer, database=database)
+        else:
+            transactions = cast(EthereumTransactions, transactions)
+
         decoder = EthereumTransactionDecoder(
             database=database,
             ethereum_inquirer=evm_inquirer,
             transactions=transactions,
         )
     elif evm_inquirer.chain_id == ChainID.OPTIMISM:
-        transactions = OptimismTransactions(optimism_inquirer=evm_inquirer, database=database)  # type: ignore # noqa: E501
+        if transactions is None:
+            transactions = OptimismTransactions(optimism_inquirer=evm_inquirer, database=database)  # type: ignore # noqa: E501
+        else:
+            transactions = cast(OptimismTransactions, transactions)
+
         decoder = OptimismTransactionDecoder(
             database=database,
             optimism_inquirer=evm_inquirer,  # type: ignore

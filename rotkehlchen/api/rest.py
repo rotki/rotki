@@ -2426,21 +2426,21 @@ class RestAPI():
 
     def get_ignored_assets(self) -> Response:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            result = [asset.identifier for asset in self.rotkehlchen.data.db.get_ignored_assets(cursor)]  # noqa: E501
-        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+            result = self.rotkehlchen.data.db.get_ignored_asset_ids(cursor)
+        return api_response(_wrap_in_ok_result(list(result)), status_code=HTTPStatus.OK)
 
     def add_ignored_assets(self, assets: list[Asset]) -> Response:
         result, msg = self.rotkehlchen.data.add_ignored_assets(assets=assets)
         if result is None:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
-        result_dict = _wrap_in_result(process_result_list(result), msg)
+        result_dict = _wrap_in_result(list(result), msg)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     def remove_ignored_assets(self, assets: list[Asset]) -> Response:
         result, msg = self.rotkehlchen.data.remove_ignored_assets(assets=assets)
         if result is None:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
-        result_dict = _wrap_in_result(process_result_list(result), msg)
+        result_dict = _wrap_in_result(list(result), msg)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     def add_ignored_action_ids(self, action_type: ActionType, action_ids: list[str]) -> Response:

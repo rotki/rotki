@@ -2063,6 +2063,7 @@
       "refresh": "Set the automatic refresh period",
       "refresh_enabled": "Enabled",
       "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.",
+      "scramble_multiplier": "Scramble multiplier",
       "show_graph_range_selector": "Show graph range selector for line chart",
       "zero_based": "Use zero as the lowest y-axis value for the graphs",
       "zero_based_hint": "By default the lowest value is the minimum in the selected period"
@@ -2072,6 +2073,7 @@
       "alias_names": "Alias name for addresses",
       "graph_basis": "Graph basis",
       "include_nfts": "Include NFTs in graphs and total amounts",
+      "scramble_multiplier": "Multiplier number used when scrambling balances. This will affects amount and fiat value.",
       "query": "Periodic status query",
       "refresh": "Automatic balance refresh",
       "show_graph_range_selector": "Show graph range selector"
@@ -2503,15 +2505,21 @@
     },
     "rate": {
       "hint": "[Optional] Custom rate of the action. If not given the rate for the asset at the given time will be used.",
-      "label": "Rate"
+      "label": "Rate",
+      "validation": {
+        "non_empty": "The rate cannot be empty when rate asset is inputted"
+      }
     },
     "rate_asset": {
       "hint": "[Optional] The asset used for the rate",
-      "label": "Rate asset"
+      "label": "Rate asset",
+      "validation": {
+        "non_empty": "The rate asset cannot be empty when asset is inputted"
+      }
     },
     "type": {
       "validation": {
-        "non_empty": "The type field cannot be empty."
+        "non_empty": "The type field cannot be empty when asset is inputted"
       }
     }
   },

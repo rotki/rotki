@@ -45,6 +45,7 @@ export interface ChangePasswordPayload {
 export interface SessionSettings {
   privacyMode: PrivacyMode;
   scrambleData: boolean;
+  scrambleMultiplier: number;
   timeframe: TimeFramePeriod;
   animationsEnabled: boolean;
 }

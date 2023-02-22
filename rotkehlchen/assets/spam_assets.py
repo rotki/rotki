@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.errors.asset import UnknownAsset
@@ -79,10 +78,10 @@ def update_spam_assets(db: 'DBHandler', assets_info: list[dict[str, Any]]) -> in
     # since it's possible for a token to exist in ignored assets but not global DB.
     # and in that case query_token_spam_list add it to the global DB
     with db.conn.read_ctx() as cursor:
-        ignored_assets = {asset.identifier for asset in db.get_ignored_assets(cursor)}
+        ignored_asset_ids = db.get_ignored_asset_ids(cursor)
     assets_added = 0
     for token in spam_tokens:
-        if token.identifier in ignored_assets:
+        if token.identifier in ignored_asset_ids:
             continue
 
         with db.user_write() as write_cursor:

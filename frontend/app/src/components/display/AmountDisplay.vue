@@ -50,7 +50,8 @@ const props = defineProps({
   },
 
   // This prop to give color to the text based on the value
-  pnl: { required: false, type: Boolean, default: false }
+  pnl: { required: false, type: Boolean, default: false },
+  noScramble: { required: false, type: Boolean, default: false }
 });
 
 const {
@@ -62,7 +63,8 @@ const {
   priceOfAsset,
   priceAsset,
   integer,
-  forceCurrency
+  forceCurrency,
+  noScramble
 } = toRefs(props);
 
 const {
@@ -71,7 +73,7 @@ const {
   floatingPrecision
 } = storeToRefs(useGeneralSettingsStore());
 
-const { scrambleData, shouldShowAmount } = storeToRefs(
+const { scrambleData, shouldShowAmount, scrambleMultiplier } = storeToRefs(
   useSessionSettingsStore()
 );
 
@@ -111,16 +113,7 @@ const convertFiat = (
   return valueVal.multipliedBy(multiplierRate).dividedBy(dividerRate);
 };
 
-const realValue = computed<BigNumber>(() => {
-  // Return a random number if scrambleData is on
-  if (get(scrambleData) || !get(shouldShowAmount)) {
-    const multiplier = [10, 100, 1000];
-
-    return BigNumber.random().multipliedBy(
-      multiplier[Math.floor(Math.random() * multiplier.length)]
-    );
-  }
-
+const internalValue: ComputedRef<BigNumber> = computed<BigNumber>(() => {
   // If there is no `sourceCurrency`, it means that no fiat currency, or the unit is asset not fiat, hence we should just show the `value` passed.
   // If `forceCurrency` is true, we should also just return the value.
   if (!get(sourceCurrency) || get(forceCurrency)) return get(value);
@@ -130,7 +123,7 @@ const realValue = computed<BigNumber>(() => {
   const priceAssetVal = get(priceAsset);
   const isCurrentCurrencyVal = get(isCurrentCurrency);
 
-  // If `priceAsset` is defined, it means we will not use value from `value`, but calculate it ourself from the price of `priceAsset`
+  // If `priceAsset` is defined, it means we will not use value from `value`, but calculate it ourselves from the price of `priceAsset`
   if (priceAssetVal) {
     if (priceAssetVal === currentCurrencyVal) {
       return get(amount);
@@ -149,6 +142,15 @@ const realValue = computed<BigNumber>(() => {
   }
 
   return get(value);
+});
+
+const realValue: ComputedRef<BigNumber> = computed(() => {
+  // Return scrambled number if scrambleData is on
+  if (!get(noScramble) && (get(scrambleData) || !get(shouldShowAmount))) {
+    return get(internalValue).multipliedBy(get(scrambleMultiplier));
+  }
+
+  return get(internalValue);
 });
 
 // Check if the `realValue` is NaN

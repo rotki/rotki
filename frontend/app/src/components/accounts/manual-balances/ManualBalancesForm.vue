@@ -128,6 +128,7 @@ const save = async () => {
     const errorMessages = deserializeApiErrorMessage(status.message);
     if (errorMessages) {
       set(errors, (errorMessages?.balances[0] as any) ?? {});
+      await get(v$).$validate();
     } else {
       const obj = { message: status.message };
       setMessage({
@@ -162,6 +163,8 @@ watch(label, label => {
     const { label, ...data } = get(errors);
     set(errors, data);
   }
+
+  get(v$).label.$validate();
 });
 
 const customAssetFormRef: Ref<InstanceType<typeof CustomAssetForm> | null> =
@@ -241,7 +244,6 @@ onMounted(async () => {
     set(asset, editPayload.asset);
   }
 });
-
 defineExpose({
   save
 });

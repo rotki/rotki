@@ -319,6 +319,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
               :price-asset="item.priceAsset"
               :amount="item.priceInAsset"
               :value="item.usdPrice"
+              no-scramble
               show-currency="symbol"
               fiat-currency="USD"
             />

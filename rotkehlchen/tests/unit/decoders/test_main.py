@@ -1,18 +1,36 @@
+from unittest.mock import patch
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
+from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
+from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_USDT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
-from rotkehlchen.types import ChainID, EvmTransaction, Location, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.factories import make_ethereum_event
+from rotkehlchen.types import (
+    ChainID,
+    EvmTransaction,
+    Location,
+    Timestamp,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+
+# Have to use a constant instead of make_evm_address() because vcr doesn't work otherwise.
+ADDRESS_WITHOUT_GENESIS_TX = '0x4bBa290826C253BD854121346c370a9886d1bC26'
 
 
 def test_decoders_initialization(ethereum_transaction_decoder):
@@ -489,3 +507,99 @@ def test_eth_deposit(
             extra_data=None,
         ),
     ]
+
+
+def test_maybe_reshuffle_events():
+    """
+    Tests that `maybe_reshuffle_events` works correctly.
+    Especially tests that there are no duplicated indices produced.
+    """
+    event_a = make_ethereum_event(1)
+    event_b = make_ethereum_event(2)
+    event_c = make_ethereum_event(3)
+    events = [event_a, event_b, event_c]
+
+    maybe_reshuffle_events(event_c, event_a)
+    assert events == [event_a, event_b, event_c]  # no change since we just swap indices
+    assert [event.sequence_index for event in events] == [3, 2, 1]  # indices swapped
+
+    maybe_reshuffle_events(event_c, event_a, events)
+    assert events == [event_c, event_b, event_a]  # events were sorted before swapping indices
+    assert [event.sequence_index for event in events] == [1, 3, 2]  # indices swapped
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xA1E4380A3B1f749673E270229993eE55F35663b4',
+    '0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0',
+]])
+def test_genesis_transaction(database, ethereum_inquirer, ethereum_accounts):
+    """Test that decoding a genesis transaction is handled correctly"""
+    transactions = EthereumTransactions(ethereum_inquirer=ethereum_inquirer, database=database)
+    evmhash = deserialize_evm_tx_hash(GENESIS_HASH)
+    user_address_1, user_address_2 = ethereum_accounts
+    transactions._get_transactions_for_range(
+        address=user_address_1,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(1676653545),
+    )
+
+    query_patch = patch.object(
+        transactions,
+        '_query_and_save_transactions_for_range',
+        wraps=transactions._query_and_save_transactions_for_range,
+    )
+
+    with query_patch as query_mock:
+        events, _ = get_decoded_events_of_transaction(
+            evm_inquirer=ethereum_inquirer,
+            database=database,
+            tx_hash=evmhash,
+            transactions=transactions,
+        )
+        assert query_mock.call_count == 1, 'Should have been called only once since one of the addresses already had transactions queried'  # noqa: E501
+
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1438269973000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('200')),
+            location_label=user_address_2,
+            notes=f'Receive 200 ETH from {ZERO_ADDRESS}',
+            counterparty=ZERO_ADDRESS,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            sequence_index=1,
+            timestamp=TimestampMS(1438269973000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('2000')),
+            location_label=user_address_1,
+            notes=f'Receive 2000 ETH from {ZERO_ADDRESS}',
+            counterparty=ZERO_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [[ADDRESS_WITHOUT_GENESIS_TX]])
+def test_genesis_transaction_no_address(database, ethereum_inquirer):
+    """
+    Test that decoding a genesis transaction is handled correctly when there is no address tracked
+    with a genesis transaction.
+    """
+    tx_hex = deserialize_evm_tx_hash(GENESIS_HASH)
+    with pytest.raises(InputError):
+        get_decoded_events_of_transaction(
+            evm_inquirer=ethereum_inquirer,
+            database=database,
+            tx_hash=tx_hex,
+        )

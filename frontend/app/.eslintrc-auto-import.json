@@ -383,6 +383,7 @@
     "useRound": true,
     "useRoute": true,
     "useRouter": true,
+    "useScramble": true,
     "useScreenOrientation": true,
     "useScreenSafeArea": true,
     "useScriptTag": true,

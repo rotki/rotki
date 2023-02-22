@@ -25,12 +25,10 @@ const props = defineProps({
 });
 
 const { assetPadding, value } = toRefs(props);
-const { shouldShowPercentage, scrambleData } = storeToRefs(
-  useSessionSettingsStore()
-);
+const { shouldShowPercentage } = storeToRefs(useSessionSettingsStore());
 
 const displayValue = computed<string>(() => {
-  if (get(scrambleData) || !get(shouldShowPercentage)) {
+  if (!get(shouldShowPercentage)) {
     return (Math.random() * 100 + 1).toFixed(2);
   }
 

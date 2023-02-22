@@ -1,11 +1,13 @@
+import re
 from dataclasses import dataclass
 from typing import Any, Literal, NamedTuple, Optional
 
 from eth_typing import HexAddress, HexStr
 from web3 import Web3
 
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChecksumEvmAddress, SupportedBlockchain
+from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChainID, ChecksumEvmAddress, SupportedBlockchain
 
 
 def string_to_evm_address(value: str) -> ChecksumEvmAddress:
@@ -92,3 +94,29 @@ class Web3Node(NamedTuple):
     web3_instance: Web3
     is_pruned: bool
     is_archive: bool
+
+
+ASSET_ID_RE = re.compile(r'eip155:(.*?)/(.*?):(.*)')
+
+
+def asset_id_is_evm_token(asset_id: str) -> Optional[tuple[ChainID, ChecksumEvmAddress]]:
+    """Takes an asset identifier and checks if it's an evm token.
+
+    If it is, returns chain ID and token address. If not it returns None
+
+    **Note**: The address is not deserialized properly here. If it's an invalid address
+    this function won't catch it. The caller has to make sure addresses are valid and
+    checksummed in the identifier (which they should be).The reason for this is
+    to have a "lightweight" function that does not need to convert to checksummed address.
+    """
+    match = ASSET_ID_RE.search(asset_id)
+    if match is None:
+        return None
+
+    try:
+        chain_id = ChainID.deserialize_from_db(int(match.group(1)))
+    except DeserializationError:
+        return None
+
+    address = string_to_evm_address(match.group(3))
+    return chain_id, address

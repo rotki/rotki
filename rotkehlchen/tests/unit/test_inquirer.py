@@ -27,6 +27,7 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import (
@@ -329,25 +330,10 @@ def test_price_underlying_tokens(inquirer, globaldb):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_find_uniswap_v2_lp_token_price(inquirer, globaldb, ethereum_manager):
+def test_find_uniswap_v2_lp_token_price(inquirer, ethereum_manager):
     address = '0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'
     identifier = ethaddress_to_identifier(address)
     inquirer.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
-    token = EvmToken.initialize(
-        address=address,
-        chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
-        decimals=18,
-        name='Uniswap LINK/ETH',
-        symbol='UNI-V2',
-        protocol='UNI-V2',
-    )
-    globaldb.add_asset(
-        asset_id=identifier,
-        asset_type=AssetType.EVM_TOKEN,
-        data=token,
-    )
-
     price = inquirer.find_uniswap_v2_lp_price(EvmToken(identifier))
     assert price is not None
 
@@ -360,17 +346,17 @@ def test_find_curve_lp_token_price(inquirer_defi, ethereum_manager):
     identifier = ethaddress_to_identifier(lp_token_address)
     inquirer_defi.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        GlobalDBHandler().set_general_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
             values=[lp_token_address],
         )
-        GlobalDBHandler().set_general_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token_address],
             values=[pool_address],
         )
-        GlobalDBHandler().set_general_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_address],
             values=[

@@ -218,6 +218,7 @@ onMounted(async () => {
           </template>
           <template #item.usdPrice="{ item }">
             <amount-display
+              no-scramble
               :price-asset="item.priceAsset"
               :amount="item.priceInAsset"
               :value="item.usdPrice"

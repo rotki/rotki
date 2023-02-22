@@ -8,6 +8,7 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.errors.misc import EventNotInABI
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_FULL_TEST_PARAMETERS,
@@ -294,6 +295,21 @@ def test_get_log_and_receipt_etherscan_bad_tx_index(
     )
     assert all(x['transactionIndex'] == 0 for x in result['logs'])
 
+    # Test that trying to query an event name that doesnot exist raises EventNotInABI
+    argument_filters = {
+        'from': ZERO_ADDRESS,
+        'to': '0xbA215F7BE6c620dA3F8240B82741eaF3C5f5D786',
+    }
+    with pytest.raises(EventNotInABI):
+        events = ethereum_inquirer.get_logs(
+            contract_address='0xFC4B8ED459e00e5400be803A9BB3954234FD50e3',
+            abi=ethereum_inquirer.contracts.abi('ATOKEN'),
+            event_name='I_DONT_EXIST',
+            argument_filters=argument_filters,
+            from_block=10773651,
+            to_block=10773653,
+        )
+
 
 def _test_get_blocknumber_by_time(ethereum_inquirer, etherscan):
     result = ethereum_inquirer.get_blocknumber_by_time(1577836800, etherscan=etherscan)
@@ -409,3 +425,12 @@ def test_get_pruned_nodes_behaviour_in_txn_queries(
         ethereum_inquirer.maybe_get_transaction_by_hash(txn_hash, call_order)
         ethereum_inquirer.maybe_get_transaction_receipt(txn_hash, call_order)
         assert etherscan_tx_or_tx_receipt_calls == 2
+
+
+def test_get_contract_deployed_block(ethereum_inquirer):
+    """Test that getting deployed block of a contract address works
+
+    TODO: Mock it with vcr.py
+    """
+    assert ethereum_inquirer.get_contract_deployed_block('0x5a464C28D19848f44199D003BeF5ecc87d090F87') == 12251871  # noqa: E501
+    assert ethereum_inquirer.get_contract_deployed_block('0x9531C059098e3d194fF87FebB587aB07B30B1306') is None  # noqa: E501

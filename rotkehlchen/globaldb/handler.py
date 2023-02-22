@@ -3,7 +3,6 @@ import os
 import shutil
 import sqlite3
 from collections import defaultdict
-from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast, overload
 
@@ -26,20 +25,14 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    ChainID,
-    ChecksumEvmAddress,
-    EvmTokenKind,
-    GeneralCacheType,
-    Price,
-    Timestamp,
-)
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, Price, Timestamp
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 from rotkehlchen.utils.serialization import (
     deserialize_asset_with_oracles_from_db,
     deserialize_generic_asset_from_db,
 )
 
+from .migrations.manager import LAST_DATA_MIGRATION, maybe_apply_globaldb_migrations
 from .schema import DB_SCRIPT_CREATE_TABLES
 from .upgrades.manager import maybe_upgrade_globaldb
 from .utils import GLOBAL_DB_FILENAME, GLOBAL_DB_VERSION, globaldb_get_setting_value
@@ -152,13 +145,16 @@ def initialize_globaldb(
         global_dir=global_dir,
         db_filename=db_filename,
     )
-    connection.executescript(DB_SCRIPT_CREATE_TABLES)
+    connection.executescript('PRAGMA foreign_keys=on;')
     if is_fresh_db is True:
+        connection.executescript(DB_SCRIPT_CREATE_TABLES)
         with connection.write_ctx() as cursor:
-            cursor.execute(
+            cursor.executemany(
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                ('version', str(GLOBAL_DB_VERSION)),
+                [('version', str(GLOBAL_DB_VERSION)), ('last_data_migration', str(LAST_DATA_MIGRATION))],  # noqa: E501
             )
+    else:
+        maybe_apply_globaldb_migrations(connection)
     connection.schema_sanity_check()
     return connection, used_backup
 
@@ -184,19 +180,6 @@ def _initialize_global_db_directory(
         db_filename=GLOBAL_DB_FILENAME,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
     )
-
-
-def _compute_cache_key(key_parts: Iterable[Union[str, GeneralCacheType]]) -> str:
-    """Function to compute cache key before accessing globaldb cache.
-    Computes cache key by iterating through `key_parts` and making one string from them.
-    Only tuple with the same values and the same order represents the same key."""
-    cache_key = ''
-    for part in key_parts:
-        if isinstance(part, GeneralCacheType):
-            cache_key += part.serialize()
-        else:
-            cache_key += part
-    return cache_key
 
 
 class GlobalDBHandler():
@@ -1555,83 +1538,6 @@ class GlobalDBHandler():
                  'from_timestamp': entry[2],
                  'to_timestamp': entry[3],
                  } for entry in query]
-
-    @staticmethod
-    def set_general_cache_values(
-            write_cursor: DBCursor,
-            key_parts: Iterable[Union[str, GeneralCacheType]],
-            values: Iterable[str],
-    ) -> None:
-        """Function to update cache in globaldb. Inserts all values paired with the cache key.
-        If any entry exists, overwrites it. The timestamp is always the current time."""
-        cache_key = _compute_cache_key(key_parts)
-        tuples = [(cache_key, value, ts_now()) for value in values]
-        write_cursor.executemany(
-            'INSERT OR REPLACE INTO general_cache '
-            '(key, value, last_queried_ts) VALUES (?, ?, ?)',
-            tuples,
-        )
-
-    @staticmethod
-    def get_general_cache_values(
-            key_parts: Iterable[Union[str, GeneralCacheType]],
-    ) -> list[str]:
-        """Function to read globaldb cache. Returns all the values that are paired with the key."""
-        cache_key = _compute_cache_key(key_parts)
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute('SELECT value FROM general_cache WHERE key=?', (cache_key,))
-            return [entry[0] for entry in cursor]
-
-    @staticmethod
-    def get_general_cache_last_queried_ts(
-            key_parts: Iterable[Union[str, GeneralCacheType]],
-            value: str,
-    ) -> Optional[Timestamp]:
-        """Function to get timestamp at which pair key - value was queried last time."""
-        cache_key = _compute_cache_key(key_parts)
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(
-                'SELECT last_queried_ts FROM general_cache WHERE key=? AND value=?',
-                (cache_key, value),
-            )
-            result = cursor.fetchone()
-        if result is None:
-            return None
-        return Timestamp(result[0])
-
-    @staticmethod
-    def get_general_cache_last_queried_ts_by_key(
-            key_parts: Iterable[Union[str, GeneralCacheType]],
-    ) -> Timestamp:
-        """
-        Get the last_queried_ts of the oldest stored element by key_parts. If there is no such
-        element returns Timestamp(0)
-        """
-        cache_key = _compute_cache_key(key_parts)
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(
-                'SELECT last_queried_ts FROM general_cache WHERE key=? '
-                'ORDER BY last_queried_ts ASC',
-                (cache_key,),
-            )
-            result = cursor.fetchone()
-        if result is None:
-            return Timestamp(0)
-        return Timestamp(result[0])
-
-    @staticmethod
-    def delete_general_cache(
-            write_cursor: DBCursor,
-            key_parts: Iterable[Union[str, GeneralCacheType]],
-            value: Optional[str] = None,
-    ) -> None:
-        """Deletes from cache in globaldb. If value is None deletes all entries with the provided
-        cache key. Otherwise, deletes only single entry `key - value`."""
-        cache_key = _compute_cache_key(key_parts)
-        if value is None:
-            write_cursor.execute('DELETE FROM general_cache WHERE key=?', (cache_key,))
-        else:
-            write_cursor.execute('DELETE FROM general_cache WHERE key=? AND value=?', (cache_key, value))  # noqa: E501
 
     @staticmethod
     def hard_reset_assets_list(

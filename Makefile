@@ -1,4 +1,4 @@
-COMMON_LINT_PATHS = rotkehlchen/ setup.py package.py
+COMMON_LINT_PATHS = rotkehlchen/ package.py
 TOOLS_LINT_PATH = tools/
 ALL_LINT_PATHS = $(COMMON_LINT_PATHS) $(TOOLS_LINT_PATH)
 ISORT_PARAMS = --ignore-whitespace --skip-glob '*/node_modules/*' $(ALL_LINT_PATHS)
@@ -56,4 +56,11 @@ create-cassettes:
 	RECORD_CASSETTES=true python pytestgeventwrapper.py -m vcr rotkehlchen/tests
 
 create-cassette:
-	RECORD_CASSETTES=true python pytestgeventwrapper.py -m vcr $(TEST)
+	RECORD_CASSETTES=true python pytestgeventwrapper.py -m vcr $(filter-out $@,$(MAKECMDGOALS))
+
+
+
+# A macro to catch extra makefile arguments and use them elsewhere
+# https://stackoverflow.com/a/6273809/110395
+%:
+	@:

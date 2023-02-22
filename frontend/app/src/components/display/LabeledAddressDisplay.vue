@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { truncateAddress, truncationPoints } from '@/filters';
-import { randomHex } from '@/utils/data';
 
 const { t } = useI18n();
 
@@ -11,12 +10,14 @@ const props = defineProps<{
 
 const { account } = toRefs(props);
 const { currentBreakpoint } = useTheme();
-const { scrambleData, shouldShowAmount } = storeToRefs(
-  useSessionSettingsStore()
-);
-
+const { scrambleData, shouldShowAmount, scrambleHex } = useScramble();
 const { addressNameSelector } = useAddressesNamesStore();
+
 const aliasName = computed<string | null>(() => {
+  if (get(scrambleData)) {
+    return null;
+  }
+
   const { address, chain } = get(account);
   return get(addressNameSelector(address, chain));
 });
@@ -25,7 +26,11 @@ const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
 const smAndDown = computed(() => get(currentBreakpoint).smAndDown);
 
 const address = computed<string>(() => {
-  return get(scrambleData) ? randomHex() : get(account).address;
+  const address = get(account).address;
+  if (!get(scrambleData)) {
+    return address;
+  }
+  return scrambleHex(address);
 });
 
 const breakpoint = computed<string>(() => {

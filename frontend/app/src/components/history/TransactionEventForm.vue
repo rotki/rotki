@@ -253,6 +253,7 @@ const save = async (): Promise<boolean> => {
     const errorFields = deserializeApiErrorMessage(result.message);
     if (errorFields) {
       set(errorMessages, convertKeys(errorFields, true, false));
+      await get(v$).$validate();
     } else {
       setMessage({
         description: result.message
@@ -363,7 +364,6 @@ defineExpose({
       data-cy="datetime"
       :hint="t('transactions.events.form.datetime.hint')"
       :error-messages="errorMessages['datetime']"
-      @focus="delete errorMessages['datetime']"
     />
 
     <v-row
@@ -480,7 +480,6 @@ defineExpose({
           data-cy="locationLabel"
           :label="t('transactions.events.form.location_label.label')"
           :error-messages="errorMessages['locationLabel']"
-          @focus="delete errorMessages['locationLabel']"
         />
       </v-col>
       <v-col cols="12" md="4">
@@ -490,7 +489,6 @@ defineExpose({
           data-cy="counterparty"
           :label="t('transactions.events.form.counterparty.label')"
           :error-messages="errorMessages['counterparty']"
-          @focus="delete errorMessages['counterparty']"
         />
       </v-col>
     </v-row>
@@ -504,7 +502,6 @@ defineExpose({
       :label="t('transactions.events.form.notes.label')"
       :hint="t('transactions.events.form.notes.hint')"
       :error-messages="errorMessages['notes']"
-      @focus="delete errorMessages['notes']"
     />
   </v-form>
 </template>

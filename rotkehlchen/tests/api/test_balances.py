@@ -858,7 +858,8 @@ def test_ethereum_tokens_detection(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
-@pytest.mark.parametrize('ignore_mocked_prices_for', ['ETH'])
+@pytest.mark.parametrize('ignore_mocked_prices_for', [['ETH', 'eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6']])  # noqa: E501
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
 def test_balances_behaviour_with_manual_current_prices(rotkehlchen_api_server, ethereum_accounts):
     """Checks that manual current price is used in balances querying endpoints"""
     setup = setup_balances(

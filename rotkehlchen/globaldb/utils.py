@@ -15,7 +15,7 @@ GLOBAL_DB_FILENAME = 'global.db'
 # Some functions that split the logic out of some GlobalDB query functions that are
 # complicated enough to be abstracted and are used in multiple places. The main reason
 # this exists is a bad design in the GlobalDBHandler() that can create circular imports.
-# The one and only case I (Lefteris) know is maybe_upgrade_globaldb()
+# The cases I (Lefteris) know is maybe_upgrade_globaldb() and maybe_apply_globaldb_migrations()
 
 
 def globaldb_get_setting_value(cursor: 'DBCursor', name: str, default_value: int) -> int:

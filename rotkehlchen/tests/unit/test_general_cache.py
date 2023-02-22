@@ -6,6 +6,10 @@ from freezegun import freeze_time
 
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.globaldb.cache import (
+    globaldb_get_general_cache_values,
+    globaldb_set_general_cache_values,
+)
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChainID, GeneralCacheType
 
@@ -46,17 +50,17 @@ def test_curve_pools_cache(rotkehlchen_instance):
     """Test curve pools fetching mechanism"""
     # Set initial cache data to check that it is gone after the cache update
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        GlobalDBHandler().set_general_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
             values=['key123'],
         )
-        GlobalDBHandler().set_general_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, 'key123'],
             values=['pool-address-1'],
         )
-        GlobalDBHandler().set_general_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, 'pool-address-1'],
             values=['coin1', 'coin2', 'coin3'],
@@ -97,18 +101,23 @@ def test_curve_pools_cache(rotkehlchen_instance):
 
     lp_tokens_to_pools_in_cache = {}
     pool_coins_in_cache = {}
-    lp_tokens_in_cache = GlobalDBHandler.get_general_cache_values(key_parts=[GeneralCacheType.CURVE_LP_TOKENS])  # noqa: E501
-
-    for lp_token_addr in lp_tokens_in_cache:
-        pool_addr = GlobalDBHandler.get_general_cache_values(
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token_addr],
-        )[0]
-        lp_tokens_to_pools_in_cache[lp_token_addr] = pool_addr
-
-        pool_coins = GlobalDBHandler.get_general_cache_values(
-            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_addr],
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        lp_tokens_in_cache = globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
         )
-        pool_coins_in_cache[pool_addr] = pool_coins
+        for lp_token_addr in lp_tokens_in_cache:
+            pool_addr = globaldb_get_general_cache_values(
+                cursor=cursor,
+                key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token_addr],
+            )[0]
+            lp_tokens_to_pools_in_cache[lp_token_addr] = pool_addr
+
+            pool_coins = globaldb_get_general_cache_values(
+                cursor=cursor,
+                key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_addr],
+            )
+            pool_coins_in_cache[pool_addr] = pool_coins
 
     assert lp_tokens_to_pools_in_cache == CURVE_EXPECTED_LP_TOKENS_TO_POOLS
     assert pool_coins_in_cache == CURVE_EXPECTED_POOL_COINS
@@ -123,6 +132,7 @@ def test_curve_pools_cache(rotkehlchen_instance):
     assert token.decimals == 18
 
     # Check that initially set values are gone
-    assert 'key123' not in GlobalDBHandler().get_general_cache_values(key_parts=[GeneralCacheType.CURVE_LP_TOKENS])  # noqa: E501
-    assert len(GlobalDBHandler().get_general_cache_values(key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, 'abc'])) == 0  # noqa: E501
-    assert len(GlobalDBHandler().get_general_cache_values(key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, 'pool-address-1'])) == 0  # noqa: E501
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert 'key123' not in globaldb_get_general_cache_values(cursor, key_parts=[GeneralCacheType.CURVE_LP_TOKENS])  # noqa: E501
+        assert len(globaldb_get_general_cache_values(cursor, key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, 'abc'])) == 0  # noqa: E501
+        assert len(globaldb_get_general_cache_values(cursor, key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, 'pool-address-1'])) == 0  # noqa: E501
