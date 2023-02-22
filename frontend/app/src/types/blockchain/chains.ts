@@ -11,10 +11,10 @@ const RestChains = [
 ] as const;
 const TokenChains = [Blockchain.ETH, Blockchain.OPTIMISM] as const;
 
-export type BtcChains = typeof BtcChains[number];
-export type EthChains = typeof EthChains[number];
-export type RestChains = typeof RestChains[number];
-export type TokenChains = typeof TokenChains[number];
+export type BtcChains = (typeof BtcChains)[number];
+export type EthChains = (typeof EthChains)[number];
+export type RestChains = (typeof RestChains)[number];
+export type TokenChains = (typeof TokenChains)[number];
 
 export const isBtcChain = (chain: Blockchain): chain is BtcChains =>
   BtcChains.includes(chain as any);

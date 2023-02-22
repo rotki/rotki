@@ -14,14 +14,6 @@ vi.mock('vue-router/composables', () => ({
   })
 }));
 
-vi.mock('@/composables/common', () => ({
-  useTheme: vi.fn().mockReturnValue({
-    currentBreakpoint: computed(() => ({
-      xsOnly: false
-    }))
-  })
-}));
-
 describe('TabNavigation.vue', () => {
   let wrapper: Wrapper<any>;
   const data = [{ name: 'tab', routeTo: '/route/to/tab', hidden: true }];

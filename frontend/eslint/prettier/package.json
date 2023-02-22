@@ -14,12 +14,12 @@
   },
   "dependencies": {
     "eslint-config-prettier": "8.6.0",
-    "eslint-define-config": "1.13.0",
+    "eslint-define-config": "1.15.0",
     "eslint-plugin-prettier": "4.2.1",
-    "eslint-plugin-yml": "1.4.0",
-    "prettier": "2.8.1"
+    "eslint-plugin-yml": "1.5.0",
+    "prettier": "2.8.4"
   },
   "devDependencies": {
-    "eslint": "8.31.0"
+    "eslint": "8.34.0"
   }
 }

@@ -16,4 +16,4 @@ export const SOURCES = [
   'rotki_trades'
 ] as const;
 
-export type ImportSourceType = typeof SOURCES[number];
+export type ImportSourceType = (typeof SOURCES)[number];

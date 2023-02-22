@@ -26,7 +26,7 @@ export const EvmTransactionsQueryStatus = {
 } as const;
 
 export type EvmTransactionsQueryStatus =
-  typeof EvmTransactionsQueryStatus[keyof typeof EvmTransactionsQueryStatus];
+  (typeof EvmTransactionsQueryStatus)[keyof typeof EvmTransactionsQueryStatus];
 
 export const EvmTransactionQueryData = z
   .object({
@@ -93,7 +93,7 @@ export const SocketMessageType = {
 } as const;
 
 export type SocketMessageType =
-  typeof SocketMessageType[keyof typeof SocketMessageType];
+  (typeof SocketMessageType)[keyof typeof SocketMessageType];
 
 const UnknownWebsocketMessage = z.object({
   type: z.string(),

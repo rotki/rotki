@@ -3,6 +3,7 @@ import dropRight from 'lodash/dropRight';
 import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import isEqual from 'lodash/isEqual';
+import { type MaybeRef } from '@vueuse/core';
 import Fragment from '@/components/helper/Fragment';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { Routes } from '@/router/routes';
@@ -126,14 +127,14 @@ const {
   isLoading,
   state: ledgerActions,
   execute
-} = useAsyncState<Collection<LedgerActionEntry>>(
-  args => fetchLedgerActions(args),
-  defaultCollectionState(),
-  {
-    resetOnExecute: false,
-    delay: 0
-  }
-);
+} = useAsyncState<
+  Collection<LedgerActionEntry>,
+  MaybeRef<LedgerActionRequestPayload>[]
+>(args => fetchLedgerActions(args), defaultCollectionState(), {
+  immediate: false,
+  resetOnExecute: false,
+  delay: 0
+});
 
 const fetchData = async (): Promise<void> => {
   await execute(0, pageParams);

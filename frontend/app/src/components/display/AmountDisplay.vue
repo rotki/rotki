@@ -9,7 +9,7 @@ import { One } from '@/utils/bignumbers';
 import RoundingMode = BigNumber.RoundingMode;
 
 const CurrencyType = ['none', 'ticker', 'symbol', 'name'] as const;
-type ShownCurrency = typeof CurrencyType[number];
+type ShownCurrency = (typeof CurrencyType)[number];
 
 const { t } = useI18n();
 

@@ -13,12 +13,12 @@
   },
   "dependencies": {
     "@rotki/eslint-config-basic": "workspace:*",
-    "@typescript-eslint/eslint-plugin": "5.48.0",
-    "@typescript-eslint/parser": "5.48.0",
-    "eslint-define-config": "1.13.0",
-    "typescript": "4.9.4"
+    "@typescript-eslint/eslint-plugin": "5.53.0",
+    "@typescript-eslint/parser": "5.53.0",
+    "eslint-define-config": "1.15.0",
+    "typescript": "4.9.5"
   },
   "devDependencies": {
-    "eslint": "8.31.0"
+    "eslint": "8.34.0"
   }
 }

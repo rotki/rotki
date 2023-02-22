@@ -6,7 +6,7 @@ import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 const additional = ['ETC'] as const;
 const supportedExplorers = [...Object.values(Blockchain), ...additional];
 
-const selection = ref<Blockchain | typeof additional[number]>(Blockchain.ETH);
+const selection = ref<Blockchain | (typeof additional)[number]>(Blockchain.ETH);
 const store = useFrontendSettingsStore();
 const { explorers } = storeToRefs(store);
 

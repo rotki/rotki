@@ -3,6 +3,7 @@ import dropRight from 'lodash/dropRight';
 import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import isEqual from 'lodash/isEqual';
+import { type MaybeRef } from '@vueuse/core';
 import { Routes } from '@/router/routes';
 import {
   type AssetMovement,
@@ -122,14 +123,14 @@ const {
   isLoading,
   state: assetMovements,
   execute
-} = useAsyncState<Collection<AssetMovementEntry>>(
-  args => fetchAssetMovements(args),
-  defaultCollectionState(),
-  {
-    resetOnExecute: false,
-    delay: 0
-  }
-);
+} = useAsyncState<
+  Collection<AssetMovementEntry>,
+  MaybeRef<AssetMovementRequestPayload>[]
+>(args => fetchAssetMovements(args), defaultCollectionState(), {
+  immediate: false,
+  resetOnExecute: false,
+  delay: 0
+});
 
 const router = useRouter();
 const route = useRoute();

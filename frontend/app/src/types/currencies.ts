@@ -58,7 +58,7 @@ const SUPPORTED_CURRENCIES = [
   CURRENCY_PLN
 ] as const;
 
-export type SupportedCurrency = typeof SUPPORTED_CURRENCIES[number];
+export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 
 export const useCurrencies = createSharedComposable(() => {
   const { tc } = useI18n();
