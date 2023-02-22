@@ -51,6 +51,9 @@ class FVal():
     def __repr__(self) -> str:
         return f'FVal({str(self.num)})'
 
+    def __hash__(self) -> int:
+        return hash(self.num)
+
     def __gt__(self, other: AcceptableFValOtherInput) -> bool:
         evaluated_other = _evaluate_input(other)
         return self.num.compare_signal(evaluated_other) == Decimal('1')
