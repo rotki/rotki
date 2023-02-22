@@ -143,7 +143,7 @@ export const useMessageHandling = () => {
       updateDbUpgradeStatus(message.data);
     } else if (type === SocketMessageType.DATA_MIGRATION_STATUS) {
       updateDataMigrationStatus(message.data);
-    } else if (type === SocketMessageType.EVM_ADDRESS_MIGRATION) {
+    } else if (type === SocketMessageType.EVM_ACCOUNTS_DETECTION) {
       setUpgradedAddresses(message.data);
     } else if (type === SocketMessageType.NEW_EVM_TOKEN_DETECTED) {
       notifications.push(handleNewTokenDetectedMessage(message.data));

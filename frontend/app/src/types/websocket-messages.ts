@@ -88,7 +88,7 @@ export const SocketMessageType = {
   PREMIUM_STATUS_UPDATE: 'premium_status_update',
   DB_UPGRADE_STATUS: 'db_upgrade_status',
   DATA_MIGRATION_STATUS: 'data_migration_status',
-  EVM_ADDRESS_MIGRATION: 'evm_address_migration',
+  EVM_ACCOUNTS_DETECTION: 'evm_accounts_detection',
   NEW_EVM_TOKEN_DETECTED: 'new_evm_token_detected'
 } as const;
 
@@ -131,7 +131,7 @@ const DataMigrationStatusMessage = z.object({
 });
 
 const MigratedAccountsMessage = z.object({
-  type: z.literal(SocketMessageType.EVM_ADDRESS_MIGRATION),
+  type: z.literal(SocketMessageType.EVM_ACCOUNTS_DETECTION),
   data: MigratedAddresses
 });
 

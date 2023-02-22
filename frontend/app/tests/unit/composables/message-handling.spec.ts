@@ -25,7 +25,8 @@ vi.mock('@/composables/info/chains', () => ({
         nativeAsset: 'ETH'
       } satisfies EvmChainInfo
     ]),
-    getChain: () => Blockchain.OPTIMISM
+    getChain: () => Blockchain.OPTIMISM,
+    getNativeAsset: (chain: Blockchain) => chain
   })
 }));
 
@@ -42,7 +43,7 @@ describe('useMessageHandling', () => {
     set(canRequestData, true);
     await handleMessage(
       JSON.stringify({
-        type: SocketMessageType.EVM_ADDRESS_MIGRATION,
+        type: SocketMessageType.EVM_ACCOUNTS_DETECTION,
         data: [
           {
             evm_chain: 'optimism',
