@@ -10,6 +10,7 @@ import {
   type AddAccountsPayload,
   type BaseAddAccountsPayload
 } from '@/types/blockchain/accounts';
+import { type TaskMeta } from '@/types/task';
 
 export const useBlockchainStore = defineStore('blockchain', () => {
   const { addAccount, fetch } = useBlockchainAccountsStore();
@@ -21,7 +22,8 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   const { enableModule } = useSettingsStore();
   const { reset: resetDefi } = useDefiStore();
   const { resetDefiStatus } = useStatusStore();
-  const { addEvmAccount } = useBlockchainAccountsApi();
+  const { addEvmAccount, detectEvmAccounts: detectEvmAccountsCaller } =
+    useBlockchainAccountsApi();
 
   const { isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
@@ -237,9 +239,32 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     }
   };
 
+  const { awaitTask } = useTaskStore();
+  const detectEvmAccounts = async () => {
+    try {
+      const taskType = TaskType.DETECT_EVM_ACCOUNTS;
+      const { taskId } = await detectEvmAccountsCaller();
+      const { result } = await awaitTask<any, TaskMeta>(taskId, taskType, {
+        title: tc('actions.detect_evm_accounts.task.title').toString()
+      });
+
+      return result;
+    } catch (e: any) {
+      logger.error(e);
+      notify({
+        title: tc('actions.detect_evm_accounts.error.title').toString(),
+        message: tc('actions.detect_evm_accounts.error.message', 0, {
+          message: e.message
+        }).toString(),
+        display: true
+      });
+    }
+  };
+
   return {
     addAccounts,
     addEvmAccounts,
+    detectEvmAccounts,
     fetchAccounts,
     refreshAccounts
   };

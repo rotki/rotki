@@ -545,6 +545,15 @@
         "title": "Eth2 daily stats"
       }
     },
+    "detect_evm_accounts": {
+      "error": {
+        "message": "Failed to detect EVM accounts with the following error: {message}",
+        "title": "Detecting EVM accounts"
+      },
+      "task": {
+        "title": "Detecting EVM accounts"
+      }
+    },
     "get_accounts": {
       "error": {
         "description": "Failed to query accounts for {blockchain}: {message}",
@@ -1177,6 +1186,10 @@
       "ksm": "Kusama balances",
       "loopring": "Loopring balances",
       "optimism": "Optimism"
+    },
+    "evm_detection": {
+      "title": "Detect EVM accounts",
+      "tooltip": "Detect activities of all registered EVM accounts in other EVM chains, and register them."
     },
     "form_dialog": {
       "add_title": "Add blockchain account",

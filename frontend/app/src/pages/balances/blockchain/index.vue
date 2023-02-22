@@ -197,6 +197,10 @@ const { createAccount, editAccount } = useAccountDialog();
       />
     </card>
 
+    <div class="mt-8">
+      <detect-evm-accounts />
+    </div>
+
     <account-balances
       v-if="ethAccounts.length > 0 || busy.ETH.value"
       id="blockchain-balances-ETH"
