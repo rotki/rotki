@@ -1478,7 +1478,7 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
 def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer'):
-    """Test that eth transctions with no value are correctly decoded and returned in the API.
+    """Test that eth transactions with no value are correctly decoded and returned in the API.
     In this case we don't need any erc20 or internal transaction, this is why they are omitted
     in this test.
     """
