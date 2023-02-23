@@ -281,7 +281,7 @@ const applyRouteFilter = () => {
   const parsedOptions = RouterPaginationOptionsSchema.parse(query);
   const parsedFilters = RouteFilterSchema.parse(query);
 
-  const hideIgnoredTradesVal = query.includeIgnoredTrades !== 'true';
+  const hideIgnoredTradesVal = query.includeIgnoredTrades === 'false';
 
   updateFilter(parsedFilters);
   set(options, parsedOptions);
