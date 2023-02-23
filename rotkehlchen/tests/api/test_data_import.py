@@ -459,7 +459,7 @@ def test_data_import_binance_history(rotkehlchen_api_server):
 
 
 def test_data_import_rotki_generic_trades(rotkehlchen_api_server):
-    """Test that data import works for Rotki generic trades import csv file."""
+    """Test that data import works for rotki generic trades import csv file."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'rotki_generic_trades.csv'
@@ -491,7 +491,7 @@ def test_data_import_rotki_generic_trades(rotkehlchen_api_server):
 
 
 def test_data_import_rotki_generic_events(rotkehlchen_api_server):
-    """Test that data import works for Rotki generic events import csv file."""
+    """Test that data import works for rotki generic events import csv file."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'rotki_generic_events.csv'

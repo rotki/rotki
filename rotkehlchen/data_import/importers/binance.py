@@ -70,7 +70,7 @@ class BinanceSingleEntry(BinanceEntry, metaclass=abc.ABCMeta):
             timestamp: Timestamp,
             data: BinanceCsvRow,
     ) -> None:
-        """This method receives a csv row and processes it into internal Rotki's representation
+        """This method receives a csv row and processes it into internal rotki's representation
         Should be implemented by subclass."""
         ...
 
@@ -90,7 +90,7 @@ class BinanceMultipleEntry(BinanceEntry, metaclass=abc.ABCMeta):
             timestamp: Timestamp,
             data: list[BinanceCsvRow],
     ) -> int:
-        """Turns given csv rows into internal Rotki's representation"""
+        """Turns given csv rows into internal rotki's representation"""
         ...
 
 

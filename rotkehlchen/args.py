@@ -132,7 +132,7 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
     )
     p.add_argument(
         'version',
-        help='Shows the rotkehlchen version',
+        help='Shows the rotki version',
         action=CommandAction,
     )
 

@@ -84,7 +84,7 @@ class PremiumCredentials():
             self.api_secret = b64decode(given_api_secret)
         except BinasciiError as e:
             raise IncorrectApiKeyFormat(
-                'Rotkehlchen api secret is not in the correct format',
+                'rotki api secret is not in the correct format',
             ) from e
 
     def serialize_key(self) -> str:
@@ -164,7 +164,7 @@ class Premium():
         active = self.is_active()
         if not active:
             self.reset_credentials(old_credentials)
-            raise PremiumAuthenticationError('Rotkehlchen API key was rejected by server')
+            raise PremiumAuthenticationError('rotki API key was rejected by server')
 
     def is_active(self, catch_connection_errors: bool = True) -> bool:
         if self.status == SubscriptionStatus.ACTIVE:
@@ -373,4 +373,4 @@ def premium_create_and_verify(credentials: PremiumCredentials) -> Premium:
     if premium.is_active(catch_connection_errors=True):
         return premium
 
-    raise PremiumAuthenticationError('Rotkehlchen API key was rejected by server')
+    raise PremiumAuthenticationError('rotki API key was rejected by server')
