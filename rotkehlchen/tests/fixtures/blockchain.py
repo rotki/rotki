@@ -243,6 +243,13 @@ def fixture_ethereum_transaction_decoder(
         )
 
 
+@pytest.fixture(name='have_decoders')
+def fixture_have_decoders() -> bool:
+    """If false, then no decoders will be initialized by the test fixtures.
+    This saves us test time at initialization"""
+    return False
+
+
 @pytest.fixture(name='eth_transactions')
 def fixture_eth_transactions(
         database,

@@ -140,6 +140,7 @@ def initialize_mock_rotkehlchen_instance(
         new_db_unlock_actions,
         current_price_oracles_order,
         network_mocking,
+        have_decoders,
 ):
     if not start_with_logged_in_user:
         return
@@ -198,6 +199,11 @@ def initialize_mock_rotkehlchen_instance(
         stack.enter_context(ksm_rpcconnect_patch)
         stack.enter_context(size_patch)
         stack.enter_context(sleep_patch)
+
+        if have_decoders is False:  # do not initialize the decoders at all -- saves time
+            no_decoder_patch = patch('rotkehlchen.chain.evm.decoding.decoder.EVMTransactionDecoder.__init__', side_effect=lambda **kwargs: None)  # noqa: E501
+            stack.enter_context(no_decoder_patch)
+
         if use_custom_database is not None:
             stack.enter_context(mock_db_schema_sanity_check())
 
@@ -336,6 +342,7 @@ def fixture_rotkehlchen_api_server(
         optimism_mock_data,
         avalanche_mock_data,
         mocked_proxies,
+        have_decoders,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -375,6 +382,7 @@ def fixture_rotkehlchen_api_server(
         new_db_unlock_actions=new_db_unlock_actions,
         current_price_oracles_order=current_price_oracles_order,
         network_mocking=network_mocking,
+        have_decoders=have_decoders,
     )
     with ExitStack() as stack:
         if start_with_logged_in_user is True:
@@ -437,6 +445,7 @@ def rotkehlchen_instance(
         new_db_unlock_actions,
         current_price_oracles_order,
         network_mocking,
+        have_decoders,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -471,6 +480,7 @@ def rotkehlchen_instance(
         new_db_unlock_actions=new_db_unlock_actions,
         current_price_oracles_order=current_price_oracles_order,
         network_mocking=network_mocking,
+        have_decoders=have_decoders,
     )
     return uninitialized_rotkehlchen
 

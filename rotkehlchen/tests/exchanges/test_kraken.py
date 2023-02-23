@@ -666,6 +666,7 @@ def test_timestamp_deserialization():
         deserialize_timestamp_from_kraken('')
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('start_with_valid_premium', [False, True])

@@ -86,6 +86,7 @@ def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server):
         assert FVal(total_token['usd_value']) >= ZERO
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_deleting_ens_account_works(rotkehlchen_api_server):
     """Test that deleting an ENS eth account can be handled properly
@@ -294,6 +295,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server):
     ]
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address() for _ in range(3)]])
 def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
         rotkehlchen_api_server,
