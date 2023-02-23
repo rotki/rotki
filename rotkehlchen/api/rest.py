@@ -292,7 +292,6 @@ class RestAPI():
         self.task_id = 0
         self.task_results: dict[int, Any] = {}
         self.trade_schema = TradeSchema()
-        self._import_tmp_files: DefaultDict[FileStorage, Path] = defaultdict()
 
     # - Private functions not exposed to the API
     def _new_task_id(self) -> int:
@@ -1665,16 +1664,10 @@ class RestAPI():
 
     if getattr(sys, 'frozen', False) is False:
         @async_api_call()
-        def _import_history_debug(self, filepath: Union[FileStorage, Path]) -> dict[str, Any]:
+        def _import_history_debug(self, filepath: Path) -> dict[str, Any]:
             """Imports the PnL debug data for processing and report generation"""
             json_importer = DebugHistoryImporter(self.rotkehlchen.data.db)
-            if isinstance(filepath, Path):
-                success, msg, data = json_importer.import_history_debug(filepath=filepath)
-            else:
-                tmpfilepath = self._import_tmp_files[filepath]
-                success, msg, data = json_importer.import_history_debug(filepath=tmpfilepath)
-                tmpfilepath.unlink(missing_ok=True)
-                del self._import_tmp_files[filepath]
+            success, msg, data = json_importer.import_history_debug(filepath=filepath)
 
             if success is False:
                 return wrap_in_fail_result(
@@ -1696,9 +1689,9 @@ class RestAPI():
             if isinstance(filepath, FileStorage):
                 _, tmpfilepath = tempfile.mkstemp()
                 filepath.save(tmpfilepath)
-                self._import_tmp_files[filepath] = Path(tmpfilepath)
+                filepath = Path(tmpfilepath)
 
-            return self._import_history_debug(async_query=async_query, filepath=filepath)  # type: ignore[unexpected-keyword-arg]  # mypy doesn't see the async decorator is expected  # noqa: E501
+            return self._import_history_debug(async_query=async_query, filepath=filepath)  # pylint: disable=unexpected-keyword-arg  # pylint doesn't see the async decorator  # noqa: E501
 
     def get_history_actionable_items(self) -> Response:
         pot = self.rotkehlchen.accountant.pots[0]
@@ -2118,25 +2111,14 @@ class RestAPI():
     def _import_data(
             self,
             source: DataImportSource,
-            filepath: Union[FileStorage, Path],
+            filepath: Path,
             **kwargs: Any,
     ) -> dict[str, Any]:
-        if isinstance(filepath, Path):
-            success, msg = self.rotkehlchen.data_importer.import_csv(
-                source=source,
-                filepath=filepath,
-                **kwargs,
-            )
-        else:
-            tmpfilepath = self._import_tmp_files[filepath]
-            success, msg = self.rotkehlchen.data_importer.import_csv(
-                source=source,
-                filepath=tmpfilepath,
-                **kwargs,
-            )
-            tmpfilepath.unlink(missing_ok=True)
-            del self._import_tmp_files[filepath]
-
+        success, msg = self.rotkehlchen.data_importer.import_csv(
+            source=source,
+            filepath=filepath,
+            **kwargs,
+        )
         if success is False:
             return wrap_in_fail_result(
                 message=f'Invalid CSV format, missing required field: {msg}',
@@ -2155,7 +2137,7 @@ class RestAPI():
         if isinstance(filepath, FileStorage):
             _, tmpfilepath = tempfile.mkstemp()
             filepath.save(tmpfilepath)
-            self._import_tmp_files[filepath] = Path(tmpfilepath)
+            filepath = Path(tmpfilepath)
 
         return self._import_data(
             async_query=async_query,
