@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.utils.version_check import get_current_version
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -44,7 +45,8 @@ def default_data_directory() -> Path:
     https://github.com/ActiveState/appdirs/blob/master/appdirs.py
     """
     data_dir_name = 'data'
-    if getattr(sys, 'frozen', False) is False:
+    version = get_current_version(check_for_updates=False).our_version
+    if getattr(sys, 'frozen', False) is False or 'dev' in version:
         data_dir_name = 'develop_data'
 
     if platform.system() == 'Linux':
