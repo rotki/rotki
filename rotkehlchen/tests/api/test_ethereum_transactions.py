@@ -237,6 +237,7 @@ def _write_transactions_to_db(
                 )
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7',
     '0x4193122032b38236825BBa166F42e54fc3F4A1EE',
@@ -423,6 +424,7 @@ def test_query_transactions(rotkehlchen_api_server):
     )
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_request_transaction_decoding_errors(rotkehlchen_api_server):
@@ -804,6 +806,7 @@ def test_query_transactions_from_to_address(
             assert result['entries_total'] == 3
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
@@ -917,6 +920,7 @@ def test_query_transactions_removed_address(
     assert result['entries_found'] == 3
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
@@ -1004,6 +1008,7 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
         assert result['entries_total'] == 2
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6e15887E2CEC81434C16D587709f64603b39b545']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
@@ -1466,6 +1471,7 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0x59ABf3837Fa962d6853b4Cc0a19513AA031fd32b']])  # noqa: E501
 @patch.object(EthereumTransactions, '_get_internal_transactions_for_ranges', lambda *args, **kargs: None)  # noqa: E501
 @patch.object(EthereumTransactions, '_get_erc20_transfers_for_ranges', lambda *args, **kargs: None)
@@ -1506,6 +1512,7 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer'):
     assert result['entries'][0]['decoded_events'][0]['entry']['balance']['amount'] == '0'
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
 def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that decoding all pending transactions works fine"""
@@ -1556,6 +1563,7 @@ def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> N
     assert outcome['result']['decoded_tx_number'] == {}
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
 def test_decoding_missing_transactions_by_address(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that decoding all pending transactions works fine when a filter by address is set"""

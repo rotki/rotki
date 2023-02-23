@@ -38,6 +38,7 @@ from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, Trad
 from rotkehlchen.utils.misc import ts_now
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
     [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
@@ -134,6 +135,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert result['report_id'] == 1
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
     [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
@@ -178,6 +180,7 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges):
     # test_accounting_events.py
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 def test_query_history_errors(rotkehlchen_api_server):
     """Test that errors in the history query REST API endpoint are handled properly"""
     # invalid from timestamp value
@@ -216,6 +219,7 @@ def test_query_history_errors(rotkehlchen_api_server):
     )
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_query_history_external_exchanges(rotkehlchen_api_server):
@@ -246,6 +250,7 @@ def test_query_history_external_exchanges(rotkehlchen_api_server):
     assert FVal('5278.03086').is_close(FVal(overview[str(AccountingEventType.TRADE)]['taxable']))
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
     [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
@@ -387,6 +392,7 @@ def test_history_debug_import(rotkehlchen_api_server):
     )
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_missing_prices_in_pnl_report(rotkehlchen_api_server):

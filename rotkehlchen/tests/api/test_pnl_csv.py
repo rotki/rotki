@@ -66,6 +66,7 @@ def assert_csv_export_response(response, csv_dir, is_download=False):
     assert count == 43
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
     [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
@@ -142,6 +143,7 @@ def test_history_export_download_csv(
         assert_csv_export_response(response, extractdir, is_download=True)
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
     [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],

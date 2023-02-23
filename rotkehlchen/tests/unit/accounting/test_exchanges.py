@@ -16,6 +16,7 @@ from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.types import AssetMovementCategory, Location, Timestamp, TradeType
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
     [(Location.COINBASE,)],
@@ -46,6 +47,7 @@ def test_account_for_coinbase_ledger_actions(rotkehlchen_api_server_with_exchang
     assert sum(events_map.values()) == 11  # processed events
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('added_exchanges', [(Location.COINBASE,)])

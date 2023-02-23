@@ -1500,6 +1500,7 @@ def _remove_blockchain_accounts_test_start(
     return eth_accounts_after_removal, eth_balances_after_removal, token_balances_after_removal
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('number_of_eth_accounts', [4])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('query_balances_before_first_modification', [True, False])
