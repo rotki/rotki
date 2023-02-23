@@ -191,6 +191,7 @@ const { ignore } = useIgnore(
 );
 
 onMounted(async () => {
+  await fetchData();
   await refreshAssetMovements();
 });
 

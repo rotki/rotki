@@ -1225,6 +1225,7 @@
       "quote": "Quote",
       "rate": "Rate"
     },
+    "hide_ignored_trades": "Hide ignored trades",
     "label": "Intercambios",
     "refresh_tooltip": "Refrescar intercambios",
     "selected": "{count} interambio(s) seleccionados",

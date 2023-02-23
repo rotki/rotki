@@ -1270,6 +1270,7 @@
       "quote": "Quote",
       "rate": "Rate"
     },
+    "hide_ignored_trades": "Hide ignored trades",
     "label": "trades",
     "refresh_tooltip": "Refresh trades",
     "selected": "{count} trade(s) selected",

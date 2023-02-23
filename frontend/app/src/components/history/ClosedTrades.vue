@@ -51,6 +51,8 @@ const valid: Ref<boolean> = ref(false);
 const form: Ref<InstanceType<typeof ExternalTradeForm> | null> = ref(null);
 const userAction: Ref<boolean> = ref(false);
 
+const hideIgnoredTrades: Ref<boolean> = ref(false);
+
 const { tc } = useI18n();
 
 const pageParams: ComputedRef<TradeRequestPayload> = computed(() => {
@@ -65,6 +67,7 @@ const pageParams: ComputedRef<TradeRequestPayload> = computed(() => {
 
   return {
     ...(selectedFilters as Partial<TradeRequestPayload>),
+    includeIgnoredTrades: !get(hideIgnoredTrades),
     limit: itemsPerPage,
     offset,
     orderByAttributes: sortBy && sortBy.length > 0 ? sortBy : ['timestamp'],
@@ -278,8 +281,11 @@ const applyRouteFilter = () => {
   const parsedOptions = RouterPaginationOptionsSchema.parse(query);
   const parsedFilters = RouteFilterSchema.parse(query);
 
+  const hideIgnoredTradesVal = query.includeIgnoredTrades !== 'true';
+
   updateFilter(parsedFilters);
   set(options, parsedOptions);
+  set(hideIgnoredTrades, hideIgnoredTradesVal);
 };
 
 watch(route, () => {
@@ -297,6 +303,10 @@ watch(filters, async (filters, oldFilters) => {
   }
 
   set(options, { ...get(options), page: 1 });
+});
+
+watch(hideIgnoredTrades, () => {
+  setPage(1);
 });
 
 const setPage = (page: number) => {
@@ -330,6 +340,7 @@ onMounted(async () => {
     newExternalTrade();
     await router.replace({ query: {} });
   } else {
+    await fetchData();
     await refreshTrades();
   }
 });
@@ -370,6 +381,7 @@ const getQuery = (): LocationQuery => {
     page: page.toString(),
     sortBy,
     sortDesc: sortDesc.map(x => x.toString()),
+    includeIgnoredTrades: (!get(hideIgnoredTrades)).toString(),
     ...selectedFilters
   };
 };
@@ -432,31 +444,43 @@ watch(loading, async (isLoading, wasLoading) => {
       </template>
       <template #actions>
         <v-row v-if="!locationOverview">
-          <v-col cols="12" md="6">
-            <v-row>
-              <v-col cols="auto">
-                <ignore-buttons
-                  :disabled="selected.length === 0 || loading"
-                  @ignore="ignore"
-                />
-              </v-col>
-              <v-col>
-                <v-btn
-                  text
-                  outlined
-                  color="red"
-                  :disabled="selected.length === 0"
-                  @click="massDelete"
-                >
-                  <v-icon> mdi-delete-outline </v-icon>
+          <v-col cols="12" md="6" class="d-flex">
+            <div>
+              <v-row>
+                <v-col cols="auto">
+                  <ignore-buttons
+                    :disabled="selected.length === 0 || loading"
+                    @ignore="ignore"
+                  />
+                </v-col>
+                <v-col>
+                  <v-btn
+                    text
+                    outlined
+                    color="red"
+                    :disabled="selected.length === 0"
+                    @click="massDelete"
+                  >
+                    <v-icon> mdi-delete-outline </v-icon>
+                  </v-btn>
+                </v-col>
+              </v-row>
+              <div v-if="selected.length > 0" class="mt-2 ms-1">
+                {{
+                  tc('closed_trades.selected', 0, { count: selected.length })
+                }}
+                <v-btn small text @click="selected = []">
+                  {{ tc('common.actions.clear_selection') }}
                 </v-btn>
-              </v-col>
-            </v-row>
-            <div v-if="selected.length > 0" class="mt-2 ms-1">
-              {{ tc('closed_trades.selected', 0, { count: selected.length }) }}
-              <v-btn small text @click="selected = []">
-                {{ tc('common.actions.clear_selection') }}
-              </v-btn>
+              </div>
+            </div>
+            <div>
+              <v-switch
+                v-model="hideIgnoredTrades"
+                class="mt-0 ml-8"
+                hide-details
+                :label="tc('closed_trades.hide_ignored_trades')"
+              />
             </div>
           </v-col>
           <v-col cols="12" md="6">

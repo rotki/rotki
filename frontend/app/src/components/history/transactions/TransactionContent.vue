@@ -496,7 +496,10 @@ const showDeleteConfirmation = () => {
 const { txEvmChains, getEvmChainName, getChain } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
 
-onMounted(async () => refreshTransactions());
+onMounted(async () => {
+  await fetchData();
+  await refreshTransactions();
+});
 
 watch(loading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading) {
