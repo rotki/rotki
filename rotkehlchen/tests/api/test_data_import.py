@@ -511,6 +511,7 @@ def test_docker_async_import(rotkehlchen_api_server):
     """Test that docker async csv import using POST on /import is initialized properly
         The test doesn't wait for import completion, it only tests successful import initialization
     """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'binance_history.csv'
     with open(filepath, 'rb') as infile:
@@ -528,3 +529,5 @@ def test_docker_async_import(rotkehlchen_api_server):
         result = assert_proper_response_with_result(response)
         outcome = wait_for_async_task(rotkehlchen_api_server, result['task_id'])
     assert outcome['message'] == ''
+    assert outcome['result'] is True
+    assert_binance_import_results(rotki)
