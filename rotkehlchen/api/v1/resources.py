@@ -912,10 +912,8 @@ class ManuallyTrackedBalancesResource(BaseMethodView):
 class TradesResource(BaseMethodView):
 
     def make_get_schema(self) -> TradesQuerySchema:
-        with self.rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            settings = self.rest_api.rotkehlchen.data.db.get_settings(cursor)
         return TradesQuerySchema(
-            treat_eth2_as_eth=settings.treat_eth2_as_eth,
+            db=self.rest_api.rotkehlchen.data.db,
         )
 
     put_schema = TradeSchema()

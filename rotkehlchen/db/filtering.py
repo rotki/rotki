@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Iterable
+from collections.abc import Collection, Iterable
 from dataclasses import dataclass
 from typing import Any, Generic, Literal, NamedTuple, Optional, TypeVar, Union, cast
 
@@ -65,7 +65,7 @@ class DBFilterPagination(NamedTuple):
 class DBFilter():
     and_op: bool
 
-    def prepare(self) -> tuple[list[str], list[Any]]:
+    def prepare(self) -> tuple[list[str], Collection[Any]]:
         raise NotImplementedError('prepare should be implemented by subclasses')
 
 
@@ -77,7 +77,7 @@ class DBNestedFilter(DBFilter):
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         filterstrings = []
-        bindings = []
+        bindings: list[Any] = []
         for single_filter in self.filters:
             filters, single_bindings = single_filter.prepare()
             if len(filters) == 0:
@@ -297,7 +297,7 @@ class DBFilterQuery():
             with_order: bool = True,
     ) -> tuple[str, list[Any]]:
         query_parts = []
-        bindings = []
+        bindings: list[Any] = []
         filterstrings = []
 
         if self.join_clause is not None:
@@ -513,9 +513,9 @@ class DBAssetFilter(DBFilter):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBIgnoreValuesFilter(DBFilter):
     column: str
-    values: list[Any]
+    values: Collection[Any]
 
-    def prepare(self) -> tuple[list[str], list[Any]]:
+    def prepare(self) -> tuple[list[str], Collection[Any]]:
         if len(self.values) == 0:
             return [], []
         return [f'{self.column} NOT IN ({", ".join(["?"] * len(self.values))})'], self.values
@@ -603,6 +603,7 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
             quote_assets: Optional[tuple[Asset, ...]] = None,
             trade_type: Optional[list[TradeType]] = None,
             location: Optional[Location] = None,
+            trades_idx_to_ignore: Optional[set[str]] = None,
     ) -> 'TradesFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -646,6 +647,12 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
         if location is not None:
             filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
             filters.append(filter_query.location_filter)
+        if trades_idx_to_ignore is not None:
+            filters.append(DBIgnoreValuesFilter(
+                and_op=True,
+                column='id',
+                values=trades_idx_to_ignore,
+            ))
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -1286,7 +1293,7 @@ class MultiTableFilterQuery():
     def prepare(self, target_table_name: str) -> tuple[str, list[Any]]:
         """Generates query and bindings for table `target_table_name`."""
         query_parts = []
-        bindings = []
+        bindings: list[Any] = []
         filterstrings = []
 
         for (single_filter, table_name) in self.filters:
