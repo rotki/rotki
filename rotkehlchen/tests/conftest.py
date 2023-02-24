@@ -251,7 +251,7 @@ def vcr_cassette_dir(request: pytest.FixtureRequest) -> str:
         b'Already on' not in stderr and
         b'Switched to' not in stderr
     ):
-        default_branch = os.environ.get('DEFAULT_VCR_BRANCH', 'develop')
+        default_branch = os.environ.get('GITHUB_BASE_REF', os.environ.get('DEFAULT_VCR_BRANCH', 'develop'))  # noqa: E501
         log.error(f'Could not find branch {current_branch} in {root_dir}. Defaulting to {default_branch}')  # noqa: E501
         checkout_proc = Popen(f'cd "{root_dir}" && git fetch origin && git checkout {default_branch} && git reset --hard origin/{default_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
         checkout_proc.wait()
