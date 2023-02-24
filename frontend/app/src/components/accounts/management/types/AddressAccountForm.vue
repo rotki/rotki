@@ -4,7 +4,6 @@ import AccountDataInput from '@/components/accounts/management/inputs/AccountDat
 import { type Module } from '@/types/modules';
 import { useMessageStore } from '@/store/message';
 import { startPromise } from '@/utils';
-import { deserializeApiErrorMessage } from '@/services/converters';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
@@ -14,6 +13,7 @@ import {
   type BlockchainAccountPayload,
   type BlockchainAccountWithBalance
 } from '@/store/balances/types';
+import { ApiValidationError } from '@/types/api/errors';
 
 const props = defineProps<{ blockchain: Blockchain }>();
 
@@ -88,15 +88,23 @@ const save = async () => {
       }
     }
   } catch (e: any) {
-    set(errorMessages, deserializeApiErrorMessage(e.message) || {});
+    let errors = e.message;
+    if (e instanceof ApiValidationError) {
+      errors = e.errors;
+    }
 
-    await setMessage({
-      description: tc('account_form.error.description', 0, {
-        error: e.message
-      }).toString(),
-      title: tc('account_form.error.title'),
-      success: false
-    });
+    if (typeof errors === 'string') {
+      await setMessage({
+        description: tc('account_form.error.description', 0, {
+          error: e.message
+        }).toString(),
+        title: tc('account_form.error.title'),
+        success: false
+      });
+    } else {
+      set(errorMessages, errors);
+    }
+
     return false;
   } finally {
     set(pending, false);

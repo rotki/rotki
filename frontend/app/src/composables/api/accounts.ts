@@ -276,7 +276,7 @@ export const useBlockchainAccountsApi = () => {
       '/blockchains/evm/accounts',
       nonEmptyProperties(payloadToData(payload)),
       {
-        validateStatus: validWithSessionAndExternalService
+        validateStatus: validWithParamsSessionAndExternalService
       }
     );
     return EvmAccountsResult.parse(handleResponse(response));
