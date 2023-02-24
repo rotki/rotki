@@ -15,6 +15,7 @@ import { mapCollectionResponse } from '@/utils/collection';
 import { logger } from '@/utils/logging';
 import { mapCollectionEntriesWithMeta } from '@/utils/history';
 import { type ActionStatus } from '@/types/action';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 
 export const useTradeStore = defineStore('history/trades', () => {
   const locationsStore = useAssociatedLocationsStore();
@@ -85,11 +86,10 @@ export const useTradeStore = defineStore('history/trades', () => {
     userInitiated = false,
     location?: SupportedExchange
   ): Promise<void> => {
-    const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
-      Section.TRADES
-    );
+    const { setStatus, isFirstLoad, resetStatus, fetchDisabled } =
+      useStatusUpdater(Section.TRADES);
 
-    if (!(userInitiated || isFirstLoad()) || loading()) {
+    if (fetchDisabled(userInitiated)) {
       logger.info('skipping trade refresh');
       return;
     }
@@ -120,14 +120,19 @@ export const useTradeStore = defineStore('history/trades', () => {
     return mapCollectionEntriesWithMeta<Trade>(mapCollectionResponse(result));
   };
 
-  const addExternalTrade = async (trade: NewTrade): Promise<ActionStatus> => {
+  const addExternalTrade = async (
+    trade: NewTrade
+  ): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
-    let message = '';
+    let message: ValidationErrors | string = '';
     try {
       await addExternalTradeCaller(trade);
       success = true;
     } catch (e: any) {
       message = e.message;
+      if (e instanceof ApiValidationError) {
+        message = e.getValidationErrors(trade);
+      }
     }
 
     await fetchAssociatedLocations();
@@ -136,14 +141,17 @@ export const useTradeStore = defineStore('history/trades', () => {
 
   const editExternalTrade = async (
     trade: TradeEntry
-  ): Promise<ActionStatus> => {
+  ): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
-    let message = '';
+    let message: ValidationErrors | string = '';
     try {
       await editExternalTradeCaller(trade);
       success = true;
     } catch (e: any) {
       message = e.message;
+      if (e instanceof ApiValidationError) {
+        message = e.getValidationErrors(trade);
+      }
     }
 
     await fetchAssociatedLocations();

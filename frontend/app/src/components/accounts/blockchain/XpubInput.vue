@@ -15,6 +15,7 @@ import {
 import { type ValidationErrors } from '@/types/api/errors';
 import { type BtcChains } from '@/types/blockchain/chains';
 import { type XpubPayload } from '@/types/blockchain/accounts';
+import { toMessages } from '@/utils/validation-errors';
 
 const props = defineProps<{
   disabled: boolean;
@@ -161,7 +162,7 @@ watch(errorMessages, errors => {
           class="account-form__xpub ml-2"
           :label="t('account_form.labels.btc.xpub')"
           autocomplete="off"
-          :error-messages="v$.xpub.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.xpub)"
           :disabled="disabled"
           @blur="v$.xpub.$touch()"
           @paste="onPasteXpub"
@@ -197,7 +198,7 @@ watch(errorMessages, errors => {
           outlined
           class="account-form__derivation-path"
           :label="t('account_form.labels.btc.derivation_path')"
-          :error-messages="v$.derivationPath.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.derivationPath)"
           autocomplete="off"
           :disabled="disabled"
           persistent-hint

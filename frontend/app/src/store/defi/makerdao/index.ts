@@ -14,7 +14,6 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { Zero, bigNumberify } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
-import { isLoading } from '@/utils/status';
 
 const convertMakerDAOVaults = (vaults: ApiMakerDAOVault[]): MakerDAOVault[] =>
   vaults.map(vault => ({
@@ -55,22 +54,20 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
     fetchMakerDAOVaultDetails: fetchMakerDAOVaultDetailsCaller
   } = useMakerDaoApi();
 
+  const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(
+    Section.DEFI_DSR_BALANCES
+  );
+
   const fetchDSRBalances = async (refresh = false): Promise<void> => {
     if (!get(activeModules).includes(Module.MAKERDAO_DSR)) {
       return;
     }
-    const section = Section.DEFI_DSR_BALANCES;
-    const currentStatus = getStatus(section);
-
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
+    if (fetchDisabled(refresh)) {
       return;
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
+    setStatus(newStatus);
 
     try {
       const taskType = TaskType.DSR_BALANCE;
@@ -100,7 +97,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
       });
     }
 
-    setStatus(Status.LOADED, section);
+    setStatus(Status.LOADED);
   };
 
   const fetchDSRHistory = async (refresh = false): Promise<void> => {
@@ -108,12 +105,8 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
       return;
     }
     const section = Section.DEFI_DSR_HISTORY;
-    const currentStatus = getStatus(section);
 
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
+    if (fetchDisabled(refresh, section)) {
       return;
     }
 
@@ -155,12 +148,8 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
       return;
     }
     const section = Section.DEFI_MAKERDAO_VAULTS;
-    const currentStatus = getStatus(section);
 
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
+    if (fetchDisabled(refresh, section)) {
       return;
     }
 
@@ -207,12 +196,8 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
       return;
     }
     const section = Section.DEFI_MAKERDAO_VAULT_DETAILS;
-    const currentStatus = getStatus(section);
 
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
+    if (fetchDisabled(refresh, section)) {
       return;
     }
 
@@ -249,7 +234,6 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
   };
 
   const reset = (protocol?: MakerDAOProtocol): void => {
-    const { resetStatus } = useStatusUpdater(Section.DEFI_DSR_BALANCES);
     if (!protocol || protocol === Module.MAKERDAO_DSR) {
       set(dsrHistory, {});
       set(dsrBalances, defaultDsrBalances());

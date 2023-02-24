@@ -23,7 +23,9 @@ const liquityStore = useLiquityStore();
 const { staking, stakingPools } = toRefs(liquityStore);
 const { fetchStaking, fetchPools } = liquityStore;
 
-const loading = isSectionLoading(Section.DEFI_LIQUITY_STAKING);
+const { isLoading } = useStatusStore();
+const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
+
 const chains = [Blockchain.ETH];
 
 const { tc } = useI18n();

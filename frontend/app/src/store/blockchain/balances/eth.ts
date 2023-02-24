@@ -79,13 +79,11 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
       return;
     }
 
-    const { getStatus, setStatus, resetStatus, loading } = useStatusUpdater(
+    const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(
       Section.L2_LOOPRING_BALANCES
     );
 
-    const status = getStatus();
-
-    if (loading() || (status === Status.LOADED && !refresh)) {
+    if (fetchDisabled(refresh)) {
       return;
     }
 

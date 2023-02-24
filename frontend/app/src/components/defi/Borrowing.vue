@@ -24,7 +24,7 @@ const store = useDefiSupportedProtocolsStore();
 const route = useRoute();
 const { tc } = useI18n();
 
-const { shouldShowLoadingScreen, isSectionRefreshing } = useSectionLoading();
+const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 
 const loading = shouldShowLoadingScreen(Section.DEFI_BORROWING);
 
@@ -45,12 +45,10 @@ const summary = computed(() => {
   return get(store.loanSummary(protocols));
 });
 
-const refreshing = computed(() => {
-  return (
-    get(isSectionRefreshing(Section.DEFI_BORROWING)) ||
-    get(isSectionRefreshing(Section.DEFI_BORROWING_HISTORY))
-  );
-});
+const refreshing = logicOr(
+  isLoading(Section.DEFI_BORROWING),
+  isLoading(Section.DEFI_BORROWING_HISTORY)
+);
 
 const refresh = async () => {
   await store.fetchBorrowing(true);

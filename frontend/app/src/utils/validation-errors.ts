@@ -1,11 +1,11 @@
-import { type ErrorObject } from '@vuelidate/core';
+import { type BaseValidation } from '@vuelidate/core';
 
 /**
- * Converts an array of vuelidate's ErrorObject to an array of
- * strings to be passed to the components error-messages.
+ * Converts an object of vuelidate's BaseValidation to an array of
+ * strings to be passed to the components error-messages
  *
- * @param errors ErrorObject
+ * @param validation BaseValidation
  * @return string[]
  */
-export const toMessages = (errors: ErrorObject[]): string[] =>
-  errors.map(e => get(e.$message));
+export const toMessages = (validation: BaseValidation): string[] =>
+  validation.$errors.map(e => get(e.$message));

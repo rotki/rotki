@@ -19,10 +19,10 @@ onMounted(async () => {
   await store.fetchAllDefi(false);
 });
 
-const { shouldShowLoadingScreen, isSectionRefreshing } = useSectionLoading();
+const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 
 const loading = shouldShowLoadingScreen(section);
-const refreshing = isSectionRefreshing(section);
+const refreshing = isLoading(section);
 </script>
 
 <template>

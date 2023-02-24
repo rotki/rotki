@@ -11,15 +11,15 @@ const modules: Module[] = [Module.BALANCER];
 
 const { fetchBalances, fetchEvents } = useBalancerStore();
 const { isModuleEnabled } = useModules();
-const { shouldShowLoadingScreen, isSectionRefreshing } = useSectionLoading();
+const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 
 const premium = usePremium();
 const isEnabled = computed(() => isModuleEnabled(modules[0]));
 const balancesLoading = shouldShowLoadingScreen(Section.DEFI_BALANCER_BALANCES);
 const eventsLoading = shouldShowLoadingScreen(Section.DEFI_BALANCER_EVENTS);
 const loading = computed(() => get(balancesLoading) && get(eventsLoading));
-const balancesRefreshing = isSectionRefreshing(Section.DEFI_BALANCER_BALANCES);
-const eventsRefreshing = isSectionRefreshing(Section.DEFI_BALANCER_EVENTS);
+const balancesRefreshing = isLoading(Section.DEFI_BALANCER_BALANCES);
+const eventsRefreshing = isLoading(Section.DEFI_BALANCER_EVENTS);
 const refreshing = computed(
   () => get(balancesRefreshing) || get(eventsRefreshing)
 );

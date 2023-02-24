@@ -62,27 +62,27 @@ const save = async () => {
     set(tags, []);
   } catch (e: any) {
     logger.error(e);
-    let message = e.message;
+    let errors = e.message;
     if (e instanceof ApiValidationError) {
-      const errors = e.getValidationErrors({
+      errors = e.getValidationErrors({
         xpub: '',
         derivationPath: ''
       });
-      if (typeof errors === 'string') {
-        message = errors;
-      } else {
-        set(errorMessages, errors);
-        return false;
-      }
     }
 
-    await setMessage({
-      description: tc('account_form.error.description', 0, {
-        error: message
-      }),
-      title: tc('account_form.error.title'),
-      success: false
-    });
+    if (typeof errors === 'string') {
+      await setMessage({
+        description: tc('account_form.error.description', 0, {
+          error: errors
+        }),
+        title: tc('account_form.error.title'),
+        success: false
+      });
+    } else {
+      set(errorMessages, errors);
+      return false;
+    }
+
     return false;
   } finally {
     set(pending, false);

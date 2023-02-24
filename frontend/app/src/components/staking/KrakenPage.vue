@@ -5,7 +5,7 @@ import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
 import { SupportedExchange } from '@/types/exchanges';
 import { Section } from '@/types/status';
 
-const { shouldShowLoadingScreen } = useSectionLoading();
+const { shouldShowLoadingScreen } = useStatusStore();
 const { load } = useKrakenStakingStore();
 
 const { connectedExchanges } = storeToRefs(useAssociatedLocationsStore());

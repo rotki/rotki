@@ -48,7 +48,6 @@ declare global {
   const getActivePinia: typeof import('pinia')['getActivePinia']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
-  const getStatus: typeof import('./store/status')['getStatus']
   const h: typeof import('vue')['h']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
   const inject: typeof import('vue')['inject']
@@ -57,7 +56,6 @@ declare global {
   const isReactive: typeof import('vue')['isReactive']
   const isReadonly: typeof import('vue')['isReadonly']
   const isRef: typeof import('vue')['isRef']
-  const isSectionLoading: typeof import('./composables/common')['isSectionLoading']
   const loadUserOptions: typeof import('./composables/backend')['loadUserOptions']
   const logicAnd: typeof import('@vueuse/math')['logicAnd']
   const logicNot: typeof import('@vueuse/math')['logicNot']
@@ -113,7 +111,6 @@ declare global {
   const set: typeof import('@vueuse/shared')['set']
   const setActivePinia: typeof import('pinia')['setActivePinia']
   const setMapStoreSuffix: typeof import('pinia')['setMapStoreSuffix']
-  const setStatus: typeof import('./store/status')['setStatus']
   const shallowReactive: typeof import('vue')['shallowReactive']
   const shallowReadonly: typeof import('vue')['shallowReadonly']
   const shallowRef: typeof import('vue')['shallowRef']
@@ -396,7 +393,6 @@ declare global {
   const useScriptTag: typeof import('@vueuse/core')['useScriptTag']
   const useScroll: typeof import('@vueuse/core')['useScroll']
   const useScrollLock: typeof import('@vueuse/core')['useScrollLock']
-  const useSectionLoading: typeof import('./composables/common')['useSectionLoading']
   const useSessionApi: typeof import('./composables/api/session/index')['useSessionApi']
   const useSessionAuthStore: typeof import('./store/session/auth')['useSessionAuthStore']
   const useSessionPurgeStore: typeof import('./store/session/purge')['useSessionPurgeStore']
@@ -560,7 +556,6 @@ declare module 'vue' {
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
-    readonly getStatus: UnwrapRef<typeof import('./store/status')['getStatus']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
@@ -569,7 +564,6 @@ declare module 'vue' {
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
-    readonly isSectionLoading: UnwrapRef<typeof import('./composables/common')['isSectionLoading']>
     readonly loadUserOptions: UnwrapRef<typeof import('./composables/backend')['loadUserOptions']>
     readonly logicAnd: UnwrapRef<typeof import('@vueuse/math')['logicAnd']>
     readonly logicNot: UnwrapRef<typeof import('@vueuse/math')['logicNot']>
@@ -625,7 +619,6 @@ declare module 'vue' {
     readonly set: UnwrapRef<typeof import('@vueuse/shared')['set']>
     readonly setActivePinia: UnwrapRef<typeof import('pinia')['setActivePinia']>
     readonly setMapStoreSuffix: UnwrapRef<typeof import('pinia')['setMapStoreSuffix']>
-    readonly setStatus: UnwrapRef<typeof import('./store/status')['setStatus']>
     readonly shallowReactive: UnwrapRef<typeof import('vue')['shallowReactive']>
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
@@ -908,7 +901,6 @@ declare module 'vue' {
     readonly useScriptTag: UnwrapRef<typeof import('@vueuse/core')['useScriptTag']>
     readonly useScroll: UnwrapRef<typeof import('@vueuse/core')['useScroll']>
     readonly useScrollLock: UnwrapRef<typeof import('@vueuse/core')['useScrollLock']>
-    readonly useSectionLoading: UnwrapRef<typeof import('./composables/common')['useSectionLoading']>
     readonly useSessionApi: UnwrapRef<typeof import('./composables/api/session/index')['useSessionApi']>
     readonly useSessionAuthStore: UnwrapRef<typeof import('./store/session/auth')['useSessionAuthStore']>
     readonly useSessionPurgeStore: UnwrapRef<typeof import('./store/session/purge')['useSessionPurgeStore']>

@@ -11,6 +11,7 @@ import {
 import isEmpty from 'lodash/isEmpty';
 import { type Eth2Validator } from '@/types/balances';
 import { type ValidationErrors } from '@/types/api/errors';
+import { toMessages } from '@/utils/validation-errors';
 
 const props = defineProps<{
   validator: Eth2Validator | null;
@@ -99,7 +100,7 @@ watch(
         type="number"
         :disabled="disabled"
         :label="tc('eth2_input.validator_index')"
-        :error-messages="v$.validatorIndex.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.validatorIndex)"
         @blur="v$.validatorIndex.$touch()"
       />
     </v-col>
@@ -109,7 +110,7 @@ watch(
         outlined
         :disabled="disabled"
         :label="tc('eth2_input.public_key')"
-        :error-messages="v$.publicKey.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.publicKey)"
         @blur="v$.publicKey.$touch()"
       />
     </v-col>
@@ -122,7 +123,7 @@ watch(
         persistent-hint
         :hint="tc('eth2_input.ownership.hint')"
         suffix="%"
-        :error-messages="v$.ownershipPercentage.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.ownershipPercentage)"
         @blur="v$.ownershipPercentage.$touch()"
       />
     </v-col>

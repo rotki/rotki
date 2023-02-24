@@ -36,7 +36,7 @@ const selectedAccounts = ref<GeneralAccount[]>([]);
 const protocol = ref<DefiProtocol | null>(null);
 const premium = usePremium();
 const route = useRoute();
-const { shouldShowLoadingScreen, isSectionRefreshing } = useSectionLoading();
+const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 
 const defiStore = useDefiStore();
 const store = useDefiSupportedProtocolsStore();
@@ -123,10 +123,9 @@ const yearnProfit = computed(() => {
 
 const loading = shouldShowLoadingScreen(section);
 const historyLoading = shouldShowLoadingScreen(historySection);
-const historyRefreshing = isSectionRefreshing(historySection);
-const refreshing = computed(
-  () => get(isSectionRefreshing(section)) || get(historyRefreshing)
-);
+const historyRefreshing = isLoading(historySection);
+
+const refreshing = logicOr(isLoading(section), historyRefreshing);
 
 const refresh = async () => {
   await store.fetchLending(true);

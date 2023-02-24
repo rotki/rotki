@@ -358,6 +358,7 @@ const showDeleteConfirmation = () => {
   );
 };
 
+const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.TRADES);
 const getItemClass = (item: TradeEntry) => {
   return item.ignoredInAccounting ? 'darken-row' : '';
@@ -418,7 +419,7 @@ watch(loading, async (isLoading, wasLoading) => {
 
 <template>
   <fragment>
-    <card outlined-body>
+    <card outlined-body class="mt-8">
       <v-btn
         v-if="!locationOverview"
         absolute

@@ -1,4 +1,3 @@
-import { type Section, Status } from '@/types/status';
 import { assert } from '@/utils/assertions';
 
 export const useProxy = () => {
@@ -26,6 +25,7 @@ export const useTheme = () => {
     }
     return null;
   });
+
   return {
     $vuetify,
     isMobile,
@@ -37,42 +37,4 @@ export const useTheme = () => {
     fontStyle,
     appBarColor
   };
-};
-
-export const useSectionLoading = () => {
-  const { getStatus } = useStatusStore();
-  const isSectionRefreshing = (section: Section) => {
-    const sectionStatus = getStatus(section);
-    return computed(() => {
-      const status = get(sectionStatus);
-      return (
-        status === Status.LOADING ||
-        status === Status.REFRESHING ||
-        status === Status.PARTIALLY_LOADED
-      );
-    });
-  };
-
-  const shouldShowLoadingScreen = (section: Section) => {
-    const sectionStatus = getStatus(section);
-    return computed(() => {
-      const status = get(sectionStatus);
-      return (
-        status !== Status.LOADED &&
-        status !== Status.PARTIALLY_LOADED &&
-        status !== Status.REFRESHING
-      );
-    });
-  };
-  return {
-    isSectionRefreshing,
-    shouldShowLoadingScreen
-  };
-};
-
-export const isSectionLoading = (section: Section) => {
-  return computed(() => {
-    const status = getStatus(section);
-    return status !== Status.LOADED && status !== Status.PARTIALLY_LOADED;
-  });
 };

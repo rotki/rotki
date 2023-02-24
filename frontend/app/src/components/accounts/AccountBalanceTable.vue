@@ -82,9 +82,8 @@ const section = computed<Section>(() => {
     : chainSection[get(blockchain)];
 });
 
-const loading = computed<boolean>(() => {
-  return useStatusUpdater(get(section)).loading();
-});
+const { isLoading } = useStatusStore();
+const loading = isLoading(get(section));
 
 const expanded: Ref<BlockchainAccountWithBalance[]> = ref([]);
 const collapsedXpubs: Ref<XpubAccountWithBalance[]> = ref([]);

@@ -115,10 +115,10 @@ const css = useCssModule();
 const airdropStore = useAirdropStore();
 const { airdropAddresses } = storeToRefs(airdropStore);
 const { isPackaged, navigate } = useInterop();
-const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
+const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 
 const loading = shouldShowLoadingScreen(section);
-const refreshing = isSectionRefreshing(section);
+const refreshing = isLoading(section);
 
 const entries = computed(() => {
   const addresses = get(selectedAccounts).map(({ address }) => address);

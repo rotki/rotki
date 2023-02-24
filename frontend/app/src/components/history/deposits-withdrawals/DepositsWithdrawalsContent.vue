@@ -196,6 +196,7 @@ onMounted(async () => {
   await refreshAssetMovements();
 });
 
+const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.ASSET_MOVEMENT);
 
 const getItemClass = (item: AssetMovementEntry) => {
@@ -255,7 +256,7 @@ watch(loading, async (isLoading, wasLoading) => {
 </script>
 
 <template>
-  <card outlined-body>
+  <card outlined-body class="mt-8">
     <template #title>
       <refresh-button
         v-if="!locationOverview"

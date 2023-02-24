@@ -15,6 +15,7 @@ import { mapCollectionResponse } from '@/utils/collection';
 import { logger } from '@/utils/logging';
 import { mapCollectionEntriesWithMeta } from '@/utils/history';
 import { type ActionStatus } from '@/types/action';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 
 export const useLedgerActionStore = defineStore(
   'history/ledger-actions',
@@ -85,11 +86,10 @@ export const useLedgerActionStore = defineStore(
       userInitiated = false,
       location?: SupportedExchange
     ): Promise<void> => {
-      const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
-        Section.LEDGER_ACTIONS
-      );
+      const { setStatus, isFirstLoad, resetStatus, fetchDisabled } =
+        useStatusUpdater(Section.LEDGER_ACTIONS);
 
-      if (!(userInitiated || isFirstLoad()) || loading()) {
+      if (fetchDisabled(userInitiated)) {
         logger.info('skipping ledger action refresh');
         return;
       }
@@ -122,14 +122,17 @@ export const useLedgerActionStore = defineStore(
 
     const addLedgerAction = async (
       ledgerAction: NewLedgerAction
-    ): Promise<ActionStatus> => {
+    ): Promise<ActionStatus<ValidationErrors | string>> => {
       let success = false;
-      let message = '';
+      let message: ValidationErrors | string = '';
       try {
         await addLedgerActionCaller(ledgerAction);
         success = true;
       } catch (e: any) {
         message = e.message;
+        if (e instanceof ApiValidationError) {
+          message = e.getValidationErrors(ledgerAction);
+        }
       }
 
       await fetchAssociatedLocations();
@@ -138,14 +141,17 @@ export const useLedgerActionStore = defineStore(
 
     const editLedgerAction = async (
       ledgerAction: LedgerActionEntry
-    ): Promise<ActionStatus> => {
+    ): Promise<ActionStatus<ValidationErrors | string>> => {
       let success = false;
-      let message = '';
+      let message: ValidationErrors | string = '';
       try {
         await editLedgerActionCaller(ledgerAction);
         success = true;
       } catch (e: any) {
         message = e.message;
+        if (e instanceof ApiValidationError) {
+          message = e.getValidationErrors(ledgerAction);
+        }
       }
 
       await fetchAssociatedLocations();

@@ -49,11 +49,11 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
       return;
     }
 
-    const { setStatus, loading, getStatus, resetStatus } = useStatusUpdater(
+    const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(
       Section.STAKING_ETH2
     );
 
-    if (loading() || (getStatus() === Status.LOADED && !refresh)) {
+    if (fetchDisabled(refresh)) {
       return;
     }
 

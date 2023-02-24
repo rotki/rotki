@@ -8,7 +8,6 @@ import {
 } from '@rotki/common/lib/settings/graphs';
 import dayjs from 'dayjs';
 import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
-import Loading from '@/components/helper/Loading.vue';
 import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
 import { Section } from '@/types/status';
 import { assert } from '@/utils/assertions';
@@ -29,13 +28,12 @@ const { totalNetWorth } = storeToRefs(statistics);
 const frontendStore = useFrontendSettingsStore();
 const { visibleTimeframes } = storeToRefs(frontendStore);
 
-const { isSectionRefreshing } = useSectionLoading();
-const isLoading = computed(() => {
-  return (
-    get(isSectionRefreshing(Section.BLOCKCHAIN_ETH)) ||
-    get(isSectionRefreshing(Section.BLOCKCHAIN_BTC))
-  );
-});
+const { isLoading: isSectionLoading } = useStatusStore();
+
+const isLoading = logicOr(
+  isSectionLoading(Section.BLOCKCHAIN_ETH),
+  isSectionLoading(Section.BLOCKCHAIN_BTC)
+);
 
 const startingValue = computed(() => {
   const data = get(timeframeData).data;

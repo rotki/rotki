@@ -8,7 +8,6 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import { deserializeApiErrorMessage } from '@/services/converters';
 import { type TradeLocation } from '@/types/history/trade/location';
 import { type ManualBalance } from '@/types/manual-balances';
 import { startPromise } from '@/utils';
@@ -125,9 +124,8 @@ const save = async () => {
   }
 
   if (status.message) {
-    const errorMessages = deserializeApiErrorMessage(status.message);
-    if (errorMessages) {
-      set(errors, (errorMessages?.balances[0] as any) ?? {});
+    if (typeof status.message !== 'string') {
+      set(errors, status.message);
       await get(v$).$validate();
     } else {
       const obj = { message: status.message };
@@ -261,7 +259,7 @@ defineExpose({
       class="manual-balances-form__label"
       outlined
       :label="tc('manual_balances_form.fields.label')"
-      :error-messages="toMessages(v$.label.$errors)"
+      :error-messages="toMessages(v$.label)"
       :disabled="pending"
       @blur="v$.label.$touch()"
     />
@@ -280,7 +278,7 @@ defineExpose({
           :label="tc('common.asset')"
           class="manual-balances-form__asset"
           outlined
-          :error-messages="toMessages(v$.asset.$errors)"
+          :error-messages="toMessages(v$.asset)"
           :disabled="pending"
           @blur="v$.asset.$touch()"
         />
@@ -318,7 +316,7 @@ defineExpose({
     <amount-input
       v-model="amount"
       :label="tc('common.amount')"
-      :error-messages="toMessages(v$.amount.$errors)"
+      :error-messages="toMessages(v$.amount)"
       class="manual-balances-form__amount"
       outlined
       autocomplete="off"
@@ -338,7 +336,7 @@ defineExpose({
       v-model="location"
       class="manual-balances-form__location"
       outlined
-      :error-messages="toMessages(v$.location.$errors)"
+      :error-messages="toMessages(v$.location)"
       :disabled="pending"
       :label="tc('common.location')"
       @blur="v$.location.$touch()"

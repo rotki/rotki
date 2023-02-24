@@ -9,7 +9,6 @@ import {
 } from '@/types/airdrops';
 import { bigNumberify } from '@/utils/bignumbers';
 import { Section, Status } from '@/types/status';
-import { isLoading } from '@/utils/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
@@ -24,6 +23,7 @@ export const useAirdropStore = defineStore('defi/airdrops', () => {
 
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
+  const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_AIRDROPS);
 
   const airdropList = (addresses: string[]): ComputedRef<Airdrop[]> =>
     computed(() => {
@@ -64,18 +64,12 @@ export const useAirdropStore = defineStore('defi/airdrops', () => {
     });
 
   async function fetchAirdrops(refresh = false) {
-    const section = Section.DEFI_AIRDROPS;
-    const currentStatus = getStatus(section);
-
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
+    if (fetchDisabled(refresh)) {
       return;
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
+    setStatus(newStatus);
 
     try {
       const { taskId } = await fetchAirdropsCaller();
@@ -96,7 +90,7 @@ export const useAirdropStore = defineStore('defi/airdrops', () => {
         display: true
       });
     }
-    setStatus(Status.LOADED, section);
+    setStatus(Status.LOADED);
   }
 
   return {

@@ -39,15 +39,15 @@ const { uniswapV2Addresses: addresses, uniswapV2PoolAssets: poolAssets } =
 
 const { isModuleEnabled } = useModules();
 const { tokenAddress } = useAssetInfoRetrievalStore();
-const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
+const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 
 const { tc } = useI18n();
 const { premiumURL } = useInterop();
 
 const enabled = isModuleEnabled(modules[0]);
 const loading = shouldShowLoadingScreen(Section.DEFI_UNISWAP_V2_BALANCES);
-const primaryRefreshing = isSectionRefreshing(Section.DEFI_UNISWAP_V2_BALANCES);
-const secondaryRefreshing = isSectionRefreshing(Section.DEFI_UNISWAP_EVENTS);
+const primaryRefreshing = isLoading(Section.DEFI_UNISWAP_V2_BALANCES);
+const secondaryRefreshing = isLoading(Section.DEFI_UNISWAP_EVENTS);
 const premium = usePremium();
 
 const selectedAddresses = useArrayMap(selectedAccounts, a => a.address);

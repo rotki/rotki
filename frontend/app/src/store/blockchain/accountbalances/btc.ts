@@ -34,7 +34,7 @@ export const useBtcAccountBalancesStore = defineStore(
       );
     });
 
-    const { shouldShowLoadingScreen } = useSectionLoading();
+    const { shouldShowLoadingScreen } = useStatusStore();
     const bitcoinTotals: ComputedRef<BlockchainTotal[]> = computed(() => [
       {
         chain: Blockchain.BTC,

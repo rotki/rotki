@@ -86,7 +86,8 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
+const { isLoading } = useStatusStore();
+const loading = isLoading(Section.NON_FUNGIBLE_BALANCES);
 
 const setPrice = async (price: string, toAsset: string) => {
   const nft = get(edit);

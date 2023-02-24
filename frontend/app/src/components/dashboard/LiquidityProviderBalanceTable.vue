@@ -110,28 +110,14 @@ const tableHeaders = createTableHeaders(
   dashboardTablesVisibleColumns
 );
 
-const { isSectionRefreshing } = useSectionLoading();
-const uniswapV3BalancesLoading = isSectionRefreshing(
-  Section.DEFI_UNISWAP_V3_BALANCES
-);
-const uniswapV2BalancesLoading = isSectionRefreshing(
-  Section.DEFI_UNISWAP_V2_BALANCES
-);
-const balancerBalancesLoading = isSectionRefreshing(
-  Section.DEFI_BALANCER_BALANCES
-);
-const sushiswapBalancesLoading = isSectionRefreshing(
-  Section.DEFI_SUSHISWAP_BALANCES
-);
+const { isLoading } = useStatusStore();
 
-const loading = computed<boolean>(() => {
-  return (
-    get(uniswapV3BalancesLoading) ||
-    get(uniswapV2BalancesLoading) ||
-    get(balancerBalancesLoading) ||
-    get(sushiswapBalancesLoading)
-  );
-});
+const loading = logicOr(
+  isLoading(Section.DEFI_UNISWAP_V3_BALANCES),
+  isLoading(Section.DEFI_UNISWAP_V2_BALANCES),
+  isLoading(Section.DEFI_BALANCER_BALANCES),
+  isLoading(Section.DEFI_SUSHISWAP_BALANCES)
+);
 
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);

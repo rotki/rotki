@@ -23,12 +23,13 @@ onMounted(async () => {
     await refresh();
   }
 });
-const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
+const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 
 const loading = shouldShowLoadingScreen(Section.STAKING_ETH2);
-const primaryRefreshing = isSectionRefreshing(Section.STAKING_ETH2);
-const secondaryRefreshing = isSectionRefreshing(Section.STAKING_ETH2_DEPOSITS);
-const eth2StatsLoading = isSectionLoading(Section.STAKING_ETH2_STATS);
+const primaryRefreshing = isLoading(Section.STAKING_ETH2);
+const secondaryRefreshing = isLoading(Section.STAKING_ETH2_DEPOSITS);
+
+const eth2StatsLoading = isLoading(Section.STAKING_ETH2_STATS);
 
 const { eth2Validators } = storeToRefs(useEthAccountsStore());
 watch(filterType, () => set(selection, []));
