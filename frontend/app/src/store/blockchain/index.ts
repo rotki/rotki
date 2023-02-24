@@ -111,7 +111,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       await refreshAccounts(chain);
     };
 
-    await Promise.allSettled(
+    const promiseResult = await Promise.allSettled(
       payload.payload.map(async p => {
         const addresses = await addEvmAccount(p);
         for (const chain in addresses) {
@@ -123,6 +123,44 @@ export const useBlockchainStore = defineStore('blockchain', () => {
         }
       })
     );
+
+    const failedPayload: AccountPayload[] = [];
+    if (
+      payload.payload.length === 1 &&
+      promiseResult[0].status === 'rejected'
+    ) {
+      throw promiseResult[0].reason;
+    }
+
+    promiseResult.forEach((res, index) => {
+      if (res.status === 'rejected') {
+        logger.error(res.reason.message);
+        failedPayload.push(payload.payload[index]);
+      }
+    });
+
+    if (failedPayload.length > 0) {
+      const titleError = tc(
+        'actions.balances.blockchain_accounts_add.error.title',
+        0,
+        { blockchain: 'EVM' }
+      );
+      const description = tc(
+        'actions.balances.blockchain_accounts_add.error.failed_list_description',
+        0,
+        {
+          list: failedPayload.map(({ address }) => `- ${address}`).join('\n'),
+          address: payload.payload.length,
+          blockchain: 'EVM'
+        }
+      );
+
+      notify({
+        title: titleError,
+        message: description,
+        display: true
+      });
+    }
   };
 
   const addAccounts = async ({
