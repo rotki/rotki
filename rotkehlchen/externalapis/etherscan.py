@@ -14,7 +14,9 @@ from rotkehlchen.constants.timing import (
     DEFAULT_READ_TIMEOUT,
     DEFAULT_TIMEOUT_TUPLE,
 )
+from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
 from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -351,7 +353,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                         )
                     else:
                         # Handling genesis transactions
-                        dbtx = DBEvmTx(self.db)  # type: ignore
+                        assert self.db is not None, 'self.db should exists at this point'
+                        dbtx = DBEvmTx(self.db)
                         tx = dbtx.get_or_create_genesis_transaction(
                             account=account,  # type: ignore[arg-type]  # always exists here
                             chain_id=chain_id,  # type: ignore[arg-type]  # is only supported chain
@@ -366,11 +369,24 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                             chain_id=chain_id,
                             evm_inquirer=None,
                         )
-                        with self.db.user_write() as cursor:  # type: ignore  # db always here
+                        with self.db.user_write() as cursor:
                             dbtx.add_evm_internal_transactions(
                                 write_cursor=cursor,
                                 transactions=[internal_tx],
                                 relevant_address=None,  # can't know the address here
+                            )
+
+                        dbevents = DBHistoryEvents(self.db)
+                        with self.db.user_write() as write_cursor:
+                            # Delete decoded genesis events so they can be later redecoded.
+                            dbevents.delete_events_by_tx_hash(
+                                write_cursor=write_cursor,
+                                tx_hashes=[GENESIS_HASH],
+                                chain_id=self.chain.to_chain_id(),  # type: ignore[arg-type]
+                            )
+                            write_cursor.execute(
+                                'DELETE from evm_tx_mappings WHERE tx_hash=? AND chain_id=? AND value=?',  # noqa: E501
+                                (GENESIS_HASH, self.chain.to_chain_id().serialize_for_db(), HISTORY_MAPPING_STATE_DECODED),  # noqa: E501
                             )
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(f'{str(e)}. Skipping transaction')
