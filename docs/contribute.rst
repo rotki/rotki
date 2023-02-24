@@ -384,11 +384,9 @@ This is how rotki inserts a variable inside a sentence. You **must** keep this v
 
 3. For missing keys from other language files, by default it will use the value of the master file which is ``English``.
 
-Code Testing
-**************
+Python Code Testing
+*********************
 
-Python
-========
 
 In order to run the python test suite, first make sure the virtual environment is activated, the developer requirements are installed, and then do:
 
@@ -408,14 +406,14 @@ We run the test suite in the GitHub CI but only a subset of them since not all a
 - ``[run all py tests]`` will run the base set of tests, the tests related to NFTs and some others that perform a big number of requests and are slower.
 
 Linting
---------
+=========
 
 Before each commit you should run the linting checks. They run ``flake8``, ``mypy`` and ``pylint`` in order.
 
 Do that by invoking ``make lint`` from the root directory of the project.
 
-Check and mock networking
------------------------------
+Mocking networking in the tests
+================================
 
 One of the biggest issues we have at rotki is that the backend testing is really slow. Currently the main reason for this is network calls. As rotki is a portfolio tracking and analytics tool, almost all of our tests are calling the network.
 
@@ -430,10 +428,16 @@ Mocking should happen with one of the following ways
 2. Using test specific mocking.
 3. For repeatable calls that would always return the same response from the network use the vcr.py approach.
 
-From 1.27.0 we have introduced VCR to mock network queries in some tests trying to improve the speed of the test suite. VCR works by generating a `yaml` file that records information about all the requests made. Then for every request that happens in the test VCR tries to match it to one of the recorded ones. We already have some pre-recorded cassettes (the name used by VCR for those yaml files) and they are available at `github <https://github.com/rotki/test-caching>`__.
-In a fresh run this repo will be cloned and then the cassettes will be replayed. This happens in the path set by the ``vcr_cassette_dir`` fixture that also sets the directory where the cassettes are located.
+Using VCR
+=============
+
+From 1.27.0 we have introduced VCR to mock network queries in most tests trying to improve the speed of the test suite. VCR works by generating a `yaml` file that records information about all the requests made. Then for every request that happens in the test VCR tries to match it to one of the recorded ones. We already have some pre-recorded cassettes (the name used by VCR for those yaml files) and they are available at `github <https://github.com/rotki/test-caching>`__.
+In a fresh run this repo will be cloned and then the cassettes will be replayed. This happens in the path set by the ``vcr_cassette_dir`` fixture that also sets the directory where the cassettes are located. By default this is ``test-caching`` directory under `rotki's data <https://rotki.readthedocs.io/en/stable/usage_guide.html#rotki-data-directory>`__ directory.
 
 Locally cassettes are only read and never written to prevent unexpected behaviour during testing. To record a new test we provide a make rule that allows it called ``create-cassette``.
+
+In the tests
+------------
 
 First we need to mark the test as a VCR test with the pytest directive
 
@@ -447,7 +451,13 @@ For the tests that make requests with parameters depending on time, blocknumber 
 
     @pytest.mark.freeze_time('2023-01-24 22:45:45 GMT')
 
-You can change the time here to match the one at which you are writing the test. Finally to execute the test and record it
+You can change the time here to match the one at which you are writing the test.
+
+
+Recording a test
+-----------------
+
+Finally to execute the test and record it
 
 ::
 
@@ -461,6 +471,8 @@ This rule can be executed with
 
     make create-cassette TEST_PATH
 
+Handling errors
+-------------------
 When executing tests mocked with VCR after making changes to the code it is possible for you to see the following error:
 
 ::
@@ -470,21 +482,32 @@ When executing tests mocked with VCR after making changes to the code it is poss
 
 This is telling you that a new request not recorded in the cassette happened and needs to be added. To solve this you need to use the ``RECORD_CASSETTES`` approach and update the yaml file if it was intentional or if no new requests are supposed to be made, investigate and figure out what is happening.
 
-After recording a cassette or updating an old one you need to sync it with the repo. By default they are cloned and recorded in the ``test-caching`` folder at the ``develop_data`` folder under the default path for `rotki's data <https://rotki.readthedocs.io/en/stable/usage_guide.html#rotki-data-directory>`__ . Create a new pull request with the changes and after merging it the other developers of the application will pull it automatically.
+Syncing with the cassettes repository
+------------------------------------------------
 
-If you are having issues because the cassettes got modified unintentionally you can restore the cassettes in the ``test-caching`` folder using ``git restore`` or delete the folder to force a new clone.
+When you work on a new branch it is possible you will need to either create a new cassette ogr update an existing one. Let's say you are working on branch ``new_cool_feature`` based out of ``bugfixes``. Then you will need to go to the cassettes repo https://github.com/rotki/test-caching and create a branch with the same name, ``new_cool_feature`` based out of that repo's bugfixes.
+
+Locally you can work with your rotki branch, and rotki will make sure to pull the proper cassette branch during testing. The logic for this is `here <https://github.com/rotki/rotki/blob/20534a679a0f1bc7951fa21496aaa5eab976ae1b/rotkehlchen/tests/conftest.py#L225>`__. This works fine in the CI and should always pull the proper branch. But it may happen that when it falls back to a branch it falls back to ``develop`` and not to ``bugfixes`` if it runs locally. Since it does not detect the target branch locally (TODO: Can we fix?). To solve that utilize the ``DEFAULT_VCR_BRANCH`` environment variable to run a test locally like this: ``DEFAULT_VCR_BRANCH=bugfixes python pytestgeventwrapper.py -xs --pdb rotkehlchen/tests/unit/test_evm_tx_decoding.py::test_genesis_remove_address``
+
+When you record a new cassette or update a new one all changes will be saved in the local test-caching repo. Make sure to commit this and push it to the upstream branch so that the your PR in rotki's CI also works.
+
+If you are having issues when re-recording a cassette, you can simply delete and re-record from scratch.
+
+After your ``new_cool_feature`` PR is merged on rotki (bugfixes in our example), **you must remember** to do the same in the cassettes repository. So merge the ``new_cool_feature`` to bugfixes and push.
+
+Note: We can probably automate this process a lot better in the CI.
 
 
 Alternative Linting and Static Analysis Tools
-----------------------------------------------
+==============================================
 
 There is some alternative linting tools that we don't run in the CI since they have a lot of false positives. It's good to run them from time to time so they are listed here.
 
  - **vulture**: Source and docs `here <https://github.com/jendrikseipp/vulture>`__. Just get via ``pip install vulture``. If you simply run it from the root directory you will get a list of possibly unused code that you can remove. You will have to go through a lot of false positives.
  - **bandit** Source and docs `here <https://github.com/PyCQA/bandit>`__. Just get via ``pip install bandit``. If you run it you will get a lot of potential issues in the code. You will have to go through a lot of false positives.
 
-Vue/Typescript
-===============
+Vue/Typescript Testing
+*************************
 
 The Vue/Typescript part of the application under the ``frontend`` directory has two types of tests.
 The unit tests that are testing functions and components are using ``vitest`` and ``vue-test-utils`` and you can run
@@ -515,7 +538,7 @@ The above command will run the e2e tests in headless mode. If you want to debug 
 This command will open the Cypress Test Runner window where you can select specific suites to execute.
 
 Linting
---------
+=========
 
 Before committing and pushing your commits ensure that you fix any lint issues. You can do this by running:
 
