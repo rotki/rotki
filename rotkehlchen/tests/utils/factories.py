@@ -10,20 +10,26 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ONE
+from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants.assets import A_ETH, A_USDC
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     AddressbookEntry,
     ApiKey,
     ApiSecret,
+    AssetAmount,
     ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
     EvmTransaction,
+    Fee,
     Location,
+    Price,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
+    TradeType,
     make_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -214,6 +220,29 @@ def make_random_user_notes(num_notes: int) -> list[dict[str, Any]]:
             },
         )
     return notes
+
+
+def make_random_trades(num_trades: int) -> list[Trade]:
+    """Make random trades to be used in tests."""
+    trades = []
+    for idx in range(num_trades):
+        trade_type = random.choice([TradeType.BUY, TradeType.SELL])
+        trades.append(
+            Trade(
+                timestamp=Timestamp(random.randint(100000, 10000000)),
+                trade_type=trade_type,
+                location=Location.EXTERNAL,
+                base_asset=A_ETH,
+                quote_asset=A_USDC,
+                amount=AssetAmount(FVal(idx)),
+                rate=Price(FVal(idx)),
+                fee=Fee(ZERO),
+                fee_currency=A_USDC,
+                link='',
+                notes='',
+            ),
+        )
+    return trades
 
 
 UNIT_BTC_ADDRESS1 = '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2'

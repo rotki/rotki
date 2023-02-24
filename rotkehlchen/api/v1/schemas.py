@@ -413,12 +413,9 @@ class TradesQuerySchema(
     location = LocationField(load_default=None)
     include_ignored_trades = fields.Boolean(load_default=True)
 
-    def __init__(
-            self,
-            treat_eth2_as_eth: bool,
-    ) -> None:
+    def __init__(self, db: 'DBHandler') -> None:
         super().__init__()
-        self.treat_eth2_as_eth = treat_eth2_as_eth
+        self.db = db
 
     @validates_schema
     def validate_trades_query_schema(
@@ -456,14 +453,21 @@ class TradesQuerySchema(
     ) -> dict[str, Any]:
         base_assets: Optional[tuple['Asset', ...]] = None
         quote_assets: Optional[tuple['Asset', ...]] = None
+        trades_idx_to_ignore = None
+        with self.db.conn.read_ctx() as cursor:
+            treat_eth2_as_eth = self.db.get_settings(cursor).treat_eth2_as_eth
+            if data['include_ignored_trades'] is not True:
+                ignored_action_ids = self.db.get_ignored_action_ids(cursor, ActionType.TRADE)
+                trades_idx_to_ignore = ignored_action_ids[ActionType.TRADE]
+
         if data['base_asset'] is not None:
             base_assets = (data['base_asset'],)
         if data['quote_asset'] is not None:
             quote_assets = (data['quote_asset'],)
 
-        if self.treat_eth2_as_eth is True and data['base_asset'] == A_ETH:
+        if treat_eth2_as_eth is True and data['base_asset'] == A_ETH:
             base_assets = (A_ETH, A_ETH2)
-        elif self.treat_eth2_as_eth is True and data['quote_asset'] == A_ETH:
+        elif treat_eth2_as_eth is True and data['quote_asset'] == A_ETH:
             quote_assets = (A_ETH, A_ETH2)
 
         filter_query = TradesFilterQuery.make(
@@ -476,6 +480,7 @@ class TradesQuerySchema(
             quote_assets=quote_assets,
             trade_type=[data['trade_type']] if data['trade_type'] is not None else None,
             location=data['location'],
+            trades_idx_to_ignore=trades_idx_to_ignore,
         )
 
         return {

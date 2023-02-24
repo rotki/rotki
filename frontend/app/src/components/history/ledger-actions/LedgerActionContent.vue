@@ -269,6 +269,7 @@ onMounted(async () => {
     newLedgerAction();
     await router.replace({ query: {} });
   } else {
+    await fetchData();
     await refreshLedgerActions();
   }
 });

@@ -18,6 +18,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     assert_simple_ok_response,
 )
+from rotkehlchen.tests.utils.factories import make_random_trades
 from rotkehlchen.tests.utils.history import (
     assert_binance_trades_result,
     assert_poloniex_trades_result,
@@ -1150,43 +1151,7 @@ def test_query_trades_associated_locations(rotkehlchen_api_server_with_exchanges
 def test_ignoring_trades(rotkehlchen_api_server):
     """Check that ignoring trades filter works as expected."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    trades = [Trade(
-        timestamp=Timestamp(1596429934),
-        location=Location.EXTERNAL,
-        base_asset=A_WETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal('1')),
-        rate=Price(FVal('320')),
-        fee=Fee(ZERO),
-        fee_currency=A_EUR,
-        link='',
-        notes='',
-    ), Trade(
-        timestamp=Timestamp(1596429934),
-        location=Location.KRAKEN,
-        base_asset=A_WETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal('1')),
-        rate=Price(FVal('320')),
-        fee=Fee(ZERO),
-        fee_currency=A_EUR,
-        link='',
-        notes='',
-    ), Trade(
-        timestamp=Timestamp(1596429934),
-        location=Location.BISQ,
-        base_asset=A_WETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal('1')),
-        rate=Price(FVal('320')),
-        fee=Fee(ZERO),
-        fee_currency=A_EUR,
-        link='',
-        notes='',
-    )]
+    trades = make_random_trades(3)
     trade_to_ignore = trades[0].identifier
 
     # populate db with trades
@@ -1225,3 +1190,59 @@ def test_ignoring_trades(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == len(trades) - 1
     assert trade_to_ignore not in {entry['entry']['trade_id'] for entry in result['entries']}
+
+
+def test_ignoring_trades_with_pagination(rotkehlchen_api_server):
+    """Check that pagination is respected when `include_ignored_trades` is True."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    trades = make_random_trades(10)
+    trades_to_ignore = [trades[0].identifier, trades[1].identifier]
+
+    # populate db with trades
+    with rotki.data.db.user_write() as cursor:
+        rotki.data.db.add_trades(cursor, trades)
+
+    # ignore two trades
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ignoredactionsresource',
+        ), json={'action_type': 'trade', 'data': trades_to_ignore},
+    )
+    assert_simple_ok_response(response)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        result = rotki.data.db.get_ignored_action_ids(cursor, None)
+    assert result[ActionType.TRADE] == set(trades_to_ignore)
+
+    # now fetch trades with pagination and `include_ignored_trades` is False
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tradesresource',
+        ), json={
+            'include_ignored_trades': 'False',
+            'limit': 7,
+            'offset': 0,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 7
+    assert result['entries_found'] == 8
+    assert result['entries_total'] == len(trades)
+    assert all([entry['entry']['trade_id'] not in trades_to_ignore for entry in result['entries']])
+
+    # now fetch trades with pagination and `include_ignored_trades` is True
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tradesresource',
+        ), json={
+            'include_ignored_trades': 'True',
+            'limit': 7,
+            'offset': 0,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 7
+    assert result['entries_found'] == 10
+    assert result['entries_total'] == len(trades)
