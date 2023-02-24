@@ -262,10 +262,12 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
 <template>
   <v-slide-y-transition>
     <div class="login">
-      <v-card-title>
-        {{ tc('login.title') }}
+      <v-card-title class="px-6">
+        <card-title>
+          {{ tc('login.title') }}
+        </card-title>
       </v-card-title>
-      <v-card-text class="pb-2">
+      <v-card-text class="pb-2 px-6">
         <v-form ref="form" :value="!v$.$invalid">
           <v-text-field
             ref="usernameRef"
@@ -478,7 +480,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
           </transition>
         </v-form>
       </v-card-text>
-      <v-card-actions class="login__actions d-block">
+      <v-card-actions class="login__actions d-block pt-6 pb-4 px-6">
         <span>
           <v-btn
             class="login__button__sign-in"
@@ -496,16 +498,17 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
             {{ tc('login.button_signin') }}
           </v-btn>
         </span>
-        <v-divider class="my-4" />
         <span class="login__actions__footer">
-          <button
+          <v-btn
+            text
             :disabled="loading"
             data-cy="new-account"
-            class="login__button__new-account font-weight-bold secondary--text"
+            color="primary"
+            class="mt-2 login__button__new-account text-subtitle-2 text-capitalize"
             @click="newAccount()"
           >
             {{ tc('login.button_new_account') }}
-          </button>
+          </v-btn>
         </span>
       </v-card-actions>
     </div>
@@ -515,8 +518,6 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
 <style scoped lang="scss">
 .login {
   &__actions {
-    padding: 16px !important;
-
     &__footer {
       font-size: 0.9em;
     }

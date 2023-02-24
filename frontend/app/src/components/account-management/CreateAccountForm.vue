@@ -125,96 +125,89 @@ const back = () => {
 <template>
   <v-slide-y-transition>
     <div class="create-account">
-      <div class="text-h6 text--primary create-account__header">
-        {{ tc('create_account.title') }}
-      </div>
+      <v-card-title class="px-6">
+        <card-title> {{ tc('create_account.title') }} </card-title>
+      </v-card-title>
       <v-stepper v-model="step">
-        <v-stepper-header>
-          <v-stepper-step step="1" :complete="step > 1">
+        <v-stepper-header class="pb-2">
+          <v-stepper-step class="px-6 py-0" step="1" :complete="step > 1">
             <span v-if="step === 1">
               {{ tc('create_account.premium.title') }}
             </span>
           </v-stepper-step>
-          <v-divider />
-          <v-stepper-step step="2" :complete="step > 2">
+          <v-divider class="mx-0" />
+          <v-stepper-step class="px-6 py-0" step="2" :complete="step > 2">
             <span v-if="step === 2">
               {{ tc('create_account.select_credentials.title') }}
             </span>
           </v-stepper-step>
-          <v-divider />
-          <v-stepper-step step="3">
+          <v-divider class="mx-0" />
+          <v-stepper-step class="px-6 py-0" step="3">
             <span v-if="step === 3">
               {{ tc('create_account.usage_analytics.title') }}
             </span>
           </v-stepper-step>
         </v-stepper-header>
         <v-stepper-items>
-          <v-stepper-content step="1">
-            <v-card-text>
-              <v-form :value="premiumFormValid">
-                <v-alert text color="primary">
-                  <i18n
-                    tag="div"
-                    path="create_account.premium.premium_question"
+          <v-stepper-content class="px-6" step="1">
+            <v-form :value="premiumFormValid">
+              <v-alert text color="primary">
+                <i18n tag="div" path="create_account.premium.premium_question">
+                  <template #premiumLink>
+                    <b>
+                      <external-link url="https://rotki.com/products">
+                        {{ tc('create_account.premium.premium_link_text') }}
+                      </external-link>
+                    </b>
+                  </template>
+                </i18n>
+                <div class="d-flex mt-4 justify-center">
+                  <v-btn
+                    depressed
+                    rounded
+                    small
+                    :outlined="premiumEnabled"
+                    color="primary"
+                    @click="
+                      premiumEnabled = false;
+                      syncDatabase = false;
+                    "
                   >
-                    <template #premiumLink>
-                      <b>
-                        <external-link url="https://rotki.com/products">
-                          {{ tc('create_account.premium.premium_link_text') }}
-                        </external-link>
-                      </b>
-                    </template>
-                  </i18n>
-                  <div class="d-flex mt-4 justify-center">
-                    <v-btn
-                      depressed
-                      rounded
-                      small
-                      :outlined="premiumEnabled"
-                      color="primary"
-                      @click="
-                        premiumEnabled = false;
-                        syncDatabase = false;
-                      "
-                    >
-                      <v-icon small class="mr-2">mdi-close</v-icon>
-                      <span>
-                        {{ tc('common.actions.no') }}
-                      </span>
-                    </v-btn>
-                    <v-btn
-                      depressed
-                      rounded
-                      small
-                      :outlined="!premiumEnabled"
-                      color="primary"
-                      class="ml-2"
-                      @click="premiumEnabled = true"
-                    >
-                      <v-icon small class="mr-2"> mdi-check</v-icon>
-                      <span>
-                        {{
-                          tc('create_account.premium.button_premium_approve')
-                        }}
-                      </span>
-                    </v-btn>
-                  </div>
-                </v-alert>
+                    <v-icon small class="mr-2">mdi-close</v-icon>
+                    <span>
+                      {{ tc('common.actions.no') }}
+                    </span>
+                  </v-btn>
+                  <v-btn
+                    depressed
+                    rounded
+                    small
+                    :outlined="!premiumEnabled"
+                    color="primary"
+                    class="ml-2"
+                    @click="premiumEnabled = true"
+                  >
+                    <v-icon small class="mr-2"> mdi-check</v-icon>
+                    <span>
+                      {{ tc('create_account.premium.button_premium_approve') }}
+                    </span>
+                  </v-btn>
+                </div>
+              </v-alert>
 
-                <premium-credentials
-                  :enabled="premiumEnabled"
-                  :api-secret="apiSecret"
-                  :api-key="apiKey"
-                  :loading="loading"
-                  :sync-database="syncDatabase"
-                  @update:api-key="apiKey = $event"
-                  @update:api-secret="apiSecret = $event"
-                  @update:sync-database="syncDatabase = $event"
-                  @update:valid="premiumFormValid = $event"
-                />
-              </v-form>
-            </v-card-text>
-            <v-card-actions>
+              <premium-credentials
+                :enabled="premiumEnabled"
+                :api-secret="apiSecret"
+                :api-key="apiKey"
+                :loading="loading"
+                :sync-database="syncDatabase"
+                @update:api-key="apiKey = $event"
+                @update:api-secret="apiSecret = $event"
+                @update:sync-database="syncDatabase = $event"
+                @update:valid="premiumFormValid = $event"
+              />
+            </v-form>
+            <v-card-actions class="pa-0 pt-4">
               <v-spacer />
               <v-btn
                 class="create-account__button__cancel"
@@ -240,76 +233,68 @@ const back = () => {
             </v-card-actions>
           </v-stepper-content>
           <v-stepper-content step="2">
-            <v-card-text>
-              <v-form ref="form" :value="credentialsFormValid">
-                <v-text-field
-                  v-model="username"
-                  outlined
-                  autofocus
-                  single-line
-                  class="create-account__fields__username"
-                  :label="
-                    tc('create_account.select_credentials.label_username')
-                  "
-                  prepend-inner-icon="mdi-account"
-                  :error-messages="v$.username.$errors.map(e => e.$message)"
-                  :disabled="loading"
-                  required
-                />
-                <v-alert
-                  v-if="syncDatabase"
-                  text
-                  class="mt-2 create-account__password-sync-requirement"
-                  outlined
-                  color="deep-orange"
-                  icon="mdi-information"
-                >
-                  {{
-                    tc(
-                      'create_account.select_credentials.password_sync_requirement'
-                    )
-                  }}
-                </v-alert>
-                <revealable-input
-                  v-model="password"
-                  outlined
-                  class="create-account__fields__password"
-                  :label="
-                    tc('create_account.select_credentials.label_password')
-                  "
-                  prepend-icon="mdi-lock"
-                  :error-messages="v$.password.$errors.map(e => e.$message)"
-                  :disabled="loading"
-                  required
-                />
-                <revealable-input
-                  v-model="passwordConfirm"
-                  outlined
-                  class="create-account__fields__password-repeat"
-                  prepend-icon="mdi-repeat"
-                  :error-messages="
-                    v$.passwordConfirm.$errors.map(e => e.$message)
-                  "
-                  :disabled="loading"
-                  :label="
-                    tc(
-                      'create_account.select_credentials.label_password_repeat'
-                    )
-                  "
-                  required
-                />
-                <v-checkbox
-                  v-model="userPrompted"
-                  class="create-account__boxes__user-prompted"
-                  :label="
-                    tc(
-                      'create_account.select_credentials.label_password_backup_reminder'
-                    )
-                  "
-                />
-              </v-form>
-            </v-card-text>
-            <v-card-actions>
+            <v-form ref="form" :value="credentialsFormValid">
+              <v-text-field
+                v-model="username"
+                outlined
+                autofocus
+                single-line
+                class="create-account__fields__username"
+                :label="tc('create_account.select_credentials.label_username')"
+                prepend-inner-icon="mdi-account"
+                :error-messages="v$.username.$errors.map(e => e.$message)"
+                :disabled="loading"
+                required
+              />
+              <v-alert
+                v-if="syncDatabase"
+                text
+                class="mt-2 create-account__password-sync-requirement"
+                outlined
+                color="deep-orange"
+                icon="mdi-information"
+              >
+                {{
+                  tc(
+                    'create_account.select_credentials.password_sync_requirement'
+                  )
+                }}
+              </v-alert>
+              <revealable-input
+                v-model="password"
+                outlined
+                class="create-account__fields__password"
+                :label="tc('create_account.select_credentials.label_password')"
+                prepend-icon="mdi-lock"
+                :error-messages="v$.password.$errors.map(e => e.$message)"
+                :disabled="loading"
+                required
+              />
+              <revealable-input
+                v-model="passwordConfirm"
+                outlined
+                class="create-account__fields__password-repeat"
+                prepend-icon="mdi-repeat"
+                :error-messages="
+                  v$.passwordConfirm.$errors.map(e => e.$message)
+                "
+                :disabled="loading"
+                :label="
+                  tc('create_account.select_credentials.label_password_repeat')
+                "
+                required
+              />
+              <v-checkbox
+                v-model="userPrompted"
+                class="mt-0 create-account__boxes__user-prompted"
+                :label="
+                  tc(
+                    'create_account.select_credentials.label_password_backup_reminder'
+                  )
+                "
+              />
+            </v-form>
+            <v-card-actions class="pa-0 pt-2">
               <v-spacer />
               <v-btn
                 color="primary"
@@ -334,7 +319,7 @@ const back = () => {
             </v-card-actions>
           </v-stepper-content>
           <v-stepper-content step="3">
-            <v-card-text>
+            <div>
               <v-alert
                 outlined
                 prominent
@@ -346,17 +331,13 @@ const back = () => {
               <v-alert v-if="error" type="error" outlined>
                 {{ error }}
               </v-alert>
-              <v-row no-gutters>
-                <v-col>
-                  <v-checkbox
-                    v-model="submitUsageAnalytics"
-                    :disabled="loading"
-                    :label="tc('create_account.usage_analytics.label_confirm')"
-                  />
-                </v-col>
-              </v-row>
-            </v-card-text>
-            <v-card-actions>
+              <v-checkbox
+                v-model="submitUsageAnalytics"
+                :disabled="loading"
+                :label="tc('create_account.usage_analytics.label_confirm')"
+              />
+            </div>
+            <v-card-actions class="pa-0 pt-2">
               <v-spacer />
               <v-btn
                 color="primary"
@@ -388,10 +369,6 @@ const back = () => {
 
 <style scoped lang="scss">
 .create-account {
-  &__header {
-    padding: 12px;
-  }
-
   &__analytics {
     &__content {
       background-color: #f8f8f8 !important;
@@ -410,10 +387,11 @@ const back = () => {
     .v-stepper {
       &__header {
         box-shadow: none !important;
+        height: auto;
       }
 
-      &__content {
-        padding: 12px !important;
+      &__wrapper {
+        overflow: visible;
       }
     }
   }

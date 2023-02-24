@@ -33,7 +33,7 @@ const displayRouter = logicAnd(connected, loginIfConnected);
     <div :class="css.wrapper">
       <div :class="css.container">
         <v-card
-          class="pb-4"
+          class="pb-2"
           :class="css.card"
           light
           data-cy="account-management"
