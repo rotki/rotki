@@ -384,6 +384,51 @@ This is how rotki inserts a variable inside a sentence. You **must** keep this v
 
 3. For missing keys from other language files, by default it will use the value of the master file which is ``English``.
 
+Working on issues
+*************************
+
+The current workflow for working on issues is the following.
+
+Picking up work
+===================
+
+Work can be picked up by checking the next patch release and/or the next feature release milestone. All the milestone issues are kept in a descending order of priority. So the higher an issue appears in the milestone, the higher its priority. The responsibility of keeping priority is up to the product owner (for now only Lefteris).
+
+As a developer you can pick up an issue by checking the milestone and asking the product owner. Once they give the go you can pick it up. If the product owner is unavailable, and you do not have anything else to work on, pick an issue with high priority and you can discuss with them later.
+
+When you pick an issue **assign yourself** to it in Github.
+
+Opening a PR
+================
+
+In order to implement your work you should create a feature branch based on either ``bugfixes`` if you are targeting a patch release or ``develop`` if you are targeting a feature release.
+
+Whenever you are ready to share your work with your colleagues you can open a Pull Request in Github from this branch. If you just want to get it to run all tests and not be checked by colleagues **open it as a draft**.
+
+
+Backend Team
+----------------
+
+Once you are ready for the PR to be seen by your colleagues set the label to ``ready for peer review`` and ping ``@rotki-backend-devs`` in discord asking for a review.
+
+Your colleague will review the PR and leave you multiple comments. Then they will set the label ``PR review work`` to the PR and ping you. After this back and forth and once both you and your colleague are sure the PR is ready you can proceed to the next stage.
+
+You set the label to ``ready for final review`` and ping the product owner (at the moment only Lefteris) in discord. The same process as above is repeated until the PR is merged.
+
+Changelog
+=============
+
+If the issue is either fixing a user-facing bug or adding a feature you should add a changelog entry in ``changelog.rst``. The changelog text should be user-facing and make sense to the user. Do not use internal-rotki speak as they would not understand it.
+
+Also if you are a backend developer and there is still frontend work to do, **do not** add a changelog entry. We leave it to the frontend to do that.
+
+
+Finalizing
+============
+
+Make sure the issue is closed once both backend and frontend work have been merged to the target branch.
+
+
 Python Code Testing
 *********************
 
@@ -423,8 +468,9 @@ There is a nice way to run tests by disallowing network calls. This can help us 
 
 You can add ``--disable-socket`` to any pytest call and it will fail immediately for any network calls. You will probably need to also add ``--allow-hosts=127.0.0.1`` if the tests makes local network calls to the rotki api. This way you can discover all network calls and mock them.
 
-Mocking should happen with one of the following ways
-1. Using common fixtures for data mocking as started and shown `here <https://github.com/rotki/rotki/pull/5269`__ . Read the PR description to get an idea.
+Mocking should happen with one of the following ways::
+
+1. Using common fixtures for data mocking as started and shown `here <https://github.com/rotki/rotki/pull/5269>`__ . Read the PR description to get an idea.
 2. Using test specific mocking.
 3. For repeatable calls that would always return the same response from the network use the vcr.py approach.
 
