@@ -2,9 +2,10 @@
 Changelog
 =========
 
+* :release:`1.27.1 <2023-02-24>`
 * :feature:`-` Transactions involving Sai CDP migration to Dai CDP are now properly decoded.
 * :bug:`-` Fixed a bug where token balance detection for EVM tokens with many addresses may not have worked properly.
-* :bug:`-` Fixes bug where error message is not shown when some input filled with incorrect value.
+* :bug:`-` Fixes bug where an error message is not shown when some input filled with incorrect value.
 * :feature:`5576` Added support for WSTETH, RETH, GNO and other collateral type makerdao vaults. Also added code to autodetect new collateral type makerdao vaults in the future (so long as ABI stays the same).
 * :bug:`-` Fixes bug where Maker Vault Collateralization Ratio can't be edited in watcher form.
 * :bug:`-` Fixes bug where wrong account label was used in asset location breakdown.
