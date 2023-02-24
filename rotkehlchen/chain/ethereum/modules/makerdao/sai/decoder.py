@@ -26,6 +26,7 @@ POOLED_ETHER_ADDRESS = string_to_evm_address('0xf53AD2c6851052A81B42133467480961
 TRANSFER_TOPIC = b'\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xaa\x95+\xa7\xf1c\xc4\xa1\x16(\xf5ZM\xf5#\xb3\xef'  # noqa: E501
 PETH_BURN_EVENT_TOPIC = b'\xcc\x16\xf5\xdb\xb4\x872\x80\x81\\\x1e\xe0\x9d\xbd\x06sl\xff\xcc\x18D\x12\xcfzq\xa0\xfd\xb7]9|\xa5'  # noqa: E501
 PETH_MINT_EVENT_TOPIC = b'\x0fg\x98\xa5`y:T\xc3\xbc\xfe\x86\xa9<\xde\x1es\x08}\x94L\x0e\xa2\x05D\x13}A!9h\x85'  # noqa: E501
+SAI_CDP_MIGRATION_TOPIC = b'\n\t\x94\xe6\x12<i3\xeeu\x98\x86\x90WW\xde\xfe"\xc1\xf5\xd0<\xd1\xee1\\\xb6\xbd\xe8\xd1\x1a\xe8'  # noqa: E501
 MAKERDAO_SAITUB_CONTRACT = string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3')
 MAKERDAO_SAITAP_CONTRACT = string_to_evm_address('0xBda109309f9FafA6Dd6A9CB9f1Df4085B27Ee8eF')
 MAKERDAO_SAI_PROXY_CONTRACT = string_to_evm_address('0x526af336D614adE5cc252A407062B8861aF998F5')
@@ -512,6 +513,41 @@ class MakerdaosaiDecoder(DecoderInterface):
             return event, []
 
         return None, []
+
+    def _decode_sai_cdp_migration(
+            self,
+            token: Optional[EvmToken],  # pylint: disable=unused-argument
+            tx_log: EvmTxReceiptLog,
+            transaction: EvmTransaction,
+            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            action_items: list[ActionItem],  # pylint: disable=unused-argument
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+        """This method decodes the migration of a Sai CDP to Dai CDP."""
+        if tx_log.topics[0] != SAI_CDP_MIGRATION_TOPIC:
+            return None, []
+
+        old_cdp_id = hex_or_bytes_to_int(tx_log.topics[1])
+        new_cdp_id = hex_or_bytes_to_int(tx_log.topics[2])
+        owner = hex_or_bytes_to_address(tx_log.data[:32])
+
+        event = self.base.make_event_from_transaction(
+            transaction=transaction,
+            tx_log=tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=owner,
+            notes=f'Migrate Sai CDP {old_cdp_id} to Dai CDP {new_cdp_id}',
+            counterparty=CPT_SAI,
+        )
+        return event, []
+
+    def decoding_rules(self) -> list[Callable]:
+        return [
+            self._decode_sai_cdp_migration,
+        ]
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
