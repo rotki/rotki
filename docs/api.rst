@@ -11987,7 +11987,7 @@ Add EVM Transaction By Hash
 
    Doing a PUT on this endpoint will add an EVM transaction to the database and associate it with the provided address.
    .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+   This endpoint can also be queried asynchronously by using ``"async_query": true``.
 
    **Example Request**:
 
