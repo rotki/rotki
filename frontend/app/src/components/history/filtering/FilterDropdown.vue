@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type AssetInfo } from '@rotki/common/lib/data';
-import { type ComputedRef, type PropType, type Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import FilterEntry from '@/components/history/filtering/FilterEntry.vue';
 import SuggestedItem from '@/components/history/filtering/SuggestedItem.vue';
 import { type SearchMatcher, type Suggestion } from '@/types/filtering';
@@ -8,30 +8,19 @@ import { compareSymbols } from '@/utils/assets';
 import { logger } from '@/utils/logging';
 import { splitSearch } from '@/utils/search';
 
-const props = defineProps({
-  matchers: {
-    required: true,
-    type: Array as PropType<SearchMatcher<any>[]>
-  },
-  used: {
-    required: true,
-    type: Array as PropType<string[]>
-  },
-  suggestion: {
-    required: false,
-    type: Object as PropType<SearchMatcher<any> | null>,
-    default: null
-  },
-  keyword: {
-    required: false,
-    type: String,
-    default: null
-  },
-  selectedSuggestion: {
-    required: true,
-    type: Number
+const props = withDefaults(
+  defineProps<{
+    matchers: SearchMatcher<any>[];
+    used: string[];
+    suggestion?: SearchMatcher<any> | null;
+    keyword?: string;
+    selectedSuggestion: number;
+  }>(),
+  {
+    suggestion: () => null,
+    keyword: ''
   }
-});
+);
 
 const emit = defineEmits<{
   (e: 'click', item: string): void;
@@ -148,9 +137,9 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <div class="px-4 py-2">
-    <div v-if="suggestion" class="pb-2">
-      <div v-if="suggested.length > 0">
+  <div class="px-4 py-1">
+    <div v-if="suggestion">
+      <div v-if="suggested.length > 0" class="pb-2" :class="css.suggestions">
         <div
           v-for="(item, index) in suggested"
           :key="item.index"
@@ -163,7 +152,7 @@ const { t } = useI18n();
               'fill-width': true,
               [css.selected]: index === selectedSuggestion
             }"
-            class="text-none text-body-1"
+            class="text-none text-body-1 px-3"
             @click="applyFilter(item)"
           >
             <span class="text-start fill-width">
@@ -172,9 +161,9 @@ const { t } = useI18n();
           </v-btn>
         </div>
       </div>
-      <div v-else>
+      <div v-else class="pb-0">
         <div class="text--secondary">
-          {{ t('no_filter_available.no_suggestions', { search: keyword }) }}
+          {{ t('table_filter.no_suggestions', { search: keyword }) }}
         </div>
       </div>
       <div
@@ -184,32 +173,34 @@ const { t } = useI18n();
         {{ suggestion.hint }}
       </div>
     </div>
-    <div v-else-if="keyword" class="py-2">
-      <span>{{ t('no_filter_available.unsupported_filter') }}</span>
+    <div v-else-if="keyword" class="pb-2">
+      <span>{{ t('table_filter.unsupported_filter') }}</span>
       <span class="font-weight-medium ms-2">{{ keyword }}</span>
     </div>
     <div v-if="!suggestion">
       <div class="caption-text text--secondary">
-        {{ t('no_filter_available.title') }}
+        {{ t('table_filter.title') }}
       </div>
       <v-divider class="my-2" />
-      <filter-entry
-        v-for="matcher in available"
-        :key="matcher.key"
-        :matcher="matcher"
-        @click="click($event)"
-      />
-      <v-divider class="mt-2" />
+      <div :class="css.suggestions">
+        <filter-entry
+          v-for="matcher in available"
+          :key="matcher.key"
+          :matcher="matcher"
+          @click="click($event)"
+        />
+      </div>
     </div>
 
     <div class="caption-text text--secondary text--lighten-2 mt-2">
-      <span>{{ t('no_filter_available.hint.description') }}</span>
+      <v-divider class="my-2" />
+      <span>{{ t('table_filter.hint.description') }}</span>
       <span class="font-weight-medium">
-        {{ t('no_filter_available.hint.example') }}
+        {{ t('table_filter.hint.example') }}
       </span>
     </div>
-    <div class="caption-text text--secondary text--lighten-2 mt-2">
-      {{ t('no_filter_available.hint_filter') }}
+    <div class="caption-text text--secondary text--lighten-2 mt-1">
+      {{ t('table_filter.hint_filter') }}
     </div>
   </div>
 </template>
@@ -217,5 +208,10 @@ const { t } = useI18n();
 <style module lang="scss">
 .selected {
   background-color: var(--v-primary-lighten4);
+}
+
+.suggestions {
+  max-height: 180px;
+  overflow-y: scroll;
 }
 </style>

@@ -126,7 +126,7 @@ export const useTransactionStore = defineStore('history/transactions', () => {
 
     try {
       await Promise.all(txAccounts.map(syncTransactionTask));
-      await checkTransactionsMissingEvents();
+      startPromise(checkTransactionsMissingEvents());
       setStatus(
         get(isTaskRunning(TaskType.TX)) ? Status.REFRESHING : Status.LOADED
       );

@@ -1,6 +1,7 @@
 import { type ComputedRef, type Ref } from 'vue';
 import { type AssetInfo } from '@rotki/common/lib/data';
-import { type AssetInfoWithId, type AssetsWithId } from '@/types/asset';
+import { z } from 'zod';
+import { AssetInfoWithId, type AssetsWithId } from '@/types/asset';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { type DateFormat } from '@/types/date-format';
 
@@ -37,12 +38,26 @@ export type MatchedKeyword<T extends string> = {
   [key in T]?: string | string[];
 };
 
-export interface Suggestion {
-  readonly index: number;
-  readonly total: number;
-  readonly key: string;
-  readonly asset: boolean;
-  readonly value: AssetInfoWithId | string;
+export const BaseSuggestion = z.object({
+  key: z.string(),
+  value: AssetInfoWithId.or(z.string())
+});
+
+export type BaseSuggestion = z.infer<typeof BaseSuggestion>;
+
+export const Suggestion = BaseSuggestion.extend({
+  index: z.number(),
+  total: z.number(),
+  asset: z.boolean()
+});
+
+export type Suggestion = z.infer<typeof Suggestion>;
+
+export enum SavedFilterLocation {
+  HISTORY_TRADES = 'historyTrades',
+  HISTORY_DEPOSITS_WITHDRAWALS = 'historyDepositsWithdrawals',
+  HISTORY_TRANSACTIONS = 'historyTransactions',
+  HISTORY_LEDGER_ACTIONS = 'historyLedgerActions'
 }
 
 export const assetSuggestions =

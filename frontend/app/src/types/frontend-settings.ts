@@ -14,6 +14,7 @@ import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { CurrencyLocationEnum } from '@/types/currency-location';
 import { DateFormatEnum } from '@/types/date-format';
 import { TableColumnEnum } from '@/types/table-column';
+import { BaseSuggestion, SavedFilterLocation } from '@/types/filtering';
 
 export enum Quarter {
   Q1 = 'Q1',
@@ -129,6 +130,8 @@ const BlockchainRefreshButtonBehaviourEnum = z.nativeEnum(
   BlockchainRefreshButtonBehaviour
 );
 
+const SavedFilterLocationEnum = z.nativeEnum(SavedFilterLocation);
+
 export const FrontendSettings = z.object({
   defiSetupDone: z.boolean().default(false),
   language: SupportedLanguageEnum.default(SupportedLanguage.EN),
@@ -190,7 +193,11 @@ export const FrontendSettings = z.object({
   blockchainRefreshButtonBehaviour:
     BlockchainRefreshButtonBehaviourEnum.default(
       BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES
-    )
+    ),
+  savedFilters: z
+    .record(SavedFilterLocationEnum, z.array(z.array(BaseSuggestion)))
+    .default({})
+    .catch({})
 });
 
 export type FrontendSettings = z.infer<typeof FrontendSettings>;

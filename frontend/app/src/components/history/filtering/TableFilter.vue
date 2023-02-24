@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { type AssetInfo } from '@rotki/common/lib/data';
-import NoFilterAvailable from '@/components/history/filtering/NoFilterAvailable.vue';
 import SuggestedItem from '@/components/history/filtering/SuggestedItem.vue';
 import {
   type MatchedKeyword,
+  type SavedFilterLocation,
   type SearchMatcher,
   type Suggestion
 } from '@/types/filtering';
@@ -11,10 +11,16 @@ import { assert } from '@/utils/assertions';
 import { logger } from '@/utils/logging';
 import { splitSearch } from '@/utils/search';
 
-const props = defineProps<{
-  matches: MatchedKeyword<any>;
-  matchers: SearchMatcher<any, any>[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    matches: MatchedKeyword<any>;
+    matchers: SearchMatcher<any, any>[];
+    location?: SavedFilterLocation | null;
+  }>(),
+  {
+    location: null
+  }
+);
 
 const emit = defineEmits<{
   (e: 'update:matches', matches: MatchedKeyword<any>): void;
@@ -228,6 +234,7 @@ const selectItem = (suggestion: Suggestion) => {
 };
 
 const restoreSelection = (matches: MatchedKeyword<any>): void => {
+  const oldSelection = get(selection);
   const newSelection: Suggestion[] = [];
   Object.entries(matches).forEach(([key, value]) => {
     const foundMatchers = matcherForKeyValue(key);
@@ -237,16 +244,27 @@ const restoreSelection = (matches: MatchedKeyword<any>): void => {
     }
 
     const values = typeof value === 'string' ? [value] : value;
+    const asset = 'asset' in foundMatchers;
 
     values.forEach(value => {
-      const deserializedValue = foundMatchers.deserializer?.(value) || value;
-      if (!deserializedValue) {
-        return;
+      let deserializedValue = null;
+      if (asset) {
+        const prevAssetSelection = oldSelection.find(
+          ({ key }) => key === foundMatchers.key
+        );
+        if (prevAssetSelection) {
+          deserializedValue = prevAssetSelection.value;
+        }
       }
+
+      if (!deserializedValue) {
+        deserializedValue = foundMatchers.deserializer?.(value) || value;
+      }
+
       newSelection.push({
         key: foundMatchers.key,
         value: deserializedValue,
-        asset: 'asset' in foundMatchers,
+        asset,
         total: 1,
         index: 0
       });
@@ -266,53 +284,68 @@ watch(matches, matches => {
 </script>
 
 <template>
-  <v-combobox
-    ref="input"
-    :value="selection"
-    outlined
-    dense
-    chips
-    small-chips
-    deletable-chips
-    multiple
-    clearable
-    hide-details
-    prepend-inner-icon="mdi-filter-variant"
-    :search-input.sync="search"
-    @input="updateMatches($event)"
-    @keydown.enter="applySuggestion"
-    @keydown.up.prevent
-    @keydown.up="moveSuggestion(true)"
-    @keydown.down.prevent
-    @keydown.down="moveSuggestion(false)"
-  >
-    <template #selection="{ item, selected }">
-      <v-chip
-        label
-        small
-        class="font-weight-medium"
-        :input-value="selected"
-        close
-        @click:close="removeSelection(item)"
-        @click="
-          removeSelection(item);
-          selectItem(item);
-        "
-      >
-        <suggested-item :suggestion="item" />
-      </v-chip>
-    </template>
-    <template #no-data>
-      <no-filter-available
+  <div class="d-flex">
+    <v-combobox
+      ref="input"
+      :value="selection"
+      outlined
+      dense
+      chips
+      small-chips
+      deletable-chips
+      multiple
+      clearable
+      hide-details
+      :menu-props="{ maxHeight: '390px' }"
+      prepend-inner-icon="mdi-filter-variant"
+      :search-input.sync="search"
+      @input="updateMatches($event)"
+      @keydown.enter="applySuggestion"
+      @keydown.up.prevent
+      @keydown.up="moveSuggestion(true)"
+      @keydown.down.prevent
+      @keydown.down="moveSuggestion(false)"
+    >
+      <template #selection="{ item, selected }">
+        <v-chip
+          label
+          small
+          class="font-weight-medium"
+          :input-value="selected"
+          close
+          @click:close="removeSelection(item)"
+          @click="
+            removeSelection(item);
+            selectItem(item);
+          "
+        >
+          <suggested-item :suggestion="item" />
+        </v-chip>
+      </template>
+      <template #no-data>
+        <filter-dropdown
+          :matchers="matchers"
+          :used="usedKeys"
+          :keyword="search"
+          :suggestion="searchSuggestion"
+          :selection="selection"
+          :selected-suggestion="selectedSuggestion"
+          :location="location"
+          @apply:filter="applyFilter($event)"
+          @suggest="suggestedFilter = $event"
+          @click="appendToSearch($event)"
+          @update:matches="updateMatches($event)"
+        />
+      </template>
+    </v-combobox>
+
+    <div v-if="location" class="ml-2 mt-1">
+      <saved-filter-management
+        :selection="selection"
+        :location="location"
         :matchers="matchers"
-        :used="usedKeys"
-        :keyword="search"
-        :suggestion="searchSuggestion"
-        :selected-suggestion="selectedSuggestion"
-        @apply:filter="applyFilter($event)"
-        @suggest="suggestedFilter = $event"
-        @click="appendToSearch($event)"
+        @update:matches="updateMatches($event)"
       />
-    </template>
-  </v-combobox>
+    </div>
+  </div>
 </template>

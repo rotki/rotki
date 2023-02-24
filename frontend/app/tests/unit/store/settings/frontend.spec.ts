@@ -83,7 +83,8 @@ describe('settings:frontend', () => {
               Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
             enableAliasNames: true,
             blockchainRefreshButtonBehaviour:
-              BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES
+              BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
+            savedFilters: {}
           })
         )
       })
@@ -157,7 +158,10 @@ describe('settings:frontend', () => {
       },
       dateInputFormat: DateFormat.DateMonthYearHourMinuteSecond,
       versionUpdateCheckFrequency: 24,
-      enableAliasNames: true
+      enableAliasNames: true,
+      blockchainRefreshButtonBehaviour:
+        BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
+      savedFilters: {}
     };
 
     store.update(state);
@@ -224,5 +228,6 @@ describe('settings:frontend', () => {
     expect(store.blockchainRefreshButtonBehaviour).toBe(
       BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES
     );
+    expect(store.savedFilters).toMatchObject({});
   });
 });

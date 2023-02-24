@@ -23,8 +23,6 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { defaultCollectionState, getCollectionData } from '@/utils/collection';
 import { IgnoreActionType } from '@/types/history/ignored';
-import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { type TablePagination } from '@/types/pagination';
 import {
   type LocationQuery,
@@ -35,6 +33,7 @@ import { type Collection } from '@/types/collection';
 import { type ActionStatus } from '@/types/action';
 import { assert } from '@/utils/assertions';
 import { defaultOptions } from '@/utils/history';
+import { SavedFilterLocation } from '@/types/filtering';
 
 const props = withDefaults(
   defineProps<{
@@ -567,6 +566,7 @@ watch(loading, async (isLoading, wasLoading) => {
               <table-filter
                 :matches="filters"
                 :matchers="matchers"
+                :location="SavedFilterLocation.HISTORY_TRANSACTIONS"
                 @update:matches="setFilter($event)"
               />
             </div>

@@ -2845,20 +2845,6 @@
     },
     "upgrade": "Displaying {limit} NFTs. To view more please upgrade to {link}"
   },
-  "no_filter_available": {
-    "hint": {
-      "description": "* type the filter and then press enter e.g.",
-      "example": "start: 26/05/2022"
-    },
-    "hint_filter": "The combined filters will be applied at the same time",
-    "title": "Available filters",
-    "unsupported_filter": "Unsupported filter:"
-  },
-  "no_premium_placeholder": {
-    "get_premium": "@:common.visit_website",
-    "no_premium": "@:common.no_premium",
-    "premium_only": " {text} @:common.available_to_premium"
-  },
   "no_task_running": {
     "description": "No Pending tasks"
   },
@@ -3549,6 +3535,20 @@
       "message_upload": "By force pushing, any previous synced data residing in the rotki server will be overwritten. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action.",
       "title": "Forzar subida | Forzar bajada"
     }
+  },
+  "table_filter": {
+    "hint": {
+      "description": "* type the filter and then press enter e.g.",
+      "example": "start: 26/05/2022"
+    },
+    "hint_filter": "The combined filters will be applied at the same time",
+    "title": "Available filters",
+    "unsupported_filter": "Unsupported filter:"
+  },
+  "no_premium_placeholder": {
+    "get_premium": "@:common.visit_website",
+    "no_premium": "@:common.no_premium",
+    "premium_only": " {text} @:common.available_to_premium"
   },
   "tag_creator": {
     "labels": {

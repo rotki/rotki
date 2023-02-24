@@ -22,6 +22,7 @@ import { type Collection } from '@/types/collection';
 import { defaultCollectionState } from '@/utils/collection';
 import { assert } from '@/utils/assertions';
 import { defaultOptions } from '@/utils/history';
+import { SavedFilterLocation } from '@/types/filtering';
 
 const props = withDefaults(
   defineProps<{
@@ -287,6 +288,7 @@ watch(loading, async (isLoading, wasLoading) => {
             <table-filter
               :matches="filters"
               :matchers="matchers"
+              :location="SavedFilterLocation.HISTORY_DEPOSITS_WITHDRAWALS"
               @update:matches="setFilter($event)"
             />
           </div>
