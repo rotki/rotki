@@ -266,6 +266,7 @@ class ExchangeManager():
                     **extras,
                 )
                 self.connected_exchanges[location].append(exchange_obj)
+        log.debug('Initialized exchanges')
 
     def get_user_binance_pairs(self, name: str, location: Location) -> list[str]:
         is_connected = location in self.connected_exchanges
