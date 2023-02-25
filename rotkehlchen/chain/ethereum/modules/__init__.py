@@ -12,8 +12,13 @@ __all__ = [
     'Sushiswap',
     'Liquity',
     'PickleFinance',
-    'Nfts',
+    'MODULE_NAME_TO_PATH',
 ]
+
+# to avoid some circular imports some of the paths are moved in a mapping here
+MODULE_NAME_TO_PATH = {
+    'nfts': '.nft.nfts',
+}
 
 from .aave.aave import Aave
 from .balancer.balancer import Balancer
@@ -23,7 +28,6 @@ from .l2.loopring import Loopring
 from .liquity.trove import Liquity
 from .makerdao.dsr import MakerdaoDsr
 from .makerdao.vaults import MakerdaoVaults
-from .nft.nfts import Nfts
 from .pickle_finance import PickleFinance
 from .sushiswap.sushiswap import Sushiswap
 from .uniswap.uniswap import Uniswap
