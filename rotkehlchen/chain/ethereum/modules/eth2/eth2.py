@@ -236,8 +236,6 @@ class Eth2(EthereumModule):
         """Go through the list of eth1 addresses and find all eth2 validators associated
         with them along with their details.
 
-
-
         May raise RemoteError due to beaconcha.in API"""
         indices = []
         index_to_address = {}

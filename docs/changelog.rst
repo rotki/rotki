@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` PnL report will now correctly show progress bar percentage if user has connected but non-syncing exchanges.
+
 * :release:`1.27.1 <2023-02-24>`
 * :feature:`-` Transactions involving Sai CDP migration to Dai CDP are now properly decoded.
 * :bug:`-` Fixed a bug where token balance detection for EVM tokens with many addresses may not have worked properly.

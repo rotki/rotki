@@ -38,6 +38,9 @@ class ExchangeManager():
 
         return str(location)
 
+    def connected_and_syncing_exchanges_num(self) -> int:
+        return len(list(self.iterate_exchanges()))
+
     def get_exchange(self, name: str, location: Location) -> Optional[ExchangeInterface]:
         """Get the exchange object for an exchange with a given name and location
 
@@ -54,7 +57,7 @@ class ExchangeManager():
         return None
 
     def iterate_exchanges(self) -> Iterator[ExchangeInterface]:
-        """Iterate all connected exchanges"""
+        """Iterate all connected and syncing exchanges"""
         with self.database.conn.read_ctx() as cursor:
             excluded = self.database.get_settings(cursor).non_syncing_exchanges
         for _, exchanges in self.connected_exchanges.items():
