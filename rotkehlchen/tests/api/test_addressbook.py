@@ -485,7 +485,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer'):
                 address=address_cody,
                 blockchain=SupportedBlockchain.ETHEREUM,
             ), AddressbookEntry(
-                name='Rotki global db',
+                name='rotki global db',
                 address=address_rotki,
                 blockchain=SupportedBlockchain.ETHEREUM,
             ),
@@ -496,7 +496,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer'):
         OptionalChainAddress(address_rotki, SupportedBlockchain.ETHEREUM),
     ]
     global_addressbook_expected = {
-        AddressbookEntry(address=address_rotki, blockchain=SupportedBlockchain.ETHEREUM, name='Rotki global db'),  # noqa: E501
+        AddressbookEntry(address=address_rotki, blockchain=SupportedBlockchain.ETHEREUM, name='rotki global db'),  # noqa: E501
         AddressbookEntry(address=address_cody, blockchain=SupportedBlockchain.ETHEREUM, name='Cody'),  # noqa: E501
     }
     response = names_request(global_addressbook_addresses)
@@ -508,7 +508,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer'):
             cursor,
             account_data=[
                 BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=address_tylor, label='Tylor'),  # noqa: E501
-                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=address_rotki, label='Rotki label'),  # noqa: E501
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=address_rotki, label='rotki label'),  # noqa: E501
                 BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=address_nonlabel),  # noqa: E501
             ],
         )
@@ -520,7 +520,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer'):
         OptionalChainAddress(address_rotki, SupportedBlockchain.ETHEREUM),  # rotki.eth
     ]
     labels_expected = {
-        AddressbookEntry(address=address_rotki, blockchain=SupportedBlockchain.ETHEREUM, name='Rotki label'),  # noqa: E501
+        AddressbookEntry(address=address_rotki, blockchain=SupportedBlockchain.ETHEREUM, name='rotki label'),  # noqa: E501
         AddressbookEntry(address=address_tylor, blockchain=SupportedBlockchain.ETHEREUM, name='Tylor'),  # noqa: E501
         AddressbookEntry(address=address_cody, blockchain=SupportedBlockchain.ETHEREUM, name='Cody'),  # noqa: E501
     }
@@ -536,7 +536,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer'):
                 address=address_rose,
                 blockchain=SupportedBlockchain.ETHEREUM,
             ), AddressbookEntry(
-                name='Rotki private db',
+                name='rotki private db',
                 address=address_rotki,
                 blockchain=SupportedBlockchain.ETHEREUM,
             ),
@@ -549,7 +549,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer'):
         OptionalChainAddress(address_rotki, SupportedBlockchain.ETHEREUM),  # rotki.eth
     ]
     private_addressbook_expected = {
-        AddressbookEntry(address=address_rotki, blockchain=SupportedBlockchain.ETHEREUM, name='Rotki private db'),  # noqa: E501
+        AddressbookEntry(address=address_rotki, blockchain=SupportedBlockchain.ETHEREUM, name='rotki private db'),  # noqa: E501
         AddressbookEntry(address=address_tylor, blockchain=SupportedBlockchain.ETHEREUM, name='Tylor'),  # noqa: E501
         AddressbookEntry(address=address_cody, blockchain=SupportedBlockchain.ETHEREUM, name='Cody'),  # noqa: E501
         AddressbookEntry(address=address_rose, blockchain=SupportedBlockchain.ETHEREUM, name='Rose'),  # noqa: E501

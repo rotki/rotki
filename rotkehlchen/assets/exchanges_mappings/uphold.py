@@ -33,7 +33,6 @@ WORLD_TO_UPHOLD = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0xd26114cd6EE289AccF82350c8d8487fedB8A0C07'): 'OMG',
     strethaddress_to_identifier('0x4575f41308EC1483f3d399aa9a2826d74Da13Deb'): 'OXT',
     strethaddress_to_identifier('0x408e41876cCCDC0F92210600ef50372656052a38'): 'REN',
-    strethaddress_to_identifier('0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F'): 'SNX',
     'SOL-2': 'SOL',
     strethaddress_to_identifier('0x476c5E26a75bd202a9683ffD34359C0CC15be0fF'): 'SRM',
     strethaddress_to_identifier('0x3883f5e181fccaF8410FA61e12b59BAd963fb645'): 'THETA',

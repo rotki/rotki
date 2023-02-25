@@ -77,7 +77,7 @@ class CurveAccountant(ModuleAccountantInterface):
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
+                method='acquisition',
                 accountant_cb=self._process_deposit_or_withdrawal,
             ),
             get_tx_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED, CPT_CURVE): TxEventSettings(  # noqa: E501

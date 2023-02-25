@@ -2,6 +2,7 @@ import datetime
 from contextlib import suppress
 from unittest.mock import patch
 
+import pytest
 from freezegun import freeze_time
 
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
@@ -46,6 +47,7 @@ CURVE_EXPECTED_POOL_COINS = {
 }
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 def test_curve_pools_cache(rotkehlchen_instance):
     """Test curve pools fetching mechanism"""
     # Set initial cache data to check that it is gone after the cache update

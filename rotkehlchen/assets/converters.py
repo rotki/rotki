@@ -354,6 +354,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'SQUID',  # neither in coingecko nor cryptocompare
     'XCNOLD',  # No info in the exchange about this asset
     'USDTEARN1',  # neither in coingecko nor cryptocompare
+    'LOGT',  # lord of dragon but not in cc or coingecko
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (
@@ -521,6 +522,12 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'VOLTINU',
     'TZBTC',
     'DST',  # Daystarter but no cc/cryptocompare data
+    'AIN',
+    'CLXY',
+    'MPLC',
+    'PRMX',
+    'TCR',
+    'USDS',
 )
 
 
@@ -546,6 +553,7 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'XLMUP',  # no cryptocompare/coingecko data
     'UAH',  # no cryptocompare/coingecko data
     'BTTC',  # no cryptocompare/coingecko data
+    'USD4',  # no info available about this asset
 )
 
 UNSUPPORTED_BITFINEX_ASSETS = (
@@ -749,6 +757,28 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'ASTRA',  # no cc/coingecko data
     'CLUB',  # no cc/coingecko data
     'TEM',  # no cc/coingecko data
+    'SHIB2L',
+    'SHIB2S',
+    'APT2L',
+    'APT2S',
+    'OP2L',
+    'OP2S',
+    'BLUR2L',
+    'BLUR2S',
+    'CFX2L',
+    'CFX2S',
+    'AGIX2L',
+    'AGIX2S',
+    'GRT2L',
+    'GRT2S',
+    'AGIX2L',
+    'AGIX2S',
+    'HISEALS',  # no cc/coingecko data
+    'HIRENGA',
+    'HIGH',
+    'KING',
+    'HIUNDEAD',
+    'HIFRIENDS',
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets
@@ -777,6 +807,8 @@ UNSUPPORTED_OKX_ASSETS = {
     'GALFT',  # not in cc or coingecko
     'SOLO',  # no information about this listing
     'EC',  # not in cc or coingecko
+    'GOAL',  # not in cc or coingecko
+    'CGL',  # not in cc or coingecko
 }
 
 # Exchange symbols that are clearly for testing purposes. They appear in all

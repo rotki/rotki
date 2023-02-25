@@ -9,11 +9,14 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
+from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
+from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     ChainID,
@@ -21,6 +24,7 @@ from rotkehlchen.types import (
     EvmTransaction,
     EVMTxHash,
     Location,
+    SupportedBlockchain,
     Timestamp,
     deserialize_evm_tx_hash,
 )
@@ -201,3 +205,67 @@ def test_query_and_decode_transactions_works_with_different_chains(
     assert len(hashes) == 0
     hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None, addresses=None)  # noqa: E501
     assert len(hashes) == 1
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0',
+    '0x9328D55ccb3FCe531f199382339f0E576ee840A3',
+    '0x4bba290826c253bd854121346c370a9886d1bc26',
+]])
+def test_genesis_remove_address(
+        database: 'DBHandler',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+):
+    """
+    Checks that if an address had a genesis transacion:
+    1. The decoded event gets deleted when the address is removed
+    2. Genesis tx gets removed if it was the last tracked address with a genesis tx
+    """
+    dbevmtx = DBEvmTx(database)
+    dbevents = DBHistoryEvents(database)
+    genesis_address_1, genesis_address_2, no_genesis_address = ethereum_accounts
+
+    def get_genesis_events() -> list[HistoryBaseEntry]:
+        with database.conn.read_ctx() as cursor:
+            events = dbevents.get_history_events(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(event_identifiers=[GENESIS_HASH]),
+                has_premium=True,
+            )
+
+        return events
+
+    def delete_transactions_for_address(address: ChecksumEvmAddress) -> None:
+        with database.user_write() as write_cursor:
+            dbevmtx.delete_transactions(
+                write_cursor=write_cursor,
+                address=address,
+                chain=SupportedBlockchain.ETHEREUM,
+            )
+
+    ethereum_transaction_decoder.decode_transaction_hashes(
+        ignore_cache=True,
+        tx_hashes=[GENESIS_HASH],
+    )
+    all_events = get_genesis_events()
+    assert len(all_events) == 2
+
+    delete_transactions_for_address(no_genesis_address)
+    assert get_genesis_events() == all_events, 'Events should have not been modified'
+
+    delete_transactions_for_address(genesis_address_1)
+    assert get_genesis_events() == [all_events[1]], 'One of the events should have been deleted'
+
+    delete_transactions_for_address(genesis_address_2)
+    assert get_genesis_events() == [], 'There should be no events at this point'
+
+    with database.conn.read_ctx() as cursor:
+        genesis_tx = dbevmtx.get_evm_transactions(
+            cursor=cursor,
+            filter_=EvmTransactionsFilterQuery.make(tx_hash=GENESIS_HASH),
+            has_premium=True,
+        )
+
+    assert len(genesis_tx) == 0, 'Genesis transaction should have been deleted'

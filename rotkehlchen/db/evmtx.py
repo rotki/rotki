@@ -477,13 +477,32 @@ class DBEvmTx():
         )
         tx_hashes = [make_evm_tx_hash(x[0]) for x in result]
         if len(tx_hashes) == 0:
-            return
+            # Need to handle the genesis tx separately since our single genesis tx contains
+            # multiple genesis transactions from multiple addresses.
+            genesis_tx_exists = write_cursor.execute(
+                'SELECT COUNT(tx_hash) FROM evmtx_address_mappings WHERE tx_hash = ?',
+                (GENESIS_HASH,),
+            ).fetchone()[0] != 0
+            if genesis_tx_exists is False:
+                return
 
         dbevents.delete_events_by_tx_hash(
             write_cursor=write_cursor,
             tx_hashes=tx_hashes,
             chain_id=chain_id,  # type: ignore[arg-type] # comes from SUPPORTED_EVM_CHAINS
         )
+        write_cursor.execute(  # delete genesis tx events related to the provided address
+            'DELETE FROM history_events WHERE event_identifier=? AND location_label=?',
+            (GENESIS_HASH, address),
+        )
+        genesis_events_count = write_cursor.execute(
+            'SELECT COUNT (*) FROM history_events WHERE event_identifier=?',
+            (GENESIS_HASH,),
+        ).fetchone()[0]
+        if genesis_events_count == 0:
+            # If there are no more events in the genesis tx, delete it
+            tx_hashes.append(GENESIS_HASH)
+
         # Now delete all relevant transactions. By deleting all relevant transactions all tables
         # are cleared thanks to cascading (except for history_events which was cleared above)
         write_cursor.executemany(

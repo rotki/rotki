@@ -187,8 +187,8 @@ def test_curve_multiple_deposit(accountant: 'Accountant', ethereum_inquirer: 'Ev
             location=Location.ETHEREUM,
             timestamp=TIMESTAMP_1_SECS,
             asset=Asset('eip155:1/erc20:0xC25a3A3b969415c80451098fa907EC722572917F'),
-            free_amount=ZERO,
-            taxable_amount=FVal('9.423568821947938716'),
+            free_amount=FVal('9.423568821947938716'),
+            taxable_amount=ZERO,
             price=Price(ONE),
             pnl=PNL(taxable=ZERO, free=ZERO),  # Deposits are not taxable
             cost_basis=None,
