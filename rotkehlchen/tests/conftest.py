@@ -227,6 +227,7 @@ def vcr_cassette_dir(request: pytest.FixtureRequest) -> str:
     Override pytest-vcr's bundled fixture to store cassettes outside source code
     # pytest-deadfixtures ignore
     """
+    cassette_dir = get_cassette_dir(request)
     if 'CI' in os.environ:
         current_branch = os.environ.get('GITHUB_HEAD_REF')  # get branch from github actions
         root_dir = Path(os.environ['CASSETTES_DIR'])
@@ -243,8 +244,9 @@ def vcr_cassette_dir(request: pytest.FixtureRequest) -> str:
 
     if current_branch is None:
         current_branch = os.popen('git rev-parse --abbrev-ref HEAD').read().rstrip('\n')
-    log.debug(f'At VCR setup, {current_branch=}')
-    checkout_proc = Popen(f'cd "{root_dir}" && git fetch origin && git checkout {current_branch} && git reset --hard origin/{current_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
+    log.debug(f'At VCR setup, {current_branch=} {root_dir=}')
+
+    checkout_proc = Popen(f'cd "{root_dir}" && git fetch origin && git checkout {current_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
     _, stderr = checkout_proc.communicate(timeout=10)
     if (
         len(stderr) != 0 and
@@ -253,11 +255,38 @@ def vcr_cassette_dir(request: pytest.FixtureRequest) -> str:
     ):
         default_branch = os.environ.get('GITHUB_BASE_REF', os.environ.get('DEFAULT_VCR_BRANCH', 'develop'))  # noqa: E501
         log.error(f'Could not find branch {current_branch} in {root_dir}. Defaulting to {default_branch}')  # noqa: E501
-        checkout_proc = Popen(f'cd "{root_dir}" && git fetch origin && git checkout {default_branch} && git reset --hard origin/{default_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
-        checkout_proc.wait()
-        log.debug(f'VCR setup: Switched to test-caching branch: {default_branch}')
-    else:
-        log.debug(f'VCR setup: Switched to test-caching branch: {current_branch}')
+        checkout_proc = Popen(f'cd "{root_dir}" && git checkout {default_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
+        _, stderr = checkout_proc.communicate(timeout=10)
+        if (
+                len(stderr) != 0 and
+                b'Already on' not in stderr and
+                b'Switched to' not in stderr
+        ):
+            log.error(f'Could not find branch {default_branch} in {root_dir}. Bailing and leaving current branch')  # noqa: E501
+            return str(base_dir / cassette_dir)
+        current_branch = default_branch
 
-    cassette_dir = get_cassette_dir(request)
+    log.debug(f'VCR setup: Checked out test-caching {current_branch} branch')
+
+    # see if we have any uncomitted work
+    diff_result = os.popen(f'cd "{root_dir}" && git diff').read()
+    if diff_result != '':
+        log.debug('VCR setup: There is uncomitted work at the test-caching repository. Not modifying it')  # noqa: E501
+        return str(base_dir / cassette_dir)
+    # see if the branch is ahead of origin, meaning local is being worked on
+    compare_result = os.popen(f'cd "{root_dir}" && git rev-list --left-right --count {current_branch}...origin/{current_branch}').read()  # noqa: E501
+    commits_ahead = int(compare_result.split()[0])
+    if commits_ahead > 0:
+        log.debug(f'VCR setup: The local test-caching branch {current_branch} is {commits_ahead} commits ahead of the remote. Not modifying it.')  # noqa: E501
+        return str(base_dir / cassette_dir)
+
+    # since we got here reset to origin's equivalent branch
+    reset_proc = Popen(f'cd "{root_dir}" n && git reset --hard origin/{current_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
+    _, stderr = reset_proc.communicate(timeout=10)
+    if len(stderr) != 0:
+        prefix = 'Failed to '
+    else:
+        prefix = ''
+    log.debug(f'VCR setup: {prefix}reset test caching branch: {current_branch} to match origin')
+
     return str(base_dir / cassette_dir)
