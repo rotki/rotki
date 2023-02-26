@@ -21,6 +21,7 @@ def handle_prefork_asset_acquisitions(
         asset: Asset,
         amount: FVal,
         price: Price,
+        ignored_asset_ids: set[str],
         starting_index: int,
 ) -> list['ProcessedAccountingEvent']:
     """
@@ -46,6 +47,8 @@ def handle_prefork_asset_acquisitions(
 
     events = []
     for acquisition in acquisitions:
+        if acquisition[0].identifier in ignored_asset_ids:
+            continue
         event = ProcessedAccountingEvent(
             type=AccountingEventType.PREFORK_ACQUISITION,
             notes=acquisition[1],
