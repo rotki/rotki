@@ -36,6 +36,10 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+# This queries search for events having a specific combination of asset + staking type + reward
+# and being from liquity this helps to filter if they are from the stability pool or the LQTY
+# staking. Then we need to consider the rewards in other assets that appear in the same
+# transaction and this is why we use the IN operator as filter.
 QUERY_STAKING_EVENTS = """
 WHERE event_identifier IN
 (SELECT A.event_identifier FROM history_events AS A JOIN history_events AS B ON A.event_identifier = B.event_identifier WHERE
@@ -54,9 +58,14 @@ WHERE event_identifier IN (
     SELECT A.event_identifier FROM history_events AS A JOIN history_events AS B ON
     A.event_identifier = B.event_identifier WHERE A.counterparty = "liquity" AND
     B.asset=? AND B.subtype=?
-) AND type="staking" AND subtype="reward"
+) AND type=? AND subtype=?
 """
-BINDINGS_STABILITY_POOL_EVENTS = [A_LQTY.identifier, HistoryEventSubType.REWARD.serialize()]
+BINDINGS_STABILITY_POOL_EVENTS = [
+    A_LQTY.identifier,
+    HistoryEventSubType.REWARD.serialize(),
+    HistoryEventType.STAKING.serialize(),
+    HistoryEventSubType.REWARD.serialize(),
+]
 QUERY_STABILITY_POOL_DEPOSITS = (
     'SELECT SUM(CAST(amount AS REAL)), SUM(CAST(usd_value AS REAL)) '
     'FROM history_events WHERE asset=? AND type=? AND subtype=?'

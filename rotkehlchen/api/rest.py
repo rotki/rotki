@@ -2713,9 +2713,9 @@ class RestAPI():
             addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity'),
         )
 
-    def get_liquity_stats(self, async_query: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    @async_api_call()
+    def get_liquity_stats(self) -> dict[str, Any]:
+        return self._eth_module_query(
             module_name='liquity',
             method='get_stats',
             query_specific_balances_before=None,

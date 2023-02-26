@@ -4,6 +4,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import LIQUITY_STAKING_DETAILS, HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
+from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -11,6 +12,7 @@ from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
     EvmInternalTransaction,
@@ -930,3 +932,54 @@ def test_remove_liquity_staking(database, ethereum_inquirer, eth_transactions):
             counterparty='liquity',
         )]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x5DD596C901987A2b28C38A9C1DfBf86fFFc15d77']])
+def test_stability_pool_withdrawal(database, ethereum_inquirer, ethereum_accounts):
+    address = ethereum_accounts[0]
+    tx_hash = deserialize_evm_tx_hash('0xca9acc377ba5eb020dd5f113961016ac1c652617b0e5c71f31a7fb32e188858d')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=0,
+            timestamp=TimestampMS(1677402143000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.00719440411023624')),
+            location_label=address,
+            notes='Burned 0.00719440411023624 ETH for gas',
+            counterparty=CPT_GAS,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=191,
+            timestamp=TimestampMS(1677402143000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_LQTY,
+            balance=Balance(amount=FVal('1.3168840890645')),
+            location_label=address,
+            notes='Collect 1.3168840890645 LQTY from liquity\'s stability pool',
+            counterparty=CPT_LIQUITY,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=195,
+            timestamp=TimestampMS(1677402143000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_LUSD,
+            balance=Balance(amount=FVal('500000')),
+            location_label=address,
+            notes='Withdraw 500000 LUSD from liquity\'s stability pool',
+            counterparty=CPT_LIQUITY,
+        )]
+    assert expected_events == events
