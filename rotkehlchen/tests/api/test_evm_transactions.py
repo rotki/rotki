@@ -137,6 +137,7 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer'):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
+@pytest.mark.parametrize('have_decoders', [[True]])
 def test_evm_transaction_hash_addition(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that adding an evm transaction by hash works as expected."""
     is_async_query = random.choice([True, False])
