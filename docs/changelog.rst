@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Ignoring forked assets ETC, BCH and BSV for accounting should now also remove any pre-fork references of them and completely omit them from the PnL report.
 * :bug:`-` Users with kraken accounts with old data that were never purged and repulled will no longer have missing events.
 * :bug:`-` PnL report will now correctly show progress bar percentage if user has connected but non-syncing exchanges.
 

@@ -46,6 +46,8 @@ class AccountingPot(CustomizableDateMixin):
             msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(database=database)
+        with database.conn.read_ctx() as cursor:
+            self.ignored_asset_ids = database.get_ignored_asset_ids(cursor)
         self.profit_currency = self.settings.main_currency.resolve_to_asset_with_oracles()
         self.cost_basis = CostBasisCalculator(
             database=database,
@@ -104,6 +106,8 @@ class AccountingPot(CustomizableDateMixin):
             report_id: int,
     ) -> None:
         self.settings = settings
+        with self.database.conn.read_ctx() as cursor:
+            self.ignored_asset_ids = self.database.get_ignored_asset_ids(cursor)
         self.report_id = report_id
         self.profit_currency = self.settings.main_currency.resolve_to_asset_with_oracles()
         self.query_start_ts = start_ts
@@ -154,6 +158,7 @@ class AccountingPot(CustomizableDateMixin):
             asset=asset,
             amount=amount,
             price=price,
+            ignored_asset_ids=self.ignored_asset_ids,
             starting_index=len(self.processed_events),
         )
         for prefork_event in prefork_events:
