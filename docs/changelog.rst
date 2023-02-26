@@ -6,8 +6,8 @@ Changelog
 * :feature:`5587` Forward/Backward navigation for filters/pagination (using mouse buttons) will now be possible in the history section.
 * :feature:`5569` It is now possible to detect when an evm address is used in other chains and start tracking it. Also a background task runs periodically that performs this check.
 * :bug:`5491` Show original manual latest price asset in manual balance form.
-* :bug:`-` Fixed a bug where token balance detection for EVM tokens with many addresses may not have worked properly.
-* :bug:`-` Fixed a bug where an error message is not showed when some input in the UI is filled with an incorrect value.
+* :bug:`-` Users with kraken accounts with old data that were never purged and repulled will no longer have missing events.
+* :bug:`-` PnL report will now correctly show progress bar percentage if user has connected but non-syncing exchanges.
 
 * :release:`1.27.1 <2023-02-24>`
 * :feature:`-` Transactions involving Sai CDP migration to Dai CDP are now properly decoded.

@@ -31,6 +31,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.defi.chad import DefiChad
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.chain.ethereum.modules import (
+    MODULE_NAME_TO_PATH,
     Aave,
     Balancer,
     Compound,
@@ -120,14 +121,20 @@ log = RotkehlchenLogsAdapter(logger)
 
 def _module_name_to_class(module_name: ModuleName) -> type[EthereumModule]:
     class_name = ''.join(word.title() for word in module_name.split('_'))
+    extra_path = MODULE_NAME_TO_PATH.get(module_name)
+    search_path = 'rotkehlchen.chain.ethereum.modules'
+    if extra_path is not None:
+        search_path += extra_path
+
     try:
-        ethereum_modules_module = import_module('rotkehlchen.chain.ethereum.modules')
+        module = import_module(search_path)
     except ModuleNotFoundError as e:
-        # This should never happen
-        raise AssertionError('Could not load ethereum modules') from e
-    module = getattr(ethereum_modules_module, class_name, None)
-    assert module, f'Could not find object {class_name} in ethereum modules'
-    return module
+        raise AssertionError(f'Could not find {search_path} in ethereum modules') from e
+    # else
+
+    klass = getattr(module, class_name, None)
+    assert klass, f'Could not find object {class_name} in {search_path}'
+    return klass
 
 
 DEFI_BALANCES_REQUERY_SECONDS = 600

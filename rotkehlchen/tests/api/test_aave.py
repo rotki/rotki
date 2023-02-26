@@ -120,6 +120,7 @@ def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
         test_warnings.warn(UserWarning(f'Test account {AAVE_BALANCESV2_TEST_ACC} has no aave v2 balances'))  # noqa: E501
 
 
+@pytest.mark.skip('Subgraph down: https://thegraph.com/hosted-service/subgraph/aave/protocol-v2')
 @flaky(max_runs=3, min_passes=1)  # open nodes some times time out
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_V2_TEST_ACC]])
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
@@ -552,6 +553,7 @@ def _query_simple_aave_history_test_v2(
     )
 
 
+@pytest.mark.skip('Subgraph down: https://thegraph.com/hosted-service/subgraph/aave/protocol-v2')
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_2]])
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -578,6 +580,7 @@ def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts):  # pylin
     _query_simple_aave_history_test(setup, rotkehlchen_api_server, async_query)
 
 
+@pytest.mark.skip('Subgraph down: https://thegraph.com/hosted-service/subgraph/aave/protocol-v2')
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_2]])
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -791,6 +794,7 @@ def _query_borrowing_aave_history_test(setup: BalancesTestSetup, server: APIServ
     )
 
 
+@pytest.mark.skip('Subgraph down: https://thegraph.com/hosted-service/subgraph/aave/protocol-v2')
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_3]])
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -853,6 +857,7 @@ def _test_for_duplicates_and_negatives(setup: BalancesTestSetup, server: APIServ
         events_set.add(event_hash)
 
 
+@pytest.mark.skip('Subgraph down: https://thegraph.com/hosted-service/subgraph/aave/protocol-v2')
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_1]])
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])

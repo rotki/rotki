@@ -42,8 +42,10 @@ log = RotkehlchenLogsAdapter(logger)
 # ledger actions
 # eth2
 # base history entries
+#
 # Please, update this number each time a history query step is either added or removed
 NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 4 + 3 * len(EVM_CHAINS_WITH_TRANSACTIONS)
+STEPS_PER_CEX = 5
 
 
 class EventsHistorian:
@@ -72,7 +74,6 @@ class EventsHistorian:
         )
 
     def _reset_variables(self) -> None:
-        # Keeps how many trades we have found per location. Used for free user limiting
         self.processing_state_name = 'Starting query of historical events'
         self.progress = ZERO
         with self.db.conn.read_ctx() as cursor:
@@ -81,6 +82,8 @@ class EventsHistorian:
         self.datelocaltime = db_settings.display_date_in_localtime
 
     def _increase_progress(self, step: int, total_steps: int) -> int:
+        """Counts the progress for querying history. When transmitted to the frontend
+        this accounts for 50% of the PnL process"""
         step += 1
         self.progress = FVal(step / total_steps) * 100
         return step
@@ -295,7 +298,7 @@ class EventsHistorian:
         self._reset_variables()
         step = 0
         total_steps = (
-            len(self.exchange_manager.connected_exchanges) * 4 +  # 4 substeps in each exchange
+            self.exchange_manager.connected_and_syncing_exchanges_num() * STEPS_PER_CEX +
             NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES
         )
         log.info(
@@ -319,6 +322,7 @@ class EventsHistorian:
             self.processing_state_name = state_name
 
         for exchange in self.exchange_manager.iterate_exchanges():
+            step_before = step
             self.processing_state_name = f'Querying {exchange.name} exchange history'
             exchange.query_history_with_callbacks(
                 # We need to have history of exchanges since before the range
@@ -328,6 +332,7 @@ class EventsHistorian:
                 new_step_data=(new_step_cb, exchange.name),
             )
             step = self._increase_progress(step, total_steps)
+            step = step_before + STEPS_PER_CEX  # Make sure remote failures don't throw steps off
 
         # Query all trades, asset movements and margin positions from the DB for all
         # possible locations.
@@ -336,7 +341,7 @@ class EventsHistorian:
             # Include all trades
             trades = self.db.get_trades(
                 cursor,
-                filter_query=TradesFilterQuery.make(),
+                filter_query=TradesFilterQuery.make(to_ts=end_ts),
                 has_premium=True,  # we need all trades for accounting -- limit happens later
             )
             history.extend(trades)
@@ -344,13 +349,13 @@ class EventsHistorian:
             # Include all asset movements
             asset_movements = self.db.get_asset_movements(
                 cursor,
-                filter_query=AssetMovementsFilterQuery.make(),
+                filter_query=AssetMovementsFilterQuery.make(to_ts=end_ts),
                 has_premium=True,  # we need all trades for accounting -- limit happens later
             )
             history.extend(asset_movements)
 
             # Include all margin positions
-            margin_positions = self.db.get_margin_positions(cursor)
+            margin_positions = self.db.get_margin_positions(cursor, to_ts=end_ts)
             history.extend(margin_positions)
 
         step = self._increase_progress(step, total_steps)
@@ -376,8 +381,8 @@ class EventsHistorian:
                     f'The final history result will not include {str_blockchain} transactions',
                 )
                 empty_or_error += '\n' + msg
-            step = self._increase_progress(step, total_steps)
 
+            step = self._increase_progress(step, total_steps)
             self.processing_state_name = f'Querying {str_blockchain} transaction receipts'
             evm_manager.transactions.get_receipts_for_transactions_missing_them()
             step = self._increase_progress(step, total_steps)
@@ -389,7 +394,7 @@ class EventsHistorian:
         # include all ledger actions
         self.processing_state_name = 'Querying ledger actions history'
         ledger_actions, _ = self.query_ledger_actions(
-            filter_query=LedgerActionsFilterQuery.make(),
+            filter_query=LedgerActionsFilterQuery.make(to_ts=end_ts),
             only_cache=True,
         )
         history.extend(ledger_actions)
@@ -411,7 +416,7 @@ class EventsHistorian:
                 )
 
         step = self._increase_progress(step, total_steps)
-
+        self.processing_state_name = 'Querying base history events'
         # Include base history entries
         history_events_db = DBHistoryEvents(self.db)
         with self.db.conn.read_ctx() as cursor:
