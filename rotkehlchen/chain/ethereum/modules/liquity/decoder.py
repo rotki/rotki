@@ -125,22 +125,27 @@ class LiquityDecoder(DecoderInterface):
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_LIQUITY
                 event.notes = f"Deposit {event.balance.amount} {self.lusd.symbol} in liquity's stability pool"  # noqa: E501
-            elif (
-                event.event_type == HistoryEventType.RECEIVE and
-                (
-                    event.asset == self.eth and
-                    event.balance.amount == collected_eth and
-                    tx_log.topics[0] == STABILITY_POOL_GAIN_WITHDRAW
-                ) or (
-                    event.asset == self.lqty and
-                    event.balance.amount == collected_lqty and
-                    tx_log.topics[0] == STABILITY_POOL_LQTY_PAID
-                )
-            ):
-                event.event_type = HistoryEventType.STAKING
-                event.event_subtype = HistoryEventSubType.REWARD
-                event.counterparty = CPT_LIQUITY
-                event.notes = f"Collect {event.balance.amount} {event.asset.resolve_to_crypto_asset().symbol} from liquity's stability pool"  # noqa: E501
+            elif event.event_type == HistoryEventType.RECEIVE:
+                if (
+                    (
+                        event.asset == self.eth and
+                        event.balance.amount == collected_eth and
+                        tx_log.topics[0] == STABILITY_POOL_GAIN_WITHDRAW
+                    ) or (
+                        event.asset == self.lqty and
+                        event.balance.amount == collected_lqty and
+                        tx_log.topics[0] == STABILITY_POOL_LQTY_PAID
+                    )
+                ):
+                    event.event_type = HistoryEventType.STAKING
+                    event.event_subtype = HistoryEventSubType.REWARD
+                    event.counterparty = CPT_LIQUITY
+                    event.notes = f"Collect {event.balance.amount} {event.asset.symbol_or_name()} from liquity's stability pool"  # noqa: E501
+                elif event.asset == self.lusd:
+                    event.event_type = HistoryEventType.STAKING
+                    event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                    event.counterparty = CPT_LIQUITY
+                    event.notes = f"Withdraw {event.balance.amount} {self.lusd.symbol} from liquity's stability pool"  # noqa: E501
         return None, []
 
     def _decode_lqty_staking_deposits(

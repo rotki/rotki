@@ -7672,7 +7672,17 @@ Getting Liquity staking information
         "message": ""
       }
 
-   :resjson object result: A mapping of the amount and value of LQTY staked in the protocol.
+   :resjson object result: A mapping with the keys ``global_stats`` and ``by_address``.
+   :resjson object global_stats: Stats aggregating the information for all the addresses tracked in the liquity module.
+   :resjson object global_stats: Breakdown by tracked address of the stats.
+   :resjson string total_usd_gains_stability_pool: Sum of all the gains valuated at the moment of the event for the stability pool.
+   :resjson string total_usd_gains_stacking: Sum of all the gains valuated at the moment of the event for liquity staking.
+   :resjson string total_deposited_stability_pool: Total amount of LUSD deposited in the stability pool.
+   :resjson string total_withdrawn_stability_pool: Total amount of LUSD withdrawn from the stability pool.
+   :resjson string total_deposited_stability_pool_usd_value: Sum of the USD value deposited in the stability pool at the time of the events.
+   :resjson string total_withdrawn_stability_pool_usd_value: Sum of the USD value withdrawn from the stability pool at the time of the events.
+   :resjson list[object] staking_gains: Breakdown by asset of the gains claimed by staking.
+   :resjson list[object] stability_pool_gains: Breakdown by asset of the gains claimed by depositing in the stability pool.
 
    :statuscode 200: Liquity staking stats successfully queried.
    :statuscode 409: User is not logged in or Liquity module is not activated.
