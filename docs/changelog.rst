@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Users with kraken accounts with old data that were never purged and repulled will no longer have missing events.
 * :bug:`-` PnL report will now correctly show progress bar percentage if user has connected but non-syncing exchanges.
 
 * :release:`1.27.1 <2023-02-24>`
