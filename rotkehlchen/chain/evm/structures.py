@@ -1,5 +1,7 @@
 import dataclasses
-from typing import Optional
+from typing import NamedTuple, Optional
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.fval import FVal
 
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash
 
@@ -21,3 +23,11 @@ class EvmTxReceipt:
     status: bool
     type: int
     logs: list[EvmTxReceiptLog] = dataclasses.field(default_factory=list)
+
+
+class SwapData(NamedTuple):
+    """Class that holds basic data for swaps"""
+    from_asset: Asset
+    from_amount: FVal
+    to_asset: Asset
+    to_amount: FVal
