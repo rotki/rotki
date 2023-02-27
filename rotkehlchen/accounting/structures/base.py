@@ -359,10 +359,16 @@ class StakingEvent:
 
     def serialize(self) -> dict[str, Any]:
         data = {
-            'event_type': self.event_type.serialize(),
             'asset': self.asset.identifier,
             'timestamp': self.timestamp,
             'location': str(self.location),
         }
+        # binance has only one type of event, so serializing it is not needed.
+        if not (
+            self.location == Location.BINANCE and
+            self.event_type == HistoryEventSubType.INTEREST_PAYMENT
+        ):
+            data['event_type'] = self.event_type.serialize()
+
         balance = abs(self.balance).serialize()
         return {**data, **balance}

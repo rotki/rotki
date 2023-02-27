@@ -3594,91 +3594,18 @@ class RestAPI():
             query_filter: HistoryEventFilterQuery,
             value_filter: HistoryEventFilterQuery,
     ) -> dict[str, Any]:
-        history_events_db = DBHistoryEvents(self.rotkehlchen.data.db)
-        table_filter = HistoryEventFilterQuery.make(
+        return self._get_exchange_staking_or_savings_history(
+            only_cache=only_cache,
             location=Location.KRAKEN,
-            event_types=[
-                HistoryEventType.STAKING,
-            ],
+            query_filter=query_filter,
+            value_filter=value_filter,
+            event_types=[HistoryEventType.STAKING],
             exclude_subtypes=[
                 HistoryEventSubType.RECEIVE_WRAPPED,
                 HistoryEventSubType.RETURN_WRAPPED,
             ],
+            event_subtypes=None,
         )
-
-        message = ''
-        entries_limit = -1
-        if self.rotkehlchen.premium is None:
-            entries_limit = FREE_HISTORY_EVENTS_LIMIT
-
-        exchanges_list = self.rotkehlchen.exchange_manager.connected_exchanges.get(
-            Location.KRAKEN,
-        )
-        if exchanges_list is None:
-            return wrap_in_fail_result(
-                message='There is no kraken account added.',
-                status_code=HTTPStatus.CONFLICT,
-            )
-
-        # After 3865 we have a recurring task that queries for missing prices but
-        # we make sure that the returned values have their correct value calculated
-        task_manager = self.rotkehlchen.task_manager
-        if task_manager is not None:
-            try:
-                entries = task_manager.get_base_entries_missing_prices(query_filter)
-                task_manager.query_missing_prices_of_base_entries(
-                    entries_missing_prices=entries,
-                )
-            except sqlcipher.OperationalError as e:  # pylint: disable=no-member
-                return wrap_in_fail_result(
-                    message=f'Database query error retrieving misssing prices {str(e)}',
-                    status_code=HTTPStatus.CONFLICT,
-                )
-
-        # Query events from database
-        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            events_raw, entries_found = self.rotkehlchen.events_historian.query_history_events(
-                cursor=cursor,
-                filter_query=query_filter,
-                only_cache=only_cache,
-            )
-            events = []
-            for event in events_raw:
-                try:
-                    staking_event = StakingEvent.from_history_base_entry(event)
-                except DeserializationError as e:
-                    log.warning(f'Could not deserialize staking event: {event} due to {str(e)}')
-                    continue
-                events.append(staking_event)
-
-            entries_total = history_events_db.get_history_events_count(cursor=cursor, query_filter=table_filter)  # noqa: E501
-            value_query_filters, value_bindings = value_filter.prepare(with_pagination=False, with_order=False)  # noqa: E501
-            usd_value, amounts = history_events_db.get_value_stats(
-                cursor=cursor,
-                query_filters=value_query_filters,
-                bindings=value_bindings,
-            )
-
-            result = {
-                'events': events,
-                'entries_found': entries_found,
-                'entries_limit': entries_limit,
-                'entries_total': entries_total,
-                'total_usd_value': usd_value,
-                'assets': history_events_db.get_entries_assets_history_events(
-                    cursor=cursor,
-                    query_filter=table_filter,
-                ),
-                'received': [
-                    {
-                        'asset': entry[0],
-                        'amount': entry[1],
-                        'usd_value': entry[2],
-                    } for entry in amounts
-                ],
-            }
-
-        return {'result': result, 'message': message, 'status_code': HTTPStatus.OK}
 
     def get_user_added_assets(self, path: Optional[Path]) -> Response:
         """
@@ -4155,3 +4082,114 @@ class RestAPI():
             )
         evm_manager.transactions_decoder.decode_transaction(transaction=transaction, tx_receipt=tx_receipt)  # noqa: E501
         return OK_RESULT
+
+    def _get_exchange_staking_or_savings_history(
+            self,
+            only_cache: bool,
+            location: Literal[Location.KRAKEN, Location.BINANCE, Location.BINANCEUS],
+            event_types: list[HistoryEventType],
+            query_filter: HistoryEventFilterQuery,
+            value_filter: HistoryEventFilterQuery,
+            event_subtypes: Optional[list[HistoryEventSubType]] = None,
+            exclude_subtypes: Optional[list[HistoryEventSubType]] = None,
+    ) -> dict[str, Any]:
+        """Query exchanges for either staking or savings history.
+
+        If `only_cache` is False, only data stored in the database is returned. Otherwise,
+        the latest data is fetched from the exchange.
+        """
+        history_events_db = DBHistoryEvents(self.rotkehlchen.data.db)
+        table_filter = HistoryEventFilterQuery.make(
+            location=location,
+            event_types=event_types,
+            event_subtypes=event_subtypes,
+            exclude_subtypes=exclude_subtypes,
+        )
+
+        message = ''
+        entries_limit = -1
+        if self.rotkehlchen.premium is None:
+            entries_limit = FREE_HISTORY_EVENTS_LIMIT
+
+        exchanges_list = self.rotkehlchen.exchange_manager.connected_exchanges.get(
+            location,
+        )
+        if exchanges_list is None:
+            return wrap_in_fail_result(
+                message=f'There is no {location.name} account added.',
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+        # query events from db and remote data(if `only_cache` is false).
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            try:
+                events_raw, entries_found = self.rotkehlchen.events_historian.query_history_events(  # noqa: E501
+                    cursor=cursor,
+                    location=location,
+                    filter_query=query_filter,
+                    only_cache=only_cache,
+                    task_manager=self.rotkehlchen.task_manager,
+                )
+            except sqlcipher.OperationalError as e:  # pylint: disable=no-member
+                return wrap_in_fail_result(
+                    message=f'Database query error retrieving missing prices {str(e)}',
+                    status_code=HTTPStatus.CONFLICT,
+                )
+
+            events = []
+            for event in events_raw:
+                try:
+                    staking_event = StakingEvent.from_history_base_entry(event)
+                except DeserializationError as e:
+                    log.warning(f'Could not deserialize staking event: {event} due to {str(e)}')  # noqa: E501
+                    continue
+                events.append(staking_event)
+
+            entries_total = history_events_db.get_history_events_count(
+                cursor=cursor,
+                query_filter=table_filter,
+            )
+            value_query_filters, value_bindings = value_filter.prepare(with_pagination=False, with_order=False)  # noqa: E501
+            usd_value, amounts = history_events_db.get_value_stats(
+                cursor=cursor,
+                query_filters=value_query_filters,
+                bindings=value_bindings,
+            )
+            result = {
+                'events': events,
+                'entries_found': entries_found,
+                'entries_limit': entries_limit,
+                'entries_total': entries_total,
+                'total_usd_value': usd_value,
+                'assets': history_events_db.get_entries_assets_history_events(
+                    cursor=cursor,
+                    query_filter=table_filter,
+                ),
+                'received': [
+                    {
+                        'asset': entry[0],
+                        'amount': entry[1],
+                        'usd_value': entry[2],
+                    } for entry in amounts
+                ],
+            }
+
+        return {'result': result, 'message': message, 'status_code': HTTPStatus.OK}
+
+    @async_api_call()
+    def get_binance_savings_history(
+            self,
+            only_cache: bool,
+            location: Literal[Location.BINANCE, Location.BINANCEUS],
+            query_filter: HistoryEventFilterQuery,
+            value_filter: HistoryEventFilterQuery,
+    ) -> dict[str, Any]:
+        """Returns a summary of Binance savings events that match the filter provided."""
+        return self._get_exchange_staking_or_savings_history(
+            only_cache=only_cache,
+            location=location,
+            event_types=[HistoryEventType.RECEIVE],
+            event_subtypes=[HistoryEventSubType.INTEREST_PAYMENT],
+            query_filter=query_filter,
+            value_filter=value_filter,
+        )

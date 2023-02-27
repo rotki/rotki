@@ -491,7 +491,7 @@ class TradesQuerySchema(
         }
 
 
-class StakingQuerySchema(
+class BaseStakingQuerySchema(
     AsyncQueryArgumentSchema,
     OnlyCacheQuerySchema,
     DBPaginationSchema,
@@ -500,6 +500,66 @@ class StakingQuerySchema(
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
     asset = AssetField(expected_type=AssetWithOracles, load_default=None)
+
+    def _get_assets_list(
+            self,
+            data: dict[str, Any],
+    ) -> Optional[tuple['AssetWithOracles', ...]]:
+        return (data['asset'],) if data['asset'] is not None else None
+
+    def _make_query(
+            self,
+            location: Location,
+            data: dict[str, Any],
+            event_types: list[HistoryEventType],
+            value_event_subtypes: list[HistoryEventSubType],
+            query_event_subtypes: Optional[list[HistoryEventSubType]] = None,
+            exclude_event_subtypes: Optional[list[HistoryEventSubType]] = None,
+    ) -> dict[str, Any]:
+        if data['order_by_attributes'] is not None:
+            attributes = []
+            for order_by_attribute in data['order_by_attributes']:
+                if order_by_attribute == 'event_type':
+                    attributes.append('subtype')
+                else:
+                    attributes.append(order_by_attribute)
+            data['order_by_attributes'] = attributes
+
+        asset_list = self._get_assets_list(data)
+        query_filter = HistoryEventFilterQuery.make(
+            order_by_rules=create_order_by_rules_list(data),
+            limit=data['limit'],
+            offset=data['offset'],
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+            location=location,
+            event_types=event_types,
+            event_subtypes=query_event_subtypes,
+            exclude_subtypes=exclude_event_subtypes,
+            assets=asset_list,
+        )
+
+        value_filter = HistoryEventFilterQuery.make(
+            limit=data['limit'],
+            offset=data['offset'],
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+            location=location,
+            event_types=event_types,
+            event_subtypes=value_event_subtypes,
+            order_by_rules=None,
+            assets=asset_list,
+        )
+
+        return {
+            'async_query': data['async_query'],
+            'only_cache': data['only_cache'],
+            'query_filter': query_filter,
+            'value_filter': value_filter,
+        }
+
+
+class StakingQuerySchema(BaseStakingQuerySchema):
     event_subtypes = fields.List(
         SerializableEnumField(enum_class=HistoryEventSubType),
         load_default=None,
@@ -512,69 +572,35 @@ class StakingQuerySchema(
         super().__init__()
         self.treat_eth2_as_eth = treat_eth2_as_eth
 
+    def _get_assets_list(
+            self,
+            data: dict[str, Any],
+    ) -> Optional[tuple['AssetWithOracles', ...]]:
+        asset_list = super()._get_assets_list(data)
+        if self.treat_eth2_as_eth is True and data['asset'] == A_ETH:
+            asset_list = (
+                A_ETH.resolve_to_asset_with_oracles(),
+                A_ETH2.resolve_to_asset_with_oracles(),
+            )
+        return asset_list
+
     @post_load
     def make_staking_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        if data['order_by_attributes'] is not None:
-            attributes = []
-            for order_by_attribute in data['order_by_attributes']:
-                if order_by_attribute == 'event_type':
-                    attributes.append('subtype')
-                else:
-                    attributes.append(order_by_attribute)
-            data['order_by_attributes'] = attributes
-        asset_list: Optional[tuple['AssetWithOracles', ...]] = None
-        if data['asset'] is not None:
-            asset_list = (data['asset'],)
-        if self.treat_eth2_as_eth is True and data['asset'] == A_ETH:
-            asset_list = (
-                A_ETH.resolve_to_asset_with_oracles(),
-                A_ETH2.resolve_to_asset_with_oracles(),
-            )
-
-        query_filter = HistoryEventFilterQuery.make(
-            order_by_rules=create_order_by_rules_list(data),
-            limit=data['limit'],
-            offset=data['offset'],
-            from_ts=data['from_timestamp'],
-            to_ts=data['to_timestamp'],
+        return self._make_query(
+            data=data,
             location=Location.KRAKEN,
-            event_types=[
-                HistoryEventType.STAKING,
-            ],
-            event_subtypes=data['event_subtypes'],
-            exclude_subtypes=[
+            event_types=[HistoryEventType.STAKING],
+            query_event_subtypes=data['event_subtypes'],
+            value_event_subtypes=[HistoryEventSubType.REWARD],
+            exclude_event_subtypes=[
                 HistoryEventSubType.RECEIVE_WRAPPED,
                 HistoryEventSubType.RETURN_WRAPPED,
             ],
-            assets=asset_list,
         )
-
-        value_filter = HistoryEventFilterQuery.make(
-            limit=data['limit'],
-            offset=data['offset'],
-            from_ts=data['from_timestamp'],
-            to_ts=data['to_timestamp'],
-            location=Location.KRAKEN,
-            event_types=[
-                HistoryEventType.STAKING,
-            ],
-            event_subtypes=[
-                HistoryEventSubType.REWARD,
-            ],
-            order_by_rules=None,
-            assets=asset_list,
-        )
-
-        return {
-            'async_query': data['async_query'],
-            'only_cache': data['only_cache'],
-            'query_filter': query_filter,
-            'value_filter': value_filter,
-        }
 
 
 class HistoryBaseEntrySchema(Schema):
@@ -2923,3 +2949,28 @@ class EvmTransactionHashAdditionSchema(AsyncQueryArgumentSchema):
                     message=f'address {data["associated_address"]} provided is not tracked by rotki for {data["evm_chain"]}',  # noqa: E501
                     field_name='associated_address',
                 )
+
+
+class BinanceSavingsSchema(BaseStakingQuerySchema):
+    location = LocationField(
+        required=True,
+        limit_to=[Location.BINANCE, Location.BINANCEUS],
+    )
+
+    @post_load
+    def make_binance_savings_query(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        location = data['location']
+        query_dict = self._make_query(
+            location=location,
+            data=data,
+            event_types=[HistoryEventType.RECEIVE],
+            query_event_subtypes=[HistoryEventSubType.INTEREST_PAYMENT],
+            value_event_subtypes=[HistoryEventSubType.INTEREST_PAYMENT],
+            exclude_event_subtypes=None,
+        )
+        query_dict.update({'location': location})
+        return query_dict

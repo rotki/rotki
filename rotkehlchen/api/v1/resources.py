@@ -45,6 +45,7 @@ from rotkehlchen.api.v1.schemas import (
     BaseXpubSchema,
     BinanceMarketsSchema,
     BinanceMarketsUserSchema,
+    BinanceSavingsSchema,
     BlockchainAccountsDeleteSchema,
     BlockchainAccountsGetSchema,
     BlockchainAccountsPatchSchema,
@@ -2419,6 +2420,28 @@ class BinanceUserMarkets(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(self, name: str, location: Location) -> Response:
         return self.rest_api.get_user_binance_pairs(name=name, location=location)
+
+
+class BinanceSavingsResource(BaseMethodView):
+
+    post_schema = BinanceSavingsSchema()
+
+    @use_kwargs(post_schema, location='json_and_query_and_view_args')
+    def post(
+            self,
+            async_query: bool,
+            only_cache: bool,
+            location: Literal[Location.BINANCE, Location.BINANCEUS],
+            query_filter: 'HistoryEventFilterQuery',
+            value_filter: 'HistoryEventFilterQuery',
+    ) -> Response:
+        return self.rest_api.get_binance_savings_history(
+            async_query=async_query,
+            location=location,
+            only_cache=only_cache,
+            query_filter=query_filter,
+            value_filter=value_filter,
+        )
 
 
 class AvalancheTransactionsResource(BaseMethodView):

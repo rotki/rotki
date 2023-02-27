@@ -1326,3 +1326,84 @@ def kraken_to_world_pair(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]
     base_asset = asset_from_kraken(base_asset_str)
     quote_asset = asset_from_kraken(quote_asset_str)
     return base_asset, quote_asset
+
+
+def mock_api_query_for_binance_lending(
+        api_type,  # pylint: disable=unused-argument
+        method,
+        options,
+        test_vars,
+):
+    """This function mocks `api_query` method of the binance exchange.
+
+    For method 'lending/union/interestHistory', it checks that pagination is
+    respected i.e. if a range has been queried before, `current` must always be > 1,
+    otherwise `current` must be == 1.
+    """
+    if 'lending/union/interestHistory' in method:
+        if (options['startTime'], options['endTime'], options['lendingType']) not in test_vars['ranges_queried']:  # noqa: E501
+            assert options['current'] == 1
+        else:
+            assert options['current'] > 1
+
+        test_vars['ranges_queried'].add(
+            (options['startTime'], options['endTime'], options['lendingType']),
+        )
+
+        if options['lendingType'] == 'DAILY':
+            if test_vars['interest_daily_call_count'] >= 1:
+                if options['current'] == 2:
+                    test_vars['interest_daily_call_count'] += 1
+                    return [
+                        {
+                            'asset': 'BUSD',
+                            'interest': '0.00006408',
+                            'lendingType': 'DAILY',
+                            'productName': 'BUSD',
+                            'time': 1577233578100,
+                        },
+                    ]
+                return []
+
+            test_vars['interest_daily_call_count'] += 1
+            return [
+                {
+                    'asset': 'BUSD',
+                    'interest': '0.00006408',
+                    'lendingType': 'DAILY',
+                    'productName': 'BUSD',
+                    'time': 1577233578000,
+                },
+            ]
+        elif options['lendingType'] == 'CUSTOMIZED_FIXED':
+            if test_vars['interest_customized_fixed_call_count'] >= 1:
+                return []
+
+            test_vars['interest_customized_fixed_call_count'] += 1
+            return [
+                {
+                    'asset': 'USDT',
+                    'interest': '0.00687654',
+                    'lendingType': 'CUSTOMIZED_FIXED',
+                    'productName': 'USDT',
+                    'time': 1577233562000,
+                },
+            ]
+        elif options['lendingType'] == 'ACTIVITY':
+            if test_vars['interest_activity_call_count'] >= 1:
+                return []
+
+            test_vars['interest_activity_call_count'] += 1
+            return [
+                {
+                    'asset': 'DAI',
+                    'interest': '0.00987654',
+                    'lendingType': 'ACTIVITY',
+                    'productName': 'USDT',
+                    'time': 1587233562000,
+                },
+            ]
+        else:
+            raise AssertionError(f'Unknown lendingType of {options["lendingType"]}')
+    else:
+        raise AssertionError('Unexpected url.')

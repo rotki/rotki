@@ -12194,3 +12194,86 @@ Add EVM Transaction By Hash
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+
+Get Binance Savings Interests History
+=======================================
+
+.. http:get:: /api/(version)/(location)/savings
+
+   Doing a GET on this endpoint will return all history events relating to interest payments for the specified location.
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/binance/savings HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "only_cache": false}
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not.
+   :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson list[string] order_by_attributes: Optional. This is the list of attributes of the history by which to order the results. If none is given 'timestamp' is assumed. Valid values are: ['timestamp', 'location', 'amount'].
+   :reqjson list[bool] ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
+   :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
+   :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
+   :reqjson bool only_cache: Optional.If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
+   :reqjson string location: This represents the exchange's name. Can only be one of `"binance"` or `"binanceus"`.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+    {
+        "result": {
+            "events": [
+                {
+                    "timestamp": 1587233562,
+                    "location": "binance",
+                    "asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                    "amount": "0.00987654",
+                    "usd_value": "0.05432097"
+                },
+                {
+                    "timestamp": 1577233578,
+                    "location": "binance",
+                    "asset": "eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53",
+                    "amount": "0.00006408",
+                    "usd_value": "0.00070488"
+                }
+            ],
+            "entries_found": 2,
+            "entries_limit": 100,
+            "entries_total": 2,
+            "total_usd_value": "0.05502585",
+            "assets": ["eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53", "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F"],
+            "received": [{"asset": "eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53", "amount": "0.00006408", "usd_value": "0.00070488"}, {"asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F", "amount": "0.00987654", "usd_value": "0.05432097"}]
+        },
+        "message": ""
+    }
+
+   :resjsonarr int timestamp: The timestamp at which the event occurred.
+   :resjsonarr string location: A valid location at which the event happened.
+   :resjsonarr string amount: The amount related to the event.
+   :resjsonarr string asset: Asset involved in the event.
+   :resjsonarr string message: It won't be empty if the query to external services fails for some reason.
+   :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+   :resjson int entries_limit: The limit of entries if free version. -1 for premium.
+   :resjson int entries_total: The number of total entries ignoring all filters.
+   :resjsonarr string total_usd_value: Sum of the USD value for the assets received computed at the time of acquisition of each event.
+   :resjson list[string] assets: Assets involved in events ignoring all filters.
+   :resjson list[object] received: Assets received with the total amount received for each asset and the aggregated USD value at time of acquisition.
+
+   :statuscode 200: The balances were returned successfully.
+   :statuscode 400: Invalid location provided.
+   :statuscode 409: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+   :statuscode 502: An external service used in the query such as binance could not be reached or returned unexpected response.

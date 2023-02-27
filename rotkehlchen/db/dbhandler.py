@@ -979,6 +979,7 @@ class DBHandler:
         - {exchange_location_name}_asset_movements_{exchange_name}
         - {exchange_location_name}_ledger_actions_{exchange_name}
         - {location}_history_events_{optional_label}
+        - {exchange_location_name}_lending_history_{exchange_name}
         - aave_events_{address}
         - yearn_vaults_events_{address}
         - yearn_vaults_v2_events_{address}
