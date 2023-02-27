@@ -94,7 +94,9 @@ watch([xpubKeyPrefix, xpubKey, derivationPath], ([prefix, xpub, path]) => {
 });
 
 const onPasteXpub = (event: ClipboardEvent) => {
-  if (get(disabled)) return;
+  if (get(disabled)) {
+    return;
+  }
   const paste = trimOnPaste(event);
   if (paste) {
     setXpubKeyType(paste);
@@ -103,7 +105,9 @@ const onPasteXpub = (event: ClipboardEvent) => {
 };
 
 const keyTypeListData = computed<XpubType[]>(() => {
-  if (get(blockchain) === Blockchain.BTC) return keyType;
+  if (get(blockchain) === Blockchain.BTC) {
+    return keyType;
+  }
   return keyType.filter(
     item => ![XpubPrefix.ZPUB, XpubPrefix.P2TR].includes(item.value)
   );

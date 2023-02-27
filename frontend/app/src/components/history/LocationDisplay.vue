@@ -26,10 +26,14 @@ const location: ComputedRef<TradeLocationData> = computed(() =>
 );
 
 const route = computed<{ path: string }>(() => {
-  if (get(detailPath)) return { path: get(detailPath) };
+  if (get(detailPath)) {
+    return { path: get(detailPath) };
+  }
 
   const path = get(location).detailPath;
-  if (path) return { path };
+  if (path) {
+    return { path };
+  }
 
   return {
     path: Routes.LOCATIONS.replace(':identifier', get(location).identifier)

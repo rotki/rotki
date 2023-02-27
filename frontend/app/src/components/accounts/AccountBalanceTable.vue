@@ -172,7 +172,9 @@ const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() => {
 
 const visibleBalances = computed<BlockchainAccountWithBalance[]>(() => {
   const balances = get(nonExpandedBalances).map(item => {
-    if (!isTokenChain(get(blockchain)) || get(loopring)) return item;
+    if (!isTokenChain(get(blockchain)) || get(loopring)) {
+      return item;
+    }
     const detected = get(getEthDetectedTokensInfo(blockchain, item.address));
     return {
       ...item,

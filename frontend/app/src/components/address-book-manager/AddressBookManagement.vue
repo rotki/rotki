@@ -83,7 +83,9 @@ const { addAddressBook, updateAddressBook } = useAddressesNamesStore();
 const { setMessage } = useMessageStore();
 
 const save = async () => {
-  if (!get(valid)) return;
+  if (!get(valid)) {
+    return;
+  }
   try {
     const formVal = get(formPayload);
     const enableForAllChainsVal = get(enableForAllChains);
@@ -100,7 +102,9 @@ const save = async () => {
     }
 
     set(tab, location === 'global' ? 0 : 1);
-    if (!enableForAllChainsVal) set(selectedChain, formVal.blockchain);
+    if (!enableForAllChainsVal) {
+      set(selectedChain, formVal.blockchain);
+    }
     set(showForm, false);
   } catch (e: any) {
     const values = { message: e.message };

@@ -46,7 +46,9 @@ const fiatExchangeRate = computed<BigNumber>(() => {
 
 const assetTotal = computed<BigNumber>(() => {
   const numbers = get(balancesSnapshot).map((item: BalanceSnapshot) => {
-    if (item.category === 'asset') return item.usdValue;
+    if (item.category === 'asset') {
+      return item.usdValue;
+    }
     return item.usdValue.negated();
   });
 
@@ -55,7 +57,9 @@ const assetTotal = computed<BigNumber>(() => {
 
 const locationTotal = computed<BigNumber>(() => {
   const numbers = get(value).map((item: LocationDataSnapshot) => {
-    if (item.location === 'total') return Zero;
+    if (item.location === 'total') {
+      return Zero;
+    }
     return item.usdValue;
   });
 
@@ -64,8 +68,12 @@ const locationTotal = computed<BigNumber>(() => {
 
 const nftsTotal = computed<BigNumber>(() => {
   const numbers = get(balancesSnapshot).map((item: BalanceSnapshot) => {
-    if (!isNft(item.assetIdentifier)) return Zero;
-    if (item.category === 'asset') return item.usdValue;
+    if (!isNft(item.assetIdentifier)) {
+      return Zero;
+    }
+    if (item.category === 'asset') {
+      return item.usdValue;
+    }
     return item.usdValue.negated();
   });
 
@@ -75,7 +83,9 @@ const nftsTotal = computed<BigNumber>(() => {
 const numericTotal = computed<BigNumber>(() => {
   const value = get(total);
 
-  if (value === '') return Zero;
+  if (value === '') {
+    return Zero;
+  }
 
   return get(currencySymbol) === CURRENCY_USD
     ? bigNumberify(value)

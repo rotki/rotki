@@ -213,7 +213,9 @@ const { filters, matchers, updateFilter, RouteFilterSchema } =
   useLedgerActionsFilter();
 
 const applyRouteFilter = () => {
-  if (!get(readFilterFromRoute)) return;
+  if (!get(readFilterFromRoute)) {
+    return;
+  }
 
   const query = get(route).query;
   const parsedOptions = RouterPaginationOptionsSchema.parse(query);

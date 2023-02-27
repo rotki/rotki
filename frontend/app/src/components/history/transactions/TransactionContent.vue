@@ -268,7 +268,9 @@ const { filters, matchers, updateFilter, RouteFilterSchema } =
   useTransactionFilter(get(protocols).length > 0);
 
 const applyRouteFilter = () => {
-  if (!get(readFilterFromRoute)) return;
+  if (!get(readFilterFromRoute)) {
+    return;
+  }
 
   const query = get(route).query;
   const parsedOptions = RouterPaginationOptionsSchema.parse(query);

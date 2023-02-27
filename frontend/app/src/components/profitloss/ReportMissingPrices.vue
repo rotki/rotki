@@ -73,7 +73,9 @@ const formattedItems = computed<EditableMissingPrice[]>(() => {
 });
 
 const updatePrice = async (item: EditableMissingPrice) => {
-  if (item.useRefreshedHistoricalPrice) return;
+  if (item.useRefreshedHistoricalPrice) {
+    return;
+  }
 
   const payload: HistoricalPriceDeletePayload = {
     fromAsset: item.fromAsset,

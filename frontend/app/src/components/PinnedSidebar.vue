@@ -16,8 +16,9 @@ const { pinned } = storeToRefs(useAreaVisibilityStore());
 
 const component: ComputedRef<any> = computed(() => {
   const pinnedValue = get(pinned);
-  if (pinnedValue && pinnedValue.name === 'report-actionable-card')
+  if (pinnedValue && pinnedValue.name === 'report-actionable-card') {
     return ReportActionableCard;
+  }
   return null;
 });
 </script>

@@ -110,7 +110,9 @@ const api = useSnapshotApi();
 const { navigateToUserLogin } = useAppNavigation();
 
 const importSnapshot = async () => {
-  if (!get(importFilesCompleted)) return;
+  if (!get(importFilesCompleted)) {
+    return;
+  }
   set(importSnapshotLoading, true);
 
   let success = false;

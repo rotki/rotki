@@ -28,7 +28,9 @@ const taxFreePeriod = (period: number) => {
 const costBasisMethodItem = computed<ActionDataEntry<CostBasisMethod> | null>(
   () => {
     const method = get(accountingSettings).costBasisMethod;
-    if (!method) return null;
+    if (!method) {
+      return null;
+    }
     return (
       get(costBasisMethodData).find(item => item.identifier === method) || null
     );

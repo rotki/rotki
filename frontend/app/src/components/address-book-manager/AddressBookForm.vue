@@ -46,7 +46,9 @@ const input = (payload: Partial<AddressBookPayload>) => {
 };
 
 watch(search, address => {
-  if (address === null) address = '';
+  if (address === null) {
+    address = '';
+  }
   input({ address });
 });
 

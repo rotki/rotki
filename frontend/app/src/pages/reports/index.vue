@@ -84,7 +84,9 @@ const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
         (await openDirectory(
           tc('profit_loss_reports.debug.select_directory')
         )) || '';
-      if (!directoryPath) return;
+      if (!directoryPath) {
+        return;
+      }
       payload['directoryPath'] = directoryPath;
     }
 
@@ -121,7 +123,9 @@ const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
 const { importReportData, uploadReportData } = useReportsApi();
 
 const importData = async () => {
-  if (!get(reportDebugData)) return;
+  if (!get(reportDebugData)) {
+    return;
+  }
   set(importDataLoading, true);
 
   let success: boolean;

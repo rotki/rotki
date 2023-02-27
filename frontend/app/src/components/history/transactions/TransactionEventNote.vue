@@ -49,7 +49,9 @@ const formatNotes = (
 
   const asset = get(assetSymbol(assetId));
 
-  if (!notes) return [];
+  if (!notes) {
+    return [];
+  }
 
   const formats: NoteFormat[] = [];
   let skip = false;

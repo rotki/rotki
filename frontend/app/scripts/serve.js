@@ -88,9 +88,13 @@ const setupMainPackageWatcher = ({ config: { server } }) => {
       );
       spawnProcess.stderr.on('data', d => {
         const data = d.toString().trim();
-        if (!data) return;
+        if (!data) {
+          return;
+        }
         const mayIgnore = stderrFilterPatterns.some(r => r.test(data));
-        if (mayIgnore) return;
+        if (mayIgnore) {
+          return;
+        }
         logger.error(data, { timestamp: true });
       });
 
