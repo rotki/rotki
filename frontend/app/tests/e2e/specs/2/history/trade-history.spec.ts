@@ -64,4 +64,61 @@ describe('trade history', () => {
     tradeHistoryPage.visibleEntries(1);
     tradeHistoryPage.tradeIsVisible(0, externalTrades[1]);
   });
+
+  it('filter and pagination', () => {
+    for (let i = 0; i < 6; i++) {
+      const time = `08/10/2015 10:50:5${i}`;
+      cy.addExternalTrade({
+        ...externalTrades[0],
+        time
+      });
+      cy.addExternalTrade({
+        ...externalTrades[1],
+        time
+      });
+    }
+
+    for (let i = 0; i < 6; i++) {
+      const time = `09/10/2015 10:50:5${i}`;
+      cy.addExternalTrade({ ...externalTrades[0], location: 'equities', time });
+      cy.addExternalTrade({ ...externalTrades[1], location: 'equities', time });
+    }
+
+    page.visit();
+    tradeHistoryPage.visit();
+
+    // after addition, should have 24 entries on table
+    tradeHistoryPage.visibleEntries(10);
+    tradeHistoryPage.totalEntries(24);
+    tradeHistoryPage.shouldBeOnPage(1);
+
+    // go to page 2
+    tradeHistoryPage.nextPage();
+    tradeHistoryPage.shouldBeOnPage(2);
+
+    // apply filter location
+    tradeHistoryPage.filterTrades('location: equities');
+    tradeHistoryPage.visibleEntries(10);
+    tradeHistoryPage.totalEntries(12);
+    tradeHistoryPage.shouldBeOnPage(1);
+
+    // go to page 2
+    tradeHistoryPage.nextPage();
+    tradeHistoryPage.shouldBeOnPage(2);
+    tradeHistoryPage.visibleEntries(2);
+
+    // history back, should go back to page 1
+    cy.go(-1);
+    tradeHistoryPage.shouldBeOnPage(1);
+    tradeHistoryPage.visibleEntries(10);
+
+    // history back, should remove filter
+    cy.go(-1);
+    tradeHistoryPage.totalEntries(24);
+    tradeHistoryPage.shouldBeOnPage(1);
+
+    // history forward, should reapply location filter
+    cy.go(1);
+    tradeHistoryPage.totalEntries(12);
+  });
 });

@@ -71,6 +71,14 @@ export class TradeHistoryPage {
     cy.get('.closed-trades tbody').find('tr').should('have.length', visible);
   }
 
+  totalEntries(total: number) {
+    cy.get('.v-data-table__progress').should('not.exist');
+    cy.get('.v-data-table__empty-wrapper').should('not.exist');
+    cy.get(
+      '.closed-trades .v-data-footer:first-child .v-data-footer__pagination .items-page-select span:last-child'
+    ).should('contain.text', total);
+  }
+
   tradeIsVisible(position: number, trade: ExternalTrade) {
     cy.get('.closed-trades tbody > tr').eq(position).as('row');
 
@@ -131,5 +139,26 @@ export class TradeHistoryPage {
     cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
     waitForTrades();
     cy.get('[data-cy=confirm-dialog]').should('not.be.exist');
+  }
+
+  filterTrades(filter: string) {
+    cy.get('[data-cy="table-filter"]')
+      .scrollIntoView()
+      .should('be.visible')
+      .type(`${filter}{enter}`);
+  }
+
+  nextPage() {
+    cy.get(
+      '.closed-trades .v-data-footer:first-child .v-data-footer__icons-after button:first-child'
+    ).click();
+  }
+
+  shouldBeOnPage(page: number) {
+    cy.get('.v-data-table__progress').should('not.exist');
+    cy.get('.v-data-table__empty-wrapper').should('not.exist');
+    cy.get(
+      '.closed-trades .v-data-footer:first-child .v-data-footer__pagination .items-page-select div .v-select__slot > input'
+    ).should('have.value', page);
   }
 }

@@ -13,6 +13,7 @@ export interface ExternalTrade {
   readonly fee_id: string;
   readonly link: string;
   readonly notes: string;
+  readonly location?: string;
 }
 
 export interface ExternalLedgerAction {

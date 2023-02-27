@@ -182,10 +182,11 @@ const previewLocationBalance = computed<Record<string, BigNumber> | null>(
       item => item.location === formVal.location
     );
 
+    const usdValueInBigNumber = bigNumberify(formVal.usdValue);
     const convertedUsdValue =
       get(currencySymbol) === CURRENCY_USD
-        ? bigNumberify(formVal.usdValue)
-        : bigNumberify(formVal.usdValue).dividedBy(get(fiatExchangeRate));
+        ? usdValueInBigNumber
+        : usdValueInBigNumber.dividedBy(get(fiatExchangeRate));
 
     if (!locationData) {
       return {
@@ -300,10 +301,11 @@ const save = () => {
   const val = get(value);
   const timestampVal = get(timestamp);
 
+  const usdValueInBigNumber = bigNumberify(formVal.usdValue);
   const convertedUsdValue =
     get(currencySymbol) === CURRENCY_USD
-      ? bigNumberify(formVal.usdValue)
-      : bigNumberify(formVal.usdValue).dividedBy(get(fiatExchangeRate));
+      ? usdValueInBigNumber
+      : usdValueInBigNumber.dividedBy(get(fiatExchangeRate));
 
   const balancesSnapshot = [...val.balancesSnapshot];
   const payload = {

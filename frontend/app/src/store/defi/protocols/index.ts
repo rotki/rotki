@@ -379,16 +379,15 @@ export const useDefiSupportedProtocolsStore = defineStore(
         if (showAll || protocols.includes(DefiProtocol.MAKERDAO_VAULTS)) {
           const makerVaults = get(makerDAOVaults);
           totalCollateralUsd = makerVaults
-            .map(({ collateral: { usdValue } }) => usdValue)
-            .reduce(
-              (sum, collateralUsdValue) => sum.plus(collateralUsdValue),
-              Zero
-            )
+            .reduce((sum: BigNumber, { collateral: { usdValue } }) => {
+              return sum.plus(usdValue);
+            }, Zero)
             .plus(totalCollateralUsd);
 
           totalDebt = makerVaults
-            .map(({ debt: { usdValue } }) => usdValue)
-            .reduce((sum, debt) => sum.plus(debt), Zero)
+            .reduce((sum, { debt: { usdValue } }) => {
+              return sum.plus(usdValue);
+            }, Zero)
             .plus(totalDebt);
         }
 
@@ -763,16 +762,17 @@ export const useDefiSupportedProtocolsStore = defineStore(
     ): ComputedRef<BigNumber> =>
       computed(() => {
         const lendBalances = get(lendingBalances(protocols, addresses));
-        let lendingDeposit = lendBalances
-          .map(value => value.balance.usdValue)
-          .reduce((sum, usdValue) => sum.plus(usdValue), Zero);
+        let lendingDeposit = balanceUsdValueSum(lendBalances);
 
         const getYearnDeposit = (
           version: ProtocolVersion = ProtocolVersion.V1
         ): BigNumber =>
-          get(yearnStore.yearnVaultsAssets(addresses, version))
-            .map(value => value.underlyingValue.usdValue)
-            .reduce((sum, usdValue) => sum.plus(usdValue), Zero);
+          get(yearnStore.yearnVaultsAssets(addresses, version)).reduce(
+            (sum, { underlyingValue: { usdValue } }) => {
+              return sum.plus(usdValue);
+            },
+            Zero
+          );
 
         if (
           protocols.length === 0 ||
