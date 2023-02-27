@@ -8,8 +8,8 @@ import gevent
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.chain.aggregator import LAST_EVM_ACCOUNTS_DETECT_KEY
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
+from rotkehlchen.chain.constants import LAST_EVM_ACCOUNTS_DETECT_KEY
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
 )

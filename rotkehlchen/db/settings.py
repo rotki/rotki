@@ -3,6 +3,7 @@ from typing import Any, NamedTuple, Optional, Union
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.chain.constants import LAST_EVM_ACCOUNTS_DETECT_KEY
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.data_migrations.manager import LAST_DATA_MIGRATION
@@ -92,6 +93,7 @@ STRING_KEYS = (
     'frontend_settings',
 )
 TIMESTAMP_KEYS = ('last_write_ts', 'last_data_upload_ts', 'last_balance_save')
+IGNORED_KEYS = (LAST_EVM_ACCOUNTS_DETECT_KEY,)
 
 
 class DBSettings(NamedTuple):
@@ -211,6 +213,8 @@ def db_settings_from_dict(
             specified_args[key] = int(value)
         elif key in STRING_KEYS:
             specified_args[key] = str(value)
+        elif key in IGNORED_KEYS:  # temp until https://github.com/rotki/rotki/issues/5684 is done
+            continue  # some keys are using the settings table in lieu of a key-value cache
         elif key == 'taxfree_after_period':
             # taxfree_after_period can also be None, to signify disabled setting
             if value is None:

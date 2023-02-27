@@ -9,7 +9,6 @@ from typing import (
     Any,
     Callable,
     DefaultDict,
-    Final,
     Literal,
     Optional,
     TypeVar,
@@ -98,6 +97,7 @@ from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_ti
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 from .balances import BlockchainBalances, BlockchainBalancesUpdate
+from .constants import LAST_EVM_ACCOUNTS_DETECT_KEY
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.avalanche.manager import AvalancheManager
@@ -139,7 +139,6 @@ def _module_name_to_class(module_name: ModuleName) -> type[EthereumModule]:
 
 DEFI_BALANCES_REQUERY_SECONDS = 600
 
-LAST_EVM_ACCOUNTS_DETECT_KEY: Final = 'last_evm_accounts_detect_ts'
 
 # Mapping to token symbols to ignore. True means all
 DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
