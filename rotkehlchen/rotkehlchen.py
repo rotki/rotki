@@ -192,6 +192,7 @@ class Rotkehlchen():
             account_tuple = (address, blockchain.to_chain_id())
             for greenlet in self.api_task_greenlets:
                 is_evm_tx_greenlet = (
+                    greenlet.dead is False and
                     len(greenlet.args) >= 1 and
                     isinstance(greenlet.args[0], MethodType) and
                     greenlet.args[0].__func__.__qualname__ == 'RestAPI._get_evm_transactions'
@@ -205,7 +206,7 @@ class Rotkehlchen():
 
             tx_query_task_greenlets = self.task_manager.running_greenlets.get(self.task_manager._maybe_query_evm_transactions, [])  # noqa: E501
             for greenlet in tx_query_task_greenlets:
-                if greenlet.kwargs['address'] in addresses:
+                if greenlet.dead is False and greenlet.kwargs['address'] in addresses:
                     greenlet.kill(exception=GreenletKilledError('Killed due to request for evm address removal'))  # noqa: E501
 
     def reset_after_failed_account_creation_or_login(self) -> None:
