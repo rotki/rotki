@@ -66,6 +66,8 @@ class HistoryEventSubType(SerializableEnumMixin):
     # for DXDAO Mesa, Gnosis cowswap etc.
     PLACE_ORDER = auto()
     LIQUIDATE = auto()
+    CANCEL_ORDER = auto()  # for cancelling orders like ETH orders in cowswap
+    REFUND = auto()  # for refunding, e.g. refunding ETH in cowswap
 
     def serialize_or_none(self) -> Optional[str]:
         """Serializes the subtype but for the subtype None it returns None"""
