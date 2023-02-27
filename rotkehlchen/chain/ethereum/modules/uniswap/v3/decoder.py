@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import ActionItem
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -45,13 +45,6 @@ UNISWAP_AUTO_ROUTER_V1 = string_to_evm_address('0xE592427A0AEce92De3Edee1F18E015
 UNISWAP_AUTO_ROUTER_V2 = string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45')
 
 UNISWAP_ROUTERS = {UNISWAP_AUTO_ROUTER_V1, UNISWAP_AUTO_ROUTER_V2}
-
-
-class SwapData(NamedTuple):
-    from_asset: Optional[Asset]
-    from_amount: FVal
-    to_asset: Optional[Asset]
-    to_amount: FVal
 
 
 class CryptoAssetAmount(NamedTuple):
