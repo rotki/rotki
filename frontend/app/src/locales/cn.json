@@ -519,146 +519,146 @@
           "title": "yearn.finance 金库 {version} 历史"
         },
         "task": {
-          "title": "Querying yearn.finance Vaults {version} history"
+          "title": "查询 yearn.finance Vaults {version} 历史"
         }
       }
     },
     "delete_eth2_validator": {
       "error": {
-        "description": "Deleting the Eth2 validators failed: {message}",
-        "title": "Deleting Eth2 validators"
+        "description": "删除 Eth2 验证器失败：{message}",
+        "title": "删除 Eth2 验证器"
       }
     },
     "edit_eth2_validator": {
       "error": {
-        "description": "There was an error while editing the Eth2 validator {id}: {message}",
-        "title": "Editing ETH2 validator"
+        "description": "编辑 Eth2 验证器 {id}: {message} 时出错",
+        "title": "编辑 ETH2 验证器"
       }
     },
     "eth2_staking_stats": {
       "error": {
-        "message": "Query failed with the following error: {message}",
-        "title": "Querying Eth2 daily stats"
+        "message": "查询失败，出现以下错误：{message}",
+        "title": "查询 Eth2 每日统计数据"
       },
       "task": {
-        "description": "Querying your Eth2 daily stats",
-        "title": "Eth2 daily stats"
+        "description": "查询你的 Eth2 每日统计数据",
+        "title": "Eth2 每日统计数据"
       }
     },
     "get_accounts": {
       "error": {
-        "description": "Failed to query accounts for {blockchain}: {message}",
-        "title": "Querying of accounts"
+        "description": "查询{blockchain}账户失败：{message}",
+        "title": "账户查询"
       }
     },
     "history": {
       "fetch_associated_locations": {
         "error": {
-          "message": "Failed to retrieve the associated locations: {message}",
-          "title": "Fetch associated locations"
+          "message": "无法检索相关位置：{message}",
+          "title": "获取相关位置"
         }
       }
     },
     "ignore": {
       "error": {
-        "description": "Failed to ignore the selected actions: {error}",
-        "title": "Ignoring actions failed"
+        "description": "无法忽略所选操作：{error}",
+        "title": "忽略操作失败"
       }
     },
     "kraken_staking": {
       "error": {
-        "message": "There was an error while querying the kraken staking events: {message}",
-        "title": "Querying Kraken staking events"
+        "message": "查询 kraken 质押事件时出错：{message}",
+        "title": "查询Kraken质押事件"
       },
       "task": {
-        "title": "Querying Kraken staking events"
+        "title": "查询Kraken质押事件"
       }
     },
     "ledger_actions": {
       "error": {
-        "description": "Failed query for {exchange}: {error}",
-        "title": "Ledger actions for {exchange}"
+        "description": "{exchange} 查询失败：{error}",
+        "title": "{exchange} 的账本操作"
       },
       "task": {
-        "description": "Retrieving ledger actions for {exchange}",
-        "title": "Ledger actions"
+        "description": "检索{exchange}的账本操作",
+        "title": "账本操作"
       }
     },
     "manual_balances": {
       "add": {
         "error": {
-          "description": "Failed to add manual balance: {message}"
+          "description": "手动添加余额失败：{message}"
         },
         "task": {
-          "title": "Adding manual balances"
+          "title": "添加手动余额"
         }
       },
       "edit": {
         "error": {
-          "description": "Failed to edit manual balance: {message}"
+          "description": "无法编辑手动余额：{message}"
         },
         "task": {
-          "title": "Editing manual balances"
+          "title": "编辑手动余额"
         }
       },
       "fetch": {
         "task": {
-          "title": "Retrieving manual balances"
+          "title": "检索手动余额"
         }
       }
     },
     "nft_balances": {
       "error": {
-        "message": "An error occurred while querying the NFT balances: {message}",
-        "title": "NFT balance querying"
+        "message": "查询 NFT 余额时出错：{message}",
+        "title": "NFT余额查询"
       },
       "task": {
-        "title": "Querying NFT balances"
+        "title": "查询NFT余额"
       }
     },
     "notifications": {
       "consume": {
-        "message_title": "Backend messages"
+        "message_title": "后端消息"
       }
     },
     "reports": {
       "csv_export": {
         "message": {
-          "failure": "History export failed",
-          "success": "History exported to CSV successfully"
+          "failure": "历史导出失败",
+          "success": "历史导出到 CSV 成功"
         },
-        "title": "CSV Export"
+        "title": "CSV 导出"
       },
       "delete": {
         "error": {
-          "description": "An unexpected response was received while deleting report history. This might indicate an issue with the reporting mechanism. Please check the logs for any error messages (you might have to enable debug logging first) and create an issue.",
-          "title": "An error has occurred deleting the report(s)."
+          "description": "删除报告历史记录时收到意外响应。这可能表明报告机制存在问题。请检查日志中是否有任何错误消息（您可能必须先启用调试日志记录）并创建问题。",
+          "title": "删除报告时出错。"
         }
       },
       "fetch": {
         "error": {
-          "description": "An unexpected response was received while fetching report history. This might indicate an issue with the reporting mechanism. Please check the logs for any error messages (you might have to enable debug logging first) and create an issue.",
-          "title": "An error has occurred retrieving the processed report(s)."
+          "description": "获取报告历史记录时收到意外响应。这可能表示报告机制存在问题。请检查日志中是否有任何错误消息（您可能必须先启用调试日志记录）并创建问题。",
+          "title": "检索已处理报告时发生错误。"
         }
       },
       "generate": {
         "error": {
-          "description": "An unexpected response was received while generating the profit and loss report. This might indicate an issue with the generation mechanism. Please check the logs for any error messages (you might have to enable debug logging first) and create an issue."
+          "description": "生成损益报告时收到意外响应。这可能表示生成机制存在问题。请检查日志中是否有任何错误消息（您可能必须先启用调试日志记录）并创建问题"
         },
         "task": {
-          "title": "Create tax report"
+          "title": "创建税务报告"
         }
       }
     },
     "session": {
       "add_queriable_address": {
         "error": {
-          "message": "Failure to add a queriable address: {message}"
+          "message": "添加可查询地址失败：{message}"
         }
       },
       "delete_queriable_address": {
         "error": {
-          "message": "Failure to delete a queriable address: {message}"
+          "message": "删除查询地址失败：{message}"
         }
       },
       "fetch_nfts": {
