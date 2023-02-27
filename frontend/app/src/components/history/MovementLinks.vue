@@ -27,7 +27,9 @@ const chain = computed<Blockchain>(() => {
 
 const transactionId = computed<string>(() => {
   const { transactionId } = get(item);
-  if (!transactionId) return '';
+  if (!transactionId) {
+    return '';
+  }
 
   if (get(chain) !== Blockchain.ETH) {
     return transactionId;

@@ -283,6 +283,6 @@ module.exports = defineConfig({
     'yml/no-empty-mapping-value': 'off',
 
     // extras
-    curly: 'error'
+    curly: ['error', 'all']
   }
 });

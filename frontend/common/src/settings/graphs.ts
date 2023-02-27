@@ -198,7 +198,9 @@ export const getTimeframeByRange = (
   let usedTimeframe: Timeframe = sortedByRange[0];
   let skip = false;
   sortedByRange.forEach(timeframe => {
-    if (skip) return;
+    if (skip) {
+      return;
+    }
 
     if (timeframe.timestampRange >= range) {
       usedTimeframe = timeframe;

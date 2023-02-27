@@ -58,9 +58,13 @@ const { premiumURL } = useInterop();
 const api = useUserNotesApi();
 
 const fetchNotes = async (loadingIndicator = false) => {
-  if (loadingIndicator) set(loading, true);
+  if (loadingIndicator) {
+    set(loading, true);
+  }
   set(notes, await api.fetchUserNotes(get(filter)));
-  if (loadingIndicator) set(loading, false);
+  if (loadingIndicator) {
+    set(loading, false);
+  }
   nextTick(() => {
     if (get(wrapper)) {
       get(wrapper).scrollTop = 0;
@@ -152,7 +156,9 @@ const clearDeleteDialog = () => {
 
 const confirmDelete = async () => {
   const id = get(idToDelete);
-  if (id === null) return;
+  if (id === null) {
+    return;
+  }
   set(animateDelete, true);
   setTimeout(async () => {
     await api.deleteUserNote(id);

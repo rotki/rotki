@@ -58,7 +58,9 @@ const v$ = useVuelidate(
 
 const dateInputFormatExample = computed(() => {
   const now = new Date();
-  if (!get(dateInputFormat)) return '';
+  if (!get(dateInputFormat)) {
+    return '';
+  }
   return displayDateFormatter.format(now, get(dateInputFormat)!);
 });
 

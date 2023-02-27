@@ -79,7 +79,9 @@ const updateLocationDataSnapshot = (
 
 const save = async (): Promise<boolean> => {
   const data = get(snapshotData);
-  if (!data) return false;
+  if (!data) {
+    return false;
+  }
 
   const payload: SnapshotPayload = {
     balancesSnapshot: [],
@@ -112,7 +114,9 @@ const save = async (): Promise<boolean> => {
   try {
     result = await api.updateSnapshotData(get(timestamp), payload);
 
-    if (!result) notifyError();
+    if (!result) {
+      notifyError();
+    }
   } catch (e: any) {
     notifyError(e);
   }

@@ -69,8 +69,12 @@ const filterItems = (
       let matchedPoints = 0;
       for (const word of keyword.trim().split(' ')) {
         const indexOf = getItemText(item).toLowerCase().indexOf(word);
-        if (indexOf > -1) matchedPoints++;
-        if (indexOf === 0) matchedPoints += 0.5;
+        if (indexOf > -1) {
+          matchedPoints++;
+        }
+        if (indexOf === 0) {
+          matchedPoints += 0.5;
+        }
       }
       item.matchedPoints = matchedPoints;
       return matchedPoints > 0;

@@ -26,7 +26,9 @@ const displayValue = computed(() => {
     usedAsset = get(assetInfo(value));
   }
 
-  if (!usedAsset) return value;
+  if (!usedAsset) {
+    return value;
+  }
 
   if (usedAsset.evmChain) {
     return `${usedAsset.symbol} (${usedAsset.evmChain})`;

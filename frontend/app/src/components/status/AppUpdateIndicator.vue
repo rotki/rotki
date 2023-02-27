@@ -34,7 +34,9 @@ const { pause, resume, isActive } = useIntervalFn(
 );
 
 const setVersionUpdateCheckInterval = () => {
-  if (isActive) pause();
+  if (isActive) {
+    pause();
+  }
   if (period > 0) {
     resume();
   }

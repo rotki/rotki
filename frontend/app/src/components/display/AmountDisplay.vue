@@ -105,18 +105,24 @@ const convertFiat = (
   const toVal = get(to);
   const fromVal = get(from);
 
-  if (toVal === fromVal) return valueVal;
+  if (toVal === fromVal) {
+    return valueVal;
+  }
   const multiplierRate = to === CURRENCY_USD ? One : get(exchangeRate(toVal));
   const dividerRate = from === CURRENCY_USD ? One : get(exchangeRate(fromVal));
 
-  if (!multiplierRate || !dividerRate) return valueVal;
+  if (!multiplierRate || !dividerRate) {
+    return valueVal;
+  }
   return valueVal.multipliedBy(multiplierRate).dividedBy(dividerRate);
 };
 
 const internalValue: ComputedRef<BigNumber> = computed<BigNumber>(() => {
   // If there is no `sourceCurrency`, it means that no fiat currency, or the unit is asset not fiat, hence we should just show the `value` passed.
   // If `forceCurrency` is true, we should also just return the value.
-  if (!get(sourceCurrency) || get(forceCurrency)) return get(value);
+  if (!get(sourceCurrency) || get(forceCurrency)) {
+    return get(value);
+  }
 
   const sourceCurrencyVal = get(sourceCurrency)!;
   const currentCurrencyVal = get(currentCurrency);
@@ -177,7 +183,9 @@ const rounding = computed<RoundingMode | undefined>(() => {
 const renderedValue: ComputedRef<string> = computed(() => {
   const floatingPrecisionUsed = get(integer) ? 0 : get(floatingPrecision);
 
-  if (get(isNaN)) return '-';
+  if (get(isNaN)) {
+    return '-';
+  }
 
   if (get(showExponential)) {
     let exponentialValue = get(realValue).toExponential(
@@ -187,8 +195,12 @@ const renderedValue: ComputedRef<string> = computed(() => {
 
     if (get(thousandSeparator) !== ',' || get(decimalSeparator) !== '.') {
       exponentialValue = exponentialValue.replace(/[,.]/g, $1 => {
-        if ($1 === ',') return get(thousandSeparator);
-        if ($1 === '.') return get(decimalSeparator);
+        if ($1 === ',') {
+          return get(thousandSeparator);
+        }
+        if ($1 === '.') {
+          return get(decimalSeparator);
+        }
         return $1;
       });
     }
@@ -254,7 +266,9 @@ const shouldShowCurrency: ComputedRef<boolean> = computed(() => {
 
 // Copy
 const realValueInString: ComputedRef<string> = computed(() => {
-  if (get(isNaN)) return '-';
+  if (get(isNaN)) {
+    return '-';
+  }
   return get(realValue).toString();
 });
 

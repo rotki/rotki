@@ -17,7 +17,9 @@ const route = useRoute();
 
 const location = computed<string>(() => {
   const meta = get(route).meta;
-  if (meta && meta.noteLocation) return meta.noteLocation as string;
+  if (meta && meta.noteLocation) {
+    return meta.noteLocation as string;
+  }
 
   let noteLocation = '';
   get(route).matched.forEach(matched => {

@@ -12,7 +12,9 @@ const { exchange } = toRefs(props);
 const { exchangeName } = useTradeLocations();
 
 const name = computed<string>(() => {
-  if (!get(exchange)) return '';
+  if (!get(exchange)) {
+    return '';
+  }
   return exchangeName(exchange);
 });
 </script>

@@ -118,12 +118,13 @@ const calculateXRange = () => {
 
 const dataTimeRange = computed<Bound>(() => {
   const data = get(balanceData);
-  if (data.length === 0)
+  if (data.length === 0) {
     return {
       min: 0,
       max: 0,
       range: 0
     };
+  }
 
   const first = data[0];
   const last = data[data.length - 1];
@@ -137,12 +138,13 @@ const dataTimeRange = computed<Bound>(() => {
 
 const dataValueRange = computed<Bound>(() => {
   const data = get(balanceData);
-  if (data.length === 0)
+  if (data.length === 0) {
     return {
       min: 0,
       max: 0,
       range: 0
     };
+  }
 
   const min = Math.min(...data.map(item => item.y));
   const max = Math.max(...data.map(item => item.y));
@@ -393,7 +395,9 @@ const createChart = (): Chart => {
 };
 
 watch(dataTimeRange, dataTimeRange => {
-  if (!chart) return;
+  if (!chart) {
+    return;
+  }
   chart.options.plugins!.zoom!.zoom!.drag!.enabled =
     dataTimeRange.range > oneDayTimestamp;
   updateChart(false, false);
@@ -466,7 +470,9 @@ const canvasMouseUp = (event: MouseEvent) => {
 const canvasClicked = (event: MouseEvent) => {
   set(isDblClick, false);
   setTimeout(() => {
-    if (get(isDblClick)) return;
+    if (get(isDblClick)) {
+      return;
+    }
 
     const axisData = chart?.getElementsAtEventForMode(
       event,
@@ -498,7 +504,9 @@ const resetZoom = () => {
   set(isDblClick, true);
 
   const chart = getChart();
-  if (!chart) return;
+  if (!chart) {
+    return;
+  }
   const xAxis = chart.options!.scales!.x!;
 
   const { min, max } = get(dataTimeRange);
@@ -542,18 +550,24 @@ const rangeButtonMouseMove = (event: MouseEvent) => {
   const activeRangeButtonVal = get(activeRangeButton);
   const rangeElem = get(rangeRef);
 
-  if (!activeRangeButtonVal || !rangeElem) return;
+  if (!activeRangeButtonVal || !rangeElem) {
+    return;
+  }
 
   const { x: elemX, width } = rangeElem.getBoundingClientRect();
   const x = Math.round(event.pageX) - elemX;
   const scale = x / width;
 
   const { min, max, range } = get(dataTimeRange);
-  if (range < oneDayTimestamp) return;
+  if (range < oneDayTimestamp) {
+    return;
+  }
   const { min: displayedMin, max: displayedMax } = get(displayedXRange);
 
   const chart = getChart();
-  if (!chart) return;
+  if (!chart) {
+    return;
+  }
   const xAxis = chart.options!.scales!.x!;
 
   // Drag the start button

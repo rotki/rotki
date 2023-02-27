@@ -68,7 +68,9 @@ const name = computed(() => get(asset)?.name);
 
 const displayAsset = computed<string>(() => {
   const currencySymbol = get(currency);
-  if (currencySymbol) return currencySymbol;
+  if (currencySymbol) {
+    return currencySymbol;
+  }
 
   return get(symbol) ?? get(name) ?? get(mappedIdentifier) ?? '';
 });

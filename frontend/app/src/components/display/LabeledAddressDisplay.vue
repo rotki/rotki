@@ -52,7 +52,9 @@ const truncatedAddress = computed(() => {
 });
 
 const displayAddress = computed<string>(() => {
-  if (get(aliasName)) return get(aliasName) as string;
+  if (get(aliasName)) {
+    return get(aliasName) as string;
+  }
   if (get(truncatedAddress).length >= get(address).length) {
     return get(address);
   }

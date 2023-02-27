@@ -41,7 +41,9 @@ const currentPage = ref<number>(1);
 const { footerProps } = useFooterProps();
 
 const onItemsPerPageChange = async (newValue: number) => {
-  if (get(itemsPerPage) === newValue) return;
+  if (get(itemsPerPage) === newValue) {
+    return;
+  }
 
   await frontendSettingsStore.updateSetting({
     itemsPerPage: newValue
@@ -56,7 +58,9 @@ const scrollToTop = () => {
   const wrapper = tableContainer ?? document.body;
   const table = get(tableRef);
 
-  if (!table || !wrapper) return;
+  if (!table || !wrapper) {
+    return;
+  }
 
   const tableTop = get(top);
   setTimeout(() => {
@@ -67,7 +71,9 @@ const scrollToTop = () => {
     } else {
       newScrollTop = tableTop + wrapper.scrollTop - 64;
     }
-    if (wrapper.scrollTop > newScrollTop) wrapper.scrollTop = newScrollTop;
+    if (wrapper.scrollTop > newScrollTop) {
+      wrapper.scrollTop = newScrollTop;
+    }
   }, 10);
 };
 
@@ -95,10 +101,16 @@ const { tc } = useI18n();
 
 onMounted(() => {
   const optionsVal = get(options);
-  if (!optionsVal) return;
+  if (!optionsVal) {
+    return;
+  }
 
-  if (optionsVal.page) set(currentPage, optionsVal.page);
-  if (optionsVal.itemsPerPage) onItemsPerPageChange(optionsVal.itemsPerPage);
+  if (optionsVal.page) {
+    set(currentPage, optionsVal.page);
+  }
+  if (optionsVal.itemsPerPage) {
+    onItemsPerPageChange(optionsVal.itemsPerPage);
+  }
 });
 </script>
 

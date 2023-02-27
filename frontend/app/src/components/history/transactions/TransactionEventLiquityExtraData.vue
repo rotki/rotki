@@ -28,10 +28,14 @@ onBeforeMount(async () => {
 
 const stakingDetail: ComputedRef<AssetBalance | null> = computed(() => {
   const { balance, identifier } = get(event);
-  if (!identifier) return null;
+  if (!identifier) {
+    return null;
+  }
 
   const data = get(extraData)?.liquityStaking;
-  if (!data) return null;
+  if (!data) {
+    return null;
+  }
 
   const stakedAmount = data.stakedAmount;
   const { usdValue, amount } = balance;

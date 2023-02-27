@@ -23,6 +23,8 @@ fs.readFile(dtsPath, { encoding: 'utf8' }, (err, data) => {
     'readonly _isBigNumber: true'
   );
   fs.writeFile(dtsPath, formatted, 'utf8', err => {
-    if (err) return console.log(err);
+    if (err) {
+      return console.log(err);
+    }
   });
 });

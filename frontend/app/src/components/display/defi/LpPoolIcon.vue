@@ -38,7 +38,9 @@ const data = [
 const icon = computed(() => {
   const selected = data.find(({ identifier }) => identifier === get(type));
 
-  if (!selected) return null;
+  if (!selected) {
+    return null;
+  }
 
   return selected.icon;
 });

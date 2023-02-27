@@ -44,7 +44,9 @@ watch(multiple, () => {
 });
 
 const onPasteMulti = (event: ClipboardEvent) => {
-  if (get(disabled)) return;
+  if (get(disabled)) {
+    return;
+  }
   const paste = trimOnPaste(event);
   if (paste) {
     userAddresses.value += paste.replace(/,(0x)/g, ',\n0x');
@@ -52,7 +54,9 @@ const onPasteMulti = (event: ClipboardEvent) => {
 };
 
 const onPasteAddress = (event: ClipboardEvent) => {
-  if (get(disabled)) return;
+  if (get(disabled)) {
+    return;
+  }
   const paste = trimOnPaste(event);
   if (paste) {
     set(address, paste);

@@ -83,7 +83,9 @@ const base = computed<string>(() => {
     }
   }
 
-  if (!formattedBaseUrl) return '';
+  if (!formattedBaseUrl) {
+    return '';
+  }
 
   return formattedBaseUrl.endsWith('/')
     ? formattedBaseUrl

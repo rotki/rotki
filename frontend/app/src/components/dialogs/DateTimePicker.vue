@@ -174,7 +174,9 @@ onMounted(() => onValueChange(get(value)));
 
 const getDefaultTimezoneName = (offset: number) => {
   let hour = offset / 60;
-  if (!Number.isInteger(offset)) hour = 0;
+  if (!Number.isInteger(offset)) {
+    hour = 0;
+  }
 
   const isPositive = hour > 0;
   return `Etc/GMT${isPositive ? '+' : ''}hour`;
@@ -195,7 +197,9 @@ const setCurrentTimezone = () => {
 };
 
 const formatDate = (date: string) => {
-  if (!date) return '';
+  if (!date) {
+    return '';
+  }
 
   const [year, month, day] = date.split('-');
   return `${day}/${month}/${year}`;

@@ -55,7 +55,9 @@ const { t, tc } = useI18n();
 const search = ref<string | null>('');
 
 watch(search, customAssetType => {
-  if (customAssetType === null) customAssetType = get(formData).customAssetType;
+  if (customAssetType === null) {
+    customAssetType = get(formData).customAssetType;
+  }
   input({ customAssetType });
 });
 

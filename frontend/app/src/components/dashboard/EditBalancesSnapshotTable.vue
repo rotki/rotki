@@ -65,7 +65,9 @@ const total = computed<BigNumber>(() => {
     item => item.location === 'total'
   );
 
-  if (!totalEntry) return Zero;
+  if (!totalEntry) {
+    return Zero;
+  }
   return totalEntry.usdValue;
 });
 
@@ -228,7 +230,9 @@ const previewDeleteLocationBalance = computed<Record<string, BigNumber> | null>(
     );
     const balanceData = val.balancesSnapshot[index];
 
-    if (!locationData || !balanceData) return null;
+    if (!locationData || !balanceData) {
+      return null;
+    }
 
     const isCurrentLiability = balanceData.category === 'liability';
     const currentFactor = bigNumberify(isCurrentLiability ? 1 : -1);
@@ -266,7 +270,9 @@ const updateData = (
   }
 
   const assetsValue = balancesSnapshot.map((item: BalanceSnapshot) => {
-    if (item.category === 'asset') return item.usdValue;
+    if (item.category === 'asset') {
+      return item.usdValue;
+    }
     return item.usdValue.negated();
   });
 
@@ -287,7 +293,9 @@ const updateData = (
 const save = () => {
   const formVal = get(form);
 
-  if (!formVal) return;
+  if (!formVal) {
+    return;
+  }
   const index = get(indexToEdit);
   const val = get(value);
   const timestampVal = get(timestamp);
@@ -338,7 +346,9 @@ const confirmDelete = () => {
   const val = get(value);
   const location = get(locationToDelete);
 
-  if (index === null) return;
+  if (index === null) {
+    return;
+  }
 
   const balancesSnapshot = [...val.balancesSnapshot];
   balancesSnapshot.splice(index, 1);

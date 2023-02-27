@@ -122,7 +122,9 @@ const add = () => {
 const save = () => {
   const formVal = get(form);
 
-  if (!formVal) return;
+  if (!formVal) {
+    return;
+  }
 
   const index = get(editedIndex);
   const val = get(value);
@@ -164,7 +166,9 @@ const updateForm = (newForm: LocationDataSnapshotPayload) => {
 const confirmDelete = (index: number) => {
   const val = get(value);
 
-  if (index === null) return;
+  if (index === null) {
+    return;
+  }
 
   const newValue = [...val];
   newValue.splice(index, 1);
@@ -175,7 +179,9 @@ const confirmDelete = (index: number) => {
 const total = computed<BigNumber>(() => {
   const totalEntry = get(value).find(item => item.location === 'total');
 
-  if (!totalEntry) return Zero;
+  if (!totalEntry) {
+    return Zero;
+  }
   return totalEntry.usdValue;
 });
 

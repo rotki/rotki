@@ -2,6 +2,7 @@ const { defineConfig } = require('eslint-define-config');
 const { rules: prettierRules } = require('eslint-config-prettier');
 
 delete prettierRules['vue/html-self-closing'];
+delete prettierRules['curly'];
 
 module.exports = defineConfig({
   extends: ['plugin:yml/prettier'],
