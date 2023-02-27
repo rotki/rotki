@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.constants.misc import ZERO
@@ -18,6 +18,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, ExchangeManager
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date
@@ -256,25 +257,48 @@ class EventsHistorian:
     def query_history_events(
             self,
             cursor: 'DBCursor',
+            location: Literal[Location.KRAKEN, Location.BINANCE, Location.BINANCEUS],
             filter_query: HistoryEventFilterQuery,
+            task_manager: Optional[TaskManager],
             only_cache: bool,
     ) -> tuple[list[HistoryBaseEntry], int]:
+        """
+        May raise:
+        - sqlcipher.OperationalError if a db error occurred while updating missing prices
+        """
         if only_cache is False:
-            exchanges_list = self.exchange_manager.connected_exchanges.get(Location.KRAKEN, [])
-            kraken_names = []
-            for kraken_instance in exchanges_list:
-                with_errors = kraken_instance.query_kraken_ledgers(   # type: ignore
-                    cursor=cursor,
-                    start_ts=filter_query.from_ts,
-                    end_ts=filter_query.to_ts,
-                )
+            exchanges_list = self.exchange_manager.connected_exchanges.get(location, [])
+            exchange_names = []
+            for exchange_instance in exchanges_list:
+                if location == Location.KRAKEN:
+                    with_errors = exchange_instance.query_kraken_ledgers(  # type: ignore
+                        cursor=cursor,
+                        start_ts=filter_query.from_ts,
+                        end_ts=filter_query.to_ts,
+                    )
+                else:
+                    with_errors = exchange_instance.query_lending_interests_history(  # type: ignore  # noqa: E501
+                        cursor=cursor,
+                        start_ts=filter_query.from_ts,
+                        end_ts=filter_query.to_ts,
+                    )
+
                 if with_errors:
-                    kraken_names.append(kraken_instance.name)
-            if len(kraken_names) != 0:
+                    exchange_names.append(exchange_instance.name)
+
+            if len(exchange_names) != 0:
                 self.msg_aggregator.add_error(
-                    f'Failed to query some events from Kraken exchanges '
-                    f'{",".join(kraken_names)}',
+                    f'Failed to query some events from {location.name} exchanges '
+                    f'{",".join(exchange_names)}',
                 )
+
+        # After 3865 we have a recurring task that queries for missing prices, but
+        # we make sure that the returned values have their correct value calculated
+        if task_manager is not None:
+            entries = task_manager.get_base_entries_missing_prices(filter_query)
+            task_manager.query_missing_prices_of_base_entries(
+                entries_missing_prices=entries,
+            )
 
         db = DBHistoryEvents(self.db)
         has_premium = self.chains_aggregator.premium is not None

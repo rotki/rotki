@@ -891,7 +891,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Database query error retrieving misssing prices no such column',
+        contained_in_msg='Database query error retrieving missing prices no such column',
         status_code=HTTPStatus.CONFLICT,
     )
 

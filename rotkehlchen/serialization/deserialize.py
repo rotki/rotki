@@ -275,7 +275,11 @@ def deserialize_asset_amount_force_positive(amount: AcceptableFValInitInput) -> 
     """Acts exactly like deserialize_asset_amount but also forces the number to be positive
 
     Is needed for some places like some exchanges that list the withdrawal amounts as
-    negative numbers because it's a withdrawal"""
+    negative numbers because it's a withdrawal.
+
+    May raise:
+    - DeserializationError
+    """
     result = deserialize_asset_amount(amount)
     if result < ZERO:
         result = AssetAmount(abs(result))

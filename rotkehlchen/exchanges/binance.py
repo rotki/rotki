@@ -7,19 +7,26 @@ from contextlib import suppress
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union
 from urllib.parse import urlencode
+from uuid import uuid4
 
 import gevent
 import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
+from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
@@ -36,6 +43,7 @@ from rotkehlchen.exchanges.utils import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -45,14 +53,23 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
     deserialize_timestamp_from_intms,
 )
-from rotkehlchen.types import ApiKey, ApiSecret, AssetMovementCategory, Fee, Location, Timestamp
+from rotkehlchen.types import (
+    ApiKey,
+    ApiSecret,
+    AssetMovementCategory,
+    Fee,
+    Location,
+    Timestamp,
+    TimestampMS,
+)
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now_in_ms
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now_in_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -60,7 +77,11 @@ log = RotkehlchenLogsAdapter(logger)
 # Binance launched at 2017-07-14T04:00:00Z (12:00 GMT+8, Beijing Time)
 # https://www.binance.com/en/support/articles/115000599831-Binance-Exchange-Launched-Date-Set
 BINANCE_LAUNCH_TS = Timestamp(1500001200)
-API_TIME_INTERVAL_CONSTRAINT_TS = Timestamp(7776000)  # 90 days
+API_TIME_INTERVAL_CONSTRAINT_TS = 7776000  # 90 days
+BINANCE_LENDING_INTEREST_HISTORY_INTERVAL_TS = 2592000  # 30 days
+
+# this determines the length of the data returned, 100 is the maximum value possible.
+BINANCE_LENDING_INTEREST_HISTORY_PAGE_SIZE = 100
 
 V3_METHODS = (
     'account',
@@ -588,6 +609,140 @@ class Binance(ExchangeInterface):
             )
 
         return balances
+
+    def query_lending_interests_history(
+            self,
+            cursor: 'DBCursor',
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> bool:
+        """Queries Binance lending interest history, transforms it into `HistoryBaseEntry` objects and saves it in the database.
+
+        "DAILY" -> flexible savings.
+        "CUSTOMIZED_FIXED" -> fixed savings.
+        "ACTIVITY" -> fixed savings but as a result of token partners.
+
+        `end_ts` - `start_ts` <= 30days. This is handled using `_api_query_list_within_time_delta`
+        using `BINANCE_LENDING_INTEREST_HISTORY_INTERVAL_TS` as the timedelta.
+
+        Lending Interest History Documentation:
+        https://binance-docs.github.io/apidocs/spot/en/#get-interest-history-user_data-2
+
+        May raise:
+        - RemoteError
+        - BinancePermissionError
+        """  # noqa: E501
+        ranges = DBQueryRanges(self.db)
+        range_query_name = f'{self.location}_lending_history_{self.name}'
+        ranges_to_query = ranges.get_location_query_ranges(
+            cursor=cursor,
+            location_string=range_query_name,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
+        for query_start_ts, query_end_ts in ranges_to_query:
+            events = []
+            for lending_type in ('DAILY', 'ACTIVITY', 'CUSTOMIZED_FIXED'):
+                try:
+                    response = self._api_query_list_within_time_delta(
+                        api_type='sapi',
+                        start_ts=query_start_ts,
+                        time_delta=BINANCE_LENDING_INTEREST_HISTORY_INTERVAL_TS,
+                        end_ts=query_end_ts,
+                        method='lending/union/interestHistory',
+                        additional_options={
+                            'lendingType': lending_type,
+                            'size': BINANCE_LENDING_INTEREST_HISTORY_PAGE_SIZE,
+                        },
+                    )
+                except (RemoteError, BinancePermissionError) as e:
+                    self.msg_aggregator.add_error(
+                        f'Failed to query binance lending interest history between '
+                        f'{query_start_ts} and {query_end_ts}. {str(e)}',
+                    )
+                    return True
+
+                for entry in response:
+                    try:
+                        interest_received = deserialize_asset_amount(entry['interest'])  # noqa: E501
+                        if interest_received == ZERO:
+                            continue
+
+                        timestamp = TimestampMS(entry['time'])
+                        notes = f'Interest paid from {entry["lendingType"]} {entry["productName"]} savings'  # noqa: E501
+                    except KeyError as e:
+                        self.msg_aggregator.add_error(
+                            f'Missing key entry for {str(e)} in {self.name} {entry}. '
+                            f'Ignoring its lending interest history query.',
+                        )
+                        continue
+                    except DeserializationError as e:
+                        self.msg_aggregator.add_error(
+                            f'Error at deserializing {self.name} asset. {str(e)}. '
+                            f'Ignoring its lending interest history query.',
+                        )
+                        continue
+
+                    try:
+                        asset = asset_from_binance(entry['asset'])
+                    except (UnsupportedAsset, UnknownAsset) as e:
+                        error_type = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
+                        self.msg_aggregator.add_warning(
+                            f'Found {error_type} {self.name} asset {e.identifier}. '
+                            f'Ignoring its lending interest history query.',
+                        )
+                        continue
+
+                    try:
+                        usd_price = PriceHistorian().query_historical_price(
+                            from_asset=asset,
+                            to_asset=A_USD,
+                            timestamp=ts_ms_to_sec(timestamp),
+                        )
+                        usd_value = usd_price * interest_received
+                    except NoPriceForGivenTimestamp as e:
+                        log.warning(
+                            f'Could not find USD price of {asset} at {timestamp}. {str(e)} '
+                            f'Using zero usd_value for lending history entry.',
+                        )
+                        usd_value = ZERO
+
+                    event = HistoryBaseEntry(
+                        event_identifier=uuid4().bytes,
+                        sequence_index=0,  # since event_identifier is always different
+                        timestamp=timestamp,
+                        location=self.location,
+                        location_label=self.name,  # the name of the CEX instance
+                        asset=asset,
+                        balance=Balance(
+                            amount=interest_received,
+                            usd_value=usd_value,
+                        ),
+                        notes=notes,
+                        event_type=HistoryEventType.RECEIVE,
+                        event_subtype=HistoryEventSubType.INTEREST_PAYMENT,
+                    )
+                    events.append(event)
+
+            if len(events) != 0:
+                history_events_db = DBHistoryEvents(self.db)
+                with self.db.user_write() as write_cursor:
+                    try:
+                        history_events_db.add_history_events(write_cursor, events)
+                    except InputError as e:
+                        self.msg_aggregator.add_error(
+                            f'Failed to save Binance {self.name} lending interest history from '
+                            f'{query_start_ts} to {query_end_ts} in the database. {str(e)}',
+                        )
+
+            with self.db.user_write() as write_cursor:
+                ranges.update_used_query_range(
+                    write_cursor=write_cursor,
+                    location_string=range_query_name,
+                    queried_ranges=[(start_ts, end_ts)],
+                )
+
+        return False
 
     def _query_cross_collateral_futures_balances(
             self,
@@ -1170,18 +1325,22 @@ class Binance(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            time_delta: Timestamp,
+            time_delta: int,
             api_type: BINANCE_API_TYPE,
             method: Literal[
                 'capital/deposit/hisrec',
                 'capital/withdraw/history',
                 'fiat/orders',
                 'fiat/payments',
+                'lending/union/interestHistory',
             ],
             additional_options: Optional[dict] = None,
     ) -> list[dict[str, Any]]:
         """Request via `api_query_dict()` from `start_ts` `end_ts` using a time
         delta (offset) less than `time_delta`.
+
+        For 'lending/union/interestHistory', pagination is required, and it is achieved using
+        `current` parameter.
 
         Be aware of:
           - If `start_ts` equals zero, the Binance launch timestamp is used
@@ -1205,6 +1364,7 @@ class Binance(ExchangeInterface):
             else end_ts  # Case request without offset (1 request)
         )
         while True:
+            current_page = 1
             options = {
                 'timestamp': ts_now_in_ms(),
                 'startTime': from_ts,
@@ -1212,8 +1372,27 @@ class Binance(ExchangeInterface):
             }
             if additional_options:
                 options.update(additional_options)
-            result = self.api_query_list(api_type, method, options=options)
-            results.extend(result)
+                if method == 'lending/union/interestHistory':
+                    options['current'] = current_page
+
+            if method == 'lending/union/interestHistory':
+                # to guard against an infinite loop if binance
+                last_queried_entry: tuple[str, int] = ('', 0)
+                while True:
+                    result = self.api_query_list(api_type, method, options=options)
+                    if (
+                        len(result) == 0 or
+                        last_queried_entry == (result[-1]['asset'], result[-1]['time'])
+                    ):
+                        break
+
+                    results.extend(result)
+                    options['current'] += 1
+                    last_queried_entry = (result[-1]['asset'], result[-1]['time'])
+            else:
+                result = self.api_query_list(api_type, method, options=options)
+                results.extend(result)
+
             # Case stop requesting
             if to_ts >= end_ts:
                 break
