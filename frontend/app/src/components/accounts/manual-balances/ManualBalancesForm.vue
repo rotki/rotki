@@ -339,6 +339,7 @@ defineExpose({
       :error-messages="toMessages(v$.location)"
       :disabled="pending"
       :label="tc('common.location')"
+      attach=".manual-balances-form__location"
       @blur="v$.location.$touch()"
     />
 

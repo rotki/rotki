@@ -26,7 +26,6 @@ import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
 import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetMovementDisplay from '@/components/display/AssetMovementDisplay.vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -54,6 +53,7 @@ import StatisticsGraphSettings from '@/components/settings/StatisticsGraphSettin
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { logger } from '@/utils/logging';
 import TransactionContent from '@/components/history/transactions/TransactionContent.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 
 /**
  * Vuetify components that are used in the premium components

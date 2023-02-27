@@ -96,11 +96,15 @@ export class DashboardPage {
   }
 
   amountDisplayIsBlurred() {
-    cy.get('.amount-display').should('have.class', 'blur-content');
+    cy.get('[data-cy="display-wrapper"]').should($div => {
+      expect($div.css('filter')).to.match(/^blur/);
+    });
   }
 
   amountDisplayIsNotBlurred() {
-    cy.get('.amount-display').should('not.have.class', 'blur-content');
+    cy.get('[data-cy="display-wrapper"]').should($div => {
+      expect($div.css('filter')).not.to.match(/^blur/);
+    });
   }
 
   percentageDisplayIsBlurred() {

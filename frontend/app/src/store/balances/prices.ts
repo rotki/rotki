@@ -14,11 +14,13 @@ import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ExchangeRates } from '@/types/user';
-import { bigNumberify } from '@/utils/bignumbers';
+import { One } from '@/utils/bignumbers';
 import { chunkArray } from '@/utils/data';
 import { convertFromTimestamp } from '@/utils/date';
 import { type ActionStatus } from '@/types/action';
 import { type FetchPricePayload } from '@/types/blockchain/accounts';
+import { logger } from '@/utils/logging';
+import { assert } from '@/utils/assertions';
 
 export const useBalancePricesStore = defineStore('balances/prices', () => {
   const prices = ref<AssetPrices>({});
@@ -128,23 +130,18 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     }
   };
 
-  const exchangeRate = (
-    currency: string
-  ): ComputedRef<BigNumber | undefined> => {
-    return computed<BigNumber | undefined>(() => {
+  const exchangeRate = (currency: string): ComputedRef<BigNumber | undefined> =>
+    computed(() => {
       return get(exchangeRates)[currency] as BigNumber;
     });
-  };
 
   const getHistoricPrice = async ({
     fromAsset,
     timestamp,
     toAsset
   }: HistoricPricePayload): Promise<BigNumber> => {
+    assert(fromAsset !== toAsset);
     const taskType = TaskType.FETCH_HISTORIC_PRICE;
-    if (get(isTaskRunning(taskType))) {
-      return bigNumberify(-1);
-    }
 
     try {
       const { taskId } = await queryHistoricalRate(
@@ -173,8 +170,9 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
 
       const parsed = HistoricPrices.parse(result);
       return parsed.assets[fromAsset][timestamp];
-    } catch {
-      return bigNumberify(-1);
+    } catch (e: any) {
+      logger.error(e);
+      return One.negated();
     }
   };
 

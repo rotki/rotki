@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import {
   type ProfitLossOverviewItem,
   type SelectedReport

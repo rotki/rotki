@@ -1,33 +1,31 @@
 <script setup lang="ts">
-import { type ComputedRef, type PropType } from 'vue';
+import { type ComputedRef } from 'vue';
 import { type Currency } from '@/types/currencies';
 
-const props = defineProps({
-  currency: { required: true, type: Object as PropType<Currency> },
-  showCurrency: {
-    required: false,
-    default: 'none',
-    type: String as PropType<'none' | 'ticker' | 'symbol' | 'name'>,
-    validator: (showCurrency: string) => {
-      return ['none', 'ticker', 'symbol', 'name'].includes(showCurrency);
-    }
-  },
-  asset: { required: false, default: '', type: String },
-  assetPadding: {
-    required: false,
-    type: Number,
-    default: 0,
-    validator: (chars: number) => chars >= 0 && chars <= 5
+const props = withDefaults(
+  defineProps<{
+    currency: Currency;
+    showCurrency?: 'none' | 'ticker' | 'symbol' | 'name';
+    asset?: string;
+    assetPadding?: number;
+    xl?: boolean;
+  }>(),
+  {
+    showCurrency: 'none',
+    asset: '',
+    assetPadding: 0,
+    xl: false
   }
-});
+);
 
 const { asset, assetPadding, showCurrency, currency } = toRefs(props);
 const assetStyle = computed(() => {
-  if (!get(assetPadding)) {
+  const padding = get(assetPadding);
+  if (!padding) {
     return {};
   }
   return {
-    width: `${get(assetPadding) + 1}ch`,
+    width: `${padding + 1}ch`,
     'text-align': 'start'
   } as any;
 });
@@ -48,16 +46,11 @@ const displayAsset = computed(() => {
 
 const { assetSymbol } = useAssetInfoRetrievalStore();
 
-const symbol: ComputedRef<string> = computed(() => {
-  if (get(asset)) {
-    return get(assetSymbol(get(asset)));
-  }
-
-  return '';
-});
+const symbol: ComputedRef<string> = assetSymbol(asset);
 
 const { isPending } = useAssetCacheStore();
 const loading = isPending(asset);
+const css = useCssModule();
 </script>
 
 <template>
@@ -74,18 +67,30 @@ const loading = isPending(asset);
         data-cy="display-currency"
         v-bind="attrs"
         :style="assetStyle"
+        :class="{ [css.xl]: xl }"
         v-on="on"
       >
         {{ symbol }}
       </span>
       <v-skeleton-loader v-else width="30" type="text" height="12" />
     </template>
-    <span data-cy="display-currency">
+    <span data-cy="display-currency" :class="{ [css.xl]: xl }">
       {{ symbol }}
     </span>
   </v-tooltip>
 
-  <span v-else :style="assetStyle" data-cy="display-currency">
+  <span
+    v-else
+    :style="assetStyle"
+    data-cy="display-currency"
+    :class="{ [css.xl]: xl }"
+  >
     {{ displayAsset }}
   </span>
 </template>
+
+<style module lang="scss">
+.xl {
+  font-size: 1.5rem;
+}
+</style>
