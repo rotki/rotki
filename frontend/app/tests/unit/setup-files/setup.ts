@@ -7,15 +7,30 @@ beforeAll(() => {
   Vue.use(Vuetify);
   Vue.use(PiniaVuePlugin);
 
-  vi.mock('@/services/assets/info', () => ({
+  vi.mock('@/composables/api/assets/info', () => ({
     useAssetInfoApi: vi.fn().mockReturnValue({
       assetMapping: vi.fn().mockResolvedValue({})
     })
   }));
 
-  vi.mock('@/services/balances/price', () => ({
+  vi.mock('@/composables/api/balances/price', () => ({
     usePriceApi: vi.fn().mockReturnValue({
-      getPriceCache: vi.fn().mockReturnValue([])
+      getPriceCache: vi.fn().mockResolvedValue([]),
+      createPriceCache: vi.fn().mockResolvedValue(1),
+      deletePriceCache: vi.fn().mockResolvedValue(1),
+      queryHistoricalRate: vi.fn().mockResolvedValue(1),
+      queryFiatExchangeRates: vi.fn().mockResolvedValue(1),
+      queryPrices: vi.fn().mockResolvedValue(1)
+    })
+  }));
+
+  vi.mock('@/composables/api/session/queried-addresses', () => ({
+    useQueriedAddressApi: vi.fn().mockReturnValue({})
+  }));
+
+  vi.mock('@/composables/api/backup', () => ({
+    useBackupApi: vi.fn().mockReturnValue({
+      info: vi.fn().mockReturnValue({})
     })
   }));
 
