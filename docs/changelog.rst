@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Ethereum transactions claiming COMP after comptroller's COMP ran out and has been refilled will now be decoded correctly as COMP rewards.
 * :bug:`-` Fixed an edge case where removing an EVM account multiple times in a row, while a transactions querying task ran, would result in an error.
 * :bug:`-` Ignoring forked assets ETC, BCH and BSV for accounting should now also remove any pre-fork references of them and completely omit them from the PnL report.
 * :bug:`-` Users with kraken accounts with old data that were never purged and repulled will no longer have missing events.
