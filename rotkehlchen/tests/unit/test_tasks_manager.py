@@ -6,12 +6,14 @@ import pytest
 
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.db.updates import RotkiDataUpdater
+from rotkehlchen.db.updates import LAST_DATA_UPDATES_KEY, RotkiDataUpdater
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
+from rotkehlchen.tasks.utils import should_run_periodic_task
 from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR1,
     TEST_ADDR2,
@@ -24,6 +26,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.exchanges.exchange import ExchangeInterface
     from rotkehlchen.exchanges.manager import ExchangeManager
 
@@ -390,3 +393,40 @@ def test_try_start_same_task(rotkehlchen_api_server):
             rotki.task_manager._maybe_update_snapshot_balances,
             simple_task,
         }
+
+
+def test_should_run_periodic_task(database: 'DBHandler') -> None:
+    """
+    Check that should_run_periodic_task correctly reads the settings when they have been
+    set and where the database doesn't have them yet.
+    """
+    assert should_run_periodic_task(
+        database=database,
+        key_name=LAST_DATA_UPDATES_KEY,
+        refresh_period=DATA_UPDATES_REFRESH,
+    ) is True
+
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO settings(name, value) VALUES (?, ?)',
+            (LAST_DATA_UPDATES_KEY, str(ts_now())),
+        )
+
+    assert should_run_periodic_task(
+        database=database,
+        key_name=LAST_DATA_UPDATES_KEY,
+        refresh_period=DATA_UPDATES_REFRESH,
+    ) is False
+
+    # Trigger that the function returns true by having an old timestamp
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'UPDATE settings SET value=? WHERE NAME=?',
+            (str(ts_now() - DATA_UPDATES_REFRESH), LAST_DATA_UPDATES_KEY),
+        )
+
+    assert should_run_periodic_task(
+        database=database,
+        key_name=LAST_DATA_UPDATES_KEY,
+        refresh_period=DATA_UPDATES_REFRESH,
+    ) is True

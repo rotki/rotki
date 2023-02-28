@@ -23,5 +23,5 @@ def should_run_periodic_task(
     if timestamp_in_db is None:
         return True
 
-    last_update_ts = deserialize_timestamp(timestamp_in_db)
+    last_update_ts = deserialize_timestamp(timestamp_in_db[0])
     return ts_now() - last_update_ts >= refresh_period
