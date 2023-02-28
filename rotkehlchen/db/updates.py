@@ -12,6 +12,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.network import query_file
 
 if TYPE_CHECKING:
@@ -127,3 +128,9 @@ class RotkiDataUpdater:
         latest_spam_assets_version = remote_information[UpdateType.SPAM_ASSETS.value]['latest']
         if local_spam_assets_version < latest_spam_assets_version:
             self.update_spam_assets(local_spam_assets_version, latest_spam_assets_version)
+
+        with self.user_db.user_write() as cursor:
+            cursor.execute(  # remember last time data updates were detected
+                'INSERT OR REPLACE INTO settings (name, value) VALUES (?, ?)',
+                (LAST_DATA_UPDATES_KEY, str(ts_now())),
+            )
