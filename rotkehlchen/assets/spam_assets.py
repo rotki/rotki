@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SPAM_PROTOCOL, ChainID, EvmTokenKind
@@ -32,8 +33,12 @@ def _save_or_update_spam_assets(
     tokens_to_ignore = set()
     # Try to add custom list
     for info in assets_info:
-        chain_id = info.get('chain')
-        chain = ChainID.deserialize(chain_id) if chain_id is not None else ChainID.ETHEREUM
+        chain_name = info.get('chain')  # we use name since in thefuture we may have non-EVM chains
+        try:
+            chain = ChainID.deserialize_from_name(chain_name) if chain_name is not None else ChainID.ETHEREUM  # noqa: E501
+        except DeserializationError:
+            log.error(f'Got unexpected chain name {chain_name} when deserializing spam asset data: {assets_info}')  # noqa: E501
+            continue
 
         evm_token = EvmToken.initialize(
             address=info['address'],

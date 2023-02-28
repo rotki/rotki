@@ -1,5 +1,6 @@
 import json
 from unittest.mock import patch
+
 import pytest
 
 from rotkehlchen.assets.asset import EvmToken
@@ -9,7 +10,6 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import SPAM_PROTOCOL, ChainID, EvmTokenKind
-
 
 ETHEREUM_SPAM_ASSET_ADDRESS = make_evm_address()
 OPTIMISM_SPAM_ASSET_ADDRESS = make_evm_address()
@@ -32,7 +32,7 @@ def mock_github_data_response(url, timeout):  # pylint: disable=unused-argument
                     'name': 'spooky-v3.xyz',
                     'symbol': 'Visit https://spooky-v3.xyz and claim rewards',
                     'decimals': 18,
-                    'chain': ChainID.OPTIMISM.serialize(),
+                    'chain': 'optimism',
                 },
             ],
         }
