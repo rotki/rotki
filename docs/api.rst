@@ -8961,6 +8961,8 @@ Adding EVM accounts to all EVM chains
 
    Doing a PUT on the EVM accounts endpoint functions just like the add blockchain accounts endpoint but adds the addresses for all evm chains. It will follow the folowing logic. Take ethereum mainnet as the parent chain. If it's a contract there, it will only add it to the mainnet. If it's an EoA it will try all chains one by one and see if they have any transactions/activity and add it to the ones that do.
 
+   .. note::
+     This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    **Example Request**:
 
