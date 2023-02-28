@@ -1,5 +1,5 @@
-import { type Balance, BigNumber } from '@rotki/common';
-import { Zero } from '@/utils/bignumbers';
+import { type Balance, type BigNumber } from '@rotki/common';
+import { Zero, bigNumberify } from '@/utils/bignumbers';
 
 export const assetSum = (balances: Record<string, Balance>): BigNumber => {
   const { isAssetIgnored } = useIgnoredAssetsStore();
@@ -23,7 +23,7 @@ export const toUnit = (value: BigNumber, unit: Unit = Unit.ETH): BigNumber => {
   }
 
   const pow = unit === Unit.ETH ? 18 : 9;
-  return value.div(new BigNumber('10').pow(pow));
+  return value.div(bigNumberify('10').pow(pow));
 };
 
 export const balanceSum = (

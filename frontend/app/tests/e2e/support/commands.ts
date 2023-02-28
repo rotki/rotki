@@ -22,7 +22,9 @@
 //
 //
 // -- This is will overwrite an existing command --
-// Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })import { type ExternalLedgerAction, type ExternalTrade } from './types';
+// Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... });
+
+import { type ExternalLedgerAction, type ExternalTrade } from './types';
 
 const logout = () => {
   cy.request({
@@ -113,7 +115,7 @@ const addExternalTrade = (trade: ExternalTrade) => {
       method: 'PUT',
       body: {
         timestamp: new Date(trade.time).getTime() / 1000,
-        location: 'external',
+        location: trade.location || 'external',
         base_asset: trade.base_id,
         quote_asset: trade.quote_id,
         trade_type: trade.trade_type,

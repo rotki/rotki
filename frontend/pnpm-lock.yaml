@@ -55,12 +55,12 @@ importers:
       cleave.js: 1.6.0
       cross-env: 7.0.3
       csv: 6.2.7
-      cypress: 12.6.0
+      cypress: 12.7.0
       dayjs: 1.11.7
       dmg-license: 1.0.11
       dotenv: 14.3.2
       dotenv-cli: 5.1.0
-      electron: 22.3.0
+      electron: 22.3.1
       electron-builder: 23.6.0
       electron-devtools-installer: 3.2.0
       electron-store: 8.1.0
@@ -97,7 +97,7 @@ importers:
       vite-plugin-istanbul: 4.0.0
       vite-plugin-pwa: 0.14.4
       vite-plugin-vue-layouts: 0.8.0
-      vitest: 0.28.5
+      vitest: 0.29.1
       vue: 2.7.14
       vue-i18n: 8.28.2
       vue-i18n-composable: 2.0.0
@@ -142,7 +142,7 @@ importers:
     optionalDependencies:
       '@babel/core': 7.21.0
       '@babel/preset-env': 7.20.2_@babel+core@7.21.0
-      '@cypress/code-coverage': 3.10.0_rsvaoigkh5facbpmlknif75k3u
+      '@cypress/code-coverage': 3.10.0_jhxwfiicc3vtf6ngj7bw5mkwzu
       babel-loader: 8.3.0_qoaxtqicpzj5p3ubthw53xafqm
       webpack: 5.75.0
     devDependencies:
@@ -161,11 +161,11 @@ importers:
       c8: 7.13.0
       cross-env: 7.0.3
       csv: 6.2.7
-      cypress: 12.6.0
+      cypress: 12.7.0
       dmg-license: 1.0.11
       dotenv: 14.3.2
       dotenv-cli: 5.1.0
-      electron: 22.3.0
+      electron: 22.3.1
       electron-builder: 23.6.0
       electron-devtools-installer: 3.2.0
       electron-store: 8.1.0
@@ -192,7 +192,7 @@ importers:
       vite-plugin-istanbul: 4.0.0_vite@4.1.4
       vite-plugin-pwa: 0.14.4_pchkumgzq6po4w4enhsumrku2u
       vite-plugin-vue-layouts: 0.8.0_rlykp6u6qlgwkziei3xuvddtwq
-      vitest: 0.28.5_sass@1.32.13
+      vitest: 0.29.1_sass@1.32.13
       vue-i18n-extract: 2.0.7
       vue-template-compiler: 2.7.14
       vue-tsc: 1.1.7_typescript@4.9.5
@@ -1526,7 +1526,7 @@ packages:
       postcss-selector-parser: 6.0.11
     dev: true
 
-  /@cypress/code-coverage/3.10.0_rsvaoigkh5facbpmlknif75k3u:
+  /@cypress/code-coverage/3.10.0_jhxwfiicc3vtf6ngj7bw5mkwzu:
     resolution: {integrity: sha512-K5pW2KPpK4vKMXqxd6vuzo6m9BNgpAv1LcrrtmqAtOJ1RGoEILXYZVost0L6Q+V01NyY7n7jXIIfS7LR3nP6YA==}
     requiresBuild: true
     peerDependencies:
@@ -1534,7 +1534,7 @@ packages:
     dependencies:
       '@cypress/webpack-preprocessor': 5.15.6_5wg4ym5g6azcxlujsc2xfwagui
       chalk: 4.1.2
-      cypress: 12.6.0
+      cypress: 12.7.0
       dayjs: 1.10.7
       debug: 4.3.4
       execa: 4.1.0
@@ -2757,10 +2757,26 @@ packages:
       chai: 4.3.7
     dev: true
 
+  /@vitest/expect/0.29.1:
+    resolution: {integrity: sha512-VFt1u34D+/L4pqjLA8VGPdHbdF8dgjX9Nq573L9KG6/7MIAL9jmbEIKpXudmxjoTwcyczOXRyDuUWBQHZafjoA==}
+    dependencies:
+      '@vitest/spy': 0.29.1
+      '@vitest/utils': 0.29.1
+      chai: 4.3.7
+    dev: true
+
   /@vitest/runner/0.28.5:
     resolution: {integrity: sha512-NKkHtLB+FGjpp5KmneQjTcPLWPTDfB7ie+MmF1PnUBf/tGe2OjGxWyB62ySYZ25EYp9krR5Bw0YPLS/VWh1QiA==}
     dependencies:
       '@vitest/utils': 0.28.5
+      p-limit: 4.0.0
+      pathe: 1.1.0
+    dev: true
+
+  /@vitest/runner/0.29.1:
+    resolution: {integrity: sha512-VZ6D+kWpd/LVJjvxkt79OA29FUpyrI5L/EEwoBxH5m9KmKgs1QWNgobo/CGQtIWdifLQLvZdzYEK7Qj96w/ixQ==}
+    dependencies:
+      '@vitest/utils': 0.29.1
       p-limit: 4.0.0
       pathe: 1.1.0
     dev: true
@@ -2771,8 +2787,24 @@ packages:
       tinyspy: 1.0.2
     dev: true
 
+  /@vitest/spy/0.29.1:
+    resolution: {integrity: sha512-sRXXK44pPzaizpiZOIQP7YMhxIs80J/b6v1yR3SItpxG952c8tdA7n0O2j4OsVkjiO/ZDrjAYFrXL3gq6hLx6Q==}
+    dependencies:
+      tinyspy: 1.0.2
+    dev: true
+
   /@vitest/utils/0.28.5:
     resolution: {integrity: sha512-UyZdYwdULlOa4LTUSwZ+Paz7nBHGTT72jKwdFSV4IjHF1xsokp+CabMdhjvVhYwkLfO88ylJT46YMilnkSARZA==}
+    dependencies:
+      cli-truncate: 3.1.0
+      diff: 5.1.0
+      loupe: 2.3.6
+      picocolors: 1.0.0
+      pretty-format: 27.5.1
+    dev: true
+
+  /@vitest/utils/0.29.1:
+    resolution: {integrity: sha512-6npOEpmyE6zPS2wsWb7yX5oDpp6WY++cC5BX6/qaaMhGC3ZlPd8BbTz3RtGPi1PfPerPvfs4KqS/JDOIaB6J3w==}
     dependencies:
       cli-truncate: 3.1.0
       diff: 5.1.0
@@ -4317,8 +4349,8 @@ packages:
       stream-transform: 3.2.2
     dev: true
 
-  /cypress/12.6.0:
-    resolution: {integrity: sha512-WdHSVaS1lumSd5XpVTslZd8ui9GIGphrzvXq9+3DtVhqjRZC5M70gu5SW/Y/SLPq3D1wiXGZoHC6HJ7ESVE2lw==}
+  /cypress/12.7.0:
+    resolution: {integrity: sha512-7rq+nmhzz0u6yabCFyPtADU2OOrYt6pvUau9qV7xyifJ/hnsaw/vkr0tnLlcuuQKUAOC1v1M1e4Z0zG7S0IAvA==}
     engines: {node: ^14.0.0 || ^16.0.0 || >=18.0.0}
     hasBin: true
     requiresBuild: true
@@ -4836,8 +4868,8 @@ packages:
       mkdirp: 0.5.6
     dev: false
 
-  /electron/22.3.0:
-    resolution: {integrity: sha512-RYraLSk4KitmdIuA1jZzOrzGC9g3u6vxDR5VR6K6jFLw295LOkWiuUorbuFrJ/yftRQBr8+F7S1bqak/Po5xlw==}
+  /electron/22.3.1:
+    resolution: {integrity: sha512-iDltL9j12bINK3aOp8ZoGq4NFBFjJhw1AYHelbWj93XUCAIT4fdA+PRsq0aaTHg3bthLLlLRvIZVgNsZPqWcqg==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
     requiresBuild: true
@@ -7071,7 +7103,7 @@ packages:
       log-update: 4.0.0
       p-map: 4.0.0
       rfdc: 1.3.0
-      rxjs: 7.6.0
+      rxjs: 7.8.0
       through: 2.3.8
       wrap-ansi: 7.0.0
 
@@ -8494,11 +8526,6 @@ packages:
     dependencies:
       queue-microtask: 1.2.3
 
-  /rxjs/7.6.0:
-    resolution: {integrity: sha512-DDa7d8TFNUalGC9VqXvQ1euWNN7sc63TrUCuM9J998+ViviahMIjKSOU7rfcgFOF+FCD71BhDRv4hrFz+ImDLQ==}
-    dependencies:
-      tslib: 2.4.1
-
   /rxjs/7.8.0:
     resolution: {integrity: sha512-F2+gxDshqmIub1KdvZkaEfGDwLNpPvk9Fs6LD/MyQxNgMds/WH9OdDDXOmxUZpME+iSK3rQCctkL0DYyytUqMg==}
     dependencies:
@@ -9816,6 +9843,27 @@ packages:
       - terser
     dev: true
 
+  /vite-node/0.29.1_qi35tff3wzjmlfhvm734cdw5za:
+    resolution: {integrity: sha512-Ey9bTlQOQrCxQN0oJ7sTg+GrU4nTMLg44iKTFCKf31ry60csqQz4E+Q04hdWhwE4cTgpxUC+zEB1kHbf5jNkFA==}
+    engines: {node: '>=v14.16.0'}
+    hasBin: true
+    dependencies:
+      cac: 6.7.14
+      debug: 4.3.4
+      mlly: 1.1.1
+      pathe: 1.1.0
+      picocolors: 1.0.0
+      vite: 4.1.4_qi35tff3wzjmlfhvm734cdw5za
+    transitivePeerDependencies:
+      - '@types/node'
+      - less
+      - sass
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+    dev: true
+
   /vite-plugin-checker/0.5.6_c3hlkr3w2tvaynud4tvamy44o4:
     resolution: {integrity: sha512-ftRyON0gORUHDxcDt2BErmsikKSkfvl1i2DoP6Jt2zDO9InfvM6tqO1RkXhSjkaXEhKPea6YOnhFaZxW3BzudQ==}
     engines: {node: '>=14.16'}
@@ -10000,6 +10048,61 @@ packages:
       tinyspy: 1.0.2
       vite: 4.1.4_qi35tff3wzjmlfhvm734cdw5za
       vite-node: 0.28.5_qi35tff3wzjmlfhvm734cdw5za
+      why-is-node-running: 2.2.2
+    transitivePeerDependencies:
+      - less
+      - sass
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+    dev: true
+
+  /vitest/0.29.1_sass@1.32.13:
+    resolution: {integrity: sha512-iSy6d9VwsIn7pz5I8SjVwdTLDRGKNZCRJVzROwjt0O0cffoymKwazIZ2epyMpRGpeL5tsXAl1cjXiT7agTyVug==}
+    engines: {node: '>=v14.16.0'}
+    hasBin: true
+    peerDependencies:
+      '@edge-runtime/vm': '*'
+      '@vitest/browser': '*'
+      '@vitest/ui': '*'
+      happy-dom: '*'
+      jsdom: '*'
+    peerDependenciesMeta:
+      '@edge-runtime/vm':
+        optional: true
+      '@vitest/browser':
+        optional: true
+      '@vitest/ui':
+        optional: true
+      happy-dom:
+        optional: true
+      jsdom:
+        optional: true
+    dependencies:
+      '@types/chai': 4.3.4
+      '@types/chai-subset': 1.3.3
+      '@types/node': 16.18.12
+      '@vitest/expect': 0.29.1
+      '@vitest/runner': 0.29.1
+      '@vitest/spy': 0.29.1
+      '@vitest/utils': 0.29.1
+      acorn: 8.8.2
+      acorn-walk: 8.2.0
+      cac: 6.7.14
+      chai: 4.3.7
+      debug: 4.3.4
+      local-pkg: 0.4.3
+      pathe: 1.1.0
+      picocolors: 1.0.0
+      source-map: 0.6.1
+      std-env: 3.3.2
+      strip-literal: 1.0.0
+      tinybench: 2.3.1
+      tinypool: 0.3.1
+      tinyspy: 1.0.2
+      vite: 4.1.4_qi35tff3wzjmlfhvm734cdw5za
+      vite-node: 0.29.1_qi35tff3wzjmlfhvm734cdw5za
       why-is-node-running: 2.2.2
     transitivePeerDependencies:
       - less

@@ -284,7 +284,7 @@ watch(matches, matches => {
 </script>
 
 <template>
-  <div class="d-flex">
+  <div class="d-flex" data-cy="table-filter">
     <v-combobox
       ref="input"
       :value="selection"

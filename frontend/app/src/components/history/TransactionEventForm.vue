@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import dayjs from 'dayjs';
@@ -19,7 +19,12 @@ import {
   type NewEthTransactionEvent
 } from '@/types/history/tx';
 import { TaskType } from '@/types/task-type';
-import { One, Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
+import {
+  One,
+  Zero,
+  bigNumberify,
+  bigNumberifyFromRef
+} from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useEventTypeData } from '@/utils/history';
 import { toMessages } from '@/utils/validation-errors';
@@ -261,8 +266,8 @@ const updateUsdValue = () => {
   if (get(amount) && get(rate)) {
     set(
       fiatValue,
-      new BigNumber(get(amount))
-        .multipliedBy(new BigNumber(get(rate)))
+      bigNumberify(get(amount))
+        .multipliedBy(bigNumberify(get(rate)))
         .toFixed()
     );
   }

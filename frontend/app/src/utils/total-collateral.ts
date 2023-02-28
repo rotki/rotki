@@ -4,11 +4,12 @@ import { type Collateral, type CollateralizedLoan } from '@/types/defi';
 import { Zero } from '@/utils/bignumbers';
 
 export const totalCollateral = (
-  loan: Ref<CollateralizedLoan<Collateral<string>[]>>
+  loan: Ref<CollateralizedLoan<Collateral[]>>
 ): ComputedRef<BigNumber> => {
   return computed(() =>
-    get(loan)
-      .collateral.map(({ usdValue }) => usdValue)
-      .reduce((previous, current) => previous.plus(current), Zero)
+    get(loan).collateral.reduce(
+      (previous, current) => previous.plus(current.usdValue),
+      Zero
+    )
   );
 };

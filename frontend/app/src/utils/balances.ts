@@ -350,6 +350,4 @@ export const getBtcBreakdown = (
 };
 
 export const balanceUsdValueSum = (balances: HasBalance[]): BigNumber =>
-  balances
-    .map(({ balance: { usdValue } }) => usdValue)
-    .reduce((sum, value) => sum.plus(value), Zero);
+  balances.reduce((sum, balance) => sum.plus(balance.balance.usdValue), Zero);

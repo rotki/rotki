@@ -1,5 +1,4 @@
 ﻿<script setup lang="ts">
-import { BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
@@ -10,7 +9,7 @@ import {
   type TradeType
 } from '@/types/history/trade';
 import { TaskType } from '@/types/task-type';
-import { Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
+import { Zero, bigNumberify, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useTradeStore } from '@/store/history/trades';
 import { toMessages } from '@/utils/validation-errors';
@@ -199,9 +198,9 @@ const save = async (): Promise<boolean> => {
   const tradePayload: Writeable<NewTrade> = {
     amount: amount.isNaN() ? Zero : amount,
     fee: fee.isNaN() || fee.isZero() ? undefined : fee,
-    feeCurrency: get(feeCurrency) ? get(feeCurrency) : undefined,
-    link: get(link) ? get(link) : undefined,
-    notes: get(notes) ? get(notes) : undefined,
+    feeCurrency: get(feeCurrency) || undefined,
+    link: get(link) || undefined,
+    notes: get(notes) || undefined,
     baseAsset: get(base),
     quoteAsset: get(quote),
     rate: rate.isNaN() ? Zero : rate,
@@ -258,9 +257,7 @@ const updateRate = (forceUpdate = false) => {
   ) {
     set(
       quoteAmount,
-      new BigNumber(get(amount))
-        .multipliedBy(new BigNumber(get(rate)))
-        .toFixed()
+      get(numericAmount).multipliedBy(get(numericRate)).toFixed()
     );
   }
 };
@@ -300,10 +297,7 @@ const onQuoteAmountChange = () => {
     get(quoteAmount) &&
     get(selectedCalculationInput) === 'quoteAmount'
   ) {
-    set(
-      rate,
-      new BigNumber(get(quoteAmount)).div(new BigNumber(get(amount))).toFixed()
-    );
+    set(rate, bigNumberify(get(quoteAmount)).div(get(numericAmount)).toFixed());
   }
 };
 
