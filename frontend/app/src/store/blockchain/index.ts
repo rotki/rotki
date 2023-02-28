@@ -23,7 +23,7 @@ import { logger } from '@/utils/logging';
 import { isBlockchain, isTokenChain } from '@/types/blockchain/chains';
 
 export const useBlockchainStore = defineStore('blockchain', () => {
-  const { addAccount, fetch } = useBlockchainAccountsStore();
+  const { addAccount, fetch, addEvmAccount } = useBlockchainAccountsStore();
   const { getAccountsByChain } = useAccountBalancesStore();
   const { fetchBlockchainBalances } = useBlockchainBalancesStore();
   const { fetchNonFungibleBalances } = useNonFungibleBalancesStore();
@@ -32,7 +32,6 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   const { enableModule } = useSettingsStore();
   const { reset: resetDefi } = useDefiStore();
   const { resetDefiStatus } = useStatusStore();
-  const { addEvmAccount } = useBlockchainAccountsApi();
 
   const { isTaskRunning } = useTasks();
   const { notify } = useNotificationsStore();
