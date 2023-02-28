@@ -94,6 +94,7 @@ export const useLedgerActionStore = defineStore(
         return;
       }
 
+      await fetchAssociatedLocations();
       const locations = location
         ? [location]
         : get(connectedExchanges).map(x => x.location);

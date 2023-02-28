@@ -21,7 +21,7 @@ export class TradeHistoryPage {
   }
 
   addTrade(trade: ExternalTrade) {
-    cy.get('.closed-trades__add-trade').click();
+    cy.get('[data-cy=closed-trades__add-trade]').click();
     cy.get('[data-cy=trade-form]').should('be.visible');
     cy.get('[data-cy=date]').type(`{selectall}{backspace}${trade.time}`);
     // clicking outside to a fully visible element to close the datepicker
@@ -68,19 +68,21 @@ export class TradeHistoryPage {
   visibleEntries(visible: number) {
     cy.get('.v-data-table__progress').should('not.exist');
     cy.get('.v-data-table__empty-wrapper').should('not.exist');
-    cy.get('.closed-trades tbody').find('tr').should('have.length', visible);
+    cy.get('[data-cy=closed-trades] tbody')
+      .find('tr')
+      .should('have.length', visible);
   }
 
   totalEntries(total: number) {
     cy.get('.v-data-table__progress').should('not.exist');
     cy.get('.v-data-table__empty-wrapper').should('not.exist');
     cy.get(
-      '.closed-trades .v-data-footer:first-child .v-data-footer__pagination .items-page-select span:last-child'
+      '[data-cy=closed-trades] .v-data-footer:first-child .v-data-footer__pagination .items-page-select span:last-child'
     ).should('contain.text', total);
   }
 
   tradeIsVisible(position: number, trade: ExternalTrade) {
-    cy.get('.closed-trades tbody > tr').eq(position).as('row');
+    cy.get('[data-cy=closed-trades] tbody > tr').eq(position).as('row');
 
     cy.get('@row')
       .find('td')
@@ -109,7 +111,7 @@ export class TradeHistoryPage {
   }
 
   editTrade(position: number, amount: string) {
-    cy.get('.closed-trades tbody > tr')
+    cy.get('[data-cy=closed-trades] tbody > tr')
       .eq(position)
       .find('[data-cy=row-edit]')
       .click();
@@ -125,7 +127,7 @@ export class TradeHistoryPage {
   }
 
   deleteTrade(position: number) {
-    cy.get('.closed-trades tbody > tr')
+    cy.get('[data-cy=closed-trades] tbody > tr')
       .eq(position)
       .find('[data-cy=row-delete]')
       .click();
@@ -150,7 +152,7 @@ export class TradeHistoryPage {
 
   nextPage() {
     cy.get(
-      '.closed-trades .v-data-footer:first-child .v-data-footer__icons-after button:first-child'
+      '[data-cy=closed-trades] .v-data-footer:first-child .v-data-footer__icons-after button:first-child'
     ).click();
   }
 
@@ -158,7 +160,7 @@ export class TradeHistoryPage {
     cy.get('.v-data-table__progress').should('not.exist');
     cy.get('.v-data-table__empty-wrapper').should('not.exist');
     cy.get(
-      '.closed-trades .v-data-footer:first-child .v-data-footer__pagination .items-page-select div .v-select__slot > input'
+      '[data-cy=closed-trades] .v-data-footer:first-child .v-data-footer__pagination .items-page-select div .v-select__slot > input'
     ).should('have.value', page);
   }
 }

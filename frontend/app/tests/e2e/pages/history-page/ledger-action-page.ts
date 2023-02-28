@@ -24,7 +24,7 @@ export class LedgerActionPage {
   }
 
   addLedgerAction(ledgerAction: ExternalLedgerAction) {
-    cy.get('.ledger-actions__add').click();
+    cy.get('[data-cy=ledger-actions__add]').click();
     cy.get('[data-cy=ledger-action-form]').should('be.visible');
     selectLocation('[data-cy=location]', ledgerAction.location);
     cy.get('[data-cy=datetime]').type(
@@ -53,14 +53,24 @@ export class LedgerActionPage {
   }
 
   visibleEntries(visible: number) {
-    cy.get('.ledger_actions tbody').should('be.visible');
+    cy.get('[data-cy=ledger-actions] tbody').should('be.visible');
     cy.get('.v-data-table__progress').should('not.exist');
     cy.get('.v-data-table__empty-wrapper').should('not.exist');
-    cy.get('.ledger_actions tbody').find('tr').should('have.length', visible);
+    cy.get('[data-cy=ledger-actions] tbody')
+      .find('tr')
+      .should('have.length', visible);
+  }
+
+  totalEntries(total: number) {
+    cy.get('.v-data-table__progress').should('not.exist');
+    cy.get('.v-data-table__empty-wrapper').should('not.exist');
+    cy.get(
+      '[data-cy=ledger-actions] .v-data-footer:first-child .v-data-footer__pagination .items-page-select span:last-child'
+    ).should('contain.text', total);
   }
 
   ledgerActionIsVisible(position: number, ledgerAction: ExternalLedgerAction) {
-    cy.get('.ledger_actions tbody > tr').eq(position).as('row');
+    cy.get('[data-cy=ledger-actions] tbody > tr').eq(position).as('row');
 
     cy.get('@row')
       .find('td')
@@ -89,7 +99,7 @@ export class LedgerActionPage {
   }
 
   editTrade(position: number, amount: string) {
-    cy.get('.ledger_actions tbody > tr')
+    cy.get('[data-cy=ledger-actions] tbody > tr')
       .eq(position)
       .find('[data-cy=row-edit]')
       .click();
@@ -105,7 +115,7 @@ export class LedgerActionPage {
   }
 
   deleteLedgerAction(position: number) {
-    cy.get('.ledger_actions tbody > tr')
+    cy.get('[data-cy=ledger-actions] tbody > tr')
       .eq(position)
       .find('[data-cy=row-delete]')
       .click();
@@ -119,5 +129,26 @@ export class LedgerActionPage {
     cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
     waitForLedgerActions();
     cy.get('[data-cy=confirm-dialog]').should('not.be.exist');
+  }
+
+  filterLedgerActions(filter: string) {
+    cy.get('[data-cy="table-filter"]')
+      .scrollIntoView()
+      .should('be.visible')
+      .type(`${filter}{enter}`);
+  }
+
+  nextPage() {
+    cy.get(
+      '[data-cy=ledger-actions] .v-data-footer:first-child .v-data-footer__icons-after button:first-child'
+    ).click();
+  }
+
+  shouldBeOnPage(page: number) {
+    cy.get('.v-data-table__progress').should('not.exist');
+    cy.get('.v-data-table__empty-wrapper').should('not.exist');
+    cy.get(
+      '[data-cy=ledger-actions] .v-data-footer:first-child .v-data-footer__pagination .items-page-select div .v-select__slot > input'
+    ).should('have.value', page);
   }
 }

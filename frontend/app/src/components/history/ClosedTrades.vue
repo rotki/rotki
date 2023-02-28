@@ -71,7 +71,7 @@ const pageParams: ComputedRef<TradeRequestPayload> = computed(() => {
     includeIgnoredTrades: !get(hideIgnoredTrades),
     limit: itemsPerPage,
     offset,
-    orderByAttributes: sortBy && sortBy.length > 0 ? sortBy : ['timestamp'],
+    orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
     ascending:
       sortDesc && sortDesc.length > 1
         ? dropRight(sortDesc).map(bool => !bool)
@@ -430,7 +430,7 @@ watch(loading, async (isLoading, wasLoading) => {
         right
         dark
         color="primary"
-        class="closed-trades__add-trade"
+        data-cy="closed-trades__add-trade"
         @click="newExternalTrade()"
       >
         <v-icon> mdi-plus</v-icon>
@@ -511,7 +511,7 @@ watch(loading, async (isLoading, wasLoading) => {
             :loading-text="tc('trade_history.loading')"
             :options="options"
             :server-items-length="itemLength"
-            class="closed-trades"
+            data-cy="closed-trades"
             :single-select="false"
             :show-select="!locationOverview"
             :item-class="getItemClass"
