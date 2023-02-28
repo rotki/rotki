@@ -631,7 +631,7 @@ CREATE TABLE IF NOT EXISTS history_events (
     usd_value TEXT NOT NULL,
     notes TEXT,
     type TEXT NOT NULL,
-    subtype TEXT,
+    subtype TEXT NOT NULL,
     counterparty TEXT,
     extra_data TEXT,
     FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,

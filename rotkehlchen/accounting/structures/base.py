@@ -51,7 +51,7 @@ HISTORY_EVENT_DB_TUPLE_READ = tuple[
     str,            # usd value
     Optional[str],  # notes
     str,            # type
-    Optional[str],  # subtype
+    str,            # subtype
     Optional[str],  # counterparty
     Optional[str],  # extra_data
 ]
@@ -148,17 +148,6 @@ class HistoryBaseEntry(AccountingEventMixin):
                     f'{entry} from the DB due to {str(e)}. Setting it to null',
                 )
 
-        # The DB Schema still allows a null subtype though the HistoryBaseEntry structure
-        # has replaced it with HistoryEventSubType.NONE. They are practically the
-        # same but need to handle this here otherwise all null subtype DB entries fail here
-        # This happens for people with old Kraken data (like Lefteris -- since there has
-        # been no DB migration or upgrade. TODO: Do the schema change to make it not nullable and
-        # then change all null subtypes to HistoryEventSubType.NONE in DB and get rid of this check
-        if entry[11] is not None:
-            subtype = HistoryEventSubType.deserialize(entry[11])
-        else:
-            subtype = HistoryEventSubType.NONE
-
         try:
             return cls(
                 identifier=entry[0],
@@ -174,7 +163,7 @@ class HistoryBaseEntry(AccountingEventMixin):
                 ),
                 notes=entry[9],
                 event_type=HistoryEventType.deserialize(entry[10]),
-                event_subtype=subtype,
+                event_subtype=HistoryEventSubType.deserialize(entry[11]),
                 counterparty=entry[12],
                 extra_data=extra_data,
             )

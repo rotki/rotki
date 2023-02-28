@@ -1288,6 +1288,45 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
     assert res[9] == 'Edited event'  # event's notes
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
+    """Test upgrading the DB from version 36 to version 37"""
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v36_rotkehlchen.db')
+    db_v36 = _init_db_with_target_version(
+        target_version=36,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db_v36.conn.cursor()
+    # Test state of DB before upgrade is as expected
+    result = cursor.execute('SELECT COUNT(*) FROM history_events;')
+    assert result.fetchone()[0] == 172
+    result = cursor.execute('SELECT COUNT(*) FROM history_events WHERE subtype IS NULL;')
+    assert result.fetchone()[0] == 2
+    old_history_events = cursor.execute('SELECT * FROM history_events;').fetchall()
+
+    db_v36.logout()
+    # Execute upgrade
+    db = _init_db_with_target_version(
+        target_version=37,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+
+    result = cursor.execute('SELECT COUNT(*) FROM history_events;')
+    assert result.fetchone()[0] == 172
+    result = cursor.execute('SELECT COUNT(*) FROM history_events WHERE subtype IS NULL;')
+    assert result.fetchone()[0] == 0
+    new_history_events = cursor.execute('SELECT * FROM history_events;').fetchall()
+    for idx, entry in enumerate(old_history_events):
+        if entry[11] is None:
+            assert entry[0:11] + ('none',) + entry[12:] == new_history_events[idx]
+        else:
+            assert entry == new_history_events[idx]
+
+
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
     """
     This is a test that we can only do for the last upgrade.
