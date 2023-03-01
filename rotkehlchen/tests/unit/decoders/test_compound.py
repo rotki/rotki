@@ -193,6 +193,7 @@ def test_compound_deposit_with_comp_claim(
     assert events == expected_events
 
 
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY3]])
 def test_compound_multiple_comp_claim(database, ethereum_inquirer):
     """Test that a transaction with multiple comp claims decodes all of them as rewards
