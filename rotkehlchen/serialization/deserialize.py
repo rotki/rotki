@@ -504,7 +504,7 @@ def deserialize_evm_transaction(
         internal: Literal[True],
         chain_id: ChainID,
         evm_inquirer: Optional['EvmNodeInquirer'] = None,
-) -> EvmInternalTransaction:
+) -> tuple[EvmInternalTransaction, None]:
     ...
 
 
@@ -513,8 +513,18 @@ def deserialize_evm_transaction(
         data: dict[str, Any],
         internal: Literal[False],
         chain_id: ChainID,
-        evm_inquirer: Optional['EvmNodeInquirer'] = None,
-) -> EvmTransaction:
+        evm_inquirer: None,
+) -> tuple[EvmTransaction, None]:
+    ...
+
+
+@overload
+def deserialize_evm_transaction(
+        data: dict[str, Any],
+        internal: Literal[False],
+        chain_id: ChainID,
+        evm_inquirer: 'EvmNodeInquirer',
+) -> tuple[EvmTransaction, dict[str, Any]]:
     ...
 
 
@@ -523,12 +533,15 @@ def deserialize_evm_transaction(
         internal: bool,
         chain_id: ChainID,
         evm_inquirer: Optional['EvmNodeInquirer'] = None,
-) -> Union[EvmTransaction, EvmInternalTransaction]:
+) -> tuple[Union[EvmTransaction, EvmInternalTransaction], Optional[dict[str, Any]]]:
     """Reads dict data of a transaction and deserializes it.
     If the transaction is not from etherscan then it's missing some data
     so evm inquirer is used to fetch it.
 
     Can raise DeserializationError if something is wrong
+
+    Returns the deserialized transaction and optionally raw receipt data if it was queried
+    and if this is not for an internal transaction.
     """
     source = 'etherscan' if evm_inquirer is None else 'web3'
     try:
@@ -558,17 +571,17 @@ def deserialize_evm_transaction(
                 from_address=from_address,
                 to_address=to_address,
                 value=value,
-            )
+            ), None
 
         # else normal transaction
         gas_price = read_integer(data=data, key='gasPrice', api=source)
         input_data = read_hash(data, 'input', source)
-        if 'gasUsed' not in data:
+        if 'gasUsed' not in data:  # some etherscan APIs may have this
             if evm_inquirer is None:
                 raise DeserializationError('Got in deserialize evm transaction without gasUsed and without evm inquirer')  # noqa: E501
             tx_hash = deserialize_evm_tx_hash(data['hash'])
-            receipt_data = evm_inquirer.get_transaction_receipt(tx_hash)
-            gas_used = read_integer(receipt_data, 'gasUsed', source)
+            raw_receipt_data = evm_inquirer.get_transaction_receipt(tx_hash)
+            gas_used = read_integer(raw_receipt_data, 'gasUsed', source)
         else:
             gas_used = read_integer(data, 'gasUsed', source)
         nonce = read_integer(data, 'nonce', source)
@@ -590,7 +603,7 @@ def deserialize_evm_transaction(
             gas_used=gas_used,
             input_data=input_data,
             nonce=nonce,
-        )
+        ), raw_receipt_data
 
 
 R = TypeVar('R')

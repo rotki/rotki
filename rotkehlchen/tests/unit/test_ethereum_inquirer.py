@@ -129,7 +129,7 @@ def test_get_transaction_by_hash(ethereum_inquirer, call_order, ethereum_manager
         connect_at_start=ethereum_manager_connect_at_start,
         evm_inquirer=ethereum_inquirer,
     )
-    result = ethereum_inquirer.get_transaction_by_hash(
+    result, _ = ethereum_inquirer.get_transaction_by_hash(
         hexstring_to_bytes('0x5b180e3dcc19cd29c918b98c876f19393e07b74c07fd728102eb6241db3c2d5c'),
         call_order=call_order,
     )

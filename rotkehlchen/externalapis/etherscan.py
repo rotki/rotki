@@ -352,7 +352,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 try:
                     # Handle genesis block transactions
                     if entry['hash'].startswith('GENESIS') is False:
-                        tx = deserialize_evm_transaction(  # type: ignore
+                        tx, _ = deserialize_evm_transaction(  # type: ignore
                             data=entry,
                             internal=is_internal,
                             chain_id=chain_id,
@@ -370,7 +370,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                         entry['from'] = ZERO_ADDRESS
                         entry['hash'] = GENESIS_HASH
                         entry['traceId'] = trace_id
-                        internal_tx = deserialize_evm_transaction(
+                        internal_tx, _ = deserialize_evm_transaction(
                             data=entry,
                             internal=True,
                             chain_id=chain_id,

@@ -127,7 +127,7 @@ def test_deserialize_deployment_ethereum_transaction():
         'input': '',
         'nonce': 1,
     }
-    tx = deserialize_evm_transaction(
+    tx, _ = deserialize_evm_transaction(
         data=data,
         internal=False,
         chain_id=ChainID.ETHEREUM,
