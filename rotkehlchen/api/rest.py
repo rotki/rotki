@@ -68,6 +68,7 @@ from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
+from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as get_liquity_stats
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
@@ -2715,12 +2716,12 @@ class RestAPI():
 
     @async_api_call()
     def get_liquity_stats(self) -> dict[str, Any]:
-        return self._eth_module_query(
-            module_name='liquity',
-            method='get_stats',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity'),
+        liquity_addresses = self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity')  # noqa: E501
+        stats = get_liquity_stats(
+            database=self.rotkehlchen.data.db,
+            addresses=liquity_addresses,
         )
+        return _wrap_in_ok_result(stats)
 
     def _watcher_query(
             self,

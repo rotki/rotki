@@ -234,7 +234,7 @@ def test_stability_pool(rotkehlchen_api_server):
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-@pytest.mark.parametrize('add_account_to_db', [[False]])
+@pytest.mark.parametrize('add_accounts_to_db', [[False]])
 @pytest.mark.parametrize('ethereum_accounts', [
     [
         '0xF662f831361c8Ab48d807f7753eb3d641be25d24',

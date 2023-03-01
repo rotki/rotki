@@ -336,7 +336,10 @@ class DBHistoryEvents():
             bindings: list[Any],
     ) -> tuple[FVal, list[tuple[str, FVal, FVal]]]:
         """Returns the sum of the USD value at the time of acquisition and the amount received
-        by asset"""
+        by asset
+        TODO: At the moment this function is used by liquity and kraken. Change it to use a filter
+        instead of query string and bindings when the refactor of the history events is made.
+        """
         usd_value = ZERO
         try:
             query = 'SELECT SUM(CAST(usd_value AS REAL)) FROM history_events ' + query_filters

@@ -97,9 +97,9 @@ def fixture_perform_upgrades_at_unlock():
     return True
 
 
-@pytest.fixture(name='add_account_to_db')
-def fixture_add_account_to_db():
-    """Adds accounts also to the prepared db"""
+@pytest.fixture(name='add_accounts_to_db')
+def fixture_add_blockchain_accounts_to_db():
+    """If True, adds blockchain accounts to the db at unlock"""
     return True
 
 
@@ -147,7 +147,7 @@ def initialize_mock_rotkehlchen_instance(
         current_price_oracles_order,
         network_mocking,
         have_decoders,
-        add_account_to_db,
+        add_accounts_to_db,
 ):
     if not start_with_logged_in_user:
         return
@@ -173,7 +173,7 @@ def initialize_mock_rotkehlchen_instance(
         add_settings_to_test_db(rotki.data.db, db_settings, ignored_assets, data_migration_version)
         maybe_include_etherscan_key(rotki.data.db, include_etherscan_key)
         maybe_include_cryptocompare_key(rotki.data.db, include_cryptocompare_key)
-        if add_account_to_db is True:
+        if add_accounts_to_db is True:
             add_blockchain_accounts_to_db(rotki.data.db, blockchain_accounts)
         add_tags_to_test_db(rotki.data.db, tags)
         add_manually_tracked_balances_to_test_db(rotki.data.db, manually_tracked_balances)
@@ -357,7 +357,7 @@ def fixture_rotkehlchen_api_server(
         avalanche_mock_data,
         mocked_proxies,
         have_decoders,
-        add_account_to_db,
+        add_accounts_to_db,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -398,7 +398,7 @@ def fixture_rotkehlchen_api_server(
         current_price_oracles_order=current_price_oracles_order,
         network_mocking=network_mocking,
         have_decoders=have_decoders,
-        add_account_to_db=add_account_to_db,
+        add_accounts_to_db=add_accounts_to_db,
     )
     with ExitStack() as stack:
         if start_with_logged_in_user is True:
@@ -462,7 +462,7 @@ def rotkehlchen_instance(
         current_price_oracles_order,
         network_mocking,
         have_decoders,
-        add_account_to_db,
+        add_accounts_to_db,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -498,7 +498,7 @@ def rotkehlchen_instance(
         current_price_oracles_order=current_price_oracles_order,
         network_mocking=network_mocking,
         have_decoders=have_decoders,
-        add_account_to_db=add_account_to_db,
+        add_accounts_to_db=add_accounts_to_db,
     )
     return uninitialized_rotkehlchen
 
