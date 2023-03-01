@@ -318,6 +318,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         is not in the expected format
         """
         options = {'sort': 'asc'}
+        parent_tx_hash = None
         if account:
             options['address'] = str(account)
         if period_or_hash is not None:
@@ -340,6 +341,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
 
             else:  # has to be parent transaction hash and internal transaction
                 options['txHash'] = period_or_hash.hex()
+                parent_tx_hash = period_or_hash
 
         transactions: Union[Sequence[EvmTransaction], Sequence[EvmInternalTransaction]] = []  # noqa: E501
         is_internal = action == 'txlistinternal'
@@ -348,18 +350,16 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             result = self._query(module='account', action=action, options=options)
             last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None  # noqa: E501 pylint: disable=unsubscriptable-object
             for entry in result:
-                gevent.sleep(0)
-                try:
-                    # Handle genesis block transactions
-                    if entry['hash'].startswith('GENESIS') is False:
+                try:  # Handle normal transactions. Internal dict does not contain a hash sometimes
+                    if is_internal or entry['hash'].startswith('GENESIS') is False:
                         tx, _ = deserialize_evm_transaction(  # type: ignore
                             data=entry,
                             internal=is_internal,
                             chain_id=chain_id,
                             evm_inquirer=None,
+                            parent_tx_hash=parent_tx_hash,
                         )
-                    else:
-                        # Handling genesis transactions
+                    else:  # Handling genesis transactions
                         assert self.db is not None, 'self.db should exists at this point'
                         dbtx = DBEvmTx(self.db)
                         tx = dbtx.get_or_create_genesis_transaction(
@@ -435,7 +435,6 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             result = self._query(module='account', action='tokentx', options=options)
             last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None  # noqa: E501 pylint: disable=unsubscriptable-object
             for entry in result:
-                gevent.sleep(0)
                 timestamp = deserialize_timestamp(entry['timeStamp'])
                 if timestamp > last_ts and len(hashes) >= TRANSACTIONS_BATCH_NUM:  # type: ignore
                     yield _hashes_tuple_to_list(hashes)

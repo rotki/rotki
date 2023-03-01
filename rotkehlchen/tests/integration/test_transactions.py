@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 import pytest
-from flaky import flaky
 
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
@@ -16,7 +15,6 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-@flaky(max_runs=3, min_passes=1)  # failed in a flaky way sometimes in the CI due to etherscan
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
 @pytest.mark.parametrize('transaction_already_queried', [True, False])
 @pytest.mark.freeze_time('2023-01-24 22:45:45 GMT')

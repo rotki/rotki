@@ -19,6 +19,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmInternalTransaction,
     EvmTransaction,
+    EVMTxHash,
     Fee,
     HexColorCode,
     Optional,
@@ -504,6 +505,7 @@ def deserialize_evm_transaction(
         internal: Literal[True],
         chain_id: ChainID,
         evm_inquirer: Optional['EvmNodeInquirer'] = None,
+        parent_tx_hash: Optional['EVMTxHash'] = None,
 ) -> tuple[EvmInternalTransaction, None]:
     ...
 
@@ -514,6 +516,7 @@ def deserialize_evm_transaction(
         internal: Literal[False],
         chain_id: ChainID,
         evm_inquirer: None,
+        parent_tx_hash: Optional['EVMTxHash'] = None,
 ) -> tuple[EvmTransaction, None]:
     ...
 
@@ -524,6 +527,7 @@ def deserialize_evm_transaction(
         internal: Literal[False],
         chain_id: ChainID,
         evm_inquirer: 'EvmNodeInquirer',
+        parent_tx_hash: Optional['EVMTxHash'] = None,
 ) -> tuple[EvmTransaction, dict[str, Any]]:
     ...
 
@@ -533,10 +537,16 @@ def deserialize_evm_transaction(
         internal: bool,
         chain_id: ChainID,
         evm_inquirer: Optional['EvmNodeInquirer'] = None,
+        parent_tx_hash: Optional['EVMTxHash'] = None,
 ) -> tuple[Union[EvmTransaction, EvmInternalTransaction], Optional[dict[str, Any]]]:
     """Reads dict data of a transaction and deserializes it.
     If the transaction is not from etherscan then it's missing some data
     so evm inquirer is used to fetch it.
+
+    If it's an internal transaction it's possible, depending on the data source (for example
+    https://docs.etherscan.io/api-endpoints/accounts#get-internal-transactions-by-transaction-hash)
+    , that the hash is missing from the data string, so it is provided in that case
+    as an argument.
 
     Can raise DeserializationError if something is wrong
 
@@ -544,8 +554,9 @@ def deserialize_evm_transaction(
     and if this is not for an internal transaction.
     """
     source = 'etherscan' if evm_inquirer is None else 'web3'
+    raw_receipt_data = None
     try:
-        tx_hash = deserialize_evm_tx_hash(data['hash'])
+        tx_hash = parent_tx_hash if parent_tx_hash is not None else deserialize_evm_tx_hash(data['hash'])  # noqa: E501
         block_number = read_integer(data, 'blockNumber', source)
         if 'timeStamp' not in data:
             if evm_inquirer is None:
@@ -565,7 +576,8 @@ def deserialize_evm_transaction(
             return EvmInternalTransaction(
                 parent_tx_hash=tx_hash,
                 chain_id=chain_id,
-                trace_id=int(data['traceId']),
+                # traceId is missing when querying by parent hash
+                trace_id=int(data.get('traceId', '0')),
                 timestamp=timestamp,
                 block_number=block_number,
                 from_address=from_address,
@@ -579,7 +591,6 @@ def deserialize_evm_transaction(
         if 'gasUsed' not in data:  # some etherscan APIs may have this
             if evm_inquirer is None:
                 raise DeserializationError('Got in deserialize evm transaction without gasUsed and without evm inquirer')  # noqa: E501
-            tx_hash = deserialize_evm_tx_hash(data['hash'])
             raw_receipt_data = evm_inquirer.get_transaction_receipt(tx_hash)
             gas_used = read_integer(raw_receipt_data, 'gasUsed', source)
         else:
