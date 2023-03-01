@@ -67,7 +67,7 @@ const pageParams: ComputedRef<LedgerActionRequestPayload> = computed(() => {
   return {
     limit: itemsPerPage,
     offset,
-    orderByAttributes: sortBy.length > 0 ? sortBy : ['timestamp'],
+    orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
     ascending:
       sortDesc.length > 1 ? dropRight(sortDesc).map(bool => !bool) : [false],
     ...(selectedFilters as Partial<LedgerActionRequestPayload>)
@@ -352,7 +352,7 @@ watch(loading, async (isLoading, wasLoading) => {
         right
         dark
         color="primary"
-        class="ledger-actions__add"
+        data-cy="ledger-actions__add"
         @click="newLedgerAction()"
       >
         <v-icon> mdi-plus </v-icon>
@@ -420,7 +420,7 @@ watch(loading, async (isLoading, wasLoading) => {
             :loading-text="tc('ledger_actions.loading')"
             :options="options"
             :server-items-length="itemLength"
-            class="ledger_actions"
+            data-cy="ledger-actions"
             :single-select="false"
             :show-select="!locationOverview"
             item-key="identifier"

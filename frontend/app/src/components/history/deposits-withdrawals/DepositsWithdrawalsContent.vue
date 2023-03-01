@@ -58,7 +58,7 @@ const pageParams: ComputedRef<AssetMovementRequestPayload> = computed(() => {
     ...(selectedFilters as Partial<AssetMovementRequestPayload>),
     limit: itemsPerPage,
     offset,
-    orderByAttributes: sortBy && sortBy.length > 0 ? sortBy : ['timestamp'],
+    orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
     ascending:
       sortDesc && sortDesc.length > 1
         ? dropRight(sortDesc).map(bool => !bool)
