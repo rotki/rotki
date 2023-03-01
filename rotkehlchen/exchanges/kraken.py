@@ -160,7 +160,18 @@ def history_event_from_kraken(
                 log.warning(
                     f'Encountered kraken historic event type we do not process. {raw_event}',
                 )
+            elif event_type == HistoryEventType.TRADE:
+                if raw_amount < ZERO:
+                    event_subtype = HistoryEventSubType.SPEND
+                else:
+                    event_subtype = HistoryEventSubType.RECEIVE
+
             fee_amount = deserialize_asset_amount(raw_event['fee'])
+
+            # since the type already represents the direction of the event we need to make sure
+            # that the amount stays positive
+            if raw_amount < ZERO:
+                raw_amount = AssetAmount(-raw_amount)
 
             # Make sure to not generate an event for KFEES that is not of type FEE
             if asset != A_KFEE:
@@ -756,10 +767,6 @@ class Kraken(ExchangeInterface):
                 movement = movement_events[0]
                 fee = Fee(ZERO)
 
-            amount = movement.balance.amount
-            if movement.event_type == HistoryEventType.WITHDRAWAL:
-                amount = amount * -1
-
             try:
                 asset = movement.asset
                 movement_type = movement.event_type
@@ -770,7 +777,7 @@ class Kraken(ExchangeInterface):
                     address=None,  # no data from kraken ledger endpoint
                     transaction_id=None,  # no data from kraken ledger endpoint
                     asset=asset,
-                    amount=amount,
+                    amount=movement.balance.amount,
                     fee_asset=asset,
                     fee=fee,
                     link=movement.serialized_event_identifier,
@@ -843,7 +850,7 @@ class Kraken(ExchangeInterface):
                     fee_part = trade_part
                 elif trade_part.asset == A_KFEE:
                     kfee_part = trade_part
-                elif trade_part.balance.amount < ZERO:
+                elif trade_part.event_subtype == HistoryEventSubType.SPEND:
                     spend_part = trade_part
                 else:
                     receive_part = trade_part
@@ -878,7 +885,7 @@ class Kraken(ExchangeInterface):
             if spend_part is not None:
                 base_asset = spend_part.asset
                 trade_type = TradeType.SELL
-                amount = spend_part.balance.amount * -1
+                amount = spend_part.balance.amount
             elif receive_part is not None:
                 base_asset = receive_part.asset
                 trade_type = TradeType.BUY
@@ -926,12 +933,12 @@ class Kraken(ExchangeInterface):
                 )
                 return None
 
-            rate = Price((spend_part.balance.amount / amount) * -1)
+            rate = Price(spend_part.balance.amount / amount)
         else:
             trade_type = TradeType.SELL
             base_asset = spend_asset
             quote_asset = receive_asset
-            amount = -1 * spend_part.balance.amount
+            amount = spend_part.balance.amount
             if amount == ZERO:
                 self.msg_aggregator.add_warning(
                     f'Rate for kraken trade couldnt be calculated. Base amount is ZERO '

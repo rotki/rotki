@@ -166,7 +166,7 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
         """
         # this is a temporary assertion to test that new accounting tools work properly.
         # Written on 06.06.2022 and can be removed after a couple of months if everything goes well
-        assert ZERO <= used_amount <= self._acquisitions_heap[0].acquisition_event.remaining_amount, f'Used amount must be in the interval [0, {self._acquisitions_heap[0].acquisition_event.remaining_amount}] but it was {used_amount}'  # noqa: E501
+        assert ZERO <= used_amount <= self._acquisitions_heap[0].acquisition_event.remaining_amount, f'The condition 0 <= {used_amount} <= {self._acquisitions_heap[0].acquisition_event.remaining_amount} didn\'t hold'  # noqa: E501
 
         self._acquisitions_heap[0].acquisition_event.remaining_amount -= used_amount
         if self._acquisitions_heap[0].acquisition_event.remaining_amount == ZERO:
