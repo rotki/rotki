@@ -690,14 +690,14 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             self,
             web3: Optional[Web3],
             tx_hash: EVMTxHash,
-    ) -> EvmTransaction:
+    ) -> tuple[EvmTransaction, dict[str, Any]]:
         if web3 is None:
             tx_data = self.etherscan.get_transaction_by_hash(tx_hash=tx_hash)
         else:
             tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
 
         try:
-            transaction = deserialize_evm_transaction(
+            transaction, receipt_data = deserialize_evm_transaction(
                 data=tx_data,
                 internal=False,
                 chain_id=self.chain_id,
@@ -708,13 +708,15 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 f'Couldnt deserialize evm transaction data from {tx_data}. Error: {str(e)}',
             ) from e
 
-        return transaction
+        assert receipt_data, 'receipt_data should exist here as etherscan getTransactionByHash does not contains gasUsed'  # noqa: E501
+        return transaction, receipt_data
 
     def get_transaction_by_hash(
             self,
             tx_hash: EVMTxHash,
             call_order: Optional[Sequence[WeightedNode]] = None,
-    ) -> EvmTransaction:
+    ) -> tuple[EvmTransaction, dict[str, Any]]:
+        """Gets transaction by hash and raw receipt data"""
         return self._query(
             method=self._get_transaction_by_hash,
             call_order=call_order if call_order is not None else self.default_call_order(),
@@ -1128,7 +1130,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         if deployed_hash is None:
             return None
 
-        transaction = self.get_transaction_by_hash(deployed_hash)
+        transaction, _ = self.get_transaction_by_hash(deployed_hash)
         return transaction.block_number
 
     # -- methods to be implemented by child classes --
