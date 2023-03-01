@@ -2,19 +2,14 @@
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { LpType } from '@rotki/common/lib/defi';
-import { type XswapAsset } from '@rotki/common/lib/defi/xswap';
+import {
+  type XswapAsset,
+  type XswapBalance
+} from '@rotki/common/lib/defi/xswap';
 import {
   HistoryEventType,
   TransactionEventProtocol
 } from '@rotki/common/lib/history/tx-events';
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import PaginatedCards from '@/components/common/PaginatedCards.vue';
-import ActiveModules from '@/components/defi/ActiveModules.vue';
-import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
-import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import NftDetails from '@/components/helper/NftDetails.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 
@@ -74,6 +69,8 @@ onMounted(async () => {
 
 const { getPoolName } = useLiquidityPosition();
 const lpType = LpType.UNISWAP_V3;
+
+const getIdentifier = (item: XswapBalance) => item.nftId;
 </script>
 
 <template>
@@ -123,11 +120,7 @@ const lpType = LpType.UNISWAP_V3;
         />
       </v-col>
     </v-row>
-    <paginated-cards
-      :identifier="item => item.nftId"
-      :items="balances"
-      class="mt-4"
-    >
+    <paginated-cards :identifier="getIdentifier" :items="balances" class="mt-4">
       <template #item="{ item }">
         <card>
           <template v-if="item.assets.length > 0" #title>

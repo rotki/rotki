@@ -3,11 +3,6 @@ import { type BigNumber } from '@rotki/common';
 import dropRight from 'lodash/dropRight';
 import { type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
-import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
-import NftDetails from '@/components/helper/NftDetails.vue';
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-import RowAppend from '@/components/helper/RowAppend.vue';
 import { Routes } from '@/router/routes';
 import { DashboardTableType } from '@/types/frontend-settings';
 import {

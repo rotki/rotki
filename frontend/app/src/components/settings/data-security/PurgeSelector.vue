@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import { type BaseMessage } from '@/types/messages';
 import { SUPPORTED_MODULES } from '@/types/modules';
 import {

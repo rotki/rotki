@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type LiquityPoolDetail } from '@rotki/common/lib/liquity';
 import { type PropType } from 'vue';
-import StatCard from '@/components/display/StatCard.vue';
 
 defineProps({
   pool: {

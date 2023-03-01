@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
-import LedgerActionForm from '@/components/history/ledger-actions/LedgerActionForm.vue';
 import { type LedgerActionEntry } from '@/types/history/ledger-action/ledger-actions';
+import LedgerActionForm from '@/components/history/ledger-actions/LedgerActionForm.vue';
 
 withDefaults(
   defineProps<{

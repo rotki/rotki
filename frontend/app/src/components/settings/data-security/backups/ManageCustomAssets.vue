@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import FileUpload from '@/components/import/FileUpload.vue';
 import { assert } from '@/utils/assertions';
 
 const zip = ref<File | null>(null);

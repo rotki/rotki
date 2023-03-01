@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import TagIcon from '@/components/tags/TagIcon.vue';
 import { type Tag } from '@/types/tags';
 
 const props = defineProps({

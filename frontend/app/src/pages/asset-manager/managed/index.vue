@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type Ref } from 'vue';
-import ManagedAssetForm from '@/components/asset-manager/ManagedAssetForm.vue';
-import ManagedAssetTable from '@/components/asset-manager/ManagedAssetTable.vue';
-import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
-import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { Routes } from '@/router/routes';
 import { type Nullable } from '@/types';
 import {

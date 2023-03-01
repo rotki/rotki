@@ -2,13 +2,6 @@
 import dropRight from 'lodash/dropRight';
 import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import NonFungibleBalanceEdit from '@/components/accounts/balances/NonFungibleBalanceEdit.vue';
-import NonFungibleBalancesFilter from '@/components/accounts/balances/NonFungibleBalancesFilter.vue';
-import ActiveModules from '@/components/defi/ActiveModules.vue';
-import NftDetails from '@/components/helper/NftDetails.vue';
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-import RowAction from '@/components/helper/RowActions.vue';
-import RowAppend from '@/components/helper/RowAppend.vue';
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { type Module } from '@/types/modules';
 import {
@@ -326,7 +319,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
             />
           </template>
           <template #item.actions="{ item }">
-            <row-action
+            <row-actions
               :delete-tooltip="tc('non_fungible_balances.row.delete')"
               :edit-tooltip="tc('non_fungible_balances.row.edit')"
               :delete-disabled="!item.manuallyInput"

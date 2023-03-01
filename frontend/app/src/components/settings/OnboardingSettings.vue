@@ -8,11 +8,9 @@ import {
   required
 } from '@vuelidate/validators';
 import { type Ref } from 'vue';
-import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
 import { type BackendOptions } from '@/electron-main/ipc';
 import { type Writeable } from '@/types';
 import { LogLevel } from '@/utils/log-level';
-import SettingResetButton from '@/components/settings/SettingResetButton.vue';
 import {
   type BackendConfiguration,
   type DefaultBackendArguments

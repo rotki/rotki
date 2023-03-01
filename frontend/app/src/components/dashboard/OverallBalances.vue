@@ -7,8 +7,6 @@ import {
   timeframes
 } from '@rotki/common/lib/settings/graphs';
 import dayjs from 'dayjs';
-import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
-import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
 import { Section } from '@/types/status';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
 import Fragment from '@/components/helper/Fragment';
 const { t } = useI18n();
 </script>

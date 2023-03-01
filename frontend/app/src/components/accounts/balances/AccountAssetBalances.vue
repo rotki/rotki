@@ -2,7 +2,6 @@
 import { type AssetBalance } from '@rotki/common';
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import DataTable from '@/components/helper/DataTable.vue';
 import { Zero } from '@/utils/bignumbers';
 
 defineProps({

@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import AccountSelector from '@/components/accounts/management/inputs/AccountSelector.vue';
 import { InputMode } from '@/types/input-mode';
-import MetamaskAccountForm from '@/components/accounts/management/types/MetamaskAccountForm.vue';
-import ValidatorAccountForm from '@/components/accounts/management/types/ValidatorAccountForm.vue';
-import XpubAccountForm from '@/components/accounts/management/types/XpubAccountForm.vue';
-import AddressAccountForm from '@/components/accounts/management/types/AddressAccountForm.vue';
 import { isBtcChain } from '@/types/blockchain/chains';
 
 const props = defineProps<{ context: Blockchain }>();

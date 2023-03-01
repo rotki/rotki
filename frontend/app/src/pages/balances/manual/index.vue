@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
-import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBalancesForm.vue';
-import ManualBalanceTable from '@/components/accounts/manual-balances/ManualBalanceTable.vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
-import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import { type ManualBalance } from '@/types/manual-balances';
 import { BalanceType } from '@/types/balances';
 

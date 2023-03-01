@@ -18,13 +18,6 @@ import { type ValueOverTime } from '@/types/graphs';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 
-const GraphTooltipWrapper = defineAsyncComponent(
-  () => import('@/components/graphs/GraphTooltipWrapper.vue')
-);
-const ExportSnapshotDialog = defineAsyncComponent(
-  () => import('@/components/dashboard/ExportSnapshotDialog.vue')
-);
-
 const props = defineProps({
   timeframe: {
     required: true,

@@ -2,11 +2,8 @@
 import { type RawLocation } from 'vue-router';
 import { type ComputedRef } from 'vue';
 import { type AssetBalanceWithPrice } from '@rotki/common';
-import AssetLocations from '@/components/assets/AssetLocations.vue';
-import AssetValueRow from '@/components/assets/AssetValueRow.vue';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
-import AssetBalances from '@/components/AssetBalances.vue';
 
 const props = defineProps({
   identifier: { required: true, type: String }

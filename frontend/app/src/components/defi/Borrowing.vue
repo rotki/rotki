@@ -1,15 +1,6 @@
 <script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { type PropType } from 'vue';
-import FullSizeContent from '@/components/common/FullSizeContent.vue';
-import ActiveModules from '@/components/defi/ActiveModules.vue';
-import DefiSelectorItem from '@/components/defi/DefiSelectorItem.vue';
-import LoanInfo from '@/components/defi/loan/LoanInfo.vue';
-import StatCardColumn from '@/components/display/StatCardColumn.vue';
-import StatCardWide from '@/components/display/StatCardWide.vue';
-import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import { type Module } from '@/types/modules';
 import { Section } from '@/types/status';
 

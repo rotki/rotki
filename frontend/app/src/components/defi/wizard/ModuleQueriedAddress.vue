@@ -5,7 +5,6 @@ import {
   type BlockchainSelection
 } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import { type Module } from '@/types/modules';
 
 const props = defineProps<{ module: Module }>();

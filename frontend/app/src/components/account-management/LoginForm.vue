@@ -2,7 +2,6 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { type Ref } from 'vue';
-import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import {
   type LoginCredentials,
   type SyncApproval,

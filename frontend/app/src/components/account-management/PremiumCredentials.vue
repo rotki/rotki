@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { trimOnPaste } from '@/utils/event';
 
 const { t, tc } = useI18n();

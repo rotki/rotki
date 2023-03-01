@@ -2,9 +2,6 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
 import { type PropType } from 'vue';
-import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
-import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
-import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import {
   type ExchangePayload,
   KrakenAccountType,

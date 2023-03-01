@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { AddressNamePriority } from '@/types/address-name-priorities';
 import { PriceOracle } from '@/types/price-oracle';
 import { type PrioritizedListItemData } from '@/types/prioritized-list-data';

@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import CollapsedPendingTasks from '@/components/status/notifications/CollapsedPendingTasks.vue';
-import NoTasksRunning from '@/components/status/notifications/NoTasksRunning.vue';
-import PendingTask from '@/components/status/notifications/PendingTask.vue';
-
 const expanded = ref(false);
 
 const css = useCssModule();

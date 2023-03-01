@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, sameAs } from '@vuelidate/validators';
-import RevealableInput from '@/components/inputs/RevealableInput.vue';
 
 interface Form {
   reset: () => boolean;

@@ -1,10 +1,6 @@
 <script setup lang="ts">
-import LoginForm from '@/components/account-management/LoginForm.vue';
 import Fragment from '@/components/helper/Fragment';
 import { type LoginCredentials } from '@/types/login';
-import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
-import PremiumReminder from '@/components/account-management/PremiumReminder.vue';
-import UpgradeProgressDisplay from '@/components/account-management/upgrade/UpgradeProgressDisplay.vue';
 
 const checkForAssetUpdate = ref(false);
 

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
-import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
+const ReportActionableCard = defineAsyncComponent(
+  () => import('@/components/profitloss/ReportActionableCard.vue')
+);
 
 defineProps({
   visible: { required: true, type: Boolean }

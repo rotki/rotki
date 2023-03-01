@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import DataTable from '@/components/helper/DataTable.vue';
 import { type BaseDefiBalance } from '@/types/defi/lending';
 
 defineProps({

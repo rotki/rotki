@@ -1,10 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import FullSizeContent from '@/components/common/FullSizeContent.vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import Eth2Page from '@/components/staking/Eth2Page.vue';
-import KrakenPage from '@/components/staking/KrakenPage.vue';
-import LiquityPage from '@/components/staking/LiquityPage.vue';
 import { Routes } from '@/router/routes';
 
 interface StakingInfo {
@@ -17,9 +12,13 @@ interface StakingInfo {
 const iconSize = '64px';
 
 const pages = {
-  eth2: Eth2Page,
-  liquity: LiquityPage,
-  kraken: KrakenPage
+  eth2: defineAsyncComponent(() => import('@/components/staking/Eth2Page.vue')),
+  liquity: defineAsyncComponent(
+    () => import('@/components/staking/LiquityPage.vue')
+  ),
+  kraken: defineAsyncComponent(
+    () => import('@/components/staking/KrakenPage.vue')
+  )
 };
 
 const props = defineProps({

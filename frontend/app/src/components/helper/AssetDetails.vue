@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
-import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import { type AssetInfoWithId } from '@/types/asset';
 
 const props = defineProps({

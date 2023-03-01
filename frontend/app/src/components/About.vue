@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import RotkiLogo from '@/components/common/RotkiLogo.vue';
-import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
 import { type SystemVersion } from '@/electron-main/ipc';
 import { type WebVersion } from '@/types';
 

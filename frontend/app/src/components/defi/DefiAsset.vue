@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { type DefiAsset } from '@/types/defi/overview';
 import { createEvmIdentifierFromAddress } from '@/utils/assets';
 

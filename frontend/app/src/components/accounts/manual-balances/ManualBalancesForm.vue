@@ -2,19 +2,15 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { type Ref } from 'vue';
-import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
-import LocationSelector from '@/components/helper/LocationSelector.vue';
-import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
-import TagInput from '@/components/inputs/TagInput.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { type TradeLocation } from '@/types/history/trade/location';
 import { type ManualBalance } from '@/types/manual-balances';
 import { startPromise } from '@/utils';
 import { bigNumberify } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation-errors';
-import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 import { BalanceType } from '@/types/balances';
+import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
+import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 
 const props = withDefaults(
   defineProps<{

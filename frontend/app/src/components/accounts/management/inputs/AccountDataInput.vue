@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Fragment from '@/components/helper/Fragment';
-import TagInput from '@/components/inputs/TagInput.vue';
 
 defineProps<{
   label: string;

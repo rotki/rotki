@@ -1,14 +1,8 @@
 <script setup lang="ts">
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import DateDisplay from '@/components/display/DateDisplay.vue';
 import Fragment from '@/components/helper/Fragment';
-import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import FileUpload from '@/components/import/FileUpload.vue';
-import SyncButtons from '@/components/status/sync/SyncButtons.vue';
 import { type Writeable } from '@/types';
 import { TaskType } from '@/types/task-type';
 import { startPromise } from '@/utils';
-import UpgradeProgressDisplay from '@/components/account-management/upgrade/UpgradeProgressDisplay.vue';
 import {
   SYNC_DOWNLOAD,
   SYNC_UPLOAD,

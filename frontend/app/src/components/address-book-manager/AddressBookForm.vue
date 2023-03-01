@@ -10,7 +10,6 @@ import {
   sanitizeAddress,
   toSentenceCase
 } from '@/utils/text';
-import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 
 const props = withDefaults(
   defineProps<{

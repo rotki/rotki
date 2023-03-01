@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
 import { type PropType } from 'vue';
-import ValidatorDisplay from '@/components/helper/display/icons/ValidatorDisplay.vue';
 
 const props = defineProps({
   value: {

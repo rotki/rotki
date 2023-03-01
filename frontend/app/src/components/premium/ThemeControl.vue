@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import ThemeSwitchLock from '@/components/premium/ThemeSwitchLock.vue';
 import { ThemeSwitch } from '@/premium/premium';
 
 defineProps({

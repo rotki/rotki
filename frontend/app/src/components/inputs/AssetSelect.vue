@@ -1,8 +1,5 @@
 ﻿<script setup lang="ts">
 import { type PropType, type Ref, useListeners } from 'vue';
-import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import NftDetails from '@/components/helper/NftDetails.vue';
 import { type AssetInfoWithId } from '@/types/asset';
 import { getValidSelectorFromEvmAddress } from '@/utils/assets';
 import { getUpdatedKey } from '@/services/axios-tranformers';

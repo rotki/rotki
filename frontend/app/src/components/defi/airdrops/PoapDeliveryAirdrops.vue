@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import DataTable from '@/components/helper/DataTable.vue';
-import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { type PoapDeliveryDetails } from '@/types/airdrops';
 import { default as images } from './poap.json';
 

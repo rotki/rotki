@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
 import { type BtcChains } from '@/types/blockchain/chains';
 import { startPromise } from '@/utils';
-import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { logger } from '@/utils/logging';
 import { assert } from '@/utils/assertions';

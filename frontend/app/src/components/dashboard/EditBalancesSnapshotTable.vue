@@ -2,11 +2,6 @@
 import { type BigNumber } from '@rotki/common';
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import EditBalancesSnapshotForm from '@/components/dashboard/EditBalancesSnapshotForm.vue';
-import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBalancesSnapshotLocationSelector.vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import NftDetails from '@/components/helper/NftDetails.vue';
-import RowActions from '@/components/helper/RowActions.vue';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
   type BalanceSnapshot,

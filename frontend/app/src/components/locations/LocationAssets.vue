@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type AssetBalanceWithPrice } from '@rotki/common';
 import { type ComputedRef } from 'vue';
-import AssetBalances from '@/components/AssetBalances.vue';
 import { TaskType } from '@/types/task-type';
 
 const props = defineProps({

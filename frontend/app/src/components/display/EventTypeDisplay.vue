@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import { type EventType } from '@/types/defi/event-type';
 
 const props = defineProps({

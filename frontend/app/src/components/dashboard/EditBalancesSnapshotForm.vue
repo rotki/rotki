@@ -3,8 +3,6 @@ import { type BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { type PropType } from 'vue';
-import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBalancesSnapshotLocationSelector.vue';
-import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import { type BalanceSnapshotPayload } from '@/types/snapshots';
 import { isNft } from '@/utils/nft';
 

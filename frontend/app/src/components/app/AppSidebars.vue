@@ -1,17 +1,4 @@
 <script setup lang="ts">
-const HelpSidebar = defineAsyncComponent(
-  () => import('@/components/help/HelpSidebar.vue')
-);
-const NotificationSidebar = defineAsyncComponent(
-  () => import('@/components/status/notifications/NotificationSidebar.vue')
-);
-const PinnedSidebar = defineAsyncComponent(
-  () => import('@/components/PinnedSidebar.vue')
-);
-const UserNotesSidebar = defineAsyncComponent(
-  () => import('@/components/notes/UserNotesSidebar.vue')
-);
-
 const {
   showAbout,
   showNotificationBar,

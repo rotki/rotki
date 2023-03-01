@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { type ComputedRef, type PropType } from 'vue';
-import ListItem from '@/components/helper/ListItem.vue';
-import NavigatorLink from '@/components/helper/NavigatorLink.vue';
-import LocationIcon from '@/components/history/LocationIcon.vue';
 import { Routes } from '@/router/routes';
 import {
   type TradeLocation,

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import ErrorScreen from '@/components/error/ErrorScreen.vue';
-
 defineProps({
   message: { required: true, type: String }
 });

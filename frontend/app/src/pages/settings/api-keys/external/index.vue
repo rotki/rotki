@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import ApiKeyBox from '@/components/settings/api-keys/ApiKeyBox.vue';
-import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { Module } from '@/types/modules';
 import {
   type ExternalServiceKey,

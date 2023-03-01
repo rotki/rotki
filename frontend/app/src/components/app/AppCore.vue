@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import AppDrawer from '@/components/app/AppDrawer.vue';
-import AppIndicators from '@/components/app/AppIndicators.vue';
-import AppSidebars from '@/components/app/AppSidebars.vue';
-import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
 
 const visibilityStore = useAreaVisibilityStore();
 const { showDrawer, isMini } = storeToRefs(visibilityStore);

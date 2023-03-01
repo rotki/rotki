@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import ActiveModules from '@/components/defi/ActiveModules.vue';
-import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { Sushi } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';

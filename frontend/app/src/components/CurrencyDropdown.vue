@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { type Currency, useCurrencies } from '@/types/currencies';
 
 const { update } = useSettingsStore();

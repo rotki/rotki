@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import PrioritizedList from '@/components/helper/PrioritizedList.vue';
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import SettingCategory from '@/components/settings/SettingCategory.vue';
 import {
   PrioritizedListData,
   type PrioritizedListItemData

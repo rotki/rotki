@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
 import { useAppRoutes } from '@/router/routes';
 
 interface NavItemDetails {

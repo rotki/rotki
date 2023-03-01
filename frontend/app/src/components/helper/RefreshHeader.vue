@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-
 const props = defineProps({
   title: { required: true, type: String },
   loading: { required: true, type: Boolean }

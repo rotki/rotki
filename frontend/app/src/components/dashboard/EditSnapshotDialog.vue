@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { type ComputedRef, type Ref } from 'vue';
-import EditBalancesSnapshotTable from '@/components/dashboard/EditBalancesSnapshotTable.vue';
-import EditLocationDataSnapshotTable from '@/components/dashboard/EditLocationDataSnapshotTable.vue';
-import EditSnapshotTotal from '@/components/dashboard/EditSnapshotTotal.vue';
 import {
   type BalanceSnapshot,
   type LocationDataSnapshot,
@@ -143,6 +140,16 @@ const finish = async () => {
     emit('finish');
   }
 };
+
+const updateAndSave = (event: LocationDataSnapshot[]) => {
+  updateLocationDataSnapshot(event);
+  save();
+};
+
+const updateAndComplete = (event: LocationDataSnapshot[]) => {
+  updateLocationDataSnapshot(event);
+  finish();
+};
 </script>
 <template>
   <v-dialog persistent :value="true" :max-width="1400">
@@ -187,12 +194,7 @@ const finish = async () => {
                 :value="locationDataSnapshot"
                 :timestamp="timestamp"
                 @update:step="step = $event"
-                @input="
-                  event => {
-                    updateLocationDataSnapshot(event);
-                    save();
-                  }
-                "
+                @input="updateAndSave($event)"
               />
             </v-stepper-content>
             <v-stepper-content :step="3" class="pa-0">
@@ -202,12 +204,7 @@ const finish = async () => {
                 :balances-snapshot="balancesSnapshot"
                 :timestamp="timestamp"
                 @update:step="step = $event"
-                @input="
-                  event => {
-                    updateLocationDataSnapshot(event);
-                    finish();
-                  }
-                "
+                @input="updateAndComplete($event)"
               />
             </v-stepper-content>
           </v-stepper-items>

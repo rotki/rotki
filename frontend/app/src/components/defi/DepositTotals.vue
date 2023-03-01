@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import StatCardColumn from '@/components/display/StatCardColumn.vue';
-import StatCardWide from '@/components/display/StatCardWide.vue';
-import PremiumLock from '@/components/premium/PremiumLock.vue';
 
 defineProps({
   loading: {

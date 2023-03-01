@@ -5,7 +5,6 @@ import { type DataTableHeader } from 'vuetify';
 import isEqual from 'lodash/isEqual';
 import { type MaybeRef } from '@vueuse/core';
 import Fragment from '@/components/helper/Fragment';
-import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { Routes } from '@/router/routes';
 import {
   type LedgerAction,

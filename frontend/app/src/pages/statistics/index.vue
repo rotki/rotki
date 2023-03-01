@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { PremiumStatistics } from '@/premium/premium';
 
 const premium = usePremium();

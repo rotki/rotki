@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
 import { type PropType } from 'vue';
-import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
-import AssetBalances from '@/components/AssetBalances.vue';
 import { Routes } from '@/router/routes';
 import { type SupportedExchange } from '@/types/exchanges';
 import { TaskType } from '@/types/task-type';

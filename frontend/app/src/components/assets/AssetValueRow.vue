@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import CardTitle from '@/components/typography/CardTitle.vue';
 import { type AssetPriceInfo } from '@/types/prices';
 
 const props = defineProps({

@@ -7,20 +7,17 @@ import {
 } from '@rotki/common/lib/data';
 import omit from 'lodash/omit';
 import { type ComputedRef, type PropType, type Ref } from 'vue';
-import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
-import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
-import HelpLink from '@/components/helper/HelpLink.vue';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import {
   isValidEthAddress,
   sanitizeAddress,
   toSentenceCase
 } from '@/utils/text';
-import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
 import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
 import { ApiValidationError } from '@/types/api/errors';
+import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 
 function time(t: string): number | undefined {
   return t ? convertToTimestamp(t) : undefined;

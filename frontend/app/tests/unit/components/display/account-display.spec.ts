@@ -6,10 +6,10 @@ import Vuetify from 'vuetify';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import { PrivacyMode } from '@/types/session';
 
-vi.mock('@/services/rotkehlchen-api', () => ({
-  assets: {
+vi.mock('@/composables/api/assets/icon', () => ({
+  useAssetIconApi: () => ({
     assetImageUrl: vi.fn()
-  }
+  })
 }));
 vi.mock('@/services/websocket/websocket-service');
 

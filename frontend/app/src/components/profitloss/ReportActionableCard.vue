@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { type Nullable } from '@rotki/common';
 import { type PropType } from 'vue';
-import ReportMissingAcquisitions from '@/components/profitloss/ReportMissingAcquisitions.vue';
-import ReportMissingPrices from '@/components/profitloss/ReportMissingPrices.vue';
 import {
   type EditableMissingPrice,
   type SelectedReport
 } from '@/types/reports';
 import { toSentenceCase } from '@/utils/text';
 import { type Pinned } from '@/types/session';
+
+const ReportMissingAcquisitions = defineAsyncComponent(
+  () => import('@/components/profitloss/ReportMissingAcquisitions.vue')
+);
+const ReportMissingPrices = defineAsyncComponent(
+  () => import('@/components/profitloss/ReportMissingPrices.vue')
+);
 
 const props = defineProps({
   report: {

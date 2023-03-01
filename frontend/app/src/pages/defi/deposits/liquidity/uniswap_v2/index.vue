@@ -7,14 +7,6 @@ import {
   type XswapBalance
 } from '@rotki/common/lib/defi/xswap';
 import { type ComputedRef } from 'vue';
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import PaginatedCards from '@/components/common/PaginatedCards.vue';
-import ActiveModules from '@/components/defi/ActiveModules.vue';
-import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
-import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
-import LpPoolIcon from '@/components/display/defi/LpPoolIcon.vue';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { UniswapDetails } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';

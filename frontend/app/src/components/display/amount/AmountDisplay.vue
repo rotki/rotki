@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import { type ComputedRef, type Ref } from 'vue';
-import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import { CURRENCY_USD, type Currency, useCurrencies } from '@/types/currencies';
 import { One, Zero } from '@/utils/bignumbers';

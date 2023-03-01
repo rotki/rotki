@@ -1,10 +1,5 @@
 <script setup lang="ts">
 import { type Message } from '@rotki/common/lib/messages';
-import ErrorScreen from '@/components/error/ErrorScreen.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import FileUpload from '@/components/import/FileUpload.vue';
-import ReportGenerator from '@/components/profitloss/ReportGenerator.vue';
-import ReportsTable from '@/components/profitloss/ReportsTable.vue';
 import { Routes } from '@/router/routes';
 import {
   type ProfitLossReportDebugPayload,

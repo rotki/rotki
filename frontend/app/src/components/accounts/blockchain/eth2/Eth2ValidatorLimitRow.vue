@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import UpgradeRow from '@/components/history/UpgradeRow.vue';
-
 defineProps({
   colspan: {
     required: true,

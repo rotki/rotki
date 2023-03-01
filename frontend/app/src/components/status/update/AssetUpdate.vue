@@ -1,16 +1,11 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
-import ConflictDialog from '@/components/status/update/ConflictDialog.vue';
 import {
   type AssetUpdateConflictResult,
   type AssetVersionUpdate,
   type ConflictResolution
 } from '@/types/asset';
-import AssetUpdateMessage from '@/components/status/update/AssetUpdateMessage.vue';
-import AssetUpdateChecking from '@/components/status/update/AssetUpdateStatus.vue';
-import AssetUpdateSetting from '@/components/status/update/AssetUpdateSetting.vue';
-import AssetUpdateInlineConfirm from '@/components/status/update/AssetUpdateInlineConfirm.vue';
 
 const props = withDefaults(defineProps<{ headless?: boolean }>(), {
   headless: false
@@ -171,7 +166,7 @@ onMounted(async () => {
       @check="check()"
     />
     <div v-else-if="headless">
-      <asset-update-checking
+      <asset-update-status
         v-if="status"
         :status="status"
         :remote-version="changes.upToVersion"

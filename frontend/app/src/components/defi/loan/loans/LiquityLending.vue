@@ -7,11 +7,6 @@ import {
   HistoryEventType,
   TransactionEventProtocol
 } from '@rotki/common/lib/history/tx-events';
-import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
-import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
-import LiquityCollateral from '@/components/defi/loan/loans/liquity/LiquityCollateral.vue';
-import LiquityLiquidation from '@/components/defi/loan/loans/liquity/LiquityLiquidation.vue';
-import PremiumCard from '@/components/display/PremiumCard.vue';
 import { type LiquityLoan } from '@/types/defi/liquity';
 
 const props = defineProps({

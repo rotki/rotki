@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import Fragment from '@/components/helper/Fragment';
-import KrakenStakingEvents from '@/components/staking/kraken/KrakenStakingEvents.vue';
-import KrakenStakingOverview from '@/components/staking/kraken/KrakenStakingOverview.vue';
-import KrakenStakingReceived from '@/components/staking/kraken/KrakenStakingReceived.vue';
 import { Section } from '@/types/status';
 
 const store = useKrakenStakingStore();

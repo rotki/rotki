@@ -2,7 +2,6 @@
 import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type PropType, type Ref, useListeners } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import ConflictRow from '@/components/status/update/ConflictRow.vue';
 import { type Writeable } from '@/types';
 import {
   type AssetUpdateConflictResult,

@@ -1,16 +1,12 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type Component, type Ref } from 'vue';
-import EthRpcSetting from '@/components/settings/general/rpc/EthRpcSetting.vue';
-import OptimismRpcSetting from '@/components/settings/general/rpc/OptimismRpcSetting.vue';
-import KsmRpcSetting from '@/components/settings/general/rpc/KsmRpcSetting.vue';
-import DotRpcSetting from '@/components/settings/general/rpc/DotRpcSetting.vue';
+import { type AsyncComponent, type Ref } from 'vue';
 
 const { tc } = useI18n();
 
 interface RpcSettingTab {
   chain: Blockchain;
-  component: Component;
+  component: AsyncComponent;
 }
 
 const rpcSettingTab: Ref<number> = ref(0);
@@ -18,19 +14,27 @@ const rpcSettingTab: Ref<number> = ref(0);
 const rpcSettingTabs: RpcSettingTab[] = [
   {
     chain: Blockchain.ETH,
-    component: EthRpcSetting
+    component: defineAsyncComponent(
+      () => import('@/components/settings/general/rpc/EthRpcSetting.vue')
+    )
   },
   {
     chain: Blockchain.OPTIMISM,
-    component: OptimismRpcSetting
+    component: defineAsyncComponent(
+      () => import('@/components/settings/general/rpc/OptimismRpcSetting.vue')
+    )
   },
   {
     chain: Blockchain.KSM,
-    component: KsmRpcSetting
+    component: defineAsyncComponent(
+      () => import('@/components/settings/general/rpc/KsmRpcSetting.vue')
+    )
   },
   {
     chain: Blockchain.DOT,
-    component: DotRpcSetting
+    component: defineAsyncComponent(
+      () => import('@/components/settings/general/rpc/DotRpcSetting.vue')
+    )
   }
 ];
 </script>

@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import omit from 'lodash/omit';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import LatestPriceForm from '@/components/price-manager/latest/LatestPriceForm.vue';
-import LatestPriceTable from '@/components/price-manager/latest/LatestPriceTable.vue';
 import { type Nullable } from '@/types';
 import { type ManualPrice, type ManualPriceFormPayload } from '@/types/prices';
 

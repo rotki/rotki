@@ -1,9 +1,7 @@
 ﻿<script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
 import { type DataTableHeader } from 'vuetify';
-import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
-import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
 import { PriceOracle } from '@/types/price-oracle';
 import { type PrioritizedListItemData } from '@/types/prioritized-list-data';
 import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/prioritized-list-id';

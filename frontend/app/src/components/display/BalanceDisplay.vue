@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type Balance } from '@rotki/common';
 import { type PropType } from 'vue';
-import AssetLink from '@/components/assets/AssetLink.vue';
 
 const props = defineProps({
   asset: { required: true, type: String },

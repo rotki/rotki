@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import ModuleQueriedAddress from '@/components/defi/wizard/ModuleQueriedAddress.vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { SUPPORTED_MODULES } from '@/types/modules';
 
 const { inc: nextStep, dec: previousStep, count: step } = useCounter(-1);

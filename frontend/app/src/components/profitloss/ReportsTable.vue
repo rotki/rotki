@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { type ComputedRef, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import DataTable from '@/components/helper/DataTable.vue';
-import RowExpander from '@/components/helper/RowExpander.vue';
-import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
-import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import { Routes } from '@/router/routes';
 import { type Report } from '@/types/reports';
 import { size } from '@/utils/data';

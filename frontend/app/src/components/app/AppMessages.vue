@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import MessageDialog from '@/components/dialogs/MessageDialog.vue';
-import MacOsVersionUnsupported from '@/components/error/MacOsVersionUnsupported.vue';
-import StartupErrorScreen from '@/components/error/StartupErrorScreen.vue';
-import WinVersionUnsupported from '@/components/error/WinVersionUnsupported.vue';
 import Fragment from '@/components/helper/Fragment';
 
 const {

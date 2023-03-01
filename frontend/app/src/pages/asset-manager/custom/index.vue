@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
-import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
-import CustomAssetTable from '@/components/asset-manager/CustomAssetTable.vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { Routes } from '@/router/routes';
 import { type Nullable } from '@/types';
 import {
@@ -11,6 +8,7 @@ import {
   defaultCustomAssetPagination
 } from '@/types/asset';
 import { convertPagination } from '@/types/pagination';
+import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 
 const props = defineProps({
   identifier: { required: false, type: String, default: null }

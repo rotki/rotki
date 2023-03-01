@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { type Blockchain } from '@rotki/common/lib/blockchain';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import AccountForm from '@/components/accounts/management/AccountForm.vue';
 
 defineProps<{ context: Blockchain }>();
 

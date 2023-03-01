@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type Balance } from '@rotki/common';
 import { type PropType } from 'vue';
-import LoanRow from '@/components/defi/loan/LoanRow.vue';
-import StatCard from '@/components/display/StatCard.vue';
 
 defineProps({
   debt: {

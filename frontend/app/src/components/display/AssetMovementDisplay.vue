@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import { type AssetMovement } from '@/types/defi';
 
 defineProps({

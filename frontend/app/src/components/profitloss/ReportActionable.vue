@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
 import { type SelectedReport } from '@/types/reports';
 import { Routes } from '@/router/routes';
 

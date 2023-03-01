@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
-import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { type TradeEntry } from '@/types/history/trade';
 
 const props = defineProps({

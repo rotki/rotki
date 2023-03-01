@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type LiquityStakingDetail } from '@rotki/common/lib/liquity';
-import StatCard from '@/components/display/StatCard.vue';
 
 defineProps({
   stake: {

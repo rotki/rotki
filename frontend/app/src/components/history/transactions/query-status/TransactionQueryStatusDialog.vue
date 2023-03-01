@@ -1,9 +1,4 @@
 <script setup lang="ts">
-import TransactionQueryStatusCurrent from '@/components/history/transactions/query-status/TransactionQueryStatusCurrent.vue';
-import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
-import TransactionQueryStatusLine from '@/components/history/transactions/query-status/TransactionQueryStatusLine.vue';
-import TransactionQueryStatusSteps from '@/components/history/transactions/query-status/TransactionQueryStatusSteps.vue';
-
 const { t } = useI18n();
 const css = useCssModule();
 

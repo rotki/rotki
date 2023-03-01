@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import LoanRow from '@/components/defi/loan/LoanRow.vue';
-import ManageWatchers from '@/components/defi/loan/loans/makerdao/ManageWatchers.vue';
-import StatCard from '@/components/display/StatCard.vue';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps({

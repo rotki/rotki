@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Notification from '@/components/status/notifications/Notification.vue';
 import { createNotification } from '@/utils/notifications';
 
 const visibleNotification = ref(createNotification());

@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import LoanRow from '@/components/defi/loan/LoanRow.vue';
-import StatCard from '@/components/display/StatCard.vue';
 
 defineProps({
   price: {

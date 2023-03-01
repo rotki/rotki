@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import DataTable from '@/components/helper/DataTable.vue';
 import { type CostBasis } from '@/types/reports';
 
 const props = defineProps({
