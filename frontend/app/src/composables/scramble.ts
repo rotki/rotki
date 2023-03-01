@@ -10,7 +10,7 @@ export const useScramble = () => {
 
   const scrambleHex = (hex: string): string => {
     const isEth = hex.startsWith('0x');
-    const multiplier = get(scrambleMultiplier) * 100;
+    const multiplier = get(scrambleMultiplier);
 
     const trimmedHex = isEth ? hex.slice(2).toUpperCase() : hex;
 
@@ -18,13 +18,13 @@ export const useScramble = () => {
       (isEth ? '0x' : '') +
       trimmedHex
         .split('')
-        .map(char => {
+        .map((char, charIndex) => {
           const index = alphaNumerics.indexOf(char);
           if (index === -1) {
             return char;
           }
           return alphaNumerics.charAt(
-            Math.floor(index * multiplier * 100) %
+            Math.floor(index * (multiplier + charIndex)) %
               (isEth ? 16 : alphaNumerics.length)
           );
         })

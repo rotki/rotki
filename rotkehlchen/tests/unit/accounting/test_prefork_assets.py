@@ -13,7 +13,8 @@ from rotkehlchen.types import Location, TradeType
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_buying_selling_eth_before_daofork(accountant, google_service):
+@pytest.mark.parametrize('ignored_assets', [[A_ETC], []])
+def test_buying_selling_eth_before_daofork(accountant, ignored_assets, google_service):
     history3 = [
         Trade(
             timestamp=1446979735,  # 11/08/2015
@@ -63,14 +64,21 @@ def test_buying_selling_eth_before_daofork(accountant, google_service):
     ]
     accounting_history_process(accountant, 1436979735, 1495751688, history3)
     no_message_errors(accountant.msg_aggregator)
-    # make sure that the intermediate ETH sell before the fork reduced our ETC
-    assert accountant.pots[0].cost_basis.get_calculated_asset_amount('ETC') == FVal(850)
+    expected_etc_amount = FVal(850) if len(ignored_assets) == 0 else None
+    # make sure that the intermediate ETH sell before the fork reduced our ETC if not ignored
+    assert accountant.pots[0].cost_basis.get_calculated_asset_amount('ETC') == expected_etc_amount
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount('ETH') == FVal(1390)
 
-    expected_pnls = PnlTotals({
-        AccountingEventType.TRADE: PNL(taxable=FVal('382.4205350'), free=FVal('923.8099920')),
-        AccountingEventType.FEE: PNL(taxable=FVal('-1.579'), free=ZERO),
-    })
+    if len(ignored_assets) == 0:
+        expected_pnls = PnlTotals({
+            AccountingEventType.TRADE: PNL(taxable=FVal('382.4205350'), free=FVal('923.8099920')),
+            AccountingEventType.FEE: PNL(taxable=FVal('-1.579'), free=ZERO),
+        })
+    else:  # ignoring ETC
+        expected_pnls = PnlTotals({
+            AccountingEventType.TRADE: PNL(taxable=FVal('382.4205350'), free=FVal('72.1841070')),
+            AccountingEventType.FEE: PNL(taxable=FVal('-0.6415'), free=ZERO),
+        })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 

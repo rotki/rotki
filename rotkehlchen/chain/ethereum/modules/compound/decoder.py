@@ -34,6 +34,7 @@ REDEEM_COMPOUND_TOKEN = b'\xe5\xb7T\xfb\x1a\xbb\x7f\x01\xb4\x99y\x1d\x0b\x82\n\x
 BORROW_COMPOUND = b'\x13\xedhf\xd4\xe1\xeem\xa4o\x84\\F\xd7\xe5A \x88=u\xc5\xea\x9a-\xac\xc1\xc4\xca\x89\x84\xab\x80'  # noqa: E501
 REPAY_COMPOUND = b'\x1a*"\xcb\x03M&\xd1\x85K\xdcff\xa5\xb9\x1f\xe2^\xfb\xbb]\xca\xd3\xb05Tx\xd6\xf5\xc3b\xa1'  # noqa: E501
 DISTRIBUTED_SUPPLIER_COMP = b',\xae\xcd\x17\xd0/V\xfa\x89w\x05\xdc\xc7@\xda-#|7?phoN\r\x9b\xd3\xbf\x04\x00\xeaz'  # noqa: E501
+DISTRIBUTED_BORROWER_COMP = b'\x1f\xc3\xec\xc0\x87\xd8\xd2\xd1^#\xd0\x03*\xf5\xa4pY\xc3\x89-\x00=\x8e\x13\x9f\xdc\xb6\xbb2|\x99\xa6'  # noqa: E501
 
 
 class CompoundDecoder(DecoderInterface):
@@ -232,21 +233,30 @@ class CompoundDecoder(DecoderInterface):
     ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
         """Example tx:
         https://etherscan.io/tx/0x024bd402420c3ba2f95b875f55ce2a762338d2a14dac4887b78174254c9ab807
+        https://etherscan.io/tx/0x25d341421044fa27006c0ec8df11067d80f69b2d2135065828f1992fa6868a49
+
+        A Distributed[Supplier/Borrower]Comp event can happen without a transfer. Just accrues
+        comp in the Comptroller until enough for a transfer is there. Also a transfer may
+        not happen if comptroller does not have enough comp at the time. And next
+        time any such event happens even if compdelta is 0 a big transfer can happen.
+        For example check the 2nd transaction has above.
+
+        So the solution for an approach is to count any COMP transfer to the user from
+        the comptroller as a reward so long as at least 1 such event exists in the transaction.
+
+        contract code: https://etherscan.io/address/0xBafE01ff935C7305907c33BF824352eE5979B526#code
         """
-        if tx_log.topics[0] != DISTRIBUTED_SUPPLIER_COMP:
+        if tx_log.topics[0] not in (DISTRIBUTED_SUPPLIER_COMP, DISTRIBUTED_BORROWER_COMP):
             return None, []
+
+        # Transactions with comp claim have many such "distributed" events. We need to do a
+        # decoded evens iteration only at the end but can't think of a good way to avoid
+        # the possibility of checking all such events
 
         supplier_address = hex_or_bytes_to_address(tx_log.topics[2])
         if not self.base.is_tracked(supplier_address):
             return None, []
 
-        comp_raw_amount = hex_or_bytes_to_int(tx_log.data[0:32])
-        if comp_raw_amount == 0:
-            return None, []  # do not count zero comp collection
-
-        # A DistributedSupplierComp event can happen without a transfer. Just accrues
-        # comp in the Comptroller until enough for a transfer is there. We should only
-        # count a payout if the transfer occurs
         for event in decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.location_label == supplier_address and event.asset == A_COMP and event.counterparty == COMPTROLLER_PROXY_ADDRESS:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD

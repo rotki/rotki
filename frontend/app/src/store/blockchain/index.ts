@@ -13,7 +13,7 @@ import {
 import { type TaskMeta } from '@/types/task';
 
 export const useBlockchainStore = defineStore('blockchain', () => {
-  const { addAccount, fetch } = useBlockchainAccountsStore();
+  const { addAccount, fetch, addEvmAccount } = useBlockchainAccountsStore();
   const { getAccountsByChain } = useAccountBalancesStore();
   const { fetchBlockchainBalances } = useBlockchainBalancesStore();
   const { fetchNonFungibleBalances } = useNonFungibleBalancesStore();
@@ -22,7 +22,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   const { enableModule } = useSettingsStore();
   const { reset: resetDefi } = useDefiStore();
   const { resetDefiStatus } = useStatusStore();
-  const { addEvmAccount, detectEvmAccounts: detectEvmAccountsCaller } =
+  const { detectEvmAccounts: detectEvmAccountsCaller } =
     useBlockchainAccountsApi();
 
   const { isTaskRunning } = useTaskStore();

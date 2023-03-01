@@ -299,7 +299,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             self,
             account: Optional[ChecksumEvmAddress],
             action: Literal['txlistinternal'],
-            period: Optional[TimestampOrBlockRange] = None,
+            period_or_hash: Optional[Union[TimestampOrBlockRange, EVMTxHash]] = None,
     ) -> Iterator[list[EvmInternalTransaction]]:
         ...
 
@@ -308,7 +308,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             self,
             account: Optional[ChecksumEvmAddress],
             action: Literal['txlist'],
-            period: Optional[TimestampOrBlockRange] = None,
+            period_or_hash: Optional[Union[TimestampOrBlockRange, EVMTxHash]] = None,
     ) -> Iterator[list[EvmTransaction]]:
         ...
 
@@ -316,35 +316,44 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             self,
             account: Optional[ChecksumEvmAddress],
             action: Literal['txlist', 'txlistinternal'],
-            period: Optional[TimestampOrBlockRange] = None,
+            period_or_hash: Optional[Union[TimestampOrBlockRange, EVMTxHash]] = None,
     ) -> Union[Iterator[list[EvmTransaction]], Iterator[list[EvmInternalTransaction]]]:
         """Gets a list of transactions (either normal or internal) for an account.
 
-        The account is optional if the txlistinternal endpoint is queried.
+        Can specify a given timestamp or block period.
+
+        For internal transactions can also query by parent transaction hash instead
+        Also the account is optional in case of internal transactions.
 
         May raise:
         - RemoteError due to self._query(). Also if the returned result
         is not in the expected format
         """
         options = {'sort': 'asc'}
+        parent_tx_hash = None
         if account:
             options['address'] = str(account)
-        if period is not None:
-            if period.range_type == 'blocks':
-                from_block = period.from_value
-                to_block = period.to_value
-            else:  # timestamps
-                from_block = self.get_blocknumber_by_time(
-                    ts=period.from_value,  # type: ignore
-                    closest='before',
-                )
-                to_block = self.get_blocknumber_by_time(
-                    ts=period.to_value,  # type: ignore
-                    closest='before',
-                )
+        if period_or_hash is not None:
+            if isinstance(period_or_hash, TimestampOrBlockRange):
+                if period_or_hash.range_type == 'blocks':
+                    from_block = period_or_hash.from_value
+                    to_block = period_or_hash.to_value
+                else:  # timestamps
+                    from_block = self.get_blocknumber_by_time(
+                        ts=period_or_hash.from_value,  # type: ignore
+                        closest='before',
+                    )
+                    to_block = self.get_blocknumber_by_time(
+                        ts=period_or_hash.to_value,  # type: ignore
+                        closest='before',
+                    )
 
-            options['startBlock'] = str(from_block)
-            options['endBlock'] = str(to_block)
+                options['startBlock'] = str(from_block)
+                options['endBlock'] = str(to_block)
+
+            else:  # has to be parent transaction hash and internal transaction
+                options['txHash'] = period_or_hash.hex()
+                parent_tx_hash = period_or_hash
 
         transactions: Union[Sequence[EvmTransaction], Sequence[EvmInternalTransaction]] = []  # noqa: E501
         is_internal = action == 'txlistinternal'
@@ -353,18 +362,16 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             result = self._query(module='account', action=action, options=options)
             last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None  # noqa: E501 pylint: disable=unsubscriptable-object
             for entry in result:
-                gevent.sleep(0)
-                try:
-                    # Handle genesis block transactions
-                    if entry['hash'].startswith('GENESIS') is False:
-                        tx = deserialize_evm_transaction(  # type: ignore
+                try:  # Handle normal transactions. Internal dict does not contain a hash sometimes
+                    if is_internal or entry['hash'].startswith('GENESIS') is False:
+                        tx, _ = deserialize_evm_transaction(  # type: ignore
                             data=entry,
                             internal=is_internal,
                             chain_id=chain_id,
                             evm_inquirer=None,
+                            parent_tx_hash=parent_tx_hash,
                         )
-                    else:
-                        # Handling genesis transactions
+                    else:  # Handling genesis transactions
                         assert self.db is not None, 'self.db should exists at this point'
                         dbtx = DBEvmTx(self.db)
                         tx = dbtx.get_or_create_genesis_transaction(
@@ -375,7 +382,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                         entry['from'] = ZERO_ADDRESS
                         entry['hash'] = GENESIS_HASH
                         entry['traceId'] = trace_id
-                        internal_tx = deserialize_evm_transaction(
+                        internal_tx, _ = deserialize_evm_transaction(
                             data=entry,
                             internal=True,
                             chain_id=chain_id,
@@ -440,7 +447,6 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             result = self._query(module='account', action='tokentx', options=options)
             last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None  # noqa: E501 pylint: disable=unsubscriptable-object
             for entry in result:
-                gevent.sleep(0)
                 timestamp = deserialize_timestamp(entry['timeStamp'])
                 if timestamp > last_ts and len(hashes) >= TRANSACTIONS_BATCH_NUM:  # type: ignore
                     yield _hashes_tuple_to_list(hashes)

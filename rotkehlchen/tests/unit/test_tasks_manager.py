@@ -19,6 +19,7 @@ from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR2,
     setup_ethereum_transactions_test,
 )
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import mock_evm_chains_with_transactions
 from rotkehlchen.tests.utils.premium import VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET
 from rotkehlchen.types import ChainID, Location, SupportedBlockchain
@@ -430,3 +431,43 @@ def test_should_run_periodic_task(database: 'DBHandler') -> None:
         key_name=LAST_DATA_UPDATES_KEY,
         refresh_period=DATA_UPDATES_REFRESH,
     ) is True
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+def test_maybe_kill_running_tx_query_tasks(rotkehlchen_api_server, ethereum_accounts):
+    """Test that using maybe_kill_running_tx_query_tasks deletes greenlet from the running tasks
+
+    Also test that if called two times without a schedule() in between, no KeyErrors happen.
+    These used to happen before a fix was introduced since the killed greenlet
+    was not removed from the tx_query_task_greenlets and/or api_task_greenlets.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    address = ethereum_accounts[0]
+    rotki.task_manager.potential_tasks = [rotki.task_manager._maybe_query_evm_transactions]
+    eth_manager = rotki.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
+
+    def patched_address_query_transactions(self, address, start_ts, end_ts):  # pylint: disable=unused-argument  # noqa: E501
+        while True:  # busy wait :D just for the test
+            gevent.sleep(1)
+
+    query_patch = patch.object(
+        eth_manager.transactions,
+        'single_address_query_transactions',
+        wraps=patched_address_query_transactions,
+    )
+
+    with query_patch:
+        rotki.task_manager.schedule()  # Schedule the query
+        greenlet = rotki.task_manager.running_greenlets[rotki.task_manager._maybe_query_evm_transactions][0]  # noqa: E501
+        assert greenlet.dead is False
+        assert 'Query ethereum transaction' in greenlet.task_name
+        # Running it twice to see it's handled properly and dead greenlet does not raise KeyErrors
+        rotki.maybe_kill_running_tx_query_tasks(SupportedBlockchain.ETHEREUM, [address])
+        assert greenlet.dead is True
+        rotki.maybe_kill_running_tx_query_tasks(SupportedBlockchain.ETHEREUM, [address])
+        assert greenlet.dead is True
+
+        # Do a reschedule to see that this clears running greenlets
+        rotki.task_manager.potential_tasks = []
+        rotki.task_manager.schedule()
+        assert len(rotki.task_manager.running_greenlets) == 0

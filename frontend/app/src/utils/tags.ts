@@ -13,7 +13,7 @@ const removeTag = (tags: string[] | null, tagName: string): string[] | null => {
   const index = tags.indexOf(tagName);
 
   if (index < 0) {
-    return null;
+    return tags;
   }
 
   return [...tags.slice(0, index), ...tags.slice(index + 1)];

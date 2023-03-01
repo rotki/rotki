@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 TESTS_ROOT_DIR = Path(__file__).parent
+SUBPROCESS_TIMEOUT = 30
 
 
 class TestEnvironment(SerializableEnumMixin):
@@ -198,7 +199,7 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
     return vcr
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def vcr_config() -> dict[str, Any]:
     """
     vcrpy config
@@ -221,13 +222,11 @@ def vcr_config() -> dict[str, Any]:
     }
 
 
-@pytest.fixture(scope='module')
-def vcr_cassette_dir(request: pytest.FixtureRequest) -> str:
-    """
-    Override pytest-vcr's bundled fixture to store cassettes outside source code
+@pytest.fixture(scope='session', name='vcr_base_dir')
+def fixture_vcr_base_dir() -> Path:
+    """Determine the base dir for vcr cassettes
     # pytest-deadfixtures ignore
     """
-    cassette_dir = get_cassette_dir(request)
     if 'CI' in os.environ:
         current_branch = os.environ.get('GITHUB_HEAD_REF')  # get branch from github actions
         root_dir = Path(os.environ['CASSETTES_DIR'])
@@ -247,7 +246,7 @@ def vcr_cassette_dir(request: pytest.FixtureRequest) -> str:
     log.debug(f'At VCR setup, {current_branch=} {root_dir=}')
 
     checkout_proc = Popen(f'cd "{root_dir}" && git fetch origin && git checkout {current_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
-    _, stderr = checkout_proc.communicate(timeout=10)
+    _, stderr = checkout_proc.communicate(timeout=SUBPROCESS_TIMEOUT)
     if (
         len(stderr) != 0 and
         b'Already on' not in stderr and
@@ -256,14 +255,14 @@ def vcr_cassette_dir(request: pytest.FixtureRequest) -> str:
         default_branch = os.environ.get('GITHUB_BASE_REF', os.environ.get('DEFAULT_VCR_BRANCH', 'develop'))  # noqa: E501
         log.error(f'Could not find branch {current_branch} in {root_dir}. Defaulting to {default_branch}')  # noqa: E501
         checkout_proc = Popen(f'cd "{root_dir}" && git checkout {default_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
-        _, stderr = checkout_proc.communicate(timeout=10)
+        _, stderr = checkout_proc.communicate(timeout=SUBPROCESS_TIMEOUT)
         if (
                 len(stderr) != 0 and
                 b'Already on' not in stderr and
                 b'Switched to' not in stderr
         ):
             log.error(f'Could not find branch {default_branch} in {root_dir}. Bailing and leaving current branch')  # noqa: E501
-            return str(base_dir / cassette_dir)
+            return base_dir
         current_branch = default_branch
 
     log.debug(f'VCR setup: Checked out test-caching {current_branch} branch')
@@ -272,21 +271,30 @@ def vcr_cassette_dir(request: pytest.FixtureRequest) -> str:
     diff_result = os.popen(f'cd "{root_dir}" && git diff').read()
     if diff_result != '':
         log.debug('VCR setup: There is uncomitted work at the test-caching repository. Not modifying it')  # noqa: E501
-        return str(base_dir / cassette_dir)
+        return base_dir
     # see if the branch is ahead of origin, meaning local is being worked on
     compare_result = os.popen(f'cd "{root_dir}" && git rev-list --left-right --count {current_branch}...origin/{current_branch}').read()  # noqa: E501
     commits_ahead = int(compare_result.split()[0])
     if commits_ahead > 0:
         log.debug(f'VCR setup: The local test-caching branch {current_branch} is {commits_ahead} commits ahead of the remote. Not modifying it.')  # noqa: E501
-        return str(base_dir / cassette_dir)
+        return base_dir
 
     # since we got here reset to origin's equivalent branch
     reset_proc = Popen(f'cd "{root_dir}" n && git reset --hard origin/{current_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
-    _, stderr = reset_proc.communicate(timeout=10)
+    _, stderr = reset_proc.communicate(timeout=SUBPROCESS_TIMEOUT)
     if len(stderr) != 0:
         prefix = 'Failed to '
     else:
         prefix = ''
     log.debug(f'VCR setup: {prefix}reset test caching branch: {current_branch} to match origin')
 
-    return str(base_dir / cassette_dir)
+    return base_dir
+
+
+@pytest.fixture(scope='module')
+def vcr_cassette_dir(request: pytest.FixtureRequest, vcr_base_dir) -> str:
+    """
+    Override pytest-vcr's bundled fixture to store cassettes outside source code
+    # pytest-deadfixtures ignore
+    """
+    return str(vcr_base_dir / get_cassette_dir(request))

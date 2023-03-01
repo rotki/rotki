@@ -17,7 +17,6 @@ import {
 import { type BtcChains } from '@/types/blockchain/chains';
 import { assert } from '@/utils/assertions';
 import { type Eth2Validator } from '@/types/balances';
-import { EvmAccountsResult } from '@/types/api/accounts';
 import { nonEmptyProperties } from '@/utils/data';
 import {
   type BlockchainAccountPayload,
@@ -269,15 +268,11 @@ export const useBlockchainAccountsApi = () => {
 
   const addEvmAccount = async (
     payload: Omit<BlockchainAccountPayload, 'blockchain'>
-  ): Promise<EvmAccountsResult> => {
-    const response = await api.instance.put<ActionResult<EvmAccountsResult>>(
+  ): Promise<PendingTask> => {
+    return performAsyncQuery(
       '/blockchains/evm/accounts',
-      nonEmptyProperties(payloadToData(payload)),
-      {
-        validateStatus: validWithParamsSessionAndExternalService
-      }
+      nonEmptyProperties(payloadToData(payload))
     );
-    return EvmAccountsResult.parse(handleResponse(response));
   };
 
   const detectEvmAccounts = async (): Promise<PendingTask> => {
