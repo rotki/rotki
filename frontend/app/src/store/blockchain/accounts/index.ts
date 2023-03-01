@@ -25,6 +25,7 @@ import { assert } from '@/utils/assertions';
 import { logger } from '@/utils/logging';
 import { startPromise } from '@/utils';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { type EvmAccountsResult } from '@/types/api/accounts';
 
 export const useBlockchainAccountsStore = defineStore(
   'blockchain/accounts',
@@ -35,7 +36,8 @@ export const useBlockchainAccountsStore = defineStore(
       editBlockchainAccount,
       editBtcAccount,
       queryAccounts,
-      queryBtcAccounts
+      queryBtcAccounts,
+      addEvmAccount: addEvmAccountCaller
     } = useBlockchainAccountsApi();
     const { removeTag: removeBtcTag, update: updateBtc } =
       useBtcAccountsStore();
@@ -81,6 +83,38 @@ export const useBlockchainAccountsStore = defineStore(
       );
 
       return result.length > 0 ? result[0] : '';
+    };
+
+    const addEvmAccount = async ({
+      address,
+      label,
+      tags
+    }: AccountPayload): Promise<EvmAccountsResult> => {
+      const taskType = TaskType.ADD_ACCOUNT;
+      const { taskId } = await addEvmAccountCaller({
+        address,
+        label,
+        tags
+      });
+
+      const blockchain = 'EVM';
+      const { result } = await awaitTask<EvmAccountsResult, BlockchainMetadata>(
+        taskId,
+        taskType,
+        {
+          title: tc('actions.balances.blockchain_accounts_add.task.title', 0, {
+            blockchain
+          }),
+          description: tc(
+            'actions.balances.blockchain_accounts_add.task.description',
+            0,
+            { address }
+          )
+        },
+        true
+      );
+
+      return result;
     };
 
     const editAccount = async (
@@ -226,6 +260,7 @@ export const useBlockchainAccountsStore = defineStore(
 
     return {
       addAccount,
+      addEvmAccount,
       editAccount,
       removeAccount,
       fetch,
