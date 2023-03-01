@@ -7675,8 +7675,8 @@ Getting Liquity staking information
    :resjson object result: A mapping with the keys ``global_stats`` and ``by_address``.
    :resjson object global_stats: Stats aggregating the information for all the addresses tracked in the liquity module.
    :resjson object global_stats: Breakdown by tracked address of the stats.
-   :resjson string total_usd_gains_stability_pool: Sum of all the gains valuated at the moment of the event for the stability pool.
-   :resjson string total_usd_gains_stacking: Sum of all the gains valuated at the moment of the event for liquity staking.
+   :resjson string total_usd_gains_stability_pool: Sum of all the gains valued at the moment of the event for the stability pool.
+   :resjson string total_usd_gains_stacking: Sum of all the gains valued at the moment of the event for liquity staking.
    :resjson string total_deposited_stability_pool: Total amount of LUSD deposited in the stability pool.
    :resjson string total_withdrawn_stability_pool: Total amount of LUSD withdrawn from the stability pool.
    :resjson string total_deposited_stability_pool_usd_value: Sum of the USD value deposited in the stability pool at the time of the events.

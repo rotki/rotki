@@ -140,7 +140,8 @@ class LiquityDecoder(DecoderInterface):
                     event.event_type = HistoryEventType.STAKING
                     event.event_subtype = HistoryEventSubType.REWARD
                     event.counterparty = CPT_LIQUITY
-                    event.notes = f"Collect {event.balance.amount} {event.asset.symbol_or_name()} from liquity's stability pool"  # noqa: E501
+                    resolved_asset = event.asset.resolve_to_asset_with_symbol()
+                    event.notes = f"Collect {event.balance.amount} {resolved_asset.symbol} from liquity's stability pool"  # noqa: E501
                 elif event.asset == self.lusd:
                     event.event_type = HistoryEventType.STAKING
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
