@@ -141,6 +141,7 @@ const chartSectionHeight = computed<string>(() => {
           <div :style="`font-size: ${adjustedTotalNetWorthFontSize}em`">
             <amount-display
               class="ps-4"
+              xl
               show-currency="symbol"
               :fiat-currency="currencySymbol"
               :value="totalNetWorth"
@@ -214,24 +215,6 @@ const chartSectionHeight = computed<string>(() => {
   }
 
   &__net-worth {
-    :deep(.amount-display) {
-      .amount-display {
-        &__value {
-          font-size: 3.5em;
-          line-height: 4rem;
-
-          @media (max-width: 450px) {
-            font-size: 2.4em;
-            line-height: 2.4rem;
-          }
-        }
-
-        &__currency {
-          font-size: 1.5rem;
-        }
-      }
-    }
-
     &__loading {
       font-size: 1.5em;
       line-height: 1em;

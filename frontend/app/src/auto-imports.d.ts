@@ -223,6 +223,7 @@ declare global {
   const useCompoundStore: typeof import('./store/defi/compound/index')['useCompoundStore']
   const useConfirmDialog: typeof import('@vueuse/core')['useConfirmDialog']
   const useConfirmStore: typeof import('./store/confirm')['useConfirmStore']
+  const useCopy: typeof import('./composables/copy')['useCopy']
   const useCostBasisMethod: typeof import('./composables/reports')['useCostBasisMethod']
   const useCounter: typeof import('@vueuse/core')['useCounter']
   const useCssModule: typeof import('vue')['useCssModule']
@@ -349,6 +350,7 @@ declare global {
   const useNonFungibleBalancesStore: typeof import('./store/balances/non-fungible')['useNonFungibleBalancesStore']
   const useNotificationsStore: typeof import('./store/notifications/index')['useNotificationsStore']
   const useNow: typeof import('@vueuse/core')['useNow']
+  const useNumberScrambler: typeof import('./composables/utils/useNumberScrambler/index')['useNumberScrambler']
   const useObjectUrl: typeof import('@vueuse/core')['useObjectUrl']
   const useOffsetPagination: typeof import('@vueuse/core')['useOffsetPagination']
   const useOnline: typeof import('@vueuse/core')['useOnline']
@@ -731,6 +733,7 @@ declare module 'vue' {
     readonly useCompoundStore: UnwrapRef<typeof import('./store/defi/compound/index')['useCompoundStore']>
     readonly useConfirmDialog: UnwrapRef<typeof import('@vueuse/core')['useConfirmDialog']>
     readonly useConfirmStore: UnwrapRef<typeof import('./store/confirm')['useConfirmStore']>
+    readonly useCopy: UnwrapRef<typeof import('./composables/copy')['useCopy']>
     readonly useCostBasisMethod: UnwrapRef<typeof import('./composables/reports')['useCostBasisMethod']>
     readonly useCounter: UnwrapRef<typeof import('@vueuse/core')['useCounter']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
@@ -857,6 +860,7 @@ declare module 'vue' {
     readonly useNonFungibleBalancesStore: UnwrapRef<typeof import('./store/balances/non-fungible')['useNonFungibleBalancesStore']>
     readonly useNotificationsStore: UnwrapRef<typeof import('./store/notifications/index')['useNotificationsStore']>
     readonly useNow: UnwrapRef<typeof import('@vueuse/core')['useNow']>
+    readonly useNumberScrambler: UnwrapRef<typeof import('./composables/utils/useNumberScrambler/index')['useNumberScrambler']>
     readonly useObjectUrl: UnwrapRef<typeof import('@vueuse/core')['useObjectUrl']>
     readonly useOffsetPagination: UnwrapRef<typeof import('@vueuse/core')['useOffsetPagination']>
     readonly useOnline: UnwrapRef<typeof import('@vueuse/core')['useOnline']>
