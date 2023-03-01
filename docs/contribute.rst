@@ -415,6 +415,10 @@ Your colleague will review the PR and leave you multiple comments. Then they wil
 
 You set the label to ``ready for final review`` and ping the product owner (at the moment only Lefteris) in discord. The same process as above is repeated until the PR is merged.
 
+Coordination between Teams
+--------------------------------------------------------
+Once an issue that needs work for both backend and frontend has the backend part done, it needs to be passed over to the frontend team. To do that we let the frontend know by pinging them in discord using ``@rotki-frontend-devs`` but also by using the label "Needs FR work" so they can filter what can be picked by them to close issues.
+
 Changelog
 =============
 
