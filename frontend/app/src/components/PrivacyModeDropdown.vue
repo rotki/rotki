@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-
 const { t, tc } = useI18n();
 
 const tickLabels: string[] = [

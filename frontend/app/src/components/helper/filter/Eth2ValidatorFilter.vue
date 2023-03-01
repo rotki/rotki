@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import ValidatorFilterInput from '@/components/helper/filter/ValidatorFilterInput.vue';
 
 withDefaults(
   defineProps<{

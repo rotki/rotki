@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { trimOnPaste } from '@/utils/event';
 import { type PremiumCredentialsPayload } from '@/types/session';
 

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-
 defineProps({
   colspan: { required: true, type: Number },
   label: { required: true, type: String },

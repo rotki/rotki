@@ -5,8 +5,6 @@ import {
   type BlockchainSelection
 } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
-import AccountDisplay from '@/components/display/AccountDisplay.vue';
-import TagDisplay from '@/components/tags/TagDisplay.vue';
 
 type AccountWithChain = GeneralAccount<BlockchainSelection>;
 

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-
 const crypto2CryptoTrades = ref(false);
 const { includeCrypto2crypto } = storeToRefs(useAccountingSettingsStore());
 

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { trimOnPaste } from '@/utils/event';
 
 const props = withDefaults(

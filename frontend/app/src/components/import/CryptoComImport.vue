@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import ImportSource from '@/components/import/ImportSource.vue';
-
 const { t } = useI18n();
 </script>
 <template>

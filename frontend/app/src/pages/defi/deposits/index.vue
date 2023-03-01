@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
-import TabNavigation from '@/components/helper/TabNavigation.vue';
 import { useAppRoutes } from '@/router/routes';
 import { type TabContent } from '@/types/tabs';
 

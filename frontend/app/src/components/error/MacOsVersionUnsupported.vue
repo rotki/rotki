@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import ErrorScreen from '@/components/error/ErrorScreen.vue';
-
 const { tc } = useI18n();
 const { closeApp } = useInterop();
 </script>

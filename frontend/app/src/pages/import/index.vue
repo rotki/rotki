@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import GroupedImport from '@/components/import/GroupedImport.vue';
-
 const { t } = useI18n();
 </script>
 

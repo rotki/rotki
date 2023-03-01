@@ -7,12 +7,6 @@ import {
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
-import LiquidityProviderBalanceDetails from '@/components/dashboard/LiquidityProviderBalanceDetails.vue';
-import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
-import NftDetails from '@/components/helper/NftDetails.vue';
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-import RowAppend from '@/components/helper/RowAppend.vue';
 import { Routes } from '@/router/routes';
 import {
   DashboardTableType,

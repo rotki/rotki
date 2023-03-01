@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { type DataTableHeader } from 'vuetify';
-import DataTable from '@/components/helper/DataTable.vue';
-import TagCreator from '@/components/tags/TagCreator.vue';
-import TagIcon from '@/components/tags/TagIcon.vue';
 import { type Tag, defaultTag } from '@/types/tags';
 
 defineProps({

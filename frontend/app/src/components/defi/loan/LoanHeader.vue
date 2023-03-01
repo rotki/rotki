@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import HashLink from '@/components/helper/HashLink.vue';
-
 defineProps({
   owner: {
     required: true,

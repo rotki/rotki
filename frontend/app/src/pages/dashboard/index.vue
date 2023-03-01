@@ -3,38 +3,6 @@ import { TaskType } from '@/types/task-type';
 import { Routes } from '@/router/routes';
 import { Module } from '@/types/modules';
 
-const PriceRefresh = defineAsyncComponent(
-  () => import('@/components/helper/PriceRefresh.vue')
-);
-const DashboardAssetTable = defineAsyncComponent(
-  () => import('@/components/dashboard/DashboardAssetTable.vue')
-);
-const OverallBalances = defineAsyncComponent(
-  () => import('@/components/dashboard/OverallBalances.vue')
-);
-const SummaryCard = defineAsyncComponent(
-  () => import('@/components/dashboard/summary-card/SummaryCard.vue')
-);
-const BlockchainBalanceRefreshBehaviourMenu = defineAsyncComponent(
-  () =>
-    import('@/components/dashboard/BlockchainBalanceRefreshBehaviourMenu.vue')
-);
-const ExchangeBox = defineAsyncComponent(
-  () => import('@/components/dashboard/ExchangeBox.vue')
-);
-const ManualBalanceCardList = defineAsyncComponent(
-  () => import('@/components/dashboard/ManualBalanceCardList.vue')
-);
-const BlockchainBalanceCardList = defineAsyncComponent(
-  () => import('@/components/dashboard/BlockchainBalanceCardList.vue')
-);
-const NftBalanceTable = defineAsyncComponent(
-  () => import('@/components/dashboard/NftBalanceTable.vue')
-);
-const LiquidityProviderBalanceTable = defineAsyncComponent(
-  () => import('@/components/dashboard/LiquidityProviderBalanceTable.vue')
-);
-
 const { t, tc } = useI18n();
 const { isTaskRunning } = useTaskStore();
 

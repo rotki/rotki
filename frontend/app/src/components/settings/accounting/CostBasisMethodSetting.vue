@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import CostBasisMethodSettings from '@/components/settings/accounting/CostBasisMethodSettings.vue';
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { CostBasisMethod } from '@/types/user';
 
 const costBasisMethod = ref<CostBasisMethod>(CostBasisMethod.FIFO);
@@ -11,24 +9,24 @@ onMounted(() => {
 });
 
 const { tc } = useI18n();
+
+const getSuccessMessage = (method: string) =>
+  tc('account_settings.messages.cost_basis_method.success', 0, {
+    method: method.toUpperCase()
+  });
+
+const getErrorMessage = (method: string) =>
+  tc('account_settings.messages.cost_basis_method.error', 0, {
+    method: method.toUpperCase()
+  });
 </script>
 
 <template>
   <settings-option
     #default="{ error, success, update }"
     setting="costBasisMethod"
-    :success-message="
-      method =>
-        tc('account_settings.messages.cost_basis_method.success', 0, {
-          method: method.toUpperCase()
-        })
-    "
-    :error-message="
-      method =>
-        tc('account_settings.messages.cost_basis_method.error', 0, {
-          method: method.toUpperCase()
-        })
-    "
+    :success-message="getSuccessMessage"
+    :error-message="getErrorMessage"
   >
     <cost-basis-method-settings
       v-model="costBasisMethod"

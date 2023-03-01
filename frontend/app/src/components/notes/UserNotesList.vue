@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import { type Collection } from '@/types/collection';
 import { type UserNote, type UserNotesFilter } from '@/types/notes';

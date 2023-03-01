@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { type ComputedRef, type PropType } from 'vue';
-import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
-import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
 import { type Nullable } from '@/types';
 import { type BaseMessage } from '@/types/messages';
 import {

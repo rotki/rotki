@@ -1,9 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
-import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
-import AaveCollateral from '@/components/defi/loan/loans/aave/AaveCollateral.vue';
-import PremiumCard from '@/components/display/PremiumCard.vue';
 import { AaveBorrowingDetails } from '@/premium/premium';
 import { type AaveLoan } from '@/types/defi/lending';
 import { Section } from '@/types/status';

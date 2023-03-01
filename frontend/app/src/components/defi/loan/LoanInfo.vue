@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { type PropType } from 'vue';
-import AaveLending from '@/components/defi/loan/loans/AaveLending.vue';
-import CompoundLending from '@/components/defi/loan/loans/CompoundLending.vue';
-import LiquityLending from '@/components/defi/loan/loans/LiquityLending.vue';
-import MakerDaoVaultLoan from '@/components/defi/loan/loans/MakerDaoVaultLoan.vue';
 import { type AaveLoan } from '@/types/defi/lending';
 import { type CompoundLoan } from '@/types/defi/compound';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';

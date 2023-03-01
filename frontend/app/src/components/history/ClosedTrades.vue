@@ -5,7 +5,6 @@ import { type DataTableHeader } from 'vuetify';
 import isEqual from 'lodash/isEqual';
 import { type MaybeRef } from '@vueuse/core';
 import Fragment from '@/components/helper/Fragment';
-import ExternalTradeForm from '@/components/history/ExternalTradeForm.vue';
 import { Routes } from '@/router/routes';
 import { type TradeLocation } from '@/types/history/trade/location';
 import {
@@ -25,6 +24,7 @@ import { defaultCollectionState } from '@/utils/collection';
 import { assert } from '@/utils/assertions';
 import { defaultOptions } from '@/utils/history';
 import { SavedFilterLocation } from '@/types/filtering';
+import ExternalTradeForm from '@/components/history/ExternalTradeForm.vue';
 
 const props = withDefaults(
   defineProps<{

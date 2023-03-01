@@ -4,10 +4,6 @@ import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
-import DataTable from '@/components/helper/DataTable.vue';
-import TagFilter from '@/components/inputs/TagFilter.vue';
-import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { CURRENCY_USD } from '@/types/currencies';
 import { type AssetBreakdown } from '@/types/blockchain/accounts';
 

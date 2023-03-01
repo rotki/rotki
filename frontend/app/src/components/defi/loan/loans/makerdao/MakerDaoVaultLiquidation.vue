@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
 import { type PropType } from 'vue';
-import LoanRow from '@/components/defi/loan/LoanRow.vue';
-import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import StatCard from '@/components/display/StatCard.vue';
-import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 import { Zero } from '@/utils/bignumbers';
 

@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import FullSizeContent from '@/components/common/FullSizeContent.vue';
-
 defineProps({
   text: {
     type: String,

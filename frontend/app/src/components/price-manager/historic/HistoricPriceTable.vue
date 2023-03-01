@@ -6,7 +6,6 @@ import {
 } from '@rotki/common/lib/messages';
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import RowActions from '@/components/helper/RowActions.vue';
 import { type HistoricalPrice, type ManualPricePayload } from '@/types/prices';
 
 const props = defineProps({

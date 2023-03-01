@@ -2,8 +2,6 @@
 import { type AssetBalanceWithPrice } from '@rotki/common';
 import { type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import DataTable from '@/components/helper/DataTable.vue';
-import RowAppend from '@/components/helper/RowAppend.vue';
 import { getSortItems } from '@/utils/assets';
 import { isEvmNativeToken } from '@/types/asset';
 import { bigNumberSum } from '@/utils/calculation';

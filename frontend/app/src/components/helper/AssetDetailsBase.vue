@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { type ComputedRef, type PropType } from 'vue';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import ListItem from '@/components/helper/ListItem.vue';
 import { Routes } from '@/router/routes';
 import { type NftAsset } from '@/types/nfts';
 

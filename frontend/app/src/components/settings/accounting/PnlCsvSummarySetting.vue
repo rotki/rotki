@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-
 const haveCSVSummary = ref(false);
 const { pnlCsvHaveSummary } = storeToRefs(useAccountingSettingsStore());
 

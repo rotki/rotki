@@ -1,10 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import RowAppend from '@/components/helper/RowAppend.vue';
-import TagFilter from '@/components/inputs/TagFilter.vue';
-import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { type ManualBalance } from '@/types/manual-balances';
 import { One } from '@/utils/bignumbers';
 import { aggregateTotal } from '@/utils/calculation';

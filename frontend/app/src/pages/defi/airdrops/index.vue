@@ -3,11 +3,6 @@ import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import PoapDeliveryAirdrops from '@/components/defi/airdrops/PoapDeliveryAirdrops.vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import DataTable from '@/components/helper/DataTable.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import RowExpander from '@/components/helper/RowExpander.vue';
 import {
   AIRDROP_1INCH,
   AIRDROP_CONVEX,

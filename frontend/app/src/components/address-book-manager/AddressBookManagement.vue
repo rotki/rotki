@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import AddressBookForm from '@/components/address-book-manager/AddressBookForm.vue';
-import AddressBookTable from '@/components/address-book-manager/AddressBookTable.vue';
-import EthNamesHint from '@/components/EthNamesHint.vue';
 import {
   type AddressBookEntry,
   type AddressBookLocation,

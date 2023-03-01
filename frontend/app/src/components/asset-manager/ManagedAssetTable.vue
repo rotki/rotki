@@ -2,13 +2,6 @@
 import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import AssetUnderlyingTokens from '@/components/asset-manager/AssetUnderlyingTokens.vue';
-import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
-import CopyButton from '@/components/helper/CopyButton.vue';
-import DataTable from '@/components/helper/DataTable.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import RowExpander from '@/components/helper/RowExpander.vue';
-import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import {
   type AssetPagination,
   type AssetPaginationOptions,

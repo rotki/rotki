@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type Blockchain } from '@rotki/common/lib/blockchain';
-import ListItem from '@/components/helper/ListItem.vue';
 
 const props = withDefaults(
   defineProps<{

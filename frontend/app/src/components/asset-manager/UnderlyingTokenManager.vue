@@ -3,7 +3,6 @@ import { EvmTokenKind, type UnderlyingToken } from '@rotki/common/lib/data';
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, numeric, required } from '@vuelidate/validators';
 import { type PropType } from 'vue';
-import RowActions from '@/components/helper/RowActions.vue';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
 
 const props = defineProps({

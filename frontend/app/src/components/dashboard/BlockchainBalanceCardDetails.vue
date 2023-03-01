@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { type SubBlockchainTotal } from '@/types/blockchain';
 import { type ActionDataEntry } from '@/types/action';
 

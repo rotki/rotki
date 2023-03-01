@@ -4,43 +4,6 @@ import { checkIfDevelopment } from '@/utils/env-utils';
 
 const isDevelopment = checkIfDevelopment();
 
-const ThemeControl = defineAsyncComponent(
-  () => import('@/components/premium/ThemeControl.vue')
-);
-const CurrencyDropdown = defineAsyncComponent(
-  () => import('@/components/CurrencyDropdown.vue')
-);
-const AppUpdateIndicator = defineAsyncComponent(
-  () => import('@/components/status/AppUpdateIndicator.vue')
-);
-const NotificationIndicator = defineAsyncComponent(
-  () => import('@/components/status/NotificationIndicator.vue')
-);
-const SyncIndicator = defineAsyncComponent(
-  () => import('@/components/status/sync/SyncIndicator.vue')
-);
-const PinnedIndicator = defineAsyncComponent(
-  () => import('@/components/PinnedIndicator.vue')
-);
-const UserNotesIndicator = defineAsyncComponent(
-  () => import('@/components/notes/UserNotesIndicator.vue')
-);
-const BackButton = defineAsyncComponent(
-  () => import('@/components/helper/BackButton.vue')
-);
-const GlobalSearch = defineAsyncComponent(
-  () => import('@/components/GlobalSearch.vue')
-);
-const HelpIndicator = defineAsyncComponent(
-  () => import('@/components/help/HelpIndicator.vue')
-);
-const UserDropdown = defineAsyncComponent(
-  () => import('@/components/UserDropdown.vue')
-);
-const PrivacyModeDropdown = defineAsyncComponent(
-  () => import('@/components/PrivacyModeDropdown.vue')
-);
-
 const { currentBreakpoint } = useTheme();
 const smAndUp = computed(() => get(currentBreakpoint).smAndUp);
 

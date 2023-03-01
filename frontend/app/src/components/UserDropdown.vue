@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import ThemeControl from '@/components/premium/ThemeControl.vue';
-
 const { t, tc } = useI18n();
 
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';

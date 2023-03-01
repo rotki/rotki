@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type AssetInfo } from '@rotki/common/lib/data';
-import SuggestedItem from '@/components/history/filtering/SuggestedItem.vue';
 import {
   type MatchedKeyword,
   type SavedFilterLocation,

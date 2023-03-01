@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import WatcherDialog from '@/components/dialogs/WatcherDialog.vue';
 import Fragment from '@/components/helper/Fragment';
-import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps({

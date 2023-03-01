@@ -6,10 +6,6 @@ import {
 } from '@rotki/common/lib/blockchain';
 import { truncateAddress } from '@/filters';
 
-const AssetIcon = defineAsyncComponent(
-  () => import('@/components/helper/display/icons/AssetIcon.vue')
-);
-
 const props = withDefaults(
   defineProps<{
     account: Account<BlockchainSelection>;

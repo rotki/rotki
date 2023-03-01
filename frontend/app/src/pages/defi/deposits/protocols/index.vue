@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import Deposits from '@/components/defi/Deposits.vue';
-import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import { Module } from '@/types/modules';
 
 const modules: Module[] = [

@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
-import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import Fragment from '@/components/helper/Fragment';
-import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { Zero } from '@/utils/bignumbers';
 
 const props = defineProps({

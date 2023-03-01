@@ -10,7 +10,6 @@ import {
   type TransactionEventProtocol
 } from '@rotki/common/lib/history/tx-events';
 import { type MaybeRef } from '@vueuse/core';
-import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
 import {
   type EthTransaction,
   type EthTransactionEntry,
@@ -32,6 +31,7 @@ import { type Collection } from '@/types/collection';
 import { assert } from '@/utils/assertions';
 import { defaultOptions } from '@/utils/history';
 import { SavedFilterLocation } from '@/types/filtering';
+import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
 
 const props = withDefaults(
   defineProps<{

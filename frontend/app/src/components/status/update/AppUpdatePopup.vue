@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-
 const releaseNotesLink = 'https://github.com/rotki/rotki/releases';
 
 const downloadReady = ref(false);

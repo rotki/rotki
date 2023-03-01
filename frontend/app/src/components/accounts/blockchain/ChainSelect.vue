@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import { Module } from '@/types/modules';
 
 const props = withDefaults(

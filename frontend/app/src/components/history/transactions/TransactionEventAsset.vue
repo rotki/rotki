@@ -4,7 +4,6 @@ import {
   TransactionEventProtocol,
   TransactionEventType
 } from '@rotki/common/lib/history/tx-events';
-import TransactionEventLiquityExtraData from '@/components/history/transactions/TransactionEventLiquityExtraData.vue';
 import { getEventType } from '@/utils/history';
 import { type EthTransactionEventEntry } from '@/types/history/tx';
 

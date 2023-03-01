@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import DataTable from '@/components/helper/DataTable.vue';
-import TransactionEventNote from '@/components/history/transactions/TransactionEventNote.vue';
-import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
-import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
 import {
   type ProfitLossEvent,
   ProfitLossEventTypeEnum,

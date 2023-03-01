@@ -1,13 +1,5 @@
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import AccountingSettingsDisplay from '@/components/profitloss/AccountingSettingsDisplay.vue';
-import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
-import ProfitLossEvents from '@/components/profitloss/ProfitLossEvents.vue';
-import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
-import ReportActionable from '@/components/profitloss/ReportActionable.vue';
-import ReportHeader from '@/components/profitloss/ReportHeader.vue';
 import { Routes } from '@/router/routes';
 import { type SelectedReport } from '@/types/reports';
 

@@ -2,8 +2,6 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
 import { type PropType } from 'vue';
-import FileUpload from '@/components/import/FileUpload.vue';
-import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { api } from '@/services/rotkehlchen-api';
 import { DateFormat } from '@/types/date-format';

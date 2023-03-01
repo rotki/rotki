@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import FullSizeContent from '@/components/common/FullSizeContent.vue';
+const FullSizeContent = defineAsyncComponent(
+  () => import('@/components/common/FullSizeContent.vue')
+);
 
 defineProps({
   full: { required: false, type: Boolean, default: true }

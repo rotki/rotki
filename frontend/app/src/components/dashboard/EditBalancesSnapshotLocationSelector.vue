@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { type PropType } from 'vue';
-import LocationSelector from '@/components/helper/LocationSelector.vue';
 
 defineProps({
   value: {

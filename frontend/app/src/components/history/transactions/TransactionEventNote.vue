@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { bigNumberify } from '@/utils/bignumbers';
 import { isValidEthAddress, isValidTxHash } from '@/utils/text';
 

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-
 const ethStakingTaxableAfterWithdrawalEnabled = ref(false);
 const { ethStakingTaxableAfterWithdrawalEnabled: enabled } = storeToRefs(
   useAccountingSettingsStore()
@@ -11,6 +9,15 @@ onMounted(() => {
 });
 
 const { tc } = useI18n();
+
+const getSuccessMessage = (enabled: boolean) =>
+  enabled
+    ? tc(
+        'account_settings.messages.eth_staking_taxable_after_withdrawal.enabled'
+      )
+    : tc(
+        'account_settings.messages.eth_staking_taxable_after_withdrawal.disabled'
+      );
 </script>
 
 <template>
@@ -20,16 +27,7 @@ const { tc } = useI18n();
     :error-message="
       tc('account_settings.messages.eth_staking_taxable_after_withdrawal.error')
     "
-    :success-message="
-      enabled =>
-        enabled
-          ? tc(
-              'account_settings.messages.eth_staking_taxable_after_withdrawal.enabled'
-            )
-          : tc(
-              'account_settings.messages.eth_staking_taxable_after_withdrawal.disabled'
-            )
-    "
+    :success-message="getSuccessMessage"
   >
     <v-switch
       v-model="ethStakingTaxableAfterWithdrawalEnabled"

@@ -1,15 +1,4 @@
 <script setup lang="ts">
-import ConnectionFailureMessage from '@/components/account-management/ConnectionFailureMessage.vue';
-import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
-import BackendSettingsButton from '@/components/helper/OnboardingSettingsButton.vue';
-import PrivacyNotice from '@/components/PrivacyNotice.vue';
-import AboutButton from '@/components/user/AboutButton.vue';
-import AnimationsButton from '@/components/user/AnimationsButton.vue';
-import LoginHeader from '@/components/user/LoginHeader.vue';
-import LoginIcon from '@/components/user/LoginIcon.vue';
-import LoginOverlay from '@/components/user/LoginOverlay.vue';
-import DockerWarning from '@/components/account-management/DockerWarning.vue';
-
 const css = useCssModule();
 
 const { autolog } = useAutoLogin();
@@ -61,7 +50,7 @@ const displayRouter = logicAnd(connected, loginIfConnected);
       <privacy-notice />
       <login-icon>
         <template v-if="isPackaged">
-          <backend-settings-button />
+          <onboarding-settings-button />
         </template>
         <template v-else>
           <about-button />

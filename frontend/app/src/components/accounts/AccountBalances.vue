@@ -1,9 +1,5 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import AccountBalanceTable from '@/components/accounts/AccountBalanceTable.vue';
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-import TagFilter from '@/components/inputs/TagFilter.vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
 import { TaskType } from '@/types/task-type';
 import { startPromise } from '@/utils';
 import { isTokenChain } from '@/types/blockchain/chains';

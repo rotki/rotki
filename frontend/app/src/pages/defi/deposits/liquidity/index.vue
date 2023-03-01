@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { useAppRoutes } from '@/router/routes';
 
 const { appRoutes } = useAppRoutes();

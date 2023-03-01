@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
 import { type CurrentDbUpgradeProgress } from '@/types/login';
-import DbActivityProgress from '@/components/account-management/upgrade/DbActivityProgress.vue';
 
 const { dbUpgradeStatus, dataMigrationStatus } = storeToRefs(
   useSessionAuthStore()

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import FullSizeContent from '@/components/common/FullSizeContent.vue';
-
 const props = defineProps({
   progress: { required: false, default: '', type: String }
 });

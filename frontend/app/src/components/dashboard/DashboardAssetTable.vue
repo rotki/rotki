@@ -6,10 +6,6 @@ import {
 } from '@rotki/common';
 import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
-import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
-import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import RowAppend from '@/components/helper/RowAppend.vue';
 import { type Nullable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
 import { type DashboardTableType } from '@/types/frontend-settings';

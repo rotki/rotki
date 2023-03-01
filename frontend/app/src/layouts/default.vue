@@ -1,10 +1,4 @@
 <script setup lang="ts">
-import About from '@/components/About.vue';
-import AppCore from '@/components/app/AppCore.vue';
-import AppHost from '@/components/app/AppHost.vue';
-import AppMessages from '@/components/app/AppMessages.vue';
-import FrontendUpdateNotifier from '@/components/status/FrontendUpdateNotifier.vue';
-import AppUpdatePopup from '@/components/status/update/AppUpdatePopup.vue';
 import { ThemeChecker } from '@/premium/premium';
 
 const { showAbout } = storeToRefs(useAreaVisibilityStore());

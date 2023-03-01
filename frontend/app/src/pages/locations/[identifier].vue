@@ -1,10 +1,4 @@
 <script setup lang="ts">
-import ClosedTrades from '@/components/history/ClosedTrades.vue';
-import DepositsWithdrawalsContent from '@/components/history/deposits-withdrawals/DepositsWithdrawalsContent.vue';
-import LedgerActionContent from '@/components/history/ledger-actions/LedgerActionContent.vue';
-import LocationIcon from '@/components/history/LocationIcon.vue';
-import LocationAssets from '@/components/locations/LocationAssets.vue';
-import LocationValueRow from '@/components/locations/LocationValueRow.vue';
 import { type TradeLocationData } from '@/types/history/trade/location';
 
 const props = defineProps({

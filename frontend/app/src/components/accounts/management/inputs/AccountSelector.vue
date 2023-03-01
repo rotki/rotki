@@ -2,8 +2,6 @@
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type InputMode } from '@/types/input-mode';
 import Fragment from '@/components/helper/Fragment';
-import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
-import InputModeSelect from '@/components/accounts/management/inputs/InputModeSelect.vue';
 
 defineProps<{
   blockchain: Blockchain;

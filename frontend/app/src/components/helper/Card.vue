@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useListeners } from 'vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
 
 const props = withDefaults(
   defineProps<{

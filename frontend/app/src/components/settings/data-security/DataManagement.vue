@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import PurgeSelector from '@/components/settings/data-security/PurgeSelector.vue';
-import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { SUPPORTED_EXCHANGES, type SupportedExchange } from '@/types/exchanges';
 import { type BaseMessage } from '@/types/messages';

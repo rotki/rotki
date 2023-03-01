@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
-import TableFilter from '@/components/history/filtering/TableFilter.vue';
-import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import {
   type KrakenStakingEventType,
   type KrakenStakingEvents,

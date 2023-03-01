@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import ModuleAddressSelector from '@/components/defi/wizard/ModuleAddressSelector.vue';
-import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
-
 const { t } = useI18n();
 </script>
 

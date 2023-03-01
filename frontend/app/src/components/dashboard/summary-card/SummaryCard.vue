@@ -1,10 +1,4 @@
 ﻿<script setup lang="ts">
-import SummaryCardRefreshMenu from '@/components/dashboard/summary-card/SummaryCardRefreshMenu.vue';
-
-const NavigatorLink = defineAsyncComponent(
-  () => import('@/components/helper/NavigatorLink.vue')
-);
-
 withDefaults(
   defineProps<{
     name: string;

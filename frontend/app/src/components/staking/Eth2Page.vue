@@ -1,9 +1,4 @@
 <script setup lang="ts">
-import ActiveModules from '@/components/defi/ActiveModules.vue';
-import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
-import Eth2ValidatorFilter from '@/components/helper/filter/Eth2ValidatorFilter.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { Eth2Staking } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';

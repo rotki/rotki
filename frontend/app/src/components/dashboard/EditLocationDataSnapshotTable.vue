@@ -2,9 +2,6 @@
 import { type BigNumber } from '@rotki/common';
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import EditLocationDataSnapshotForm from '@/components/dashboard/EditLocationDataSnapshotForm.vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import RowActions from '@/components/helper/RowActions.vue';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
   type LocationDataSnapshot,
@@ -25,7 +22,10 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:step', 'input']);
+const emit = defineEmits<{
+  (e: 'update:step', step: number): void;
+  (e: 'input', value: LocationDataSnapshot[]): void;
+}>();
 
 const { value, timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());

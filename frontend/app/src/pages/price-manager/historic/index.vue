@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import HistoricPriceForm from '@/components/price-manager/historic/HistoricPriceForm.vue';
-import HistoricPriceTable from '@/components/price-manager/historic/HistoricPriceTable.vue';
 import { type Nullable } from '@/types';
 import {
   type HistoricalPrice,

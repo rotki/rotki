@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type AssetInfo } from '@rotki/common/lib/data';
 import { type ComputedRef, type Ref } from 'vue';
-import FilterEntry from '@/components/history/filtering/FilterEntry.vue';
-import SuggestedItem from '@/components/history/filtering/SuggestedItem.vue';
 import { type SearchMatcher, type Suggestion } from '@/types/filtering';
 import { compareSymbols } from '@/utils/assets';
 import { logger } from '@/utils/logging';

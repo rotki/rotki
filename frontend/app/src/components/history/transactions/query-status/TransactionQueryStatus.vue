@@ -1,9 +1,5 @@
 <script setup lang="ts">
 import { type EvmTransactionQueryData } from '@/types/websocket-messages';
-import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
-import TransactionQueryStatusDialog from '@/components/history/transactions/query-status/TransactionQueryStatusDialog.vue';
-import TransactionQueryStatusCurrent from '@/components/history/transactions/query-status/TransactionQueryStatusCurrent.vue';
-import TransactionQueryStatusLine from '@/components/history/transactions/query-status/TransactionQueryStatusLine.vue';
 
 defineProps<{ colspan: number }>();
 

@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import NoDataScreen from '@/components/common/NoDataScreen.vue';
-import Overview from '@/components/defi/Overview.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import { Section } from '@/types/status';
 
 const store = useDefiStore();

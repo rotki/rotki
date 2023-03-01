@@ -1,9 +1,5 @@
 <script setup lang="ts">
 import { type DataTableHeader } from 'vuetify';
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vue';
 import { type Writeable } from '@/types';
 import {
   type Exchange,

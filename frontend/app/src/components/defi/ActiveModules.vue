@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type PropType, type Ref } from 'vue';
-import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import { type Nullable } from '@/types';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { assert } from '@/utils/assertions';

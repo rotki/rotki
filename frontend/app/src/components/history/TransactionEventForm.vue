@@ -8,8 +8,6 @@ import {
   HistoryEventSubType,
   type HistoryEventType
 } from '@rotki/common/lib/history/tx-events';
-import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
-import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { type Writeable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';

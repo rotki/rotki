@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import omit from 'lodash/omit';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import RowAction from '@/components/helper/RowActions.vue';
-import RpcNodeForm from '@/components/settings/general/rpc/RpcNodeForm.vue';
 import {
   type EvmRpcNode,
   type EvmRpcNodeList,
@@ -272,7 +269,7 @@ const css = useCssModule();
             <v-list-item-action :class="css.centered">
               <v-row align="center" justify="center">
                 <v-col>
-                  <row-action
+                  <row-actions
                     :delete-tooltip="tc('evm_rpc_node_manager.delete_tooltip')"
                     :delete-disabled="isEtherscan(item)"
                     :edit-tooltip="tc('evm_rpc_node_manager.edit_tooltip')"

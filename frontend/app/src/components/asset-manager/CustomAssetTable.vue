@@ -2,10 +2,6 @@
 import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
-import CopyButton from '@/components/helper/CopyButton.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import RowExpander from '@/components/helper/RowExpander.vue';
 import {
   type CustomAsset,
   type CustomAssetPagination,

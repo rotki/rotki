@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import PremiumLock from '@/components/premium/PremiumLock.vue';
-
 defineProps({
   title: { required: false, type: String, default: '' },
   locked: { required: false, type: Boolean, default: false },

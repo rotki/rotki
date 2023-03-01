@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
-import AccountAssetBalances from '@/components/accounts/balances/AccountAssetBalances.vue';
 
 const props = defineProps({
   blockchain: {

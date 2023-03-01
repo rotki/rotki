@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import orderBy from 'lodash/orderBy';
-import Notification from '@/components/status/notifications/Notification.vue';
-import PendingTasks from '@/components/status/notifications/PendingTasks.vue';
 
 defineProps({
   visible: { required: true, type: Boolean }

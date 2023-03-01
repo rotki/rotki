@@ -7,12 +7,6 @@ import {
   TransactionEventProtocol
 } from '@rotki/common/lib/history/tx-events';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
-import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
-import MakerDaoVaultCollateral from '@/components/defi/loan/loans/makerdao/MakerDaoVaultCollateral.vue';
-import MakerDaoVaultDebtDetails from '@/components/defi/loan/loans/makerdao/MakerDaoVaultDebtDetails.vue';
-import MakerDaoVaultLiquidation from '@/components/defi/loan/loans/makerdao/MakerDaoVaultLiquidation.vue';
-import PremiumCard from '@/components/display/PremiumCard.vue';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 import { Zero } from '@/utils/bignumbers';
 
