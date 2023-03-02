@@ -40,8 +40,10 @@ export const useEthAccountsStore = defineStore(
       deleteEth2Validators: deleteEth2ValidatorsCaller
     } = useBlockchainAccountsApi();
 
+    const isEth2Enabled = () => get(activeModules).includes(Module.ETH2);
+
     const fetchEth2Validators = async () => {
-      if (!get(activeModules).includes(Module.ETH2)) {
+      if (!isEth2Enabled()) {
         return;
       }
       try {
@@ -63,8 +65,7 @@ export const useEthAccountsStore = defineStore(
     const addEth2Validator = async (
       payload: Eth2Validator
     ): Promise<ActionStatus<ValidationErrors | string>> => {
-      const { activeModules } = useGeneralSettingsStore();
-      if (!get(activeModules).includes(Module.ETH2)) {
+      if (!isEth2Enabled()) {
         return {
           success: false,
           message: ''
@@ -112,8 +113,7 @@ export const useEthAccountsStore = defineStore(
     const editEth2Validator = async (
       payload: Eth2Validator
     ): Promise<ActionStatus<ValidationErrors | string>> => {
-      const { activeModules } = useGeneralSettingsStore();
-      if (!get(activeModules).includes(Module.ETH2)) {
+      if (!isEth2Enabled()) {
         return { success: false, message: '' };
       }
 
@@ -142,7 +142,9 @@ export const useEthAccountsStore = defineStore(
       }
     };
 
-    const deleteEth2Validators = async (validators: string[]) => {
+    const deleteEth2Validators = async (
+      validators: string[]
+    ): Promise<boolean> => {
       try {
         const validatorsState = get(eth2Validators);
         const entries = [...validatorsState.entries];
