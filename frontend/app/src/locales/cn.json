@@ -663,339 +663,339 @@
       },
       "fetch_nfts": {
         "task": {
-          "title": "Querying NFTs"
+          "title": "查询NFT"
         }
       },
       "fetch_prices": {
         "error": {
-          "message": "Failed to fetch prices: {error}",
-          "title": "Fetching prices"
+          "message": "获取价格失败：{error}",
+          "title": "获取价格"
         },
         "task": {
-          "title": "Fetching prices"
+          "title": "获取价格"
         }
       },
       "fetch_queriable_address": {
         "error": {
-          "message": "Failure to fetch the queriable addresses: {message}"
+          "message": "获取可查询地址失败：{message}"
         }
       },
       "fetch_watchers": {
         "error": {
-          "message": "Error: {message}",
-          "title": "Fetching watchers"
+          "message": "错误：{message}",
+          "title": "获取观察者"
         }
       },
       "force_sync": {
         "error": {
-          "message": "There was an error while performing the sync: {error}",
-          "title": "Forced Sync"
+          "message": "执行同步时出错：{error}",
+          "title": "强制同步"
         },
         "success": {
-          "message": "The data sync operation was completed successfully.",
-          "title": "Forced sync"
+          "message": "数据同步操作成功完成。",
+          "title": "强制同步"
         },
         "task": {
-          "title": "Forced Sync"
+          "title": "强制同步"
         }
       },
       "ignored_assets": {
         "error": {
-          "message": "Failed to retrieve ignored assets: {error}",
-          "title": "Querying ignored assets"
+          "message": "无法检索被忽略的资产：{error}",
+          "title": "查询被忽略的资产"
         }
       },
       "kraken_account": {
         "error": {
-          "title": "Error setting kraken account type"
+          "title": "错误设置 kraken 帐户类型"
         },
         "success": {
-          "message": "Successfully set kraken account type",
-          "title": "Success"
+          "message": "成功设置kraken账户类型",
+          "title": "成功"
         }
       },
       "password_change": {
-        "error": "Error while changing the user password: {message}",
-        "success": "Successfully changed user password"
+        "error": "更改用户密码时出错：{message}",
+        "success": "修改用户密码成功"
       },
       "periodic_query": {
         "error": {
-          "message": "Error at periodic client query: {message}",
-          "title": "Periodic client query"
+          "message": "周期性客户端查询错误：{message}",
+          "title": "定期客户端查询"
         }
       },
       "tag_add": {
         "error": {
-          "title": "Adding tag"
+          "title": "添加标签"
         }
       },
       "tag_delete": {
         "error": {
-          "title": "Deleting tag"
+          "title": "删除标签"
         }
       },
       "tag_edit": {
         "error": {
-          "title": "Editing tag"
+          "title": "编辑标签"
         }
       }
     },
     "staking": {
       "eth2": {
         "error": {
-          "description": "Failed to query the Eth2 staking details: {error}",
-          "title": "Querying the Eth2 staking details"
+          "description": "查询 Eth2 质押详情失败：{error}",
+          "title": "查询 Eth2 质押详情"
         },
         "task": {
-          "title": "Querying Eth2 staking details"
+          "title": "查询 Eth2 质押详情"
         }
       },
       "eth2_deposits": {
         "error": {
-          "description": "Failed to query the Eth2 staking deposits: {error}",
-          "title": "Querying the Eth2 staking deposits"
+          "description": "查询 Eth2 抵押存款失败：{error}",
+          "title": "查询 Eth2 质押存款"
         },
         "task": {
-          "title": "Querying Eth2 staking deposits"
+          "title": "查询 Eth2 质押存款"
         }
       }
     },
     "statistics": {
       "net_value": {
         "error": {
-          "message": "Failed: {message}",
-          "title": "Retrieving net value data"
+          "message": "失败：{message}",
+          "title": "获取净值数据"
         }
       }
     },
     "trades": {
       "error": {
-        "description": "Failed query for {exchange}: {error}",
-        "title": "Trades for {exchange}"
+        "description": "{exchange} 查询失败：{error}",
+        "title": "交易 {exchange}"
       },
       "task": {
-        "description": "Retrieving trades for {exchange}",
-        "title": "Trades"
+        "description": "检索{exchange}的交易",
+        "title": "交易"
       }
     },
     "transactions": {
       "error": {
-        "description": "Failed query for {address} ({chain}): {error}",
-        "title": "Evm Transactions Query"
+        "description": "{address} ({chain}) 查询失败：{error}",
+        "title": "EVM交易查询"
       },
       "task": {
-        "description": "Retrieving txns for {address} ({chain})",
-        "title": "Evm Transactions"
+        "description": "正在检索 {address} ({chain}) 的交易",
+        "title": "EVM 交易"
       }
     },
     "transactions_events": {
       "task": {
-        "description": "Retrieving transactions events",
-        "title": "Evm Transactions Events"
+        "description": "检索交易事件",
+        "title": "EVM 交易事件"
       }
     },
     "unignore": {
       "error": {
-        "description": "Failed to unignore the selected actions: {error}",
-        "title": "Unignoring actions failed"
+        "description": "无法取消忽略所选操作：{error}",
+        "title": "取消忽略操作失败"
       }
     }
   },
   "active_modules": {
-    "activate": "Activate the {name} module",
+    "activate": "激活 {name} 模块",
     "enable": {
-      "description": "Would you like to enable the {name} module?",
-      "title": "Enabled module"
+      "description": "你想启用 {name} 模块吗？",
+      "title": "启用模块"
     },
-    "view_addresses": "View the queried addresses for {name}"
+    "view_addresses": "查看 {name} 的查询地址"
   },
   "address_book": {
     "actions": {
       "add": {
         "error": {
-          "description": "Adding to the address book was not successful: {message}",
-          "title": "Address book addition failed"
+          "description": "添加到地址簿不成功：{message}",
+          "title": "添加地址簿失败"
         }
       },
       "delete": {
         "dialog": {
-          "message": "Are you sure you want to delete address book entry for {address} ({chain})?",
-          "title": "Delete the address book entry"
+          "message": "您确定要删除 {address} ({chain}) 的地址簿条目吗？",
+          "title": "删除地址簿条目"
         },
         "error": {
-          "description": "Deleting address book for {address} ({chain}) was not successful: {message}",
-          "title": "Address book deletion failed"
+          "description": "删除 {address} ({chain}) 的地址簿不成功：{message}",
+          "title": "地址簿删除失败"
         },
-        "tooltip": "Delete the address book"
+        "tooltip": "删除地址簿"
       },
       "edit": {
         "error": {
-          "description": "Editing address book was not successful: {message}",
-          "title": "Address book edit failed"
+          "description": "编辑地址簿失败：{message}",
+          "title": "地址簿编辑失败"
         },
-        "tooltip": "Edit the address book"
+        "tooltip": "编辑地址簿"
       },
       "fetch": {
         "error": {
-          "message": "Failed to retrieve the address book: {message}",
-          "title": "Querying address book"
+          "message": "无法获取地址簿：{message}",
+          "title": "查询地址簿"
         }
       }
     },
     "dialog": {
-      "add_title": "Add address book entry",
-      "edit_title": "Edit address book entry"
+      "add_title": "添加地址簿条目",
+      "edit_title": "编辑地址簿条目"
     },
     "form": {
       "labels": {
-        "address": "Address",
-        "for_all_chain": "Save this name for all chains"
+        "address": "地址",
+        "for_all_chain": "为所有链保存这个名字"
       },
-      "no_suggestions_available": "No Suggestions Available",
+      "no_suggestions_available": "没有可用的建议",
       "validation": {
-        "address": "The address field cannot be empty",
-        "name": "The name field cannot be empty",
-        "valid": "Please input valid ETH address"
+        "address": "地址栏不能为空",
+        "name": "name字段不能为空",
+        "valid": "请输入有效的ETH地址"
       }
     },
     "hint": {
-      "global": "Global",
-      "global_description": "address book is saved in global db (shared across all accounts in this device)",
+      "global": "全球",
+      "global_description": "地址簿保存在全局数据库中（在此设备中的所有帐户之间共享）",
       "priority": {
         "list": {
-          "blockchain_account_labels": "Blockchain account labels",
-          "ens_names": "ENS names",
-          "ethereum_tokens": "Ethereum tokens",
-          "global_address_book": "Global address book",
-          "hardcoded_mappings": "Hardcoded mappings",
-          "private_address_book": "Private address book"
+          "blockchain_account_labels": "区块链账户标签",
+          "ens_names": "ENS 名称",
+          "ethereum_tokens": "以太坊代币",
+          "global_address_book": "全球地址簿",
+          "hardcoded_mappings": "硬编码映射",
+          "private_address_book": "私人地址簿"
         },
-        "title": "The priority of the returned names adheres to the following order. From top to bottom, the first name found will be shown."
+        "title": "返回名称的优先级遵循以下顺序。从上到下，将显示找到的第一个名称。"
       },
-      "private": "Private",
-      "private_description": "address book is saved only for this account."
+      "private": "私人",
+      "private_description": "地址簿仅为该账户保存。"
     },
     "table": {
-      "subtitle": "Add, edit, remove alias name for addresses. Changes in the names will be reflected across the app.",
-      "title": "Address Book"
+      "subtitle": "添加、编辑、删除地址的别名。名称的更改将反映在整个应用程序中。",
+      "title": "地址簿"
     },
-    "title": "Address Book Management"
+    "title": "地址簿管理"
   },
   "address_name_priority_setting": {
-    "data_name": "priority"
+    "data_name": "优先级"
   },
   "airdrops": {
-    "description": "* These are the airdrops rotki detected your tracked accounts are eligible for. You may have already claimed them. If not then visit the link for each protocol and claim your share.",
+    "description": "* 这些是 rotki 检测到您的跟踪帐户有资格获得的空投。您可能已经领取了它们。如果没有，请访问每个协议的链接并领取您的份额。",
     "headers": {
-      "source": "Source"
+      "source": "来源"
     },
-    "loading": "Please wait while rotki queries the airdrops for your addresses...",
-    "title": "Airdrops"
+    "loading": "请稍候,rotki 正在查询您的地址空投......",
+    "title": "空投"
   },
   "alias_names": {
     "error": {
-      "message": "Failed to retrieve the alias names: {message}",
-      "title": "Querying alias names"
+      "message": "获取别名失败：{message}",
+      "title": "查询别名"
     }
   },
   "amount_display": {
-    "click_to_copy": "Click to copy",
-    "copied": "Copied!",
-    "manual_tooltip": "Manually defined price"
+    "click_to_copy": "点击复制",
+    "copied": "已复制！",
+    "manual_tooltip": "手动定义价格"
   },
   "app": {
-    "moto": "the opensource portfolio manager that protects your privacy",
+    "moto": "保护您隐私的开源投资组合管理器",
     "name": "rotki"
   },
   "asset_balances": {
-    "loading": "Please wait while rotki queries the blockchain..."
+    "loading": "rotki 正在查询区块链，请稍候..."
   },
   "asset_form": {
     "fetch_latest_icon": {
-      "description": "Failed to fetch the latest icon for {identifier}: {message}",
-      "title": "Fetch the latest icon"
+      "description": "无法获取 {identifier} 的最新图标：{message}",
+      "title": "获取最新图标"
     },
-    "help_coingecko": "Click for help on how to locate the CoinGecko identifier",
-    "help_cryptocompare": "Click for help on how to locate the CryptoCompare identifier",
+    "help_coingecko": "点击获取有关如何定位 CoinGecko 标识符的帮助",
+    "help_cryptocompare": "点击获取有关如何定位 CryptoCompare 标识符的帮助",
     "icon_upload": {
-      "description": "The icon upload failed: {message}",
-      "title": "Icon upload"
+      "description": "图标上传失败：{message}",
+      "title": "图标上传"
     },
-    "identifier": "Identifier",
-    "identifier_copy": "Copy the identifier",
+    "identifier": "标识符",
+    "identifier_copy": "复制标识符",
     "labels": {
-      "asset_type": "Asset Type",
-      "chain": "Chain",
+      "asset_type": "资产类型",
+      "chain": "链",
       "coingecko": "CoinGecko",
-      "coingecko_hint": "The identifier of the asset on CoinGecko. If not set rotki will not be able to retrieve prices for the asset from CoinGecko.",
-      "cryptocompare": "CryptoCompare",
-      "cryptocompare_hint": "The identifier of the asset on CryptoCompare. If not given, the symbol is assumed as default. If that does not work and if not otherwise set rotki will not be able to retrieve prices for the asset from CryptoCompare",
-      "decimals": "Decimals",
-      "forked": "Forked",
-      "notes": "Notes",
-      "started": "Started",
-      "swapped_for": "Swapped for",
-      "symbol": "Symbol",
-      "token_kind": "Token Kind"
+      "coingecko_hint": "CoinGecko 上资产的标识符。如果未设置,rotki 将无法从 CoinGecko 检索资产价格。",
+      "cryptocompare": "加密比较",
+      "cryptocompare_hint": "CryptoCompare 上资产的标识符。如果没有给出，符号将被假定为默认符号。如果这不起作用并且没有设置 rotki 将无法从 CryptoCompare 检索资产的价格",
+      "decimals": "小数",
+      "forked": "分叉",
+      "notes": "备注",
+      "started": "开始",
+      "swapped_for": "交换为",
+      "symbol": "符号",
+      "token_kind": "代币种类"
     },
-    "name_non_empty": "The name of the asset cannot be empty",
-    "optional": "Optional Fields",
-    "oracle_disable": "Disable/Enable the price fetching from the price oracle. If the oracle is not disabled, and there is no value specified, rotki will attempt to fetch a price using the asset symbol.",
-    "replaced": "This icon will be replaced with {name} on save.",
-    "type_non_empty": "The type of the asset cannot be empty",
+    "name_non_empty": "资产名称不能为空",
+    "optional": "可选字段",
+    "oracle_disable": "禁用/启用从价格 oracle 获取价格。如果 oracle 未禁用且未指定值,rotki 将尝试使用资产符号获取价格。",
+    "replaced": "此图标将在保存时替换为 {name}。",
+    "type_non_empty": "资产类型不能为空",
     "types": {
-      "error": "We could not load the asset types: {message}"
+      "error": "我们无法加载资产类型：{message}"
     },
-    "underlying_tokens": "Underlying tokens"
+    "underlying_tokens": "底层代币"
   },
   "asset_icon": {
     "tooltip": "[{symbol}] {name}"
   },
   "asset_locations": {
     "header": {
-      "percentage": "Percentage",
-      "validator": "Validator Index | Public Key",
-      "value": "{symbol} value"
+      "percentage": "百分比",
+      "validator": "验证器索引|公钥",
+      "value": "{symbol} 值"
     },
-    "title": "Asset Locations"
+    "title": "资产位置"
   },
   "asset_management": {
-    "add_error": "Could not add asset: {message}",
-    "add_title": "Add a new asset",
+    "add_error": "无法添加资产：{message}",
+    "add_title": "添加新资产",
     "confirm_delete": {
-      "message": "Are you sure you want to delete {asset} from the asset database?",
-      "title": "Delete asset"
+      "message": "您确定要从资产数据库中删除{asset}吗？",
+      "title": "删除资产"
     },
     "custom": {
-      "title": "Custom Assets"
+      "title": "自定义资产"
     },
-    "delete_error": "Could not delete {address}: {message}",
-    "edit_error": "Could not edit asset: {message}",
-    "edit_title": "Edit an asset",
+    "delete_error": "无法删除 {address}: {message}",
+    "edit_error": "无法编辑资产：{message}",
+    "edit_title": "编辑资产",
     "managed": {
-      "title": "Managed Assets"
+      "title": "管理资产"
     },
-    "merge_assets": "Merge Assets",
-    "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)"
+    "merge_assets": "合并资产",
+    "merge_assets_tooltip": "将两个资产合并为一个（可用于将自定义资产迁移到官方支持的资产）"
   },
   "asset_select": {
-    "no_results": "No assets matching your search"
+    "no_results": "没有资产匹配您的搜索"
   },
   "asset_table": {
     "copy_identifier": {
-      "tooltip": "Copy the asset identifier to clipboard"
+      "tooltip": "将资产标识符复制到剪贴板"
     },
     "custom": {
-      "subtitle": "Add, edit, remove custom assets. Changes in the assets will be reflected across all your accounts"
+      "subtitle": "添加、编辑、删除自定义资产。资产的更改将反映在您的所有帐户中"
     },
-    "delete_tooltip": "Delete the asset",
-    "edit_tooltip": "Edit the asset",
-    "filter_by_ignored_status": "Filter by ignored status",
+    "delete_tooltip": "删除资产",
+    "edit_tooltip": "编辑资产",
+    "filter_by_ignored_status": "按忽略状态过滤",
     "headers": {
-      "started": "Started"
+      "started": "开始"
     },
     "managed": {
-      "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts"
+      "subtitle": "添加、编辑、删除代币和资产。资产的变化将反映在您的所有账户中"
     },
     "newly_detected": {
       "accept_selected": "Accept selected tokens",
