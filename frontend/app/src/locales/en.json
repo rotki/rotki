@@ -3780,6 +3780,9 @@
       "nonce": "Nonce",
       "title": "Transaction details"
     },
+    "dialog": {
+      "add_tx": "Add transaction by tx hash"
+    },
     "events": {
       "actions": {
         "delete": "Delete event",
@@ -3938,6 +3941,20 @@
       "end_date": "filter by the end date of the transaction period",
       "protocol": "filter by the protocol / counterparty of the events",
       "start_date": "filter by the start date of the transaction period"
+    },
+    "form": {
+      "account": {
+        "label": "Account to be associated with the transaction",
+        "validation": {
+          "non_empty": "The account field cannot be empty"
+        }
+      },
+      "tx_hash": {
+        "validation": {
+          "non_empty": "The tx hash field cannot be empty.",
+          "valid": "Please input valid tx hash."
+        }
+      }
     },
     "ignore": "Ignore Tx in Accounting",
     "label": "transactions",

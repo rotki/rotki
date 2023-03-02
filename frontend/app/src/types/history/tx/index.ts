@@ -85,6 +85,12 @@ export interface AddressesAndEvmChainPayload {
   readonly evmChain: string;
 }
 
+export interface AddTransactionHashPayload {
+  readonly evmChain: string;
+  readonly txHash: string;
+  readonly associatedAddress: string;
+}
+
 export const EvmChainAddress = z.object({
   address: z.string(),
   evmChain: z.string()

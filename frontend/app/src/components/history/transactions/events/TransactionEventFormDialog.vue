@@ -1,23 +1,26 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { type ComputedRef, type Ref } from 'vue';
-import { type LedgerActionEntry } from '@/types/history/ledger-action/ledger-actions';
-import LedgerActionForm from '@/components/history/ledger-actions/LedgerActionForm.vue';
+import {
+  type EthTransactionEntry,
+  type EthTransactionEvent
+} from '@/types/history/tx';
+import TransactionEventForm from '@/components/history/transactions/events/TransactionEventForm.vue';
 
 const props = withDefaults(
   defineProps<{
     value: boolean;
-    edit?: boolean;
-    formData?: Partial<LedgerActionEntry> | null;
+    editableItem?: EthTransactionEvent | null;
     loading?: boolean;
+    transaction?: EthTransactionEntry | null;
   }>(),
   {
-    edit: false,
-    formData: null,
-    loading: false
+    editableItem: null,
+    loading: false,
+    transaction: null
   }
 );
 
-const { edit } = toRefs(props);
+const { editableItem } = toRefs(props);
 
 const emit = defineEmits<{
   (e: 'input', open: boolean): void;
@@ -26,7 +29,7 @@ const emit = defineEmits<{
 }>();
 
 const valid: Ref<boolean> = ref(false);
-const form = ref<InstanceType<typeof LedgerActionForm> | null>(null);
+const form = ref<InstanceType<typeof TransactionEventForm> | null>(null);
 
 const clearDialog = () => {
   get(form)?.reset();
@@ -48,33 +51,26 @@ const confirmSave = async () => {
 const { tc } = useI18n();
 
 const title: ComputedRef<string> = computed(() => {
-  return get(edit)
-    ? tc('ledger_actions.dialog.edit.title')
-    : tc('ledger_actions.dialog.add.title');
-});
-
-const subtitle: ComputedRef<string> = computed(() => {
-  return get(edit)
-    ? tc('ledger_actions.dialog.edit.subtitle')
-    : tc('ledger_actions.dialog.add.subtitle');
+  return get(editableItem)
+    ? tc('transactions.events.dialog.edit.title')
+    : tc('transactions.events.dialog.add.title');
 });
 </script>
 <template>
   <big-dialog
     :display="value"
     :title="title"
-    :subtitle="subtitle"
     :primary-action="tc('common.actions.save')"
     :action-disabled="loading || !valid"
     :loading="loading"
     @confirm="confirmSave()"
     @cancel="clearDialog()"
   >
-    <ledger-action-form
+    <transaction-event-form
       ref="form"
       v-model="valid"
-      :edit="edit"
-      :form-data="formData"
+      :transaction="transaction"
+      :edit="editableItem"
     />
   </big-dialog>
 </template>

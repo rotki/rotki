@@ -3,7 +3,7 @@ import { type BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import dayjs from 'dayjs';
-import { type ComputedRef, type PropType } from 'vue';
+import { type ComputedRef } from 'vue';
 import {
   HistoryEventSubType,
   type HistoryEventType
@@ -29,25 +29,22 @@ import { toMessages } from '@/utils/validation-errors';
 import { type ActionDataEntry } from '@/types/action';
 import { transactionEventTypeMapping } from '@/data/transaction-event-mapping';
 
-const props = defineProps({
-  value: { required: false, type: Boolean, default: false },
-  edit: {
-    required: false,
-    type: Object as PropType<EthTransactionEvent | null>,
-    default: null
-  },
-  transaction: {
-    required: false,
-    type: Object as PropType<EthTransactionEntry | null>,
-    default: null
+const props = withDefaults(
+  defineProps<{
+    value?: boolean;
+    edit?: EthTransactionEvent | null;
+    transaction?: EthTransactionEntry | null;
+  }>(),
+  {
+    value: false,
+    edit: null,
+    transaction: null
   }
-});
+);
 
 const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
 const { t } = useI18n();
 const { edit, transaction } = toRefs(props);
-
-const input = (valid: boolean) => emit('input', valid);
 
 const { isTaskRunning } = useTaskStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -335,7 +332,7 @@ watch([eventType, eventSubtype], ([type, subType]) => {
 });
 
 watch(v$, ({ $invalid }) => {
-  input(!$invalid);
+  emit('input', !$invalid);
 });
 
 onMounted(async () => {

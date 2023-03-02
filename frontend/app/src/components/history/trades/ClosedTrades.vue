@@ -24,32 +24,27 @@ import { defaultCollectionState } from '@/utils/collection';
 import { assert } from '@/utils/assertions';
 import { defaultOptions } from '@/utils/history';
 import { SavedFilterLocation } from '@/types/filtering';
-import ExternalTradeForm from '@/components/history/ExternalTradeForm.vue';
 
 const props = withDefaults(
   defineProps<{
     locationOverview?: TradeLocation;
-    readFilterFromRoute?: boolean;
+    mainPage?: boolean;
   }>(),
   {
     locationOverview: '',
-    readFilterFromRoute: false
+    mainPage: false
   }
 );
 
-const { locationOverview, readFilterFromRoute } = toRefs(props);
+const { locationOverview, mainPage } = toRefs(props);
 
 const selected: Ref<TradeEntry[]> = ref([]);
 const options: Ref<TablePagination<Trade>> = ref(defaultOptions());
-const dialogTitle: Ref<string> = ref('');
-const dialogSubtitle: Ref<string> = ref('');
 const openDialog: Ref<boolean> = ref(false);
 const editableItem: Ref<TradeEntry | null> = ref(null);
 const tradesToDelete: Ref<TradeEntry[]> = ref([]);
 const confirmationMessage: Ref<string> = ref('');
 const expanded: Ref<TradeEntry[]> = ref([]);
-const valid: Ref<boolean> = ref(false);
-const form: Ref<InstanceType<typeof ExternalTradeForm> | null> = ref(null);
 const userAction: Ref<boolean> = ref(false);
 
 const hideIgnoredTrades: Ref<boolean> = ref(false);
@@ -170,15 +165,12 @@ const {
 );
 
 const newExternalTrade = () => {
-  set(dialogTitle, tc('closed_trades.dialog.add.title'));
-  set(dialogSubtitle, '');
+  set(editableItem, null);
   set(openDialog, true);
 };
 
 const editTradeHandler = (trade: TradeEntry) => {
   set(editableItem, trade);
-  set(dialogTitle, tc('closed_trades.dialog.edit.title'));
-  set(dialogSubtitle, tc('closed_trades.dialog.edit.subtitle'));
   set(openDialog, true);
 };
 
@@ -249,26 +241,6 @@ const deleteTradeHandler = async () => {
   await fetchData();
 };
 
-const clearDialog = () => {
-  if (isDefined(form)) {
-    get(form).reset();
-  }
-
-  set(openDialog, false);
-  set(editableItem, null);
-};
-
-const confirmSave = async () => {
-  if (!isDefined(form)) {
-    return;
-  }
-  const success = await get(form).save();
-  if (success) {
-    await fetchData();
-    clearDialog();
-  }
-};
-
 const router = useRouter();
 const route = useRoute();
 
@@ -276,7 +248,7 @@ const { filters, matchers, updateFilter, RouteFilterSchema } =
   useTradeFilters();
 
 const applyRouteFilter = () => {
-  if (!get(readFilterFromRoute)) {
+  if (!get(mainPage)) {
     return;
   }
 
@@ -400,7 +372,7 @@ watch(pageParams, async (params, op) => {
   if (isEqual(params, op)) {
     return;
   }
-  if (get(userAction) && get(readFilterFromRoute)) {
+  if (get(userAction) && get(mainPage)) {
     // Route should only be updated on user action otherwise it messes with
     // forward navigation.
     await router.push({
@@ -620,17 +592,13 @@ watch(loading, async (isLoading, wasLoading) => {
         </template>
       </collection-handler>
     </card>
-    <big-dialog
-      :display="openDialog"
-      :title="dialogTitle"
-      :subtitle="dialogSubtitle"
-      :primary-action="tc('common.actions.save')"
-      :action-disabled="loading || !valid"
+    <external-trade-form-dialog
+      v-model="openDialog"
       :loading="loading"
-      @confirm="confirmSave()"
-      @cancel="clearDialog()"
-    >
-      <external-trade-form ref="form" v-model="valid" :edit="editableItem" />
-    </big-dialog>
+      :editable-item="editableItem"
+      :open="openDialog"
+      @reset-edit="editableItem = null"
+      @saved="fetchData()"
+    />
   </fragment>
 </template>

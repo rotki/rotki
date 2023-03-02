@@ -1,3 +1,3 @@
 <template>
-  <transaction-content read-filter-from-route />
+  <transaction-content main-page />
 </template>

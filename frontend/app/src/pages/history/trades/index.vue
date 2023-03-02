@@ -1,3 +1,3 @@
 <template>
-  <closed-trades read-filter-from-route />
+  <closed-trades main-page />
 </template>

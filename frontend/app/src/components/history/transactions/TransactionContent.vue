@@ -31,7 +31,6 @@ import { type Collection } from '@/types/collection';
 import { assert } from '@/utils/assertions';
 import { defaultOptions } from '@/utils/history';
 import { SavedFilterLocation } from '@/types/filtering';
-import TransactionEventForm from '@/components/history/TransactionEventForm.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -41,7 +40,7 @@ const props = withDefaults(
     externalAccountFilter?: Account[];
     useExternalAccountFilter?: boolean;
     sectionTitle?: string;
-    readFilterFromRoute?: boolean;
+    mainPage?: boolean;
   }>(),
   {
     protocols: () => [],
@@ -50,7 +49,7 @@ const props = withDefaults(
     externalAccountFilter: () => [],
     useExternalAccountFilter: false,
     sectionTitle: '',
-    readFilterFromRoute: false
+    mainPage: false
   }
 );
 
@@ -63,7 +62,7 @@ const {
   sectionTitle,
   eventTypes,
   eventSubTypes,
-  readFilterFromRoute
+  mainPage
 } = toRefs(props);
 
 const usedTitle: ComputedRef<string> = computed(() => {
@@ -107,7 +106,6 @@ const {
   deleteTransactionEvent
 } = useTransactionStore();
 
-const dialogTitle: Ref<string> = ref('');
 const openDialog: Ref<boolean> = ref(false);
 const editableItem: Ref<EthTransactionEventEntry | null> = ref(null);
 const selectedTransaction: Ref<EthTransactionEntry | null> = ref(null);
@@ -116,8 +114,6 @@ const transactionToIgnore: Ref<EthTransactionEntry | null> = ref(null);
 const confirmationTitle: Ref<string> = ref('');
 const confirmationMessage: Ref<string> = ref('');
 const confirmationPrimaryAction: Ref<string> = ref('');
-const valid: Ref<boolean> = ref(false);
-const form = ref<InstanceType<typeof TransactionEventForm> | null>(null);
 
 const selected: Ref<EthTransactionEntry[]> = ref([]);
 
@@ -168,13 +164,12 @@ const toggleIgnore = async (item: EthTransactionEntry) => {
 
 const addEvent = (item: EthTransactionEntry) => {
   set(selectedTransaction, item);
-  set(dialogTitle, tc('transactions.events.dialog.add.title'));
+  set(editableItem, null);
   set(openDialog, true);
 };
 
 const editEventHandler = (event: EthTransactionEventEntry) => {
   set(editableItem, event);
-  set(dialogTitle, tc('transactions.events.dialog.edit.title'));
   set(openDialog, true);
 };
 
@@ -234,22 +229,6 @@ const deleteEventHandler = async () => {
   set(confirmationPrimaryAction, '');
 };
 
-const clearDialog = () => {
-  get(form)?.reset();
-
-  set(openDialog, false);
-  set(editableItem, null);
-};
-
-const confirmSave = async () => {
-  if (get(form)) {
-    const success = await get(form)?.save();
-    if (success) {
-      clearDialog();
-    }
-  }
-};
-
 const options: Ref<TablePagination<EthTransaction>> = ref(defaultOptions());
 const accounts: Ref<GeneralAccount[]> = ref([]);
 
@@ -268,7 +247,7 @@ const { filters, matchers, updateFilter, RouteFilterSchema } =
   useTransactionFilter(get(protocols).length > 0);
 
 const applyRouteFilter = () => {
-  if (!get(readFilterFromRoute)) {
+  if (!get(mainPage)) {
     return;
   }
 
@@ -442,7 +421,7 @@ watch(pageParams, async (params, op) => {
   if (isEqual(params, op)) {
     return;
   }
-  if (get(userAction) && get(readFilterFromRoute)) {
+  if (get(userAction) && get(mainPage)) {
     // Route should only be updated on user action otherwise it messes with
     // forward navigation.
     await router.push({
@@ -490,11 +469,29 @@ watch(loading, async (isLoading, wasLoading) => {
     await fetchData();
   }
 });
+
+const openAddTxDialog: Ref<boolean> = ref(false);
+const addTransactionHash = () => {
+  set(openAddTxDialog, true);
+};
 </script>
 
 <template>
   <div>
     <card class="mt-8" outlined-body>
+      <v-btn
+        v-if="mainPage"
+        absolute
+        fab
+        top
+        right
+        dark
+        color="primary"
+        data-cy="ledger-actions__add"
+        @click="addTransactionHash()"
+      >
+        <v-icon>mdi-plus</v-icon>
+      </v-btn>
       <template #title>
         <refresh-button
           :loading="loading"
@@ -712,22 +709,21 @@ watch(loading, async (isLoading, wasLoading) => {
         </template>
       </collection-handler>
     </card>
-    <big-dialog
-      :display="openDialog"
-      :title="dialogTitle"
-      :primary-action="tc('common.actions.save')"
-      :action-disabled="!valid"
+    <transaction-event-form-dialog
+      v-model="openDialog"
       :loading="loading"
-      @confirm="confirmSave()"
-      @cancel="clearDialog()"
-    >
-      <transaction-event-form
-        ref="form"
-        v-model="valid"
-        :transaction="selectedTransaction"
-        :edit="editableItem"
-      />
-    </big-dialog>
+      :editable-item="editableItem"
+      :open="openDialog"
+      :transaction="selectedTransaction"
+      @reset-edit="editableItem = null"
+      @saved="fetchData()"
+    />
+
+    <transaction-form-dialog
+      v-model="openAddTxDialog"
+      :loading="loading"
+      @saved="fetchData()"
+    />
   </div>
 </template>
 <style module lang="scss">

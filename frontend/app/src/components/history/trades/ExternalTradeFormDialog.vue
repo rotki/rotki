@@ -1,23 +1,20 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { type ComputedRef, type Ref } from 'vue';
-import { type LedgerActionEntry } from '@/types/history/ledger-action/ledger-actions';
-import LedgerActionForm from '@/components/history/ledger-actions/LedgerActionForm.vue';
+import { type Trade } from '@/types/history/trade';
+import ExternalTradeForm from '@/components/history/trades/ExternalTradeForm.vue';
 
 const props = withDefaults(
   defineProps<{
     value: boolean;
-    edit?: boolean;
-    formData?: Partial<LedgerActionEntry> | null;
+    editableItem?: Trade | null;
     loading?: boolean;
   }>(),
   {
-    edit: false,
-    formData: null,
-    loading: false
+    editableItem: null
   }
 );
 
-const { edit } = toRefs(props);
+const { editableItem } = toRefs(props);
 
 const emit = defineEmits<{
   (e: 'input', open: boolean): void;
@@ -26,7 +23,7 @@ const emit = defineEmits<{
 }>();
 
 const valid: Ref<boolean> = ref(false);
-const form = ref<InstanceType<typeof LedgerActionForm> | null>(null);
+const form = ref<InstanceType<typeof ExternalTradeForm> | null>(null);
 
 const clearDialog = () => {
   get(form)?.reset();
@@ -48,17 +45,16 @@ const confirmSave = async () => {
 const { tc } = useI18n();
 
 const title: ComputedRef<string> = computed(() => {
-  return get(edit)
-    ? tc('ledger_actions.dialog.edit.title')
-    : tc('ledger_actions.dialog.add.title');
+  return get(editableItem)
+    ? tc('closed_trades.dialog.edit.title')
+    : tc('closed_trades.dialog.add.title');
 });
 
 const subtitle: ComputedRef<string> = computed(() => {
-  return get(edit)
-    ? tc('ledger_actions.dialog.edit.subtitle')
-    : tc('ledger_actions.dialog.add.subtitle');
+  return get(editableItem) ? tc('closed_trades.dialog.edit.subtitle') : '';
 });
 </script>
+
 <template>
   <big-dialog
     :display="value"
@@ -70,11 +66,6 @@ const subtitle: ComputedRef<string> = computed(() => {
     @confirm="confirmSave()"
     @cancel="clearDialog()"
   >
-    <ledger-action-form
-      ref="form"
-      v-model="valid"
-      :edit="edit"
-      :form-data="formData"
-    />
+    <external-trade-form ref="form" v-model="valid" :edit="editableItem" />
   </big-dialog>
 </template>
