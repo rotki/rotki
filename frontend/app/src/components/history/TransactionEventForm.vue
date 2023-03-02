@@ -3,7 +3,7 @@ import { type BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import dayjs from 'dayjs';
-import { type PropType } from 'vue';
+import { type ComputedRef, type PropType } from 'vue';
 import {
   HistoryEventSubType,
   type HistoryEventType
@@ -26,6 +26,8 @@ import {
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useEventTypeData } from '@/utils/history';
 import { toMessages } from '@/utils/validation-errors';
+import { type ActionDataEntry } from '@/types/action';
+import { transactionEventTypeMapping } from '@/data/transaction-event-mapping';
 
 const props = defineProps({
   value: { required: false, type: Boolean, default: false },
@@ -314,9 +316,22 @@ watch(location, (location: string) => {
   }
 });
 
-watch([eventType, eventSubtype], ([eventType, eventSubtype]) => {
-  const typeData = getEventTypeData({ eventType, eventSubtype }, false);
+watch([eventType, eventSubtype], ([type, subType]) => {
+  const typeData = getEventTypeData(
+    { eventType: type, eventSubtype: subType },
+    false
+  );
+
   set(transactionEventType, typeData.label);
+
+  if (
+    subType &&
+    !get(historyEventSubTypeFilteredData)
+      .map(({ identifier }) => identifier)
+      .includes(subType)
+  ) {
+    set(eventSubtype, '');
+  }
 });
 
 watch(v$, ({ $invalid }) => {
@@ -331,6 +346,21 @@ defineExpose({
   save,
   reset
 });
+
+const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
+  computed(() => {
+    const eventTypeVal = get(eventType);
+    const allData = get(historyEventSubTypeData);
+    const mapping = transactionEventTypeMapping;
+
+    if (!eventTypeVal) {
+      return allData;
+    }
+
+    const subTypeMapping = Object.keys(mapping[eventTypeVal]);
+
+    return allData.filter(data => subTypeMapping.includes(data.identifier));
+  });
 </script>
 <template>
   <v-form
@@ -440,7 +470,7 @@ defineExpose({
           outlined
           required
           :label="t('transactions.events.form.event_subtype.label')"
-          :items="historyEventSubTypeData"
+          :items="historyEventSubTypeFilteredData"
           item-value="identifier"
           item-text="label"
           data-cy="eventSubtype"
