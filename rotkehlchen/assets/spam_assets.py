@@ -33,7 +33,7 @@ def _save_or_update_spam_assets(
     tokens_to_ignore = set()
     # Try to add custom list
     for info in assets_info:
-        chain_name = info.get('chain')  # we use name since in thefuture we may have non-EVM chains
+        chain_name = info.get('chain')  # use name since in the future we may have non-EVM chains
         try:
             chain = ChainID.deserialize_from_name(chain_name) if chain_name is not None else ChainID.ETHEREUM  # noqa: E501
         except DeserializationError:
