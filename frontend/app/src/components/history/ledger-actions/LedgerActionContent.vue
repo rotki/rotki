@@ -27,20 +27,18 @@ import { SavedFilterLocation } from '@/types/filtering';
 const props = withDefaults(
   defineProps<{
     locationOverview?: TradeLocation;
-    readFilterFromRoute?: boolean;
+    mainPage?: boolean;
   }>(),
   {
     locationOverview: '',
-    readFilterFromRoute: false
+    mainPage: false
   }
 );
 
-const { locationOverview, readFilterFromRoute } = toRefs(props);
+const { locationOverview, mainPage } = toRefs(props);
 
 const selected: Ref<LedgerActionEntry[]> = ref([]);
 const options: Ref<TablePagination<LedgerAction>> = ref(defaultOptions());
-const dialogTitle: Ref<string> = ref('');
-const dialogSubtitle: Ref<string> = ref('');
 const openDialog: Ref<boolean> = ref(false);
 const editableItem: Ref<LedgerActionEntry | null> = ref(null);
 const ledgerActionsToDelete: Ref<LedgerActionEntry[]> = ref([]);
@@ -141,15 +139,12 @@ const fetchData = async (): Promise<void> => {
 };
 
 const newLedgerAction = () => {
-  set(dialogTitle, tc('ledger_actions.dialog.add.title'));
-  set(dialogSubtitle, tc('ledger_actions.dialog.add.subtitle'));
+  set(editableItem, null);
   set(openDialog, true);
 };
 
 const editLedgerActionHandler = (ledgerAction: LedgerActionEntry) => {
   set(editableItem, ledgerAction);
-  set(dialogTitle, tc('ledger_actions.dialog.edit.title'));
-  set(dialogSubtitle, tc('ledger_actions.dialog.edit.subtitle'));
   set(openDialog, true);
 };
 
@@ -212,7 +207,7 @@ const { filters, matchers, updateFilter, RouteFilterSchema } =
   useLedgerActionsFilter();
 
 const applyRouteFilter = () => {
-  if (!get(readFilterFromRoute)) {
+  if (!get(mainPage)) {
     return;
   }
 
@@ -321,7 +316,7 @@ watch(pageParams, async (params, op) => {
   if (isEqual(params, op)) {
     return;
   }
-  if (get(userAction) && get(readFilterFromRoute)) {
+  if (get(userAction) && get(mainPage)) {
     // Route should only be updated on user action otherwise it messes with
     // forward navigation.
     await router.push({
@@ -501,11 +496,10 @@ watch(loading, async (isLoading, wasLoading) => {
     </card>
 
     <ledger-action-form-dialog
+      v-model="openDialog"
       :loading="loading"
       :edit="!!editableItem"
       :form-data="editableItem"
-      :open="openDialog"
-      @update:open="openDialog = $event"
       @reset-edit="editableItem = null"
       @saved="fetchData()"
     />

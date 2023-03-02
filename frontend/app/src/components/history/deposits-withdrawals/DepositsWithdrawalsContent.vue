@@ -27,15 +27,15 @@ import { SavedFilterLocation } from '@/types/filtering';
 const props = withDefaults(
   defineProps<{
     locationOverview?: TradeLocation;
-    readFilterFromRoute?: boolean;
+    mainPage?: boolean;
   }>(),
   {
     locationOverview: '',
-    readFilterFromRoute: false
+    mainPage: false
   }
 );
 
-const { locationOverview, readFilterFromRoute } = toRefs(props);
+const { locationOverview, mainPage } = toRefs(props);
 
 const selected: Ref<AssetMovementEntry[]> = ref([]);
 const expanded: Ref<AssetMovementEntry[]> = ref([]);
@@ -140,7 +140,7 @@ const { filters, matchers, updateFilter, RouteFilterSchema } =
   useAssetMovementFilters();
 
 const applyRouteFilter = () => {
-  if (!get(readFilterFromRoute)) {
+  if (!get(mainPage)) {
     return;
   }
 
@@ -238,7 +238,7 @@ watch(pageParams, async (params, op) => {
   if (isEqual(params, op)) {
     return;
   }
-  if (get(userAction) && get(readFilterFromRoute)) {
+  if (get(userAction) && get(mainPage)) {
     // Route should only be updated on user action otherwise it messes with
     // forward navigation.
     await router.push({

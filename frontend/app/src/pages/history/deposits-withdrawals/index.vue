@@ -1,3 +1,3 @@
 <template>
-  <deposits-withdrawals-content read-filter-from-route />
+  <deposits-withdrawals-content main-page />
 </template>

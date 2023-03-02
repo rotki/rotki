@@ -21,7 +21,7 @@ const props = withDefaults(
   }>(),
   {
     value: false,
-    edit: () => null
+    edit: null
   }
 );
 

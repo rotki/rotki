@@ -4,6 +4,7 @@ import { type MaybeRef } from '@vueuse/core';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { type EntryWithMeta } from '@/types/history/meta';
 import {
+  type AddTransactionHashPayload,
   type EthTransaction,
   type EthTransactionEntry,
   type EthTransactionEvent,
@@ -42,7 +43,8 @@ export const useTransactionStore = defineStore('history/transactions', () => {
     fetchEthTransactionEvents,
     reDecodeMissingTransactionEvents,
     addTransactionEvent: addTransactionEventCaller,
-    editTransactionEvent: editTransactionEventCaller
+    editTransactionEvent: editTransactionEventCaller,
+    addTransactionHash: addTransactionHashCaller
   } = useTransactionsApi();
   const { awaitTask, isTaskRunning } = useTaskStore();
 
@@ -293,6 +295,24 @@ export const useTransactionStore = defineStore('history/transactions', () => {
     set(counterparties, result);
   };
 
+  const addTransactionHash = async (
+    payload: AddTransactionHashPayload
+  ): Promise<ActionStatus<ValidationErrors | string>> => {
+    let success = false;
+    let message: ValidationErrors | string = '';
+    try {
+      await addTransactionHashCaller(payload);
+      success = true;
+    } catch (e: any) {
+      message = e.message;
+      if (e instanceof ApiValidationError) {
+        message = e.getValidationErrors(payload);
+      }
+    }
+
+    return { success, message };
+  };
+
   return {
     counterparties,
     fetchTransactions,
@@ -302,7 +322,8 @@ export const useTransactionStore = defineStore('history/transactions', () => {
     editTransactionEvent,
     deleteTransactionEvent,
     fetchCounterparties,
-    checkTransactionsMissingEvents
+    checkTransactionsMissingEvents,
+    addTransactionHash
   };
 });
 

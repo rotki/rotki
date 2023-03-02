@@ -1,3 +1,3 @@
 <template>
-  <ledger-action-content read-filter-from-route />
+  <ledger-action-content main-page />
 </template>

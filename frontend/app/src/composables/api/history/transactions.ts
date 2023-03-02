@@ -8,11 +8,13 @@ import {
   handleResponse,
   paramsSerializer,
   validStatus,
+  validTaskStatus,
   validWithParamsSessionAndExternalService
 } from '@/services/utils';
 import { type CollectionResponse } from '@/types/collection';
 import { type EntryWithMeta } from '@/types/history/meta';
 import {
+  type AddTransactionHashPayload,
   type AddressesAndEvmChainPayload,
   type EthTransaction,
   EthTransactionCollectionResponse,
@@ -158,6 +160,20 @@ export const useTransactionsApi = () => {
     return EthTransactionEventDetail.parse(handleResponse(response));
   };
 
+  const addTransactionHash = async (
+    payload: AddTransactionHashPayload
+  ): Promise<boolean> => {
+    const response = await api.instance.put<ActionResult<boolean>>(
+      '/blockchains/evm/transactions/add-hash',
+      axiosSnakeCaseTransformer(payload),
+      {
+        validateStatus: validTaskStatus
+      }
+    );
+
+    return handleResponse(response);
+  };
+
   return {
     fetchEthTransactionsTask,
     fetchEthTransactions,
@@ -167,6 +183,7 @@ export const useTransactionsApi = () => {
     addTransactionEvent,
     editTransactionEvent,
     deleteTransactionEvent,
-    getEventDetails
+    getEventDetails,
+    addTransactionHash
   };
 };
