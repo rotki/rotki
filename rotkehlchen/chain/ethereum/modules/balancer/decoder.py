@@ -221,7 +221,7 @@ class BalancerDecoder(DecoderInterface):
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE
                 ):
-                    event.event_type = HistoryEventType.STAKING
+                    event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                     event.counterparty = CPT_BALANCER_V1
                     event.notes = f'Receive {event.balance.amount} {token.symbol} from a Balancer v1 pool'  # noqa: E501
@@ -230,7 +230,7 @@ class BalancerDecoder(DecoderInterface):
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE
                 ):
-                    event.event_type = HistoryEventType.STAKING
+                    event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.counterparty = CPT_BALANCER_V1
                     event.notes = f'Deposit {event.balance.amount} {token.symbol} to a Balancer v1 pool'  # noqa: E501
@@ -240,7 +240,7 @@ class BalancerDecoder(DecoderInterface):
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE
                 ):
-                    event.event_type = HistoryEventType.STAKING
+                    event.event_type = HistoryEventType.WITHDRAWAL
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.counterparty = CPT_BALANCER_V1
                     event.notes = f'Receive {event.balance.amount} {token.symbol} after removing liquidity from a Balancer v1 pool'  # noqa: E501
@@ -249,13 +249,46 @@ class BalancerDecoder(DecoderInterface):
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE
                 ):
-                    event.event_type = HistoryEventType.STAKING
+                    event.event_type = HistoryEventType.WITHDRAWAL
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     event.counterparty = CPT_BALANCER_V1
                     event.notes = f'Return {event.balance.amount} {token.symbol} to a Balancer v1 pool'  # noqa: E501
                     return True
 
         return False
+
+    def _check_refunds_v1(
+            self,
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
+            decoded_events: list[HistoryBaseEntry],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+    ) -> list[HistoryBaseEntry]:
+        """
+        It can happen that after sending tokens to the DSProxy in balancer V1 the amount of tokens
+        required for the deposit is lower than the amount sent and then those tokens are returned
+        to the DSProxy and then to the user.
+        """
+        deposited_assets = set()
+
+        for event in decoded_events:
+            if (
+                event.counterparty == CPT_BALANCER_V1 and
+                event.event_type == HistoryEventType.DEPOSIT and
+                event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET
+            ):
+                deposited_assets.add(event.asset)
+            elif (
+                event.counterparty == CPT_BALANCER_V1 and
+                event.event_type == HistoryEventType.DEPOSIT and
+                event.event_subtype == HistoryEventSubType.RECEIVE_WRAPPED and
+                event.asset in deposited_assets
+            ):
+                # in this case we got refunded one of the assets deposited
+                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                asset = event.asset.resolve_to_asset_with_symbol()
+                event.notes = f'Refunded {event.balance.amount} {asset.symbol} after depositing in Balancer V1 pool'  # noqa: E501
+
+        return decoded_events
 
     # -- DecoderInterface methods
 
@@ -272,3 +305,6 @@ class BalancerDecoder(DecoderInterface):
 
     def counterparties(self) -> list[str]:
         return [CPT_BALANCER_V1, CPT_BALANCER_V2]
+
+    def post_decoding_rules(self) -> list[tuple[int, Callable]]:
+        return [(0, self._check_refunds_v1)]

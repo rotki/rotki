@@ -3,14 +3,16 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_BAL, A_BPT, A_DAI, A_ETH, A_WETH
+from rotkehlchen.constants.assets import A_BAL, A_BPT, A_DAI, A_ETH, A_USDC, A_WETH
 from rotkehlchen.constants.misc import EXP18
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
@@ -247,7 +249,7 @@ def test_balancer_v1_join(database, ethereum_manager, eth_transactions):
             sequence_index=328,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.STAKING,
+            event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_WETH,
             balance=Balance(amount=FVal(0.05)),
@@ -261,7 +263,7 @@ def test_balancer_v1_join(database, ethereum_manager, eth_transactions):
             sequence_index=335,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.STAKING,
+            event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=A_BPT,
             balance=Balance(amount=FVal('0.042569019597126949')),
@@ -388,7 +390,7 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
             sequence_index=91,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.STAKING,
+            event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=A_BPT,
             balance=Balance(amount=FVal('0.042569019597126949')),
@@ -402,7 +404,7 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
             sequence_index=95,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.STAKING,
+            event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_BAL,
             balance=Balance(amount=FVal('0.744372160905819159')),
@@ -416,12 +418,126 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
             sequence_index=97,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.STAKING,
+            event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_WETH,
             balance=Balance(amount=FVal('0.010687148200906598')),
             location_label=user_address,
             notes='Receive 0.010687148200906598 WETH after removing liquidity from a Balancer v1 pool',  # noqa: E501
+            counterparty=CPT_BALANCER_V1,
+            identifier=None,
+            extra_data=None,
+        ),
+    ]
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x549C0421c69Be943A2A60e76B19b4A801682cBD3']])
+def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accounts):
+    """Verify that when a refund is made for a deposit in balancer v1 this is properly decoded"""
+    user_address = ethereum_accounts[0]
+    tx_hash = deserialize_evm_tx_hash('0x22162f5c71261421db82a03ba4ad13725ef4fe9639c62bf6702538f980fbe7ba')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    assert events == [
+        HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=0,
+            timestamp=TimestampMS(1593186380000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.01452447')),
+            location_label=user_address,
+            notes='Burned 0.01452447 ETH for gas',
+            counterparty='gas',
+            identifier=None,
+            extra_data=None,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=131,
+            timestamp=TimestampMS(1593186380000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:1/erc20:0xe2f2a5C287993345a840Db3B0845fbC70f5935a5'),
+            balance=Balance(amount=FVal('131578.947368421052491563')),
+            location_label=user_address,
+            notes='Deposit 131578.947368421052491563 mUSD to a Balancer v1 pool',
+            counterparty=CPT_BALANCER_V1,
+            identifier=None,
+            extra_data=None,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=132,
+            timestamp=TimestampMS(1593186380000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:1/erc20:0xe2f2a5C287993345a840Db3B0845fbC70f5935a5'),
+            balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
+            location_label=user_address,
+            notes='Approve 115792089237316195423570985000000000000000000000000000000000 mUSD of 0x549C0421c69Be943A2A60e76B19b4A801682cBD3 for spending by 0x9ED47950144e51925166192Bf0aE95553939030a',  # noqa: E501
+            counterparty='0x9ED47950144e51925166192Bf0aE95553939030a',
+            identifier=None,
+            extra_data=None,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=134,
+            timestamp=TimestampMS(1593186380000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_USDC,
+            balance=Balance(amount=FVal('131421.703252')),
+            location_label=user_address,
+            notes='Deposit 131421.703252 USDC to a Balancer v1 pool',
+            counterparty=CPT_BALANCER_V1,
+            identifier=None,
+            extra_data=None,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=144,
+            timestamp=TimestampMS(1593186380000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:1/erc20:0xe2f2a5C287993345a840Db3B0845fbC70f5935a5'),
+            balance=Balance(amount=FVal('6578.947368421052624578')),
+            location_label=user_address,
+            notes='Refunded 6578.947368421052624578 mUSD after depositing in Balancer V1 pool',  # noqa: E501
+            counterparty=CPT_BALANCER_V1,
+            identifier=None,
+            extra_data=None,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=145,
+            timestamp=TimestampMS(1593186380000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_USDC,
+            balance=Balance(amount=FVal('6571.085163')),
+            location_label=user_address,
+            notes='Refunded 6571.085163 USDC after depositing in Balancer V1 pool',
+            counterparty=CPT_BALANCER_V1,
+            identifier=None,
+            extra_data=None,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=146,
+            timestamp=TimestampMS(1593186380000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:1/erc20:0x72Cd8f4504941Bf8c5a21d1Fd83A96499FD71d2C'),
+            balance=Balance(amount=FVal('1675.495956074927519908')),
+            location_label=user_address,
+            notes='Receive 1675.495956074927519908 BPT from a Balancer v1 pool',
             counterparty=CPT_BALANCER_V1,
             identifier=None,
             extra_data=None,
