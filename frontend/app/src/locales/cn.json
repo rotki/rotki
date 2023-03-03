@@ -998,201 +998,201 @@
       "subtitle": "添加、编辑、删除代币和资产。资产的变化将反映在您的所有账户中"
     },
     "newly_detected": {
-      "accept_selected": "Accept selected tokens",
-      "ignore_selected": "Ignore selected tokens",
-      "seen_during": "Seen during",
-      "select_deselect_all_tokens": "Select/deselect all tokens",
-      "subtitle": "Inspect the list of newly detected tokens and add any spam assets to the ignored tokens list",
-      "title": "Newly detected tokens"
+      "accept_selected": "接受选择的代币",
+      "ignore_selected": "忽略选定的代币",
+      "seen_during": "看到期间",
+      "select_deselect_all_tokens": "选择/取消选择所有的代币",
+      "subtitle": "检查新检测到的令牌列表并将任何垃圾邮件资产添加到忽略的代币列表",
+      "title": "新检测到的代币"
     },
-    "notes": "Notes",
-    "only_show_ignored": "Only show ignored assets ({length})",
-    "only_show_owned": "Only show owned assets",
-    "only_show_unignored": "Only show un-ignored assets",
-    "selected": "{count} asset(s) selected",
-    "show_all": "Show all",
-    "underlying_tokens": "Underlying Tokens"
+    "notes": "备注",
+    "only_show_ignored": "只显示忽略的资产 ({length})",
+    "only_show_owned": "只显示自有资产",
+    "only_show_unignored": "只显示未忽略的资产",
+    "selected": "{count} 个资产被选中",
+    "show_all": "显示全部",
+    "underlying_tokens": "底层代币"
   },
   "asset_update": {
-    "advanced": "Advanced",
-    "description": "Version {remote} of the asset database is available. Would you like to update from version {local}?",
+    "advanced": "高级",
+    "description": "资产数据库的 {remote} 版本可用。您想从 {local} 版本更新吗？",
     "manual": {
-      "check": "Check For Update",
-      "skipped": "Update notifications are disabled for version {skipped}",
-      "subtitle": "Perform a check for an updated version of the asset database",
-      "title": "Check for asset db updates"
+      "check": "检查更新",
+      "skipped": "版本 {skipped} 禁用更新通知",
+      "subtitle": "检查资产数据库的更新版本",
+      "title": "检查资产数据库更新"
     },
-    "partially_update": "Partially update",
+    "partially_update": "部分更新",
     "restore": {
       "delete_confirmation": {
-        "hard_reset_message": "Do you really want to reset your local copy of assets? You will lose any custom assets that you may have added manually.",
-        "soft_reset_message": "Do you really want to restore your local assets database? This will keep the assets that you manually added and were not known to rotki before and reset all others to their original state.",
-        "title": "Reset assets database"
+        "hard_reset_message": "你真的想重置你的本地资产副本吗？你将丢失你可能手动添加的任何自定义资产。",
+        "soft_reset_message": "你真的想恢复你的本地资产数据库吗？这将保留你手动添加的资产，并且之前 rotki 不知道并将所有其他资产重置为原始状态。",
+        "title": "重置资产数据库"
       },
-      "hard_reset": "Hard Reset",
-      "hard_reset_hint": "This option will also reset assets that were added by the user.",
+      "hard_reset": "硬重置",
+      "hard_reset_hint": "此选项还将重置用户添加的资产。",
       "hard_restore_confirmation": {
-        "message": "There are assets that will be deleted and might cause an inconsistent state in this account or other accounts in the system. Confirm this action only if you know what you are doing.",
-        "title": "Dangerous operation"
+        "message": "有些资产将被删除，可能会导致本账户或系统中其他账户的状态不一致。只有在你知道自己在做什么的情况下才能确认此操作。",
+        "title": "危险操作"
       },
-      "soft_reset": "Soft Reset",
-      "soft_reset_hint": "This option will not reset assets that were added by the user.",
-      "subtitle": "Delete custom assets and reset assets database to its initial state. Caution: This operation might affect other users in the same system using the database for assets.",
+      "soft_reset": "软复位",
+      "soft_reset_hint": "此选项不会重置用户添加的资产。",
+      "subtitle": "删除自定义资产并将资产数据库重置为初始状态。注意：此操作可能会影响同一系统中使用资产数据库的其他用户。",
       "success": {
-        "description": "The asset database has been successfully restored. You will now need to re-login to apply the changes.",
-        "title": "Asset database restore"
+        "description": "资产数据库已成功恢复。您现在需要重新登录才能应用更改。",
+        "title": "资产数据库恢复"
       },
-      "title": "Reset assets database"
+      "title": "重置资产数据库"
     },
-    "skip_notification": "Don't notify me until the next update",
+    "skip_notification": "下次更新前不要通知我",
     "success": {
-      "description": "The asset database has been successfully updated to version {remoteVersion}. You will now need to re-login to apply the changes",
+      "description": "资产数据库已成功更新到版本 {remoteVersion}。您现在需要重新登录才能应用更改",
       "ok": "OK",
-      "title": "Asset database update"
+      "title": "资产数据库更新"
     },
-    "title": "A supported asset update is available",
-    "total_changes": "This update contains {changes} asset changes.",
-    "up_to_date": "Your asset database is up to date.",
-    "up_to_version": "Only update up to version"
+    "title": "支持的资产更新可用",
+    "total_changes": "此更新包含 {changes} 个资产变化。",
+    "up_to_date": "您的资产数据库是最新的。",
+    "up_to_version": "只更新到版本"
   },
   "asset_update_status": {
     "checking": {
-      "title": "Checking for updated assets",
-      "message": "Please wait while a check for an asset update is performed"
+      "title": "正在检查更新的资产",
+      "message": "正在执行资产更新检查，请稍候"
     },
     "applying": {
-      "title": "Applying asset update",
-      "message": "Please wait while your asset data are updated to version {remoteVersion}"
+      "title": "应用资产更新",
+      "message": "请稍候，您的资产数据正在更新到版本 {remoteVersion}"
     }
   },
   "assets": {
-    "amount": "Total Owned",
+    "amount": "总拥有量",
     "backup": {
-      "missing_directory": "Please select a directory"
+      "missing_directory": "请选择目录"
     },
     "filter": {
-      "name": "Filter by the name of the asset",
-      "name_hint": "Search using the asset name",
-      "symbol": "Filter by the symbol of the asset",
-      "symbol_hint": "Search using the asset symbol",
-      "type": "Filter by the type of the custom asset",
-      "type_hint": "Search using the asset type"
+      "name": "按资产名称过滤",
+      "name_hint": "使用资产名称搜索",
+      "symbol": "按资产符号筛选",
+      "symbol_hint": "使用资产符号搜索",
+      "type": "按自定义资产类型过滤",
+      "type_hint": "使用资产类型搜索"
     },
-    "multi_chain_assets": "Multi Chain Assets",
-    "ignore": "Ignore Asset",
-    "value": "Value"
+    "multi_chain_assets": "多链资产",
+    "ignore": "忽略资产",
+    "value": "价值"
   },
   "back_button": {
-    "tooltip": "Navigate back to the previous page."
+    "tooltip": "导航回上一页。"
   },
   "backend_settings": {
     "actions": {
-      "reset": "Reset to default"
+      "reset": "重置为默认值"
     },
-    "advanced": "Advanced",
-    "config_file_disabled": "This parameter is already set in the rotki_config.json",
+    "advanced": "高级",
+    "config_file_disabled": "此参数已在 rotki_config.json 中设置",
     "confirm": {
-      "message": "Are you sure you want to rest the backend settings to default?",
-      "title": "Rest backend settings"
+      "message": "您确定要将后端设置恢复为默认设置吗？",
+      "title": "休息后端设置"
     },
     "data_directory": {
-      "select": "Select where rotki will store the data"
+      "select": "选择 rotki 存储数据的位置"
     },
     "errors": {
-      "min": "Minimum value for this setting is {min}",
-      "non_empty": "This setting cannot be empty"
+      "min": "此设置的最小值为 {min}",
+      "non_empty": "这个设置不能为空"
     },
     "log_directory": {
-      "select": "Select where rotki will store the logs"
+      "select": "选择 rotki 存储日志的位置"
     },
     "log_from_other_modules": {
-      "hint": "Enables logging from third party libraries (useful for debugging)",
-      "label": "Log from other modules"
+      "hint": "启用来自第三方库的日志记录（对调试有用）",
+      "label": "从其他模块登录"
     },
     "max_log_files": {
-      "hint": "This is the maximum number of logfiles to keep",
-      "label": "Max num of log files"
+      "hint": "这是要保留的最大日志文件数",
+      "label": "最大日志文件数"
     },
     "max_log_size": {
-      "hint": "This is the maximum size in megabytes that will be used for all rotki logs",
-      "label": "Max log size"
+      "hint": "这是将用于所有 rotki 日志的最大大小（以兆字节为单位）",
+      "label": "最大日志大小"
     },
     "settings": {
       "data_directory": {
-        "hint": "By changing the data directory, data in the old directory will have to be manually moved to the new one.",
-        "label": "Data Directory"
+        "hint": "通过更改数据目录，旧目录中的数据将不得不手动移动到新目录中。",
+        "label": "数据目录"
       },
       "log_directory": {
-        "label": "Log Directory"
+        "label": "日志目录"
       },
       "log_level": {
-        "label": "Log Level"
+        "label": "日志级别"
       }
     },
     "sqlite_instructions": {
-      "hint": "Specify after how many sqlite VM instructions to context switch between cooperative threads. Set to 0 to disable async DB access",
-      "label": "Instructions per SQLite context switch"
+      "hint": "指定在协作线程之间进行上下文切换的 sqlite VM 指令之后。设置为 0 以禁用异步数据库访问",
+      "label": "每个 SQLite 上下文切换的说明"
     },
-    "subtitle": "Modify the backend settings",
-    "title": "Backend Settings"
+    "subtitle": "修改后台设置",
+    "title": "后台设置"
   },
   "backend_settings_button": {
-    "tooltip": "Change the backend settings. Changing the settings will restart the rotki backend"
+    "tooltip": "更改后端设置。更改设置将重启 rotki 后端"
   },
   "backup_manager": {
-    "backup_button": "Create new Backup",
-    "delete_selected": "Delete selected Backups",
-    "title": "User Database Backups"
+    "backup_button": "创建新备份",
+    "delete_selected": "删除选定的备份",
+    "title": "用户数据库备份"
   },
   "balancer": {
-    "loading": "Please wait while your liquidity pools are getting loaded...",
-    "premium": "Balancer feature "
+    "loading": "请稍候，您的流动资金池正在加载...",
+    "premium": "平衡器功能"
   },
   "binance_market_selector": {
-    "default_label": "Filter market pair(s)",
+    "default_label": "过滤市场对",
     "query_all": {
-      "error": "Couldn't get the list of markets for binance.",
-      "title": "Query Binance markets"
+      "error": "无法获取 binance 的市场列表。",
+      "title": "查询币安市场"
     },
     "query_user": {
-      "error": "Couldn't get the list of markets selected to be queried for binance.",
-      "title": "Query selected Binance markets"
+      "error": "无法获取选择要查询币安的市场列表。",
+      "title": "查询所选币安市场"
     }
   },
   "blockchain_account_selector": {
-    "all": "all",
-    "default_label": "Filter account(s)",
-    "hint": "Showing results across {hintText} accounts.",
-    "no_data": "No more usable addresses"
+    "all": "全部",
+    "default_label": "过滤账户",
+    "hint": "显示 {hintText} 账户的结果。",
+    "no_data": "没有可用地址"
   },
   "blockchain_balances": {
-    "add_account": "Add Account",
+    "add_account": "添加账户",
     "balances": {
-      "avax": "Avalanche balances",
-      "bch": "Bitcoin Cash balances",
-      "btc": "Bitcoin balances",
-      "dot": "Polkadot balances",
-      "eth": "Ethereum balances",
-      "eth2": "Eth2 balances",
-      "ksm": "Kusama balances",
-      "loopring": "Loopring balances",
+      "avax": "Avalanche 余额",
+      "bch": "Bitcoin Cash 余额",
+      "btc": "Bitcoin 余额",
+      "dot": "Polkadot 余额",
+      "eth": "Ethereum 余额",
+      "eth2": "Eth2 余额",
+      "ksm": "Kusama 余额",
+      "loopring": "Loopring 余额",
       "optimism": "Optimism"
     },
     "form_dialog": {
-      "add_title": "Add blockchain account",
-      "edit_subtitle": "Modify account details",
-      "edit_title": "Edit blockchain account"
+      "add_title": "添加区块链账户",
+      "edit_subtitle": "修改账户信息",
+      "edit_title": "编辑区块链账户"
     },
     "metamask_import": {
       "error": {
-        "description": "Adding addresses from metamask could not be completed: {error}",
-        "title": "Metamask address import"
+        "description": "从Metamask添加地址无法完成:{error}",
+        "title": "Metamask 地址导入"
       }
     },
     "per_asset": {
-      "title": "Blockchain Balances per Asset"
+      "title": "每项资产的区块链余额"
     },
-    "title": "Blockchain Balances per asset"
+    "title": "每项资产的区块链余额"
   },
   "blockchains": {
     "avax": "Avalanche",
