@@ -17,17 +17,29 @@ from rotkehlchen.tests.utils.accounting import (
 from rotkehlchen.tests.utils.constants import A_CHF, A_XMR
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import Location, Timestamp, TradeType
+from rotkehlchen.types import CostBasisMethod, Location, Timestamp, TradeType
 
 
+@pytest.mark.parametrize(('db_settings', 'expected_pnls'), [
+    (
+        {'cost_basis_method': CostBasisMethod.FIFO},
+        PnlTotals({
+            AccountingEventType.TRADE: PNL(taxable=FVal('559.6947154'), free=ZERO),
+            AccountingEventType.FEE: PNL(taxable=FVal('-0.23886813'), free=ZERO),
+        }),
+    ),
+    (
+        {'cost_basis_method': CostBasisMethod.ACB},
+        PnlTotals({
+            AccountingEventType.TRADE: PNL(taxable=FVal('551.2588760825750541683933333'), free=ZERO),  # noqa: E501
+            AccountingEventType.FEE: PNL(taxable=FVal('-0.2640127597017956302424120028'), free=ZERO),  # noqa: E501
+        }),
+    ),
+])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_simple_accounting(accountant, google_service):
+def test_simple_accounting(accountant, google_service, expected_pnls):
     accounting_history_process(accountant, 1436979735, 1495751688, history1)
     no_message_errors(accountant.msg_aggregator)
-    expected_pnls = PnlTotals({
-        AccountingEventType.TRADE: PNL(taxable=FVal('559.6947154'), free=ZERO),
-        AccountingEventType.FEE: PNL(taxable=FVal('-0.23886813'), free=ZERO),
-    })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
