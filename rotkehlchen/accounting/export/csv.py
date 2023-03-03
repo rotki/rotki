@@ -10,7 +10,7 @@ from rotkehlchen.accounting.pnl import PnlTotals
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import CostBasisMethod, Timestamp
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 from rotkehlchen.utils.version_check import get_current_version
 
@@ -138,19 +138,25 @@ class CSVExporter(CustomizableDateMixin):
         dict_event[f'pnl_{name}'] = equation
         cost_basis = ''
         if event.cost_basis is not None:
-            for acquisition in event.cost_basis.matched_acquisitions:
-                if name == 'taxable' and acquisition.taxable is False:
-                    continue
-                if name == 'free' and acquisition.taxable is True:
-                    continue
+            if self.settings.cost_basis_method == CostBasisMethod.ACB:
+                # ACB doesn't have matched acquisitions so we use pure numbers.
+                cost_basis = event.cost_basis.taxable_bought_cost if name == 'taxable' else event.cost_basis.taxfree_bought_cost  # type: ignore[assignment]  # noqa: E501
+                cost_basis = str(cost_basis) if cost_basis != 0 else ''
+            else:  # FIFO, LIFO, HIFO (methods that do have matched acquisitions)
+                cost_basis = ''
+                for acquisition in event.cost_basis.matched_acquisitions:
+                    if name == 'taxable' and acquisition.taxable is False:
+                        continue
+                    if name == 'free' and acquisition.taxable is True:
+                        continue
 
-                index = acquisition.event.index + CSV_INDEX_OFFSET
-                if cost_basis == '':
-                    cost_basis = '='
-                else:
-                    cost_basis += '+'
+                    index = acquisition.event.index + CSV_INDEX_OFFSET
+                    if cost_basis == '':
+                        cost_basis = '='
+                    else:
+                        cost_basis += '+'
 
-                cost_basis += f'{str(acquisition.amount)}*H{index}'
+                    cost_basis += f'{str(acquisition.amount)}*H{index}'
 
         dict_event[f'cost_basis_{name}'] = cost_basis
 
