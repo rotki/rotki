@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
+import { type ComputedRef } from 'vue';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import {
   type AddressBookLocation,
   type AddressBookPayload
 } from '@/types/eth-names';
-import {
-  isValidEthAddress,
-  sanitizeAddress,
-  toSentenceCase
-} from '@/utils/text';
+import { isValidEthAddress, toSentenceCase } from '@/utils/text';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
+import ComboboxWithCustomInput from '@/components/inputs/ComboboxWithCustomInput.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -33,30 +31,16 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const { value, enableForAllChains } = toRefs(props);
 
-const search = ref<string | null>('');
-
 const addressesNamesStore = useAddressesNamesStore();
 const { getFetchedAddressesList } = addressesNamesStore;
 
-const addressSuggestions = computed<string[]>(() => {
+const addressSuggestions: ComputedRef<string[]> = computed(() => {
   return get(getFetchedAddressesList(get(value).blockchain));
 });
 
 const input = (payload: Partial<AddressBookPayload>) => {
   emit('input', { ...get(value), ...payload });
 };
-
-watch(search, address => {
-  if (address === null) address = '';
-  input({ address });
-});
-
-watch(value, ({ address }) => {
-  const sanitizedAddress = sanitizeAddress(get(address));
-  if (get(address) !== sanitizedAddress) {
-    set(search, sanitizedAddress);
-  }
-});
 
 const locations: AddressBookLocation[] = ['global', 'private'];
 
@@ -133,7 +117,7 @@ const { getBlockie } = useBlockie();
         />
       </div>
       <div>
-        <v-combobox
+        <combobox-with-custom-input
           :value="value.address"
           outlined
           :label="t('address_book.form.labels.address')"
@@ -141,7 +125,7 @@ const { getBlockie } = useBlockie();
           :no-data-text="t('address_book.form.no_suggestions_available')"
           :disabled="edit"
           :error-messages="v$.address.$errors.map(e => e.$message)"
-          :search-input.sync="search"
+          auto-select-first
           @input="input({ address: $event })"
         >
           <template #prepend-inner>
@@ -162,7 +146,7 @@ const { getBlockie } = useBlockie();
             </span>
             {{ item }}
           </template>
-        </v-combobox>
+        </combobox-with-custom-input>
       </div>
       <div>
         <v-text-field
