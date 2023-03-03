@@ -8,6 +8,7 @@ import { bigNumberify, zeroBalance } from '@/utils/bignumbers';
 import '../../../i18n';
 import { BalanceType } from '@/types/balances';
 import { type BtcAccountData } from '@/types/blockchain/accounts';
+import { updateGeneralSettings } from '../../../utils/general-settings';
 
 describe('store::balances/aggregated', () => {
   beforeEach(() => {
@@ -295,9 +296,8 @@ describe('store::balances/aggregated', () => {
     const { exchangeRates } = storeToRefs(useBalancePricesStore());
     set(exchangeRates, { EUR: bigNumberify(1.2) });
 
-    const generalSettingsStore = useGeneralSettingsStore();
     const { currencies } = useCurrencies();
-    generalSettingsStore.update({
+    updateGeneralSettings({
       mainCurrency: get(currencies)[1]
     });
 

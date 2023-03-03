@@ -1,7 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Module } from '@/types/modules';
 import { type GeneralAccountData } from '@/types/blockchain/accounts';
-import { setModules } from '../../../../utils/modules';
+import { setModules } from '../../../../utils/general-settings';
 
 vi.mock('@/composables/api/blockchain/accounts', () => ({
   useBlockchainAccountsApi: vi.fn().mockReturnValue({

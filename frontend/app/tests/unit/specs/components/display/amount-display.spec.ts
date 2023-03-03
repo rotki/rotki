@@ -4,7 +4,6 @@ import { type Pinia } from 'pinia';
 import Vuetify from 'vuetify';
 import { VTooltip } from 'vuetify/lib/components';
 import flushPromises from 'flush-promises';
-import { defaultGeneralSettings } from '@/data/factories';
 import { useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
 import { FrontendSettings } from '@/types/frontend-settings';
@@ -12,6 +11,7 @@ import { Zero, bigNumberify } from '@/utils/bignumbers';
 import '@/filters';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import createCustomPinia from '../../../utils/create-pinia';
+import { updateGeneralSettings } from '../../../utils/general-settings';
 
 // This is workaround used because stubs is somehow not working,
 // Eager prop will render the <slot /> immediately
@@ -59,12 +59,10 @@ describe('AmountDisplay.vue', () => {
     pinia = createCustomPinia();
     setActivePinia(pinia);
     document.body.dataset.app = 'true';
-    const store = useGeneralSettingsStore();
     const { findCurrency } = useCurrencies();
-    const mainCurrency = findCurrency('EUR');
-    store.update({
-      ...defaultGeneralSettings(mainCurrency),
-      mainCurrency,
+
+    updateGeneralSettings({
+      mainCurrency: findCurrency('EUR'),
       uiFloatingPrecision: 2
     });
 

@@ -1,6 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { FrontendSettings } from '@/types/frontend-settings';
-import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 
 vi.mock('@/composables/api/blockchain/addresses-names', () => ({
   useAddressesNamesApi: vi.fn().mockReturnValue({

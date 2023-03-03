@@ -3,7 +3,7 @@ import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { Module } from '@/types/modules';
-import { setModules } from '../../../../utils/modules';
+import { setModules } from '../../../../utils/general-settings';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
