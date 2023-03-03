@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useAttrs, useListeners } from 'vue';
+import { useListeners } from 'vue';
 
 const rootAttrs = useAttrs();
 const rootListeners = useListeners();

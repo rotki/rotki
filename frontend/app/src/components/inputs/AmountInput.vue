@@ -1,9 +1,3 @@
-<script lang="ts">
-export default {
-  inheritAttrs: false
-};
-</script>
-
 <script setup lang="ts">
 import Cleave from 'cleave.js';
 import { useListeners } from 'vue';
@@ -14,11 +8,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits<{ (e: 'input', value: string): void }>();
-/**
- * When this component is used, prop [type] shouldn't be passed,
- * because it will break the Cleave.js functionality.
- * It should only accept number, thousandSeparator, and decimalSeparator as input.
- */
 const attrs = useAttrs();
 const slots = useSlots();
 const listeners = useListeners();

@@ -41,7 +41,6 @@ beforeAll(() => {
     return {
       ...mod,
       useListeners: vi.fn(),
-      useAttrs: vi.fn(),
       useCssModule: vi.fn().mockReturnValue({})
     };
   });

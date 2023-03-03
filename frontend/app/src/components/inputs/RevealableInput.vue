@@ -1,56 +1,25 @@
 <script setup lang="ts">
-import { type PropType, ref, useAttrs, useListeners } from 'vue';
+import { useListeners } from 'vue';
 
 const rootAttrs = useAttrs();
 const rootListeners = useListeners();
 
-defineProps({
-  value: {
-    required: false,
-    type: String as PropType<string | null>,
-    default: null
-  },
-  rules: {
-    required: false,
-    default: () => [],
-    type: Array as PropType<((v: string) => boolean | string)[]>
-  },
-  outlined: {
-    required: false,
-    type: Boolean,
-    default: false
-  },
-  disabled: {
-    required: false,
-    type: Boolean,
-    default: false
-  },
-  label: {
-    required: false,
-    type: String,
-    default: ''
-  },
-  hint: {
-    required: false,
-    type: String,
-    default: ''
-  },
-  prependIcon: {
-    required: false,
-    type: String,
-    default: 'mdi-key'
-  },
-  errorMessages: {
-    required: false,
-    type: [String, Array],
-    default: ''
-  },
-  sensitiveKey: {
-    required: false,
-    type: Boolean,
-    default: false
+withDefaults(
+  defineProps<{
+    value?: string | null;
+    outlined?: boolean;
+    hint?: string;
+    prependIcon?: string;
+    sensitiveKey?: boolean;
+  }>(),
+  {
+    value: null,
+    outlined: false,
+    hint: '',
+    prependIcon: 'mdi-key',
+    sensitiveKey: false
   }
-});
+);
 
 const emit = defineEmits<{ (e: 'input', value: string | null): void }>();
 
@@ -70,11 +39,8 @@ const input = (value: string | null) => {
     :class="{
       'sensitive-key': sensitiveKey
     }"
-    :label="label"
     :hint="hint"
-    :disabled="disabled"
     :persistent-hint="!!hint"
-    :error-messages="errorMessages"
     :outlined="outlined"
     single-line
     v-on="rootListeners"

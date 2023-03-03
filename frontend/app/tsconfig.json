@@ -5,7 +5,8 @@
       "vuetify",
       "vue-i18n",
       "vite/client",
-      "vite-plugin-vue-layouts/client"
+      "vite-plugin-vue-layouts/client",
+      "unplugin-vue-define-options/macros-global"
     ]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "components.d.ts"],
