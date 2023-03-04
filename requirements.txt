@@ -10,11 +10,11 @@ coincurve==17.0.0
 base58check==1.0.2
 bech32==1.2.0
 gql==2.0.0
-scalecodec==1.1.4
+scalecodec==1.2.2
 py-sr25519-bindings==0.2.0
 py-ed25519-zebra-bindings==1.0.1
 py-bip39-bindings==0.1.11
-substrate-interface==1.4.2
+substrate-interface==1.5.2
 beautifulsoup4==4.11.1
 maxminddb==2.2.0
 miniupnpc==2.0.2; sys_platform != 'win32'
