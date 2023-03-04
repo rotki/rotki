@@ -280,13 +280,16 @@ def fixture_vcr_base_dir() -> Path:
         return base_dir
 
     # since we got here reset to origin's equivalent branch
-    reset_proc = Popen(f'cd "{root_dir}" n && git reset --hard origin/{current_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
+    reset_proc = Popen(f'cd "{root_dir}" && git reset --hard origin/{current_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
     _, stderr = reset_proc.communicate(timeout=SUBPROCESS_TIMEOUT)
     if len(stderr) != 0:
         prefix = 'Failed to '
+        error = f' due to {stderr!r}'
     else:
         prefix = ''
-    log.debug(f'VCR setup: {prefix}reset test caching branch: {current_branch} to match origin')
+        error = ''
+
+    log.debug(f'VCR setup: {prefix}reset test caching branch: {current_branch} to match origin{error}')  # noqa: E501
 
     return base_dir
 

@@ -1,6 +1,12 @@
+import csv
+import tempfile
+from itertools import zip_longest
+from pathlib import Path
+
 import pytest
 
 from rotkehlchen.accounting.cost_basis import AssetAcquisitionEvent
+from rotkehlchen.accounting.export.csv import FILENAME_ALL_CSV
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
@@ -16,6 +22,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address, make_random_bytes
 from rotkehlchen.types import CostBasisMethod, Location, Timestamp, make_evm_tx_hash
 
+EXAMPLE_TIMESTAMP = Timestamp(1675483017)
+
 
 def add_acquisition(pot, amount, asset=A_ETH, price=ONE, taxable=False):
     """
@@ -27,7 +35,7 @@ def add_acquisition(pot, amount, asset=A_ETH, price=ONE, taxable=False):
         event_type=AccountingEventType.TRANSACTION_EVENT,
         notes='Test',
         location=Location.BLOCKCHAIN,
-        timestamp=Timestamp(1675483017),
+        timestamp=EXAMPLE_TIMESTAMP,
         asset=asset,
         amount=amount,
         taxable=taxable,
@@ -45,7 +53,7 @@ def add_spend(pot, amount, asset=A_ETH, price=ONE, taxable=True):
         event_type=AccountingEventType.TRANSACTION_EVENT,
         notes='Test',
         location=Location.BLOCKCHAIN,
-        timestamp=Timestamp(1675483017),
+        timestamp=EXAMPLE_TIMESTAMP,
         asset=asset,
         amount=amount,
         taxable=taxable,
@@ -822,12 +830,14 @@ def test_missing_acquisitions(accountant):
     assert cost_basis.missing_acquisitions == expected_missing_acquisitions
 
 
+@pytest.mark.parametrize('db_settings', [
+    {'cost_basis_method': CostBasisMethod.ACB},
+])
 def test_accounting_average_cost_basis(accountant):
     """Test various scenarios in average cost basis calculation"""
     pot = accountant.pots[0]
     events = pot.processed_events
     cost_basis = pot.cost_basis
-    cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.ACB))
     manager = cost_basis.get_events(A_ETH).acquisitions_manager
 
     # Step 1. Add an acquisition
@@ -923,6 +933,28 @@ def test_accounting_average_cost_basis(accountant):
     assert events[10].pnl.taxable == missing_acquisition.missing_amount * events[10].price == FVal(2.5)  # noqa: E501
     assert manager.current_total_acb == ZERO
     assert manager.current_amount == ZERO
+
+    # Also check that the values in the exported csv match the processed events list.
+    # In case of ACB export cost basis values are pure numbers, with no formulas, so we can check
+    # like this.
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path_dir = Path(tmpdir)
+        accountant.csvexporter.export(
+            events=pot.processed_events,
+            pnls=pot.pnls,
+            directory=path_dir,
+        )
+        with open(path_dir / FILENAME_ALL_CSV) as f:
+            for event, row in zip_longest(events, csv.DictReader(f)):
+                if event.cost_basis is None:
+                    assert row['cost_basis_taxable'] == ''
+                else:
+                    if row['cost_basis_taxable'] == '':
+                        value = ZERO
+                    else:
+                        value = FVal(row['cost_basis_taxable'])
+
+                    assert value == event.cost_basis.taxable_bought_cost
 
 
 @pytest.mark.parametrize('mocked_price_queries', [{

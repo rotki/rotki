@@ -7,6 +7,7 @@ Changelog
 * :feature:`5587` Forward/Backward navigation for filters/pagination (using mouse buttons) will now be possible in the history section.
 * :feature:`5569` It is now possible to detect when an evm address is used in other chains and start tracking it. Also a background task runs periodically that performs this check.
 * :bug:`5491` Show original manual latest price asset in manual balance form.
+* :bug:`5672` Exported csv files after using ACB as the cost basis calculation algorithm will now reflect the same numbers as shown in the app.
 * :bug:`-` Ethereum transactions claiming COMP after comptroller's COMP ran out and has been refilled will now be decoded correctly as COMP rewards.
 * :bug:`-` Fixed an edge case where removing an EVM account multiple times in a row, while a transactions querying task ran, would result in an error.
 * :bug:`-` Ignoring forked assets ETC, BCH and BSV for accounting should now also remove any pre-fork references of them and completely omit them from the PnL report.
