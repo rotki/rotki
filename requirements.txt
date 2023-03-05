@@ -19,7 +19,7 @@ beautifulsoup4==4.11.2
 maxminddb==2.2.0
 miniupnpc==2.0.2; sys_platform != 'win32'
 miniupnpc==2.2.3; sys_platform == 'win32'
-cryptography==39.0.1
+cryptography==39.0.2
 
 # For the rest api
 flask-cors==3.0.10
