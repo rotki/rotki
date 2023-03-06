@@ -35,10 +35,10 @@ export class LedgerActionPage {
     cy.get('[data-cy=bottom-dialog]').find('.card-title').click();
 
     selectAsset('[data-cy=asset]', ledgerAction.asset, ledgerAction.asset_id);
-    cy.get('[data-cy=amount]').type(ledgerAction.amount);
+    cy.get('[data-cy=amount] input').type(ledgerAction.amount);
     cy.get('[data-cy=action-type]').parent().click();
     cy.get('.v-menu__content').contains(ledgerAction.action_type).click();
-    cy.get('[data-cy=rate]').type(`${ledgerAction.rate}`);
+    cy.get('[data-cy=rate] input').type(`${ledgerAction.rate}`);
     selectAsset(
       '[data-cy=rate-asset]',
       ledgerAction.rate_asset,
@@ -105,8 +105,8 @@ export class LedgerActionPage {
       .click();
 
     cy.get('[data-cy=ledger-action-form]').should('be.visible');
-    cy.get('[data-cy=amount]').clear();
-    cy.get('[data-cy=amount]').type(amount);
+    cy.get('[data-cy=amount] input').clear();
+    cy.get('[data-cy=amount] input').type(amount);
 
     const waitForLedgerActions = this.createWaitForLedgerActions();
     cy.get('.big-dialog__buttons__confirm').click();

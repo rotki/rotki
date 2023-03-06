@@ -108,6 +108,7 @@
     "typescript": "4.9.5",
     "unplugin-auto-import": "0.14.4",
     "unplugin-vue-components": "0.24.0",
+    "unplugin-vue-define-options": "1.2.3",
     "vite": "4.1.4",
     "vite-plugin-checker": "0.5.6",
     "vite-plugin-istanbul": "4.0.0",

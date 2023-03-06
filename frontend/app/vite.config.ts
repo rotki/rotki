@@ -2,6 +2,7 @@ import { builtinModules } from 'node:module';
 import { join, resolve } from 'node:path';
 import vue from '@vitejs/plugin-vue2';
 import AutoImport from 'unplugin-auto-import/vite';
+import DefineOptions from 'unplugin-vue-define-options/vite';
 import { VuetifyResolver } from 'unplugin-vue-components/resolvers';
 import Components from 'unplugin-vue-components/vite';
 import { defineConfig, splitVendorChunkPlugin } from 'vite';
@@ -114,6 +115,7 @@ export default defineConfig({
         }
       ]
     }),
+    DefineOptions(),
     Layouts({
       layoutsDirs: ['src/layouts'],
       defaultLayout: 'default'

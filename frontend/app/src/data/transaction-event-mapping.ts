@@ -64,7 +64,7 @@ export const transactionEventTypeMapping: Record<
     [HistoryEventSubType.DEPOSIT_ASSET]: TransactionEventType.DEPOSIT,
     [HistoryEventSubType.REWARD]: TransactionEventType.RECEIVE,
     [HistoryEventSubType.RECEIVE_WRAPPED]: TransactionEventType.RECEIVE,
-    [HistoryEventSubType.REMOVE_ASSET]: TransactionEventType.RECEIVE,
+    [HistoryEventSubType.REMOVE_ASSET]: TransactionEventType.WITHDRAW,
     [HistoryEventSubType.RETURN_WRAPPED]: TransactionEventType.SEND
   }
 };

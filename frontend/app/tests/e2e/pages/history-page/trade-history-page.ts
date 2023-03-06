@@ -38,7 +38,7 @@ export class TradeHistoryPage {
       .parentsUntil('.v-radio')
       .first()
       .click();
-    cy.get('[data-cy=amount]').type(trade.amount);
+    cy.get('[data-cy=amount] input').type(trade.amount);
     cy.wait('@priceTask').its('response.statusCode').should('equal', 200);
     cy.get('[data-cy=rate]')
       .parent()
@@ -47,14 +47,16 @@ export class TradeHistoryPage {
       .should('not.exist');
     if (trade.quote_amount) {
       cy.get('[data-cy=grouped-amount-input__swap-button]').click();
-      cy.get('[data-cy=quote-amount]').type(
+      cy.get('[data-cy=quote-amount] input').type(
         `{selectall}{backspace}${trade.quote_amount}`
       );
-      cy.get('[data-cy=rate]').should('have.value', trade.rate);
+      cy.get('[data-cy=rate] input').should('have.value', trade.rate);
     } else {
-      cy.get('[data-cy=rate]').type(`{selectall}{backspace}${trade.rate}`);
+      cy.get('[data-cy=rate] input').type(
+        `{selectall}{backspace}${trade.rate}`
+      );
     }
-    cy.get('[data-cy=fee]').type(trade.fee);
+    cy.get('[data-cy=fee] input').type(trade.fee);
     selectAsset('[data-cy=fee-currency]', trade.fee_currency, trade.fee_id);
     cy.get('[data-cy=link]').type(trade.link);
     cy.get('[data-cy=notes]').type(trade.notes);
@@ -117,8 +119,8 @@ export class TradeHistoryPage {
       .click();
 
     cy.get('[data-cy=trade-form]').should('be.visible');
-    cy.get('[data-cy=amount]').clear();
-    cy.get('[data-cy=amount]').type(amount);
+    cy.get('[data-cy=amount] input').clear();
+    cy.get('[data-cy=amount] input').type(amount);
 
     const waitForTrades = this.createWaitForTrades();
     cy.get('.big-dialog__buttons__confirm').click();

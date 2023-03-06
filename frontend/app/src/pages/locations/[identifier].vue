@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { type TradeLocationData } from '@/types/history/trade/location';
 
+defineOptions({
+  name: 'LocationBreakdown'
+});
+
 const props = defineProps({
   identifier: { required: true, type: String }
 });

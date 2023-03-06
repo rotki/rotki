@@ -37,13 +37,6 @@ module.exports = {
     {
       files: ['*.ts'],
       extends: ['@rotki/eslint-config-ts']
-    },
-    {
-      // Disabled because it moves the inheritAttrs export to the setup script
-      files: ['AmountInput.vue'],
-      rules: {
-        'import/first': 'off'
-      }
     }
   ],
   settings: {

@@ -92,6 +92,7 @@ importers:
       typescript: 4.9.5
       unplugin-auto-import: 0.14.4
       unplugin-vue-components: 0.24.0
+      unplugin-vue-define-options: 1.2.3
       vite: 4.1.4
       vite-plugin-checker: 0.5.6
       vite-plugin-istanbul: 4.0.0
@@ -187,6 +188,7 @@ importers:
       typescript: 4.9.5
       unplugin-auto-import: 0.14.4_@vueuse+core@9.13.0
       unplugin-vue-components: 0.24.0_vue@2.7.14
+      unplugin-vue-define-options: 1.2.3_vue@2.7.14
       vite: 4.1.4_qi35tff3wzjmlfhvm734cdw5za
       vite-plugin-checker: 0.5.6_c3hlkr3w2tvaynud4tvamy44o4
       vite-plugin-istanbul: 4.0.0_vite@4.1.4
@@ -2852,6 +2854,22 @@ packages:
       '@volar/vue-language-core': 1.1.7
     dev: true
 
+  /@vue-macros/common/1.1.0_vue@2.7.14:
+    resolution: {integrity: sha512-BvreSru0kh6q/PFAt4erTY29buoVzLoUfXp1nW2cS9PQ589Y76iACw0NcjflXUUxGPRxQkQK+iRx/c4pUj0eeQ==}
+    engines: {node: '>=14.19.0'}
+    peerDependencies:
+      vue: ^2.7.0 || ^3.2.25
+    peerDependenciesMeta:
+      vue:
+        optional: true
+    dependencies:
+      '@babel/types': 7.21.0
+      '@vue/compiler-sfc': 3.2.47
+      local-pkg: 0.4.3
+      magic-string: 0.29.0
+      vue: 2.7.14
+    dev: true
+
   /@vue/compiler-core/3.2.45:
     resolution: {integrity: sha512-rcMj7H+PYe5wBV3iYeUgbCglC+pbpN8hBLTJvRiK2eKQiWqu+fG9F+8sW99JdL4LQi7Re178UOxn09puSXvn4A==}
     dependencies:
@@ -3485,6 +3503,14 @@ packages:
 
   /assertion-error/1.1.0:
     resolution: {integrity: sha512-jgsaNduz+ndvGyFt3uSuWqvy4lCnIJiovtouQN5JZHOKCS2QuhEdbcQHFhVksz2N2U9hXJo8odG7ETyWlEeuDw==}
+    dev: true
+
+  /ast-walker-scope/0.4.0:
+    resolution: {integrity: sha512-THVisYmmqkcopZXJDniGgVW6BRKtjutRLytqAgw0XDabYZmxC0GfFggTFZouMhvNT7jPBkx0vOy/2Y+udCDwgg==}
+    engines: {node: '>=14.19.0'}
+    dependencies:
+      '@babel/parser': 7.21.1
+      '@babel/types': 7.21.0
     dev: true
 
   /astral-regex/2.0.0:
@@ -9698,6 +9724,19 @@ packages:
     transitivePeerDependencies:
       - rollup
       - supports-color
+    dev: true
+
+  /unplugin-vue-define-options/1.2.3_vue@2.7.14:
+    resolution: {integrity: sha512-ku2Z5uD8uWE2vvQ2FeUlPKPcsHhDH2crL9up1nWXDAg15dfa2ap05e3T3dYmRvBpCsYhOqrt/Mi8JDVfo8EVDw==}
+    engines: {node: '>=14.19.0'}
+    dependencies:
+      '@rollup/pluginutils': 5.0.2
+      '@vue-macros/common': 1.1.0_vue@2.7.14
+      ast-walker-scope: 0.4.0
+      unplugin: 1.1.0
+    transitivePeerDependencies:
+      - rollup
+      - vue
     dev: true
 
   /unplugin/1.1.0:

@@ -5,6 +5,10 @@ import { type AssetBalanceWithPrice } from '@rotki/common';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
 
+defineOptions({
+  name: 'AssetBreakdown'
+});
+
 const props = defineProps({
   identifier: { required: true, type: String }
 });
