@@ -37,6 +37,10 @@ module.exports = {
     {
       files: ['*.ts'],
       extends: ['@rotki/eslint-config-ts']
+    },
+    {
+      files: ['src/**/*.vue'],
+      extends: ['plugin:vuetify/recommended']
     }
   ],
   settings: {

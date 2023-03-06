@@ -24,7 +24,7 @@
     "dev:web": "node scripts/start-dev.js --web"
   },
   "devDependencies": {
-    "@rotki/eslint-config": "workspace:*",
+    "@rotki/eslint-config": "1.0.3",
     "argparse": "2.0.1",
     "dotenv": "14.3.2",
     "eslint": "8.29.0",
@@ -36,11 +36,5 @@
   "engines": {
     "node": ">=16 <17",
     "pnpm": ">=7 <8"
-  },
-  "workspaces": [
-    "app",
-    "common",
-    "dev-proxy",
-    "eslint/*"
-  ]
+  }
 }
