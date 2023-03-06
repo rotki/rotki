@@ -137,11 +137,7 @@ onMounted(async () => {
   &__items {
     margin-top: 24px;
     border-radius: 4px;
-    border: thin solid rgba(0, 0, 0, 0.12);
-  }
-
-  .theme--dark &__items {
-    border: thin solid rgba(255, 255, 255, 0.12);
+    border: thin solid var(--border-color);
   }
 
   /* stylelint-enable selector-class-pattern,selector-nested-pattern */

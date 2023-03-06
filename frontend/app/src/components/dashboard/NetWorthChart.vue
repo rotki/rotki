@@ -749,16 +749,12 @@ onBeforeUnmount(() => {
 
   &__marker {
     height: 90%;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--border-color);
     position: absolute;
     width: 100%;
     top: 0;
     z-index: 2;
     cursor: all-scroll;
-
-    &--dark {
-      background: rgba(255, 255, 255, 0.1);
-    }
 
     &__limit {
       height: 100%;

@@ -2,7 +2,10 @@
 import { type Account, type GeneralAccount } from '@rotki/common/lib/account';
 import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import { type BlockchainSelection } from '@rotki/common/lib/blockchain';
+import {
+  type Blockchain,
+  type BlockchainSelection
+} from '@rotki/common/lib/blockchain';
 import isEqual from 'lodash/isEqual';
 import {
   type HistoryEventSubType,
@@ -44,6 +47,7 @@ const props = withDefaults(
     useExternalAccountFilter?: boolean;
     sectionTitle?: string;
     mainPage?: boolean;
+    onlyChains?: Blockchain[];
   }>(),
   {
     protocols: () => [],
@@ -52,7 +56,8 @@ const props = withDefaults(
     externalAccountFilter: () => [],
     useExternalAccountFilter: false,
     sectionTitle: '',
-    mainPage: false
+    mainPage: false,
+    onlyChains: () => []
   }
 );
 
@@ -65,7 +70,8 @@ const {
   sectionTitle,
   eventTypes,
   eventSubTypes,
-  mainPage
+  mainPage,
+  onlyChains
 } = toRefs(props);
 
 const usedTitle: ComputedRef<string> = computed(() => {
@@ -464,7 +470,7 @@ const txChains = useArrayMap(txEvmChains, x => x.id);
 
 onMounted(async () => {
   await fetchData();
-  await refreshTransactions();
+  await refreshTransactions(get(onlyChains));
 });
 
 watch(loading, async (isLoading, wasLoading) => {
@@ -499,7 +505,7 @@ const addTransactionHash = () => {
         <refresh-button
           :loading="loading"
           :tooltip="tc('transactions.refresh_tooltip')"
-          @refresh="refreshTransactions(true)"
+          @refresh="refreshTransactions(onlyChains, true)"
         />
         {{ usedTitle }}
       </template>
@@ -699,7 +705,10 @@ const addTransactionHash = () => {
               />
             </template>
             <template #body.prepend="{ headers }">
-              <transaction-query-status :colspan="headers.length" />
+              <transaction-query-status
+                :only-chains="onlyChains"
+                :colspan="headers.length"
+              />
               <upgrade-row
                 v-if="showUpgradeRow"
                 :limit="limit"

@@ -91,6 +91,7 @@ const chain = Blockchain.ETH;
           ]"
           :use-external-account-filter="true"
           :external-account-filter="[{ chain, address: vault.owner }]"
+          :only-chains="[chain]"
         />
       </div>
     </v-col>

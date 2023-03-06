@@ -1,20 +1,26 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
-import { type LiquityStakingDetail } from '@rotki/common/lib/liquity';
+import { type LiquityStakingDetailEntry } from '@rotki/common/lib/liquity';
+import { useStatusStore } from '@/store/status';
+import { Section } from '@/types/status';
 
-defineProps({
-  stake: {
-    required: false,
-    type: Object as PropType<LiquityStakingDetail | null>,
-    default: null
+withDefaults(
+  defineProps<{
+    stake?: LiquityStakingDetailEntry | null;
+  }>(),
+  {
+    stake: null
   }
-});
+);
 
 const { tc } = useI18n();
+
+const { isLoading } = useStatusStore();
+const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
 </script>
 
 <template>
-  <stat-card :title="tc('loan_stake.title')">
+  <card :loading="loading">
+    <template #title> {{ tc('loan_stake.title') }} </template>
     <template v-if="stake">
       <div class="d-flex align-center py-4 justify-end">
         <balance-display
@@ -43,5 +49,5 @@ const { tc } = useI18n();
     <div v-else class="text-center grey--text pt-4">
       {{ tc('loan_stake.no_lqty_staked') }}
     </div>
-  </stat-card>
+  </card>
 </template>

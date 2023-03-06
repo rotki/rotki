@@ -2623,11 +2623,11 @@
     "title": "稳定池存款"
   },
   "liquity_staking_details": {
-    "refresh_tooltip": "刷新质押金额和事件",
+    "refresh_tooltip": "刷新质押金额和价格",
     "select_account": "选择账户",
     "view": {
-      "hide": "隐藏流动性质押细节",
-      "show": "显示流动性质押细节"
+      "hide": "隐藏细节",
+      "show": "显示细节"
     }
   },
   "liquity_staking_events": {

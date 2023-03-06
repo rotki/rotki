@@ -81,7 +81,7 @@ def _get_stats(
 
     return {
         'total_usd_gains_stability_pool': total_usd_stability_rewards,
-        'total_usd_gains_stacking': total_usd_staking_rewards,
+        'total_usd_gains_staking': total_usd_staking_rewards,
         'total_deposited_stability_pool': FVal(stability_pool_deposits[0]) if stability_pool_deposits[0] is not None else ZERO,  # noqa: E501
         'total_withdrawn_stability_pool': FVal(stability_pool_withdrawals[0]) if stability_pool_withdrawals[0] is not None else ZERO,  # noqa: E501
         'total_deposited_stability_pool_usd_value': FVal(stability_pool_deposits[1]) if stability_pool_deposits[1] is not None else ZERO,  # noqa: E501

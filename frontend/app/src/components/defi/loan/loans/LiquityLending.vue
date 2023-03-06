@@ -29,6 +29,7 @@ const liquidationPrice: ComputedRef<BigNumber | null> = computed(
 );
 const premium = usePremium();
 const { tc } = useI18n();
+const chain = Blockchain.ETH;
 </script>
 
 <template>
@@ -83,12 +84,8 @@ const { tc } = useI18n();
             HistoryEventSubType.GENERATE_DEBT,
             HistoryEventSubType.PAYBACK_DEBT
           ]"
-          :external-account-filter="[
-            {
-              address: loan.owner,
-              chain: Blockchain.ETH
-            }
-          ]"
+          :external-account-filter="[{ chain, address: loan.owner }]"
+          :only-chains="[chain]"
         />
       </div>
     </v-col>

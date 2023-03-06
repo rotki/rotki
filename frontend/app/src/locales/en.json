@@ -2660,15 +2660,38 @@
     "title": "Stability pool deposits"
   },
   "liquity_staking_details": {
-    "refresh_tooltip": "Refresh the staked amounts and events",
+    "has_proxy_addresses": "has {length} proxy address(es):",
+    "refresh_tooltip": "Refresh the staked amounts and prices",
     "select_account": "Select account",
     "view": {
-      "hide": "Hide liquity staking detail",
-      "show": "Show liquity staking detail"
+      "hide": "Hide details",
+      "show": "Show details"
     }
   },
   "liquity_staking_events": {
     "title": "Stake Events"
+  },
+  "liquity_statistic": {
+    "estimated_pnl": "Estimated PnL",
+    "estimated_pnl_warning": "This estimation PnL takes into consideration the current unclaimed gains",
+    "no_statistics": "No statistics found",
+    "no_staking_gains": "No Unclaimed Staking Gains",
+    "no_stability_pool_gains": "No Unclaimed Stability Pool Gains",
+    "stability_pool_gains": "Stability Pool Gains",
+    "staking_gains": "Staking Gains",
+    "switch": {
+      "current": "Current",
+      "historical": "Historical"
+    },
+    "title": "Statistics",
+    "total_deposited_stability_pool": "Total Deposited Stability Pool",
+    "total_gains_stability_pool": "Total Gains Stability Pool",
+    "total_gains_staking": "Total Gains Staking",
+    "total_withdrawn_stability_pool": "Total Withdrawn Stability Pool",
+    "view": {
+      "show": "Show more",
+      "hide": "Show less"
+    }
   },
   "loan_collateral": {
     "apy": "APY",

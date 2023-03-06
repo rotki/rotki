@@ -272,6 +272,7 @@ const transactionEventProtocols: ComputedRef<TransactionEventProtocol[]> =
           HistoryEventSubType.DEPLOY
         ]"
         :external-account-filter="selectedAccounts"
+        :only-chains="chains"
       />
     </div>
   </div>

@@ -1,19 +1,27 @@
 <script setup lang="ts">
-import { type LiquityPoolDetail } from '@rotki/common/lib/liquity';
+import { type LiquityPoolDetailEntry } from '@rotki/common/lib/liquity';
 import { type PropType } from 'vue';
+import { useStatusStore } from '@/store/status';
+import { Section } from '@/types/status';
 
 defineProps({
   pool: {
     required: false,
-    type: Object as PropType<LiquityPoolDetail | null>,
+    type: Object as PropType<LiquityPoolDetailEntry | null>,
     default: null
   }
 });
 
 const { tc } = useI18n();
+
+const { isLoading } = useStatusStore();
+const loading = isLoading(Section.DEFI_LIQUITY_STAKING_POOLS);
 </script>
 <template>
-  <stat-card :title="tc('liquity_pools.title')">
+  <card :loading="loading">
+    <template #title>
+      {{ tc('liquity_pools.title') }}
+    </template>
     <template v-if="pool">
       <div class="d-flex align-center py-4 justify-end">
         <balance-display
@@ -46,5 +54,5 @@ const { tc } = useI18n();
     <div v-else class="text-center grey--text pt-4">
       {{ tc('liquity_pools.no_lusd_deposited') }}
     </div>
-  </stat-card>
+  </card>
 </template>

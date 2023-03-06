@@ -379,6 +379,7 @@ declare global {
   const useQueriedAddressesStore: typeof import('./store/session/queried-addresses')['useQueriedAddressesStore']
   const useRafFn: typeof import('@vueuse/core')['useRafFn']
   const useRefHistory: typeof import('@vueuse/core')['useRefHistory']
+  const useRefMap: typeof import('./composables/utils/useRefMap/index')['useRefMap']
   const useRefresh: typeof import('./composables/balances/refresh')['useRefresh']
   const useReportsApi: typeof import('./composables/api/reports/index')['useReportsApi']
   const useReportsStore: typeof import('./store/reports/index')['useReportsStore']
@@ -887,6 +888,7 @@ declare module 'vue' {
     readonly useQueriedAddressesStore: UnwrapRef<typeof import('./store/session/queried-addresses')['useQueriedAddressesStore']>
     readonly useRafFn: UnwrapRef<typeof import('@vueuse/core')['useRafFn']>
     readonly useRefHistory: UnwrapRef<typeof import('@vueuse/core')['useRefHistory']>
+    readonly useRefMap: UnwrapRef<typeof import('./composables/utils/useRefMap/index')['useRefMap']>
     readonly useRefresh: UnwrapRef<typeof import('./composables/balances/refresh')['useRefresh']>
     readonly useReportsApi: UnwrapRef<typeof import('./composables/api/reports/index')['useReportsApi']>
     readonly useReportsStore: UnwrapRef<typeof import('./store/reports/index')['useReportsStore']>
