@@ -1205,400 +1205,400 @@
     "optimism": "Optimism"
   },
   "borrowing": {
-    "header": "Collateralized Loans",
-    "loading": "Please wait while your liabilities are getting loaded...",
-    "select_loan": "Select Loan",
-    "select_loan_hint": "Please select a loan to see information",
-    "total_collateral_locked": "Total collateral locked",
-    "total_outstanding_debt": "Total outstanding debt"
+    "header": "抵押贷款",
+    "loading": "正在加载您的债务，请稍候...",
+    "select_loan": "选择贷款",
+    "select_loan_hint": "请选择贷款查看信息",
+    "total_collateral_locked": "锁定抵押品总额",
+    "total_outstanding_debt": "未偿债务总额"
   },
   "change_password": {
-    "button": "Change Password",
+    "button": "更改密码",
     "labels": {
-      "confirm_password": "Confirm New Password",
-      "new_password": "New Password",
-      "password": "Current Password"
+      "confirm_password": "确认新密码",
+      "new_password": "新密码",
+      "password": "当前密码"
     },
-    "sync_warning": "Changing the password with premium sync enabled will affect other synced instances of the application. Upon login with other synced instances, you will be asked to overwrite the local DB with the synced version on the server. After that, you must log in with the newly set password.",
-    "title": "User Account & Security",
+    "sync_warning": "在启用高级同步的情况下更改密码会影响应用程序的其他同步实例。在使用其他同步实例登录时，系统会要求您使用服务器上的同步版本覆盖本地数据库。之后，您必须 使用新设置的密码登录。",
+    "title": "用户账户和安全",
     "validation": {
-      "empty_confirmation": "Please provide a password confirmation",
-      "empty_password": "Please provide a password",
-      "password_mismatch": "The password confirmation does not match the provided password"
+      "empty_confirmation": "请提供密码确认",
+      "empty_password": "请提供密码",
+      "password_mismatch": "密码确认与提供的密码不匹配"
     }
   },
   "closed_trades": {
     "confirmation": {
-      "message": "Are you sure you want to delete the following trade: {action} of {amount} {pair}",
-      "multiple_message": "Are you sure you want to delete these {length} trades?",
-      "title": "Delete Trade"
+      "message": "您确定要删除以下交易：{action} of {amount} {pair}",
+      "multiple_message": "您确定要删除这些 {length} 笔交易吗？",
+      "title": "删除交易"
     },
-    "delete_tooltip": "Delete trade",
+    "delete_tooltip": "删除交易",
     "description": {
-      "for": "for",
-      "with": "with"
+      "for": "为了",
+      "with": "与"
     },
     "details": {
-      "fee": "Fee",
-      "link": "Link",
-      "link_data": "Trade has no link",
-      "title": "Trade Details"
+      "fee": "费用",
+      "link": "链接",
+      "link_data": "交易没有链接",
+      "title": "交易详情"
     },
     "dialog": {
       "add": {
-        "title": "Add an external trade"
+        "title": "添加对外贸易"
       },
       "edit": {
-        "subtitle": "Edit an existing trade",
-        "title": "Edit External Trade"
+        "subtitle": "编辑现有交易",
+        "title": "编辑对外交易"
       }
     },
-    "edit_tooltip": "Edit trade",
+    "edit_tooltip": "编辑交易",
     "filter": {
-      "base_asset": "filter by the base asset of the trade",
-      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
-      "end_date": "filter by the end date of the trade period",
-      "location": "filter by the trade location",
-      "quote_asset": "filter by the quote asset of the trade",
-      "start_date": "filter by the start date of the trade period",
-      "trade_type": "filter by the trade action (buy or sell)"
+      "base_asset": "按交易基础资产筛选",
+      "date_hint": "格式 {format} HH:mm:ss(时间/秒可选)",
+      "end_date": "按交易期结束日期过滤",
+      "location": "按交易地点过滤",
+      "quote_asset": "按交易的报价资产过滤",
+      "start_date": "按交易周期的开始日期筛选",
+      "trade_type": "按交易行为过滤（买入或卖出）"
     },
     "headers": {
-      "action": "Action",
-      "actions": "Actions",
-      "base": "Base",
-      "quote": "Quote",
-      "rate": "Rate"
+      "action": "动作",
+      "actions": "动作",
+      "base": "基地",
+      "quote": "引用",
+      "rate": "率"
     },
-    "hide_ignored_trades": "Hide ignored trades",
-    "label": "trades",
-    "refresh_tooltip": "Refresh trades",
-    "selected": "{count} trade(s) selected",
-    "title": "Closed Orders"
+    "hide_ignored_trades": "隐藏忽略的交易",
+    "label": "交易",
+    "refresh_tooltip": "刷新交易",
+    "selected": "{count} 笔交易已选择",
+    "title": "关闭订单"
   },
   "collapsed_pending_tasks": {
-    "title": "{count} pending task | {count} pending tasks"
+    "title": "{count} 个待处理任务 | {count} 个待处理任务"
   },
   "common": {
-    "account": "Account",
+    "account": "账户",
     "actions": {
-      "accept": "Accept",
-      "back": "Back",
-      "cancel": "Cancel",
-      "clear_selection": "Clear Selection",
-      "close": "Close",
-      "confirm": "Confirm",
-      "continue": "Continue",
-      "copy": "Copy to clipboard",
-      "create": "Create",
-      "delete": "Delete",
-      "dismiss": "Dismiss",
-      "download": "Download",
-      "edit": "Edit",
-      "filter": "Filter",
-      "finish": "Finish",
-      "generate": "Generate",
-      "import": "Import",
-      "install": "Install",
-      "next": "Next",
-      "no": "No",
-      "ok": "Ok",
-      "pull": "Pull",
-      "push": "Push",
-      "save": "Save",
-      "search": "Search",
-      "skip": "Skip",
-      "terminate": "Terminate",
-      "update": "Update",
-      "upgrade": "Upgrade",
-      "yes": "Yes"
+      "accept": "接受",
+      "back": "返回",
+      "cancel": "取消",
+      "clear_selection": "清除选择",
+      "close": "关闭",
+      "confirm": "确认",
+      "continue": "继续",
+      "copy": "复制到剪贴板",
+      "create": "创建",
+      "delete": "删除",
+      "dismiss": "驳回",
+      "download": "下载",
+      "edit": "编辑",
+      "filter": "过滤器",
+      "finish": "完成",
+      "generate": "生成",
+      "import": "导入",
+      "install": "安装",
+      "next": "下一个",
+      "no": "没有",
+      "ok": "好的",
+      "pull": "拉",
+      "push": "推",
+      "save": "保存",
+      "search": "搜索",
+      "skip": "跳过",
+      "terminate": "终止",
+      "update": "更新",
+      "upgrade": "升级",
+      "yes": "是"
     },
-    "address": "Address",
-    "amount": "Amount",
-    "asset": "Asset",
-    "assets": "Assets",
-    "available_to_premium": "only available to premium users.",
-    "balance": "Balance",
-    "category": "Category",
-    "datetime": "Date/Time",
-    "deposits": "Deposits",
-    "description": "Description",
-    "details": "Details",
-    "event": "Event",
-    "events": "Events",
-    "ignored_in_accounting": "Ignored in Accounting",
-    "location": "Location",
-    "multi_chain": "Multi Chain",
-    "name": "Name",
-    "no_premium": "No premium subscription detected. ",
+    "address": "地址",
+    "amount": "金额",
+    "asset": "资产",
+    "assets": "资产",
+    "available_to_premium": "仅对高级用户可用。",
+    "balance": "余额",
+    "category": "类别",
+    "datetime": "日期/时间",
+    "deposits": "存款",
+    "description": "描述",
+    "details": "细节",
+    "event": "事件",
+    "events": "事件",
+    "ignored_in_accounting": "在会计中忽略",
+    "location": "位置",
+    "multi_chain": "多链",
+    "name": "姓名",
+    "no_premium": "未检测到高级订阅。",
     "of": "of",
-    "price": "Price",
-    "price_in_symbol": "Price in {symbol}",
-    "priority": "Priority",
-    "protocol": "Protocol",
-    "select_address": "Select address(es)",
-    "total": "Total",
+    "price": "价格",
+    "price_in_symbol": "{symbol} 价格",
+    "priority": "优先级",
+    "protocol": "协议",
+    "select_address": "选择地址",
+    "total": "总计",
     "tx": "Tx",
-    "tx_hash": "Tx Hash",
-    "type": "Type",
-    "value_in_symbol": "{symbol} Value",
-    "visit_website": "To get a premium subscription please visit our {0}"
+    "tx_hash": "交易哈希",
+    "type": "类型",
+    "value_in_symbol": "{symbol} 值",
+    "visit_website": "要获得高级订阅，请访问我们的 {0}"
   },
   "compound_lending": {
-    "header": "Compound Loan ({asset})",
-    "history": "Compound History"
+    "header": "复合贷款 ({asset})",
+    "history": "复合历史"
   },
   "confirmable_reset": {
     "confirm": {
-      "message": "Are you sure you want to proceed with the reset?"
+      "message": "您确定要继续重置吗？"
     }
   },
   "conflict_dialog": {
     "action": {
-      "local": "Local",
-      "remote": "Remote"
+      "local": "本地",
+      "remote": "远程"
     },
-    "all_buttons_description": "For all conflicts",
-    "hint": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input.",
-    "keep_local": "Keep Local",
-    "keep_remote": "Keep Remote",
-    "subtitle": "Local changes have been detected to the following assets. Select if you would like to keep the local version or overwrite it with the remote one.",
+    "all_buttons_description": "对于所有冲突",
+    "hint": "{conflicts} 个资产条目无法自动更新。{remaining} 个剩余条目需要用户输入。",
+    "keep_local": "保持本地化",
+    "keep_remote": "保持远程",
+    "subtitle": "已检测到以下资产的本地更改。选择是要保留本地版本还是用远程版本覆盖它。",
     "table": {
       "headers": {
-        "keep": "Keep",
-        "local": "Local",
-        "remote": "Remote"
+        "keep": "保持",
+        "local": "本地",
+        "remote": "远程"
       }
     },
-    "title": "Conflicts detected"
+    "title": "检测到冲突"
   },
   "connection_failure": {
-    "default": "Connect to default",
-    "message": "A connection to the rotki backend was not possible, would you like to retry again?",
-    "retry": "Retry",
-    "title": "Connection failure"
+    "default": "连接到默认",
+    "message": "无法连接到 rotki 后端，你想再试一次吗？",
+    "retry": "重试",
+    "title": "连接失败"
   },
   "connection_loading": {
-    "message": "Connecting to rotki backend"
+    "message": "正在连接到 rotki 后端"
   },
   "cost_basis_table": {
-    "complete": "(Complete)",
-    "cost_basis": "Cost Basis",
+    "complete": "（完成）",
+    "cost_basis": "成本基础",
     "headers": {
-      "amount": "Amount Sold",
-      "full_amount": "Total acquired by event",
-      "rate": "{currency} Rate",
-      "remaining_amount": "Remaining after selling",
-      "taxable": "Taxable ?"
+      "amount": "销售量",
+      "full_amount": "事件获得总量",
+      "rate": "{currency} 汇率",
+      "remaining_amount": "卖出后剩余",
+      "taxable": "应税？"
     },
-    "incomplete": "(Incomplete)"
+    "incomplete": "（不完整）"
   },
   "create_account": {
     "premium": {
-      "button_premium_approve": "Yes, enable premium",
-      "premium_link_text": "here.",
-      "premium_question": "Are you already a rotki premium user and want to enable premium features? This is needed if you want to sync your rotki database from another device at account creation. You can buy premium {premiumLink}",
-      "title": "Enable Premium"
+      "button_premium_approve": "是的，启用高级",
+      "premium_link_text": "这里。",
+      "premium_question": "您已经是 rotki 高级用户并且想启用高级功能吗？如果您想在创建帐户时从另一台设备同步您的 rotki 数据库，这是必需的。您可以购买高级版 {premiumLink}",
+      "title": "启用高级"
     },
     "select_credentials": {
-      "label_password": "Password",
-      "label_password_backup_reminder": "rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password.",
-      "label_password_repeat": "Repeat Password",
-      "label_username": "Username",
-      "password_sync_requirement": "Ensure that the account uses the same password as the database originally backed up. You can't access the database if you input a different password.",
-      "title": "Select Credentials",
+      "label_password": "密码",
+      "label_password_backup_reminder": "rotki 在本地保存所有用户数据。我知道如果我丢失了密码，我将无法访问我的数据。我已经创建了密码备份。",
+      "label_password_repeat": "重复密码",
+      "label_username": "用户名",
+      "password_sync_requirement": "确保该账户使用的密码与原先备份的数据库相同。输入不同的密码将无法访问数据库。",
+      "title": "选择凭证",
       "validation": {
-        "non_empty_password": "Please provide a password",
-        "non_empty_password_confirmation": "Please provide a password confirmation",
-        "non_empty_username": "Please provide a user name",
-        "password_confirmation_mismatch": "The password confirmation does not match the provided password",
-        "valid_username": "A username must contain only alphanumeric characters and have no spaces"
+        "non_empty_password": "请提供密码",
+        "non_empty_password_confirmation": "请提供密码确认",
+        "non_empty_username": "请提供用户名",
+        "password_confirmation_mismatch": "密码确认与提供的密码不匹配",
+        "valid_username": "用户名必须只包含字母数字字符且不能有空格"
       }
     },
-    "title": "Create Account",
+    "title": "创建账号",
     "usage_analytics": {
-      "description": "rotki is a local application and anonymous usage analytics is the only way for us to have an idea of how many people use our software, where they are from etc. These data are really important to us, are completely anonymous and help us create a better product for you.",
-      "label_confirm": "Submit anonymous usage analytics",
-      "title": "Usage analytics"
+      "description": "rotki 是一个本地应用程序，匿名使用分析是我们了解有多少人使用我们的软件，他们来自哪里等的唯一方式。这些数据对我们非常重要，完全匿名并且 帮助我们为您创造更好的产品。",
+      "label_confirm": "提交匿名使用分析",
+      "title": "使用分析"
     }
   },
   "currencies": {
-    "aud": "Australian Dollar",
-    "brl": "Brazilian Real",
-    "cad": "Canadian Dollar",
-    "chf": "Swiss Franc",
-    "cny": "Chinese Yuan",
-    "dkk": "Danish krone",
-    "eur": "Euro",
-    "gbp": "British Pound",
-    "inr": "Indian rupee",
-    "jpy": "Japanese Yen",
-    "krw": "Korean Won",
-    "nok": "Norwegian krone",
-    "nzd": "New Zealand Dollar",
-    "pln": "Polish zloty",
-    "rub": "Russian Ruble",
-    "sek": "Swedish Krona",
-    "sgd": "Singapore Dollar",
-    "try": "Turkish Lira",
-    "twd": "New Taiwan dollar",
-    "usd": "United States Dollar",
-    "zar": "South African Rand"
+    "aud": "澳元",
+    "brl": "巴西雷亚尔",
+    "cad": "加元",
+    "chf": "瑞士法郎",
+    "cny": "人民币",
+    "dkk": "丹麦克朗",
+    "eur": "欧元",
+    "gbp": "英镑",
+    "inr": "印度卢比",
+    "jpy": "日元",
+    "krw": "韩元",
+    "nok": "挪威克朗",
+    "nzd": "新西兰元",
+    "pln": "波兰兹罗提",
+    "rub": "俄罗斯卢布",
+    "sek": "瑞典克朗",
+    "sgd": "新加坡元",
+    "try": "土耳其里拉",
+    "twd": "新台币",
+    "usd": "美元",
+    "zar": "南非兰特"
   },
   "currency_drop_down": {
-    "hint": "Select as the main currency",
-    "profit_currency": "Profit Currency ({currency})"
+    "hint": "选择作为主要货币",
+    "profit_currency": "利润货币 ({currency})"
   },
   "dashboard": {
     "blockchain_balances": {
-      "add": "Add blockchain address",
-      "title": "blockchain",
+      "add": "添加区块链地址",
+      "title": "区块链",
       "behaviour": {
-        "only_refresh_balances": "Only refresh balances",
-        "redetect_tokens": "Re-detect tokens and refresh balances",
-        "title": "Blockchain refresh button behaviour"
+        "only_refresh_balances": "只刷新余额",
+        "redetect_tokens": "重新检测代币并刷新余额",
+        "title": "区块链刷新按钮行为"
       }
     },
     "exchange_balances": {
-      "add": "Add an exchange",
-      "title": "exchange"
+      "add": "添加交易所",
+      "title": "交换"
     },
     "liabilities": {
-      "title": "Liabilities"
+      "title": "负债"
     },
     "liquidity_position": {
-      "refresh_tooltip": "Refresh LP Tokens",
-      "title": "LP Tokens"
+      "refresh_tooltip": "刷新 LP 代币",
+      "title": "LP代币"
     },
     "manual_balances": {
-      "add": "Add a manual balance",
-      "card_tooltip": "Aggregate value of manual balances entered. Fiat balances are aggregated in the banks entry.",
-      "title": "manual"
+      "add": "添加手动余额",
+      "card_tooltip": "手动输入余额的总值。法币余额在银行条目中汇总。",
+      "title": "手册"
     },
     "snapshot": {
       "delete": {
         "dialog": {
-          "message": "Are you sure you want to delete this snapshot?",
-          "title": "Delete snapshot"
+          "message": "你确定要删除这个快照吗？",
+          "title": "删除快照"
         },
         "message": {
-          "failure": "Delete snapshot failed",
-          "success": "Snapshot successfully deleted",
-          "title": "Delete snapshot"
+          "failure": "删除快照失败",
+          "success": "快照删除成功",
+          "title": "删除快照"
         }
       },
       "download": {
         "message": {
-          "failure": "Snapshot CSV export failed",
-          "success": "Snapshot exported to CSV successfully",
-          "title": "Snapshot CSV Export"
+          "failure": "快照 CSV 导出失败",
+          "success": "快照导出为CSV成功",
+          "title": "快照 CSV 导出"
         }
       },
       "edit": {
         "dialog": {
           "actions": {
-            "add_new_entry": "Add New Entry",
-            "delete_item": "Delete item",
-            "edit_item": "Edit item"
+            "add_new_entry": "添加新条目",
+            "delete_item": "删除项目",
+            "edit_item": "编辑项目"
           },
           "balances": {
-            "add_title": "Add balance snapshot data",
-            "delete_confirmation": "Are you sure you want to delete this balance snapshot item?",
-            "delete_title": "Delete balance snapshot item",
-            "edit_title": "Update balance snapshot data",
+            "add_title": "添加余额快照数据",
+            "delete_confirmation": "你确定要删除这个余额快照项目吗？",
+            "delete_title": "删除余额快照项",
+            "edit_title": "更新余额快照数据",
             "hints": {
-              "location": "This is optional. If specified, the location balance data will be adjusted automatically. If not, you have to update location balance data manually."
+              "location": "这是可选的。如果指定，位置余额数据将自动调整。如果没有，您必须手动更新位置余额数据。"
             },
             "nft": "NFT",
-            "nft_hint": "Accepted format: \"_nft_{ETH address}_{collection number}\"",
-            "optional": "Optional",
+            "nft_hint": "接受格式： \"_nft_{ETH address}_{collection number}\"",
+            "optional": "可选",
             "preview": {
-              "from": "From",
-              "title": "This location value will be updated",
-              "to": "To"
+              "from": "从",
+              "title": "此位置值将被更新",
+              "to": "到"
             },
             "rules": {
-              "amount": "The amount field cannot be empty",
-              "asset": "The asset field cannot be empty",
-              "asset_non_duplicate": "The entry with this asset already exists, please use another asset.",
-              "category": "The category field cannot be empty",
-              "value": "The value field cannot be empty"
+              "amount": "金额字段不能为空",
+              "asset": "资产字段不能为空",
+              "asset_non_duplicate": "该资产条目已存在，请使用其他资产。",
+              "category": "类别字段不能为空",
+              "value": "值字段不能为空"
             },
-            "title": "Balances Snapshot",
+            "title": "余额快照",
             "token": "Token"
           },
           "fetch": {
-            "loading": "Fetching snapshot data"
+            "loading": "正在获取快照数据"
           },
           "location_data": {
-            "add_title": "Add location data snapshot data",
-            "delete_confirmation": "Are you sure you want to delete this location data snapshot item?",
-            "delete_title": "Delete location data snapshot item",
-            "edit_title": "Update location data snapshot data",
+            "add_title": "添加位置数据快照数据",
+            "delete_confirmation": "您确定要删除此位置数据快照项吗？",
+            "delete_title": "删除位置数据快照项",
+            "edit_title": "更新位置数据快照数据",
             "rules": {
-              "location": "The location field cannot be empty",
-              "value": "The value field cannot be empty"
+              "location": "位置字段不能为空",
+              "value": "值字段不能为空"
             },
-            "title": "Location Data Snapshot"
+            "title": "位置数据快照"
           },
           "message": {
-            "error": "Failed to update snapshot data: {message}",
-            "success": "Data was successfully updated",
-            "title": "Update snapshot data"
+            "error": "无法更新快照数据：{message}",
+            "success": "数据更新成功",
+            "title": "更新快照数据"
           },
-          "title": "Edit snapshot data at {date}",
+          "title": "编辑 {date} 的快照数据",
           "total": {
-            "hint": "You have different amount between assets total and locations total. You can choose which amount to use.",
+            "hint": "资产总额和位置总额之间的金额不同。您可以选择要使用的金额。",
             "rules": {
-              "total": "The value field cannot be empty"
+              "total": "值字段不能为空"
             },
-            "use_calculated_asset": "Use total from {length} asset(s) value: ",
-            "use_calculated_location": "Use total from {length} location(s) value: ",
-            "use_calculated_total": "Use calculated total value: ",
-            "warning": "This is total value that includes NFTs value. If you turn off setting \"Include NFTs in graphs and total amounts\", it will show value {amount} on the chart"
+            "use_calculated_asset": "使用 {length} 个资产总值：",
+            "use_calculated_location": "使用 {length} 个位置的总计值：",
+            "use_calculated_total": "使用计算总值：",
+            "warning": "这是包括 NFTs 价值的总价值。如果你关闭设置“在图表和总量中包括 NFTs”，它将在图表上显示价值 {amount}"
           }
         }
       },
-      "export_database_snapshot": "Export database snapshot",
-      "select_directory": "Select a directory",
-      "subtitle": "Click the button below to download snapshot for"
+      "export_database_snapshot": "导出数据库快照",
+      "select_directory": "选择目录",
+      "subtitle": "点击下方按钮下载快照"
     }
   },
   "dashboard_asset_table": {
     "headers": {
-      "percentage_of_total_current_group": "% of total {group}",
-      "percentage_of_total_net_value": "% of net Value",
-      "percentage_total": "% of total"
+      "percentage_of_total_current_group": "占 {group} 总数的百分比",
+      "percentage_of_total_net_value": "净值百分比",
+      "percentage_total": "占总数的百分比"
     },
-    "no_search_result": "Your search for \"{search}\" yielded no results.",
-    "select_visible_columns": "Select visible columns"
+    "no_search_result": "您对 \"{search}\" 的搜索没有结果。",
+    "select_visible_columns": "选择可见列"
   },
   "data_management": {
     "confirm": {
-      "message": "Are you sure you want to purge the cached data for {source}?",
-      "title": "Confirm cached data purge"
+      "message": "您确定要清除 {source} 的缓存数据吗？",
+      "title": "确认缓存数据清除"
     },
-    "error": "Purging the cached data for {source} failed: {message}",
-    "subtitle": "Allows you to purge data cached by rotki",
-    "success": "Data was successfully deleted",
-    "title": "Manage Data"
+    "error": "清除 {source} 的缓存数据失败：{message}",
+    "subtitle": "允许您清除 rotki 缓存的数据",
+    "success": "数据删除成功",
+    "title": "管理数据"
   },
   "data_table": {
-    "items_no": "Items #",
-    "rows_per_page": "Rows per page"
+    "items_no": "项目 #",
+    "rows_per_page": "每页行数"
   },
   "database_backups": {
     "action": {
-      "delete": "Delete the backup",
-      "download": "Download the backup"
+      "delete": "删除备份",
+      "download": "下载备份"
     },
     "backup": {
-      "message": "A database backup was successfully created {filepath}",
-      "title": "Database Backup"
+      "message": "数据库备份已成功创建 {filepath}",
+      "title": "数据库备份"
     },
     "backup_error": {
-      "message": "There was a problem creating the database backup: {message}",
-      "title": "Database Backup failure"
+      "message": "创建数据库备份时出现问题：{message}",
+      "title": "数据库备份失败"
     },
     "column": {
       "size": "Size",
