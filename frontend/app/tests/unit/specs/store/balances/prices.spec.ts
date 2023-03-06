@@ -1,7 +1,7 @@
-import { defaultGeneralSettings } from '@/data/factories';
 import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
 import { PriceOracle } from '@/types/price-oracle';
 import { bigNumberify } from '@/utils/bignumbers';
+import { updateGeneralSettings } from '../../../utils/general-settings';
 
 vi.mock('@/store/tasks', () => ({
   useTaskStore: vi.fn().mockReturnValue({
@@ -209,9 +209,7 @@ describe('store::balances/manual', () => {
   describe('toSelectedCurrency', () => {
     test('default', () => {
       const { findCurrency } = useCurrencies();
-      useGeneralSettingsStore().update(
-        defaultGeneralSettings(findCurrency('EUR'))
-      );
+      updateGeneralSettings({ mainCurrency: findCurrency('EUR') });
 
       const convertedValue = store.toSelectedCurrency(bigNumberify(10));
 

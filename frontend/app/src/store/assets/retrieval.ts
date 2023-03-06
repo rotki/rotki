@@ -109,7 +109,7 @@ export const useAssetInfoRetrievalStore = defineStore('assets/info', () => {
     });
 
   const assetName = (
-    identifier: MaybeRef<string>,
+    identifier: MaybeRef<string | undefined>,
     enableAssociation: MaybeRef<boolean> = true
   ): ComputedRef<string> =>
     computed(() => {
