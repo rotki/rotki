@@ -365,7 +365,10 @@ export const transactionEventTypeMapping: Record<
   },
   [HistoryEventType.STAKING]: {
     [HistoryEventSubType.DEPOSIT_ASSET]: TransactionEventType.DEPOSIT,
-    [HistoryEventSubType.REWARD]: TransactionEventType.RECEIVE
+    [HistoryEventSubType.REWARD]: TransactionEventType.RECEIVE,
+    [HistoryEventSubType.RECEIVE_WRAPPED]: TransactionEventType.RECEIVE,
+    [HistoryEventSubType.REMOVE_ASSET]: TransactionEventType.WITHDRAW,
+    [HistoryEventSubType.RETURN_WRAPPED]: TransactionEventType.SEND
   }
 };
 
@@ -388,6 +391,13 @@ export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [
     identifier: TransactionEventProtocol.BADGER,
     label: 'badger',
     image: './assets/images/defi/badger.png'
+  },
+  {
+    identifier: TransactionEventProtocol.BALANCER,
+    label: 'badger',
+    image: './assets/images/defi/balancer.svg',
+    matcher: (identifier: string): boolean =>
+      identifier.toLowerCase().startsWith('balancer')
   },
   {
     identifier: TransactionEventProtocol.COMPOUND,
@@ -515,7 +525,9 @@ export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [
   {
     identifier: TransactionEventProtocol.YEARN,
     label: 'Yearn',
-    image: './assets/images/defi/yearn_vaults.svg'
+    image: './assets/images/defi/yearn_vaults.svg',
+    matcher: (identifier: string): boolean =>
+      identifier.toLowerCase().startsWith('yearn')
   },
   {
     identifier: TransactionEventProtocol.ZKSYNC,

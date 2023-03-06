@@ -31,6 +31,9 @@ import { TaskType } from '@/types/task-type';
 import { One, Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useEventTypeData } from '@/utils/history';
+import { isValidEthAddress } from '@/utils/text';
+import ComboboxWithCustomInput from '@/components/inputs/ComboboxWithCustomInput.vue';
+import { useTransactions } from '@/store/history/transactions';
 
 const props = defineProps({
   value: { required: false, type: Boolean, default: false },
@@ -138,6 +141,19 @@ const rules = {
       ).toString(),
       required
     )
+  },
+  counterparty: {
+    required: helpers.withMessage(
+      t(
+        'transactions.events.form.counterparty.validation.non_empty'
+      ).toString(),
+      required
+    ),
+    isValid: helpers.withMessage(
+      t('transactions.events.form.counterparty.validation.valid').toString(),
+      (value: string) =>
+        get(counterparties).includes(value) || isValidEthAddress(value)
+    )
   }
 };
 
@@ -150,9 +166,10 @@ const v$ = useVuelidate(
     usdValue: fiatValue,
     sequenceIndex,
     eventType,
-    eventSubtype
+    eventSubtype,
+    counterparty
   },
-  { $externalResults: errorMessages }
+  { $autoDirty: true, $externalResults: errorMessages }
 );
 
 const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
@@ -340,6 +357,8 @@ defineExpose({
   save,
   reset
 });
+
+const { counterparties } = storeToRefs(useTransactions());
 </script>
 <template>
   <v-form
@@ -488,12 +507,16 @@ defineExpose({
         />
       </v-col>
       <v-col cols="12" md="4">
-        <v-text-field
+        <combobox-with-custom-input
           v-model="counterparty"
           outlined
-          data-cy="counterparty"
+          required
+          auto-select-first
           :label="t('transactions.events.form.counterparty.label')"
-          :error-messages="errorMessages['counterparty']"
+          :items="counterparties"
+          data-cy="counterparty"
+          :error-messages="v$.counterparty.$errors.map(e => e.$message)"
+          @blur="v$.counterparty.$touch()"
         />
       </v-col>
     </v-row>

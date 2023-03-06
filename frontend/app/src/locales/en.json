@@ -3790,7 +3790,11 @@
           }
         },
         "counterparty": {
-          "label": "Counterparty"
+          "label": "Counterparty",
+          "validation": {
+            "non_empty": "The counterparty field cannot be empty",
+            "valid": "The counterparty field is invalid, fill with available counterparties, or valid address"
+          }
         },
         "datetime": {
           "hint": "The date & time of when the event happened",
