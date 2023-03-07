@@ -365,6 +365,12 @@ class HistoryBaseEntry(AccountingEventMixin):
         # else it's a decoded transaction event and should be processed there
         return accounting.transactions.process(self, events_iterator)
 
+    def __hash__(self) -> int:
+        if self.identifier is not None:
+            return hash(self.identifier)
+
+        return hash(str(self.event_identifier) + str(self.sequence_index))
+
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class StakingEvent:
