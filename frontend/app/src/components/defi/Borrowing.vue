@@ -5,7 +5,7 @@ import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import DefiSelectorItem from '@/components/defi/DefiSelectorItem.vue';
 import LoanInfo from '@/components/defi/loan/LoanInfo.vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import StatCardColumn from '@/components/display/StatCardColumn.vue';
 import StatCardWide from '@/components/display/StatCardWide.vue';
 import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';

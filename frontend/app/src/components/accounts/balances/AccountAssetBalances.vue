@@ -2,7 +2,7 @@
 import { type AssetBalance } from '@rotki/common';
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';

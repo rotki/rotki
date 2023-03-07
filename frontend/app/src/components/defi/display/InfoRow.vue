@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import { Zero } from '@/utils/bignumbers';
 
 defineProps({

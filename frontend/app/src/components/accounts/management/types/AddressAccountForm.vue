@@ -157,7 +157,7 @@ onMounted(() => {
     <address-input
       :addresses="addresses"
       :error-messages="errorMessages.address"
-      :disabled="loading"
+      :disabled="loading || !!accountToEdit"
       :multi="!accountToEdit"
       @update:addresses="
         delete errorMessages['address'];

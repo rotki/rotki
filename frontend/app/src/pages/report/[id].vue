@@ -80,6 +80,17 @@ const onPage = async ({
   await fetchReport(reportId, { limit, offset });
   set(refreshing, false);
 };
+
+const regenerateReport = async () => {
+  await router.push({
+    path: Routes.PROFIT_LOSS_REPORTS,
+    query: {
+      regenerate: 'true',
+      start: get(report).start.toString(),
+      end: get(report).end.toString()
+    }
+  });
+};
 </script>
 
 <template>
@@ -114,13 +125,20 @@ const onPage = async ({
       :accounting-settings="settings"
       class="mt-4 mb-8"
     />
-    <div v-if="latest" class="d-flex">
-      <export-report-csv class="mr-4" />
-      <report-actionable
-        :report="selectedReport"
-        :initial-open="initialOpenReportActionable"
-      />
+    <div class="d-flex">
+      <v-btn class="mr-2" color="primary" text @click="regenerateReport">
+        <v-icon class="mr-2">mdi-refresh</v-icon>
+        {{ tc('profit_loss_report.actionable.actions.regenerate_report') }}
+      </v-btn>
+      <template v-if="latest">
+        <export-report-csv class="mr-4" />
+        <report-actionable
+          :report="selectedReport"
+          :initial-open="initialOpenReportActionable"
+        />
+      </template>
     </div>
+
     <profit-loss-overview
       class="mt-8"
       :report="selectedReport"

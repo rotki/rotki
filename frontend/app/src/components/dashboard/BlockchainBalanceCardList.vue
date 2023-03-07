@@ -3,7 +3,7 @@ import { type BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef, type PropType } from 'vue';
 import BlockchainBalanceCardDetails from '@/components/dashboard/BlockchainBalanceCardDetails.vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';

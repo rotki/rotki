@@ -54,9 +54,12 @@ const extraDataPanel: Ref<number[]> = ref([]);
         </div>
         <div>
           <amount-display
+            :amount="event.balance.amount"
             :value="event.balance.usdValue"
+            :price-asset="event.asset"
             fiat-currency="USD"
             class="grey--text"
+            :timestamp="event.timestamp"
           />
         </div>
       </div>

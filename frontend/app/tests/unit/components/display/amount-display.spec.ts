@@ -4,7 +4,8 @@ import { set } from '@vueuse/core';
 import { type Pinia, setActivePinia, storeToRefs } from 'pinia';
 import Vuetify from 'vuetify';
 import { VTooltip } from 'vuetify/lib/components';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import flushPromises from 'flush-promises';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import { defaultGeneralSettings } from '@/data/factories';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useSessionStore } from '@/store/session';
@@ -14,7 +15,7 @@ import { useSessionSettingsStore } from '@/store/settings/session';
 import { useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
 import { FrontendSettings } from '@/types/frontend-settings';
-import { bigNumberify } from '@/utils/bignumbers';
+import { Zero, bigNumberify } from '@/utils/bignumbers';
 import '@/filters';
 import createCustomPinia from '../../utils/create-pinia';
 
@@ -22,6 +23,13 @@ import createCustomPinia from '../../utils/create-pinia';
 // Eager prop will render the <slot /> immediately
 // @ts-ignore
 VTooltip.options.props.eager.default = true;
+
+vi.mocked(useCssModule).mockReturnValue({
+  blur: 'blur',
+  profit: 'profit',
+  loss: 'loss',
+  display: 'display'
+});
 
 describe('AmountDisplay.vue', () => {
   let wrapper: Wrapper<any>;
@@ -39,6 +47,7 @@ describe('AmountDisplay.vue', () => {
       asset?: string;
       priceAsset?: string;
       priceOfAsset?: BigNumber;
+      timestamp?: number;
     } = {}
   ) => {
     const vuetify = new Vuetify();
@@ -126,12 +135,16 @@ describe('AmountDisplay.vue', () => {
   describe('Check PnL', () => {
     test('Check if profit', () => {
       const wrapper = createWrapper(bigNumberify(50), { pnl: true });
-      expect(wrapper.find('.amount-display--profit').exists()).toBe(true);
+      expect(wrapper.find('[data-cy="display-wrapper"].profit').exists()).toBe(
+        true
+      );
     });
 
     test('Check if loss', () => {
       const wrapper = createWrapper(bigNumberify(-50), { pnl: true });
-      expect(wrapper.find('.amount-display--loss').exists()).toBe(true);
+      expect(wrapper.find('[data-cy="display-wrapper"].loss').exists()).toBe(
+        true
+      );
     });
   });
 
@@ -425,6 +438,48 @@ describe('AmountDisplay.vue', () => {
       expect(valueWrapper.find('[data-cy="display-amount"]').text()).toBe(
         '1,000.00'
       );
+    });
+  });
+
+  describe('uses historic price', () => {
+    test('when timestamp is set and prices exists', async () => {
+      const getPrice = vi.spyOn(useBalancePricesStore(), 'getHistoricPrice');
+      getPrice.mockResolvedValue(bigNumberify(1.2));
+
+      wrapper = createWrapper(bigNumberify(1), {
+        fiatCurrency: 'USD',
+        timestamp: 1000
+      });
+
+      await nextTick();
+      await flushPromises();
+
+      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.20');
+      expect(getPrice).toHaveBeenCalledWith({
+        timestamp: 1000,
+        fromAsset: 'USD',
+        toAsset: 'EUR'
+      });
+    });
+
+    test('when timestamp is set and prices does not exist', async () => {
+      const getPrice = vi.spyOn(useBalancePricesStore(), 'getHistoricPrice');
+      getPrice.mockResolvedValue(Zero);
+
+      wrapper = createWrapper(bigNumberify(1), {
+        fiatCurrency: 'USD',
+        timestamp: 1000
+      });
+
+      await nextTick();
+      await flushPromises();
+
+      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('0.00');
+      expect(getPrice).toHaveBeenCalledWith({
+        timestamp: 1000,
+        fromAsset: 'USD',
+        toAsset: 'EUR'
+      });
     });
   });
 });

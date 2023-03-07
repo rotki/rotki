@@ -3,7 +3,7 @@ import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
 import { type PropType } from 'vue';
 import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import { Routes } from '@/router/routes';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useTasks } from '@/store/tasks';

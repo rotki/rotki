@@ -47,10 +47,9 @@ onMounted(async () => {
         end: Number.parseInt(end)
       };
 
+      await router.replace({ query: {} });
       await generate(period);
     }
-
-    await router.replace({ query: {} });
   }
 });
 

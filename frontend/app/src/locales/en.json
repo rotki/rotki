@@ -3337,7 +3337,8 @@
     },
     "price_non_empty": "The price cannot be empty",
     "to_asset": "To Asset",
-    "to_non_empty": "The to asset cannot be empty"
+    "to_non_empty": "The to asset cannot be empty",
+    "update_price": "Update price"
   },
   "price_management": {
     "add": {
@@ -3451,7 +3452,10 @@
       "hide": "Hide Cost Basis",
       "show": "Show Cost Basis"
     },
+    "edit_historic_price": "Update historic price",
+    "edit_price_warning": "You will need to regenerate the report to see the updated price in the report events.",
     "headers": {
+      "actions": "Actions",
       "notes": "Notes",
       "pnl_free": "Tax Free PnL",
       "pnl_taxable": "Taxable PnL",
@@ -3618,7 +3622,7 @@
     }
   },
   "staking": {
-    "eth2": "ETH2",
+    "eth2": "ETH",
     "kraken": "Kraken",
     "liquity": "Liquity"
   },
@@ -3788,6 +3792,10 @@
           "validation": {
             "non_empty": "The asset field cannot be empty"
           }
+        },
+        "asset_price": {
+          "label": "Asset price in {symbol} at the time",
+          "hint": "If you change the asset price, rotki will save the historic price that will be considered in PnL report calculation"
         },
         "counterparty": {
           "label": "Counterparty",

@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import RoundingSettings from '@/components/settings/explorers/RoundingSettings.vue';
 import FrontendSettings from '@/components/settings/FrontendSettings.vue';
 import AbbreviateNumberSetting from '@/components/settings/general/AbbreviateNumberSetting.vue';

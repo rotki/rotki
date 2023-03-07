@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import TransactionEventNote from '@/components/history/transactions/TransactionEventNote.vue';
@@ -112,6 +112,13 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   {
     text: tc('profit_loss_events.headers.notes'),
     value: 'notes',
+    sortable: false
+  },
+  {
+    text: tc('profit_loss_events.headers.actions'),
+    value: 'actions',
+    align: 'end',
+    width: 140,
     sortable: false
   }
 ]);
@@ -287,6 +294,12 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
           />
           <template v-else>{{ item.notes }}</template>
         </div>
+      </template>
+      <template #item.actions="{ item }">
+        <report-profit-loss-event-action
+          :event="item"
+          :currency="report.settings.profitCurrency"
+        />
       </template>
       <template #expanded-item="{ headers, item }">
         <cost-basis-table

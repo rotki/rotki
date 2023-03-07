@@ -24,7 +24,7 @@ import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
 import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetMovementDisplay from '@/components/display/AssetMovementDisplay.vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';

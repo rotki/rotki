@@ -88,6 +88,7 @@ const props = defineProps({
   seconds: { required: false, default: false, type: Boolean },
   outlined: { required: false, default: false, type: Boolean },
   disabled: { required: false, default: false, type: Boolean },
+  hideDetails: { required: false, default: false, type: Boolean },
   errorMessages: {
     required: false,
     default: () => [],
@@ -284,6 +285,7 @@ defineExpose({
           :label="label"
           :hint="hint"
           :disabled="disabled"
+          :hide-details="hideDetails"
           prepend-inner-icon="mdi-calendar"
           :persistent-hint="persistentHint"
           :rules="allRules"

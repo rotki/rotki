@@ -2,7 +2,7 @@
 import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
 import { type PropType } from 'vue';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';

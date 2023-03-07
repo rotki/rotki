@@ -1,0 +1,189 @@
+<script lang="ts" setup>
+import { type Ref } from 'vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+
+withDefaults(
+  defineProps<{
+    primaryValue: string;
+    secondaryValue: string;
+    primaryAttrs?: Object;
+    secondaryAttrs?: Object;
+  }>(),
+  {
+    primaryAttrs: () => ({}),
+    secondaryAttrs: () => ({})
+  }
+);
+
+const emit = defineEmits<{
+  (e: 'update:primary-value', value: string): void;
+  (e: 'update:secondary-value', value: string): void;
+  (e: 'update:reversed', reversed: boolean): void;
+}>();
+
+const reversed: Ref<boolean> = ref(false);
+
+const rootAttrs = useAttrs();
+
+const reverse = () => {
+  const newReversed = !get(reversed);
+  set(reversed, newReversed);
+  emit('update:reversed', newReversed);
+
+  nextTick(() => {
+    if (!newReversed) {
+      get(primaryInput)?.focus();
+    } else {
+      get(secondaryInput)?.focus();
+    }
+  });
+};
+
+const primaryInput: Ref<InstanceType<typeof AmountInput> | null> = ref(null);
+const secondaryInput: Ref<InstanceType<typeof AmountInput> | null> = ref(null);
+
+const updatePrimaryValue = (value: string) => {
+  emit('update:primary-value', value);
+};
+
+const updateSecondaryValue = (value: string) => {
+  emit('update:secondary-value', value);
+};
+</script>
+<template>
+  <div
+    class="wrapper d-flex"
+    :class="{
+      'flex-column': !reversed,
+      'flex-column-reverse': reversed
+    }"
+  >
+    <amount-input
+      ref="primaryInput"
+      :value="primaryValue"
+      :disabled="reversed || rootAttrs.disabled"
+      :hide-details="reversed"
+      filled
+      persistent-hint
+      :class="`${!reversed ? 'v-input--is-enabled' : ''}`"
+      v-bind="{ ...rootAttrs, ...primaryAttrs }"
+      @input="updatePrimaryValue"
+    />
+
+    <amount-input
+      ref="secondaryInput"
+      :value="secondaryValue"
+      :disabled="!reversed || rootAttrs.disabled"
+      :hide-details="!reversed"
+      filled
+      persistent-hint
+      :class="`${reversed ? 'v-input--is-enabled' : ''}`"
+      v-bind="{ ...rootAttrs, ...secondaryAttrs }"
+      @input="updateSecondaryValue"
+    />
+
+    <v-btn
+      class="swap-button"
+      fab
+      small
+      dark
+      color="primary"
+      data-cy="grouped-amount-input__swap-button"
+      @click="reverse"
+    >
+      <v-icon>mdi-swap-vertical</v-icon>
+    </v-btn>
+  </div>
+</template>
+<style scoped lang="scss">
+.wrapper {
+  position: relative;
+
+  :deep(.v-input) {
+    position: static;
+
+    .v-input {
+      &__slot {
+        margin-bottom: 0;
+        background: transparent !important;
+      }
+    }
+
+    &.v-input {
+      &--is-disabled {
+        .v-input {
+          &__control {
+            .v-input {
+              &__slot {
+                &::before {
+                  content: none;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      &--is-enabled {
+        &::before {
+          content: '';
+          width: 100%;
+          height: 100%;
+          position: absolute;
+          top: 0;
+          left: 0;
+          border: 1px solid rgba(0, 0, 0, 0.42);
+          border-radius: 4px;
+        }
+
+        &.v-input {
+          &--is-focused {
+            &::before {
+              border: 2px solid var(--v-primary-base) !important;
+            }
+          }
+        }
+
+        &.error {
+          &--text {
+            &::before {
+              border: 2px solid var(--v-error-base) !important;
+            }
+          }
+        }
+      }
+    }
+
+    .v-text-field {
+      &__details {
+        position: absolute;
+        bottom: -30px;
+        width: 100%;
+      }
+    }
+  }
+}
+
+.swap-button {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.theme {
+  &--dark {
+    .wrapper {
+      /* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+      :deep(.v-input--is-enabled),
+      :deep(.v-input__slot) {
+        &::before {
+          border-color: hsla(0, 0%, 100%, 0.24);
+        }
+      }
+      /* stylelint-enable selector-class-pattern,selector-nested-pattern */
+    }
+  }
+}
+</style>
