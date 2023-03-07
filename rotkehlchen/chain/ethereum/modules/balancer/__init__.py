@@ -9,7 +9,6 @@ __all__ = [
 ]
 
 from .balancer import Balancer
-from .decoder import BalancerDecoder  # noqa: F401
 from .types import (
     BALANCER_EVENTS_PREFIX,
     BalancerBPTEventPoolToken,
