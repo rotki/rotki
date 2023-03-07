@@ -230,6 +230,10 @@ def fixture_vcr_base_dir() -> Path:
     if 'CI' in os.environ:
         current_branch = os.environ.get('GITHUB_HEAD_REF')  # get branch from github actions
         root_dir = Path(os.environ['CASSETTES_DIR'])
+        if current_branch is None or (current_branch is not None and current_branch == ''):
+            # This is needed when the job doesn't happen due to a PR for example is executed
+            # in a cron job inside github
+            current_branch = os.environ.get('GITHUB_REF_NAME')
     else:
         current_branch = os.environ.get('VCR_BRANCH')
         root_dir = default_data_directory().parent / 'test-caching'
@@ -245,14 +249,20 @@ def fixture_vcr_base_dir() -> Path:
         current_branch = os.popen('git rev-parse --abbrev-ref HEAD').read().rstrip('\n')
     log.debug(f'At VCR setup, {current_branch=} {root_dir=}')
 
-    checkout_proc = Popen(f'cd "{root_dir}" && git fetch origin && git checkout {current_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
+    checkout_proc = Popen(f'cd "{root_dir}" && git fetch --depth=1 origin && git checkout {current_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
     _, stderr = checkout_proc.communicate(timeout=SUBPROCESS_TIMEOUT)
+
     if (
         len(stderr) != 0 and
         b'Already on' not in stderr and
         b'Switched to' not in stderr
     ):
         default_branch = os.environ.get('GITHUB_BASE_REF', os.environ.get('DEFAULT_VCR_BRANCH', 'develop'))  # noqa: E501
+        if default_branch == '' and 'CI' in os.environ:
+            # In the case of the CI when the job is executed and not due to a PR then
+            # GITHUB_BASE_REF is set to ''
+            default_branch = 'develop'
+
         log.error(f'Could not find branch {current_branch} in {root_dir}. Defaulting to {default_branch}')  # noqa: E501
         checkout_proc = Popen(f'cd "{root_dir}" && git checkout {default_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
         _, stderr = checkout_proc.communicate(timeout=SUBPROCESS_TIMEOUT)
@@ -272,6 +282,7 @@ def fixture_vcr_base_dir() -> Path:
     if diff_result != '':
         log.debug('VCR setup: There is uncomitted work at the test-caching repository. Not modifying it')  # noqa: E501
         return base_dir
+
     # see if the branch is ahead of origin, meaning local is being worked on
     compare_result = os.popen(f'cd "{root_dir}" && git rev-list --left-right --count {current_branch}...origin/{current_branch}').read()  # noqa: E501
     commits_ahead = int(compare_result.split()[0])
