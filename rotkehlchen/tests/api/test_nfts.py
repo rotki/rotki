@@ -715,10 +715,10 @@ def test_nft_no_price(rotkehlchen_api_server):
             'name': 'Devcon VI Souvenir',
             'price_asset': 'ETH',
             'price_in_asset': '0',
-            'usd_price': '0.00'}]},
+            'usd_price': '0.0'}]},
         'entries_found': 1,
         'entries_total': 1,
-        'total_usd_value': '0.00',
+        'total_usd_value': '0.0',
     }
 
 
