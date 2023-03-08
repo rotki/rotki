@@ -71,6 +71,21 @@ HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
     Optional[str],  # extra_data
 ]
 
+HISTORY_EVENT_DB_TUPLE_WRITE_NO_EXTRA_DATA = tuple[
+    bytes,          # event_identifier
+    int,            # sequence_index
+    int,            # timestamp
+    str,            # location
+    Optional[str],  # location label
+    str,            # asset
+    str,            # amount
+    str,            # usd value
+    Optional[str],  # notes
+    str,            # type
+    str,            # subtype
+    Optional[str],  # counterparty
+]
+
 SUB_SWAPS_DETAILS = 'sub_swaps'
 LIQUITY_STAKING_DETAILS = 'liquity_staking'
 
@@ -115,6 +130,14 @@ class HistoryBaseEntry(AccountingEventMixin):
     extra_data: Optional[dict[str, Any]] = None
 
     def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE_WRITE:
+        extra_data = json.dumps(self.extra_data) if self.extra_data else None
+        return self.serialize_for_db_without_extra_data() + (extra_data,)
+
+    def serialize_for_db_without_extra_data(self) -> HISTORY_EVENT_DB_TUPLE_WRITE_NO_EXTRA_DATA:
+        """
+        Serialize information for the database excluding the extra data field.
+        This is used when writting information edited by the user
+        """
         return (
             self.event_identifier,
             self.sequence_index,
@@ -128,7 +151,6 @@ class HistoryBaseEntry(AccountingEventMixin):
             self.event_type.serialize(),
             self.event_subtype.serialize(),
             self.counterparty,
-            json.dumps(self.extra_data) if self.extra_data else None,
         )
 
     @classmethod
