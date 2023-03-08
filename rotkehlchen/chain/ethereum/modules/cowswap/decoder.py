@@ -20,7 +20,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -104,7 +103,7 @@ class CowswapDecoder(DecoderInterface):
         Finds the emitted Trade events and decodes them.
         Also handles special cases when ETH is swapped.
 
-        Returns a list of swap datas. Each entry in the list contains basic information about a
+        Returns a list of swap data. Each entry in the list contains basic information about a
         swap made in the transaction.
         """
         trades = []
@@ -124,14 +123,14 @@ class CowswapDecoder(DecoderInterface):
                 owner_address == ETH_FLOW_ADDRESS
             ):
                 from_asset = self.eth  # ETH swaps are made by eth flow contract in cowswap
-            else:
+            else:  # token should exist since this is the post-processing stage
                 from_asset = EvmToken(evm_address_to_identifier(
                     address=from_token_address,
                     chain_id=ChainID.ETHEREUM,
                     token_type=EvmTokenKind.ERC20,
                 ))
             to_asset = self.eth if to_token_address == ETH_SPECIAL_ADDRESS else EvmToken(
-                evm_address_to_identifier(
+                evm_address_to_identifier(  # token should exist since this is the post-processing stage  # noqa: E501
                     address=to_token_address,
                     chain_id=ChainID.ETHEREUM,
                     token_type=EvmTokenKind.ERC20,
@@ -185,7 +184,9 @@ class CowswapDecoder(DecoderInterface):
                 # If a token is spent, there has to be an event for that.
                 spend_event = related_transfer_events.get((HistoryEventType.SPEND, swap_data.from_asset, swap_data.from_amount))  # noqa: E501
                 if spend_event is None:
-                    log.error(f'Could not find a spend event in a cowswap transaction {transaction.tx_hash.hex()}')  # noqa: E501
+                    log.error(
+                        f'Could not find a spend event of {swap_data.from_amount} '
+                        f'{swap_data.from_asset} in a cowswap transaction {transaction.tx_hash.hex()}')  # noqa: E501
                     continue
             else:
                 # If ETH is spent, then there will not be a decoded transfer. Thus we create it.
