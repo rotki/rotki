@@ -491,7 +491,7 @@ def test_uniswap_v3_swap_by_aggregator(database, ethereum_inquirer, eth_transact
             asset=EvmToken(ethaddress_to_identifier('0xd9Fcd98c322942075A5C3860693e9f4f03AAE07b')),
             balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
             location_label=ADDY_3,
-            notes='Approve 115792089237316195423570985000000000000000000000000000000000 EUL of 0xdD84Ce1aDcb3A4908Db61A1dFA3353C3974c5a2B for spending by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',  # noqa: E501
+            notes='Set EUL spending approval of 0xdD84Ce1aDcb3A4908Db61A1dFA3353C3974c5a2B by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
             counterparty='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
         ),
     ]

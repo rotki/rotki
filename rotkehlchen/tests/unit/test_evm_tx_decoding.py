@@ -153,7 +153,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                         location_label=addr1,
                         asset=A_SAI,
                         balance=Balance(amount=1),
-                        notes=f'Approve 1 SAI of {addr1} for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',  # noqa: E501
+                        notes=f'Set SAI spending approval of {addr1} by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE to 1',  # noqa: E501
                         event_type=HistoryEventType.INFORMATIONAL,
                         event_subtype=HistoryEventSubType.APPROVE,
                         counterparty='0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',

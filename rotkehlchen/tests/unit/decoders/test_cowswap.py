@@ -1,4 +1,5 @@
 import pytest
+
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -8,7 +9,6 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT, A_WBTC, A_WETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
@@ -140,7 +140,7 @@ def test_swap_eth_to_token(database, ethereum_inquirer, ethereum_accounts):
     '0x0D2f07876685bEcd81DDa1C897f2D6Cacc733fc1',
     '0x34938Bd809BDf57178df6DF523759B4083A29190',
 ]])
-def test_2_deocoded_swaps(database, ethereum_inquirer, ethereum_accounts):
+def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
     """
     Tests that if a user has 2 tracked addresses from a cowswap settlement transaction
     both swaps are decoded correctly.
@@ -212,7 +212,7 @@ def test_2_deocoded_swaps(database, ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0xe9B076B476D8865cDF79D1Cf7DF420EE397a7f75'),
             balance=Balance(amount=FVal('115792089237316195423570985000000000000000000000000000000000000000000')),  # noqa: E501
             location_label=user_address_1,
-            notes='Approve 115792089237316195423570985000000000000000000000000000000000000000000 FUND of 0x0D2f07876685bEcd81DDa1C897f2D6Cacc733fc1 for spending by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',  # noqa: E501
+            notes='Set FUND spending approval of 0x0D2f07876685bEcd81DDa1C897f2D6Cacc733fc1 by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 115792089237316195423570985000000000000000000000000000000000000000000',  # noqa: E501
             counterparty='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
         ),
     ]

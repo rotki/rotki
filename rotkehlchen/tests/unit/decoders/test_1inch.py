@@ -88,7 +88,7 @@ def test_1inchv1_swap(database, ethereum_inquirer):
             asset=A_CHI,
             balance=Balance(),
             location_label=ADDY,
-            notes=f'Revoke CHI approval of {ADDY} for spending by {chispender_addy}',
+            notes=f'Revoke CHI spending approval of {ADDY} by {chispender_addy}',
             counterparty=chispender_addy,
         ),
     ]
@@ -158,7 +158,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
             asset=A_PAN,
             balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
             location_label=ADDY,
-            notes=f'Approve 115792089237316195423570985000000000000000000000000000000000 PAN of {ADDY} for spending by {oneinch_v2_addy}',  # noqa: E501
+            notes=f'Set PAN spending approval of {ADDY} by {oneinch_v2_addy} to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
             counterparty=oneinch_v2_addy,
         ),
     ]
