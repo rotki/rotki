@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`5639` Cowswap transactions are now decoded properly.
 * :feature:`5582` Users will now be able to add their own tx hash, if somehow rotki failed to detects it.
 * :feature:`5588` Users will now be able to save and restore used filters in the history section.
 * :feature:`5587` Forward/Backward navigation for filters/pagination (using mouse buttons) will now be possible in the history section.

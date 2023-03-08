@@ -39,7 +39,9 @@ export enum HistoryEventSubType {
   DONATE = 'donate',
   NFT = 'nft',
   PLACE_ORDER = 'place order',
-  LIQUIDATE = 'liquidate'
+  LIQUIDATE = 'liquidate',
+  CANCEL_ORDER = 'cancel order',
+  REFUND = 'refund'
 }
 
 export const HistoryEventSubTypeEnum = z.nativeEnum(HistoryEventSubType);
@@ -67,7 +69,9 @@ export enum TransactionEventType {
   TRANSFER = 'transfer',
   CLAIM_REWARD = 'claim_reward',
   LIQUIDATE = 'liquidate',
-  INFORMATIONAL = 'informational'
+  INFORMATIONAL = 'informational',
+  CANCEL_ORDER = 'cancel_order',
+  REFUND = 'refund'
 }
 
 export const TransactionEventTypeEnum = z.nativeEnum(TransactionEventType);
@@ -84,6 +88,7 @@ export enum TransactionEventProtocol {
   BALANCER_V2 = 'balancer-v2',
   COMPOUND = 'compound',
   CONVEX = 'convex',
+  COWSWAP = 'cowswap',
   CURVE = 'curve',
   DXDAO = 'dxdao',
   ELEMENT_FINANCE = 'element-finance',
