@@ -365,7 +365,7 @@ def test_uniswap_v2_swap_with_approval(database, ethereum_inquirer, ethereum_acc
             asset=Asset('eip155:1/erc20:0x33349B282065b0284d756F0577FB39c158F935e6'),
             balance=Balance(amount=FVal('115792089237316195423570985000000000000000000000000000000000')),  # noqa: E501
             location_label=user_address,
-            notes='Approve 115792089237316195423570985000000000000000000000000000000000 MPL of 0xa931b486F661540c6D709aE6DfC8BcEF347ea437 for spending by 0x617Dee16B86534a5d792A4d7A62FB491B544111E',  # noqa: E501
+            notes='Set MPL spending approval of 0xa931b486F661540c6D709aE6DfC8BcEF347ea437 by 0x617Dee16B86534a5d792A4d7A62FB491B544111E to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
             counterparty='0x617Dee16B86534a5d792A4d7A62FB491B544111E',
         ), HistoryBaseEntry(
             event_identifier=evmhash,
@@ -718,7 +718,7 @@ def test_uniswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transactio
             asset='eip155:1/erc20:0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc',
             balance=Balance(amount=FVal('9.6176228659E-8')),
             location_label=ADDY_3,
-            notes='Approve 0.000000096176228659 UNI-V2 of 0x65fc65C639467423Bf19801a59FCfd62f0F29777 for spending by 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',  # noqa: E501
+            notes='Set UNI-V2 spending approval of 0x65fc65C639467423Bf19801a59FCfd62f0F29777 by 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D to 0.000000096176228659',  # noqa: E501
             counterparty='0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
         ), HistoryBaseEntry(
             event_identifier=evmhash,

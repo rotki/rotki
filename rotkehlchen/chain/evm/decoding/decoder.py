@@ -535,8 +535,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             return None, []
 
         amount = token_normalized_value(token_amount=amount_raw, token=token)
-        prefix = f'Revoke {token.symbol} approval' if amount == ZERO else f'Approve {amount} {token.symbol}'  # noqa: E501
-        notes = f'{prefix} of {owner_address} for spending by {spender_address}'
+        if amount == ZERO:
+            notes = f'Revoke {token.symbol} spending approval of {owner_address} by {spender_address}'  # noqa: E501
+        else:
+            notes = f'Set {token.symbol} spending approval of {owner_address} by {spender_address} to {amount}'  # noqa: E501
         event = self.base.make_event_from_transaction(
             transaction=transaction,
             tx_log=tx_log,

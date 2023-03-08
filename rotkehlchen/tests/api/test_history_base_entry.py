@@ -56,7 +56,7 @@ def _add_entries(server) -> list[HistoryBaseEntry]:
         asset=A_DAI,
         balance=Balance(amount=FVal('1.542'), usd_value=FVal('1.675')),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes='Approve 1 DAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',  # noqa: E501
+        notes='Set DAI spending approval of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE to 1',  # noqa: E501
         event_subtype=HistoryEventSubType.APPROVE,
         counterparty='0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',
     ), HistoryBaseEntry(
@@ -68,7 +68,7 @@ def _add_entries(server) -> list[HistoryBaseEntry]:
         asset=A_USDT,
         balance=Balance(amount=FVal('1.542'), usd_value=FVal('1.675')),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes='Approve 1 USDT of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',  # noqa: E501
+        notes='Set USDT spending approval of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE to 1',  # noqa: E501
         event_subtype=HistoryEventSubType.APPROVE,
         counterparty='0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',
     ), HistoryBaseEntry(
