@@ -268,10 +268,12 @@ def fixture_vcr_base_dir() -> Path:
     log.debug(f'VCR setup: Checked out test-caching {current_branch} branch')
 
     # see if we have any uncomitted work
-    diff_result = os.popen(f'cd "{root_dir}" && git diff').read()
-    if diff_result != '':
-        log.debug('VCR setup: There is uncomitted work at the test-caching repository. Not modifying it')  # noqa: E501
-        return base_dir
+    for diff_type in ('diff', 'diff --staged'):
+        diff_result = os.popen(f'cd "{root_dir}" && git {diff_type}').read()
+        if diff_result != '':
+            log.debug('VCR setup: There is uncomitted work at the test-caching repository. Not modifying it')  # noqa: E501
+            return base_dir
+
     # see if the branch is ahead of origin, meaning local is being worked on
     compare_result = os.popen(f'cd "{root_dir}" && git rev-list --left-right --count {current_branch}...origin/{current_branch}').read()  # noqa: E501
     commits_ahead = int(compare_result.split()[0])
