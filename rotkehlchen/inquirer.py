@@ -5,7 +5,7 @@ from enum import auto
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterable, NamedTuple, Optional, Sequence, Union
 
-from rotkehlchen.assets.asset import Asset, EvmToken, FiatAsset
+from rotkehlchen.assets.asset import Asset, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.contracts import EvmContract
@@ -73,11 +73,13 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
     UNISWAP_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,
     ChainID,
+    EvmTokenKind,
     GeneralCacheType,
     OracleSource,
     Price,
@@ -890,12 +892,43 @@ class Inquirer():
         ethereum = self.get_ethereum_manager()
         globaldb = GlobalDBHandler()
         with globaldb.conn.read_ctx() as cursor:
-            maybe_underlying_token = globaldb.fetch_underlying_tokens(cursor, ethaddress_to_identifier(token.evm_address))  # noqa: E501
-        if maybe_underlying_token is None or len(maybe_underlying_token) != 1:
-            log.error(f'Yearn vault token {token} without an underlying asset')
-            return None
+            maybe_underlying_tokens = globaldb.fetch_underlying_tokens(cursor, ethaddress_to_identifier(token.evm_address))  # noqa: E501
 
-        underlying_token = EvmToken(ethaddress_to_identifier(maybe_underlying_token[0].address))
+        contract = EvmContract(
+            address=token.evm_address,
+            abi=ethereum.node_inquirer.contracts.abi('YEARN_VAULT_V2'),
+            deployed_block=0,
+        )
+        if maybe_underlying_tokens is None or len(maybe_underlying_tokens) != 1:
+            # underlying token not recorded in the DB. Ask the chain
+            try:
+                remote_underlying_token = contract.call(ethereum.node_inquirer, 'token')
+            except (RemoteError, BlockchainQueryError) as e:
+                log.error(f'Failed to query underlying token method in Yearn v2 Vault. {str(e)}')
+                return None
+
+            try:
+                underlying_token_address = deserialize_evm_address(remote_underlying_token)
+            except DeserializationError:
+                log.error(f'underlying token call of {token.evm_address} returned invalid address {remote_underlying_token}')  # noqa: E501
+                return None
+            # store it in the DB, so next time no need to query chain
+            with globaldb.conn.write_ctx() as write_cursor:
+                globaldb._add_underlying_tokens(
+                    write_cursor=write_cursor,
+                    parent_token_identifier=token.identifier,
+                    underlying_tokens=[
+                        UnderlyingToken(
+                            address=underlying_token_address,
+                            token_kind=EvmTokenKind.ERC20,  # this may be a guess here
+                            weight=ONE,  # all yearn vaults have single underlying
+                        )],
+                    chain_id=ChainID.ETHEREUM,
+                )
+        else:
+            underlying_token_address = maybe_underlying_tokens[0].address
+
+        underlying_token = EvmToken(ethaddress_to_identifier(underlying_token_address))
         underlying_token_price = self.find_usd_price(underlying_token)
         # Get the price per share from the yearn contract
         contract = EvmContract(

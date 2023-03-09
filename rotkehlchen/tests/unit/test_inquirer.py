@@ -17,11 +17,13 @@ from rotkehlchen.constants.assets import (
     A_ALETH,
     A_BTC,
     A_CRV,
+    A_DAI,
     A_ETH,
     A_EUR,
     A_KFEE,
     A_LINK,
     A_USD,
+    A_USDC,
 )
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
@@ -523,3 +525,33 @@ def test_punishing_of_oracles_works(inquirer):
                 tz=datetime.timezone.utc,
         )):
             assert inquirer._coingecko.is_penalized() is False
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_yearn_vaults_v2_price(inquirer_defi, globaldb):
+    """
+    When this test was written yearn vaults query was relying in the underlying token
+    being correctly recorded in the global DB. To emulate that we make sure one is
+    missing.
+
+    This test makes sure if underlying token is missing the chain is asked for it
+    and it's recorded in the DB, so that next time price is asked, that remote query
+    is not done again.
+    """
+    yvusdc = EvmToken('eip155:1/erc20:0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9')
+    yvdai = EvmToken('eip155:1/erc20:0xdA816459F1AB5631232FE5e97a05BBBb94970c95')
+
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'DELETE from underlying_tokens_list WHERE parent_token_entry=?',
+            (yvdai.identifier,),
+        )
+
+    for token, underlying_token in ((yvusdc, A_USDC), (yvdai, A_DAI)):
+        price = inquirer_defi.find_yearn_price(token)
+        assert price is not None
+
+        with globaldb.conn.read_ctx() as cursor:
+            result = globaldb.fetch_underlying_tokens(cursor, token.identifier)
+            assert result and result[0].address == underlying_token.resolve_to_evm_token().evm_address  # noqa: E501
