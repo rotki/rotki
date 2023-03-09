@@ -28,6 +28,7 @@ import { useEventTypeData } from '@/utils/history';
 import { toMessages } from '@/utils/validation-errors';
 import { type ActionDataEntry } from '@/types/action';
 import { transactionEventTypeMapping } from '@/data/transaction-event-mapping';
+import { isValidEthAddress } from '@/utils/text';
 
 const props = withDefaults(
   defineProps<{
@@ -124,6 +125,19 @@ const rules = {
       ).toString(),
       required
     )
+  },
+  counterparty: {
+    required: helpers.withMessage(
+      t(
+        'transactions.events.form.counterparty.validation.non_empty'
+      ).toString(),
+      required
+    ),
+    isValid: helpers.withMessage(
+      t('transactions.events.form.counterparty.validation.valid').toString(),
+      (value: string) =>
+        get(counterparties).includes(value) || isValidEthAddress(value)
+    )
   }
 };
 
@@ -136,7 +150,8 @@ const v$ = useVuelidate(
     usdValue: fiatValue,
     sequenceIndex,
     eventType,
-    eventSubtype
+    eventSubtype,
+    counterparty
   },
   {
     $autoDirty: true,
@@ -358,6 +373,8 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
 
     return allData.filter(data => subTypeMapping.includes(data.identifier));
   });
+
+const { counterparties } = storeToRefs(useTransactionStore());
 </script>
 <template>
   <v-form
@@ -506,12 +523,16 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
         />
       </v-col>
       <v-col cols="12" md="4">
-        <v-text-field
+        <combobox-with-custom-input
           v-model="counterparty"
           outlined
-          data-cy="counterparty"
+          required
+          auto-select-first
           :label="t('transactions.events.form.counterparty.label')"
-          :error-messages="errorMessages['counterparty']"
+          :items="counterparties"
+          data-cy="counterparty"
+          :error-messages="v$.counterparty.$errors.map(e => e.$message)"
+          @blur="v$.counterparty.$touch()"
         />
       </v-col>
     </v-row>

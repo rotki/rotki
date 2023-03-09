@@ -11,6 +11,12 @@ import requests
 
 from rotkehlchen.accounting.export.csv import FILENAME_ALL_CSV
 from rotkehlchen.accounting.mixins.event import AccountingEventType
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
 from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test, prices
@@ -19,7 +25,7 @@ from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import create_timestamp
 
 
-def assert_csv_export_response(response, csv_dir, is_download=False):
+def assert_csv_export_response(response, csv_dir, is_download=False, unicode_check=False):
     if is_download:
         assert response.status_code == HTTPStatus.OK
     else:
@@ -31,6 +37,7 @@ def assert_csv_export_response(response, csv_dir, is_download=False):
     # and check the csv files were generated succesfully. Here we are only checking
     # for valid CSV and not for the values to be valid. Valid values are tested
     # in unit/test_accounting.py
+    rows = []
     with open(os.path.join(csv_dir, FILENAME_ALL_CSV), newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         count = 0
@@ -63,7 +70,13 @@ def assert_csv_export_response(response, csv_dir, is_download=False):
             assert row['pnl_free'] is not None
             assert row['cost_basis_free'] is not None
             count += 1
-    assert count == 43
+            rows.append(row)
+
+    if unicode_check is True:
+        assert count == 44
+        assert 'Κοκκινολαίμης' in rows[43]['notes']
+    else:
+        assert count == 43
 
 
 @pytest.mark.parametrize('have_decoders', [True])
@@ -81,6 +94,24 @@ def test_history_export_download_csv(
         tmpdir_factory,
 ):
     """Test that the csv export/download REST API endpoint works correctly"""
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    dbevents = DBHistoryEvents(rotki.data.db)
+    # Add one event with unicode notes, to make sure unicode is exported in the CSV
+    with rotki.data.db.user_write() as write_cursor:
+        event_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryBaseEntry(  # The event identifier needs (atm) to have specific format
+                event_identifier=b'rotki_events_whatever',
+                sequence_index=0,
+                timestamp=1569924574 * 1000,
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.FEE,
+                asset=A_ETH,
+                balance=Balance(amount=FVal(1)),
+                notes='Κοκκινολαίμης',
+            ))
+
     # Query history api to have report data to export
     query_api_create_and_get_report(
         server=rotkehlchen_api_server_with_exchanges,
@@ -96,14 +127,16 @@ def test_history_export_download_csv(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource'),
         json={'directory_path': csv_dir},
     )
-    assert_csv_export_response(response, csv_dir)
+    assert_csv_export_response(response, csv_dir, unicode_check=True)
     # now query the export endpoint with query params
     response = requests.get(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource') +
         f'?directory_path={csv_dir2}',
     )
-    assert_csv_export_response(response, csv_dir2)
+    assert_csv_export_response(response, csv_dir2, unicode_check=True)
     # query it again and make sure that csv is recreated and events are not duplicated
+
+    dbevents.delete_history_events_by_identifier(identifiers=[event_id])
     query_api_create_and_get_report(
         server=rotkehlchen_api_server_with_exchanges,
         start_ts=0,
@@ -114,7 +147,7 @@ def test_history_export_download_csv(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource') +
         f'?directory_path={csv_dir2}',
     )
-    assert_csv_export_response(response, csv_dir2)
+    assert_csv_export_response(response, csv_dir2, unicode_check=True)
     # now query the download CSV endpoint
     response = requests.get(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'historydownloadingresource'))
@@ -124,7 +157,7 @@ def test_history_export_download_csv(
         tempzipfile.write_bytes(response.content)
         with zipfile.ZipFile(tempzipfile, 'r') as zip_ref:
             zip_ref.extractall(extractdir)
-        assert_csv_export_response(response, extractdir, is_download=True)
+        assert_csv_export_response(response, extractdir, is_download=True, unicode_check=True)
     # query it again and make sure that csv is recreated and events are not duplicated
     query_api_create_and_get_report(
         server=rotkehlchen_api_server_with_exchanges,
@@ -140,7 +173,7 @@ def test_history_export_download_csv(
         tempzipfile.write_bytes(response.content)
         with zipfile.ZipFile(tempzipfile, 'r') as zip_ref:
             zip_ref.extractall(extractdir)
-        assert_csv_export_response(response, extractdir, is_download=True)
+        assert_csv_export_response(response, extractdir, is_download=True, unicode_check=True)
 
 
 @pytest.mark.parametrize('have_decoders', [True])

@@ -125,12 +125,20 @@ export const useHistoryEventTypeData = createSharedComposable(() => {
         label: tc('transactions.events.history_event_subtype.return_wrapped')
       },
       {
-        identifier: HistoryEventSubType.REWARD,
-        label: tc('transactions.events.history_event_subtype.reward')
+        identifier: HistoryEventSubType.DONATE,
+        label: tc('transactions.events.history_event_subtype.donate')
       },
       {
         identifier: HistoryEventSubType.NFT,
         label: tc('transactions.events.history_event_subtype.nft')
+      },
+      {
+        identifier: HistoryEventSubType.PLACE_ORDER,
+        label: tc('transactions.events.history_event_subtype.place_order')
+      },
+      {
+        identifier: HistoryEventSubType.LIQUIDATE,
+        label: tc('transactions.events.history_event_subtype.liquidate')
       }
     ]
   );

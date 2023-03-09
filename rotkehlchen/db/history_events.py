@@ -89,14 +89,17 @@ class DBHistoryEvents():
             )
 
     def edit_history_event(self, event: HistoryBaseEntry) -> tuple[bool, str]:
-        """Edit a history entry to the DB. Returns the edited entry"""
+        """
+        Edit a history entry to the DB with information provided by the user.
+        NOTE: It edits all the fields except the extra_data one.
+        """
         with self.db.user_write() as cursor:
             try:
                 cursor.execute(
                     'UPDATE history_events SET event_identifier=?, sequence_index=?, timestamp=?, '
                     'location=?, location_label=?, asset=?, amount=?, usd_value=?, notes=?, '
-                    'type=?, subtype=?, counterparty=?, extra_data=? WHERE identifier=?',
-                    (*event.serialize_for_db(), event.identifier),
+                    'type=?, subtype=?, counterparty=? WHERE identifier=?',
+                    (*event.serialize_for_db_without_extra_data(), event.identifier),
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 msg = (

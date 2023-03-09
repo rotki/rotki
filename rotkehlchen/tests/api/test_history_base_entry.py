@@ -1,5 +1,6 @@
+import json
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import requests
@@ -7,7 +8,6 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import SUB_SWAPS_DETAILS, HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -32,6 +32,9 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+
 
 def entry_to_input_dict(
         entry: HistoryBaseEntry,
@@ -46,7 +49,7 @@ def entry_to_input_dict(
     return serialized
 
 
-def _add_entries(server) -> list[HistoryBaseEntry]:
+def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list[HistoryBaseEntry]:
     entries = [HistoryBaseEntry(
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
         sequence_index=162,
@@ -83,6 +86,7 @@ def _add_entries(server) -> list[HistoryBaseEntry]:
         notes='Burned 0.0001 ETH for gas',
         event_subtype=HistoryEventSubType.FEE,
         counterparty=CPT_GAS,
+        extra_data={'testing_data': 42},
     ), HistoryBaseEntry(
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
         sequence_index=3,
@@ -109,24 +113,40 @@ def _add_entries(server) -> list[HistoryBaseEntry]:
         counterparty='0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a',
     )]
 
+    entries_added_using_api = 0
     for entry in entries:
-        json_data = entry_to_input_dict(entry, include_identifier=False)
-        response = requests.put(
-            api_url_for(server, 'historybaseentryresource'),
-            json=json_data,
-        )
-        result = assert_proper_response_with_result(response)
-        assert 'identifier' in result
-        entry.identifier = result['identifier']
+        if entry.extra_data is not None:
+            # If any entry has extra data add it directly to the database instead of
+            # making use of the API. The reason is that the API doesn't allow to edit
+            # the extra data field
+            with events_db.db.conn.write_ctx() as write_cursor:
+                identifier = events_db.add_history_event(
+                    write_cursor=write_cursor,
+                    event=entry,
+                )
+                entry.identifier = identifier
+        else:
+            json_data = entry_to_input_dict(entry, include_identifier=False)
+            response = requests.put(
+                api_url_for(server, 'historybaseentryresource'),
+                json=json_data,
+            )
+            result = assert_proper_response_with_result(response)
+            assert 'identifier' in result
+            entry.identifier = result['identifier']
+            entries_added_using_api += 1
+
+    # make sure that the API was used to add events
+    assert entries_added_using_api == 4
 
     return entries
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_edit_delete_entries(rotkehlchen_api_server):
+def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    entries = _add_entries(rotkehlchen_api_server)
     db = DBHistoryEvents(rotki.data.db)
+    entries = _add_entries(server=rotkehlchen_api_server, events_db=db)
     with rotki.data.db.conn.read_ctx() as cursor:
         saved_events = db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
     for idx, event in enumerate(saved_events):
@@ -184,11 +204,23 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
     entry.event_subtype = HistoryEventSubType.NONE
     entry.counterparty = '0xAB8d71d59827dcc90fEDc5DDb97f87eFfB1B1A5B'
     json_data = entry_to_input_dict(entry, include_identifier=True)
+    assert entry.extra_data == {'testing_data': 42}
+
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
         json=json_data,
     )
     assert_simple_ok_response(response)
+    assert entry.identifier is not None
+
+    # check that the extra data information hasn't been overwritten
+    with db.db.conn.read_ctx() as cursor:
+        cursor.execute(
+            'SELECT extra_data FROM history_events WHERE identifier=?',
+            (entry.identifier,),
+        )
+        db_extra_data = json.loads(cursor.fetchone()[0])
+    assert entry.extra_data == db_extra_data
 
     entries.sort(key=lambda x: x.timestamp)  # resort by timestamp
     with rotki.data.db.conn.read_ctx() as cursor:

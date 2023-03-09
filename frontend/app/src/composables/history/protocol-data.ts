@@ -23,7 +23,7 @@ export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [
   },
   {
     identifier: TransactionEventProtocol.BALANCER,
-    label: 'badger',
+    label: 'balancer',
     image: './assets/images/defi/balancer.svg',
     matcher: (identifier: string): boolean =>
       identifier.toLowerCase().startsWith('balancer')
