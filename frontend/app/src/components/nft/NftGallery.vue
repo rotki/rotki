@@ -7,6 +7,7 @@ import { type Module } from '@/types/modules';
 import { uniqueStrings } from '@/utils/data';
 import { type GalleryNft, type Nft, type Nfts } from '@/types/nfts';
 import { type NftPriceArray } from '@/types/prices';
+import { useNft } from '@/composables/nft';
 
 defineProps({
   modules: {
@@ -149,7 +150,7 @@ const collections = computed(() => {
     .filter(uniqueStrings);
 });
 
-const { fetchNfts: nftFetch } = useNftsStore();
+const { fetchNfts: nftFetch } = useNft();
 
 const fetchNfts = async (ignoreCache = false) => {
   set(loading, true);

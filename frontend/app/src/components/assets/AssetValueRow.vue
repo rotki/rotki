@@ -7,7 +7,7 @@ const props = defineProps({
 });
 
 const { identifier, isCollectionParent } = toRefs(props);
-const { assetPriceInfo } = useAggregatedBalancesStore();
+const { assetPriceInfo } = useAggregatedBalances();
 
 const info = computed<AssetPriceInfo>(() => {
   return get(assetPriceInfo(identifier, isCollectionParent));

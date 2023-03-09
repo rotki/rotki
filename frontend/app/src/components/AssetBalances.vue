@@ -29,7 +29,7 @@ const total = computed(() => {
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { assetInfo } = useAssetInfoRetrievalStore();
+const { assetInfo } = useAssetInfoRetrieval();
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
   return [

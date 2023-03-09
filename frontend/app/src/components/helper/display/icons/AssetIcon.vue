@@ -48,7 +48,7 @@ const currency = computed<string | undefined>(() => {
     ?.unicodeSymbol;
 });
 
-const { assetInfo } = useAssetInfoRetrievalStore();
+const { assetInfo } = useAssetInfoRetrieval();
 const { assetImageUrl } = useAssetIconApi();
 
 const asset = assetInfo(mappedIdentifier, enableAssociation);

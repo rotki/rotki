@@ -26,7 +26,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { activeModules } = useModules();
-  const { assetSymbol } = useAssetInfoRetrievalStore();
+  const { assetSymbol } = useAssetInfoRetrieval();
   const premium = usePremium();
   const { t } = useI18n();
   const { fetchYearnVaultsBalances, fetchYearnVaultsHistory } = useYearnApi();

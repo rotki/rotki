@@ -20,7 +20,7 @@ const props = defineProps({
 const emit = defineEmits(['input', 'valid']);
 
 const { value } = toRefs(props);
-const { assetSymbol } = useAssetInfoRetrievalStore();
+const { assetSymbol } = useAssetInfoRetrieval();
 
 const date = computed(({ value }) =>
   value.timestamp ? convertFromTimestamp(value.timestamp, true) : ''

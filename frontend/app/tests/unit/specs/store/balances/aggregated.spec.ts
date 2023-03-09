@@ -90,13 +90,10 @@ describe('store::balances/aggregated', () => {
       }
     ]);
 
-    const store = useAggregatedBalancesStore();
-    const { balances } = store;
-    const { totals } = storeToRefs(store);
+    const { balances } = useAggregatedBalances();
     const { totals: ethTotals } = storeToRefs(useEthBalancesStore());
 
     const totalsState = {
-      ...get(totals),
       ETH: {
         DAI: {
           amount: bigNumberify(100),
@@ -209,7 +206,7 @@ describe('store::balances/aggregated', () => {
 
     const { btc } = storeToRefs(useBtcAccountsStore());
     const { balances } = storeToRefs(useBtcBalancesStore());
-    const { btcAccounts } = storeToRefs(useBtcAccountBalancesStore());
+    const { btcAccounts } = useBtcAccountBalances();
 
     set(btc, accounts);
     set(balances, { BTC: btcBalances });
@@ -291,7 +288,7 @@ describe('store::balances/aggregated', () => {
     });
 
     const { prices } = storeToRefs(useBalancePricesStore());
-    const { adjustPrices } = useBalancesStore();
+    const { adjustPrices } = useBalances();
 
     const { exchangeRates } = storeToRefs(useBalancePricesStore());
     set(exchangeRates, { EUR: bigNumberify(1.2) });
@@ -343,13 +340,10 @@ describe('store::balances/aggregated', () => {
       }
     ]);
 
-    const store = useAggregatedBalancesStore();
-    const { balances } = store;
-    const { totals } = storeToRefs(store);
+    const { balances } = useAggregatedBalances();
     const { totals: ethTotals } = storeToRefs(useEthBalancesStore());
 
     const totalsState = {
-      ...get(totals),
       ETH: {
         DAI: {
           amount: bigNumberify(100),

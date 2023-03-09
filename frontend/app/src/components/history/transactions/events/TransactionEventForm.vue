@@ -29,6 +29,7 @@ import { toMessages } from '@/utils/validation-errors';
 import { type ActionDataEntry } from '@/types/action';
 import { transactionEventTypeMapping } from '@/data/transaction-event-mapping';
 import { isValidEthAddress } from '@/utils/text';
+import { useHistoryStore } from '@/store/history';
 
 const props = withDefaults(
   defineProps<{
@@ -219,7 +220,7 @@ const setEditMode = async () => {
 
 const { setMessage } = useMessageStore();
 
-const { editTransactionEvent, addTransactionEvent } = useTransactionStore();
+const { editTransactionEvent, addTransactionEvent } = useTransactions();
 
 const save = async (): Promise<boolean> => {
   const numericAmount = get(bigNumberifyFromRef(amount));
@@ -374,7 +375,7 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
     return allData.filter(data => subTypeMapping.includes(data.identifier));
   });
 
-const { counterparties } = storeToRefs(useTransactionStore());
+const { counterparties } = storeToRefs(useHistoryStore());
 </script>
 <template>
   <v-form

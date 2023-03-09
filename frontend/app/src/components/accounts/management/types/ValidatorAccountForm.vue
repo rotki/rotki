@@ -10,7 +10,7 @@ const validator = ref<Eth2Validator | null>(null);
 const errorMessages = ref<ValidationErrors>({});
 
 const { addEth2Validator, editEth2Validator } = useEthAccountsStore();
-const { refreshAccounts } = useBlockchainStore();
+const { refreshAccounts } = useBlockchains();
 const { setMessage } = useMessageStore();
 const { valid, setSave, accountToEdit } = useAccountDialog();
 const { pending, loading } = useAccountLoading();

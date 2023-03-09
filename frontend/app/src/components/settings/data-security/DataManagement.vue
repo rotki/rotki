@@ -17,7 +17,7 @@ const status = ref<BaseMessage | null>(null);
 const confirm = ref<boolean>(false);
 const pending = ref<boolean>(false);
 
-const { purgeCache } = useSessionPurgeStore();
+const { purgeCache } = useSessionPurge();
 
 const { tc } = useI18n();
 const { show } = useConfirmStore();

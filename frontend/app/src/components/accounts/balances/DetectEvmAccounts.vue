@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n-composable';
 import { TaskType } from '@/types/task-type';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchains } from '@/composables/blockchain';
 
 const { isTaskRunning } = useTaskStore();
 const isEvmAccountsDetecting = isTaskRunning(TaskType.DETECT_EVM_ACCOUNTS);
-const { detectEvmAccounts } = useBlockchainStore();
+const { detectEvmAccounts } = useBlockchains();
 
 const { tc } = useI18n();
 </script>

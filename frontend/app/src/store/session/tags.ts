@@ -14,7 +14,7 @@ export const useTagStore = defineStore('session/tags', () => {
     return { ...get(allTags), ...READ_ONLY_TAGS };
   });
 
-  const { removeTag } = useBlockchainAccountsStore();
+  const { removeTag } = useBlockchainAccounts();
   const { setMessage } = useMessageStore();
   const { tc } = useI18n();
   const { queryAddTag, queryTags, queryEditTag, queryDeleteTag } = useTagsApi();

@@ -19,7 +19,7 @@ const store = useQueriedAddressesStore();
 const { queriedAddresses } = storeToRefs(store);
 const { addQueriedAddress, deleteQueriedAddress } = store;
 
-const { accounts } = storeToRefs(useAccountBalancesStore());
+const { accounts } = useAccountBalances();
 
 const setSelectedAccounts = (addresses: string[]): void => {
   const selected = get(accounts).filter(

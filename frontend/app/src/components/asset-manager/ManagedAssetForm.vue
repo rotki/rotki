@@ -37,7 +37,7 @@ const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
 
 const { t, tc } = useI18n();
 const { edit } = toRefs(props);
-const { fetchTokenDetails } = useAssetInfoRetrievalStore();
+const { fetchTokenDetails } = useAssetInfoRetrieval();
 
 const input = (value: boolean) => {
   emit('input', value);

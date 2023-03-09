@@ -36,10 +36,10 @@ type Filters = MatchedKeyword<TradeFilterValueKeys>;
 export const useTradeFilters = () => {
   const filters: Ref<Filters> = ref({});
 
-  const { associatedLocations } = storeToRefs(useAssociatedLocationsStore());
+  const { associatedLocations } = storeToRefs(useHistoryStore());
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { assetSearch } = useAssetInfoApi();
-  const { assetInfo } = useAssetInfoRetrievalStore();
+  const { assetInfo } = useAssetInfoRetrieval();
   const { tc } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(

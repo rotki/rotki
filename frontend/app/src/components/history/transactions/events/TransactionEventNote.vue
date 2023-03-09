@@ -44,7 +44,7 @@ const formatNotes = (
   assetId: string,
   noTxHash: boolean
 ): NoteFormat[] => {
-  const { assetSymbol } = useAssetInfoRetrievalStore();
+  const { assetSymbol } = useAssetInfoRetrieval();
 
   const asset = get(assetSymbol(assetId));
 

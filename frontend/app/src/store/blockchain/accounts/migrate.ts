@@ -21,7 +21,7 @@ export const useAccountMigrationStore = defineStore(
 
     const { canRequestData } = storeToRefs(useSessionAuthStore());
     const { txEvmChains, getChain } = useSupportedChains();
-    const { fetchAccounts } = useBlockchainStore();
+    const { fetchAccounts } = useBlockchains();
 
     const { tc } = useI18n();
     const { notify } = useNotificationsStore();

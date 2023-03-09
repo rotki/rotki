@@ -39,12 +39,12 @@ export const useExchangeBalancesStore = defineStore(
     const { awaitTask, isTaskRunning, metadata } = useTaskStore();
     const { notify } = useNotificationsStore();
     const { setMessage } = useMessageStore();
-    const { getAssociatedAssetIdentifier } = useAssetInfoRetrievalStore();
+    const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
     const { isAssetIgnored } = useIgnoredAssetsStore();
     const { assetPrice } = useBalancePricesStore();
     const { queryRemoveExchange, queryExchangeBalances, querySetupExchange } =
       useExchangeApi();
-    const { connectedExchanges } = storeToRefs(useAssociatedLocationsStore());
+    const { connectedExchanges } = storeToRefs(useHistoryStore());
 
     const exchanges: ComputedRef<ExchangeInfo[]> = computed(() => {
       const balances = get(exchangeBalances);

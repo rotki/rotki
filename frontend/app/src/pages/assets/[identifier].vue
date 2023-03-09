@@ -29,7 +29,7 @@ const toggleIgnoreAsset = async () => {
 
 const premium = usePremium();
 
-const { assetName, assetSymbol, assetInfo } = useAssetInfoRetrievalStore();
+const { assetName, assetSymbol, assetInfo } = useAssetInfoRetrieval();
 const name = assetName(identifier);
 const symbol = assetSymbol(identifier);
 const asset = assetInfo(identifier);
@@ -55,7 +55,7 @@ const editRoute = computed<RawLocation>(() => ({
   }
 }));
 
-const { balances } = useAggregatedBalancesStore();
+const { balances } = useAggregatedBalances();
 const collectionBalance: ComputedRef<AssetBalanceWithPrice[]> = computed(() => {
   if (!get(isCollectionParent)) {
     return [];

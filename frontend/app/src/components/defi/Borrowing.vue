@@ -10,7 +10,7 @@ defineProps({
 
 const selection = ref<string>();
 const protocol = ref<DefiProtocol | null>(null);
-const store = useDefiSupportedProtocolsStore();
+const store = useDefiSupportedProtocols();
 const route = useRoute();
 const { tc } = useI18n();
 

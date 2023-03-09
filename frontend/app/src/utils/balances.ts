@@ -111,7 +111,7 @@ const toSortedAndGroupedArray = <T extends Balance>(
   groupMultiChain: boolean,
   map: (asset: string) => T & { asset: string }
 ): T[] => {
-  const { assetInfo } = useAssetInfoRetrievalStore();
+  const { assetInfo } = useAssetInfoRetrieval();
   const { fetchedAssetCollections } = storeToRefs(useAssetCacheStore());
 
   const data = Object.keys(ownedAssets)

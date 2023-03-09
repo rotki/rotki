@@ -5,7 +5,7 @@ interface ActionFailure<T = string> {
   readonly success: false;
 }
 
-interface ActionSuccess {
+export interface ActionSuccess {
   readonly success: true;
 }
 

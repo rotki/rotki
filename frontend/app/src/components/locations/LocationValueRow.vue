@@ -11,7 +11,7 @@ const { identifier } = toRefs(props);
 const { t } = useI18n();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { balancesByLocation } = storeToRefs(useBalancesBreakdownStore());
+const { balancesByLocation } = useBalancesBreakdown();
 
 const totalValue = computed<BigNumber>(() => {
   const locations = get(balancesByLocation);

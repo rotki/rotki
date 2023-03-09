@@ -41,8 +41,8 @@ const router = useRouter();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());
-const { balances } = useAggregatedBalancesStore();
-const { balancesByLocation } = storeToRefs(useBalancesBreakdownStore());
+const { balances } = useAggregatedBalances();
+const { balancesByLocation } = useBalancesBreakdown();
 const { getLocation } = useLocationInfo();
 const { assetSearch } = useAssetInfoApi();
 const { dark } = useTheme();

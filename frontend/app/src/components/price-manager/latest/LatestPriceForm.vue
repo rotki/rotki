@@ -19,7 +19,7 @@ const props = defineProps({
 const emit = defineEmits(['input', 'valid']);
 
 const { value } = toRefs(props);
-const { assetSymbol } = useAssetInfoRetrievalStore();
+const { assetSymbol } = useAssetInfoRetrieval();
 
 const fromAsset = computed(({ value }) => get(assetSymbol(value.fromAsset)));
 const toAsset = computed(({ value }) => get(assetSymbol(value.toAsset)));

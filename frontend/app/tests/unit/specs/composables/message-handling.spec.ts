@@ -30,7 +30,7 @@ vi.mock('@/composables/info/chains', () => ({
   })
 }));
 
-describe('useMessageHandling', () => {
+describe('composables::message-handling', () => {
   beforeAll(() => {
     const pinia = createPinia();
     setActivePinia(pinia);

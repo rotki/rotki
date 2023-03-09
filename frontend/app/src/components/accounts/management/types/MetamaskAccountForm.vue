@@ -12,7 +12,7 @@ const tags = ref<string[]>([]);
 const { notify } = useNotificationsStore();
 const { tc } = useI18n();
 const { isPackaged, metamaskImport } = useInterop();
-const { addAccounts } = useBlockchainStore();
+const { addAccounts } = useBlockchains();
 const { valid, setSave } = useAccountDialog();
 const { loading } = useAccountLoading();
 

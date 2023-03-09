@@ -20,8 +20,8 @@ const selectedModules = ref<Module[]>([]);
 const allEvmChains = ref(true);
 const errorMessages = ref<Record<string, string[]>>({});
 
-const { addAccounts, addEvmAccounts, fetchAccounts } = useBlockchainStore();
-const { editAccount } = useBlockchainAccountsStore();
+const { addAccounts, addEvmAccounts, fetchAccounts } = useBlockchains();
+const { editAccount } = useBlockchainAccounts();
 const { setMessage } = useMessageStore();
 const { fetchAddressesNames } = useAddressesNamesStore();
 const { isEvm } = useSupportedChains();

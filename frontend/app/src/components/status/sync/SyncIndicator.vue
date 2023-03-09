@@ -14,9 +14,9 @@ const { t, tc } = useI18n();
 const { logout } = useSessionStore();
 const { lastBalanceSave, lastDataUpload } = storeToRefs(usePeriodicStore());
 const { upgradeVisible, canRequestData } = storeToRefs(useSessionAuthStore());
-const { forceSync } = useSyncStore();
+const { forceSync } = useSync();
 
-const { fetchBalances } = useBalancesStore();
+const { fetchBalances } = useBalances();
 const { currentBreakpoint } = useTheme();
 const premium = usePremium();
 const { appSession } = useInterop();

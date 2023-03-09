@@ -18,7 +18,7 @@ const props = defineProps({
 const { exchange } = toRefs(props);
 const { isTaskRunning } = useTaskStore();
 const store = useExchangeBalancesStore();
-const { connectedExchanges } = storeToRefs(useAssociatedLocationsStore());
+const { connectedExchanges } = storeToRefs(useHistoryStore());
 
 const selectedExchange = ref<string>('');
 const usedExchanges = computed<SupportedExchange[]>(() => {

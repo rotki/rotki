@@ -30,7 +30,7 @@ const { uniswapV2Addresses: addresses, uniswapV2PoolAssets: poolAssets } =
   storeToRefs(store);
 
 const { isModuleEnabled } = useModules();
-const { tokenAddress } = useAssetInfoRetrievalStore();
+const { tokenAddress } = useAssetInfoRetrieval();
 const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 
 const { tc } = useI18n();

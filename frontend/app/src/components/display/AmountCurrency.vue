@@ -44,7 +44,7 @@ const displayAsset = computed(() => {
   return '';
 });
 
-const { assetSymbol } = useAssetInfoRetrievalStore();
+const { assetSymbol } = useAssetInfoRetrieval();
 
 const symbol: ComputedRef<string> = assetSymbol(asset);
 

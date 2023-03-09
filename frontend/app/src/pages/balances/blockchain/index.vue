@@ -62,12 +62,10 @@ const updateWhenRatio = (
   });
 };
 
-const { ethAccounts, eth2Accounts, loopringAccounts } = storeToRefs(
-  useEthAccountBalancesStore()
-);
+const { ethAccounts, eth2Accounts, loopringAccounts } = useEthAccountBalances();
 const { ksmAccounts, dotAccounts, avaxAccounts, optimismAccounts } =
-  storeToRefs(useChainAccountBalancesStore());
-const { btcAccounts, bchAccounts } = storeToRefs(useBtcAccountBalancesStore());
+  useChainAccountBalances();
+const { btcAccounts, bchAccounts } = useBtcAccountBalances();
 
 const blockchainData: BlockchainData = {
   btcAccounts,
@@ -81,9 +79,7 @@ const blockchainData: BlockchainData = {
   optimismAccounts
 };
 
-const { blockchainAssets } = storeToRefs(
-  useAggregatedBlockchainBalancesStore()
-);
+const { blockchainAssets } = useBlockchainAggregatedBalances();
 
 const getFirstContext = (data: BlockchainData) => {
   const hasData = (data: Ref<BlockchainAccountWithBalance[]>) => {

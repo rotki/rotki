@@ -5,7 +5,7 @@ import { Section } from '@/types/status';
 const { shouldShowLoadingScreen } = useStatusStore();
 const { load } = useKrakenStakingStore();
 
-const { connectedExchanges } = storeToRefs(useAssociatedLocationsStore());
+const { connectedExchanges } = storeToRefs(useHistoryStore());
 const isKrakenConnected = computed(() => {
   const exchanges = get(connectedExchanges);
   return exchanges.some(

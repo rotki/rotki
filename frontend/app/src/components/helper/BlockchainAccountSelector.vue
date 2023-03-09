@@ -54,7 +54,7 @@ const {
 const search = ref('');
 const { t } = useI18n();
 
-const { accounts } = storeToRefs(useAccountBalancesStore());
+const { accounts } = useAccountBalances();
 
 const internalValue = computed(() => {
   const accounts = get(value);

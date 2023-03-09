@@ -43,7 +43,7 @@ const total = computed(() => {
   return get(totalInUsd).multipliedBy(get(exchangeRate(mainCurrency)) ?? One);
 });
 
-const { assetSymbol, assetName, assetInfo } = useAssetInfoRetrievalStore();
+const { assetSymbol, assetName, assetInfo } = useAssetInfoRetrieval();
 
 const assetFilter = (
   _value: Nullable<string>,

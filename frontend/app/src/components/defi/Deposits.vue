@@ -39,7 +39,7 @@ const route = useRoute();
 const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 
 const defiStore = useDefiStore();
-const store = useDefiSupportedProtocolsStore();
+const store = useDefiSupportedProtocols();
 const yearnStore = useYearnStore();
 const aaveStore = useAaveStore();
 

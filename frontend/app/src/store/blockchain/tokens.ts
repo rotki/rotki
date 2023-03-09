@@ -136,7 +136,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     chain: Blockchain.OPTIMISM
   });
 
-  const { fetchBlockchainBalances } = useBlockchainBalancesStore();
+  const { fetchBlockchainBalances } = useBlockchainBalances();
 
   watch(isEthDetecting, async (isDetecting, wasDetecting) => {
     if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {

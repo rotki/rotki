@@ -6,8 +6,8 @@ import { Module } from '@/types/modules';
 const { t, tc } = useI18n();
 const { isTaskRunning } = useTaskStore();
 
-const { balances, liabilities } = useAggregatedBalancesStore();
-const { blockchainTotals } = storeToRefs(useAccountBalancesStore());
+const { balances, liabilities } = useAggregatedBalances();
+const { blockchainTotals } = useAccountBalances();
 const aggregatedBalances = balances();
 const aggregatedLiabilities = liabilities();
 

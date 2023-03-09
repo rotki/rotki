@@ -47,7 +47,7 @@ const expanded: Ref<LedgerActionEntry[]> = ref([]);
 const userAction: Ref<boolean> = ref(false);
 
 const { deleteLedgerAction, fetchLedgerActions, refreshLedgerActions } =
-  useLedgerActionStore();
+  useLedgerActions();
 
 const { tc } = useI18n();
 
