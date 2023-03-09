@@ -118,6 +118,17 @@ export const useTransactionEventTypeData = createSharedComposable(() => {
         identifier: TransactionEventType.INFORMATIONAL,
         label: tc('transactions.events.type.informational'),
         icon: 'mdi-information-outline'
+      },
+      {
+        identifier: TransactionEventType.CANCEL_ORDER,
+        label: tc('transactions.events.type.cancel_order'),
+        icon: 'mdi-close-circle-multiple-outline',
+        color: 'red'
+      },
+      {
+        identifier: TransactionEventType.REFUND,
+        label: tc('transactions.events.type.refund'),
+        icon: 'mdi-cash-refund'
       }
     ]
   );

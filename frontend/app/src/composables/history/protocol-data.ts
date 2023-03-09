@@ -39,6 +39,11 @@ export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [
     image: './assets/images/defi/convex.jpeg'
   },
   {
+    identifier: TransactionEventProtocol.COWSWAP,
+    label: 'Cowswap',
+    image: './assets/images/defi/cowswap.jpg'
+  },
+  {
     identifier: TransactionEventProtocol.CURVE,
     label: 'Curve.fi',
     image: './assets/images/defi/curve.svg'
