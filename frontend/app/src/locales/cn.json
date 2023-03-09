@@ -1601,91 +1601,91 @@
       "title": "数据库备份失败"
     },
     "column": {
-      "size": "Size",
-      "version": "Version"
+      "size": "尺寸",
+      "version": "版本"
     },
     "confirm": {
-      "mass_message": "Are you sure you want to delete these {length} database backup(s)?",
-      "message": "Are you sure you want to delete the {size} database backup from {date}?",
-      "title": "Delete database backup"
+      "mass_message": "您确定要删除这些 {length} 个数据库备份吗？",
+      "message": "您确定要从 {date} 删除 {size} 数据库备份吗？",
+      "title": "删除数据库备份"
     },
     "delete_error": {
-      "mass_message": "There was a problem while deleting the database backups: {message}",
-      "message": "There was a problem deleting {file}: {message}",
-      "title": "Backup delete failure"
+      "mass_message": "删除数据库备份时出现问题：{message}",
+      "message": "删除 {file} 时出现问题：{message}",
+      "title": "备份删除失败"
     },
     "load_error": {
-      "message": "There was a problem loading the list of available backups: {message}",
-      "title": "Database Backup load"
+      "message": "加载可用备份列表时出现问题：{message}",
+      "title": "数据库备份负载"
     }
   },
   "database_info_display": {
-    "directory": "Database Directory:",
-    "globaldb": "Global Database",
-    "globaldb_assets": "Assets version:",
-    "globaldb_schema": "Schema version:",
-    "title": "Database Info",
-    "userdb": "User Database",
-    "userdb_size": "Size on disk:",
-    "userdb_version": "Database Version:"
+    "directory": "数据库目录:",
+    "globaldb": "全球数据库",
+    "globaldb_assets": "资产版本:",
+    "globaldb_schema": "模式版本:",
+    "title": "数据库信息",
+    "userdb": "用户数据库",
+    "userdb_size": "磁盘大小:",
+    "userdb_version": "数据库版本:"
   },
   "database_manager": {
-    "refresh_tooltip": "Refresh the database backup list"
+    "refresh_tooltip": "刷新数据库备份列表"
   },
   "date_format_help": {
     "directive": {
-      "ampm": "morning or afternoon marker",
-      "day_numeric": "Day (numeric)",
-      "day_of_the_week": "Day of the week numeric",
-      "day_of_year": "Day of the year",
-      "day_of_year_padded": "Three-digit day of the year (with leading zeroes)",
-      "day_two_digit": "Two-digit day",
-      "hour": "Hour 24h",
-      "hour_padded": "Two-digit hour (with leading zeroes) 24h",
-      "hour_twelve": "Two-digit hour (with leading zeroes) 12h",
-      "hour_twelve_padded": "Hour 12h",
-      "locale_date": "Date in the locale format",
-      "locale_datetime": "Date and time in the locale format",
-      "locale_time": "Time in the locale format",
-      "minutes": "Minutes",
-      "minutes_padded": "Two-digit minutes (with leading zeroes)",
-      "month": "Full month name",
-      "month_numeric": "Month (numeric)",
-      "month_short": "Abbreviated month name",
-      "month_two_digit": "Two-digit month",
-      "seconds": "Seconds",
-      "seconds_padded": "Two-digit seconds (with leading zeroes)",
-      "timezone": "Time zone",
-      "timezone_offset": "RFC 822 numeric offset from GMT",
-      "week_day": "Full weekday name",
-      "week_day_short": "Abbreviated weekday name",
-      "year": "Four-digit year",
-      "year_two_digit": "Last two digits of the year"
+      "ampm": "上午或下午标记",
+      "day_numeric": "日（数字）",
+      "day_of_the_week": "星期几",
+      "day_of_year": "一年中的第几天",
+      "day_of_year_padded": "一年中的三位数日期（带前导零）",
+      "day_two_digit": "两位数的日期",
+      "hour": "24小时",
+      "hour_padded": "两位数小时(带前导零)24h",
+      "hour_twelve": "两位数小时(带前导零)12h",
+      "hour_twelve_padded": "12 点钟",
+      "locale_date": "语言环境格式的日期",
+      "locale_datetime": "区域设置格式的日期和时间",
+      "locale_time": "语言环境格式的时间",
+      "minutes": "分钟",
+      "minutes_padded": "两位数分钟（带前导零）",
+      "month": "完整的月份名称",
+      "month_numeric": "月份（数字）",
+      "month_short": "缩写月份名称",
+      "month_two_digit": "两位数的月份",
+      "seconds": "秒",
+      "seconds_padded": "两位数秒（带前导零）",
+      "timezone": "时区",
+      "timezone_offset": "RFC 822 与 GMT 的数字偏移",
+      "week_day": "完整的工作日名称",
+      "week_day_short": "缩写工作日名称",
+      "year": "四位数年份",
+      "year_two_digit": "年份的最后两位数字"
     },
-    "example": "Resulting date ({example})",
-    "subtitle": "These are the supported date formatting options",
-    "title": "Date Format"
+    "example": "结果日期 ({example})",
+    "subtitle": "这些是支持的日期格式选项",
+    "title": "日期格式"
   },
   "date_time_picker": {
-    "default_format": "Date should be in {dateFormat} or {dateFormat} HH:MM format",
-    "seconds_format": "Date should be in {dateFormat} [[HH:MM]:ss] format",
+    "default_format": "日期应为 {dateFormat} 或 {dateFormat} HH:MM 格式",
+    "seconds_format": "日期应采用 {dateFormat} [[HH:MM]:ss] 格式",
     "timezone_field": {
-      "non_empty": "Timezone should be specified"
+      "non_empty": "应指定时区"
     }
   },
   "decentralized_overview": {
-    "empty_subtitle": "Please add at least one ETH account that has DeFi balances",
-    "empty_title": "No DeFi overview can be shown",
-    "loading": "Please wait while your defi balances are getting loaded...",
-    "title": "Defi Overview"
+    "empty_subtitle": "请添加至少一个有 DeFi 余额的 ETH 账户",
+    "empty_title": "无法显示 DeFi 概览",
+    "loading": "正在加载您的 defi 余额，请稍候...",
+    "title": "Defi 概览"
   },
   "defi_overview": {
-    "multiple_assets": "Multiple assets"
+    "multiple_assets": "多项资产"
   },
   "defi_protocol_selector": {
-    "filter_all": "Showing all results",
-    "filter_specific": "Showing results for selected protocol",
-    "label": "Filter protocol(s)"
+    "filter_all": "显示所有结果",
+    "filter_specific": "显示所选协议的结果",
+    "label": "过滤协议"
   },
   "defi_selector_item": {
     "vault": "Maker Vault"
@@ -1693,312 +1693,312 @@
   "defi_wizard": {
     "steps": {
       "select_accounts": {
-        "hint": "Select accounts for which data will be retrieved for each submodule. If no addresses are selected data will be retrieved for all available addresses",
-        "subtitle": "Select accounts",
-        "title": "Select accounts"
+        "hint": "选择将为每个子模块检索数据的帐户。如果没有选择地址，将为所有可用地址检索数据",
+        "subtitle": "选择账户",
+        "title": "选择账户"
       },
       "select_modules": {
-        "hint": "If no modules are specified, querying for the supported modules will be disabled.",
-        "subtitle": "Select the modules you would like to activate.",
-        "title": "Select Modules"
+        "hint": "如果没有指定模块，查询支持的模块将被禁用。",
+        "subtitle": "选择您要激活的模块。",
+        "title": "选择模块"
       },
       "setup": {
-        "description_line_one": "rotki will attempt by default to retrieve information for all your accounts and available modules. The retrieval might require a lot of time based on the number of accounts you have.",
-        "description_line_three": "You can use the default settings if you want to have information for all protocols fetched for all accounts automatically. (Module Settings can be changed at a later time).",
-        "description_line_two": "To reduce the query time you can specify only the DeFi modules and accounts you are interested in.",
-        "subtitle": "Select options to improve your rotki DeFi experience",
-        "title": "Setup DeFi",
-        "used_default": "Use Default"
+        "description_line_one": "默认情况下，rotki 将尝试检索所有帐户和可用模块的信息。根据您拥有的帐户数量，检索可能需要很多时间。",
+        "description_line_three": "如果你想为所有账户自动获取所有协议的信息，你可以使用默认设置。（模块设置可以在以后更改）",
+        "description_line_two": "为了减少查询时间，您可以只指定您感兴趣的 DeFi 模块和账户。",
+        "subtitle": "选择选项以改善您的 rotki DeFi 体验",
+        "title": "设置 DeFi",
+        "used_default": "使用默认值"
       }
     }
   },
   "deposit_withdrawals": {
     "filter": {
-      "action": "filter by the action",
-      "asset": "filter by the asset",
-      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
-      "end_date": "filter by the ending date of the period",
-      "location": "filter by the location",
-      "start_date": "filter by the starting date of the period"
+      "action": "按动作过滤",
+      "asset": "按资产过滤",
+      "date_hint": "format {format} HH:mm:ss(时间/秒可选)",
+      "end_date": "按期间结束日期筛选",
+      "location": "按位置过滤",
+      "start_date": "按期间的开始日期过滤"
     }
   },
   "deposits_withdrawals": {
     "details": {
-      "no_details": "No details found.",
-      "title": "Details"
+      "no_details": "未找到详细信息。",
+      "title": "详情"
     },
     "headers": {
-      "action": "Action",
-      "fee": "Fee"
+      "action": "动作",
+      "fee": "费用"
     },
-    "label": "asset movements",
-    "loading": "Please wait while your asset movements are getting loaded...",
-    "refresh_tooltip": "Refresh deposits & withdrawals",
-    "selected": "{count} item(s) selected",
-    "title": "Deposits & Withdrawals"
+    "label": "资产变动",
+    "loading": "正在加载您的资产移动，请稍候...",
+    "refresh_tooltip": "刷新存款和取款",
+    "selected": "{count} 个项目被选中",
+    "title": "存取款"
   },
   "docker_warning": {
-    "action": "Yes, I understand",
-    "documentation": "documentation",
-    "title": "You are running rotki in docker. Make sure you have read our {0} and understand the potential risk that running rotki in this way entails."
+    "action": "是的，我明白了",
+    "documentation": "文档",
+    "title": "您正在 docker 中运行 rotki。确保您已阅读我们的 {0} 并了解以这种方式运行 rotki 的潜在风险。"
   },
   "ens_names": {
     "task": {
-      "title": "Querying ENS names"
+      "title": "查询ENS名称"
     }
   },
   "error": {
-    "process_running": "A rotki backend process is already running. This is known to cause problems with the operation of the application. Please kill these processes pids: [{pids}] and restart the application."
+    "process_running": "一个 rotki 后端进程已经在运行。已知这会导致应用程序的运行出现问题。请终止这些进程 pids: [{pids}] 并重新启动应用程序。"
   },
   "error_screen": {
-    "backend_error": "There is a problem with the backend.",
-    "copy_tooltip": "Copy the error text to the clipboard",
-    "message": "Open an issue in Github and include rotki_electron.log and rotkehlchen.log. The backend's output follows below:",
-    "start_failure": "rotki failed to start"
+    "backend_error": "后端有问题。",
+    "copy_tooltip": "将错误文本复制到剪贴板",
+    "message": "在 Github 中打开一个问题，包括 rotki_electron.log 和 rotkehlchen.log。后端的输出如下:",
+    "start_failure": "rotki 启动失败"
   },
   "eth2_input": {
     "ownership": {
-      "hint": "*Optional: By default it is 100%",
-      "validation": "The value should be 0-100%"
+      "hint": "*可选：默认为 100%",
+      "validation": "该值应为 0-100%"
     },
-    "ownership_percentage": "Ownership Percentage",
-    "public_key": "Public Key",
-    "validator_index": "Validator Index"
+    "ownership_percentage": "所有权百分比",
+    "public_key": "公钥",
+    "validator_index": "验证器索引"
   },
   "eth2_page": {
-    "loading": "Please wait while your eth2 staking details are getting loaded...",
-    "no_premium": "ETH2 Staking is",
+    "loading": "正在加载您的 eth2 质押详细信息，请稍候...",
+    "no_premium": "ETH2 质押是",
     "toggle": {
-      "depositor": "Depositor",
-      "hint": "Switch the filtering and display mode between ETH2 validators and ETH1 Addresses",
-      "key": "Validator"
+      "depositor": "存款人",
+      "hint": "在 ETH2 验证器和 ETH1 地址之间切换过滤和显示模式",
+      "key": "验证器"
     }
   },
   "eth2_validator_filter": {
-    "label": "Select Depositor address"
+    "label": "选择存款人地址"
   },
   "eth2_validator_limit_row": {
-    "label": "Beacon chain validators"
+    "label": "信标链验证者"
   },
   "evm_rpc_node_manager": {
     "activate_error": {
-      "title": "Activating/Deactivating node {node} failed"
+      "title": "激活/停用节点 {node} 失败"
     },
-    "add_button": "Add Node",
+    "add_button": "添加节点",
     "add_dialog": {
-      "title": "Add an {chain} RPC Node"
+      "title": "添加一个 {chain} RPC 节点"
     },
     "add_error": {
-      "title": "Adding {chain} RPC Node"
+      "title": "添加 {chain} RPC 节点"
     },
     "confirm": {
-      "message": "Are you sure you want to delete the RPC node '{node}' ({endpoint}) for {chain}?",
-      "title": "Delete {chain} RPC Node"
+      "message": "您确定要删除 {chain} 的 RPC 节点 '{node}' ({endpoint}) 吗？",
+      "title": "删除 {chain} RPC 节点"
     },
     "connected": {
-      "false": "Not connected",
-      "true": "Connected"
+      "false": "未连接",
+      "true": "已连接"
     },
     "delete_error": {
-      "title": "Deleting {chain} RPC Node"
+      "title": "删除 {chain} RPC 节点"
     },
-    "delete_tooltip": "Delete the selected RPC Node",
+    "delete_tooltip": "删除选中的 RPC 节点",
     "edit_error": {
-      "title": "Editing {chain} RPC Node"
+      "title": "编辑 {chain} RPC 节点"
     },
-    "edit_tooltip": "Edit the selected RPC Node",
-    "etherscan": "Etherscan API used by rotki",
+    "edit_tooltip": "编辑选定的 RPC 节点",
+    "etherscan": "rotki 使用的 Etherscan API",
     "loading_error": {
-      "title": "Loading {chain} RPC Nodes"
+      "title": "加载 {chain} RPC 节点"
     },
-    "private_node": "This is a private node added by the user",
-    "private_node_hint": "Private nodes take priority over public nodes",
-    "public_node": "This is a public node",
-    "weight": "Node weight {weight}%"
+    "private_node": "这是用户添加的私有节点",
+    "private_node_hint": "私有节点优先于公共节点",
+    "public_node": "这是一个公共节点",
+    "weight": "节点权重{weight}%"
   },
   "exchange_balances": {
-    "add_exchange": "Add exchange",
-    "click_here": "Click here",
-    "no_connected_exchanges": "You do not have any connected exchanges. {0} to set up an Exchange Connection.",
-    "select_exchange": "Select Exchange",
-    "select_hint": "Select an exchange to view asset details.",
-    "title": "Exchange Balances"
+    "add_exchange": "添加交易所",
+    "click_here": "点击这里",
+    "no_connected_exchanges": "你没有任何连接的交易所。{0} 建立一个交易所连接。",
+    "select_exchange": "选择交易所",
+    "select_hint": "选择交易所查看资产详情。",
+    "title": "外汇余额"
   },
   "exchange_keys_form": {
     "api_key": {
-      "non_empty": "The api key field cannot be empty."
+      "non_empty": "api 键字段不能为空。"
     },
     "api_secret": {
-      "non_empty": "The api secret field cannot be empty."
+      "non_empty": "api secret 字段不能为空。"
     },
     "edit": {
-      "activate_tooltip": "Edit the api keys for the exchange.",
-      "deactivate_tooltip": "Cancel the edit of the api keys for the exchange."
+      "activate_tooltip": "编辑交易所的 api 密钥。",
+      "deactivate_tooltip": "取消对交易所 api 密钥的编辑。"
     },
-    "exchange": "Exchange",
+    "exchange": "交换",
     "name": {
-      "non_empty": "The name field cannot be empty."
+      "non_empty": "名称字段不能为空。"
     },
     "passphrase": {
-      "non_empty": "The passphrase field cannot be empty."
+      "non_empty": "密码字段不能为空。"
     }
   },
   "exchange_settings": {
     "confirmation": {
-      "message": "Are you sure you want to delete the API key and secret for the {location} entry named {name} from rotki? This action can not be undone and you will need to obtain the key and secret again from the exchange.",
-      "title": "Confirmation Required"
+      "message": "您确定要从 rotki 中删除名为 {name} 的 {location} 条目的 API 密钥和机密吗？此操作无法撤消，您需要从交易所再次获取密钥和机密",
+      "title": "需要确认"
     },
     "delete": {
-      "tooltip": "Delete the exchange account"
+      "tooltip": "删除兑换账户"
     },
     "dialog": {
       "add": {
-        "title": "Add an exchange"
+        "title": "添加交易所"
       },
       "edit": {
-        "title": "Edit an exchange"
+        "title": "编辑交易所"
       }
     },
     "edit": {
-      "tooltip": "Edit the exchange account"
+      "tooltip": "编辑兑换账户"
     },
     "header": {
-      "actions": "Actions",
-      "sync_enabled": "Sync Enabled"
+      "actions": "动作",
+      "sync_enabled": "同步启用"
     },
     "inputs": {
       "api_key": "API Key",
       "api_secret": "API Secret",
-      "ftx_subaccount": "[Optional] FTX subaccount name",
-      "kraken_account": "Select the type of your Kraken account",
+      "ftx_subaccount": "[可选] FTX 子账户名称",
+      "kraken_account": "选择您的 Kraken 账户类型",
       "passphrase": "Passphrase"
     },
     "keys": "Keys",
-    "subtitle": "rotki can connect to supported exchanges and automatically pull your trades and balances from them. See the {0} for more information.",
+    "subtitle": "rotki 可以连接到支持的交易所并自动从中提取您的交易和余额。有关详细信息，请参阅 {0}。",
     "sync": {
       "messages": {
-        "description": "Cannot {action} syncing exchange {location} with name {name}: {message}",
-        "disable": "disable",
-        "enable": "enable",
-        "title": "Failed to update non syncing exchanges"
+        "description": "无法 {action} 同步交换 {location} 与名称 {name}: {message}",
+        "disable": "禁用",
+        "enable": "启用",
+        "title": "无法更新非同步交易所"
       }
     },
-    "title": "Connected Exchanges",
-    "usage_guide": "Usage Guide"
+    "title": "连接交易所",
+    "usage_guide": "使用指南"
   },
   "explorers": {
-    "address": "Addresses",
-    "address_url": "Addresses will open at {addressUrl}",
-    "chain_selector": "Blockchain",
-    "subtitle": "Set the external explorer urls for addresses and transaction",
-    "title": "Blockchain explorers",
-    "tx": "Transactions",
-    "tx_url": "Transactions will open at {txUrl}"
+    "address": "地址",
+    "address_url": "地址将在 {addressUrl} 打开",
+    "chain_selector": "区块链",
+    "subtitle": "设置地址和交易的外部资源管理器 url",
+    "title": "区块链探索者",
+    "tx": "交易",
+    "tx_url": "交易将在 {txUrl} 打开"
   },
   "external_services": {
     "beaconchain": {
-      "delete_tooltip": "Deletes the Beaconcha.in API key",
-      "description": "rotki uses Beaconcha.in to obtain information about eth2 staking in your portfolio. An API key is only needed if you are being rate-limited.",
-      "hint": "Enter your Beaconcha.in API key",
+      "delete_tooltip": "删除 Beaconcha.in API 密钥",
+      "description": "rotki 使用 Beaconcha.in 获取有关在你的投资组合中抵押 eth2 的信息。只有在你受到速率限制时才需要 API 密钥。",
+      "hint": "输入您的 Beaconcha.in API 密钥",
       "label": "API key",
       "title": "Beaconcha.in"
     },
     "confirmation": {
-      "message": "Are you sure you want to delete this API Key?",
-      "title": "Delete API Key"
+      "message": "您确定要删除此 API 密钥吗？",
+      "title": "删除 API Key"
     },
     "covalent": {
-      "delete_tooltip": "Deletes the Covalent API key",
-      "description": "rotki can use Covalent to get historical data for various chains",
-      "hint": "Enter your Covalent API key",
+      "delete_tooltip": "删除 the Covalent API key",
+      "description": "rotki可以使用Covalent获取各种链的历史数据",
+      "hint": "输入您的 Covalent API 密钥",
       "label": "API key",
       "title": "Covalent"
     },
     "cryptocompare": {
-      "delete_tooltip": "Deletes the CryptoCompare API key",
-      "description": "rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited.",
-      "hint": "Enter your CryptoCompare API key",
+      "delete_tooltip": "删除 CryptoCompare API 密钥",
+      "description": "rotki 使用 cryptocompare 来获取您投资组合中资产的价格信息。只有当您拥有大量资产并且受到速率限制时才需要 API 密钥。",
+      "hint": "输入您的 CryptoCompare API 密钥",
       "label": "API key",
-      "title": "CryptoCompare"
+      "title": "加密比较"
     },
     "delete_error": {
-      "description": "Error while removing the external service api keys: {message}",
-      "title": "Error"
+      "description": "删除外部服务 api 密钥时出错： {message}",
+      "title": "错误"
     },
     "etherscan": {
-      "delete_tooltip": "Deletes the {chain} Etherscan API key",
-      "description": "Recommended for any EVM blockchain balances or transactions if you are not using your own node.",
-      "hint": "Enter your {chain} Etherscan API key",
+      "delete_tooltip": "删除 {chain} Etherscan API 密钥",
+      "description": "如果您不使用自己的节点，建议用于任何 EVM 区块链余额或交易。",
+      "hint": "输入您的 {chain} Etherscan API 密钥",
       "label": "API key",
       "title": "Etherscan"
     },
     "loopring": {
-      "delete_tooltip": "Delete your Loopring API key",
-      "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key.",
-      "hint": "Enter your Loopring API key",
+      "delete_tooltip": "删除您的 Loopring API key",
+      "description": "用于查询路印协议中的余额。此API密钥只能查询生成此密钥的账户。",
+      "hint": "输入您的 Loopring API 密钥",
       "label": "API key",
-      "not_enabled": "The Loopring module is not enabled. Your balances won't be retrieved unless you enable the loopring module",
-      "settings": "Settings",
+      "not_enabled": "路印协议模块未启用。除非您启用路印协议模块，否则您的余额将不会被检索",
+      "settings": "设置",
       "title": "Loopring"
     },
     "opensea": {
-      "delete_tooltip": "Delete your OpenSea API key",
-      "description": "Used to query NFT information and balances from OpenSea.",
-      "here": "here",
-      "hint": "Enter your OpenSea API key",
+      "delete_tooltip": "删除你的 OpenSea API key",
+      "description": "用于查询OpenSea的NFT信息和余额。",
+      "here": "这儿",
+      "hint": "输入您的 OpenSea API key",
       "label": "API Key",
-      "link": "You can apply for an API key {link}",
+      "link": "您可以申请 an API key {link}",
       "title": "Opensea"
     },
     "set": {
       "error": {
-        "message": "Error while settings external service api keys: {error}",
+        "message": "设置外部服务 api 密钥时出错： {error}",
         "title": "Error"
       },
       "success": {
-        "message": "Successfully updated the key for {serviceName}",
+        "message": "已成功更新 {serviceName} 的密钥",
         "title": "Success"
       }
     },
-    "subtitle": "rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases rotki depends on these APIs for basic information, in which case you will need to provide an API key.",
-    "title": "External Services"
+    "subtitle": "rotki 连接到各种服务提供商,以获取历史价格或区块链数据等信息。在某些情况下,rotki 依赖这些 API 获取基本信息，在这种情况下，您需要提供 API 密钥。",
+    "title": "外部服务"
   },
   "external_trade_form": {
     "amount": {
-      "hint": "Amount bought/sold"
+      "hint": "买入/卖出金额"
     },
     "base_asset": {
-      "hint": "The base asset of the trade",
-      "label": "Base Asset"
+      "hint": "交易的基础资产",
+      "label": "基础资产"
     },
-    "buy_base": "Buy",
-    "buy_quote": "With",
+    "buy_base": "购买",
+    "buy_quote": "与",
     "date": {
-      "hint": "Time the trade took place",
-      "label": "Time"
+      "hint": "交易发生的时间",
+      "label": "时间"
     },
     "fee": {
-      "hint": "[Optional] Fee if any of the trade that occurred",
-      "label": "Fee"
+      "hint": "[可选]如果发生任何交易则收取费用",
+      "label": "费用"
     },
     "fee_currency": {
-      "hint": "[Optional] The currency used for the fee",
-      "label": "Fee Currency"
+      "hint": "[可选] 费用使用的货币",
+      "label": "手续费币种"
     },
     "link": {
-      "hint": "[Optional] A link to the trade. e.g. in an explorer",
-      "label": "Link"
+      "hint": "[可选] 交易链接。例如在浏览器中",
+      "label": "链接"
     },
     "notes": {
-      "hint": "[Optional] Additional notes to store for the trade",
-      "label": "Additional notes"
+      "hint": "[可选] 为交易存储的附加说明",
+      "label": "补充说明"
     },
     "quote_amount": {
-      "label": "Quote amount bought/sold"
+      "label": "报价买入/卖出金额"
     },
     "quote_asset": {
-      "hint": "The quote asset of the trade",
-      "label": "Quote Asset"
+      "hint": "交易的报价资产",
+      "label": "报价资产"
     },
     "rate": {
       "label": "Rate of the trade"
