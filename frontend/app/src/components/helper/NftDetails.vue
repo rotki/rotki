@@ -15,7 +15,7 @@ const props = defineProps({
 const css = useCssModule();
 
 const { identifier } = toRefs(props);
-const { assetInfo } = useAssetInfoRetrievalStore();
+const { assetInfo } = useAssetInfoRetrieval();
 
 const balanceData = assetInfo(identifier);
 

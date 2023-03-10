@@ -159,7 +159,7 @@ const setEditMode = () => {
 
 const { setMessage } = useMessageStore();
 
-const { addLedgerAction, editLedgerAction } = useLedgerActionStore();
+const { addLedgerAction, editLedgerAction } = useLedgerActions();
 
 const save = async (): Promise<boolean> => {
   const numericAmount = get(bigNumberifyFromRef(amount));

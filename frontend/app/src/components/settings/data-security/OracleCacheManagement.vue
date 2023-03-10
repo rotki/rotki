@@ -74,7 +74,7 @@ watch(selection, async () => {
 const pending = isTaskRunning(TaskType.CREATE_PRICE_CACHE);
 
 const { notify } = useNotificationsStore();
-const { assetSymbol } = useAssetInfoRetrievalStore();
+const { assetSymbol } = useAssetInfoRetrieval();
 
 const clearCache = async (entry: OracleCacheMeta) => {
   const { fromAsset, toAsset } = entry;

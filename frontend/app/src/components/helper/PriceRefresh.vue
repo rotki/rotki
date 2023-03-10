@@ -12,7 +12,7 @@ const props = defineProps({
 });
 
 const { isTaskRunning } = useTaskStore();
-const { refreshPrices } = useBalancesStore();
+const { refreshPrices } = useBalances();
 const { isLoading } = useStatusStore();
 
 const refreshing = isLoading(Section.PRICES);
@@ -26,7 +26,7 @@ const loadingData = computed<boolean>(() => {
   );
 });
 
-const { assets } = useAggregatedBalancesStore();
+const { assets } = useAggregatedBalances();
 const { additionalAssets } = toRefs(props);
 
 const refresh = async () => {

@@ -19,8 +19,8 @@ const tags = ref<string[]>([]);
 
 const errorMessages = ref<ValidationErrors>({});
 
-const { addAccounts, fetchAccounts } = useBlockchainStore();
-const { editAccount } = useBlockchainAccountsStore();
+const { addAccounts, fetchAccounts } = useBlockchains();
+const { editAccount } = useBlockchainAccounts();
 const { setMessage } = useMessageStore();
 const { valid, setSave, accountToEdit } = useAccountDialog();
 const { pending, loading } = useAccountLoading();

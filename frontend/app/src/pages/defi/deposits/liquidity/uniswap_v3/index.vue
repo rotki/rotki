@@ -28,7 +28,7 @@ const { fetchV3Balances: fetchBalances, uniswapV3Balances: uniswapBalances } =
 const { uniswapV3Addresses: addresses, uniswapV3PoolAssets: poolAssets } =
   storeToRefs(store);
 const { isModuleEnabled } = useModules();
-const { tokenAddress } = useAssetInfoRetrievalStore();
+const { tokenAddress } = useAssetInfoRetrieval();
 const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 const { tc } = useI18n();
 

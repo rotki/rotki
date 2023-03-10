@@ -17,7 +17,7 @@ const premium = usePremium();
 const { isLoading } = useStatusStore();
 const aaveHistoryLoading = isLoading(Section.DEFI_AAVE_HISTORY);
 
-const { assetSymbol } = useAssetInfoRetrievalStore();
+const { assetSymbol } = useAssetInfoRetrieval();
 const { tc } = useI18n();
 const symbol = asyncComputed(() => assetSymbol(get(loan).asset));
 </script>

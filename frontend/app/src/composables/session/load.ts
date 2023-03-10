@@ -8,8 +8,8 @@ export const useDataLoader = () => {
   const { fetchTags } = useTagStore();
   const { fetchIgnoredAssets } = useIgnoredAssetsStore();
   const { fetchNetValue } = useStatisticsStore();
-  const { fetchCounterparties } = useTransactionStore();
-  const { fetch, refreshPrices } = useBalancesStore();
+  const { fetchCounterparties } = useHistoryStore();
+  const { fetch, refreshPrices } = useBalances();
 
   const refreshData = async (): Promise<void> => {
     logger.info('Refreshing data');

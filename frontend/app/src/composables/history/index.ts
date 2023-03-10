@@ -25,8 +25,45 @@ export const useIgnore = <T extends EntryMeta>(
   refresh: () => any
 ) => {
   const { setMessage } = useMessageStore();
-  const { ignoreInAccounting } = useHistoryStore();
   const { tc } = useI18n();
+  const api = useHistoryIgnoringApi();
+
+  const ignoreInAccounting = async (
+    payload: IgnorePayload,
+    ignore: boolean
+  ): Promise<ActionStatus> => {
+    try {
+      ignore
+        ? await api.ignoreActions(payload)
+        : await api.unignoreActions(payload);
+    } catch (e: any) {
+      let title: string;
+      let description: string;
+      if (ignore) {
+        title = tc('actions.ignore.error.title');
+      } else {
+        title = tc('actions.unignore.error.title');
+      }
+
+      if (ignore) {
+        description = tc('actions.ignore.error.description', 0, {
+          error: e.message
+        }).toString();
+      } else {
+        description = tc('actions.unignore.error.description', 0, {
+          error: e.message
+        }).toString();
+      }
+      setMessage({
+        success: false,
+        title,
+        description
+      });
+      return { success: false, message: 'failed' };
+    }
+
+    return { success: true };
+  };
 
   const ignoreActions = async (
     payload: IgnorePayload

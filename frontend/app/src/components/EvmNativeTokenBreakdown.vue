@@ -17,8 +17,8 @@ const props = withDefaults(
 
 const { identifier, blockchainOnly } = toRefs(props);
 
-const { getBreakdown: getBlockchainBreakdown } = useAccountBalancesStore();
-const { assetBreakdown } = useBalancesBreakdownStore();
+const { getBreakdown: getBlockchainBreakdown } = useAccountBalances();
+const { assetBreakdown } = useBalancesBreakdown();
 
 const breakdowns = computed(() => {
   const asset = get(identifier);

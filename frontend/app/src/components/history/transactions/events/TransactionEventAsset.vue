@@ -20,7 +20,7 @@ const props = withDefaults(
 const { tc } = useI18n();
 
 const { event } = toRefs(props);
-const { assetSymbol } = useAssetInfoRetrievalStore();
+const { assetSymbol } = useAssetInfoRetrieval();
 
 const showBalance = computed<boolean>(() => {
   const type = getEventType(get(event));

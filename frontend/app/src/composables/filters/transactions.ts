@@ -36,10 +36,10 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
   const filters: Ref<Filters> = ref({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-  const { counterparties } = storeToRefs(useTransactionStore());
+  const { counterparties } = storeToRefs(useHistoryStore());
   const { txEvmChains } = useSupportedChains();
   const { assetSearch } = useAssetInfoApi();
-  const { assetInfo } = useAssetInfoRetrievalStore();
+  const { assetInfo } = useAssetInfoRetrieval();
   const { tc } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(() => {

@@ -76,8 +76,8 @@ const editAccount = (account: BlockchainAccountWithBalance) => {
 };
 
 const { deleteEth2Validators } = useEthAccountsStore();
-const { removeAccount } = useBlockchainAccountsStore();
-const { refreshAccounts } = useBlockchainStore();
+const { removeAccount } = useBlockchainAccounts();
+const { refreshAccounts } = useBlockchains();
 const { deleteXpub } = useBtcAccountsStore();
 
 const deleteAccount = async (payload: XpubPayload | string[]) => {

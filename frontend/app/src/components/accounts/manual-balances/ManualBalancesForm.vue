@@ -86,7 +86,7 @@ watch(
 
 const { editManualBalance, addManualBalance, manualLabels } =
   useManualBalancesStore();
-const { refreshPrices } = useBalancesStore();
+const { refreshPrices } = useBalances();
 const { setMessage } = useMessageStore();
 
 const save = async () => {

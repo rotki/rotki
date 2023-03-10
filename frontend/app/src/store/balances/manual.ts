@@ -38,7 +38,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     deleteManualBalances
   } = useManualBalancesApi();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-  const { getAssociatedAssetIdentifier } = useAssetInfoRetrievalStore();
+  const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
 
   const manualBalances: ComputedRef<ManualBalanceWithValue[]> = computed(() => {
     return get(manualBalancesData).filter(

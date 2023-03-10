@@ -11,7 +11,7 @@ import {
 import { TaskType } from '@/types/task-type';
 import { Zero, bigNumberify, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
-import { useTradeStore } from '@/store/history/trades';
+import { useTrades } from '@/composables/history/trades';
 import { toMessages } from '@/utils/validation-errors';
 
 const props = withDefaults(
@@ -56,7 +56,7 @@ const rateInput = ref<any>(null);
 const feeInput = ref<any>(null);
 const feeCurrencyInput = ref<any>(null);
 
-const { assetSymbol } = useAssetInfoRetrievalStore();
+const { assetSymbol } = useAssetInfoRetrieval();
 const baseSymbol = assetSymbol(base);
 const quoteSymbol = assetSymbol(quote);
 
@@ -188,7 +188,7 @@ const setEditMode = () => {
 
 const { setMessage } = useMessageStore();
 
-const { addExternalTrade, editExternalTrade } = useTradeStore();
+const { addExternalTrade, editExternalTrade } = useTrades();
 
 const save = async (): Promise<boolean> => {
   const amount = get(numericAmount);

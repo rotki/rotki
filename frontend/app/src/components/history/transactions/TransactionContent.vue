@@ -104,7 +104,7 @@ const {
   refreshTransactions,
   fetchTransactionEvents,
   deleteTransactionEvent
-} = useTransactionStore();
+} = useTransactions();
 
 const openDialog: Ref<boolean> = ref(false);
 const editableItem: Ref<EthTransactionEventEntry | null> = ref(null);

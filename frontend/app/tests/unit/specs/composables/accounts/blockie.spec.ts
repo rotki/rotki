@@ -1,6 +1,6 @@
 import { createBlockie } from '@/utils/blockie';
 
-describe('accounts/blockie', () => {
+describe('composables::accounts/blockie', () => {
   const { cache, getBlockie } = useBlockie();
   let firstBlockie = '';
   const address = '0x790b4086d106eafd913e71843aed987efe291c92';

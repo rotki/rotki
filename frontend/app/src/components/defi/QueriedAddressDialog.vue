@@ -17,7 +17,7 @@ const ETH = Blockchain.ETH;
 const store = useQueriedAddressesStore();
 const { addQueriedAddress, deleteQueriedAddress } = store;
 const { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
-const { accounts } = storeToRefs(useAccountBalancesStore());
+const { accounts } = useAccountBalances();
 
 const { tc } = useI18n();
 

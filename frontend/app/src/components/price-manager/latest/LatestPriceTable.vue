@@ -66,7 +66,7 @@ const headers = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-const { refreshPrices } = useBalancesStore();
+const { refreshPrices } = useBalances();
 const { deleteLatestPrice, fetchLatestPrices } = useAssetPricesApi();
 
 const deletePrice = async (item: ManualPrice) => {
@@ -108,7 +108,7 @@ const getLatestPrices = async () => {
   }
 };
 
-const { assets } = useAggregatedBalancesStore();
+const { assets } = useAggregatedBalances();
 const { fetchNonFungibleBalances } = useNonFungibleBalancesStore();
 
 const refresh = async () => {

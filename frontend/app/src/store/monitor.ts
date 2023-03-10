@@ -15,7 +15,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { consume } = useMessageHandling();
   const { fetchWatchers } = useWatchersStore();
   const { monitor } = useTaskStore();
-  const { autoRefresh } = useBalancesStore();
+  const { autoRefresh } = useBalances();
 
   const { queryPeriod, refreshPeriod } = storeToRefs(
     useFrontendSettingsStore()

@@ -53,7 +53,7 @@ export const useDefiStore = defineStore('defi', () => {
   const balancerStore = useBalancerStore();
   const sushiswapStore = useSushiswapStore();
   const uniswapStore = useUniswapStore();
-  const lendingStore = useDefiSupportedProtocolsStore();
+  const lendingStore = useDefiSupportedProtocols();
   const { t, tc } = useI18n();
 
   const { fetchAllDefi: fetchAllDefiCaller } = useDefiApi();

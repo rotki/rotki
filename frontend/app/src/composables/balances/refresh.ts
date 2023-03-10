@@ -3,7 +3,7 @@ import { type MaybeRef } from '@vueuse/core';
 import { BlockchainRefreshButtonBehaviour } from '@/types/frontend-settings';
 
 export const useRefresh = (blockchain?: MaybeRef<Blockchain>) => {
-  const { fetchBlockchainBalances } = useBlockchainBalancesStore();
+  const { fetchBlockchainBalances } = useBlockchainBalances();
   const { fetchLoopringBalances } = useEthBalancesStore();
   const { fetchConnectedExchangeBalances } = useExchangeBalancesStore();
 

@@ -145,10 +145,10 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
   return headers;
 });
 
-const assetInfoRetrievalStore = useAssetInfoRetrievalStore();
+const assetInfoRetrievalStore = useAssetInfoRetrieval();
 const { assetSymbol } = assetInfoRetrievalStore;
 
-const { deleteExternalTrade, fetchTrades, refreshTrades } = useTradeStore();
+const { deleteExternalTrade, fetchTrades, refreshTrades } = useTrades();
 
 const {
   isLoading,

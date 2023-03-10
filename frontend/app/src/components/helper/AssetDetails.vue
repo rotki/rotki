@@ -19,7 +19,7 @@ const props = defineProps({
 });
 
 const { asset, enableAssociation, isCollectionParent } = toRefs(props);
-const { assetInfo } = useAssetInfoRetrievalStore();
+const { assetInfo } = useAssetInfoRetrieval();
 
 const assetDetails = assetInfo(asset, enableAssociation, isCollectionParent);
 

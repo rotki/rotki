@@ -24,7 +24,7 @@ import { isNft } from '@/utils/nft';
 
 export const assetsApi = (): AssetsApi => {
   const { assetInfo, assetSymbol, assetName, tokenAddress } =
-    useAssetInfoRetrievalStore();
+    useAssetInfoRetrieval();
 
   return {
     assetInfo,
@@ -103,8 +103,8 @@ export const userSettings = (): UserSettingsApi => {
 
 export const balancesApi = (): BalancesApi => {
   const { exchangeRate } = useBalancePricesStore();
-  const { balancesByLocation } = storeToRefs(useBalancesBreakdownStore());
-  const { balances } = useAggregatedBalancesStore();
+  const { balancesByLocation } = useBalancesBreakdown();
+  const { balances } = useAggregatedBalances();
   return {
     byLocation: balancesByLocation as ComputedRef<Record<string, BigNumber>>,
     aggregatedBalances: balances() as ComputedRef<AssetBalanceWithPrice[]>,

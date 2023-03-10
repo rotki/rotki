@@ -11,7 +11,7 @@ const props = defineProps({
 
 const { suggestion } = toRefs(props);
 
-const { assetInfo } = useAssetInfoRetrievalStore();
+const { assetInfo } = useAssetInfoRetrieval();
 
 const displayValue = computed(() => {
   const item = get(suggestion);

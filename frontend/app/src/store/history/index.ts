@@ -1,54 +1,48 @@
-import { type IgnorePayload } from '@/types/history/ignored';
-import { type ActionStatus } from '@/types/action';
+import { type Ref } from 'vue';
+import { type TradeLocation } from '@/types/history/trade/location';
+import { logger } from '@/utils/logging';
+import { type Exchange } from '@/types/exchanges';
 
 export const useHistoryStore = defineStore('history', () => {
-  const { setMessage } = useMessageStore();
+  const { notify } = useNotificationsStore();
   const { t } = useI18n();
+  const counterparties: Ref<string[]> = ref([]);
+  const associatedLocations: Ref<TradeLocation[]> = ref([]);
+  const connectedExchanges: Ref<Exchange[]> = ref([]);
+  const {
+    fetchAssociatedLocations: fetchAssociatedLocationsApi,
+    fetchAvailableCounterparties
+  } = useHistoryApi();
 
-  const api = useHistoryIgnoringApi();
-
-  const ignoreInAccounting = async (
-    payload: IgnorePayload,
-    ignore: boolean
-  ): Promise<ActionStatus> => {
+  const fetchAssociatedLocations = async () => {
     try {
-      ignore
-        ? await api.ignoreActions(payload)
-        : await api.unignoreActions(payload);
+      set(associatedLocations, await fetchAssociatedLocationsApi());
     } catch (e: any) {
-      let title: string;
-      let description: string;
-      if (ignore) {
-        title = t('actions.ignore.error.title').toString();
-      } else {
-        title = t('actions.unignore.error.title').toString();
-      }
-
-      if (ignore) {
-        description = t('actions.ignore.error.description', {
-          error: e.message
-        }).toString();
-      } else {
-        description = t('actions.unignore.error.description', {
-          error: e.message
-        }).toString();
-      }
-      setMessage({
-        success: false,
-        title,
-        description
+      logger.error(e);
+      const message = e?.message ?? e ?? '';
+      notify({
+        title: t(
+          'actions.history.fetch_associated_locations.error.title'
+        ).toString(),
+        message: t('actions.history.fetch_associated_locations.error.message', {
+          message
+        }).toString(),
+        display: true
       });
-      return { success: false, message: 'failed' };
     }
+  };
 
-    return { success: true };
+  const fetchCounterparties = async (): Promise<void> => {
+    const result = await fetchAvailableCounterparties();
+
+    set(counterparties, result);
   };
 
   return {
-    ignoreInAccounting
+    counterparties,
+    connectedExchanges,
+    associatedLocations,
+    fetchAssociatedLocations,
+    fetchCounterparties
   };
 });
-
-if (import.meta.hot) {
-  import.meta.hot.accept(acceptHMRUpdate(useHistoryStore, import.meta.hot));
-}

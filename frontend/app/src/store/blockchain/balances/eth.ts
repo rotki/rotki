@@ -43,7 +43,7 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
-  const { getAssociatedAssetIdentifier } = useAssetInfoRetrievalStore();
+  const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
   const { queryLoopringBalances } = useBlockchainBalancesApi();
   const { tc } = useI18n();
 

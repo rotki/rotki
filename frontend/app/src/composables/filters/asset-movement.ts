@@ -37,11 +37,11 @@ type Filters = MatchedKeyword<AssetMovementFilterValueKeys>;
 export const useAssetMovementFilters = () => {
   const filters: Ref<Filters> = ref({});
 
-  const locationsStore = useAssociatedLocationsStore();
+  const locationsStore = useHistoryStore();
   const { associatedLocations } = storeToRefs(locationsStore);
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { assetSearch } = useAssetInfoApi();
-  const { assetInfo } = useAssetInfoRetrievalStore();
+  const { assetInfo } = useAssetInfoRetrieval();
   const { tc } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(

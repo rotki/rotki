@@ -18,11 +18,11 @@ const props = defineProps<{ identifier: string }>();
 const { identifier } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { getAccountByAddress } = useAccountBalancesStore();
+const { getAccountByAddress } = useAccountBalances();
 const { getEth2Account } = useEthAccountsStore();
 const { detailsLoading } = storeToRefs(useStatusStore());
-const { assetPriceInfo } = useAggregatedBalancesStore();
-const { assetBreakdown } = useBalancesBreakdownStore();
+const { assetPriceInfo } = useAggregatedBalances();
+const { assetBreakdown } = useBalancesBreakdown();
 const { t } = useI18n();
 
 const onlyTags = ref<string[]>([]);

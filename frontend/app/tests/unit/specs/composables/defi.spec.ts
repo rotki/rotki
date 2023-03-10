@@ -6,7 +6,7 @@ import {
   setUniswapV3Balances
 } from '../store/defi/uniswap.spec';
 
-describe('defi', () => {
+describe('composables::defi', () => {
   beforeAll(() => {
     setActivePinia(createPinia());
     setUniswapV2Balances();
