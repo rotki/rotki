@@ -36,7 +36,3 @@ class CurveAccountant(DepositableAccountantInterface):
                 accountant_cb=self._process_deposit_or_withdrawal,
             ),
         }
-
-    @property
-    def name(self) -> str:
-        return 'curve'
