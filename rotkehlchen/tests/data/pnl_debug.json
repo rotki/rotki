@@ -414,7 +414,8 @@
       "ethereum_tokens",
       "hardcoded_mappings",
       "ens_names"
-    ]
+    ],
+    "include_fees_in_cost_basis": true
   },
   "ignored_events_ids": {
     "ledger_action": ["2"],

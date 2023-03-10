@@ -368,21 +368,26 @@ class Trade(AccountingEventMixin):
         else:  # settlement buy/sell only in poloniex. Should properly process when margin
             return 1  # trades are implemented
 
+        group_id = self.identifier
+        taxable = asset_in.is_fiat() or accounting.settings.include_crypto2crypto
+
+        should_calculate_fee = self.fee is not None and self.fee_currency is not None and self.fee != ZERO  # noqa: E501
+
+        fee_info_for_cost_basis = None
+        if should_calculate_fee and accounting.settings.include_fees_in_cost_basis is True:
+            fee_info_for_cost_basis = (self.fee, self.fee_currency)
+
         prices = accounting.get_prices_for_swap(
             timestamp=self.timestamp,
             amount_in=amount_in,
             asset_in=asset_in,
             amount_out=amount_out,
             asset_out=asset_out,
-            fee=self.fee,
-            fee_asset=self.fee_currency,
+            fee_info=fee_info_for_cost_basis,  # type: ignore[arg-type]  # mypy doesn't see that `should_calculate_fee` condition makes sure that the values are not None.  # noqa: E501
         )
         if prices is None:
             log.debug(f'Skipping {self} at accounting due to inability to find a price')
             return 1
-
-        group_id = self.identifier
-        taxable = asset_in.is_fiat() or accounting.settings.include_crypto2crypto
 
         _, trade_taxable_amount = accounting.add_spend(
             event_type=AccountingEventType.TRADE,
@@ -408,8 +413,7 @@ class Trade(AccountingEventMixin):
             extra_data={'group_id': group_id},
         )
 
-        if self.fee is not None and self.fee_currency is not None and self.fee != ZERO:
-            # also checking fee_asset != None due to https://github.com/rotki/rotki/issues/4172
+        if should_calculate_fee:  # include fee as a standalone event
             fee_price = None
             if self.fee_currency == accounting.profit_currency:
                 fee_price = Price(ONE)
@@ -418,19 +422,28 @@ class Trade(AccountingEventMixin):
             elif self.fee_currency == asset_out:
                 fee_price = prices[0]
 
+            if accounting.settings.include_fees_in_cost_basis:
+                # If fee is included in cost basis, we just reduce the amount of fee asset owned
+                fee_taxable = False
+                fee_taxable_amount_ratio = ONE
+            else:
+                # Otherwise we make it a normal spend event
+                fee_taxable = True
+                fee_taxable_amount_ratio = trade_taxable_amount / amount_out
+
             accounting.add_spend(
                 event_type=AccountingEventType.FEE,
                 notes=notes + 'Fee',
                 location=self.location,
                 timestamp=self.timestamp,
-                asset=self.fee_currency,
-                amount=self.fee,
-                taxable=True,
+                asset=self.fee_currency,  # type: ignore[arg-type]  # mypy doesn't see that `calculate_fee` condition makes sure that the values are not None.  # noqa: E501
+                amount=self.fee,  # type: ignore[arg-type]  # mypy doesn't see that `calculate_fee` condition makes sure that the values are not None.  # noqa: E501
+                taxable=fee_taxable,
                 given_price=fee_price,
                 # By setting the taxable amount ratio we determine how much of the fee
                 # spending should be a taxable spend and how much free.
-                taxable_amount_ratio=trade_taxable_amount / amount_out,
-                count_cost_basis_pnl=accounting.settings.include_crypto2crypto,
+                taxable_amount_ratio=fee_taxable_amount_ratio,
+                count_cost_basis_pnl=True,
                 count_entire_amount_spend=True,
                 extra_data={'group_id': group_id},
             )
@@ -590,7 +603,7 @@ class MarginPosition(AccountingEventMixin):
             amount=amount,
             taxable=True,
         )
-        if self.fee != ZERO:
+        if self.fee != ZERO:  # Fee is not included in the asset price here since it is not a swap/trade event.  # noqa: E501
             accounting.add_spend(
                 event_type=AccountingEventType.FEE,
                 notes='Margin position. Fee',

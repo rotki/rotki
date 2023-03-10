@@ -47,8 +47,8 @@ def test_report_settings(database):
     assert report['total_actions'] == total_actions
 
     returned_settings = report['settings']
-    assert len(returned_settings) == 8
-    for x in ('account_for_assets_movements', 'calculate_past_cost_basis', 'include_crypto2crypto', 'include_gas_costs', 'profit_currency', 'taxfree_after_period', 'cost_basis_method', 'eth_staking_taxable_after_withdrawal_enabled'):  # noqa: E501
+    assert len(returned_settings) == 9
+    for x in ('account_for_assets_movements', 'calculate_past_cost_basis', 'include_crypto2crypto', 'include_gas_costs', 'profit_currency', 'taxfree_after_period', 'cost_basis_method', 'eth_staking_taxable_after_withdrawal_enabled', 'include_fees_in_cost_basis'):  # noqa: E501
         setting_name = 'main_currency' if x == 'profit_currency' else x
         if setting_name == 'cost_basis_method':
             value = settings.cost_basis_method.serialize()

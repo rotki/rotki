@@ -1059,6 +1059,7 @@ class ModifiableSettingsSchema(Schema):
     address_name_priority = fields.List(fields.String(
         validate=webargs.validate.OneOf(choices=DEFAULT_ADDRESS_NAME_PRIORITY),
     ), load_default=DEFAULT_ADDRESS_NAME_PRIORITY)
+    include_fees_in_cost_basis = fields.Boolean(load_default=None)
 
     @validates_schema
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -1109,6 +1110,7 @@ class ModifiableSettingsSchema(Schema):
             treat_eth2_as_eth=data['treat_eth2_as_eth'],
             eth_staking_taxable_after_withdrawal_enabled=data['eth_staking_taxable_after_withdrawal_enabled'],  # noqa: 501
             address_name_priority=data['address_name_priority'],
+            include_fees_in_cost_basis=data['include_fees_in_cost_basis'],
         )
 
 
