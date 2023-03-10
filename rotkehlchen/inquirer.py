@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterable, NamedTuple, Optional, Sequence, Union
 
 from rotkehlchen.assets.asset import Asset, EvmToken, FiatAsset, UnderlyingToken
+from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.contracts import EvmContract
@@ -59,7 +60,12 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.defi import DefiPoolError
-from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors.misc import (
+    BlockchainQueryError,
+    NotERC20Conformant,
+    RemoteError,
+    UnableToDecryptRemoteData,
+)
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.bisq_market import get_bisq_market_price
@@ -694,20 +700,16 @@ class Inquirer():
         if is_known_protocol is True or underlying_tokens is not None:
             assert token is not None
             result, oracle = get_underlying_asset_price(token)
-            if result is None:
-                usd_price = Price(ZERO)
-                instance._msg_aggregator.add_warning(
-                    f'Could not find price for {token}',
-                )
-            else:
+            if result is not None:
                 usd_price = Price(result)
-            Inquirer._cached_current_price[cache_key] = CachedPriceEntry(
-                price=usd_price,
-                time=ts_now(),
-                oracle=oracle,
-                used_main_currency=False,  # this function is for usd only, so it doesn't matter
-            )
-            return usd_price, oracle, False
+                Inquirer._cached_current_price[cache_key] = CachedPriceEntry(
+                    price=usd_price,
+                    time=ts_now(),
+                    oracle=oracle,
+                    used_main_currency=False,  # function is for usd only, so it doesn't matter
+                )
+                return usd_price, oracle, False
+            # else known protocol on-chain query failed. Continue to external oracles
 
         # BSQ is a special asset that doesnt have oracle information but its custom API
         if asset == A_BSQ:
@@ -912,6 +914,19 @@ class Inquirer():
             except DeserializationError:
                 log.error(f'underlying token call of {token.evm_address} returned invalid address {remote_underlying_token}')  # noqa: E501
                 return None
+
+            try:  # make sure it's in the global DB
+                underlying_token = get_or_create_evm_token(
+                    userdb=ethereum.node_inquirer.database,
+                    evm_address=underlying_token_address,
+                    chain_id=ChainID.ETHEREUM,
+                    seen=TokenSeenAt(description='Detecting Yearn vault underlying tokens'),
+                )
+            except NotERC20Conformant as e:
+                log.error(
+                    f'Error fetching ethereum token {underlying_token_address} while '
+                    f'detecting underlying tokens of {str(token.evm_address)}: {str(e)}',
+                )
             # store it in the DB, so next time no need to query chain
             with globaldb.conn.write_ctx() as write_cursor:
                 globaldb._add_underlying_tokens(
@@ -926,9 +941,8 @@ class Inquirer():
                     chain_id=ChainID.ETHEREUM,
                 )
         else:
-            underlying_token_address = maybe_underlying_tokens[0].address
+            underlying_token = EvmToken(ethaddress_to_identifier(maybe_underlying_tokens[0].address))  # noqa: E501
 
-        underlying_token = EvmToken(ethaddress_to_identifier(underlying_token_address))
         underlying_token_price = self.find_usd_price(underlying_token)
         # Get the price per share from the yearn contract
         contract = EvmContract(

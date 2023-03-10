@@ -555,3 +555,16 @@ def test_find_yearn_vaults_v2_price(inquirer_defi, globaldb):
         with globaldb.conn.read_ctx() as cursor:
             result = globaldb.fetch_underlying_tokens(cursor, token.identifier)
             assert result and result[0].address == underlying_token.resolve_to_evm_token().evm_address  # noqa: E501
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_protocol_price_falllback_to_oracle(inquirer_defi):
+    """Test that if the onchain price query fails for a known protocol token,
+    the external oracles are still queried and provide us (potentially) with an answer
+    """
+    yvusdc = EvmToken('eip155:1/erc20:0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9')
+    yearn_patch = patch('rotkehlchen.inquirer.get_underlying_asset_price', side_effect=lambda *args: (None, None))  # noqa: E501
+    with yearn_patch:
+        price = inquirer_defi.find_usd_price(yvusdc)
+    assert price is not None and price != ZERO
