@@ -83,7 +83,7 @@ const css = useCssModule();
               />
               <v-radio
                 value="show_only"
-                :label="tc('asset_table.only_show_ignored')"
+                :label="tc('asset_table.only_show_ignored', 2)"
               />
             </v-radio-group>
           </v-list-item>

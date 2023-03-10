@@ -979,7 +979,7 @@
       "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts"
     },
     "notes": "Notes",
-    "only_show_ignored": "Only show ignored assets ({length})",
+    "only_show_ignored": "Only show ignored assets ({length}) | Only show ignored assets",
     "only_show_owned": "Only show owned assets",
     "only_show_unignored": "Only show un-ignored assets",
     "selected": "{count} asset(s) selected",

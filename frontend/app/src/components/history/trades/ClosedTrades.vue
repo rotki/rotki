@@ -20,9 +20,8 @@ import {
   RouterPaginationOptionsSchema
 } from '@/types/route';
 import { type Collection } from '@/types/collection';
-import { defaultCollectionState } from '@/utils/collection';
+import { defaultCollectionState, defaultOptions } from '@/utils/collection';
 import { assert } from '@/utils/assertions';
-import { defaultOptions } from '@/utils/history';
 import { SavedFilterLocation } from '@/types/filtering';
 
 const props = withDefaults(
@@ -259,7 +258,10 @@ const applyRouteFilter = () => {
   const hideIgnoredTradesVal = query.includeIgnoredTrades === 'false';
 
   updateFilter(parsedFilters);
-  set(options, parsedOptions);
+  set(options, {
+    ...get(options),
+    ...parsedOptions
+  });
   set(hideIgnoredTrades, hideIgnoredTradesVal);
 };
 
@@ -334,6 +336,7 @@ const showDeleteConfirmation = () => {
 
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.TRADES);
+
 const getItemClass = (item: TradeEntry) => {
   return item.ignoredInAccounting ? 'darken-row' : '';
 };

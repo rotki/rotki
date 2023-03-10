@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import dropRight from 'lodash/dropRight';
-import { type Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
+import { type MaybeRef } from '@vueuse/core';
 import { Routes } from '@/router/routes';
 import { DashboardTableType } from '@/types/frontend-settings';
 import {
@@ -12,23 +13,28 @@ import {
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
 import { calculatePercentage } from '@/utils/calculation';
-import { getCollectionData } from '@/utils/collection';
+import {
+  defaultCollectionState,
+  defaultOptions,
+  getCollectionData
+} from '@/utils/collection';
 import { type TablePagination } from '@/types/pagination';
+import { type Collection } from '@/types/collection';
 
 const nonFungibleRoute = Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE;
 
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);
-const balancesStore = useNonFungibleBalancesStore();
-const { balances } = storeToRefs(balancesStore);
-const { fetchNonFungibleBalances, updateRequestPayload } = balancesStore;
-const { isLoading } = useStatusStore();
+const { fetchNonFungibleBalances, refreshNonFungibleBalances } =
+  useNonFungibleBalancesStore();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { tc } = useI18n();
 
 const group = DashboardTableType.NFT;
-const loading = isLoading(Section.NON_FUNGIBLE_BALANCES);
+
+const { isLoading: isSectionLoading } = useStatusStore();
+const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[group];
@@ -87,8 +93,6 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
   return headers;
 });
 
-const { totalUsdValue } = getCollectionData<NonFungibleBalance>(balances);
-
 const percentageOfTotalNetValue = (value: BigNumber) => {
   return calculatePercentage(value, get(totalNetWorthUsd) as BigNumber);
 };
@@ -97,56 +101,71 @@ const percentageOfCurrentGroup = (value: BigNumber) => {
   return calculatePercentage(value, get(totalUsdValue) as BigNumber);
 };
 
-const refresh = async () => {
-  return await fetchNonFungibleBalances(true);
-};
-
 const { dashboardTablesVisibleColumns } = storeToRefs(
   useFrontendSettingsStore()
 );
-const options: Ref<TablePagination<NonFungibleBalance> | null> = ref(null);
 
-const updatePaginationHandler = async (
-  newOptions: TablePagination<NonFungibleBalance> | null
-) => {
-  set(options, newOptions);
-  await updatePayloadHandler();
-};
+const {
+  isLoading,
+  state: balances,
+  execute
+} = useAsyncState<
+  Collection<NonFungibleBalance>,
+  MaybeRef<NonFungibleBalancesRequestPayload>[]
+>(args => fetchNonFungibleBalances(args), defaultCollectionState(), {
+  immediate: false,
+  resetOnExecute: false,
+  delay: 0
+});
 
-const updatePayloadHandler = async () => {
-  let paginationOptions = {};
+const { totalUsdValue } = getCollectionData<NonFungibleBalance>(balances);
 
-  const optionsVal = get(options);
-  if (optionsVal) {
-    const { itemsPerPage, page, sortBy, sortDesc } = optionsVal;
+const options: Ref<TablePagination<NonFungibleBalance>> = ref(
+  defaultOptions('name')
+);
+
+const pageParams: ComputedRef<NonFungibleBalancesRequestPayload> = computed(
+  () => {
+    const { itemsPerPage, page, sortBy, sortDesc } = get(options);
     const offset = (page - 1) * itemsPerPage;
 
-    paginationOptions = {
+    return {
+      ignoredAssetsHandling: 'exclude',
       limit: itemsPerPage,
       offset,
-      orderByAttributes: sortBy.length > 0 ? sortBy : ['name'],
+      orderByAttributes: sortBy?.length > 0 ? sortBy : ['name'],
       ascending:
-        sortDesc.length > 1 ? dropRight(sortDesc).map(bool => !bool) : [true]
+        sortDesc && sortDesc.length > 1
+          ? dropRight(sortDesc).map(bool => !bool)
+          : [true]
     };
   }
+);
 
-  const payload: Partial<NonFungibleBalancesRequestPayload> = {
-    ignoredAssetsHandling: 'exclude',
-    ...paginationOptions
-  };
-
-  await updateRequestPayload(payload);
+const fetchData = async (): Promise<void> => {
+  await execute(0, pageParams);
 };
 
+const userAction: Ref<boolean> = ref(false);
 const setPage = (page: number) => {
-  const optionsVal = get(options);
-  if (optionsVal) {
-    updatePaginationHandler({ ...optionsVal, page });
-  }
+  set(userAction, true);
+  set(options, { ...get(options), page });
+};
+
+const setOptions = (newOptions: TablePagination<NonFungibleBalance>) => {
+  set(userAction, true);
+  set(options, newOptions);
 };
 
 onMounted(async () => {
-  await updatePayloadHandler();
+  await fetchData();
+  await refreshNonFungibleBalances();
+});
+
+watch(loading, async (isLoading, wasLoading) => {
+  if (!isLoading && wasLoading) {
+    await fetchData();
+  }
 });
 </script>
 
@@ -156,7 +175,7 @@ onMounted(async () => {
       <refresh-button
         :loading="loading"
         :tooltip="tc('nft_balance_table.refresh')"
-        @refresh="refresh"
+        @refresh="refreshNonFungibleBalances(true)"
       />
       {{ tc('nft_balance_table.title') }}
       <v-btn :to="nonFungibleRoute" icon class="ml-2">
@@ -195,10 +214,10 @@ onMounted(async () => {
         <data-table
           :headers="tableHeaders"
           :items="data"
-          :loading="loading"
+          :loading="isLoading"
           :options="options"
           :server-items-length="itemLength"
-          @update:options="updatePaginationHandler($event)"
+          @update:options="setOptions($event)"
         >
           <template #item.name="{ item }">
             <nft-details :identifier="item.id" />

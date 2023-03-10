@@ -19,9 +19,8 @@ import {
   RouterPaginationOptionsSchema
 } from '@/types/route';
 import { type Collection } from '@/types/collection';
-import { defaultCollectionState } from '@/utils/collection';
+import { defaultCollectionState, defaultOptions } from '@/utils/collection';
 import { assert } from '@/utils/assertions';
-import { defaultOptions } from '@/utils/history';
 import { SavedFilterLocation } from '@/types/filtering';
 
 const props = withDefaults(
@@ -149,7 +148,10 @@ const applyRouteFilter = () => {
   const parsedFilters = RouteFilterSchema.parse(query);
 
   updateFilter(parsedFilters);
-  set(options, parsedOptions);
+  set(options, {
+    ...get(options),
+    ...parsedOptions
+  });
 };
 
 watch(route, () => {
