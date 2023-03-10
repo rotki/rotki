@@ -138,7 +138,7 @@
     "cost_basis_method": "成本基础方法:",
     "crypto2crypto": "加密到加密交易被考虑在内:",
     "days": "{days} 天",
-    "eth_staking_taxable_after_withdrawal_enabled": "在启用提款之前，ETH 质押事件将被忽略",
+    "eth_staking_taxable_after_withdrawal_enabled": "在启用提款之前,ETH 质押事件将被忽略",
     "gas_costs": "考虑了 Gas 成本:",
     "past_cost_basis": "过去的成本基础是在报告创建期间计算的:",
     "profit_currency": "盈利货币",
@@ -162,7 +162,7 @@
 
   "address_account_form": {
     "label": "添加到所有支持的 EVM 链",
-    "hint": "当检查时，将跟踪此地址的所有支持的EVM链(Ethereum, Optimism 等)"
+    "hint": "当检查时,将跟踪此地址的所有支持的EVM链(Ethereum, Optimism 等)"
   },
   "actions": {
     "add_eth2_validator": {
@@ -1555,7 +1555,7 @@
             "use_calculated_asset": "使用 {length} 个资产总值：",
             "use_calculated_location": "使用 {length} 个位置的总计值：",
             "use_calculated_total": "使用计算总值：",
-            "warning": "这是包括 NFTs 价值的总价值。如果你关闭设置“在图表和总量中包括 NFTs”，它将在图表上显示价值 {amount}"
+            "warning": "这是包括 NFTs 价值的总价值。如果你关闭设置“在图表和总量中包括 NFTs”,它将在图表上显示价值 {amount}"
           }
         }
       },
@@ -1703,7 +1703,7 @@
         "title": "选择模块"
       },
       "setup": {
-        "description_line_one": "默认情况下，rotki 将尝试检索所有帐户和可用模块的信息。根据您拥有的帐户数量，检索可能需要很多时间。",
+        "description_line_one": "默认情况下,rotki 将尝试检索所有帐户和可用模块的信息。根据您拥有的帐户数量，检索可能需要很多时间。",
         "description_line_three": "如果你想为所有账户自动获取所有协议的信息，你可以使用默认设置。（模块设置可以在以后更改）",
         "description_line_two": "为了减少查询时间，您可以只指定您感兴趣的 DeFi 模块和账户。",
         "subtitle": "选择选项以改善您的 rotki DeFi 体验",
@@ -2001,202 +2001,202 @@
       "label": "报价资产"
     },
     "rate": {
-      "label": "Rate of the trade"
+      "label": "交易费率"
     },
-    "rate_not_found": "We could not find a rate for the specified pair.",
-    "sell_base": "Sell",
-    "sell_quote": "For",
+    "rate_not_found": "我们找不到指定货币对的汇率。",
+    "sell_base": "卖出",
+    "sell_quote": "对于",
     "summary": {
-      "buy": "{label}: Buy {amount} {base} with {quote} for {rate} {quote} per {base}",
-      "label": "Summary",
-      "sell": "{label}: Sell {amount} {base} with {quote} for {rate} {quote} per {base}"
+      "buy": "{label}: 用 {quote} 以每 {base} {rate} {quote} 的价格购买 {amount} {base}",
+      "label": "总结",
+      "sell": "{label}: 以 {quote} 的价格卖出 {amount} {base} 每 {base} 的 {rate} {quote}"
     },
     "trade_type": {
-      "buy": "Buy",
-      "label": "Trade type",
-      "sell": "Sell"
+      "buy": "买",
+      "label": "交易类型",
+      "sell": "卖"
     },
     "validation": {
-      "non_empty_amount": "The amount cannot be empty",
-      "non_empty_base": "The base asset cannot be empty",
-      "non_empty_fee": "The fee cannot be empty when fee currency is inputted",
-      "non_empty_fee_currency": "The fee currency cannot be empty when fee is inputted",
-      "non_empty_quote": "The quote asset cannot be empty",
-      "non_empty_quote_amount": "The quote amount cannot be empty",
-      "non_empty_rate": "The rate cannot be empty"
+      "non_empty_amount": "金额不能为空",
+      "non_empty_base": "基础资产不能为空",
+      "non_empty_fee": "输入费用币种时费用不能为空",
+      "non_empty_fee_currency": "输入费用时费用货币不能为空",
+      "non_empty_quote": "报价资产不能为空",
+      "non_empty_quote_amount": "报价金额不能为空",
+      "non_empty_rate": "费率不能为空"
     }
   },
   "file_upload": {
-    "change_file": "Change file",
+    "change_file": "更改文件",
     "date_input_format": {
-      "hint": "Use this if date format in your file is: {format}",
-      "placeholder": "Input custom date format",
-      "switch_label": "Use custom date format to parse your file"
+      "hint": "如果文件中的日期格式为：{format}，请使用此选项",
+      "placeholder": "输入自定义日期格式",
+      "switch_label": "使用自定义日期格式来解析你的文件"
     },
-    "drop_area": "Drop the file or",
-    "import_complete": "Import was completed successfully.",
-    "loading": "Loading",
-    "many_files_selected": "One one file must be selected",
-    "only_files": "Only {fileFilter} files are allowed",
-    "select_file": "Select file",
-    "selected_file": "Selected file: {name}",
+    "drop_area": "放下文件或",
+    "import_complete": "导入成功完成。",
+    "loading": "加载中",
+    "many_files_selected": "必须选择一个文件",
+    "only_files": "只允许 {fileFilter} 个文件",
+    "select_file": "选择文件",
+    "selected_file": "选择的文件：{name}",
     "task": {
-      "title": "Importing csv for source: {source}"
+      "title": "正在为来源导入 csv:{source}"
     }
   },
   "frontend_settings": {
     "animations": {
-      "disable": "Disable animations",
-      "disable_hint": "Disabling animations will improve app performance.",
-      "enable": "Enable animations"
+      "disable": "禁用动画",
+      "disable_hint": "禁用动画将提高应用性能。",
+      "enable": "启用动画"
     },
     "hint": {
-      "refresh": "How often (in minutes) your balances will be automatically refreshed"
+      "refresh": "您的余额多久（以分钟为单位）自动刷新一次"
     },
     "label": {
-      "abbreviate_number": "Use abbreviations for large numbers.",
-      "animations": "Reduce animations effect. This setting will improve app performance. NOTE: You will see animations that are not smooth, which aims to reduce the use of system resources.",
-      "enable_alias_names": "Show alias name for blockchain addresses.",
-      "include_nfts": "Include NFTs in the graphs and total net worth",
-      "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs",
-      "query_period": "Query period in seconds",
-      "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
-      "refresh": "Set the automatic refresh period",
-      "refresh_enabled": "Enabled",
-      "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.",
-      "show_graph_range_selector": "Show graph range selector for line chart",
-      "zero_based": "Use zero as the lowest y-axis value for the graphs",
-      "zero_based_hint": "By default the lowest value is the minimum in the selected period"
+      "abbreviate_number": "对大数字使用缩写。",
+      "animations": "减少动画效果。此设置将提高应用程序性能。注意：您会看到动画不流畅，旨在减少系统资源的使用。",
+      "enable_alias_names": "显示区块链地址的别名。",
+      "include_nfts": "在图表和总净值中包含 NFT",
+      "include_nfts_hint": "默认情况下图表和仪表板包含所有 NFT 的值",
+      "query_period": "以秒为单位的查询周期",
+      "query_period_hint": "多长时间（以秒为单位）检查后端消息，",
+      "refresh": "设置自动刷新周期",
+      "refresh_enabled": "启用",
+      "scramble": "加扰数据。在与他人分享屏幕截图时使用此选项，例如提交错误报告时。注意：此设置不会在会话之间持续存在。",
+      "show_graph_range_selector": "显示折线图的图形范围选择器",
+      "zero_based": "使用零作为图表的最低 y 轴值",
+      "zero_based_hint": "默认情况下，最低值是所选时间段内的最小值"
     },
     "subtitle": {
-      "abbreviate_number": "For example, 1.234.567 will appear as 1.23 M when this setting is enabled",
-      "alias_names": "Alias name for addresses",
-      "graph_basis": "Graph basis",
-      "include_nfts": "Include NFTs in graphs and total amounts",
-      "query": "Periodic status query",
-      "refresh": "Automatic balance refresh",
-      "show_graph_range_selector": "Show graph range selector"
+      "abbreviate_number": "例如,启用此设置时,1.234.567 将显示为 1.23 M",
+      "alias_names": "地址的别名",
+      "graph_basis": "图形基础",
+      "include_nfts": "在图表和总量中包含 NFT",
+      "query": "周期状态查询",
+      "refresh": "余额自动刷新",
+      "show_graph_range_selector": "显示图形范围选择器"
     },
-    "title": "Frontend-only Settings",
+    "title": "仅前端设置",
     "validation": {
       "animations": {
-        "error": "Error setting animations state: {message}"
+        "error": "错误设置动画状态：{message}"
       },
       "enable_alias_names": {
-        "error": "Failed to change alias names visibility"
+        "error": "无法更改别名可见性"
       },
       "periodic_query": {
-        "error": "Error setting query period",
-        "invalid_period": "Period must be between {start} and {end}",
-        "non_empty": "Please enter the number of seconds"
+        "error": "查询周期设置错误",
+        "invalid_period": "周期必须在 {start} 和 {end} 之间",
+        "non_empty": "请输入秒数"
       },
       "refresh_period": {
-        "error": "Failed to set the refresh period",
-        "invalid_period": "Period must be between {start} and {end} min",
-        "non_empty": "Please enter the number of minutes"
+        "error": "设置刷新周期失败",
+        "invalid_period": "周期必须在 {start} 和 {end} 分钟之间",
+        "non_empty": "请输入分钟数"
       },
       "scramble": {
-        "error": "Error setting scramble mode: {message}"
+        "error": "错误设置打乱模式：{message}"
       },
       "timeframe": {
-        "error": "Failed to set the default timeframe for the user",
-        "success": "Default timeframe set to {timeframe}"
+        "error": "无法为用户设置默认时间范围",
+        "success": "默认时间范围设置为{timeframe}"
       }
     }
   },
   "general_settings": {
     "amount": {
       "label": {
-        "currency_location": "Currency location",
-        "decimal_separator": "Decimal separator",
-        "location_after": "After",
-        "location_before": "Before",
-        "resulting_format": "Resulting format:",
-        "thousand_separator": "Thousands separator"
+        "currency_location": "货币位置",
+        "decimal_separator": "小数分隔符",
+        "location_after": "之后",
+        "location_before": "之前",
+        "resulting_format": "结果格式：",
+        "thousand_separator": "千位分隔符"
       },
       "labels": {
-        "floating_precision": "Floating Precision",
-        "main_currency": "Select Main Currency",
-        "main_currency_subtitle": "Select as the main currency"
+        "floating_precision": "浮动精度",
+        "main_currency": "选择主要货币",
+        "main_currency_subtitle": "选择为主货币"
       },
-      "title": "Amounts Settings"
+      "title": "金额设置"
     },
     "date_display": {
       "validation": {
-        "empty": "The date display format cannot be empty",
-        "invalid": "No valid pattern detected in the date display format"
+        "empty": "日期显示格式不能为空",
+        "invalid": "在日期显示格式中未检测到有效模式"
       }
     },
-    "date_display_format_hint": "Resulting date: {format}",
-    "date_display_tooltip": "Restore the default date display format",
-    "date_input_format_hint": "Input example: {format}",
+    "date_display_format_hint": "结果日期：{format}",
+    "date_display_tooltip": "恢复默认日期显示格式",
+    "date_input_format_hint": "输入示例：{format}",
     "decimal_separator": {
       "validation": {
-        "cannot_be_numeric_character": "The decimal separator cannot be numeric character",
-        "cannot_be_the_same": "The decimal separator cannot be the same as the thousand separator",
-        "empty": "The decimal separator cannot be empty"
+        "cannot_be_numeric_character": "小数分隔符不能为数字字符",
+        "cannot_be_the_same": "小数分隔符不能与千位分隔符相同",
+        "empty": "小数分隔符不能为空"
       }
     },
     "labels": {
-      "anonymous_analytics": "Should anonymous usage analytics be submitted?",
-      "balance_saving_frequency": "Balance data saving frequency in hours",
-      "btc_derivation_gap": "BTC derivation gap limit",
-      "date_display_format": "Date display format",
-      "date_input_format": "Date input format",
-      "display_date_in_localtime": "Display date in localtime and not in UTC for CSV export and backend logs.",
-      "dot_rpc_endpoint": "Polkadot Node RPC Endpoint",
-      "force_saved_language_setting_in_machine_hint": "This setting is saved on your user settings. Activate this to keep this setting when you logged out.",
-      "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
-      "language": "Selected language",
-      "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
-      "version_update_check": "Set the version update check period while in app",
-      "version_update_check_enabled": "Enabled"
+      "anonymous_analytics": "是否应该提交匿名使用分析？",
+      "balance_saving_frequency": "以小时为单位的余额数据保存频率",
+      "btc_derivation_gap": "BTC衍生差距限制",
+      "date_display_format": "日期显示格式",
+      "date_input_format": "日期输入格式",
+      "display_date_in_localtime": "CSV 导出和后端日志以本地时间而非 UTC 显示日期。",
+      "dot_rpc_endpoint": "Polkadot 节点 RPC 端点",
+      "force_saved_language_setting_in_machine_hint": "此设置保存在您的用户设置中。激活此设置可在您注销时保留此设置。",
+      "ksm_rpc_endpoint": "Kusama 节点 RPC 端点",
+      "language": "选择的语言",
+      "treat_eth2_as_eth": "应将 ETH2(Staked ETH)视为 ETH",
+      "version_update_check": "在应用中设置版本更新检查周期",
+      "version_update_check_enabled": "启用"
     },
-    "language_contribution_tooltip": "This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up. Click here for more information.",
+    "language_contribution_tooltip": "此功能是实验性的，对于某些语言可能无法按预期工作。这是因为应用程序中的所有静态句子都必须手动翻译，这是一个漫长而持续的过程。因此，我们需要您的贡献来加快速度 起来。单击此处了解更多信息。",
     "rpc_node_setting": {
-      "title": "RPC node setting"
+      "title": "RPC节点设置"
     },
     "thousand_separator": {
       "validation": {
-        "cannot_be_numeric_character": "The thousand separator cannot be numeric character",
-        "cannot_be_the_same": "The thousand separator cannot be the same as the decimal separator",
-        "empty": "The thousand separator cannot be empty"
+        "cannot_be_numeric_character": "千位分隔符不能为数字字符",
+        "cannot_be_the_same": "千位分隔符不能与小数分隔符相同",
+        "empty": "千位分隔符不能为空"
       }
     },
-    "title": "General Settings",
+    "title": "通用设置",
     "validation": {
       "analytics": {
-        "error": "Error setting anonymous usage analytics"
+        "error": "设置匿名使用分析时出错"
       },
       "balance_frequency": {
-        "error": "Error setting balance save frequency to {frequency}",
-        "invalid_frequency": "Frequency must be between {start} and {end} hours",
-        "non_empty": "Please enter the number of hours",
-        "success": "Data save frequency set to {frequency} hours"
+        "error": "将余额保存频率设置为 {frequency} 时出错",
+        "invalid_frequency": "频率必须在 {start} 和 {end} 小时之间",
+        "non_empty": "请输入小时数",
+        "success": "数据保存频率设置为 {frequency} 小时"
       },
       "btc_derivation_gap": {
-        "error": "Error setting the BTC derivation gap limit",
-        "success": "The BTC derivation gap limit was successfully changed to {limit}"
+        "error": "设置BTC差额限额错误",
+        "success": "BTC衍生差额限制已成功更改为{limit}"
       },
       "currency": {
-        "error": "Error setting the main currency",
-        "success": "Main currency set to {symbol}"
+        "error": "主要货币设置错误",
+        "success": "主要货币设置为{symbol}"
       },
       "currency_location": {
-        "error": "Error setting currency location",
-        "success": "Currency location set to {currencyLocation}"
+        "error": "设置货币位置错误",
+        "success": "货币位置设置为{currencyLocation}"
       },
       "date_display_format": {
-        "error": "Error setting date display format",
-        "success": "Date display set to {dateFormat}"
+        "error": "设置日期显示格式错误",
+        "success": "日期显示设置为{dateFormat}"
       },
       "date_input_format": {
-        "error": "Error setting date input format",
-        "success": "Date input set to {dateFormat}"
+        "error": "设置日期输入格式错误",
+        "success": "日期输入设置为{dateFormat}"
       },
       "decimal_separator": {
-        "error": "Error setting decimal separator",
-        "success": "Decimal separator set to {decimalSeparator}"
+        "error": "设置小数点分隔符错误",
+        "success": "十进制分隔符设置为 {decimalSeparator}"
       },
       "display_date_in_localtime": {
         "error": "Error setting the display date in local time setting"
