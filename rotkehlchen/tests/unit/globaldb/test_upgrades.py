@@ -1,3 +1,4 @@
+import json
 import shutil
 from contextlib import ExitStack
 from pathlib import Path
@@ -287,6 +288,55 @@ def test_upgrade_v3_v4(globaldb):
         assert cursor.fetchone()[0] == 0
         cursor.execute('SELECT COUNT(*) from evm_tokens WHERE protocol=?', (YEARN_VAULTS_V1_PROTOCOL,))  # noqa: E501
         assert cursor.fetchone()[0] == YEARN_V1_ASSETS_IN_V3
+
+
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('custom_globaldb', ['v4_global.db'])
+@pytest.mark.parametrize('target_globaldb_version', [4])
+@pytest.mark.parametrize('reload_user_assets', [False])
+def test_upgrade_v4_v5(globaldb):
+    """Test the global DB upgrade from v4 to v5"""
+    # Check the state before upgrading
+    with globaldb.conn.read_ctx() as cursor:
+        assert globaldb.get_setting_value('version', None) == 4
+        cursor.execute(
+            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name=?',
+            ('default_rpc_nodes',),
+        )
+        assert cursor.fetchone()[0] == 0
+
+    # execute upgrade
+    with ExitStack() as stack:
+        patch_for_globaldb_upgrade_to(stack, 5)
+        maybe_upgrade_globaldb(
+            connection=globaldb.conn,
+            global_dir=globaldb._data_directory / 'global_data',
+            db_filename=GLOBAL_DB_FILENAME,
+        )
+
+    assert globaldb.get_setting_value('version', None) == 5
+
+    with globaldb.conn.read_ctx() as cursor:
+        cursor.execute(
+            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name=?',
+            ('default_rpc_nodes',),
+        )
+        assert cursor.fetchone()[0] == 1
+
+        cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes')
+        assert cursor.fetchone()[0] == 10
+
+        # check that we have five nodes for each chain
+        nodes_file_path = Path(__file__).resolve().parent.parent.parent.parent / 'data' / 'nodes.json'  # noqa: E501
+        with open(nodes_file_path) as f:
+            nodes_info = json.loads(f.read())
+            nodes_tuples_from_file = [
+                (idx, node['name'], node['endpoint'], int(False), int(True), str(node['weight']), node['blockchain'])  # noqa: E501
+                for idx, node in enumerate(nodes_info, start=1)
+            ]
+
+            nodes_tuples_from_db = cursor.execute('SELECT * FROM default_rpc_nodes').fetchall()
+            assert nodes_tuples_from_db == nodes_tuples_from_file
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

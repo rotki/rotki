@@ -466,8 +466,8 @@ def test_asset_update(assets_updater: AssetsUpdater):
         assert cursor.fetchall() == [(99999999, 'ETH'), (99999999, 'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')]  # noqa: E501
 
     # check that we skip versions with wrong schema and that all the versions
-    # required are corretly queried.
+    # required are correctly queried.
     warnings = assets_updater.msg_aggregator.consume_warnings()
     assert warnings == [
-        'Skipping assets update 998 since it requires a min schema of 3 and max schema of 3 while the local DB schema version is 4. You will have to follow an alternative method to obtain the assets of this update. Easiest would be to reset global DB.',  # noqa: E501
+        'Skipping assets update 998 since it requires a min schema of 4 and max schema of 4 while the local DB schema version is 5. You will have to follow an alternative method to obtain the assets of this update. Easiest would be to reset global DB.',  # noqa: E501
     ]

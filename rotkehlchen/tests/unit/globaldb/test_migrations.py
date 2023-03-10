@@ -18,7 +18,7 @@ def test_migration1(globaldb):
     """Test for the 1st globalDB data migration"""
     # Check state before migration
     with globaldb.conn.read_ctx() as cursor:
-        assert globaldb.get_setting_value('version', None) == 4
+        assert globaldb.get_setting_value('version', None) == 5
         assert globaldb.get_setting_value('last_data_migration', None) is None
         assert globaldb.get_setting_value('last_assets_json_version', None) == 72
         assert cursor.execute('SELECT COUNT(*) FROM contract_abi').fetchone()[0] == 66
@@ -32,7 +32,7 @@ def test_migration1(globaldb):
 
     # assert state is correct after migration
     with globaldb.conn.read_ctx() as cursor:
-        assert globaldb.get_setting_value('version', None) == 4
+        assert globaldb.get_setting_value('version', None) == 5
         assert globaldb.get_setting_value('last_assets_json_version', None) is None
         assert globaldb.get_setting_value('last_data_migration', None) == 1
         assert cursor.execute('SELECT COUNT(*) FROM contract_abi').fetchone()[0] == 67
