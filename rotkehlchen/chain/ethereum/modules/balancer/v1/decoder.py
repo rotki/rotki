@@ -194,7 +194,7 @@ class Balancerv1Decoder(DecoderInterface):
             # When joining a pool first we spend the assets and then we receive the BPT token.
             # In the case of exiting the pool first we return the BPT token and then we receive
             # the assets.
-            # To handle properly the case of multiple events happening in the same transaction we
+            # To handle the case of multiple events happening in the same transaction properly we
             # accumulate them in the current list of events and then we empty it in the
             # related_events map
             if (
@@ -205,12 +205,14 @@ class Balancerv1Decoder(DecoderInterface):
                     related_events_map[event] = related_events
                     related_events = []
                     last_event = None
+
             elif (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.RETURN_WRAPPED
             ):
                 related_events = []
                 last_event = event
+
             elif (
                 (
                     event.event_type == HistoryEventType.DEPOSIT and
@@ -231,6 +233,7 @@ class Balancerv1Decoder(DecoderInterface):
                     related_events = []
 
                 related_events.append(event)
+
             elif (
                 event.event_type == HistoryEventType.WITHDRAWAL and
                 event.event_subtype == HistoryEventSubType.REMOVE_ASSET

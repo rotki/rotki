@@ -83,7 +83,7 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
 
         if events_to_consume is None:
             log.debug(
-                f'Could not find the number of events to consume for a {self.name} '
+                f'Could not find the number of events to consume for a {event.counterparty} '
                 f'deposit/withdrawal transaction {event.serialized_event_identifier}',
             )
             return
@@ -111,9 +111,3 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
                 count_cost_basis_pnl=False,
                 extra_data={'tx_hash': next_event.serialized_event_identifier},
             )
-
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """Name of the protocol that uses this interface"""
-        ...
