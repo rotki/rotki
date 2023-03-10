@@ -10,6 +10,19 @@ CREATE TABLE IF NOT EXISTS underlying_tokens_list (
 );
 """
 
+# these are the default nodes for every new user created.
+DB_CREATE_DEFAULT_RPC_NODES = """
+CREATE TABLE IF NOT EXISTS default_rpc_nodes (
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    endpoint TEXT NOT NULL,
+    owned INTEGER NOT NULL CHECK (owned IN (0, 1)),
+    active INTEGER NOT NULL CHECK (active IN (0, 1)),
+    weight TEXT NOT NULL,
+    blockchain TEXT NOT NULL
+);
+"""
+
 # Custom enum table for asset types
 DB_CREATE_ASSET_TYPES = """
 CREATE TABLE IF NOT EXISTS asset_types (
@@ -301,6 +314,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_GENERAL_CACHE}
 {DB_CREATE_CONTRACT_ABI}
 {DB_CREATE_CONTRACT_DATA}
+{DB_CREATE_DEFAULT_RPC_NODES}
 COMMIT;
 PRAGMA foreign_keys=on;
 """

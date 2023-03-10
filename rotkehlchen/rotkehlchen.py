@@ -221,8 +221,14 @@ class Rotkehlchen():
 
     def _perform_new_db_actions(self) -> None:
         """Actions to perform at creation of a new DB"""
-        with self.data.db.user_write() as write_cursor:
-            populate_rpc_nodes_in_database(write_cursor)
+        with (
+            self.data.db.user_write() as write_cursor,
+            GlobalDBHandler().conn.read_ctx() as cursor,
+        ):
+            populate_rpc_nodes_in_database(
+                db_write_cursor=write_cursor,
+                globaldb_cursor=cursor,
+            )
 
     def unlock_user(
             self,

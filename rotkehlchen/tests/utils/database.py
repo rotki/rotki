@@ -164,8 +164,14 @@ def _use_prepared_db(user_data_dir: Path, filename: str) -> None:
 def perform_new_db_unlock_actions(db: DBHandler, new_db_unlock_actions: tuple[str]) -> None:
     """Decide actions to perform at new DB unlock for a specific test depending on arguments"""
     if 'rpc_nodes' in new_db_unlock_actions:
-        with db.user_write() as write_cursor:
-            populate_rpc_nodes_in_database(write_cursor)
+        with (
+            db.user_write() as write_cursor,
+            GlobalDBHandler().conn.read_ctx() as globaldb_cursor,
+        ):
+            populate_rpc_nodes_in_database(
+                db_write_cursor=write_cursor,
+                globaldb_cursor=globaldb_cursor,
+            )
     if 'spam_assets' in new_db_unlock_actions:
         with (
             GlobalDBHandler().conn.read_ctx() as globaldb_cursor,
