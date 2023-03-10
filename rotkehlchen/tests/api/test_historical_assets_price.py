@@ -77,7 +77,11 @@ def test_get_historical_assets_price(rotkehlchen_api_server):
     assert result['target_asset'] == 'USD'
 
 
-def _assert_expected_prices(data: list[dict[str, Any]], after_deletion: bool) -> None:
+def _assert_expected_prices(
+        data: list[dict[str, Any]],
+        after_deletion: bool,
+        crv_1611166340_price: str = '1.40',
+) -> None:
     assert len(data) == 2 if after_deletion else 3
 
     expected_data = []
@@ -93,7 +97,7 @@ def _assert_expected_prices(data: list[dict[str, Any]], after_deletion: bool) ->
         'from_asset': A_CRV.identifier,
         'to_asset': 'USD',
         'timestamp': 1611166340,
-        'price': '1.40',
+        'price': crv_1611166340_price,
     }, {
         'from_asset': A_CRV.identifier,
         'to_asset': 'USD',
@@ -210,10 +214,34 @@ def test_manual_historical_price(rotkehlchen_api_server, globaldb):
             'from_asset': A_CRV.identifier,
             'to_asset': 'USD',
             'timestamp': 1611166340,
-            'price': '1.40',
+            'price': '1.50',
         },
     )
     # Try to retrieve the assets price
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalassetspriceresource',
+        ),
+        params={
+            'from_asset': A_CRV.identifier,
+        },
+    )
+    data = assert_proper_response_with_result(response)
+    _assert_expected_prices(data, after_deletion=False, crv_1611166340_price='1.50')
+    # Check that calling PUT for an existing price replaces the price
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalassetspriceresource',
+        ),
+        json={
+            'from_asset': A_CRV.identifier,
+            'to_asset': 'USD',
+            'timestamp': 1611166340,
+            'price': '1.40',
+        },
+    )
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
