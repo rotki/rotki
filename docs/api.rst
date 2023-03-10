@@ -1408,7 +1408,7 @@ Query the historical price of assets
 
 .. http:put:: /api/(version)/assets/prices/historical
 
-    Manually adds the price of an asset against another asset at a certain timestamp to the database.
+    Manually adds the price of an asset against another asset at a certain timestamp to the database. If a manual price for the specified asset pair and timestamp already exists, it is replaced with the new price provided.
 
 
    **Example Request**:
