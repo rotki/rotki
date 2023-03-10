@@ -45,13 +45,14 @@ history5 = history1 + [Trade(
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings', [{
     'include_crypto2crypto': False,
+    'include_fees_in_cost_basis': False,
 }])
 def test_nocrypto2crypto(accountant, google_service):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('264693.433642820')),
-        AccountingEventType.FEE: PNL(taxable=FVal('-1.172677782721563021308995038'), free=ZERO),
+        AccountingEventType.FEE: PNL(taxable=FVal('-0.238868129979988140934107'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 
@@ -59,12 +60,14 @@ def test_nocrypto2crypto(accountant, google_service):
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings', [{
     'taxfree_after_period': -1,
+    'include_fees_in_cost_basis': False,
+
 }])
 def test_no_taxfree_period(accountant, google_service):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
-        AccountingEventType.TRADE: PNL(taxable=FVal('265253.1283582327833875'), free=ZERO),
+        AccountingEventType.TRADE: PNL(taxable=FVal('265253.1344345727833875'), free=ZERO),
         AccountingEventType.FEE: PNL(taxable=FVal('-0.238868129979988140934107'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
@@ -73,15 +76,16 @@ def test_no_taxfree_period(accountant, google_service):
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings', [{
     'taxfree_after_period': 86400,
+    'include_fees_in_cost_basis': False,
 }])
 def test_big_taxfree_period(accountant, google_service):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
-        AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('265253.1283582327833875')),
+        AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('265253.1344345727833875')),
         AccountingEventType.FEE: PNL(
-            taxable=FVal('-1.172677782721563021308995038'),
-            free=FVal('0.9338096527415748803748880375'),
+            taxable=FVal('-1.170993974737499896599075038'),
+            free=FVal('0.9321258447575117556649680375'),
         ),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
@@ -130,6 +134,7 @@ def test_include_gas_costs(accountant, google_service):
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('ignored_assets', [[A_DASH]])
+@pytest.mark.parametrize('db_settings', [{'include_fees_in_cost_basis': False}])
 def test_ignored_assets(accountant, google_service):
     history = history1 + [
         Trade(
@@ -159,13 +164,14 @@ def test_ignored_assets(accountant, google_service):
     accounting_history_process(accountant, 1436979735, 1519693374, history)
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
-        AccountingEventType.TRADE: PNL(taxable=FVal('559.6947154127833875'), free=ZERO),
+        AccountingEventType.TRADE: PNL(taxable=FVal('559.7007917527833875'), free=ZERO),
         AccountingEventType.FEE: PNL(taxable=FVal('-0.238868129979988140934107'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('db_settings', [{'include_fees_in_cost_basis': False}])
 def test_margin_events_affect_gained_lost_amount(accountant, google_service):
     history = [
         Trade(
@@ -223,9 +229,9 @@ def test_margin_events_affect_gained_lost_amount(accountant, google_service):
     no_message_errors(accountant.msg_aggregator)
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount('BTC').is_close('3.7468')
     expected_pnls = PnlTotals({
-        AccountingEventType.TRADE: PNL(taxable=FVal('1940.9761588'), free=ZERO),
-        AccountingEventType.FEE: PNL(taxable=FVal('-1.87166029184'), free=ZERO),
-        AccountingEventType.MARGIN_POSITION: PNL(taxable=FVal('-44.47442060'), free=ZERO),
+        AccountingEventType.TRADE: PNL(taxable=FVal('1941.115'), free=ZERO),
+        AccountingEventType.FEE: PNL(taxable=FVal('-1.8712160'), free=ZERO),
+        AccountingEventType.MARGIN_POSITION: PNL(taxable=FVal('-44.405'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 
@@ -233,7 +239,7 @@ def test_margin_events_affect_gained_lost_amount(accountant, google_service):
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings, expected', [
     ({'account_for_assets_movements': False, 'taxfree_after_period': -1}, ZERO),
-    ({'account_for_assets_movements': True, 'taxfree_after_period': -1}, FVal('-0.0781483014791')),
+    ({'account_for_assets_movements': True, 'taxfree_after_period': -1}, FVal('-0.07814830147911')),  # noqa: E501
 ])
 def test_assets_movements_not_accounted_for(accountant, expected, google_service):
     # asset_movements_list partially copied from
@@ -303,14 +309,22 @@ def test_assets_movements_not_accounted_for(accountant, expected, google_service
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings, expected', [
     (
-        {'calculate_past_cost_basis': False, 'taxfree_after_period': -1},
+        {
+            'calculate_past_cost_basis': False,
+            'taxfree_after_period': -1,
+            'include_fees_in_cost_basis': False,
+        },
         PnlTotals({
             AccountingEventType.TRADE: PNL(taxable=FVal('2292.44'), free=ZERO),
             AccountingEventType.FEE: PNL(taxable=FVal('-0.01'), free=ZERO),
         }),
     ),
     (
-        {'calculate_past_cost_basis': True, 'taxfree_after_period': -1},
+        {
+            'calculate_past_cost_basis': True,
+            'taxfree_after_period': -1,
+            'include_fees_in_cost_basis': False,
+        },
         PnlTotals({
             AccountingEventType.TRADE: PNL(taxable=FVal('1755.083364282'), free=ZERO),
             AccountingEventType.FEE: PNL(taxable=FVal('-0.01'), free=ZERO),

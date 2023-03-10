@@ -117,8 +117,7 @@ class TransactionsAccountant():
             asset_in=in_event.asset,
             amount_out=out_event.balance.amount,
             asset_out=out_event.asset,
-            fee=None,
-            fee_asset=None,
+            fee_info=None,
         )
         if prices is None:
             log.debug(f'Skipping {self} at accounting for a swap due to inability to find a price')

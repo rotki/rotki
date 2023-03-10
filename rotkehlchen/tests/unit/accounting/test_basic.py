@@ -24,15 +24,15 @@ from rotkehlchen.types import CostBasisMethod, Location, Timestamp, TradeType
     (
         {'cost_basis_method': CostBasisMethod.FIFO},
         PnlTotals({
-            AccountingEventType.TRADE: PNL(taxable=FVal('559.6947154'), free=ZERO),
-            AccountingEventType.FEE: PNL(taxable=FVal('-0.23886813'), free=ZERO),
+            AccountingEventType.TRADE: PNL(taxable=FVal('559.7007917527833875'), free=ZERO),
+            AccountingEventType.FEE: PNL(taxable=ZERO, free=ZERO),
         }),
     ),
     (
         {'cost_basis_method': CostBasisMethod.ACB},
         PnlTotals({
-            AccountingEventType.TRADE: PNL(taxable=FVal('551.2588760825750541683933333'), free=ZERO),  # noqa: E501
-            AccountingEventType.FEE: PNL(taxable=FVal('-0.2640127597017956302424120028'), free=ZERO),  # noqa: E501
+            AccountingEventType.TRADE: PNL(taxable=FVal('551.2649524225750541683933333'), free=ZERO),  # noqa: E501
+            AccountingEventType.FEE: PNL(taxable=ZERO, free=ZERO),
         }),
     ),
 ])
@@ -44,7 +44,23 @@ def test_simple_accounting(accountant, google_service, expected_pnls):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_selling_crypto_bought_with_crypto(accountant, google_service):
+@pytest.mark.parametrize(('db_settings', 'expected_pnl_totals'), [
+    (
+        {'include_fees_in_cost_basis': True},
+        PnlTotals({
+            AccountingEventType.TRADE: PNL(taxable=FVal('74.24348625705538353047999998'), free=ZERO),  # noqa: E501
+            AccountingEventType.FEE: PNL(taxable=ZERO, free=ZERO),
+        }),
+    ),
+    (
+        {'include_fees_in_cost_basis': False},
+        PnlTotals({
+            AccountingEventType.TRADE: PNL(taxable=FVal('74.4107983124540625'), free=ZERO),
+            AccountingEventType.FEE: PNL(taxable=FVal('-0.418612202811480978'), free=ZERO),
+        }),
+    ),
+])
+def test_selling_crypto_bought_with_crypto(accountant, google_service, expected_pnl_totals):
     history = [
         Trade(
             timestamp=1446979735,
@@ -88,13 +104,9 @@ def test_selling_crypto_bought_with_crypto(accountant, google_service):
     assert len(sells) == 1
     assert sells[0].timestamp == 1449809536
     assert sells[0].amount.is_close(FVal('0.3853125'))
-    assert sells[0].rate.is_close(FVal('386.03406326'))
+    assert sells[0].rate.is_close(FVal('386.175'))
 
-    expected_pnls = PnlTotals({
-        AccountingEventType.TRADE: PNL(taxable=FVal('74.3118704999540625'), free=ZERO),
-        AccountingEventType.FEE: PNL(taxable=FVal('-0.419658351381311222'), free=ZERO),
-    })
-    check_pnls_and_csv(accountant, expected_pnls, google_service)
+    check_pnls_and_csv(accountant, expected_pnl_totals, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -138,6 +150,7 @@ def test_buy_event_creation(accountant):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('db_settings', [{'include_fees_in_cost_basis': False}])
 def test_no_corresponding_buy_for_sell(accountant, google_service):
     """Test that if there is no corresponding buy for a sell, the entire sell counts as profit"""
     history = [Trade(
@@ -237,8 +250,7 @@ def test_sell_fiat_for_crypto(accountant, google_service):
     )
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
-        AccountingEventType.TRADE: PNL(taxable=FVal('24749.74'), free=ZERO),
-        AccountingEventType.FEE: PNL(taxable=FVal('-0.0412'), free=ZERO),
+        AccountingEventType.TRADE: PNL(taxable=FVal('24749.72'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 

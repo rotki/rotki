@@ -324,23 +324,22 @@ class AccountingPot(CustomizableDateMixin):
             asset_in: Asset,
             amount_out: FVal,
             asset_out: Asset,
-            fee: Optional[FVal],
-            fee_asset: Optional[Asset],
+            fee_info: Optional[tuple[FVal, Asset]],
     ) -> Optional[tuple[Price, Price]]:
         """
         Calculates the prices for assets going in and out of a swap/trade.
 
-        The rules are:
-        - For the asset_in we get the equivalent rate from asset_out + fee if any.
-        If there is no price found for fee_currency we ignore it.
-        If there is no price for asset_out then we switch to using the asset_in price itself.
-        If neither of the 2 assets can have their price known, we bail.
+        The algorithm is:
+        1. Query oracles for prices of asset_out and asset_in.
+        2.1 If either of the assets is fiat -- use its amount and price for calculations.
+        2.2. If neither of the assets is fiat -- use `out_price` if `out_price` is known,
+        otherwise `in_price`.
+        3.1 If `fee_info` is provided, fee is included in the price of one of the assets.
+        3.2. If `asset_out` is fiat -- fee is added to `calculated_in_price`.
+        3.3. If `asset_in` is fiat -- fee is subtracted from `calculated_out_price`.
+        3.4. Otherwise fee is added to the price of the asset that was bought.
 
-        - For the asset_out we get the equivalent rate from asset_in.
-        if there is no price found for asset_in then we switch to using the asset_out price.
-        If neither of the 2 assets can have their price known we bail.
-
-        Returns (out_price, in_price) or None if it can't find proper prices
+        Returns (calculated_out_price, calculated_in_price) or None if it can't find proper prices.
         """
         if ZERO in (amount_in, amount_out):
             log.error(
@@ -356,16 +355,6 @@ class AccountingPot(CustomizableDateMixin):
         except (PriceQueryUnsupportedAsset, NoPriceForGivenTimestamp, RemoteError):
             out_price = None
 
-        fee_price = None
-        if fee is not None and fee_asset is not None and fee != ZERO:
-            # also checking fee_asset != None due to https://github.com/rotki/rotki/issues/4172
-            try:
-                fee_price = self.get_rate_in_profit_currency(
-                    asset=fee_asset,
-                    timestamp=timestamp,
-                )
-            except (PriceQueryUnsupportedAsset, NoPriceForGivenTimestamp, RemoteError):
-                fee_price = None
         try:
             in_price = self.get_rate_in_profit_currency(
                 asset=asset_in,
@@ -378,20 +367,53 @@ class AccountingPot(CustomizableDateMixin):
             if e.rate_limited is True and out_price is None:
                 raise  # in_price = out_price = None -> notify user
 
-        if out_price is None and in_price is None:
+        if fee_info is not None:
+            try:
+                fee_price = self.get_rate_in_profit_currency(
+                    asset=fee_info[1],
+                    timestamp=timestamp,
+                )
+            except (PriceQueryUnsupportedAsset, RemoteError):
+                fee_price = None
+
+        # Determine whether to use `out_price` or `in_price` for calculations
+        price_to_use: Literal['in', 'out']
+        if asset_out.is_fiat() and asset_out is not None:
+            price_to_use = 'out'  # Use `out_price` if `asset_out` is fiat
+        elif asset_in.is_fiat() and asset_in is not None:
+            price_to_use = 'in'  # Use `in_price` if `asset_in` is fiat
+        elif out_price is not None:
+            price_to_use = 'out'  # Prefer `out_price` over `in_price`
+        elif in_price is not None:
+            price_to_use = 'in'
+        else:  # Can't proceed if there is no price known
             return None
 
-        if out_price is not None:
-            paid = amount_out * out_price
-            if fee_price is not None:
-                paid += fee_price * fee  # type: ignore # fee should exist here
-            calculated_in = Price(paid / amount_in)
+        if price_to_use == 'in':
+            total_paid = amount_in * in_price  # type: ignore[operator]  # in_price is not None
         else:
-            calculated_in = in_price  # type: ignore # in_price should exist here
+            total_paid = amount_out * out_price  # type: ignore[operator]  # out_price is not None
 
-        if in_price is not None:
-            calculated_out = Price((amount_in * in_price) / amount_out)
-        else:
-            calculated_out = out_price  # type: ignore # out_price should exist here
+        if asset_in.is_fiat():
+            if fee_info is not None and fee_price is not None:
+                total_paid -= fee_price * fee_info[0]  # Subtract fee from cost basis
 
-        return (calculated_out, calculated_in)
+            calculated_out_price = Price(total_paid / amount_out)
+
+            if price_to_use == 'in':
+                calculated_in_price = in_price
+            else:
+                calculated_in_price = Price((amount_out * out_price) / amount_in)  # type: ignore[operator]  # out_price is not None  # noqa: E501
+
+        else:  # if asset_out is fiat or both assets are crypto or both are fiat
+            if fee_info is not None and fee_price is not None:
+                total_paid += fee_price * fee_info[0]  # Add fee to cost basis
+
+            calculated_in_price = Price(total_paid / amount_in)
+
+            if price_to_use == 'out':
+                calculated_out_price = out_price  # type: ignore[assignment]  # out_price is not None  # noqa: E501
+            else:
+                calculated_out_price = Price((amount_in * in_price) / amount_out)  # type: ignore[operator]  # in_price is not None  # noqa: E501
+
+        return (calculated_out_price, calculated_in_price)  # type: ignore[return-value]  # calculated_in_price is not None  # noqa: E501
