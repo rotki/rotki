@@ -180,7 +180,7 @@ class GoogleService:
 
 
 @pytest.fixture(scope='session', name='session_google_service')
-def fixture_session_google_service() -> Optional[Generator[GoogleService, None, None]]:
+def fixture_session_google_service() -> Generator[Optional[GoogleService], None, None]:
     service = None
     credentials_file_path = os.environ.get('GOOGLE_CREDENTIALS_FILE', None)
     if credentials_file_path is None:

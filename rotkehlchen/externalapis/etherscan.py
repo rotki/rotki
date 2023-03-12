@@ -1,7 +1,7 @@
 import json
 import logging
 from abc import ABCMeta
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
 
@@ -355,7 +355,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 options['txHash'] = period_or_hash.hex()
                 parent_tx_hash = period_or_hash
 
-        transactions: Union[Sequence[EvmTransaction], Sequence[EvmInternalTransaction]] = []  # noqa: E501
+        transactions: Union[list[EvmTransaction], list[EvmInternalTransaction]] = []  # type: ignore  # noqa: E501
         is_internal = action == 'txlistinternal'
         chain_id = self.chain.to_chain_id()
         while True:
@@ -414,8 +414,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 if tx.timestamp > last_ts and len(transactions) >= TRANSACTIONS_BATCH_NUM:
                     yield transactions
                     last_ts = tx.timestamp
-                    transactions = []
-                transactions.append(tx)  # type: ignore
+                    transactions = []  # type: ignore
+                transactions.append(tx)
 
             if len(result) != ETHERSCAN_TX_QUERY_LIMIT:
                 break
