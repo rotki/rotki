@@ -2199,208 +2199,208 @@
         "success": "十进制分隔符设置为 {decimalSeparator}"
       },
       "display_date_in_localtime": {
-        "error": "Error setting the display date in local time setting"
+        "error": "在本地时间设置中设置显示日期时出错"
       },
       "dot_rpc": {
-        "error": "There was an error setting the Polkadot node RPC endpoint",
-        "success_set": "The Polkadot node RPC endpoint was set to {endpoint}",
-        "success_unset": "The Polkadot node RPC endpoint was successfully unset"
+        "error": "设置 Polkadot 节点 RPC 端点时出错",
+        "success_set": "Polkadot 节点 RPC 端点被设置为 {endpoint}",
+        "success_unset": "Polkadot 节点 RPC 端点已成功取消设置"
       },
       "floating_precision": {
-        "error": "Error setting floating precision to {precision}",
-        "non_empty": "Please input the floating precision",
-        "success": "Floating precision set to {precision}"
+        "error": "将浮动精度设置为 {precision} 时出错",
+        "non_empty": "请输入浮动精度",
+        "success": "浮动精度设置为{precision}"
       },
       "ksm_rpc": {
-        "error": "There was an error setting the Kusama node RPC endpoint",
-        "success_set": "The Kusama node RPC endpoint was set to {endpoint}",
-        "success_unset": "The Kusama node RPC endpoint was successfully unset"
+        "error": "设置 Kusama 节点 RPC 端点时出错",
+        "success_set": "Kusama 节点 RPC 端点被设置为 {endpoint}",
+        "success_unset": "Kusama 节点 RPC 端点已成功取消设置"
       },
       "language": {
-        "error": "Error change language setting"
+        "error": "错误更改语言设置"
       },
       "thousand_separator": {
-        "error": "Error setting thousand separator",
-        "success": "Thousand separator set to {thousandSeparator}"
+        "error": "千位分隔符设置错误",
+        "success": "千位分隔符设置为 {thousandSeparator}"
       },
       "treat_eth2_as_eth": {
-        "error": "Error change setting for treat ETH2 as ETH"
+        "error": "将 ETH2 视为 ETH 的错误更改设置"
       },
       "version_update_check_frequency": {
-        "error": "Error setting version update check frequency",
-        "invalid_frequency": "Period must be between {start} and {end} hours",
-        "non_empty": "Please enter the number of hours"
+        "error": "错误设置版本更新检查频率",
+        "invalid_frequency": "周期必须在 {start} 和 {end} 小时之间",
+        "non_empty": "请输入小时数"
       }
     },
-    "version_update_check_hint": "How often (in hours) your app version will be checked for update"
+    "version_update_check_hint": "多久（以小时为单位）检查您的应用程序版本以进行更新"
   },
   "generate": {
-    "custom_selection": "Custom",
-    "period": "Period",
+    "custom_selection": "自定义",
+    "period": "时期",
     "sub_period": {
-      "all": "All"
+      "all": "全部"
     },
-    "sub_period_label": "Period Details",
+    "sub_period_label": "期间详情",
     "validation": {
-      "empty_end_date": "End date cannot be empty",
-      "empty_start_date": "Start date cannot be empty",
-      "end_after_start": "The end time should be after the start time."
+      "empty_end_date": "结束日期不能为空",
+      "empty_start_date": "开始日期不能为空",
+      "end_after_start": "结束时间应该在开始时间之后。"
     }
   },
   "global_search": {
-    "menu_tooltip": "Search ({modifier} + {key})",
-    "no_actions": "No actions found",
-    "search_placeholder": "Search anything..."
+    "menu_tooltip": "搜索 ({modifier} + {key})",
+    "no_actions": "没有找到动作",
+    "search_placeholder": "搜索任何内容..."
   },
   "hash_link": {
-    "open_link": "Open in external block explorer"
+    "open_link": "在外部区块浏览器中打开"
   },
   "help_sidebar": {
     "about": {
-      "subtitle": "About the application",
-      "title": "About"
+      "subtitle": "关于申请",
+      "title": "关于"
     },
     "browser_log": {
       "error": {
         "empty": {
-          "message": "Oops, there are no log entries",
-          "title": "Empty log entries"
+          "message": "糟糕，没有日志条目",
+          "title": "清空日志条目"
         }
       },
-      "subtitle": "Download browser log file",
-      "title": "Browser Log"
+      "subtitle": "下载浏览器日志文件",
+      "title": "浏览器日志"
     },
     "faq": {
-      "subtitle": "Questions on the application",
-      "title": "FAQ"
+      "subtitle": "关于申请的问题",
+      "title": "常见问题解答"
     },
     "github": {
-      "subtitle": "Review our code and open issues",
+      "subtitle": "查看我们的代码并打开问题",
       "title": "Github"
     },
     "support": {
-      "subtitle": "Join our active community and get support",
+      "subtitle": "加入我们活跃的社区并获得支持",
       "title": "Discord"
     },
-    "title": "Help & Support",
+    "title": "帮助与支持",
     "tooltip": "Help",
     "twitter": {
-      "subtitle": "Follow us",
+      "subtitle": "关注我们",
       "title": "Twitter"
     },
     "user_guide": {
-      "subtitle": "Get started here",
-      "title": "Usage Guide"
+      "subtitle": "从这里开始",
+      "title": "使用指南"
     }
   },
   "helpers": {
     "refresh_header": {
-      "tooltip": "Refresh {title} data"
+      "tooltip": "刷新 {title} 数据"
     }
   },
   "ignore": {
     "failed": {
-      "ignore_message": "{length} asset(s) could not be added to ignored assets: {message}",
-      "ignore_title": "Failed to ignore assets",
-      "unignore_message": "{length} asset(s) could not be removed from ignored assets: {message}",
-      "unignore_title": "Failed to unignore assets"
+      "ignore_message": "{length} 资产无法添加到忽略的资产：{message}",
+      "ignore_title": "忽略资产失败",
+      "unignore_message": "无法从忽略的资产中删除 {length} 个资产：{message}",
+      "unignore_title": "无法取消忽略资产"
     },
     "no_items": {
-      "description": "All the selected entries are already ignored | All the selected entries are already included",
-      "title": "No entries to ignore | No entries to unignore"
+      "description": "所有选定的条目都已被忽略 | 所有选定的条目都已包含",
+      "title": "没有要忽略的条目 | 没有要取消忽略的条目"
     }
   },
   "ignore_buttons": {
-    "ignore": "Ignore",
-    "ignore_tooltip": "Ignored the selected actions in the profit/loss report",
-    "unignore": "Unignore",
-    "unignore_tooltip": "Included the selected actions in the profit/loss report"
+    "ignore": "忽略",
+    "ignore_tooltip": "忽略损益报告中的选定操作",
+    "unignore": "无视",
+    "unignore_tooltip": "在损益报告中包含选定的操作"
   },
   "import_data": {
     "binance": {
-      "line_one": "Imports: Deposits, Withdrawals, Trades, ETH 2.0 Staking, Small assets exchange BNB, ETH 2.0 Staking Rewards, Launchpool Interest, POS savings interest, POS savings purchase, POS savings redemption.",
-      "line_two": "Because of binance's csv format there is a chance that not all data will be imported. If this will happen, you will get warning.",
-      "name": "Binance",
-      "note": "Important notes for importing data from {0}'s CSV exports.",
-      "source_name": "Binance"
+      "line_one": "导入:存款、取款、交易、ETH 2.0 Staking、小资产交易所 BNB、ETH 2.0 Staking 奖励、Launchpool 利息、POS 储蓄利息、POS 储蓄购买、POS 储蓄赎回。",
+      "line_two": "由于 binance 的 csv 格式，有可能不会导入所有数据。如果发生这种情况，您将收到警告。",
+      "name": "币安",
+      "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
+      "source_name": "币安"
     },
     "bisq": {
-      "import": "Import {0} from bisq",
-      "import_trade": "trades",
-      "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
+      "import": "从 bisq 导入 {0}",
+      "import_trade": "交易",
+      "line_one": "[Experimental] 如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
       "name": "Bisq",
       "note": "Important notes for importing data from {0}'s CSV exports.",
       "source_name": "Bisq"
     },
     "blockfi": {
-      "import": "Import {0} from BlockFi",
-      "import_trade": "trades",
-      "import_transactions": "transactions",
-      "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
-      "line_two": "BlockFi lets you export two different files. Trades will be imported from the file that only contains trades.",
+      "import": "从 BlockFi 导入 {0}",
+      "import_trade": "交易",
+      "import_transactions": "交易",
+      "line_one": "[Experimental]如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
+      "line_two": "BlockFi 允许您导出两个不同的文件。交易将从仅包含交易的文件中导入。",
       "name": "BlockFi",
-      "note": "Important notes for importing data from {0}'s CSV exports.",
+      "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
       "source_name": "BlockFi"
     },
     "cointracking": {
-      "line_one": "Trades/deposits/withdrawals from Cointracking do not include fees.",
-      "line_three": "ETH/BTC Transactions are treated as deposits/withdrawals so they are not imported in rotki. To import ETH transactions simply input your accounts in {0} and they will be imported automatically for you.",
-      "line_two": "All trades imported from Cointracking will always be considered as buys due to the way the data are represented.",
-      "link": "Blockchain Accounts/Balances",
-      "name": "CoinTracking",
-      "note": " Important notes for importing data from {0}'s CSV exports.",
-      "preferred": "For the above reasons it's preferred to directly connect your exchanges in order to import data from there. If you do not do that a lot of accuracy is lost.",
+      "line_one": "Cointracking 的交易/存款/取款不包括费用。",
+      "line_three": "ETH/BTC 交易被视为存款/取款，因此它们不会导入到 rotki 中。要导入 ETH 交易，只需在 {0} 中输入您的账户，它们就会自动为您导入。",
+      "line_two": "由于数据的表示方式，从 Cointracking 导入的所有交易将始终被视为买入。",
+      "link": "区块链账户/余额",
+      "name": "硬币追踪",
+      "note": " 从 {0} 的 CSV 导出中导入数据的重要说明。",
+      "preferred": "出于上述原因，最好直接连接你的交易所以便从那里导入数据。如果你不这样做，就会失去很多准确性。",
       "source_name": "cointracking"
     },
     "cryptocom": {
-      "line_four": "Only transactions are imported here (for tax report), if you want the assets be displayed in your rotki balances, you have to add them manually as manual balances: {0}",
-      "line_four_link": "Manual Accounts/Balances",
-      "line_one": "[Early stage] This import script may miss some transaction types, like withdrawals. Since we can't have an exhaustive list of every type, we develop it using what we know at the time. If you think that import script can be improved and you can help providing more data types, {0}.",
-      "line_one_link": "please let us know",
-      "line_three": "Trades/deposits/withdrawals from crypto.com do not include fees details. They are waived at the moment (August 2020) or they are handled in the traded amount.",
-      "line_two": "{0} If you want to connect your Crypto.com Exchange account, please wait until we support it and then connect to it as an exchange.",
-      "line_two_warning": "It only concerns the Crypto.com mobile application.",
+      "line_four": "此处仅导入交易（用于税务报告），如果您希望资产显示在您的 rotki 余额中，您必须手动添加它们作为手动余额：{0}",
+      "line_four_link": "手工账户/余额",
+      "line_one": "[Early stage] 这个导入脚本可能会遗漏一些交易类型，比如取款。由于我们无法拥有所有类型的详尽列表，我们会使用我们当时所知道的来开发它。如果你认为导入 可以改进脚本，您可以帮助提供更多数据类型，{0}。",
+      "line_one_link": "请告诉我们",
+      "line_three": "来自 crypto.com 的交易/存款/取款不包括费用明细。它们目前(2020 年 8 月)被免除或按交易金额处理。",
+      "line_two": "{0} 如果您想连接您的 Crypto.com Exchange 帐户，请等待我们支持它，然后连接到它作为交易所。",
+      "line_two_warning": "它只涉及 Crypto.com 移动应用程序。",
       "name": "Crypto.com",
-      "note": "Important notes for importing data from {0}'s CSV exports.",
-      "source_name": "crypto.com mobile app"
+      "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
+      "source_name": "crypto.com 移动应用程序"
     },
     "custom": {
-      "import_events": "Import events",
-      "import_trades": "Import trades",
-      "name": "Custom Import"
+      "import_events": "导入事件",
+      "import_trades": "导入交易",
+      "name": "自定义导入"
     },
-    "description": "You can manually import data from the services below by dragging the file on the respective area or clicking the select button.",
+    "description": "您可以通过将文件拖到相应区域或单击选择按钮，从以下服务手动导入数据。",
     "nexo": {
-      "import": "Import {0} from Nexo",
-      "import_transactions": "transactions",
-      "line_one": "[Experimental] If you find an issue with the imported data let us know so we can adapt the code accordingly.",
+      "import": "从 Nexo 导入 {0}",
+      "import_transactions": "交易",
+      "line_one": "[Experimental] 如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
       "name": "Nexo",
-      "note": "Important notes for importing data from {0}'s CSV exports.",
+      "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
       "source_name": "Nexo"
     },
-    "notice": "{warning} Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
-    "notice_link": "open an issue with rotki",
-    "notice_warning": "⚠️ Important notice ⚠️:",
+    "notice": "{warning} 这些平台可能会经常以向后不兼容的方式更改其格式。 因此，此导入可能会停止工作。 如果发生这种情况{link}，我们将看看我们能做些什么。",
+    "notice_link": "用 rotki 打开一个问题",
+    "notice_warning": "⚠️重要通知⚠️:",
     "select_source": {
-      "title": "Select source"
+      "title": "选择来源"
     },
     "shapeshift": {
-      "import": "Import {0} from ShapeShift",
-      "import_trade": "trades",
-      "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
-      "line_two": "ShapeShift lets you export a trades file. Trades will be imported from the file that only contains trades.",
+      "import": "从 ShapeShift 导入 {0}",
+      "import_trade": "交易",
+      "line_one": "[Experimental] 如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
+      "line_two": "ShapeShift 允许您导出交易文件。交易将从仅包含交易的文件中导入。",
       "name": "ShapeShift",
-      "note": "Important notes for importing data from {0}'s CSV exports.",
+      "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
       "source_name": "ShapeShift"
     },
-    "title": "Import Data",
+    "title": "导入数据",
     "uphold": {
-      "import": "Import {0} from uphold",
-      "import_trade": "trades",
-      "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
-      "line_two": "Uphold lets you export a transactions file. It can be found under activity at the top right of the activity list.",
+      "import": "从 uphold 导入 {0}",
+      "import_trade": "交易",
+      "line_one": "[Experimental] 如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
+      "line_two": "Uphold 让您导出一个交易文件。它可以在活动列表右上角的活动下找到。",
       "name": "Uphold",
-      "note": "Important notes for importing data from {0}'s CSV exports.",
+      "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
       "source_name": "uphold"
     }
   },
