@@ -35,6 +35,8 @@ SUBPROCESS_TIMEOUT = 30
 
 
 class TestEnvironment(SerializableEnumMixin):
+    __test__ = False  # tell pytest not to collect this class
+
     STANDARD = auto()  # test during normal development
     NIGHTLY = auto()  # all tests
     NFTS = auto()  # nft tests
