@@ -28,6 +28,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 ADDY_1 = string_to_evm_address('0x3CAdf2cA458376a6a5feA2EF3612346037D5A787')
 ADDY_2 = string_to_evm_address('0xCC917Ab28544c80E2f0e8efFbd22551A3cB096bE')
 ADDY_3 = string_to_evm_address('0x65fc65C639467423Bf19801a59FCfd62f0F29777')
+ADDY_4 = string_to_evm_address('0x43e141534d718D72552De1B606a5FCBc72256cD7')
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_1]])
@@ -744,6 +745,205 @@ def test_uniswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transactio
             location_label=ADDY_3,
             notes='Remove 7.073493 USDC from uniswap-v2 LP 0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY_4]])
+def test_uniswap_v2_swap_events_order(
+        database,
+        ethereum_inquirer,
+        eth_transactions,
+        ethereum_accounts,
+):
+    """Check that the order of swap events are consecutive.
+
+    This transaction hash does not exist on-chain.
+    It was mocked to avoid leaking user info to the public.
+
+    It checks that an approval event does not come between trade events.
+    """
+    tx_hash = '0xec15324d55274d9ad3181ed2f29d29e9812841e5e79aa9228a0f3ef4d3ce8d2c'
+    evmhash = deserialize_evm_tx_hash(tx_hash)
+    user_address = ethereum_accounts[0]
+    transaction = EvmTransaction(
+        tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1672784687),
+        block_number=16329226,
+        from_address=ADDY_4,
+        to_address='0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
+        value=0,
+        gas=354181,
+        gas_price=20000000000,
+        gas_used=234471,
+        input_data=hexstring_to_bytes('0x38ed1739000000000000000000000000000000000000000000000001405cc9cdb5ccd5f50000000000000000000000000000000000000000000000032232ec1cbf43ca0100000000000000000000000000000000000000000000000000000000000000a00000000000000000000000007db7da086318462a46327b8f2d46f457008cc111000000000000000000000000000000000000000000000000000000005f7258b30000000000000000000000000000000000000000000000000000000000000003000000000000000000000000a3bed4e1c75d00fa6f4e5e6922db7261b5e9acd2000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000006b175474e89094c44da98b954eedeac495271d0f'),  # noqa: E501
+        nonce=2,
+    )
+    receipt = EvmTxReceipt(
+        tx_hash=evmhash,
+        chain_id=ChainID.ETHEREUM,
+        contract_address=None,
+        status=True,
+        type=0,
+        logs=[
+            EvmTxReceiptLog(
+                log_index=31,
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000001405cc9cdb5ccd5f5'),  # noqa: E501
+                address=string_to_evm_address('0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x00000000000000000000000043e141534d718D72552De1B606a5FCBc72256cD7'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000000d0d65e7a7db277d3e0f5e1676325e75f3340455'),  # noqa: E501
+                ],
+            ), EvmTxReceiptLog(
+                log_index=32,
+                data=hexstring_to_bytes('0xfffffffffffffffffffffffffffffffffffffffffffffffebfa336324a332a0a'),  # noqa: E501
+                address=string_to_evm_address('0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'),  # noqa: E501
+                    hexstring_to_bytes('0x00000000000000000000000043e141534d718D72552De1B606a5FCBc72256cD7'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d'),  # noqa: E501
+                ],
+            ), EvmTxReceiptLog(
+                log_index=33,
+                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000002476b12c1292c7a'),  # noqa: E501
+                address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000000d0d65e7a7db277d3e0f5e1676325e75f3340455'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000a478c2975ab1ea89e8196811f51a7b7ade33eb11'),  # noqa: E501
+                ],
+            ), EvmTxReceiptLog(
+                log_index=34,
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000085458f584469791bd7960000000000000000000000000000000000000000000000f36cd1acc023153ced'),  # noqa: E501
+                address=string_to_evm_address('0x0d0d65E7A7dB277d3E0F5E1676325E75f3340455'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1'),  # noqa: E501
+                ],
+            ), EvmTxReceiptLog(
+                log_index=35,
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000001405cc9cdb5ccd5f50000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002476b12c1292c7a'),  # noqa: E501
+                address=string_to_evm_address('0x0d0d65E7A7dB277d3E0F5E1676325E75f3340455'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000a478c2975ab1ea89e8196811f51a7b7ade33eb11'),  # noqa: E501
+                ],
+            ), EvmTxReceiptLog(
+                log_index=36,
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000026068b3a890000000000000000000000000000000000000000000000074f0bf96ef2478fa7ad'),  # noqa: E501
+                address=string_to_evm_address('0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1'),  # noqa: E501
+                ],
+            ), EvmTxReceiptLog(
+                log_index=37,
+                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000000000000006beed50000000000000000000000000000000000000000000000000014bed67222b2ba'),  # noqa: E501
+                address=string_to_evm_address('0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xdccd412f0b1252819cb1fd330b93224ca42612892bb3f4f789976e6d81936496'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d'),  # noqa: E501
+                ],
+            ), EvmTxReceiptLog(
+                log_index=38,
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000032c190329a9b16bef'),  # noqa: E501
+                address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000a478c2975ab1ea89e8196811f51a7b7ade33eb11'),  # noqa: E501
+                    hexstring_to_bytes('0x00000000000000000000000043e141534d718D72552De1B606a5FCBc72256cD7'),  # noqa: E501
+                ],
+            ), EvmTxReceiptLog(
+                log_index=39,
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000997f8a78f8b20f05afd018000000000000000000000000000000000000000000006df1960f8fb9530fad8a'),  # noqa: E501
+                address=string_to_evm_address('0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1'),  # noqa: E501
+                ],
+            ), EvmTxReceiptLog(
+                log_index=40,
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002476b12c1292c7a0000000000000000000000000000000000000000000000032c190329a9b16bef0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
+                address=string_to_evm_address('0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d'),  # noqa: E501
+                    hexstring_to_bytes('0x00000000000000000000000043e141534d718D72552De1B606a5FCBc72256cD7'),  # noqa: E501
+                ],
+            ),
+        ],
+    )
+    dbevmtx = DBEvmTx(database)
+    decoder = EthereumTransactionDecoder(
+        database=database,
+        ethereum_inquirer=ethereum_inquirer,
+        transactions=eth_transactions,
+    )
+    with database.user_write() as cursor:
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=evmhash,
+            timestamp=1672784687000,
+            location=Location.ETHEREUM,
+            sequence_index=0,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(FVal('0.00468942')),
+            location_label=user_address,
+            notes='Burned 0.00468942 ETH for gas',
+            counterparty=CPT_GAS,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            timestamp=1672784687000,
+            location=Location.ETHEREUM,
+            sequence_index=32,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('eip155:1/erc20:0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2'),
+            balance=Balance(FVal('23.084547675349898741')),
+            location_label=user_address,
+            notes=f'Swap 23.084547675349898741 MTA in uniswap-v2 from {user_address}',  # noqa: E501
+            counterparty=CPT_UNISWAP_V2,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            timestamp=1672784687000,
+            location=Location.ETHEREUM,
+            sequence_index=33,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_DAI,
+            balance=Balance(FVal('58.517806710690769903')),
+            location_label=user_address,
+            notes=f'Receive 58.517806710690769903 DAI in uniswap-v2 from {user_address}',  # noqa: E501
+            counterparty=CPT_UNISWAP_V2,
+        ), HistoryBaseEntry(
+            event_identifier=evmhash,
+            timestamp=1672784687000,
+            location=Location.ETHEREUM,
+            sequence_index=39,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:1/erc20:0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2'),
+            balance=Balance(FVal('1.157920892373161954235709850E+59')),
+            location_label=user_address,
+            notes=f'Approve 115792089237316195423570985000000000000000000000000000000000 MTA of {user_address} for spending by 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',  # noqa: E501
+            counterparty='0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
         ),
     ]
     assert events == expected_events
