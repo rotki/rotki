@@ -1,7 +1,7 @@
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.fval import FVal
 
-CURRENCYCONVERTER_API_KEY = 'd006657c1412526cb1b9'
+CURRENCYCONVERTER_API_KEY = '4cb9c0c810bb826b4f5e'
 
 ZERO = FVal(0)
 ONE = FVal(1)
