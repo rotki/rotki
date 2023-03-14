@@ -1014,18 +1014,28 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 addresses=self.queried_addresses_for_module('liquity'),
             )
             for address, staked_info in liquity_staked.items():
-                staked_balance = staked_info['staked'].balance
+                staked_balance = staked_info['balances']['staked'].balance
                 if staked_balance.amount > ZERO:
                     eth_balances[address].assets[A_LQTY] += staked_balance
+
+                for proxy_balance in staked_info['proxies'].values():
+                    staked_balance = proxy_balance['staked'].balance
+                    if staked_balance.amount > ZERO:
+                        eth_balances[address].assets[A_LQTY] += staked_balance
 
             # Get stability pool balances
             liquity_stability_pool = liquity_module.get_stability_pool_balances(
                 addresses=self.queried_addresses_for_module('liquity'),
             )
             for address, staked_info in liquity_stability_pool.items():
-                staked_balance = staked_info['deposited'].balance
-                if staked_balance.amount > ZERO:
-                    eth_balances[address].assets[A_LUSD] += staked_balance
+                pool_balance = staked_info['balances']['deposited'].balance
+                if pool_balance.amount > ZERO:
+                    eth_balances[address].assets[A_LUSD] += pool_balance
+
+                for proxy_balance in staked_info['proxies'].values():
+                    pool_balance = proxy_balance['deposited'].balance
+                    if pool_balance.amount > ZERO:
+                        eth_balances[address].assets[A_LUSD] += pool_balance
 
         # Finally count the balances detected in various protocols in defi balances
         self.add_defi_balances_to_account()

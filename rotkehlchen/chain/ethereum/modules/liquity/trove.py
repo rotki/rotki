@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, DefaultDict, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, DefaultDict, NamedTuple, Optional, TypedDict
 
 from gevent.lock import Semaphore
 
@@ -47,6 +47,11 @@ class Trove(NamedTuple):
         result['active'] = self.active
         result['trove_id'] = self.trove_id
         return result
+
+
+class LiquityBalanceWithProxy(TypedDict):
+    proxies: dict[ChecksumEvmAddress, dict[str, AssetBalance]]
+    balances: dict[str, AssetBalance]
 
 
 class Liquity(HasDSProxy):
@@ -157,7 +162,7 @@ class Liquity(HasDSProxy):
             methods: tuple[str, str, str],
             keys: tuple[str, str, str],
             assets: tuple['Asset', 'Asset', 'Asset'],
-    ) -> dict[ChecksumEvmAddress, dict[str, AssetBalance]]:
+    ) -> dict[ChecksumEvmAddress, LiquityBalanceWithProxy]:
         """
         For Liquity staking contracts there is always one asset that we stake and two other assets
         for rewards. This method abstracts the logic of querying the staked amount and the
@@ -194,7 +199,12 @@ class Liquity(HasDSProxy):
 
         # the structure of the queried data is:
         # staked address 1, reward 1 of address 1, reward 2 of address 1, staked address 2, reward 1 of address 2, ...  # noqa: E501
-        data: DefaultDict[ChecksumEvmAddress, dict[str, AssetBalance]] = defaultdict(dict)
+        data: DefaultDict[ChecksumEvmAddress, LiquityBalanceWithProxy] = defaultdict(
+            lambda: LiquityBalanceWithProxy(
+                proxies=defaultdict(lambda: defaultdict(AssetBalance)),  # type: ignore[arg-type]  # noqa: E501
+                balances=defaultdict(AssetBalance),  # type: ignore[arg-type]
+            ),
+        )
         for idx, output in enumerate(outputs):
             # depending on the output index get the address we are tracking
             current_address = addresses[idx // 3]
@@ -219,20 +229,34 @@ class Liquity(HasDSProxy):
             amount = deserialize_asset_amount(
                 token_normalized_value_decimals(gain_info, 18),
             )
-            data[current_address][key] = AssetBalance(
-                asset=asset,
-                balance=Balance(
-                    amount=amount,
-                    usd_value=asset_price * amount,
-                ),
-            )
-
+            proxy_owner = self.ethereum.proxies_inquirer.proxy_to_address.get(current_address)
+            if proxy_owner is not None:
+                data[proxy_owner]['proxies'][current_address][key] = AssetBalance(
+                    asset=asset,
+                    balance=Balance(
+                        amount=amount,
+                        usd_value=asset_price * amount,
+                    ),
+                )
+            else:
+                data[current_address]['balances'][key] = AssetBalance(
+                    asset=asset,
+                    balance=Balance(
+                        amount=amount,
+                        usd_value=asset_price * amount,
+                    ),
+                )
         return data
 
     def get_stability_pool_balances(
             self,
             addresses: list[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, dict[str, AssetBalance]]:
+    ) -> dict[ChecksumEvmAddress, LiquityBalanceWithProxy]:
+        """Returns the balances of the liquity stability pool
+
+        Returns the balances and whether the addresses returned
+        is a proxy address to any of the tracked accounts.
+        """
         return self._query_deposits_and_rewards(
             contract=self.stability_pool_contract,
             addresses=addresses,
@@ -244,9 +268,11 @@ class Liquity(HasDSProxy):
     def liquity_staking_balances(
             self,
             addresses: list[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, dict[str, AssetBalance]]:
-        """
-        Query the ethereum chain to retrieve information about staked assets
+    ) -> dict[ChecksumEvmAddress, LiquityBalanceWithProxy]:
+        """Query the ethereum chain to retrieve information about staked assets.
+
+        Returns the balances and whether the addresses returned
+        is a proxy address to any of the tracked accounts.
         """
         return self._query_deposits_and_rewards(
             contract=self.staking_contract,

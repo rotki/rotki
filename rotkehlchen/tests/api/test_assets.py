@@ -509,7 +509,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Filtering by evm_chain is only supported by evm tokens',
+        contained_in_msg='Filtering by evm_chain is only supported for evm tokens',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

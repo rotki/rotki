@@ -1917,7 +1917,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
             data['asset_type'] not in (None, AssetType.EVM_TOKEN)
         ):
             raise ValidationError(
-                message='Filtering by evm_chain is only supported by evm tokens',
+                message='Filtering by evm_chain is only supported for evm tokens',
                 field_name='evm_chain',
             )
 
