@@ -4,8 +4,8 @@ import {
   type Eth2DailyStatsPayload
 } from '@rotki/common/lib/staking/eth2';
 import {
-  snakeCaseTransformer,
-  getUpdatedKey
+  getUpdatedKey,
+  snakeCaseTransformer
 } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {

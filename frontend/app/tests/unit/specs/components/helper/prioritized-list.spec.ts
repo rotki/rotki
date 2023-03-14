@@ -26,7 +26,7 @@ describe('PrioritizedList.vue', () => {
     return mount(PrioritizedList, {
       pinia,
       vuetify,
-      stubs: ['v-tooltip', 'action-status-indicator'],
+      stubs: ['action-status-indicator'],
       ...options
     });
   };

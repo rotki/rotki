@@ -36,5 +36,10 @@
   "engines": {
     "node": ">=16 <17",
     "pnpm": ">=7 <8"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "bignumber.js@9.1.1": "patches/bignumber.js@9.1.1.patch"
+    }
   }
 }

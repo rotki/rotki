@@ -1,7 +1,7 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import {
-  snakeCaseTransformer,
-  setupTransformer
+  setupTransformer,
+  snakeCaseTransformer
 } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {

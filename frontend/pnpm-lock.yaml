@@ -1,5 +1,10 @@
 lockfileVersion: 5.4
 
+patchedDependencies:
+  bignumber.js@9.1.1:
+    hash: mia2k5wehigboo5ep5nlxwffwa
+    path: patches/bignumber.js@9.1.1.patch
+
 importers:
 
   .:
@@ -40,7 +45,7 @@ importers:
       '@types/node': 16.18.12
       '@vitejs/plugin-vue2': 2.2.0
       '@vitest/coverage-c8': 0.28.5
-      '@vue/test-utils': 1.3.3
+      '@vue/test-utils': 1.3.4
       '@vuelidate/core': 2.0.0
       '@vuelidate/validators': 2.0.0
       '@vueuse/core': 9.13.0
@@ -121,7 +126,7 @@ importers:
       '@vueuse/math': 9.13.0_vue@2.7.14
       '@vueuse/shared': 9.13.0_vue@2.7.14
       axios: 1.3.4
-      bignumber.js: 9.1.1
+      bignumber.js: 9.1.1_mia2k5wehigboo5ep5nlxwffwa
       chart.js: 3.9.1
       chartjs-plugin-zoom: 1.2.1_chart.js@3.9.1
       cleave.js: 1.6.0
@@ -163,7 +168,7 @@ importers:
       '@types/node': 16.18.12
       '@vitejs/plugin-vue2': 2.2.0_vite@4.1.4+vue@2.7.14
       '@vitest/coverage-c8': 0.28.5_sass@1.32.13
-      '@vue/test-utils': 1.3.3_rhqkolmkwunxzlyyxxsuwaiuri
+      '@vue/test-utils': 1.3.4_rhqkolmkwunxzlyyxxsuwaiuri
       c8: 7.13.0
       cross-env: 7.0.3
       csv: 6.2.7
@@ -215,7 +220,7 @@ importers:
       vue-i18n: 8.28.2
       zod: 3.20.6
     dependencies:
-      bignumber.js: 9.1.1
+      bignumber.js: 9.1.1_mia2k5wehigboo5ep5nlxwffwa
       zod: 3.20.6
     devDependencies:
       '@vueuse/core': 9.13.0_vue@2.7.14
@@ -3122,8 +3127,8 @@ packages:
     resolution: {integrity: sha512-BHGyyGN3Q97EZx0taMQ+OLNuZcW3d37ZEVmEAyeoA9ERdGvm9Irc/0Fua8SNyOtV1w6BS4q25wbMzJujO9HIfQ==}
     dev: true
 
-  /@vue/test-utils/1.3.3_rhqkolmkwunxzlyyxxsuwaiuri:
-    resolution: {integrity: sha512-DmZkKrH5/MSkrU0hhHhv5+aOXcEJSaOhutKMOh2viuiLiMaFeOLPiTEvtegLunO3rXBagzHO681qW1sNMaB1sQ==}
+  /@vue/test-utils/1.3.4_rhqkolmkwunxzlyyxxsuwaiuri:
+    resolution: {integrity: sha512-yh2sbosCxk5FfwjXYXdY9rUffaJqYEFjsod5sCD4oosRn2x8LfBLEzQH0scdo5n7z8VkBUThpYzbkI6DVAWimA==}
     peerDependencies:
       vue: 2.x
       vue-template-compiler: ^2.x
@@ -3760,9 +3765,10 @@ packages:
     dev: false
     optional: true
 
-  /bignumber.js/9.1.1:
+  /bignumber.js/9.1.1_mia2k5wehigboo5ep5nlxwffwa:
     resolution: {integrity: sha512-pHm4LsMJ6lzgNGVfZHjMoO8sdoRhOzOH4MLmY65Jg70bpxCKu5iOHNJyfF6OyvYw7t8Fpf35RuzUyqnQsj8Vig==}
     dev: false
+    patched: true
 
   /binary-extensions/2.2.0:
     resolution: {integrity: sha512-jDctJ/IVQbZoJykoeHbhXpOlNBqGNcwXJKJog42E5HDPUwQTSdjCHdihjj0DlnheQ7blbT6dHOafNAiS8ooQKA==}

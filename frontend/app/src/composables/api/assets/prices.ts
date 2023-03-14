@@ -83,9 +83,7 @@ export const useAssetPricesApi = () => {
   ): Promise<ManualPrice[]> => {
     const response = await api.instance.post<ActionResult<ManualPrice[]>>(
       '/assets/prices/latest/all',
-      payload
-        ? snakeCaseTransformer(nonEmptyProperties(payload, true))
-        : null,
+      payload ? snakeCaseTransformer(nonEmptyProperties(payload, true)) : null,
       {
         validateStatus: validStatus
       }

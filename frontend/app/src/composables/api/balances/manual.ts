@@ -27,9 +27,7 @@ export const useManualBalancesApi = () => {
   ): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       'balances/manual',
-      snakeCaseTransformer(
-        nonEmptyProperties({ balances, asyncQuery: true })
-      ),
+      snakeCaseTransformer(nonEmptyProperties({ balances, asyncQuery: true })),
       {
         validateStatus: validWithParamsSessionAndExternalService
       }
@@ -42,9 +40,7 @@ export const useManualBalancesApi = () => {
   ): Promise<PendingTask> => {
     const response = await api.instance.patch<ActionResult<PendingTask>>(
       'balances/manual',
-      snakeCaseTransformer(
-        nonEmptyProperties({ balances, asyncQuery: true })
-      ),
+      snakeCaseTransformer(nonEmptyProperties({ balances, asyncQuery: true })),
       {
         validateStatus: validWithParamsSessionAndExternalService
       }
