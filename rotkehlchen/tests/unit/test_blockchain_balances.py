@@ -183,21 +183,15 @@ def test_protocol_balances(blockchain: 'ChainsAggregator') -> None:
     ETH_ADDRESS1 has a DSProxy with deposits in liquity and ETH_ADDRESS2 doesn't have anything
     """
     blockchain._add_eth_protocol_balances(eth_balances=blockchain.balances.eth)
-    dsproxy_acc1 = string_to_evm_address('0x33EAfDB72b69BFBe6b5911eDCbab41011e63C523')
+    # the proxy balances are added to the owner's
     assert blockchain.balances.eth[ETH_ADDRESS1].assets == {
         A_LQTY: Balance(
-            amount=FVal('4240.34'),
-            usd_value=FVal('6360.510'),
+            amount=FVal('16535.272316119505457412'),
+            usd_value=FVal('24802.9084741792581861180'),
         ),
         A_LUSD: Balance(
             amount=FVal('58774.021313242937366493'),
             usd_value=FVal('88161.0319698644060497395'),
-        ),
-    }
-    assert blockchain.balances.eth[dsproxy_acc1].assets == {
-        A_LQTY: Balance(
-            amount=FVal('12294.932316119505457412'),
-            usd_value=FVal('18442.3984741792581861180'),
         ),
     }
     assert ETH_ADDRESS2 not in blockchain.balances.eth

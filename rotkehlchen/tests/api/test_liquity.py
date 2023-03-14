@@ -114,21 +114,24 @@ def test_trove_staking(rotkehlchen_api_server, inquirer):  # pylint: disable=unu
     assert LQTY_STAKING in result
     stake_data = result[LQTY_STAKING]
     assert stake_data == {
-        'staked': {
-            'asset': A_LQTY.identifier,
-            'amount': '25.491052675181405108',
-            'usd_value': '38.2365790127721076620',
+        'balances': {
+            'staked': {
+                'asset': A_LQTY.identifier,
+                'amount': '25.491052675181405108',
+                'usd_value': '38.2365790127721076620',
+            },
+            'lusd_rewards': {
+                'asset': A_LUSD.identifier,
+                'amount': '0.093099083885857991',
+                'usd_value': '0.1396486258287869865',
+            },
+            'eth_rewards': {
+                'asset': 'ETH',
+                'amount': '0.000000023029038481',
+                'usd_value': '0.0000000345435577215',
+            },
         },
-        'lusd_rewards': {
-            'asset': A_LUSD.identifier,
-            'amount': '0.093099083885857991',
-            'usd_value': '0.1396486258287869865',
-        },
-        'eth_rewards': {
-            'asset': 'ETH',
-            'amount': '0.000000023029038481',
-            'usd_value': '0.0000000345435577215',
-        },
+        'proxies': {},
     }
 
 
@@ -215,17 +218,17 @@ def test_stability_pool(rotkehlchen_api_server):
     assert JUSTIN in result
     assert LIQUITY_POOL_DEPOSITOR in result
     expected_amount = FVal('43.180853032438783295')
-    assert result[JUSTIN]['gains']['asset'] == A_ETH
-    assert FVal(result[JUSTIN]['gains']['amount']) == expected_amount
-    assert FVal(result[JUSTIN]['gains']['usd_value']) == expected_amount * FVal(1.5)
+    assert result[JUSTIN]['balances']['gains']['asset'] == A_ETH
+    assert FVal(result[JUSTIN]['balances']['gains']['amount']) == expected_amount
+    assert FVal(result[JUSTIN]['balances']['gains']['usd_value']) == expected_amount * FVal(1.5)
     expected_amount = FVal('114160.573902982554552744')
-    assert result[JUSTIN]['rewards']['asset'] == A_LQTY
-    assert FVal(result[JUSTIN]['rewards']['amount']) == expected_amount
-    assert FVal(result[JUSTIN]['rewards']['usd_value']) == expected_amount * FVal(1.5)
+    assert result[JUSTIN]['balances']['rewards']['asset'] == A_LQTY
+    assert FVal(result[JUSTIN]['balances']['rewards']['amount']) == expected_amount
+    assert FVal(result[JUSTIN]['balances']['rewards']['usd_value']) == expected_amount * FVal(1.5)
     expected_amount = FVal('10211401.723115634393264567')
-    assert result[JUSTIN]['deposited']['asset'] == A_LUSD
-    assert FVal(result[JUSTIN]['deposited']['amount']) == expected_amount
-    assert FVal(result[JUSTIN]['deposited']['usd_value']) == expected_amount * FVal(1.5)
+    assert result[JUSTIN]['balances']['deposited']['asset'] == A_LUSD
+    assert FVal(result[JUSTIN]['balances']['deposited']['amount']) == expected_amount
+    assert FVal(result[JUSTIN]['balances']['deposited']['usd_value']) == expected_amount * FVal(1.5)  # noqa: E501
 
 
 @pytest.mark.parametrize('use_custom_database', ['liquity_stats.db'])
@@ -270,3 +273,28 @@ def test_staking_stats(rotkehlchen_api_server, ethereum_accounts):
     assert address_0_data['stability_pool_gains'][0]['amount'] == '1.7820064710306824'
     assert address_1_data['stability_pool_gains'][0]['amount'] == '12.294706987216218'
     assert address_1_data['stability_pool_gains'][1]['amount'] == '4240.34942308358'
+
+
+@pytest.mark.vcr(match_on=['uri', 'method'], filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xbB8311c7bAD518f0D8f907Cad26c5CcC85a06dC4']])
+@pytest.mark.parametrize('ethereum_modules', [['liquity']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+def test_proxy_info_is_shown(rotkehlchen_api_server, ethereum_accounts):
+    """Check that information about proxies is added to the responses for liquity endpoints"""
+    user_address = ethereum_accounts[0]
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'liquitystabilitypoolresource',
+    ), json={'async_query': False})
+
+    result = assert_proper_response_with_result(response)
+    assert 'gains' in result[user_address]['proxies']['0x33EAfDB72b69BFBe6b5911eDCbab41011e63C523']
+
+    # check the other endpoint.
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'liquitystakingresource',
+    ), json={'async_query': False})
+    result = assert_proper_response_with_result(response)
+    assert 'staked' in result[user_address]['proxies']['0x33EAfDB72b69BFBe6b5911eDCbab41011e63C523']  # noqa: E501

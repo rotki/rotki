@@ -7439,15 +7439,48 @@ Getting Liquity staked amount
       {
           "result": {
             "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": {
-                "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
-                "amount": "177.02",
-                "usd_value": "265.530"
+                "balances": {
+                  "staked": {
+                    "asset": "ETH",
+                    "amount": "43.180853032438783295",
+                    "usd_value": "43.180853032438783295",
+                  },
+                  "lusd_rewards": {
+                    "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
+                    "amount": "94477.70111867384658505",
+                    "usd_value": "94477.70111867384658505",
+                  },
+                  "eth_rewards": {
+                    "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
+                    "amount": "10211401.723115634393264567",
+                    "usd_value": "10211401.723115634393264567",
+                  }
+                },
+                "proxies": {
+                    "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": {
+                      "staked": {
+                        "asset": "ETH",
+                        "amount": "43.180853032438783295",
+                        "usd_value": "43.180853032438783295",
+                      },
+                      "lusd_rewards": {
+                        "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
+                        "amount": "94477.70111867384658505",
+                        "usd_value": "94477.70111867384658505",
+                      },
+                      "eth_rewards": {
+                        "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
+                        "amount": "10211401.723115634393264567",
+                        "usd_value": "10211401.723115634393264567",
+                      }
+                }
             }
           },
           "message": ""
       }
 
-   :resjson object result: A mapping of the amount and value of LQTY staked in the protocol.
+   :resjson object balances: A mapping of the category to the amount & value of assets staked in the protocol.
+   :resjson object proxies: A mapping of proxy addresses to the amount and value of assets staked in the protocol.
 
    :statuscode 200: Liquity staking information successfully queried.
    :statuscode 409: User is not logged in or Liquity module is not activated.
@@ -7485,46 +7518,50 @@ Getting Liquity stability pool infomration
       Content-Type: application/json
 
       {
-        "result":{
-            "0x3DdfA8eC3052539b6C9549F12cEA2C295cfF5296":{
-              "gains": {
-                "asset": "ETH",
-                "amount": "43.180853032438783295",
-                "usd_value": "43.180853032438783295",
-              },
-              "rewards": {
-                "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
-                "amount": "94477.70111867384658505",
-                "usd_value": "94477.70111867384658505",
-              },
-              "deposited": {
-                "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
-                "amount": "10211401.723115634393264567",
-                "usd_value": "10211401.723115634393264567",
-              },
-            },
-            "0xFBcAFB005695afa660836BaC42567cf6917911ac":{
-              "gains": {
-                "asset": "ETH",
-                "amount": "0.012830143966323228",
-                "usd_value": "0.012830143966323228",
-              },
-              "rewards": {
-                "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
-                "amount": "1430.186501693619414912",
-                "usd_value": "1430.186501693619414912",
-              },
-              "deposited": {
-                "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
-                "amount": "546555.36725208608367891",
-                "usd_value": "546555.36725208608367891",
-              },
+          "result": {
+            "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": {
+                "balances": {
+                  "gains": {
+                    "asset": "ETH",
+                    "amount": "43.180853032438783295",
+                    "usd_value": "43.180853032438783295",
+                  },
+                  "rewards": {
+                    "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
+                    "amount": "94477.70111867384658505",
+                    "usd_value": "94477.70111867384658505",
+                  },
+                  "deposited": {
+                    "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
+                    "amount": "10211401.723115634393264567",
+                    "usd_value": "10211401.723115634393264567",
+                  }
+                },
+                "proxies": {
+                    "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": {
+                      "gains": {
+                        "asset": "ETH",
+                        "amount": "43.180853032438783295",
+                        "usd_value": "43.180853032438783295",
+                      },
+                      "rewards": {
+                        "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
+                        "amount": "94477.70111867384658505",
+                        "usd_value": "94477.70111867384658505",
+                      },
+                      "deposited": {
+                        "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
+                        "amount": "10211401.723115634393264567",
+                        "usd_value": "10211401.723115634393264567",
+                      }
+                }
             }
-        },
-        "message":""
+          },
+          "message": ""
       }
 
-   :resjson object result: A mapping of the addresses having the liquity module enabled and their positions.
+   :resjson object balances: A mapping of the category to the amount & value of assets staked in the protocol.
+   :resjson object proxies: A mapping of proxy addresses to the amount and value of assets staked in the protocol.
    :resjson object deposited: Information about the amount and usd value of the LUSD deposited.
    :resjson object gains: Information about the amount and usd value of the ETH gained as reward for liquidations.
    :resjson object rewards: Information about the amount and usd value of the LQTY rewards gained.
