@@ -19,7 +19,11 @@ import {
 } from '@/types/history/tx';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import { defaultCollectionState, getCollectionData } from '@/utils/collection';
+import {
+  defaultCollectionState,
+  defaultOptions,
+  getCollectionData
+} from '@/utils/collection';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { type TablePagination } from '@/types/pagination';
 import {
@@ -29,7 +33,6 @@ import {
 } from '@/types/route';
 import { type Collection } from '@/types/collection';
 import { assert } from '@/utils/assertions';
-import { defaultOptions } from '@/utils/history';
 import { SavedFilterLocation } from '@/types/filtering';
 
 const props = withDefaults(

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
 import { Module, SUPPORTED_MODULES } from '@/types/modules';
+import { useStatusUpdater } from '@/composables/status';
+import { Section } from '@/types/status';
 
 const wasActivated = (
   active: Module[],
@@ -24,10 +26,10 @@ const { activeModules } = storeToRefs(useGeneralSettingsStore());
 const { update: updateSettings } = useSettingsStore();
 
 const balancesStore = useNonFungibleBalancesStore();
-const { fetchNonFungibleBalances } = balancesStore;
+const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
 
 const fetch = () => {
-  const callback = () => fetchNonFungibleBalances();
+  const callback = () => resetStatus();
   setTimeout(callback, 800);
 };
 

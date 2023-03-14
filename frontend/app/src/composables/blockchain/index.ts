@@ -11,12 +11,13 @@ import {
   type BaseAddAccountsPayload
 } from '@/types/blockchain/accounts';
 import { type TaskMeta } from '@/types/task';
+import { useStatusUpdater } from '@/composables/status';
+import { Section } from '@/types/status';
 
 export const useBlockchains = () => {
   const { addAccount, fetch, addEvmAccount } = useBlockchainAccounts();
   const { getAccountsByChain } = useAccountBalances();
   const { fetchBlockchainBalances } = useBlockchainBalances();
-  const { fetchNonFungibleBalances } = useNonFungibleBalancesStore();
   const { fetchLoopringBalances } = useEthBalancesStore();
   const { fetchDetected } = useBlockchainTokensStore();
   const { enableModule } = useSettingsStore();
@@ -28,6 +29,10 @@ export const useBlockchains = () => {
   const { isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { tc } = useI18n();
+
+  const { resetStatus: resetNftSectionStatus } = useStatusUpdater(
+    Section.NON_FUNGIBLE_BALANCES
+  );
 
   const getNewAccountPayload = (
     chain: Blockchain,
@@ -93,7 +98,7 @@ export const useBlockchains = () => {
         }
         resetDefi();
         resetDefiStatus();
-        startPromise(fetchNonFungibleBalances(true));
+        resetNftSectionStatus();
       }
 
       if (isTokenChain(chain)) {
@@ -249,10 +254,8 @@ export const useBlockchains = () => {
           }
           await refreshAccounts(blockchain);
         };
-        await Promise.allSettled([
-          detectAndRefresh(),
-          fetchNonFungibleBalances(true)
-        ]);
+        await Promise.allSettled([detectAndRefresh()]);
+        resetNftSectionStatus();
       };
       try {
         await fetchAccounts(blockchain);

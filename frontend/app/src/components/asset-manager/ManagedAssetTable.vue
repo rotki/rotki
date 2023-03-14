@@ -258,7 +258,7 @@ const css = useCssModule();
                   <v-radio
                     value="show_only"
                     :label="
-                      tc('asset_table.only_show_ignored', 0, {
+                      tc('asset_table.only_show_ignored', 1, {
                         length: ignoredAssets.length
                       })
                     "

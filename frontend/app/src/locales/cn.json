@@ -1006,7 +1006,7 @@
       "title": "新检测到的代币"
     },
     "notes": "备注",
-    "only_show_ignored": "只显示忽略的资产 ({length})",
+    "only_show_ignored": "只显示忽略的资产 ({length}) | 只显示忽略的资产",
     "only_show_owned": "只显示自有资产",
     "only_show_unignored": "只显示未忽略的资产",
     "selected": "{count} 个资产被选中",

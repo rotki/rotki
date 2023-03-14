@@ -2,6 +2,7 @@ import { type BigNumber } from '@rotki/common';
 import { type ComputedRef, type Ref } from 'vue';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { Zero } from '@/utils/bignumbers';
+import { type TablePagination } from '@/types/pagination';
 
 export const mapCollectionResponse = <T>(
   response: CollectionResponse<T>
@@ -79,5 +80,17 @@ export const setupEntryLimit = (
   return {
     itemLength,
     showUpgradeRow
+  };
+};
+
+export const defaultOptions = <T extends Object>(
+  orderBy?: keyof T
+): TablePagination<T> => {
+  const { itemsPerPage } = useFrontendSettingsStore();
+  return {
+    page: 1,
+    itemsPerPage,
+    sortBy: orderBy ? [orderBy] : ['timestamp' as keyof T],
+    sortDesc: [true]
   };
 };

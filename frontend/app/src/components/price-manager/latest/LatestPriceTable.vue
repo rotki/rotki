@@ -10,6 +10,8 @@ import { CURRENCY_USD } from '@/types/currencies';
 import { isNft } from '@/utils/nft';
 import { One } from '@/utils/bignumbers';
 import { type ManualPrice } from '@/types/prices';
+import { useStatusUpdater } from '@/composables/status';
+import { Section } from '@/types/status';
 
 const props = defineProps({
   assetFilter: {
@@ -109,12 +111,12 @@ const getLatestPrices = async () => {
 };
 
 const { assets } = useAggregatedBalances();
-const { fetchNonFungibleBalances } = useNonFungibleBalancesStore();
+const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
 
 const refresh = async () => {
   await getLatestPrices();
   await refreshPrices(false, [...get(latestAssets), ...get(assets())]);
-  await fetchNonFungibleBalances();
+  await resetStatus();
 };
 
 const { assetPrice } = useBalancePricesStore();

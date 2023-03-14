@@ -7,12 +7,10 @@ import {
 import { isValidEthAddress } from '@/utils/text';
 import { type EthTransactionEventEntry } from '@/types/history/tx';
 import { uniqueStrings } from '@/utils/data';
-import { type PaginationRequestPayload } from '@/types/common';
 import { type EntryMeta, type EntryWithMeta } from '@/types/history/meta';
 import { type Collection } from '@/types/collection';
 import { transactionEventTypeMapping } from '@/data/transaction-event-mapping';
 import { type ActionDataEntry } from '@/types/action';
-import { type TablePagination } from '@/types/pagination';
 
 export const getEventType = (event: {
   eventType?: string | null;
@@ -138,28 +136,3 @@ export function transformEntryWithMeta<T>(
 export function filterAddressesFromWords(words: string[]): string[] {
   return words.filter(uniqueStrings).filter(isValidEthAddress);
 }
-
-export const defaultHistoricPayloadState = <
-  T extends Object
->(): PaginationRequestPayload<T> => {
-  const store = useFrontendSettingsStore();
-
-  return {
-    limit: store.itemsPerPage,
-    offset: 0,
-    orderByAttributes: ['timestamp' as keyof T],
-    ascending: [false]
-  };
-};
-
-export const defaultOptions = <T extends Object>(
-  orderBy?: keyof T
-): TablePagination<T> => {
-  const { itemsPerPage } = useFrontendSettingsStore();
-  return {
-    page: 1,
-    itemsPerPage,
-    sortBy: orderBy ? [orderBy] : ['timestamp' as keyof T],
-    sortDesc: [true]
-  };
-};

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import dropRight from 'lodash/dropRight';
-import { type PropType, type Ref } from 'vue';
+import { type ComputedRef, type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
+import { type MaybeRef } from '@vueuse/core';
+import isEqual from 'lodash/isEqual';
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { type Module } from '@/types/modules';
 import {
@@ -14,6 +16,12 @@ import { uniqueStrings } from '@/utils/data';
 import { type TablePagination } from '@/types/pagination';
 import { type ActionStatus } from '@/types/action';
 import { type ManualPriceFormPayload } from '@/types/prices';
+import { defaultCollectionState, defaultOptions } from '@/utils/collection';
+import { type Collection } from '@/types/collection';
+import {
+  type LocationQuery,
+  RouterPaginationOptionsSchema
+} from '@/types/route';
 
 defineProps({
   modules: {
@@ -22,11 +30,9 @@ defineProps({
   }
 });
 
-const balancesStore = useNonFungibleBalancesStore();
-const { fetchNonFungibleBalances: fetch, updateRequestPayload } = balancesStore;
-const { balances } = storeToRefs(balancesStore);
+const { fetchNonFungibleBalances, refreshNonFungibleBalances } =
+  useNonFungibleBalancesStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const options: Ref<TablePagination<NonFungibleBalance> | null> = ref(null);
 
 const { tc } = useI18n();
 const { notify } = useNotificationsStore();
@@ -79,8 +85,8 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-const { isLoading } = useStatusStore();
-const loading = isLoading(Section.NON_FUNGIBLE_BALANCES);
+const { isLoading: isSectionLoading } = useStatusStore();
+const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
 
 const setPrice = async (price: string, toAsset: string) => {
   const nft = get(edit);
@@ -93,7 +99,7 @@ const setPrice = async (price: string, toAsset: string) => {
       price
     };
     await addLatestPrice(payload);
-    await fetch();
+    await fetchData();
   } catch (e: any) {
     notify({
       title: '',
@@ -106,7 +112,7 @@ const setPrice = async (price: string, toAsset: string) => {
 const deletePrice = async (toDeletePrice: NonFungibleBalance) => {
   try {
     await deleteLatestPrice(toDeletePrice.id);
-    await fetch();
+    await fetchData();
   } catch {
     notify({
       title: tc('non_fungible_balances.delete.error.title'),
@@ -136,7 +142,7 @@ const toggleIgnoreAsset = async (identifier: string) => {
   }
 
   if (success && get(ignoredAssetsHandling) !== 'none') {
-    await fetch();
+    await fetchData();
   }
 };
 
@@ -170,68 +176,134 @@ const massIgnore = async (ignored: boolean) => {
   if (status.success) {
     set(selected, []);
     if (get(ignoredAssetsHandling) !== 'none') {
-      await fetch();
+      await fetchData();
     }
   }
 };
 
-const updatePayloadHandler = async () => {
-  let paginationOptions = {};
-
-  const optionsVal = get(options);
-  if (optionsVal) {
-    const { itemsPerPage, page, sortBy, sortDesc } = optionsVal;
-    const offset = (page - 1) * itemsPerPage;
-
-    paginationOptions = {
-      limit: itemsPerPage,
-      offset,
-      orderByAttributes: sortBy.length > 0 ? sortBy : ['name'],
-      ascending:
-        sortDesc.length > 1 ? dropRight(sortDesc).map(bool => !bool) : [true]
-    };
-  }
-
-  const payload: Partial<NonFungibleBalancesRequestPayload> = {
-    ignoredAssetsHandling: get(ignoredAssetsHandling),
-    ...paginationOptions
-  };
-
-  await updateRequestPayload(payload);
-};
-
-const updatePaginationHandler = async (
-  newOptions: TablePagination<NonFungibleBalance> | null
-) => {
-  set(options, newOptions);
-  await updatePayloadHandler();
-};
-
-watch(ignoredAssetsHandling, async (filters, oldValue) => {
-  if (filters === oldValue) {
-    return;
-  }
-  let newOptions = null;
-  const optionsVal = get(options);
-  if (optionsVal) {
-    newOptions = {
-      ...optionsVal,
-      page: 1
-    };
-  }
-
-  await updatePaginationHandler(newOptions);
+const {
+  isLoading,
+  state: balances,
+  execute
+} = useAsyncState<
+  Collection<NonFungibleBalance>,
+  MaybeRef<NonFungibleBalancesRequestPayload>[]
+>(args => fetchNonFungibleBalances(args), defaultCollectionState(), {
+  immediate: false,
+  resetOnExecute: false,
+  delay: 0
 });
 
-const setPage = (page: number) => {
-  const optionsVal = get(options);
-  if (optionsVal) {
-    updatePaginationHandler({ ...optionsVal, page });
+const fetchData = async (): Promise<void> => {
+  await execute(0, pageParams);
+};
+
+const options: Ref<TablePagination<NonFungibleBalance>> = ref(
+  defaultOptions('name')
+);
+
+const pageParams: ComputedRef<NonFungibleBalancesRequestPayload> = computed(
+  () => {
+    const { itemsPerPage, page, sortBy, sortDesc } = get(options);
+    const offset = (page - 1) * itemsPerPage;
+
+    return {
+      ignoredAssetsHandling: get(ignoredAssetsHandling),
+      limit: itemsPerPage,
+      offset,
+      orderByAttributes: sortBy?.length > 0 ? sortBy : ['name'],
+      ascending:
+        sortDesc && sortDesc.length > 1
+          ? dropRight(sortDesc).map(bool => !bool)
+          : [true]
+    };
   }
+);
+
+const router = useRouter();
+const route = useRoute();
+
+const applyRouteFilter = () => {
+  const query = get(route).query;
+  const parsedOptions = RouterPaginationOptionsSchema.parse(query);
+
+  const newIgnoredAssetsHandling = query.ignoredAssetsHandling || 'exclude';
+
+  set(options, {
+    ...get(options),
+    ...parsedOptions
+  });
+  set(ignoredAssetsHandling, newIgnoredAssetsHandling);
+};
+
+watch(route, () => {
+  set(userAction, false);
+  applyRouteFilter();
+});
+
+onBeforeMount(() => {
+  applyRouteFilter();
+});
+
+watch(ignoredAssetsHandling, async (filters, oldValue) => {
+  if (isEqual(filters, oldValue)) {
+    return;
+  }
+
+  set(options, { ...get(options), page: 1 });
+});
+
+const userAction: Ref<boolean> = ref(false);
+
+const setPage = (page: number) => {
+  set(userAction, true);
+  set(options, { ...get(options), page });
+};
+
+const setOptions = (newOptions: TablePagination<NonFungibleBalance>) => {
+  set(userAction, true);
+  set(options, newOptions);
 };
 
 onMounted(async () => {
-  await updatePayloadHandler();
+  await fetchData();
+  await refreshNonFungibleBalances();
+});
+
+const getQuery = (): LocationQuery => {
+  const opts = get(options);
+  assert(opts);
+  const { itemsPerPage, page, sortBy, sortDesc } = opts;
+
+  return {
+    itemsPerPage: itemsPerPage.toString(),
+    page: page.toString(),
+    sortBy,
+    sortDesc: sortDesc.map(x => x.toString()),
+    ignoredAssetsHandling: get(ignoredAssetsHandling)
+  };
+};
+
+watch(pageParams, async (params, op) => {
+  if (isEqual(params, op)) {
+    return;
+  }
+  if (get(userAction)) {
+    // Route should only be updated on user action otherwise it messes with
+    // forward navigation.
+    await router.push({
+      query: getQuery()
+    });
+    set(userAction, false);
+  }
+
+  await fetchData();
+});
+
+watch(loading, async (isLoading, wasLoading) => {
+  if (!isLoading && wasLoading) {
+    await fetchData();
+  }
 });
 
 const { show } = useConfirmStore();
@@ -271,7 +343,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
       <refresh-button
         :loading="loading"
         :tooltip="tc('non_fungible_balances.refresh')"
-        @refresh="fetch(true)"
+        @refresh="refreshNonFungibleBalances(true)"
       />
     </template>
 
@@ -283,11 +355,11 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
           :items="data"
           :options="options"
           :server-items-length="itemLength"
-          :loading="loading"
+          :loading="isLoading"
           show-select
           multi-sort
           :must-sort="false"
-          @update:options="updatePaginationHandler($event)"
+          @update:options="setOptions($event)"
         >
           <template #item.name="{ item }">
             <nft-details :identifier="item.id" />
