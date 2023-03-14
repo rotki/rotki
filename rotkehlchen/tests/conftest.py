@@ -110,6 +110,7 @@ if sys.platform == 'darwin':
         created as a sub directory of the base temporary
         directory.  The returned object is a `py.path.local`_
         path object.
+        # pytest-deadfixtures ignore
         """
         name = request.node.name
         name = re.sub(r'[\W]', '_', name)
