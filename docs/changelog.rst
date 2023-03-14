@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`5572` Fix a detection error that caused some uniswap v2 trade edge cases not to be accounted for properly in pnl report.
 * :feature:`5592` Either include fees in the bought assets price or treat them as standalone events depending on the accounting settings.
 * :feature:`-` For known protocols like yearn, curve, uniswap etc, if the on-chain price query fails, external oracles will still be queried in case something is found there.
 * :bug:`-` Yearn vault price queries will now work more robustly. If the underlying token is not in rotki's DB it will be queried from the chain.
