@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -23,7 +23,7 @@ export const useTradesApi = () => {
     asyncQuery: boolean
   ): Promise<T> => {
     const response = await api.instance.get<ActionResult<T>>('/trades', {
-      params: axiosSnakeCaseTransformer({
+      params: snakeCaseTransformer({
         asyncQuery,
         ...payload
       }),
@@ -53,7 +53,7 @@ export const useTradesApi = () => {
   const addExternalTrade = async (trade: NewTrade): Promise<Trade> => {
     const response = await api.instance.put<ActionResult<Trade>>(
       '/trades',
-      axiosSnakeCaseTransformer(trade),
+      snakeCaseTransformer(trade),
       {
         validateStatus: validStatus
       }
@@ -65,7 +65,7 @@ export const useTradesApi = () => {
   const editExternalTrade = async (trade: Trade): Promise<Trade> => {
     const response = await api.instance.patch<ActionResult<Trade>>(
       '/trades',
-      axiosSnakeCaseTransformer(trade),
+      snakeCaseTransformer(trade),
       {
         validateStatus: validStatus
       }
@@ -78,7 +78,7 @@ export const useTradesApi = () => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       '/trades',
       {
-        data: axiosSnakeCaseTransformer({ tradesIds }),
+        data: snakeCaseTransformer({ tradesIds }),
         validateStatus: validStatus
       }
     );

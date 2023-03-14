@@ -1,6 +1,6 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import {
-  axiosSnakeCaseTransformer,
+  snakeCaseTransformer,
   getUpdatedKey
 } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
@@ -22,7 +22,7 @@ export const useKrakenApi = () => {
   ): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
       '/staking/kraken',
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         asyncQuery,
         ...pagination,
         orderByAttributes:

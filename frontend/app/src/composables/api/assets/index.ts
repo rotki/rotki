@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import {
   handleResponse,
   validFileOperationStatus,
@@ -18,7 +18,7 @@ export const useAssetsApi = () => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
       '/assets/updates',
       {
-        params: axiosSnakeCaseTransformer({ asyncQuery: true }),
+        params: snakeCaseTransformer({ asyncQuery: true }),
         validateStatus: validWithoutSessionStatus
       }
     );
@@ -51,7 +51,7 @@ export const useAssetsApi = () => {
     sourceIdentifier: string,
     targetAsset: string
   ): Promise<true> => {
-    const data = axiosSnakeCaseTransformer({
+    const data = snakeCaseTransformer({
       sourceIdentifier,
       targetAsset
     });
@@ -72,7 +72,7 @@ export const useAssetsApi = () => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       '/assets/updates',
       {
-        data: axiosSnakeCaseTransformer({ reset, ignoreWarnings }),
+        data: snakeCaseTransformer({ reset, ignoreWarnings }),
         validateStatus: validStatus
       }
     );
@@ -154,7 +154,7 @@ export const useAssetsApi = () => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
       '/nfts',
       {
-        params: axiosSnakeCaseTransformer(params),
+        params: snakeCaseTransformer(params),
         validateStatus: validWithoutSessionStatus
       }
     );

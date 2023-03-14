@@ -7,7 +7,7 @@ import {
 import { type Pinia, createPinia } from 'pinia';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
 import {
@@ -42,7 +42,7 @@ describe('settings:frontend', () => {
     expect(api.setSettings).toHaveBeenCalledWith(
       expect.objectContaining({
         frontendSettings: JSON.stringify(
-          axiosSnakeCaseTransformer({
+          snakeCaseTransformer({
             defiSetupDone: true,
             language: SupportedLanguage.EN,
             timeframeSetting: TimeFramePersist.REMEMBER,

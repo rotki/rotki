@@ -1,7 +1,7 @@
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type ActionResult } from '@rotki/common/lib/data';
 import { type Nullable } from '@rotki/common';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -19,7 +19,7 @@ export const useBlockchainBalancesApi = () => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
       'blockchains/ETH/modules/loopring/balances',
       {
-        params: axiosSnakeCaseTransformer({ asyncQuery: true }),
+        params: snakeCaseTransformer({ asyncQuery: true }),
         validateStatus: validWithSessionAndExternalService
       }
     );
@@ -35,7 +35,7 @@ export const useBlockchainBalancesApi = () => {
       url += `/${blockchain}`;
     }
     const response = await api.instance.get<ActionResult<PendingTask>>(url, {
-      params: axiosSnakeCaseTransformer({
+      params: snakeCaseTransformer({
         asyncQuery: true,
         ignoreCache: ignoreCache ? true : undefined
       }),
@@ -51,7 +51,7 @@ export const useBlockchainBalancesApi = () => {
   ): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
       `/blockchains/${chain}/tokens/detect`,
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         asyncQuery,
         onlyCache: !asyncQuery,
         addresses

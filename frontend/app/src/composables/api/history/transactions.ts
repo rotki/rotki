@@ -1,6 +1,6 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import {
-  axiosSnakeCaseTransformer,
+  snakeCaseTransformer,
   getUpdatedKey
 } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
@@ -33,7 +33,7 @@ export const useTransactionsApi = () => {
   ): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
       `/blockchains/evm/transactions`,
-      axiosSnakeCaseTransformer(
+      snakeCaseTransformer(
         nonEmptyProperties({
           asyncQuery,
           ...payload,
@@ -84,7 +84,7 @@ export const useTransactionsApi = () => {
   ): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       'blockchains/evm/transactions',
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         asyncQuery: true,
         ...payload
       })
@@ -99,7 +99,7 @@ export const useTransactionsApi = () => {
   ): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
       '/blockchains/evm/transactions/decode',
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         asyncQuery,
         data
       }),
@@ -114,7 +114,7 @@ export const useTransactionsApi = () => {
   ): Promise<{ identifier: number }> => {
     const response = await api.instance.put<
       ActionResult<{ identifier: number }>
-    >('/history/events', axiosSnakeCaseTransformer(event), {
+    >('/history/events', snakeCaseTransformer(event), {
       validateStatus: validStatus
     });
 
@@ -126,7 +126,7 @@ export const useTransactionsApi = () => {
   ): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       '/history/events',
-      axiosSnakeCaseTransformer(event),
+      snakeCaseTransformer(event),
       {
         validateStatus: validStatus
       }
@@ -141,7 +141,7 @@ export const useTransactionsApi = () => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       '/history/events',
       {
-        data: axiosSnakeCaseTransformer({ identifiers }),
+        data: snakeCaseTransformer({ identifiers }),
         validateStatus: validStatus
       }
     );
@@ -155,7 +155,7 @@ export const useTransactionsApi = () => {
     const response = await api.instance.get<
       ActionResult<EthTransactionEventDetail>
     >('/history/events/details', {
-      params: axiosSnakeCaseTransformer({ identifier })
+      params: snakeCaseTransformer({ identifier })
     });
     return EthTransactionEventDetail.parse(handleResponse(response));
   };
@@ -165,7 +165,7 @@ export const useTransactionsApi = () => {
   ): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(
       '/blockchains/evm/transactions/add-hash',
-      axiosSnakeCaseTransformer(payload),
+      snakeCaseTransformer(payload),
       {
         validateStatus: validTaskStatus
       }

@@ -4,7 +4,7 @@ import {
   handleResponse,
   validWithSessionAndExternalService
 } from '@/services/utils';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { type PendingTask } from '@/types/task';
 
@@ -17,7 +17,7 @@ export const useDefiApi = () => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
       '/blockchains/ETH/airdrops',
       {
-        params: axiosSnakeCaseTransformer({
+        params: snakeCaseTransformer({
           asyncQuery: true
         }),
         validateStatus: validWithSessionAndExternalService

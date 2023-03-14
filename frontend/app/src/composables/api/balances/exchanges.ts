@@ -1,6 +1,6 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import { type AxiosResponse } from 'axios';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -42,7 +42,7 @@ export const useExchangeApi = () => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
       `/exchanges/balances/${location}`,
       {
-        params: axiosSnakeCaseTransformer({
+        params: snakeCaseTransformer({
           asyncQuery: true,
           ignoreCache: ignoreCache ? true : undefined
         }),
@@ -62,7 +62,7 @@ export const useExchangeApi = () => {
     if (!edit) {
       response = await api.instance.put<ActionResult<boolean>>(
         '/exchanges',
-        axiosSnakeCaseTransformer(nonEmptyProperties(payload)),
+        snakeCaseTransformer(nonEmptyProperties(payload)),
         {
           validateStatus: validStatus
         }
@@ -70,7 +70,7 @@ export const useExchangeApi = () => {
     } else {
       response = await api.instance.patch<ActionResult<boolean>>(
         '/exchanges',
-        axiosSnakeCaseTransformer(nonEmptyProperties(payload)),
+        snakeCaseTransformer(nonEmptyProperties(payload)),
         {
           validateStatus: validStatus
         }
@@ -96,7 +96,7 @@ export const useExchangeApi = () => {
     const response = await api.instance.get<ActionResult<string[]>>(
       '/exchanges/binance/pairs',
       {
-        params: axiosSnakeCaseTransformer({
+        params: snakeCaseTransformer({
           location
         })
       }
@@ -112,7 +112,7 @@ export const useExchangeApi = () => {
     const response = await api.instance.get<ActionResult<string[]>>(
       `/exchanges/binance/pairs/${name}`,
       {
-        params: axiosSnakeCaseTransformer({
+        params: snakeCaseTransformer({
           location
         })
       }

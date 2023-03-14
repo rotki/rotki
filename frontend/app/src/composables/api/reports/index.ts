@@ -8,7 +8,7 @@ import {
   ReportActionableItem,
   Reports
 } from '@/types/reports';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { handleResponse, validStatus, validTaskStatus } from '@/services/utils';
 import { downloadFileByUrl } from '@/utils/download';
 import { api } from '@/services/rotkehlchen-api';
@@ -23,7 +23,7 @@ export const useReportsApi = () => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
       '/history',
       {
-        params: axiosSnakeCaseTransformer({
+        params: snakeCaseTransformer({
           asyncQuery: true,
           fromTimestamp: start,
           toTimestamp: end
@@ -75,7 +75,7 @@ export const useReportsApi = () => {
   ): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
       '/history/debug',
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         asyncQuery: true,
         ...payload
       }),
@@ -89,7 +89,7 @@ export const useReportsApi = () => {
   const importReportData = async (filepath: string): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/history/debug',
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         filepath,
         asyncQuery: true
       }),

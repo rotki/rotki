@@ -2,7 +2,7 @@ import { type Wrapper, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { FrontendSettings } from '@/types/frontend-settings';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
@@ -40,7 +40,7 @@ describe('DefiWizard.vue', () => {
     await wrapper.vm.$nextTick();
     expect(api.setSettings).toBeCalledWith({
       frontendSettings: JSON.stringify(
-        axiosSnakeCaseTransformer({ ...settings, defiSetupDone: true })
+        snakeCaseTransformer({ ...settings, defiSetupDone: true })
       )
     });
   });
@@ -55,7 +55,7 @@ describe('DefiWizard.vue', () => {
     await wrapper.vm.$nextTick();
     expect(api.setSettings).toBeCalledWith({
       frontendSettings: JSON.stringify(
-        axiosSnakeCaseTransformer({ ...settings, defiSetupDone: true })
+        snakeCaseTransformer({ ...settings, defiSetupDone: true })
       )
     });
   });

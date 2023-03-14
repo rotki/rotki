@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { handleResponse } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
 import { type PendingTask } from '@/types/task';
@@ -10,7 +10,7 @@ export const useInfoApi = () => {
     const response = await api.instance.get<ActionResult<BackendInfo>>(
       '/info',
       {
-        params: axiosSnakeCaseTransformer({
+        params: snakeCaseTransformer({
           checkForUpdates
         })
       }

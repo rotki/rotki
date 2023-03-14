@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import {
   handleResponse,
   validStatus,
@@ -27,7 +27,7 @@ export const useAssetPricesApi = () => {
       '/assets/prices/historical',
       {
         params: payload
-          ? axiosSnakeCaseTransformer(nonEmptyProperties(payload, true))
+          ? snakeCaseTransformer(nonEmptyProperties(payload, true))
           : null,
         validateStatus: validWithoutSessionStatus
       }
@@ -41,7 +41,7 @@ export const useAssetPricesApi = () => {
   ): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(
       '/assets/prices/historical',
-      axiosSnakeCaseTransformer(price),
+      snakeCaseTransformer(price),
       {
         validateStatus: validWithoutSessionStatus
       }
@@ -55,7 +55,7 @@ export const useAssetPricesApi = () => {
   ): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       '/assets/prices/historical',
-      axiosSnakeCaseTransformer(price),
+      snakeCaseTransformer(price),
       {
         validateStatus: validWithoutSessionStatus
       }
@@ -70,7 +70,7 @@ export const useAssetPricesApi = () => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       '/assets/prices/historical',
       {
-        data: axiosSnakeCaseTransformer(payload),
+        data: snakeCaseTransformer(payload),
         validateStatus: validWithoutSessionStatus
       }
     );
@@ -84,7 +84,7 @@ export const useAssetPricesApi = () => {
     const response = await api.instance.post<ActionResult<ManualPrice[]>>(
       '/assets/prices/latest/all',
       payload
-        ? axiosSnakeCaseTransformer(nonEmptyProperties(payload, true))
+        ? snakeCaseTransformer(nonEmptyProperties(payload, true))
         : null,
       {
         validateStatus: validStatus
@@ -99,7 +99,7 @@ export const useAssetPricesApi = () => {
   ): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(
       '/assets/prices/latest',
-      axiosSnakeCaseTransformer(payload),
+      snakeCaseTransformer(payload),
       {
         validateStatus: validStatus
       }

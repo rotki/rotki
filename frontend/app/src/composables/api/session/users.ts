@@ -1,6 +1,6 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import {
-  axiosSnakeCaseTransformer,
+  snakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
@@ -70,7 +70,7 @@ export const useUsersApi = () => {
 
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/users',
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         name: username,
         password,
         premiumApiKey: premiumSetup?.apiKey,
@@ -92,7 +92,7 @@ export const useUsersApi = () => {
     const { password, syncApproval, username } = credentials;
     const response = await api.instance.post<ActionResult<PendingTask>>(
       `/users/${username}`,
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         password,
         syncApproval,
         asyncQuery: true

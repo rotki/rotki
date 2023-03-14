@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
 import { type IgnorePayload } from '@/types/history/ignored';
@@ -8,7 +8,7 @@ export const useHistoryIgnoringApi = () => {
   const ignoreActions = async (payload: IgnorePayload): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(
       '/actions/ignored',
-      axiosSnakeCaseTransformer(payload),
+      snakeCaseTransformer(payload),
       {
         validateStatus: validStatus
       }
@@ -21,7 +21,7 @@ export const useHistoryIgnoringApi = () => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       '/actions/ignored',
       {
-        data: axiosSnakeCaseTransformer(payload),
+        data: snakeCaseTransformer(payload),
         validateStatus: validStatus
       }
     );

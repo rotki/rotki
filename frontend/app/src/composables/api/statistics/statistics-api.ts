@@ -5,7 +5,7 @@ import {
   TimedAssetBalances,
   TimedBalances
 } from '@rotki/common/lib/statistics';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
 
@@ -14,7 +14,7 @@ export const useStatisticsApi = () => {
     const response = await api.instance.get<ActionResult<NetValue>>(
       '/statistics/netvalue',
       {
-        params: axiosSnakeCaseTransformer({
+        params: snakeCaseTransformer({
           includeNfts
         }),
         validateStatus: validStatus
@@ -31,7 +31,7 @@ export const useStatisticsApi = () => {
   ): Promise<TimedBalances> => {
     const balances = await api.instance.post<ActionResult<TimedBalances>>(
       `/statistics/balance`,
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         fromTimestamp,
         toTimestamp,
         asset
@@ -49,7 +49,7 @@ export const useStatisticsApi = () => {
       const statistics = await api.instance.get<ActionResult<LocationData>>(
         '/statistics/value_distribution',
         {
-          params: axiosSnakeCaseTransformer({ distributionBy: 'location' }),
+          params: snakeCaseTransformer({ distributionBy: 'location' }),
           validateStatus: validStatus
         }
       );
@@ -61,7 +61,7 @@ export const useStatisticsApi = () => {
       const statistics = await api.instance.get<
         ActionResult<TimedAssetBalances>
       >('/statistics/value_distribution', {
-        params: axiosSnakeCaseTransformer({ distributionBy: 'asset' }),
+        params: snakeCaseTransformer({ distributionBy: 'asset' }),
         validateStatus: validStatus
       });
       return TimedAssetBalances.parse(handleResponse(statistics));

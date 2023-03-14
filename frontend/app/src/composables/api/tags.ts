@@ -1,7 +1,7 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import {
-  axiosNoRootCamelCaseTransformer,
-  axiosSnakeCaseTransformer
+  noRootCamelCaseTransformer,
+  snakeCaseTransformer
 } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -18,33 +18,33 @@ export const useTagsApi = () => {
     });
 
     const data = handleResponse(response);
-    return Tags.parse(axiosNoRootCamelCaseTransformer(data));
+    return Tags.parse(noRootCamelCaseTransformer(data));
   };
 
   const queryAddTag = async (tag: Tag): Promise<Tags> => {
     const response = await api.instance.put<ActionResult<Tags>>(
       '/tags',
-      axiosSnakeCaseTransformer(tag),
+      snakeCaseTransformer(tag),
       {
         validateStatus: validStatus
       }
     );
 
     const data = handleResponse(response);
-    return Tags.parse(axiosNoRootCamelCaseTransformer(data));
+    return Tags.parse(noRootCamelCaseTransformer(data));
   };
 
   const queryEditTag = async (tag: Tag): Promise<Tags> => {
     const response = await api.instance.patch<ActionResult<Tags>>(
       '/tags',
-      axiosSnakeCaseTransformer(tag),
+      snakeCaseTransformer(tag),
       {
         validateStatus: validStatus
       }
     );
 
     const data = handleResponse(response);
-    return Tags.parse(axiosNoRootCamelCaseTransformer(data));
+    return Tags.parse(noRootCamelCaseTransformer(data));
   };
 
   const queryDeleteTag = async (tagName: string): Promise<Tags> => {
@@ -56,7 +56,7 @@ export const useTagsApi = () => {
     });
 
     const data = handleResponse(response);
-    return Tags.parse(axiosNoRootCamelCaseTransformer(data));
+    return Tags.parse(noRootCamelCaseTransformer(data));
   };
 
   return {

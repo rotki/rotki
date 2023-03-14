@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -27,7 +27,7 @@ export const useSnapshotApi = () => {
   ): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       `/snapshots/${timestamp}`,
-      axiosSnakeCaseTransformer(payload),
+      snakeCaseTransformer(payload),
       {
         validateStatus: validStatus
       }
@@ -46,7 +46,7 @@ export const useSnapshotApi = () => {
     const response = await api.instance.get<ActionResult<boolean>>(
       `/snapshots/${timestamp}`,
       {
-        params: axiosSnakeCaseTransformer({
+        params: snakeCaseTransformer({
           path,
           action: 'export'
         }),
@@ -59,7 +59,7 @@ export const useSnapshotApi = () => {
 
   const downloadSnapshot = async (timestamp: number): Promise<any> => {
     return api.instance.get<any>(`/snapshots/${timestamp}`, {
-      params: axiosSnakeCaseTransformer({ action: 'download' }),
+      params: snakeCaseTransformer({ action: 'download' }),
       validateStatus: validWithoutSessionStatus,
       responseType: 'blob'
     });
@@ -71,7 +71,7 @@ export const useSnapshotApi = () => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       '/snapshots',
       {
-        data: axiosSnakeCaseTransformer(payload),
+        data: snakeCaseTransformer(payload),
         validateStatus: validWithoutSessionStatus
       }
     );
@@ -85,7 +85,7 @@ export const useSnapshotApi = () => {
   ): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(
       '/snapshots',
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         balancesSnapshotFile,
         locationDataSnapshotFile
       }),

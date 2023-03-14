@@ -5,7 +5,7 @@ import {
   Eth2Validators
 } from '@rotki/common/lib/staking/eth2';
 import { onlyIfTruthy } from '@rotki/common';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -32,7 +32,7 @@ const performAsyncQuery = async (
 ): Promise<PendingTask> => {
   const response = await api.instance.put<ActionResult<PendingTask>>(
     url,
-    axiosSnakeCaseTransformer({
+    snakeCaseTransformer({
       asyncQuery: true,
       ...payload
     }),
@@ -102,7 +102,7 @@ export const useBlockchainAccountsApi = () => {
     const response = await api.instance.delete<ActionResult<PendingTask>>(
       `/blockchains/${blockchain}/accounts`,
       {
-        data: axiosSnakeCaseTransformer({
+        data: snakeCaseTransformer({
           asyncQuery: true,
           accounts
         }),
@@ -136,7 +136,7 @@ export const useBlockchainAccountsApi = () => {
 
     const response = await api.instance.patch<ActionResult<BtcAccountData>>(
       url,
-      axiosSnakeCaseTransformer(nonEmptyProperties(data)),
+      snakeCaseTransformer(nonEmptyProperties(data)),
       {
         validateStatus: validWithParamsSessionAndExternalService
       }
@@ -199,7 +199,7 @@ export const useBlockchainAccountsApi = () => {
     const response = await api.instance.delete<ActionResult<PendingTask>>(
       `/blockchains/${blockchain}/xpub`,
       {
-        data: axiosSnakeCaseTransformer({
+        data: snakeCaseTransformer({
           xpub,
           derivationPath: derivationPath ? derivationPath : undefined,
           asyncQuery: true
@@ -227,7 +227,7 @@ export const useBlockchainAccountsApi = () => {
   ): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/blockchains/ETH2/validators',
-      axiosSnakeCaseTransformer({ ...payload, asyncQuery: true }),
+      snakeCaseTransformer({ ...payload, asyncQuery: true }),
       {
         validateStatus: validAuthorizedStatus
       }
@@ -242,7 +242,7 @@ export const useBlockchainAccountsApi = () => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       '/blockchains/ETH2/validators',
       {
-        data: axiosSnakeCaseTransformer({
+        data: snakeCaseTransformer({
           validators
         }),
         validateStatus: validWithSessionStatus
@@ -257,7 +257,7 @@ export const useBlockchainAccountsApi = () => {
   }: Eth2Validator): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       '/blockchains/ETH2/validators',
-      axiosSnakeCaseTransformer({ ownershipPercentage, validatorIndex }),
+      snakeCaseTransformer({ ownershipPercentage, validatorIndex }),
       {
         validateStatus: validWithSessionAndExternalService
       }
@@ -278,7 +278,7 @@ export const useBlockchainAccountsApi = () => {
   const detectEvmAccounts = async (): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
       '/blockchains/evm/accounts',
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         asyncQuery: true
       }),
       {

@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { handleResponse, validStatus } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
 import { type PendingTask } from '@/types/task';
@@ -12,7 +12,7 @@ export const useImportDataApi = () => {
   ): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/import',
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         source,
         file,
         timestampFormat,

@@ -1,6 +1,6 @@
 import isEmpty from 'lodash/isEmpty';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
+import { camelCaseTransformer } from '@/services/axios-tranformers';
 
 export type ValidationErrors = Record<string, string[] | string>;
 
@@ -10,7 +10,7 @@ export class ApiValidationError extends Error {
     super(message);
     this.name = 'ApiValidationError';
     this.errors =
-      axiosCamelCaseTransformer(deserializeApiErrorMessage(message)) ?? {};
+      camelCaseTransformer(deserializeApiErrorMessage(message)) ?? {};
   }
 
   getValidationErrors(payload: Object): ValidationErrors | string {
