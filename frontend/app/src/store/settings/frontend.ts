@@ -6,7 +6,7 @@ import {
 } from '@rotki/common/lib/settings/graphs';
 import { type ComputedRef } from 'vue';
 import { getBnFormat } from '@/data/amount_formatter';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { type CurrencyLocation } from '@/types/currency-location';
 import { type DateFormat } from '@/types/date-format';
 import {
@@ -126,9 +126,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     try {
       const updatedSettings = { ...settings, ...payload };
       const { other } = await api.setSettings({
-        frontendSettings: JSON.stringify(
-          axiosSnakeCaseTransformer(updatedSettings)
-        )
+        frontendSettings: JSON.stringify(snakeCaseTransformer(updatedSettings))
       });
 
       update(updatedSettings);

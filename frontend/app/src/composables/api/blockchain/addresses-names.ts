@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -20,7 +20,7 @@ export const useAddressesNamesApi = () => {
   ): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
       '/names/ens/reverse',
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         ethereumAddresses,
         asyncQuery,
         ignoreCache: asyncQuery
@@ -97,7 +97,7 @@ export const useAddressesNamesApi = () => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       `/names/addressbook/${location}`,
       {
-        data: axiosSnakeCaseTransformer({ addresses }),
+        data: snakeCaseTransformer({ addresses }),
         validateStatus: validWithSessionAndExternalService
       }
     );

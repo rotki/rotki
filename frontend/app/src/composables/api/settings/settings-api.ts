@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -15,7 +15,7 @@ export const useSettingsApi = () => {
   ): Promise<UserSettingsModel> => {
     const response = await api.instance.put<ActionResult<UserSettingsModel>>(
       '/settings',
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         settings
       }),
       {

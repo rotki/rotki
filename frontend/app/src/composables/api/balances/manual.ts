@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -15,7 +15,7 @@ export const useManualBalancesApi = () => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
       'balances/manual',
       {
-        params: axiosSnakeCaseTransformer({ asyncQuery: true }),
+        params: snakeCaseTransformer({ asyncQuery: true }),
         validateStatus: validWithSessionAndExternalService
       }
     );
@@ -27,9 +27,7 @@ export const useManualBalancesApi = () => {
   ): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       'balances/manual',
-      axiosSnakeCaseTransformer(
-        nonEmptyProperties({ balances, asyncQuery: true })
-      ),
+      snakeCaseTransformer(nonEmptyProperties({ balances, asyncQuery: true })),
       {
         validateStatus: validWithParamsSessionAndExternalService
       }
@@ -42,9 +40,7 @@ export const useManualBalancesApi = () => {
   ): Promise<PendingTask> => {
     const response = await api.instance.patch<ActionResult<PendingTask>>(
       'balances/manual',
-      axiosSnakeCaseTransformer(
-        nonEmptyProperties({ balances, asyncQuery: true })
-      ),
+      snakeCaseTransformer(nonEmptyProperties({ balances, asyncQuery: true })),
       {
         validateStatus: validWithParamsSessionAndExternalService
       }

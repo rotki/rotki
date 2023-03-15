@@ -1,6 +1,6 @@
 import { type ActionResult, type SupportedAsset } from '@rotki/common/lib/data';
 import { OwnedAssets } from '@rotki/common/lib/statistics';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -23,7 +23,7 @@ export const useAssetManagementApi = () => {
   ): Promise<SupportedAssets> => {
     const response = await api.instance.post<ActionResult<SupportedAssets>>(
       '/assets/all',
-      axiosSnakeCaseTransformer(pagination),
+      snakeCaseTransformer(pagination),
       {
         validateStatus: validWithSessionAndExternalService
       }
@@ -37,7 +37,7 @@ export const useAssetManagementApi = () => {
   ): Promise<CustomAssets> => {
     const response = await api.instance.post<ActionResult<CustomAssets>>(
       '/assets/custom',
-      axiosSnakeCaseTransformer(pagination),
+      snakeCaseTransformer(pagination),
       {
         validateStatus: validWithSessionAndExternalService
       }
@@ -62,7 +62,7 @@ export const useAssetManagementApi = () => {
   ): Promise<AssetIdResponse> => {
     const response = await api.instance.put<ActionResult<AssetIdResponse>>(
       '/assets/ethereum',
-      axiosSnakeCaseTransformer({ token }),
+      snakeCaseTransformer({ token }),
       {
         validateStatus: validStatus
       }
@@ -76,7 +76,7 @@ export const useAssetManagementApi = () => {
   ): Promise<AssetIdResponse> => {
     const response = await api.instance.patch<ActionResult<AssetIdResponse>>(
       '/assets/ethereum',
-      axiosSnakeCaseTransformer({ token }),
+      snakeCaseTransformer({ token }),
       {
         validateStatus: validStatus
       }
@@ -92,7 +92,7 @@ export const useAssetManagementApi = () => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       '/assets/ethereum',
       {
-        data: axiosSnakeCaseTransformer({ address, chain }),
+        data: snakeCaseTransformer({ address, chain }),
         validateStatus: validStatus
       }
     );
@@ -116,7 +116,7 @@ export const useAssetManagementApi = () => {
   ): Promise<AssetIdResponse> => {
     const response = await api.instance.put<ActionResult<AssetIdResponse>>(
       '/assets/all',
-      axiosSnakeCaseTransformer(asset),
+      snakeCaseTransformer(asset),
       {
         validateStatus: validStatus
       }
@@ -128,7 +128,7 @@ export const useAssetManagementApi = () => {
   const editAsset = async (asset: SupportedAsset): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       '/assets/all',
-      axiosSnakeCaseTransformer(asset),
+      snakeCaseTransformer(asset),
       {
         validateStatus: validStatus
       }
@@ -141,7 +141,7 @@ export const useAssetManagementApi = () => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       '/assets/all',
       {
-        data: axiosSnakeCaseTransformer({ identifier }),
+        data: snakeCaseTransformer({ identifier }),
         validateStatus: validStatus
       }
     );
@@ -165,7 +165,7 @@ export const useAssetManagementApi = () => {
   ): Promise<string> => {
     const response = await api.instance.put<ActionResult<string>>(
       '/assets/custom',
-      axiosSnakeCaseTransformer(asset),
+      snakeCaseTransformer(asset),
       {
         validateStatus: validStatus
       }
@@ -177,7 +177,7 @@ export const useAssetManagementApi = () => {
   const editCustomAsset = async (asset: CustomAsset): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       '/assets/custom',
-      axiosSnakeCaseTransformer(asset),
+      snakeCaseTransformer(asset),
       {
         validateStatus: validStatus
       }
@@ -190,7 +190,7 @@ export const useAssetManagementApi = () => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       '/assets/custom',
       {
-        data: axiosSnakeCaseTransformer({ identifier }),
+        data: snakeCaseTransformer({ identifier }),
         validateStatus: validStatus
       }
     );

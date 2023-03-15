@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -22,7 +22,7 @@ export const usePriceApi = () => {
   ): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
       `/oracles/${source}/cache`,
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         asyncQuery: true,
         purgeOld: purgeOld ? purgeOld : undefined,
         fromAsset,
@@ -44,7 +44,7 @@ export const usePriceApi = () => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       `/oracles/${source}/cache`,
       {
-        data: axiosSnakeCaseTransformer({
+        data: snakeCaseTransformer({
           fromAsset,
           toAsset
         }),
@@ -75,7 +75,7 @@ export const usePriceApi = () => {
   ): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
       '/assets/prices/historical',
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         asyncQuery: true,
         assetsTimestamp: [[fromAsset, timestamp]],
         targetAsset: toAsset
@@ -95,7 +95,7 @@ export const usePriceApi = () => {
   ): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
       '/assets/prices/latest',
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         asyncQuery: true,
         assets,
         targetAsset,

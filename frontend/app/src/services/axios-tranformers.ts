@@ -1,8 +1,5 @@
 import { BigNumber } from '@rotki/common';
-import {
-  type AxiosRequestTransformer,
-  type AxiosResponseTransformer
-} from 'axios';
+import { type AxiosResponseTransformer } from 'axios';
 import { isEvmIdentifier } from '@/utils/assets';
 
 const isObject = (data: any): boolean =>
@@ -61,20 +58,17 @@ export const convertKeys = (
   return converted;
 };
 
-export const axiosSnakeCaseTransformer: AxiosRequestTransformer = (
-  data,
-  _headers
-) => convertKeys(data, false, false);
+export const snakeCaseTransformer = (data: any): any => {
+  return convertKeys(data, false, false);
+};
 
-export const axiosCamelCaseTransformer: AxiosResponseTransformer = (
-  data,
-  _headers
-) => convertKeys(data, true, false);
+export const camelCaseTransformer = (data: any): any => {
+  return convertKeys(data, true, false);
+};
 
-export const axiosNoRootCamelCaseTransformer: AxiosResponseTransformer = (
-  data,
-  _headers
-) => convertKeys(data, true, true);
+export const noRootCamelCaseTransformer = (data: any): any => {
+  return convertKeys(data, true, true);
+};
 
 const jsonTransformer: AxiosResponseTransformer = (data, headers) => {
   let result = data;
@@ -93,7 +87,7 @@ export const setupTransformer = (
   skipRoot = false
 ): AxiosResponseTransformer[] => [
   jsonTransformer,
-  skipRoot ? axiosNoRootCamelCaseTransformer : axiosCamelCaseTransformer
+  skipRoot ? noRootCamelCaseTransformer : camelCaseTransformer
 ];
 
 export const basicAxiosTransformer = setupTransformer();

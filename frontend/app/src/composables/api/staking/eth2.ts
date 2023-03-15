@@ -4,8 +4,8 @@ import {
   type Eth2DailyStatsPayload
 } from '@rotki/common/lib/staking/eth2';
 import {
-  axiosSnakeCaseTransformer,
-  getUpdatedKey
+  getUpdatedKey,
+  snakeCaseTransformer
 } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -19,7 +19,7 @@ export const useEth2Api = () => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
       '/blockchains/ETH2/stake/details',
       {
-        params: axiosSnakeCaseTransformer({
+        params: snakeCaseTransformer({
           asyncQuery: true
         }),
         validateStatus: validWithSessionAndExternalService
@@ -32,7 +32,7 @@ export const useEth2Api = () => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
       '/blockchains/ETH2/stake/deposits',
       {
-        params: axiosSnakeCaseTransformer({
+        params: snakeCaseTransformer({
           asyncQuery: true
         }),
         validateStatus: validWithSessionAndExternalService
@@ -47,7 +47,7 @@ export const useEth2Api = () => {
   ): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
       '/blockchains/ETH2/stake/dailystats',
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         asyncQuery,
         ...payload,
         orderByAttributes:

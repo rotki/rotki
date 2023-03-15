@@ -1,7 +1,7 @@
 import {
-  axiosCamelCaseTransformer,
-  axiosNoRootCamelCaseTransformer,
-  axiosSnakeCaseTransformer
+  camelCaseTransformer,
+  noRootCamelCaseTransformer,
+  snakeCaseTransformer
 } from '@/services/axios-tranformers';
 import { bigNumberify } from '@/utils/bignumbers';
 
@@ -10,7 +10,7 @@ describe('axios transformers', () => {
     const json =
       '{"amount":"10","test_label":"label","data":[{"amount":"2","usd_value":"10"}]}';
     const parsed = JSON.parse(json);
-    expect(axiosCamelCaseTransformer(parsed)).toMatchObject({
+    expect(camelCaseTransformer(parsed)).toMatchObject({
       amount: '10',
       testLabel: 'label',
       data: [{ amount: '2', usdValue: '10' }]
@@ -23,7 +23,7 @@ describe('axios transformers', () => {
       label: 'test'
     };
 
-    expect(JSON.stringify(axiosSnakeCaseTransformer(object))).toMatch(
+    expect(JSON.stringify(snakeCaseTransformer(object))).toMatch(
       '{"data":[{"usd_value":"10"},{"usd_value":"11"}],"label":"test"}'
     );
   });
@@ -34,7 +34,7 @@ describe('axios transformers', () => {
       BTC: 2
     };
 
-    expect(JSON.stringify(axiosSnakeCaseTransformer(object))).toMatch(
+    expect(JSON.stringify(snakeCaseTransformer(object))).toMatch(
       '{"ETH":1,"BTC":2}'
     );
   });
@@ -42,7 +42,7 @@ describe('axios transformers', () => {
   test('transformer no root', () => {
     const json = '{"_amount_": { "a_cbc": "1", "a_abc": "2"}}';
     const parsed = JSON.parse(json);
-    const transformed = axiosNoRootCamelCaseTransformer(parsed);
+    const transformed = noRootCamelCaseTransformer(parsed);
     expect(transformed).toMatchObject({
       _amount_: {
         aCbc: '1',

@@ -37,7 +37,7 @@ describe('ExternalServices.vue', () => {
       components: {
         EvmChainIcon
       },
-      stubs: ['v-tooltip', 'v-dialog', 'card-title', 'card', 'i18n'],
+      stubs: ['v-dialog', 'card-title', 'card', 'i18n'],
       propsData: {
         value: ''
       }

@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
 import { type PendingTask } from '@/types/task';
@@ -12,7 +12,7 @@ export const useBalancesApi = () => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
       '/balances',
       {
-        params: axiosSnakeCaseTransformer({
+        params: snakeCaseTransformer({
           asyncQuery: true,
           ...payload
         }),

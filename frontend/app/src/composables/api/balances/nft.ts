@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -20,7 +20,7 @@ export const useNftBalancesApi = () => {
     asyncQuery: boolean
   ): Promise<T> => {
     const response = await api.instance.get<ActionResult<T>>('/nfts/balances', {
-      params: axiosSnakeCaseTransformer({
+      params: snakeCaseTransformer({
         asyncQuery,
         ...payload
       }),

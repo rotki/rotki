@@ -5,7 +5,7 @@ import {
   validWithParamsSessionAndExternalService,
   validWithSessionAndExternalService
 } from '@/services/utils';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { type Watcher, Watchers } from '@/types/session';
 
 export const useWatchersApi = () => {
@@ -25,7 +25,7 @@ export const useWatchersApi = () => {
   ): Promise<Watchers> => {
     const response = await api.instance.put<ActionResult<Watchers>>(
       '/watchers',
-      axiosSnakeCaseTransformer({ watchers }),
+      snakeCaseTransformer({ watchers }),
       {
         validateStatus: validWithParamsSessionAndExternalService
       }
@@ -37,7 +37,7 @@ export const useWatchersApi = () => {
   const editWatcher = async (watchers: Watchers): Promise<Watchers> => {
     const response = await api.instance.patch<ActionResult<Watchers>>(
       '/watchers',
-      axiosSnakeCaseTransformer({ watchers }),
+      snakeCaseTransformer({ watchers }),
       {
         validateStatus: validWithParamsSessionAndExternalService
       }
@@ -50,7 +50,7 @@ export const useWatchersApi = () => {
     const response = await api.instance.delete<ActionResult<Watchers>>(
       '/watchers',
       {
-        data: axiosSnakeCaseTransformer({ watchers: identifiers }),
+        data: snakeCaseTransformer({ watchers: identifiers }),
         validateStatus: validWithParamsSessionAndExternalService
       }
     );

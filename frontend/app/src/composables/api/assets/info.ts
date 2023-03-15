@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -29,7 +29,7 @@ export const useAssetInfoApi = () => {
   ): Promise<AssetsWithId> => {
     const response = await api.instance.post<ActionResult<AssetsWithId>>(
       '/assets/search/levenshtein',
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         value: keyword,
         limit,
         searchNfts
@@ -46,7 +46,7 @@ export const useAssetInfoApi = () => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
       '/blockchains/ETH/erc20details',
       {
-        params: axiosSnakeCaseTransformer({
+        params: snakeCaseTransformer({
           asyncQuery: true,
           address
         }),

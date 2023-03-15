@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -23,7 +23,7 @@ export const useLedgerActionsApi = () => {
     asyncQuery: boolean
   ): Promise<T> => {
     const response = await api.instance.get<ActionResult<T>>('/ledgeractions', {
-      params: axiosSnakeCaseTransformer({
+      params: snakeCaseTransformer({
         asyncQuery,
         ...payload
       }),
@@ -55,7 +55,7 @@ export const useLedgerActionsApi = () => {
   ): Promise<LedgerAction> => {
     const response = await api.instance.put<ActionResult<LedgerAction>>(
       '/ledgeractions',
-      axiosSnakeCaseTransformer(ledgerAction),
+      snakeCaseTransformer(ledgerAction),
       {
         validateStatus: validStatus
       }
@@ -69,7 +69,7 @@ export const useLedgerActionsApi = () => {
   ): Promise<LedgerAction> => {
     const response = await api.instance.patch<ActionResult<LedgerAction>>(
       '/ledgeractions',
-      axiosSnakeCaseTransformer(ledgerAction),
+      snakeCaseTransformer(ledgerAction),
       {
         validateStatus: validStatus
       }
@@ -84,7 +84,7 @@ export const useLedgerActionsApi = () => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       '/ledgeractions',
       {
-        data: axiosSnakeCaseTransformer({ identifiers }),
+        data: snakeCaseTransformer({ identifiers }),
         validateStatus: validStatus
       }
     );

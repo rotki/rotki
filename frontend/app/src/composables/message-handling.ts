@@ -12,7 +12,7 @@ import {
   SocketMessageType,
   WebsocketMessage
 } from '@/types/websocket-messages';
-import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
+import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { logger } from '@/utils/logging';
 import { Routes } from '@/router/routes';
 import router from '@/router';
@@ -120,7 +120,7 @@ export const useMessageHandling = () => {
 
   const handleMessage = async (data: string): Promise<void> => {
     const message: WebsocketMessage = WebsocketMessage.parse(
-      axiosCamelCaseTransformer(JSON.parse(data))
+      camelCaseTransformer(JSON.parse(data))
     );
     const type = message.type;
 

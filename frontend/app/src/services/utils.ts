@@ -1,6 +1,10 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { type AxiosInstance, type AxiosResponse } from 'axios';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import {
+  type AxiosInstance,
+  type AxiosResponse,
+  type ParamsSerializerOptions
+} from 'axios';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { ApiValidationError } from '@/types/api/errors';
 import { type PendingTask } from '@/types/task';
 
@@ -28,7 +32,7 @@ export const fetchExternalAsync = async (
 ): Promise<PendingTask> => {
   const result = await api.get<ActionResult<PendingTask>>(url, {
     validateStatus: validWithSessionAndExternalService,
-    params: axiosSnakeCaseTransformer({
+    params: snakeCaseTransformer({
       asyncQuery: true,
       ...(params ? params : {})
     })
@@ -36,7 +40,7 @@ export const fetchExternalAsync = async (
   return handleResponse(result);
 };
 
-export function paramsSerializer(params: Record<string, any>): string {
+export function serialize(params: Record<string, any>) {
   const list = [];
   for (const [key, value] of Object.entries(params)) {
     if (value === null || value === undefined) {
@@ -51,6 +55,10 @@ export function paramsSerializer(params: Record<string, any>): string {
   }
   return list.join('&');
 }
+
+export const paramsSerializer: ParamsSerializerOptions = {
+  serialize
+};
 
 /**
  * Returns true if the provided status code is contained in the array of valid

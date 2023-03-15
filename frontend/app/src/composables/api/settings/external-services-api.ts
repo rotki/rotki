@@ -1,5 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -30,7 +30,7 @@ export const useExternalServicesApi = () => {
   ): Promise<ExternalServiceKeys> => {
     const response = await api.instance.put<ActionResult<ExternalServiceKeys>>(
       '/external_services',
-      axiosSnakeCaseTransformer({
+      snakeCaseTransformer({
         services: keys
       }),
       {
