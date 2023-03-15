@@ -10,7 +10,7 @@ from marshmallow.exceptions import ValidationError
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import (
     ActionType,
     HistoryEventSubType,
@@ -603,7 +603,7 @@ class StakingQuerySchema(BaseStakingQuerySchema):
         )
 
 
-class HistoryBaseEntrySchema(Schema):
+class EvmEventSchema(Schema):
     event_identifier = fields.String(required=True)
     sequence_index = fields.Integer(required=True)
     # Timestamp coming in from the API is in seconds, in contrast to what we save in the struct
@@ -620,7 +620,9 @@ class HistoryBaseEntrySchema(Schema):
         load_default=HistoryEventSubType.NONE,
         allow_none=True,
     )
-    counterparty = fields.String(required=False)
+    counterparty = fields.String(load_default=None)
+    product = fields.String(load_default=None)
+    address = EvmAddressField(load_default=None)
 
     @post_load
     def make_history_base_entry(
@@ -630,11 +632,11 @@ class HistoryBaseEntrySchema(Schema):
     ) -> dict[str, Any]:
         if data.get('event_subtype', None) is None:
             data['event_subtype'] = HistoryEventSubType.NONE
-        data['event_identifier'] = HistoryBaseEntry.deserialize_event_identifier(data['event_identifier'])  # noqa: E501
-        return {'event': HistoryBaseEntry(**data)}
+        data['event_identifier'] = EvmEvent.deserialize_event_identifier(data['event_identifier'])  # noqa: E501
+        return {'event': EvmEvent(**data)}
 
 
-class EditHistoryBaseEntrySchema(HistoryBaseEntrySchema):
+class EditEvmEventSchema(EvmEventSchema):
     identifier = fields.Integer(required=True)
 
 

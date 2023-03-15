@@ -36,7 +36,7 @@ from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS
 from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry, StakingEvent
+from rotkehlchen.accounting.structures.base import StakingEvent
 from rotkehlchen.accounting.structures.types import (
     ActionType,
     HistoryEventSubType,
@@ -102,6 +102,7 @@ from rotkehlchen.db.filtering import (
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
+    EvmEventFilterQuery,
     EvmTransactionsFilterQuery,
     HistoryEventFilterQuery,
     LedgerActionsFilterQuery,
@@ -192,6 +193,7 @@ from rotkehlchen.utils.snapshots import parse_import_snapshot_data
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -914,7 +916,7 @@ class RestAPI():
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def add_history_event(self, event: HistoryBaseEntry) -> Response:
+    def add_history_event(self, event: 'EvmEvent') -> Response:
         db = DBHistoryEvents(self.rotkehlchen.data.db)
         with self.rotkehlchen.data.db.user_write() as cursor:
             try:
@@ -937,7 +939,7 @@ class RestAPI():
         result_dict = _wrap_in_ok_result({'identifier': identifier})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def edit_history_event(self, event: HistoryBaseEntry) -> Response:
+    def edit_history_event(self, event: 'EvmEvent') -> Response:
         db = DBHistoryEvents(self.rotkehlchen.data.db)
         result, msg = db.edit_history_event(event)
         if result is False:
@@ -2822,12 +2824,12 @@ class RestAPI():
                 if event_params['asset'] is not None:
                     asset = (event_params['asset'], )
                 for entry in transactions:
-                    events = dbevents.get_history_events(
+                    events: list['EvmEvent'] = dbevents.get_history_events(  # type: ignore[assignment]  # noqa: E501
                         cursor=cursor,
-                        filter_query=HistoryEventFilterQuery.make(
+                        filter_query=EvmEventFilterQuery.make(
                             event_identifiers=[entry.tx_hash],
                             assets=asset,
-                            protocols=event_params['protocols'],
+                            counterparties=event_params['protocols'],
                             event_types=event_params['event_types'],
                             event_subtypes=event_params['event_subtypes'],
                             exclude_ignored_assets=event_params['exclude_ignored_assets'],
@@ -4042,7 +4044,7 @@ class RestAPI():
 
     def get_event_details(self, identifier: int) -> Response:
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
-        event = dbevents.get_history_event_by_identifier(identifier=identifier)
+        event = dbevents.get_evm_event_by_identifier(identifier=identifier)
         if event is None:
             return api_response(wrap_in_fail_result('No event found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
 
