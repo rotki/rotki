@@ -13,6 +13,7 @@ Changelog
 * :bug:`-` Users with kraken accounts with old data that were never purged and repulled will no longer have missing events.
 * :bug:`-` PnL report will now correctly show progress bar percentage if user has connected but non-syncing exchanges.
 * :bug:`5749` Phishing zero token transfer transactions will now be hidden and ignored.
+* :bug:`5717` Swaps will now be processed in accounting correctly even if set manually.
 
 * :release:`1.27.1 <2023-02-24>`
 * :feature:`-` Transactions involving Sai CDP migration to Dai CDP are now properly decoded.
