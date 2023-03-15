@@ -2,6 +2,7 @@ import { Balance, NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { type PaginationRequestPayload } from '@/types/common';
 import { EntryMeta } from '@/types/history/meta';
+import { CollectionCommonFields } from '@/types/collection';
 
 const LiquityStakingEventExtraData = z.object({
   asset: z.string(),
@@ -119,18 +120,14 @@ export const TxEventEntryMeta = EntryMeta.merge(
 
 export type TxEventEntryMeta = z.infer<typeof TxEventEntryMeta>;
 
-export const EthTransactionCollectionResponse = z.object({
+export const EthTransactionCollectionResponse = CollectionCommonFields.extend({
   entries: z.array(
     z
       .object({
         entry: EthTransaction
       })
       .merge(TxEntryMeta)
-  ),
-  entriesFound: z.number(),
-  entriesLimit: z.number().default(-1),
-  entriesTotal: z.number(),
-  totalUsdValue: NumericString.nullish()
+  )
 });
 
 export interface EthTransactionEntry extends EthTransaction, TxEntryMeta {}

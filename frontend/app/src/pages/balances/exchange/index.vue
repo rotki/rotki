@@ -1,24 +1,31 @@
 <script setup lang="ts">
 import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
-import { type PropType } from 'vue';
 import { Routes } from '@/router/routes';
-import { type SupportedExchange } from '@/types/exchanges';
+import { SupportedExchange } from '@/types/exchanges';
 import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
+import { type Nullable } from '@/types';
 
-const props = defineProps({
-  exchange: {
-    required: false,
-    type: String as PropType<SupportedExchange>,
-    default: ''
+const props = withDefaults(
+  defineProps<{
+    exchange?: Nullable<SupportedExchange>;
+  }>(),
+  {
+    exchange: null
   }
-});
+);
 
 const { exchange } = toRefs(props);
 const { isTaskRunning } = useTaskStore();
-const store = useExchangeBalancesStore();
+const { getBalances, refreshExchangeSavings } = useExchangeBalancesStore();
 const { connectedExchanges } = storeToRefs(useHistoryStore());
+
+const { refreshBalance } = useRefresh();
+
+const refreshExchangeBalances = async () => {
+  await Promise.all([refreshBalance('exchange'), refreshExchangeSavings(true)]);
+};
 
 const selectedExchange = ref<string>('');
 const usedExchanges = computed<SupportedExchange[]>(() => {
@@ -45,7 +52,7 @@ watch(route, () => {
 });
 
 const exchangeBalance = (exchange: SupportedExchange): BigNumber => {
-  const balances = get(store.getBalances(exchange));
+  const balances = get(getBalances(exchange));
   return balances.reduce(
     (sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue),
     Zero
@@ -60,15 +67,43 @@ const openExchangeDetails = async () => {
 
 const balances = computed(() => {
   const currentExchange = get(exchange);
-  return get(store.getBalances(currentExchange));
+  if (!currentExchange) {
+    return null;
+  }
+  return get(getBalances(currentExchange));
+});
+
+const exchangeDetailTabs: Ref<number> = ref(0);
+watch(exchange, () => {
+  set(exchangeDetailTabs, 0);
 });
 
 const { t, tc } = useI18n();
+
+onMounted(() => {
+  refreshExchangeSavings();
+});
+
+const isBinance = computed(() => {
+  const exchangeVal = get(exchange);
+  if (!exchangeVal) {
+    return false;
+  }
+  return [SupportedExchange.BINANCE, SupportedExchange.BINANCEUS].includes(
+    exchangeVal
+  );
+});
 </script>
 
 <template>
   <card class="exchange-balances mt-8" outlined-body>
     <template #title>
+      <refresh-button
+        class="exchange-balances__refresh"
+        :loading="isExchangeLoading"
+        :tooltip="tc('exchange_balances.refresh_tooltip')"
+        @refresh="refreshExchangeBalances"
+      />
       {{ tc('exchange_balances.title') }}
     </template>
     <v-btn
@@ -148,14 +183,36 @@ const { t, tc } = useI18n();
           $vuetify.breakpoint.mdAndUp ? 'exchange-balances__balances' : null
         "
       >
-        <asset-balances
-          v-if="exchange"
-          hide-breakdown
-          :loading="isExchangeLoading"
-          :balances="balances"
-        />
-        <div v-else class="pa-4">
-          {{ t('exchange_balances.select_hint') }}
+        <div>
+          <div v-if="exchange">
+            <v-tabs v-model="exchangeDetailTabs">
+              <v-tab>{{ t('exchange_balances.tabs.balances') }}</v-tab>
+              <v-tab v-if="isBinance">{{
+                t('exchange_balances.tabs.savings_interest_history')
+              }}</v-tab>
+            </v-tabs>
+
+            <v-divider />
+
+            <v-tabs-items v-model="exchangeDetailTabs">
+              <v-tab-item class="pa-4">
+                <v-sheet outlined rounded>
+                  <asset-balances
+                    hide-breakdown
+                    :loading="isExchangeLoading"
+                    :balances="balances"
+                  />
+                </v-sheet>
+              </v-tab-item>
+              <v-tab-item v-if="isBinance" class="pa-4">
+                <binance-saving-detail :exchange="exchange" />
+              </v-tab-item>
+            </v-tabs-items>
+          </div>
+
+          <div v-else class="pa-4">
+            {{ t('exchange_balances.select_hint') }}
+          </div>
         </div>
       </v-col>
     </v-row>
@@ -172,16 +229,6 @@ const { t, tc } = useI18n();
 </template>
 
 <style scoped lang="scss">
-:deep(.v-tabs-bar) {
-  .v-tabs-bar {
-    &__content {
-      background-color: var(--v-rotki-light-grey-darken1);
-      border-radius: 4px 0 0 4px;
-      height: 100%;
-    }
-  }
-}
-
 .exchange-balances {
   &__balances {
     border-left: var(--v-rotki-light-grey-darken1) solid thin;
@@ -190,6 +237,15 @@ const { t, tc } = useI18n();
   &__tabs {
     border-radius: 4px 0 0 4px;
     height: 100%;
+
+    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+    :deep(.v-tabs-bar__content) {
+      /* stylelint-enable selector-class-pattern,selector-nested-pattern */
+      background-color: var(--v-rotki-light-grey-darken1);
+      border-radius: 4px 0 0 4px;
+      height: 100%;
+    }
   }
 
   &__tab {

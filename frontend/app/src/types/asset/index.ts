@@ -1,4 +1,3 @@
-import { NumericString } from '@rotki/common';
 import {
   AssetInfo,
   AssetInfoWithTransformer,
@@ -6,6 +5,7 @@ import {
 } from '@rotki/common/lib/data';
 import { z } from 'zod';
 import { type ApiPagination, type TablePagination } from '@/types/pagination';
+import { CollectionCommonFields } from '@/types/collection';
 
 export interface AssetDBVersion {
   readonly local: number;
@@ -95,12 +95,8 @@ export const CustomAsset = z.object({
 
 export type CustomAsset = z.infer<typeof CustomAsset>;
 
-export const CustomAssets = z.object({
-  entries: z.array(CustomAsset),
-  entriesFound: z.number(),
-  entriesLimit: z.number().default(-1),
-  entriesTotal: z.number(),
-  totalUsdValue: NumericString.nullish()
+export const CustomAssets = CollectionCommonFields.extend({
+  entries: z.array(CustomAsset)
 });
 export type CustomAssets = z.infer<typeof CustomAssets>;
 
@@ -160,11 +156,7 @@ export interface AssetUpdatePayload {
 export type ConflictResolution = Readonly<
   Record<string, ConflictResolutionStrategy>
 >;
-export const SupportedAssets = z.object({
-  entries: z.array(SupportedAsset),
-  entriesFound: z.number(),
-  entriesLimit: z.number().default(-1),
-  entriesTotal: z.number(),
-  totalUsdValue: NumericString.nullish()
+export const SupportedAssets = CollectionCommonFields.extend({
+  entries: z.array(SupportedAsset)
 });
 export type SupportedAssets = z.infer<typeof SupportedAssets>;

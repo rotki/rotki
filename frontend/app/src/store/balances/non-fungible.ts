@@ -1,6 +1,6 @@
 import { type BigNumber } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
-import { type Collection } from '@/types/collection';
+import { type Collection, type CollectionResponse } from '@/types/collection';
 import { Module } from '@/types/modules';
 import {
   type NonFungibleBalance,
@@ -40,7 +40,9 @@ export const useNonFungibleBalancesStore = defineStore(
       ) {
         set(nonFungibleTotalValue, result.totalUsdValue);
       }
-      return mapCollectionResponse<NonFungibleBalance>(result);
+      return mapCollectionResponse<CollectionResponse<NonFungibleBalance>>(
+        result
+      );
     };
 
     const syncNonFungiblesTask = async (): Promise<boolean> => {

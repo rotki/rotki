@@ -41,7 +41,8 @@ export enum HistoryEventSubType {
   PLACE_ORDER = 'place order',
   LIQUIDATE = 'liquidate',
   CANCEL_ORDER = 'cancel order',
-  REFUND = 'refund'
+  REFUND = 'refund',
+  INTEREST_PAYMENT = 'interest payment'
 }
 
 export const HistoryEventSubTypeEnum = z.nativeEnum(HistoryEventSubType);

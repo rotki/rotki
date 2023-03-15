@@ -1,15 +1,22 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import { type AxiosResponse } from 'axios';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import {
+  getUpdatedKey,
+  snakeCaseTransformer
+} from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
+  paramsSerializer,
   validStatus,
+  validWithParamsSessionAndExternalService,
   validWithSessionStatus
 } from '@/services/utils';
 import {
   type Exchange,
   type ExchangePayload,
+  ExchangeSavingsCollectionResponse,
+  type ExchangeSavingsRequestPayload,
   Exchanges,
   type SupportedExchange
 } from '@/types/exchanges';
@@ -134,6 +141,49 @@ export const useExchangeApi = () => {
     return handleResponse(response);
   };
 
+  const internalExchangeSavings = async <T>(
+    payload: ExchangeSavingsRequestPayload,
+    asyncQuery: boolean
+  ): Promise<T> => {
+    const response = await api.instance.post<ActionResult<T>>(
+      `/exchanges/${payload.location}/savings`,
+      snakeCaseTransformer(
+        nonEmptyProperties({
+          asyncQuery,
+          ...payload,
+          orderByAttributes:
+            payload.orderByAttributes?.map(item =>
+              getUpdatedKey(item, false)
+            ) ?? []
+        })
+      ),
+      {
+        paramsSerializer,
+        validateStatus: validWithParamsSessionAndExternalService
+      }
+    );
+
+    return handleResponse(response);
+  };
+
+  const getExchangeSavingsTask = async (
+    payload: ExchangeSavingsRequestPayload
+  ): Promise<PendingTask> => {
+    return internalExchangeSavings<PendingTask>(payload, true);
+  };
+
+  const getExchangeSavings = async (
+    payload: ExchangeSavingsRequestPayload
+  ): Promise<ExchangeSavingsCollectionResponse> => {
+    const response =
+      await internalExchangeSavings<ExchangeSavingsCollectionResponse>(
+        payload,
+        false
+      );
+
+    return ExchangeSavingsCollectionResponse.parse(response);
+  };
+
   return {
     queryRemoveExchange,
     queryExchangeBalances,
@@ -141,6 +191,8 @@ export const useExchangeApi = () => {
     getExchanges,
     queryBinanceMarkets,
     queryBinanceUserMarkets,
-    deleteExchangeData
+    deleteExchangeData,
+    getExchangeSavingsTask,
+    getExchangeSavings
   };
 };

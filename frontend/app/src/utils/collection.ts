@@ -1,18 +1,24 @@
 import { type BigNumber } from '@rotki/common';
 import { type ComputedRef, type Ref } from 'vue';
+import omit from 'lodash/omit';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { Zero } from '@/utils/bignumbers';
 import { type TablePagination } from '@/types/pagination';
 
-export const mapCollectionResponse = <T>(
-  response: CollectionResponse<T>
-): Collection<T> => {
+export const mapCollectionResponse = <T extends CollectionResponse<any>>(
+  response: T
+) => {
   return {
     data: response.entries,
     found: response.entriesFound,
     limit: response.entriesLimit,
     total: response.entriesTotal,
-    totalUsdValue: response.totalUsdValue
+    ...omit(response, [
+      'entries',
+      'entriesFound',
+      'entriesLimit',
+      'entriesTotal'
+    ])
   };
 };
 

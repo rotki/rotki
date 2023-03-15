@@ -1,8 +1,8 @@
-import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { type PaginationRequestPayload } from '@/types/common';
 import { PriceInformation } from '@/types/prices';
+import { CollectionCommonFields } from '@/types/collection';
 
 export const NonFungibleBalance = PriceInformation.merge(
   z.object({
@@ -21,15 +21,10 @@ type NonFungibleBalanceArray = z.infer<typeof NonFungibleBalanceArray>;
 export const NonFungibleBalances = z.record(NonFungibleBalanceArray);
 export type NonFungibleBalances = z.infer<typeof NonFungibleBalances>;
 
-export const NonFungibleBalancesCollectionResponse = z
-  .object({
-    entries: NonFungibleBalances,
-    entriesFound: z.number(),
-    entriesLimit: z.number().default(-1),
-    entriesTotal: z.number(),
-    totalUsdValue: NumericString.nullish()
-  })
-  .transform(response => {
+export const NonFungibleBalancesCollectionResponse =
+  CollectionCommonFields.extend({
+    entries: NonFungibleBalances
+  }).transform(response => {
     const mappedEntries: NonFungibleBalanceArray = Object.values(
       response.entries
     ).flat();

@@ -276,6 +276,15 @@
           "title": "Retrieving {location} balances"
         }
       },
+      "exchange_savings_interest": {
+        "error": {
+          "message": "Failed to query {location} savings interest information: {error}",
+          "title": "{location} savings interest information query"
+        },
+        "task": {
+          "title": "Retrieving {location} savings interest information"
+        }
+      },
       "exchange_rates": {
         "error": {
           "message": "Failed fetching exchange rates: {message}",
@@ -1833,8 +1842,15 @@
     "add_exchange": "Add exchange",
     "click_here": "Click here",
     "no_connected_exchanges": "You do not have any connected exchanges. {0} to set up an Exchange Connection.",
+    "received_interest": "Received Interest",
+    "received_interest_history": "History",
     "select_exchange": "Select Exchange",
+    "refresh_tooltip": "Refresh exchange balances ignoring any cached entries",
     "select_hint": "Select an exchange to view asset details.",
+    "tabs": {
+      "balances": "Balances",
+      "savings_interest_history": "Savings Interest History"
+    },
     "title": "Exchange Balances"
   },
   "exchange_keys_form": {

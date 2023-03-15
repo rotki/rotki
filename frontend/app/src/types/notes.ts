@@ -1,5 +1,5 @@
-import { NumericString } from '@rotki/common';
 import { z } from 'zod';
+import { CollectionCommonFields } from '@/types/collection';
 
 export const UserNote = z.object({
   identifier: z.number(),
@@ -16,12 +16,8 @@ export const UserNotes = z.array(UserNote);
 
 export type UserNotes = z.infer<typeof UserNotes>;
 
-export const UserNoteCollectionResponse = z.object({
-  entries: z.array(UserNote),
-  entriesFound: z.number(),
-  entriesLimit: z.number().default(-1),
-  entriesTotal: z.number(),
-  totalUsdValue: NumericString.nullish()
+export const UserNoteCollectionResponse = CollectionCommonFields.extend({
+  entries: z.array(UserNote)
 });
 
 export interface UserNotesFilter {

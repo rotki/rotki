@@ -12241,9 +12241,9 @@ Add EVM Transaction By Hash
 Get Binance Savings Interests History
 =======================================
 
-.. http:get:: /api/(version)/(location)/savings
+.. http:post:: /api/(version)/exchange/(location)/savings
 
-   Doing a GET on this endpoint will return all history events relating to interest payments for the specified location.
+   Doing a POST on this endpoint will return all history events relating to interest payments for the specified location.
    .. note::
 
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
@@ -12252,7 +12252,7 @@ Get Binance Savings Interests History
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/binance/savings HTTP/1.1
+      POST /api/1/exchange/binance/savings HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -12325,7 +12325,7 @@ Get Binance Savings Interests History
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_limit: The limit of entries if free version. -1 for premium.
    :resjson int entries_total: The number of total entries ignoring all filters.
-   :resjsonarr string total_usd_value: Sum of the USD value for the assets received computed at the time of acquisition of each event.
+   :resjson string total_usd_value: Sum of the USD value for the assets received computed at the time of acquisition of each event.
    :resjson list[string] assets: Assets involved in events ignoring all filters.
    :resjson list[object] received: Assets received with the total amount received for each asset and the aggregated USD value at time of acquisition.
 
