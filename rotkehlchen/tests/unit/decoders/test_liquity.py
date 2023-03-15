@@ -336,7 +336,6 @@ def test_liquity_trove_remove_eth(database, ethereum_inquirer, eth_transactions)
         transactions=eth_transactions,
     )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
-    assert len(events) == 3
     expected_events = [
         HistoryBaseEntry(
             event_identifier=evmhash,
@@ -365,19 +364,8 @@ def test_liquity_trove_remove_eth(database, ethereum_inquirer, eth_transactions)
             location_label=user_address,
             notes='Withdraw 32 ETH collateral from liquity',
             counterparty='liquity',
-        ), HistoryBaseEntry(
-            event_identifier=evmhash,
-            sequence_index=295,
-            timestamp=TimestampMS(1646375440000),
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
-            asset=A_LUSD,
-            balance=Balance(amount=FVal('0'), usd_value=ZERO),
-            location_label=user_address,
-            notes='Return 0 LUSD to liquity',
-            counterparty='liquity',
-        )]
+        ),
+    ]
     assert events == expected_events
 
 
