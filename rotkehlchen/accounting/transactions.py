@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment, TxEventSettings
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
@@ -16,16 +16,16 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def history_base_entries_iterator(
+def evm_events_iterator(
         events_iterator: Iterator[AccountingEventMixin],
-        associated_event: HistoryBaseEntry,
-) -> Iterator[HistoryBaseEntry]:
+        associated_event: EvmEvent,
+) -> Iterator[EvmEvent]:
     """
     Takes an iterator of accounting events and transforms it into a history base entries iterator.
     Takes associated event as an argument to be able to log it in case of errors.
     """
     for event in events_iterator:
-        if not isinstance(event, HistoryBaseEntry):
+        if not isinstance(event, EvmEvent):
             log.error(
                 f'At accounting for tx_event {associated_event.notes} with hash '
                 f'{associated_event.event_identifier.hex()} we expected to take an additional '
@@ -53,7 +53,7 @@ class TransactionsAccountant():
 
     def process(
             self,
-            event: HistoryBaseEntry,
+            event: EvmEvent,
             events_iterator: Iterator[AccountingEventMixin],
     ) -> int:
         """Process a transaction event and return amount of actions consumed from the iterator"""
@@ -79,11 +79,11 @@ class TransactionsAccountant():
             event_settings.accountant_cb(
                 pot=self.pot,
                 event=event,
-                other_events=history_base_entries_iterator(events_iterator, event),
+                other_events=evm_events_iterator(events_iterator, event),
             )
 
         if event_settings.accounting_treatment == TxAccountingTreatment.SWAP:
-            in_event = next(history_base_entries_iterator(events_iterator, event), None)
+            in_event = next(evm_events_iterator(events_iterator, event), None)
             if in_event is None:
                 log.error(
                     f'Tried to process accounting swap but could not find the in '
@@ -115,8 +115,8 @@ class TransactionsAccountant():
     def _process_tx_swap(
             self,
             timestamp: Timestamp,
-            out_event: HistoryBaseEntry,
-            in_event: HistoryBaseEntry,
+            out_event: EvmEvent,
+            in_event: EvmEvent,
             event_settings: TxEventSettings,
     ) -> int:
         prices = self.pot.get_prices_for_swap(
