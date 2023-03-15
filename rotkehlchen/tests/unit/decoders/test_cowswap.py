@@ -1,11 +1,12 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT, A_WBTC, A_WETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -24,7 +25,7 @@ def test_swap_token_to_token(database, ethereum_inquirer, ethereum_accounts):
         tx_hash=tx_hex,
     )
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=4,
             timestamp=TimestampMS(1676976635000),
@@ -36,7 +37,8 @@ def test_swap_token_to_token(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Swap 0.15463537 WBTC in cowswap',
             counterparty=CPT_COWSWAP,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=34,
             timestamp=TimestampMS(1676976635000),
@@ -48,6 +50,7 @@ def test_swap_token_to_token(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Receive 3800 USDC as the result of a swap in cowswap',
             counterparty=CPT_COWSWAP,
+            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
         ),
     ]
     assert events == expected_events
@@ -65,7 +68,7 @@ def test_swap_token_to_eth(database, ethereum_inquirer, ethereum_accounts):
         tx_hash=tx_hex,
     )
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1676976635000),
@@ -77,7 +80,8 @@ def test_swap_token_to_eth(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Swap 99.99 USDT in cowswap',
             counterparty=CPT_COWSWAP,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=10,
             timestamp=TimestampMS(1676976635000),
@@ -89,6 +93,7 @@ def test_swap_token_to_eth(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Receive 0.053419767450716028 ETH as the result of a swap in cowswap',  # noqa: E501
             counterparty=CPT_COWSWAP,
+            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
         ),
     ]
     assert events == expected_events
@@ -106,7 +111,7 @@ def test_swap_eth_to_token(database, ethereum_inquirer, ethereum_accounts):
         tx_hash=tx_hex,
     )
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1676987243000),
@@ -118,7 +123,8 @@ def test_swap_eth_to_token(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Swap 24.311042505395616962 ETH in cowswap',
             counterparty=CPT_COWSWAP,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=321,
             timestamp=TimestampMS(1676987243000),
@@ -130,6 +136,7 @@ def test_swap_eth_to_token(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Receive 40690.637506 USDC as the result of a swap in cowswap',
             counterparty=CPT_COWSWAP,
+            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
         ),
     ]
     assert events == expected_events
@@ -154,7 +161,7 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
         tx_hash=tx_hex,
     )
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1676976635000),
@@ -166,7 +173,8 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address_2,
             notes='Swap 99.99 USDT in cowswap',
             counterparty=CPT_COWSWAP,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1676976635000),
@@ -178,7 +186,8 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address_2,
             notes='Receive 0.053419767450716028 ETH as the result of a swap in cowswap',  # noqa: E501
             counterparty=CPT_COWSWAP,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=8,
             timestamp=TimestampMS(1676976635000),
@@ -190,7 +199,8 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address_1,
             notes='Swap 16000 FUND in cowswap',
             counterparty=CPT_COWSWAP,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=9,
             timestamp=TimestampMS(1676976635000),
@@ -202,7 +212,8 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address_1,
             notes='Receive 4.870994011222719015 WETH as the result of a swap in cowswap',  # noqa: E501
             counterparty=CPT_COWSWAP,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=37,
             timestamp=TimestampMS(1676976635000),
@@ -213,7 +224,7 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
             balance=Balance(amount=FVal('115792089237316195423570985000000000000000000000000000000000000000000')),  # noqa: E501
             location_label=user_address_1,
             notes='Set FUND spending approval of 0x0D2f07876685bEcd81DDa1C897f2D6Cacc733fc1 by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 115792089237316195423570985000000000000000000000000000000000000000000',  # noqa: E501
-            counterparty='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
+            address='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
         ),
     ]
     assert events == expected_events
@@ -231,7 +242,7 @@ def test_place_eth_order(database, ethereum_inquirer, ethereum_accounts):
         tx_hash=tx_hex,
     )
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1676987159000),
@@ -243,7 +254,7 @@ def test_place_eth_order(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Burned 0.001768460133875456 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1676987159000),
@@ -255,6 +266,7 @@ def test_place_eth_order(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Deposit 24.311042505395616962 ETH to swap it for USDC in cowswap',
             counterparty=CPT_COWSWAP,
+            address=string_to_evm_address('0x40A50cf069e992AA4536211B23F286eF88752187'),
         ),
     ]
     assert events == expected_events
@@ -272,7 +284,7 @@ def test_invalidate_eth_order(database, ethereum_inquirer, ethereum_accounts):
         tx_hash=tx_hex,
     )
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1677040511000),
@@ -284,7 +296,7 @@ def test_invalidate_eth_order(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Burned 0.001171136978414093 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1677040511000),
@@ -296,6 +308,7 @@ def test_invalidate_eth_order(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Invalidate an order that intended to swap 50 ETH in cowswap',
             counterparty=CPT_COWSWAP,
+            address=string_to_evm_address('0x40A50cf069e992AA4536211B23F286eF88752187'),
         ),
     ]
     assert events == expected_events
@@ -313,7 +326,7 @@ def test_refund_eth_order(database, ethereum_inquirer, ethereum_accounts):
         tx_hash=tx_hex,
     )
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1677055175000),
@@ -325,6 +338,7 @@ def test_refund_eth_order(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Refund 11 unused ETH from cowswap',
             counterparty=CPT_COWSWAP,
+            address=string_to_evm_address('0x40A50cf069e992AA4536211B23F286eF88752187'),
         ),
     ]
     assert events == expected_events

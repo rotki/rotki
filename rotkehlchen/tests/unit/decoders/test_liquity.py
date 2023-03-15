@@ -1,10 +1,11 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import LIQUITY_STAKING_DETAILS, HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import LIQUITY_STAKING_DETAILS, EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -109,7 +110,7 @@ def test_liquity_trove_adjust(database, ethereum_inquirer, eth_transactions):
 
     assert len(events) == 3
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
@@ -124,7 +125,7 @@ def test_liquity_trove_adjust(database, ethereum_inquirer, eth_transactions):
             location_label=user_address,
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1646375440000),
@@ -135,8 +136,9 @@ def test_liquity_trove_adjust(database, ethereum_inquirer, eth_transactions):
             balance=Balance(amount=FVal('2.1'), usd_value=ZERO),
             location_label=user_address,
             notes='Deposit 2.1 ETH as collateral for liquity',
-            counterparty='liquity',
-        ), HistoryBaseEntry(
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0x24179cd81c9e782a4096035f7ec97fb8b783e007'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=100,
             timestamp=TimestampMS(1646375440000),
@@ -147,7 +149,8 @@ def test_liquity_trove_adjust(database, ethereum_inquirer, eth_transactions):
             balance=Balance(amount=FVal('4751.162005820150243344'), usd_value=ZERO),
             location_label=user_address,
             notes='Generate 4751.162005820150243344 LUSD from liquity',
-            counterparty='liquity',
+            counterparty=CPT_LIQUITY,
+            address=ZERO_ADDRESS,
         )]
     assert events == expected_events
 
@@ -225,7 +228,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_inquirer, eth_transaction
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
@@ -240,7 +243,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_inquirer, eth_transaction
             location_label=user_address,
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=208,
             timestamp=TimestampMS(1646375440000),
@@ -251,7 +254,8 @@ def test_liquity_trove_deposit_lusd(database, ethereum_inquirer, eth_transaction
             balance=Balance(amount=FVal('118184.07'), usd_value=ZERO),
             location_label=user_address,
             notes='Return 118184.07 LUSD to liquity',
-            counterparty='liquity',
+            counterparty=CPT_LIQUITY,
+            address=ZERO_ADDRESS,
         )]
     assert events == expected_events
 
@@ -339,7 +343,7 @@ def test_liquity_trove_remove_eth(database, ethereum_inquirer, eth_transactions)
     )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
@@ -354,7 +358,7 @@ def test_liquity_trove_remove_eth(database, ethereum_inquirer, eth_transactions)
             location_label=user_address,
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1646375440000),
@@ -365,7 +369,8 @@ def test_liquity_trove_remove_eth(database, ethereum_inquirer, eth_transactions)
             balance=Balance(amount=FVal('32'), usd_value=ZERO),
             location_label=user_address,
             notes='Withdraw 32 ETH collateral from liquity',
-            counterparty='liquity',
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F'),
         ),
     ]
     assert events == expected_events
@@ -434,7 +439,7 @@ def test_liquity_pool_deposit(database, ethereum_inquirer, eth_transactions):
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
@@ -449,7 +454,7 @@ def test_liquity_pool_deposit(database, ethereum_inquirer, eth_transactions):
             location_label=user_address,
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=908,
             timestamp=TimestampMS(1646375440000),
@@ -460,7 +465,8 @@ def test_liquity_pool_deposit(database, ethereum_inquirer, eth_transactions):
             balance=Balance(amount=FVal('120'), usd_value=ZERO),
             location_label=user_address,
             notes="Deposit 120 LUSD in liquity's stability pool",
-            counterparty='liquity',
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0x66017D22b0f8556afDd19FC67041899Eb65a21bb'),
         )]
     assert events == expected_events
 
@@ -561,7 +567,7 @@ def test_liquity_pool_remove_deposits(database, ethereum_inquirer, eth_transacti
 
     assert len(events) == 3
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
@@ -576,7 +582,7 @@ def test_liquity_pool_remove_deposits(database, ethereum_inquirer, eth_transacti
             location_label=user_address,
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1646375440000),
@@ -587,8 +593,9 @@ def test_liquity_pool_remove_deposits(database, ethereum_inquirer, eth_transacti
             balance=Balance(amount=FVal('0.0211265398269'), usd_value=ZERO),
             location_label=user_address,
             notes="Collect 0.0211265398269 ETH from liquity's stability pool",
-            counterparty='liquity',
-        ), HistoryBaseEntry(
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=135,
             timestamp=TimestampMS(1646375440000),
@@ -599,7 +606,8 @@ def test_liquity_pool_remove_deposits(database, ethereum_inquirer, eth_transacti
             balance=Balance(amount=FVal('1308.878062778294406909'), usd_value=ZERO),
             location_label=user_address,
             notes="Collect 1308.878062778294406909 LQTY from liquity's stability pool",
-            counterparty='liquity',
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0xD8c9D9071123a059C6E0A945cF0e0c82b508d816'),
         )]
     assert events == expected_events
 
@@ -707,7 +715,7 @@ def test_increase_liquity_staking(database, ethereum_inquirer, eth_transactions)
 
     assert len(events) == 4
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
@@ -722,7 +730,7 @@ def test_increase_liquity_staking(database, ethereum_inquirer, eth_transactions)
             location_label=user_address,
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1646375440000),
@@ -733,8 +741,9 @@ def test_increase_liquity_staking(database, ethereum_inquirer, eth_transactions)
             balance=Balance(amount=FVal('0.000047566872899089'), usd_value=ZERO),
             location_label=user_address,
             notes="Receive reward of 0.000047566872899089 ETH from Liquity's staking",
-            counterparty='liquity',
-        ), HistoryBaseEntry(
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=177,
             timestamp=TimestampMS(1646375440000),
@@ -745,9 +754,10 @@ def test_increase_liquity_staking(database, ethereum_inquirer, eth_transactions)
             balance=Balance(amount=FVal('89.99999999999997'), usd_value=ZERO),
             location_label=user_address,
             notes='Stake 89.99999999999997 LQTY in the Liquity protocol',
-            counterparty='liquity',
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d'),
             extra_data={LIQUITY_STAKING_DETAILS: {'staked_amount': '171.95999999999998', 'asset': A_LQTY}},  # noqa: E501
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=180,
             timestamp=TimestampMS(1646375440000),
@@ -758,7 +768,8 @@ def test_increase_liquity_staking(database, ethereum_inquirer, eth_transactions)
             balance=Balance(amount=FVal('1.134976028981709316'), usd_value=ZERO),
             location_label=user_address,
             notes="Receive reward of 1.134976028981709316 LUSD from Liquity's staking",
-            counterparty='liquity',
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d'),
         )]
     assert events == expected_events
 
@@ -866,7 +877,7 @@ def test_remove_liquity_staking(database, ethereum_inquirer, eth_transactions):
 
     assert len(events) == 4
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
@@ -881,7 +892,7 @@ def test_remove_liquity_staking(database, ethereum_inquirer, eth_transactions):
             location_label=user_address,
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1646375440000),
@@ -892,8 +903,9 @@ def test_remove_liquity_staking(database, ethereum_inquirer, eth_transactions):
             balance=Balance(amount=FVal('0.000215197741630696'), usd_value=ZERO),
             location_label=user_address,
             notes="Receive reward of 0.000215197741630696 ETH from Liquity's staking",
-            counterparty='liquity',
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d'),
+            counterparty=CPT_LIQUITY,
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=119,
             timestamp=TimestampMS(1646375440000),
@@ -904,9 +916,10 @@ def test_remove_liquity_staking(database, ethereum_inquirer, eth_transactions):
             balance=Balance(amount=FVal('372.883717436930835121'), usd_value=ZERO),
             location_label=user_address,
             notes='Unstake 372.883717436930835121 LQTY from the Liquity protocol',
-            counterparty='liquity',
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d'),
             extra_data={LIQUITY_STAKING_DETAILS: {'staked_amount': '0', 'asset': A_LQTY}},
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=122,
             timestamp=TimestampMS(1646375440000),
@@ -917,7 +930,8 @@ def test_remove_liquity_staking(database, ethereum_inquirer, eth_transactions):
             balance=Balance(amount=FVal('2.476877599503048728'), usd_value=ZERO),
             location_label=user_address,
             notes="Receive reward of 2.476877599503048728 LUSD from Liquity's staking",
-            counterparty='liquity',
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d'),
         )]
     assert events == expected_events
 
@@ -933,7 +947,7 @@ def test_stability_pool_withdrawal(database, ethereum_inquirer, ethereum_account
         tx_hash=tx_hash,
     )
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1677402143000),
@@ -945,7 +959,7 @@ def test_stability_pool_withdrawal(database, ethereum_inquirer, ethereum_account
             location_label=address,
             notes='Burned 0.00719440411023624 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=191,
             timestamp=TimestampMS(1677402143000),
@@ -957,7 +971,8 @@ def test_stability_pool_withdrawal(database, ethereum_inquirer, ethereum_account
             location_label=address,
             notes='Collect 1.3168840890645 LQTY from liquity\'s stability pool',
             counterparty=CPT_LIQUITY,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0xD8c9D9071123a059C6E0A945cF0e0c82b508d816'),
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=195,
             timestamp=TimestampMS(1677402143000),
@@ -969,5 +984,6 @@ def test_stability_pool_withdrawal(database, ethereum_inquirer, ethereum_account
             location_label=address,
             notes='Withdraw 500000 LUSD from liquity\'s stability pool',
             counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0x66017D22b0f8556afDd19FC67041899Eb65a21bb'),
         )]
     assert expected_events == events

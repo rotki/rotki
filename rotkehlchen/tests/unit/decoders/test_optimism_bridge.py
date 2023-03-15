@@ -1,10 +1,12 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_ETH, A_OPTIMISM_ETH
 from rotkehlchen.fval import FVal
@@ -26,7 +28,7 @@ def test_deposit_erc20(database, ethereum_inquirer, ethereum_accounts):
     )
     user_address = ethereum_accounts[0]
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1674055295000),
@@ -38,7 +40,7 @@ def test_deposit_erc20(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Burned 0.00465973024452012 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=202,
             timestamp=TimestampMS(1674055295000),
@@ -50,6 +52,7 @@ def test_deposit_erc20(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Bridge 10 USDC from ethereum address {user_address} to optimism address {user_address} via optimism bridge',  # noqa: E501
             counterparty=CPT_OPTIMISM,
+            address=string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1'),
         ),
     ]
 
@@ -68,7 +71,7 @@ def test_deposit_eth(database, ethereum_inquirer, ethereum_accounts):
     )
     user_address = ethereum_accounts[0]
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1674057215000),
@@ -80,7 +83,7 @@ def test_deposit_eth(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Burned 0.006541751818933373 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1674057215000),
@@ -92,6 +95,7 @@ def test_deposit_eth(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Bridge 0.1 ETH from ethereum address {user_address} to optimism address {user_address} via optimism bridge',  # noqa: E501
             counterparty=CPT_OPTIMISM,
+            address=string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1'),
         ),
     ]
 
@@ -110,7 +114,7 @@ def test_receive_erc20_on_optimism(database, optimism_inquirer, optimism_account
     )
     user_address = optimism_accounts[0]
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1674055897000),
@@ -122,6 +126,7 @@ def test_receive_erc20_on_optimism(database, optimism_inquirer, optimism_account
             location_label=user_address,
             notes=f'Bridge 10 USDC from ethereum address {user_address} to optimism address {user_address} via optimism bridge',  # noqa: E501
             counterparty=CPT_OPTIMISM,
+            address=ZERO_ADDRESS,
         ),
     ]
 
@@ -140,7 +145,7 @@ def test_receive_eth_on_optimism(database, optimism_inquirer, optimism_accounts)
     )
     user_address = optimism_accounts[0]
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1674120410000),
@@ -152,6 +157,7 @@ def test_receive_eth_on_optimism(database, optimism_inquirer, optimism_accounts)
             location_label=user_address,
             notes=f'Bridge 0.009 ETH from ethereum address {user_address} to optimism address {user_address} via optimism bridge',  # noqa: E501
             counterparty=CPT_OPTIMISM,
+            address=ZERO_ADDRESS,
         ),
     ]
 
@@ -170,7 +176,7 @@ def test_withdraw_erc20(database, optimism_inquirer, optimism_accounts):
     )
     user_address = optimism_accounts[0]
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1673522839000),
@@ -182,7 +188,7 @@ def test_withdraw_erc20(database, optimism_inquirer, optimism_accounts):
             location_label=user_address,
             notes='Burned 0.0000001197 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1673522839000),
@@ -194,6 +200,7 @@ def test_withdraw_erc20(database, optimism_inquirer, optimism_accounts):
             location_label=user_address,
             notes=f'Bridge 2718.857536 USDC from optimism address {user_address} to ethereum address {user_address} via optimism bridge',  # noqa: E501
             counterparty=CPT_OPTIMISM,
+            address=ZERO_ADDRESS,
         ),
     ]
 
@@ -212,7 +219,7 @@ def test_withdraw_eth(database, optimism_inquirer, optimism_accounts):
     )
     user_address = optimism_accounts[0]
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1673253269000),
@@ -224,7 +231,7 @@ def test_withdraw_eth(database, optimism_inquirer, optimism_accounts):
             location_label=user_address,
             notes='Burned 0.000000115426 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1673253269000),
@@ -236,6 +243,7 @@ def test_withdraw_eth(database, optimism_inquirer, optimism_accounts):
             location_label=user_address,
             notes=f'Bridge 0.435796826762301485 ETH from optimism address {user_address} to ethereum address {user_address} via optimism bridge',  # noqa: E501
             counterparty=CPT_OPTIMISM,
+            address=ZERO_ADDRESS,
         ),
     ]
 
@@ -254,7 +262,7 @@ def test_claim_erc20_on_ethereum(database, ethereum_inquirer, ethereum_accounts)
     )
     user_address = ethereum_accounts[0]
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1674128075000),
@@ -266,7 +274,7 @@ def test_claim_erc20_on_ethereum(database, ethereum_inquirer, ethereum_accounts)
             location_label=user_address,
             notes='Burned 0.01405791999714114 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=121,
             timestamp=TimestampMS(1674128075000),
@@ -278,6 +286,7 @@ def test_claim_erc20_on_ethereum(database, ethereum_inquirer, ethereum_accounts)
             location_label=user_address,
             notes=f'Bridge 2718.857536 USDC from optimism address {user_address} to ethereum address {user_address} via optimism bridge',  # noqa: E501
             counterparty=CPT_OPTIMISM,
+            address=string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1'),
         ),
     ]
 
@@ -296,7 +305,7 @@ def test_claim_eth_on_ethereum(database, ethereum_inquirer, ethereum_accounts):
     )
     user_address = ethereum_accounts[0]
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1674127139000),
@@ -308,7 +317,7 @@ def test_claim_eth_on_ethereum(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Burned 0.012214330132870492 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1674127139000),
@@ -320,5 +329,6 @@ def test_claim_eth_on_ethereum(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Bridge 0.435796826762301485 ETH from optimism address {user_address} to ethereum address {user_address} via optimism bridge',  # noqa: E501
             counterparty=CPT_OPTIMISM,
+            address=string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1'),
         ),
     ]

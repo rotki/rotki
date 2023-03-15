@@ -1,11 +1,12 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -42,7 +43,7 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
         timestamp=Timestamp(1646375440),
         block_number=14351442,
         from_address=ADDY_1,
-        to_address='0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F',
+        to_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
         value=0,
         gas=171249,
         gas_price=22990000000,
@@ -102,8 +103,8 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     expected_events = [
-        HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
+        EvmEvent(
+            event_identifier=EvmEvent.deserialize_event_identifier(tx_hex),
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -117,8 +118,8 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
             location_label=ADDY_1,
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
+        ), EvmEvent(
+            event_identifier=EvmEvent.deserialize_event_identifier(tx_hex),
             sequence_index=307,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -129,8 +130,9 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
             location_label=ADDY_1,
             notes='Swap 19.157411925828275084 cvxCRV in sushiswap-v2 from 0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF',  # noqa: E501
             counterparty=CPT_SUSHISWAP_V2,
-        ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
+            address=string_to_evm_address('0x33F6DDAEa2a8a54062E021873bCaEE006CdF4007'),
+        ), EvmEvent(
+            event_identifier=EvmEvent.deserialize_event_identifier(tx_hex),
             sequence_index=309,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -141,6 +143,7 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
             location_label=ADDY_1,
             notes='Receive 18.47349725628421943 CRV in sushiswap-v2 from 0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF',  # noqa: E501
             counterparty=CPT_SUSHISWAP_V2,
+            address=string_to_evm_address('0x33F6DDAEa2a8a54062E021873bCaEE006CdF4007'),
         ),
     ]
     assert events == expected_events
@@ -162,7 +165,7 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
         timestamp=Timestamp(1672888271),
         block_number=16337817,
         from_address=ADDY_2,
-        to_address='0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F',
+        to_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
         value=0,
         gas=600000,
         gas_price=34000000000,
@@ -176,7 +179,7 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
         trace_id=27,
         timestamp=Timestamp(1672888271),
         block_number=16337817,
-        from_address='0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F',
+        from_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
         to_address=ADDY_2,
         value=FVal('1.122198589808876532') * EXP18,
     )
@@ -290,7 +293,7 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
 
     assert len(events) == 4
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1672888271000),
@@ -302,7 +305,7 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
             location_label=ADDY_2,
             notes='Burned 0.006668386 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1672888271000),
@@ -314,7 +317,8 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
             location_label=ADDY_2,
             notes='Remove 1.122198589808876532 ETH from sushiswap-v2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
             counterparty=CPT_SUSHISWAP_V2,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=23,
             timestamp=TimestampMS(1672888271000),
@@ -326,7 +330,8 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
             location_label=ADDY_2,
             notes='Send 0.0000243611620791 SLP to sushiswap-v2 pool',
             counterparty=CPT_SUSHISWAP_V2,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=30,
             timestamp=TimestampMS(1672888271000),
@@ -338,6 +343,7 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
             location_label=ADDY_2,
             notes='Remove 1408.739932 USDT from sushiswap-v2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
             counterparty=CPT_SUSHISWAP_V2,
+            address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
         ),
     ]
     assert events == expected_events
@@ -353,13 +359,14 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
     """
     tx_hash = '0x2ce6f92f4020fdc4ed69a173b10c1dd2811184fac34d56188270950db1152f3a'
     evmhash = deserialize_evm_tx_hash(tx_hash)
+    timestamp = TimestampMS(1672893947000)
     transaction = EvmTransaction(
         tx_hash=evmhash,
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1672893947),
         block_number=16338287,
         from_address=ADDY_3,
-        to_address='0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F',
+        to_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
         value=797012710918264,
         gas=245745,
         gas_price=17231958700,
@@ -455,10 +462,10 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
 
     assert len(events) == 4
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1672893947000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -467,10 +474,10 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
             location_label=ADDY_3,
             notes='Burned 0.0030789891485573 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
-            timestamp=TimestampMS(1672893947000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
@@ -479,10 +486,11 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
             location_label=ADDY_3,
             notes='Deposit 0.000797012710918264 ETH to sushiswap-v2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
             counterparty=CPT_SUSHISWAP_V2,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=218,
-            timestamp=TimestampMS(1672893947000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
@@ -491,10 +499,11 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
             location_label=ADDY_3,
             notes='Deposit 0.999992 USDT to sushiswap-v2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
             counterparty=CPT_SUSHISWAP_V2,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=222,
-            timestamp=TimestampMS(1672893947000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
@@ -503,6 +512,7 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
             location_label=ADDY_3,
             notes='Receive 0.000000017297304741 SLP from sushiswap-v2 pool',
             counterparty=CPT_SUSHISWAP_V2,
+            address=ZERO_ADDRESS,
         ),
     ]
     assert events == expected_events

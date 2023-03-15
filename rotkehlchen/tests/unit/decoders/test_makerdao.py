@@ -1,8 +1,11 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.chain.ethereum.modules.makerdao.constants import CPT_VAULT
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -28,7 +31,7 @@ def test_makerdao_simple_transaction(
         tx_hash=tx_hash,
     )
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=HexBytes('0x95de47059bcc084ebb8bdd60f48fbcf05619c2af84bf612fdc27a6bbf9b5097e'),  # noqa: E501
             sequence_index=0,
             timestamp=1593572988000,
@@ -39,10 +42,10 @@ def test_makerdao_simple_transaction(
             balance=Balance(amount=FVal(0.00926134), usd_value=ZERO),
             location_label='0x648aA14e4424e0825A5cE739C8C68610e143FB79',
             notes='Burned 0.00926134 ETH for gas',
-            counterparty='gas',
+            counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=HexBytes('0x95de47059bcc084ebb8bdd60f48fbcf05619c2af84bf612fdc27a6bbf9b5097e'),  # noqa: E501
             sequence_index=1,
             timestamp=1593572988000,
@@ -53,7 +56,8 @@ def test_makerdao_simple_transaction(
             balance=Balance(amount=FVal(0.6), usd_value=ZERO),
             location_label='0x648aA14e4424e0825A5cE739C8C68610e143FB79',
             notes='Withdraw 0.6 ETH from ETH-A MakerDAO vault',
-            counterparty='makerdao vault',
+            counterparty=CPT_VAULT,
+            address=string_to_evm_address('0x809aade1B623d8cDAeb86484d3366A03F8841FBc'),
             identifier=None,
             extra_data={'vault_type': 'ETH-A'},
         ),

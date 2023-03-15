@@ -1,13 +1,14 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_HOP
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, deserialize_evm_tx_hash
+from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
@@ -24,11 +25,12 @@ def test_hop_l2_deposit(database, ethereum_inquirer):
         database=database,
         tx_hash=tx_hash,
     )
+    timestamp = TimestampMS(1653219722000)
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
-            timestamp=1653219722000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -37,10 +39,10 @@ def test_hop_l2_deposit(database, ethereum_inquirer):
             location_label=ADDY,
             notes='Burned 0.001964214783875487 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=1,
-            timestamp=1653219722000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
@@ -49,6 +51,7 @@ def test_hop_l2_deposit(database, ethereum_inquirer):
             location_label=ADDY,
             notes='Bridge 0.2 ETH to Optimism at the same address via Hop protocol',
             counterparty=CPT_HOP,
+            address=string_to_evm_address('0xb8901acB165ed027E32754E0FFe830802919727f'),
         )]
     assert expected_events == events
 
@@ -66,10 +69,10 @@ def test_hop_optimism_eth_receive(database, optimism_inquirer):
         tx_hash=tx_hash,
     )
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
-            timestamp=1653220466000,
+            timestamp=TimestampMS(1653220466000),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
@@ -78,6 +81,7 @@ def test_hop_optimism_eth_receive(database, optimism_inquirer):
             location_label=ADDY,
             notes='Bridge 0.200077923923235647 ETH via hop protocol',
             counterparty=CPT_HOP,
+            address=string_to_evm_address('0x86cA30bEF97fB651b8d866D45503684b90cb3312'),
             extra_data={'sent_amount': '0.2'},
         )]
     assert expected_events == events

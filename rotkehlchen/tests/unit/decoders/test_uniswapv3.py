@@ -1,11 +1,12 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V3
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -47,7 +48,7 @@ def test_uniswap_v3_swap(database, ethereum_inquirer, eth_transactions):
         timestamp=Timestamp(1646375440),
         block_number=14351442,
         from_address=ADDY,
-        to_address='0xE592427A0AEce92De3Edee1F18E0157C05861564',
+        to_address=string_to_evm_address('0xE592427A0AEce92De3Edee1F18E0157C05861564'),
         value=632989659350357136,
         gas=171249,
         gas_price=22990000000,
@@ -117,7 +118,7 @@ def test_uniswap_v3_swap(database, ethereum_inquirer, eth_transactions):
 
     assert len(events) == 3
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
@@ -132,7 +133,7 @@ def test_uniswap_v3_swap(database, ethereum_inquirer, eth_transactions):
             location_label=ADDY,
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1646375440000),
@@ -144,7 +145,8 @@ def test_uniswap_v3_swap(database, ethereum_inquirer, eth_transactions):
             location_label=ADDY,
             notes='Swap 0.632989659350357136 ETH via uniswap-v3 auto router',
             counterparty=CPT_UNISWAP_V3,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0xE592427A0AEce92De3Edee1F18E0157C05861564'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1646375440000),
@@ -156,6 +158,7 @@ def test_uniswap_v3_swap(database, ethereum_inquirer, eth_transactions):
             location_label=ADDY,
             notes=f'Receive 1000 LDO as the result of a swap via {CPT_UNISWAP_V3} auto router',
             counterparty=CPT_UNISWAP_V3,
+            address=string_to_evm_address('0xE592427A0AEce92De3Edee1F18E0157C05861564'),
         ),
     ]
     assert events == expected_events
@@ -175,7 +178,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_inquirer, eth_transa
         timestamp=Timestamp(1646375440),
         block_number=14351442,
         from_address=ADDY_2,
-        to_address='0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+        to_address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         value=0,
         gas=171249,
         gas_price=22990000000,
@@ -230,7 +233,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_inquirer, eth_transa
         trace_id=27,
         timestamp=Timestamp(1646375440),
         block_number=14351442,
-        from_address='0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+        from_address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         to_address=ADDY_2,
         value=FVal('49.523026278486536412') * EXP18,
     )
@@ -248,7 +251,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_inquirer, eth_transa
 
     assert len(events) == 3
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
@@ -260,7 +263,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_inquirer, eth_transa
             location_label=ADDY_2,
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1646375440000),
@@ -272,7 +275,8 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_inquirer, eth_transa
             location_label=ADDY_2,
             notes=f'Swap 75000 USDC via {CPT_UNISWAP_V3} auto router',
             counterparty=CPT_UNISWAP_V3,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=2,
             timestamp=Timestamp(1646375440000),
@@ -284,6 +288,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_inquirer, eth_transa
             location_label=ADDY_2,
             notes=f'Receive 49.523026278486536412 ETH as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
+            address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ),
     ]
     assert events == expected_events
@@ -303,7 +308,7 @@ def test_uniswap_v3_swap_by_aggregator(database, ethereum_inquirer, eth_transact
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1669210175),
         block_number=16032999,
-        from_address='0xc9ec550BEA1C64D779124b23A26292cc223327b6',
+        from_address=string_to_evm_address('0xc9ec550BEA1C64D779124b23A26292cc223327b6'),
         to_address=ADDY_3,
         value=0,
         gas=171249,
@@ -442,7 +447,7 @@ def test_uniswap_v3_swap_by_aggregator(database, ethereum_inquirer, eth_transact
         trace_id=27,
         timestamp=Timestamp(1669210175),
         block_number=16032999,
-        from_address='0x9008D19f58AAbD9eD0D60971565AA8510560ab41',
+        from_address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
         to_address=ADDY_3,
         value=FVal('0.738572737905232914') * EXP18,
     )
@@ -457,7 +462,7 @@ def test_uniswap_v3_swap_by_aggregator(database, ethereum_inquirer, eth_transact
     )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1669210175000),
@@ -468,8 +473,8 @@ def test_uniswap_v3_swap_by_aggregator(database, ethereum_inquirer, eth_transact
             balance=Balance(amount=FVal('0.738572737905232914')),
             location_label=ADDY_3,
             notes='Receive 0.738572737905232914 ETH from 0x9008D19f58AAbD9eD0D60971565AA8510560ab41',  # noqa: E501
-            counterparty='0x9008D19f58AAbD9eD0D60971565AA8510560ab41',
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=251,
             timestamp=TimestampMS(1669210175000),
@@ -480,8 +485,8 @@ def test_uniswap_v3_swap_by_aggregator(database, ethereum_inquirer, eth_transact
             balance=Balance(amount=FVal('214.201817170016947233')),
             location_label=ADDY_3,
             notes='Send 214.201817170016947233 EUL from 0xdD84Ce1aDcb3A4908Db61A1dFA3353C3974c5a2B to 0x9008D19f58AAbD9eD0D60971565AA8510560ab41',  # noqa: E501
-            counterparty='0x9008D19f58AAbD9eD0D60971565AA8510560ab41',
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=253,
             timestamp=TimestampMS(1669210175000),
@@ -492,7 +497,7 @@ def test_uniswap_v3_swap_by_aggregator(database, ethereum_inquirer, eth_transact
             balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
             location_label=ADDY_3,
             notes='Set EUL spending approval of 0xdD84Ce1aDcb3A4908Db61A1dFA3353C3974c5a2B by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
-            counterparty='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
+            address=string_to_evm_address('0xC92E8bdf79f0507f65a392b0ab4667716BFE0110'),
         ),
     ]
     assert len(events) == 3
@@ -511,7 +516,7 @@ def test_swap_eth_to_tokens(database, ethereum_inquirer, ethereum_accounts):
         tx_hash=tx_hex,
     )
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1641528717000),
@@ -522,8 +527,8 @@ def test_swap_eth_to_tokens(database, ethereum_inquirer, ethereum_accounts):
             balance=Balance(amount=FVal('0.082968903798164815')),
             location_label=user_address,
             notes='Burned 0.082968903798164815 ETH for gas',
-            counterparty='gas',
-        ), HistoryBaseEntry(
+            counterparty=CPT_GAS,
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1641528717000),
@@ -535,7 +540,8 @@ def test_swap_eth_to_tokens(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Swap 262 ETH via {CPT_UNISWAP_V3} auto router',
             counterparty=CPT_UNISWAP_V3,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1641528717000),
@@ -547,6 +553,7 @@ def test_swap_eth_to_tokens(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Receive 841047.621362 USDC as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
+            address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ),
     ]
 
@@ -563,7 +570,7 @@ def test_swap_eth_to_tokens_refund(database, ethereum_inquirer, ethereum_account
         tx_hash=tx_hex,
     )
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1669924223000),
@@ -575,7 +582,7 @@ def test_swap_eth_to_tokens_refund(database, ethereum_inquirer, ethereum_account
             location_label=user_address,
             notes='Burned 0.00142634334688392 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1669924223000),
@@ -587,7 +594,8 @@ def test_swap_eth_to_tokens_refund(database, ethereum_inquirer, ethereum_account
             location_label=user_address,
             notes=f'Swap 0.003918934703639028 ETH via {CPT_UNISWAP_V3} auto router',
             counterparty=CPT_UNISWAP_V3,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1669924223000),
@@ -599,6 +607,7 @@ def test_swap_eth_to_tokens_refund(database, ethereum_inquirer, ethereum_account
             location_label=user_address,
             notes=f'Receive 5 USDT as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
+            address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ),
     ]
 
@@ -615,7 +624,7 @@ def test_swap_tokens_to_eth(database, ethereum_inquirer, ethereum_accounts):
         tx_hash=tx_hex,
     )
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1655541881000),
@@ -626,8 +635,8 @@ def test_swap_tokens_to_eth(database, ethereum_inquirer, ethereum_accounts):
             balance=Balance(amount=FVal('0.03490929635453643')),
             location_label=user_address,
             notes='Burned 0.03490929635453643 ETH for gas',
-            counterparty='gas',
-        ), HistoryBaseEntry(
+            counterparty=CPT_GAS,
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1655541881000),
@@ -639,7 +648,8 @@ def test_swap_tokens_to_eth(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Swap 150000 USDC via {CPT_UNISWAP_V3} auto router',
             counterparty=CPT_UNISWAP_V3,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1655541881000),
@@ -651,6 +661,7 @@ def test_swap_tokens_to_eth(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Receive 150.306972002256248665 ETH as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
+            address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ),
     ]
 
@@ -666,8 +677,8 @@ def test_swap_tokens_to_tokens_single_receipt(database, ethereum_inquirer, ether
         database=database,
         tx_hash=tx_hex,
     )
-    assert events == [
-        HistoryBaseEntry(
+    expected_events = [
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1643060358000),
@@ -678,8 +689,8 @@ def test_swap_tokens_to_tokens_single_receipt(database, ethereum_inquirer, ether
             balance=Balance(amount=FVal('0.074007294410979132')),
             location_label=user_address,
             notes='Burned 0.074007294410979132 ETH for gas',
-            counterparty='gas',
-        ), HistoryBaseEntry(
+            counterparty=CPT_GAS,
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1643060358000),
@@ -691,7 +702,8 @@ def test_swap_tokens_to_tokens_single_receipt(database, ethereum_inquirer, ether
             location_label=user_address,
             notes=f'Swap 3000000 UST via {CPT_UNISWAP_V3} auto router',
             counterparty=CPT_UNISWAP_V3,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1643060358000),
@@ -703,8 +715,10 @@ def test_swap_tokens_to_tokens_single_receipt(database, ethereum_inquirer, ether
             location_label=user_address,
             notes=f'Receive 2994089.109716 USDC as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
+            address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ),
     ]
+    assert events == expected_events
 
 
 @pytest.mark.vcr()
@@ -718,8 +732,8 @@ def test_swap_tokens_to_tokens_multiple_receipts(database, ethereum_inquirer, et
         database=database,
         tx_hash=tx_hex,
     )
-    assert events == [
-        HistoryBaseEntry(
+    expected_events = [
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1658331886000),
@@ -730,8 +744,8 @@ def test_swap_tokens_to_tokens_multiple_receipts(database, ethereum_inquirer, et
             balance=Balance(amount=FVal('0.049823244141159502')),
             location_label=user_address,
             notes='Burned 0.049823244141159502 ETH for gas',
-            counterparty='gas',
-        ), HistoryBaseEntry(
+            counterparty=CPT_GAS,
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1658331886000),
@@ -743,7 +757,8 @@ def test_swap_tokens_to_tokens_multiple_receipts(database, ethereum_inquirer, et
             location_label=user_address,
             notes=f'Swap 224.18247796 WBTC via {CPT_UNISWAP_V3} auto router',
             counterparty=CPT_UNISWAP_V3,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1658331886000),
@@ -755,8 +770,10 @@ def test_swap_tokens_to_tokens_multiple_receipts(database, ethereum_inquirer, et
             location_label=user_address,
             notes=f'Receive 5326023.631679255788142165 DAI as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
+            address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ),
     ]
+    assert events == expected_events
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_4]])
@@ -775,7 +792,7 @@ def test_uniswap_v3_remove_liquidity(database, ethereum_inquirer, eth_transactio
         timestamp=Timestamp(1672413263),
         block_number=16298410,
         from_address=ADDY_4,
-        to_address='0xC36442b4a4522E871399CD717aBDD847Ab11FE88',
+        to_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         value=0,
         gas=375016,
         gas_price=18022413529,
@@ -789,7 +806,7 @@ def test_uniswap_v3_remove_liquidity(database, ethereum_inquirer, eth_transactio
         trace_id=27,
         timestamp=Timestamp(1672413263),
         block_number=16298410,
-        from_address='0xC36442b4a4522E871399CD717aBDD847Ab11FE88',
+        from_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         to_address=ADDY_4,
         value=1000374356073654694973,
     )
@@ -895,7 +912,7 @@ def test_uniswap_v3_remove_liquidity(database, ethereum_inquirer, eth_transactio
 
     assert len(events) == 3
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1672413263000),
@@ -907,7 +924,7 @@ def test_uniswap_v3_remove_liquidity(database, ethereum_inquirer, eth_transactio
             location_label=ADDY_4,
             notes='Burned 0.004505819651212348 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1672413263000),
@@ -919,7 +936,8 @@ def test_uniswap_v3_remove_liquidity(database, ethereum_inquirer, eth_transactio
             location_label=ADDY_4,
             notes='Remove 1000.374356073654694973 ETH from uniswap-v3 LP 389043',
             counterparty=CPT_UNISWAP_V3,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=56,
             timestamp=TimestampMS(1672413263000),
@@ -931,6 +949,7 @@ def test_uniswap_v3_remove_liquidity(database, ethereum_inquirer, eth_transactio
             location_label=ADDY_4,
             notes='Remove 198401.464386 USDC from uniswap-v3 LP 389043',
             counterparty=CPT_UNISWAP_V3,
+            address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ),
     ]
     assert events == expected_events
@@ -952,7 +971,7 @@ def test_uniswap_v3_add_liquidity(database, ethereum_inquirer, eth_transactions)
         timestamp=Timestamp(1672409279),
         block_number=16298078,
         from_address=ADDY_5,
-        to_address='0xC36442b4a4522E871399CD717aBDD847Ab11FE88',
+        to_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         value=0,
         gas=1172373,
         gas_price=14477765135,
@@ -1033,7 +1052,7 @@ def test_uniswap_v3_add_liquidity(database, ethereum_inquirer, eth_transactions)
 
     assert len(events) == 4
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1672409279000),
@@ -1045,7 +1064,7 @@ def test_uniswap_v3_add_liquidity(database, ethereum_inquirer, eth_transactions)
             location_label=ADDY_5,
             notes='Burned 0.005657780314871785 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=308,
             timestamp=TimestampMS(1672409279000),
@@ -1057,7 +1076,8 @@ def test_uniswap_v3_add_liquidity(database, ethereum_inquirer, eth_transactions)
             location_label=ADDY_5,
             notes='Deposit 11257.999999195502514358 DAI to uniswap-v3 LP 401357',
             counterparty=CPT_UNISWAP_V3,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=309,
             timestamp=TimestampMS(1672409279000),
@@ -1069,7 +1089,8 @@ def test_uniswap_v3_add_liquidity(database, ethereum_inquirer, eth_transactions)
             location_label=ADDY_5,
             notes='Deposit 13732.357062 USDC to uniswap-v3 LP 401357',
             counterparty=CPT_UNISWAP_V3,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=311,
             timestamp=TimestampMS(1672409279000),
@@ -1081,6 +1102,7 @@ def test_uniswap_v3_add_liquidity(database, ethereum_inquirer, eth_transactions)
             location_label=ADDY_5,
             notes='Create uniswap-v3 LP with id 401357',
             counterparty=CPT_UNISWAP_V3,
+            address=ZERO_ADDRESS,
             extra_data={'token_id': 401357, 'token_name': 'Uniswap V3 Positions NFT-V1'},
         ),
     ]

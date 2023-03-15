@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
@@ -39,7 +39,7 @@ def test_mint_ens_name(database, ethereum_inquirer):
     )
     expires_timestamp = 2142055301
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1637144069000,
@@ -51,7 +51,7 @@ def test_mint_ens_name(database, ethereum_inquirer):
             location_label=ADDY,
             notes='Burned 0.023654025517055036 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=2,
             timestamp=1637144069000,
@@ -63,16 +63,17 @@ def test_mint_ens_name(database, ethereum_inquirer):
             location_label=ADDY,
             notes=f'Register ENS name hania.eth for 0.019345192039577752 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
             counterparty=CPT_ENS,
+            address=string_to_evm_address('0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5'),
         )]
     assert expected_events == events[0:2]
     erc721_asset = get_or_create_evm_token(  # TODO: Better way to test than this for ERC721 ...?
         userdb=database,
-        evm_address='0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85',
+        evm_address=string_to_evm_address('0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85'),
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC721,
         evm_inquirer=ethereum_inquirer,
     )
-    assert events[2] == HistoryBaseEntry(
+    assert events[2] == EvmEvent(
         event_identifier=tx_hash,
         sequence_index=47,
         timestamp=1637144069000,
@@ -84,6 +85,7 @@ def test_mint_ens_name(database, ethereum_inquirer):
         location_label=ADDY,
         notes='Receive ENS name ERC721 token for hania.eth with id 88045077199635585930173998576189366882372899073811035545363728149974713265418',  # noqa: E501
         counterparty=CPT_ENS,
+        address=string_to_evm_address('0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5'),
         extra_data={
             'token_id': 88045077199635585930173998576189366882372899073811035545363728149974713265418,  # noqa: E501
             'token_name': 'ERC721 token',
@@ -104,7 +106,7 @@ def test_text_changed(ethereum_transaction_decoder, ethereum_accounts):
         timestamp=0,
         block_number=0,
         from_address=ethereum_accounts[0],
-        to_address='0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41',
+        to_address=string_to_evm_address('0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41'),
         value=ZERO,
         gas=0,
         gas_price=0,
@@ -151,7 +153,7 @@ def test_text_changed(ethereum_transaction_decoder, ethereum_accounts):
         tx_receipt=receipt,
     )
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
             timestamp=0,
@@ -162,10 +164,10 @@ def test_text_changed(ethereum_transaction_decoder, ethereum_accounts):
             balance=Balance(),
             location_label='0x4bBa290826C253BD854121346c370a9886d1bC26',
             notes='Burned 0 ETH for gas',
-            counterparty='gas',
+            counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=290,
             timestamp=0,
@@ -176,10 +178,11 @@ def test_text_changed(ethereum_transaction_decoder, ethereum_accounts):
             balance=Balance(),
             location_label='0x4bBa290826C253BD854121346c370a9886d1bC26',
             notes='Set ENS url attribute for nebolax.eth',
-            counterparty='ens',
+            counterparty=CPT_ENS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41'),
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=291,
             timestamp=0,
@@ -190,9 +193,10 @@ def test_text_changed(ethereum_transaction_decoder, ethereum_accounts):
             balance=Balance(),
             location_label='0x4bBa290826C253BD854121346c370a9886d1bC26',
             notes='Set ENS avatar attribute for nebolax.eth',
-            counterparty='ens',
+            counterparty=CPT_ENS,
             identifier=None,
             extra_data=None,
+            address=string_to_evm_address('0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41'),
         ),
     ]
     assert events == expected_events
@@ -211,7 +215,7 @@ def test_set_resolver(ethereum_transaction_decoder, ethereum_accounts):
         timestamp=0,
         block_number=0,
         from_address=ethereum_accounts[0],
-        to_address='0x084b1c3C81545d370f3634392De611CaaBFf8148',
+        to_address=string_to_evm_address('0x084b1c3C81545d370f3634392De611CaaBFf8148'),
         value=ZERO,
         gas=0,
         gas_price=0,
@@ -258,7 +262,7 @@ def test_set_resolver(ethereum_transaction_decoder, ethereum_accounts):
     )
 
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
             timestamp=0,
@@ -269,10 +273,10 @@ def test_set_resolver(ethereum_transaction_decoder, ethereum_accounts):
             balance=Balance(),
             location_label='0x4bBa290826C253BD854121346c370a9886d1bC26',
             notes='Burned 0 ETH for gas',
-            counterparty='gas',
+            counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=271,
             timestamp=0,
@@ -283,9 +287,10 @@ def test_set_resolver(ethereum_transaction_decoder, ethereum_accounts):
             balance=Balance(amount=ZERO, usd_value=ZERO),
             location_label='0x4bBa290826C253BD854121346c370a9886d1bC26',
             notes='Set ENS address for nebolax.eth',
-            counterparty='ens',
+            counterparty=CPT_ENS,
             identifier=None,
             extra_data=None,
+            address=string_to_evm_address('0x084b1c3C81545d370f3634392De611CaaBFf8148'),
         ),
     ]
     assert events == expected_events

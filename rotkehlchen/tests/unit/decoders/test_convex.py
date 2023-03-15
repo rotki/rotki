@@ -3,11 +3,8 @@ import warnings as test_warnings
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import (
-    HistoryBaseEntry,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.base import HistoryEventSubType, HistoryEventType
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_POOLS, CPT_CONVEX
@@ -21,7 +18,13 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_CRV, A_CVX, A_ETH
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChainID, EvmTransaction, Location, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChainID,
+    EvmTransaction,
+    Location,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
@@ -144,7 +147,7 @@ def test_booster_deposit(database, ethereum_inquirer, eth_transactions):
     )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=0,
@@ -158,7 +161,7 @@ def test_booster_deposit(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=461,
             timestamp=0,
@@ -170,6 +173,7 @@ def test_booster_deposit(database, ethereum_inquirer, eth_transactions):
             location_label='0xC960338B529e0353F570f62093Fd362B8FB55f0B',
             notes='Deposit 3.996511863643743872 steCRV into convex',
             counterparty=CPT_CONVEX,
+            address=string_to_evm_address('0x989AEb4d175e16225E39E87d0D97A3360524AD80'),
             identifier=None,
             extra_data=None,
         ),
@@ -246,7 +250,7 @@ def test_booster_withdraw(database, ethereum_inquirer, eth_transactions):
     )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=0,
@@ -260,7 +264,7 @@ def test_booster_withdraw(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=223,
             timestamp=0,
@@ -272,9 +276,10 @@ def test_booster_withdraw(database, ethereum_inquirer, eth_transactions):
             location_label='0x53913A03a065f685097f8E8f40284D58016bB0F9',
             notes='Return 364.338089842514973505 cvxcvxFXSFXS-f to convex',
             counterparty=CPT_CONVEX,
+            address=ZERO_ADDRESS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=229,
             timestamp=0,
@@ -286,6 +291,7 @@ def test_booster_withdraw(database, ethereum_inquirer, eth_transactions):
             location_label='0x53913A03a065f685097f8E8f40284D58016bB0F9',
             notes='Withdraw 364.338089842514973505 cvxFXSFXS-f from convex',
             counterparty=CPT_CONVEX,
+            address=string_to_evm_address('0xF403C135812408BFbE8713b5A23a04b3D48AAE31'),
             identifier=None,
             extra_data=None,
         ),
@@ -379,11 +385,12 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
         transactions=eth_transactions,
     )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    timestamp = TimestampMS(1655675488000)
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
-            timestamp=1655675488000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -394,10 +401,10 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=450,
-            timestamp=1655675488000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
@@ -406,12 +413,13 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
             location_label='0xFb305A40Dac406BdCF3b85F6311e5430770f44bA',
             notes='Claim 860.972070701362256315 CRV reward from convex',
             counterparty=CPT_CONVEX,
+            address=string_to_evm_address('0x3Fe65692bfCD0e6CF84cB1E7d24108E434A7587e'),
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=451,
-            timestamp=1655675488000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
@@ -420,12 +428,13 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
             location_label='0xFb305A40Dac406BdCF3b85F6311e5430770f44bA',
             notes='Claim 73.182626009615791786 CVX reward from convex',
             counterparty=CPT_CONVEX,
+            address=ZERO_ADDRESS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=453,
-            timestamp=1655675488000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
@@ -434,6 +443,7 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
             location_label='0xFb305A40Dac406BdCF3b85F6311e5430770f44bA',
             notes='Claim 587.269770914653758937 3Crv reward from convex',
             counterparty=CPT_CONVEX,
+            address=string_to_evm_address('0x7091dbb7fcbA54569eF1387Ac89Eb2a5C9F6d2EA'),
             identifier=None,
             extra_data=None,
         ),
@@ -509,7 +519,7 @@ def test_cvxcrv_withdraw(database, ethereum_inquirer, eth_transactions):
     )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=0,
@@ -523,7 +533,7 @@ def test_cvxcrv_withdraw(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=424,
             timestamp=0,
@@ -535,6 +545,7 @@ def test_cvxcrv_withdraw(database, ethereum_inquirer, eth_transactions):
             location_label='0xe81FC42336c9314A9Be1EDB3F50eA9e275C93df3',
             notes='Withdraw 15719.844875963195659251 cvxCRV from convex',
             counterparty=CPT_CONVEX,
+            address=string_to_evm_address('0x3Fe65692bfCD0e6CF84cB1E7d24108E434A7587e'),
             identifier=None,
             extra_data=None,
         ),
@@ -611,7 +622,7 @@ def test_cvxcrv_stake(database, ethereum_inquirer, eth_transactions):
     )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=0,
@@ -625,7 +636,7 @@ def test_cvxcrv_stake(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=426,
             timestamp=0,
@@ -637,9 +648,10 @@ def test_cvxcrv_stake(database, ethereum_inquirer, eth_transactions):
             location_label='0x2AcEcBF2Ee5BFc8eed599D58835EE9A7c45F3E2c',
             notes='Deposit 166.415721340864759482 cvxCRV into convex',
             counterparty=CPT_CONVEX,
+            address=string_to_evm_address('0x3Fe65692bfCD0e6CF84cB1E7d24108E434A7587e'),
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=427,
             timestamp=0,
@@ -650,7 +662,7 @@ def test_cvxcrv_stake(database, ethereum_inquirer, eth_transactions):
             balance=Balance(amount=FVal('1.157920892373161954235709850E+59'), usd_value=ZERO),
             location_label='0x2AcEcBF2Ee5BFc8eed599D58835EE9A7c45F3E2c',
             notes='Set cvxCRV spending approval of 0x2AcEcBF2Ee5BFc8eed599D58835EE9A7c45F3E2c by 0x3Fe65692bfCD0e6CF84cB1E7d24108E434A7587e to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
-            counterparty='0x3Fe65692bfCD0e6CF84cB1E7d24108E434A7587e',
+            address=string_to_evm_address('0x3Fe65692bfCD0e6CF84cB1E7d24108E434A7587e'),
             identifier=None,
             extra_data=None,
         ),
@@ -727,7 +739,7 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
     )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=0,
@@ -741,7 +753,7 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=343,
             timestamp=0,
@@ -753,9 +765,10 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
             location_label='0x5B186c93A50D3CB435fE2933427d36E6Dc688e4b',
             notes='Deposit 1 CVX into convex',
             counterparty=CPT_CONVEX,
+            address=string_to_evm_address('0xCF50b810E57Ac33B91dCF525C6ddd9881B139332'),
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=344,
             timestamp=0,
@@ -766,7 +779,7 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
             balance=Balance(amount=FVal('1.157920892373161954235709850E+59'), usd_value=ZERO),
             location_label='0x5B186c93A50D3CB435fE2933427d36E6Dc688e4b',
             notes='Set CVX spending approval of 0x5B186c93A50D3CB435fE2933427d36E6Dc688e4b by 0xCF50b810E57Ac33B91dCF525C6ddd9881B139332 to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
-            counterparty='0xCF50b810E57Ac33B91dCF525C6ddd9881B139332',
+            address=string_to_evm_address('0xCF50b810E57Ac33B91dCF525C6ddd9881B139332'),
             identifier=None,
             extra_data=None,
         ),
@@ -873,7 +886,7 @@ def test_cvx_get_reward(database, ethereum_inquirer, eth_transactions):
     )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=0,
@@ -887,7 +900,7 @@ def test_cvx_get_reward(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=220,
             timestamp=0,
@@ -899,6 +912,7 @@ def test_cvx_get_reward(database, ethereum_inquirer, eth_transactions):
             location_label='0x95c5582D781d507A084c9E5f885C77BabACf8EeA',
             notes='Claim 31.768689199711000544 cvxCRV reward from convex',
             counterparty=CPT_CONVEX,
+            address=string_to_evm_address('0xCF50b810E57Ac33B91dCF525C6ddd9881B139332'),
             identifier=None,
             extra_data=None,
         ),
@@ -965,7 +979,7 @@ def test_cvx_withdraw(database, ethereum_inquirer, eth_transactions):
     )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=0,
@@ -979,7 +993,7 @@ def test_cvx_withdraw(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=423,
             timestamp=0,
@@ -991,6 +1005,7 @@ def test_cvx_withdraw(database, ethereum_inquirer, eth_transactions):
             location_label='0x84BCE169c271e1c1777715bb0dd38Ad9e6381BAa',
             notes='Withdraw 550.028156587407675374 CVX from convex',
             counterparty=CPT_CONVEX,
+            address=string_to_evm_address('0xCF50b810E57Ac33B91dCF525C6ddd9881B139332'),
             identifier=None,
             extra_data=None,
         ),
@@ -1048,7 +1063,7 @@ def test_claimzap_abracadabras(database, ethereum_inquirer, eth_transactions):
     )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=0,
@@ -1062,7 +1077,7 @@ def test_claimzap_abracadabras(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=593,
             timestamp=0,
@@ -1074,6 +1089,7 @@ def test_claimzap_abracadabras(database, ethereum_inquirer, eth_transactions):
             location_label='0x999EcCEa3C4f9219B1B1B42b4830e62c26004B40',
             notes='Claim 118.309589873153954467 CVX reward from convex',
             counterparty=CPT_CONVEX,
+            address=string_to_evm_address('0x3Ba207c25A278524e1cC7FaAea950753049072A4'),
             identifier=None,
             extra_data=None,
         ),
@@ -1140,7 +1156,7 @@ def test_claimzap_cvx_locker(database, ethereum_inquirer, eth_transactions):
     )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=0,
@@ -1154,7 +1170,7 @@ def test_claimzap_cvx_locker(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=307,
             timestamp=0,
@@ -1166,6 +1182,7 @@ def test_claimzap_cvx_locker(database, ethereum_inquirer, eth_transactions):
             location_label='0x0C3Cc503EaE928Ed6B5b01B8a9EE8de2855d03Ac',
             notes='Claim 177.668241365710099244 cvxCRV reward from convex',
             counterparty=CPT_CONVEX,
+            address=string_to_evm_address('0xD18140b4B819b895A3dba5442F959fA44994AF50'),
             identifier=None,
             extra_data=None,
         ),

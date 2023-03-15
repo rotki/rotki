@@ -3,15 +3,16 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_CDAI, A_CETH, A_COMP, A_DAI, A_ETH, A_USDC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, Timestamp, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -38,11 +39,12 @@ def test_compound_ether_deposit(database, ethereum_inquirer):
         database=database,
         tx_hash=tx_hash,
     )
+    timestamp = TimestampMS(1598639099000)
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
-            timestamp=1598639099000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -51,10 +53,10 @@ def test_compound_ether_deposit(database, ethereum_inquirer):
             location_label=ADDY,
             notes='Burned 0.014122318 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=1,
-            timestamp=1598639099000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
@@ -63,10 +65,11 @@ def test_compound_ether_deposit(database, ethereum_inquirer):
             location_label=ADDY,
             notes='Deposit 0.5 ETH to compound',
             counterparty=CPT_COMPOUND,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'),
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=33,
-            timestamp=1598639099000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
@@ -75,6 +78,7 @@ def test_compound_ether_deposit(database, ethereum_inquirer):
             location_label=ADDY,
             notes='Receive 24.97649991 cETH from compound',
             counterparty=CPT_COMPOUND,
+            address=string_to_evm_address('0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'),
         )]
     assert events == expected_events
 
@@ -91,11 +95,12 @@ def test_compound_ether_withdraw(database, ethereum_inquirer):
         database=database,
         tx_hash=tx_hash,
     )
+    timestamp = TimestampMS(1598813490000)
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
-            timestamp=1598813490000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -104,10 +109,10 @@ def test_compound_ether_withdraw(database, ethereum_inquirer):
             location_label=ADDY,
             notes='Burned 0.02858544 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=1,
-            timestamp=1598813490000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
@@ -116,10 +121,11 @@ def test_compound_ether_withdraw(database, ethereum_inquirer):
             location_label=ADDY,
             notes='Return 24.97649991 cETH to compound',
             counterparty=CPT_COMPOUND,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'),
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=50,
-            timestamp=1598813490000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
@@ -128,6 +134,7 @@ def test_compound_ether_withdraw(database, ethereum_inquirer):
             location_label=ADDY,
             notes='Withdraw 0.500003923413507454 ETH from compound',
             counterparty=CPT_COMPOUND,
+            address=string_to_evm_address('0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'),
         )]
     assert events == expected_events
 
@@ -147,14 +154,15 @@ def test_compound_deposit_with_comp_claim(
         database=database,
         tx_hash=tx_hash,
     )
+    timestamp = TimestampMS(1607572696000)
     amount = FVal('14309.930911242041089052')
     wrapped_amount = FVal('687371.5068874')
     interest = FVal('0.076123031460129653')
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
-            timestamp=1607572696000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -163,10 +171,10 @@ def test_compound_deposit_with_comp_claim(
             location_label=ADDY2,
             notes='Burned 0.00945248 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=241,
-            timestamp=1607572696000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
@@ -175,10 +183,11 @@ def test_compound_deposit_with_comp_claim(
             location_label=ADDY2,
             notes=f'Collect {interest} COMP from compound',
             counterparty=CPT_COMPOUND,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B'),
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=243,
-            timestamp=1607572696000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
@@ -187,10 +196,11 @@ def test_compound_deposit_with_comp_claim(
             location_label=ADDY2,
             notes=f'Deposit {amount} DAI to compound',
             counterparty=CPT_COMPOUND,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643'),
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=250,
-            timestamp=1607572696000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
@@ -199,6 +209,7 @@ def test_compound_deposit_with_comp_claim(
             location_label=ADDY2,
             notes=f'Receive {wrapped_amount} cDAI from compound',
             counterparty=CPT_COMPOUND,
+            address=string_to_evm_address('0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643'),
         )]
     assert events == expected_events
 
@@ -211,14 +222,14 @@ def test_compound_multiple_comp_claim(database, ethereum_inquirer):
     as a simple receive.
     """
     tx_hash = deserialize_evm_tx_hash('0x25d341421044fa27006c0ec8df11067d80f69b2d2135065828f1992fa6868a49')  # noqa: E501
-    timestamp = Timestamp(1622430975000)
+    timestamp = TimestampMS(1622430975000)
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         database=database,
         tx_hash=tx_hash,
     )
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
@@ -230,7 +241,7 @@ def test_compound_multiple_comp_claim(database, ethereum_inquirer):
             location_label=ADDY3,
             notes='Burned 0.074799254 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=25,
             timestamp=timestamp,
@@ -242,7 +253,8 @@ def test_compound_multiple_comp_claim(database, ethereum_inquirer):
             location_label=ADDY3,
             notes='Collect 3.037897781413961524 COMP from compound',
             counterparty=CPT_COMPOUND,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B'),
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=29,
             timestamp=timestamp,
@@ -254,7 +266,8 @@ def test_compound_multiple_comp_claim(database, ethereum_inquirer):
             location_label=ADDY3,
             notes='Collect 0.03855352439614718 COMP from compound',
             counterparty=CPT_COMPOUND,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B'),
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=36,
             timestamp=timestamp,
@@ -266,7 +279,8 @@ def test_compound_multiple_comp_claim(database, ethereum_inquirer):
             location_label=ADDY3,
             notes='Collect 0.000186677589499495 COMP from compound',
             counterparty=CPT_COMPOUND,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B'),
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=39,
             timestamp=timestamp,
@@ -278,7 +292,8 @@ def test_compound_multiple_comp_claim(database, ethereum_inquirer):
             location_label=ADDY3,
             notes='Collect 0.001710153220923912 COMP from compound',
             counterparty=CPT_COMPOUND,
-        ), HistoryBaseEntry(  # this appeared as Receive at time of writing the test
+            address=string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B'),
+        ), EvmEvent(  # this appeared as Receive at time of writing the test
             event_identifier=tx_hash,
             sequence_index=44,
             timestamp=timestamp,
@@ -290,6 +305,7 @@ def test_compound_multiple_comp_claim(database, ethereum_inquirer):
             location_label=ADDY3,
             notes='Collect 0.000000000000000015 COMP from compound',
             counterparty=CPT_COMPOUND,
+            address=string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B'),
         )]
     assert events == expected_events
 
@@ -310,7 +326,7 @@ def test_compound_borrow(
         tx_hash=tx_hash,
     )
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1578114925000),
@@ -322,7 +338,7 @@ def test_compound_borrow(
             location_label=ADDR_BORROWS,
             notes='Burned 0.002977007 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=9,
             timestamp=TimestampMS(1578114925000),
@@ -334,6 +350,7 @@ def test_compound_borrow(
             location_label=ADDR_BORROWS,
             notes='Borrow 1500000 USDC from compound',
             counterparty=CPT_COMPOUND,
+            address=string_to_evm_address('0x39AA39c021dfbaE8faC545936693aC917d5E7563'),
         ),
     ]
     assert expected_events == events
@@ -355,7 +372,7 @@ def test_compound_payback(
         tx_hash=tx_hash,
     )
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1605818798000),
@@ -367,7 +384,7 @@ def test_compound_payback(
             location_label=ADDR_REPAYS,
             notes='Burned 0.0037086 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=246,
             timestamp=TimestampMS(1605818798000),
@@ -379,7 +396,8 @@ def test_compound_payback(
             location_label=ADDR_REPAYS,
             notes='Collect 1.209128558800877907 COMP from compound',
             counterparty=CPT_COMPOUND,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B'),
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=248,
             timestamp=TimestampMS(1605818798000),
@@ -391,6 +409,7 @@ def test_compound_payback(
             location_label=ADDR_REPAYS,
             notes='Repay 11637.762191 USDC to compound',
             counterparty=CPT_COMPOUND,
+            address=string_to_evm_address('0x39AA39c021dfbaE8faC545936693aC917d5E7563'),
         ),
     ]
     assert expected_events == events
@@ -412,7 +431,7 @@ def test_compound_borrow_eth(
         tx_hash=tx_hash,
     )
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1581618106000),
@@ -424,7 +443,7 @@ def test_compound_borrow_eth(
             location_label=ADDR_BORROWS_ETH,
             notes='Burned 0.001882176 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1581618106000),
@@ -436,6 +455,7 @@ def test_compound_borrow_eth(
             location_label=ADDR_BORROWS_ETH,
             notes='Borrow 0.1 ETH from compound',
             counterparty=CPT_COMPOUND,
+            address=string_to_evm_address('0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'),
         ),
     ]
     assert expected_events == events
@@ -457,7 +477,7 @@ def test_compound_repays_eth(
         tx_hash=tx_hash,
     )
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1590532744000),
@@ -469,7 +489,7 @@ def test_compound_repays_eth(
             location_label=ADDR_REPAYS_ETH,
             notes='Burned 0.003931524 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1590532744000),
@@ -481,6 +501,7 @@ def test_compound_repays_eth(
             location_label=ADDR_REPAYS_ETH,
             notes='Repay 0.2 ETH to compound',
             counterparty=CPT_COMPOUND,
+            address=string_to_evm_address('0xf859A1AD94BcF445A406B892eF0d3082f4174088'),
         ),
     ]
     assert expected_events == events

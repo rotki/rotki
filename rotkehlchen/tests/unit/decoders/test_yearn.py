@@ -1,11 +1,12 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V1, CPT_YEARN_V2
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -100,7 +101,7 @@ def test_deposit_yearn_v2(database, ethereum_inquirer, eth_transactions):
 
     assert len(events) == 3
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
@@ -115,7 +116,7 @@ def test_deposit_yearn_v2(database, ethereum_inquirer, eth_transactions):
             location_label=user_address,
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=121,
             timestamp=TimestampMS(1646375440000),
@@ -127,7 +128,8 @@ def test_deposit_yearn_v2(database, ethereum_inquirer, eth_transactions):
             location_label=user_address,
             notes='Deposit 0.02192084 YFI in yearn-v2 vault YFI yVault',
             counterparty=CPT_YEARN_V2,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0xdb25cA703181E7484a155DD612b06f57E12Be5F0'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=155,
             timestamp=TimestampMS(1646375440000),
@@ -139,6 +141,7 @@ def test_deposit_yearn_v2(database, ethereum_inquirer, eth_transactions):
             location_label=user_address,
             notes='Receive 0.02164738945170483 YFI yVault after deposit in a yearn-v2 vault',
             counterparty=CPT_YEARN_V2,
+            address=ZERO_ADDRESS,
         )]
     assert events == expected_events
 
@@ -209,7 +212,7 @@ def test_withdraw_yearn_v2(database, ethereum_inquirer, eth_transactions):
 
     assert len(events) == 3
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
@@ -224,7 +227,7 @@ def test_withdraw_yearn_v2(database, ethereum_inquirer, eth_transactions):
             location_label=user_address,
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=79,
             timestamp=TimestampMS(1646375440000),
@@ -236,7 +239,8 @@ def test_withdraw_yearn_v2(database, ethereum_inquirer, eth_transactions):
             location_label=user_address,
             notes='Return 86.244532826510255848 yv1INCH to a yearn-v2 vault',
             counterparty=CPT_YEARN_V2,
-        ), HistoryBaseEntry(
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=80,
             timestamp=TimestampMS(1646375440000),
@@ -248,6 +252,7 @@ def test_withdraw_yearn_v2(database, ethereum_inquirer, eth_transactions):
             location_label=user_address,
             notes='Withdraw 92.236538270354905336 1INCH from yearn-v2 vault 1INCH yVault',
             counterparty=CPT_YEARN_V2,
+            address=string_to_evm_address('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'),
         )]
     assert events == expected_events
 
@@ -318,7 +323,7 @@ def test_deposit_yearn_v1(database, ethereum_inquirer, eth_transactions):
 
     assert len(events) == 3
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
@@ -333,7 +338,7 @@ def test_deposit_yearn_v1(database, ethereum_inquirer, eth_transactions):
             location_label=user_address,
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=290,
             timestamp=TimestampMS(1646375440000),
@@ -345,7 +350,8 @@ def test_deposit_yearn_v1(database, ethereum_inquirer, eth_transactions):
             location_label=user_address,
             notes='Deposit 0.980572717318809472 crvRenWBTC in yearn-v1 vault yearn Curve.fi renBTC/wBTC',  # noqa: E501
             counterparty=CPT_YEARN_V1,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x5334e150B938dd2b6bd040D9c4a03Cff0cED3765'),
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=291,
             timestamp=TimestampMS(1646375440000),
@@ -357,6 +363,7 @@ def test_deposit_yearn_v1(database, ethereum_inquirer, eth_transactions):
             location_label=user_address,
             notes='Receive 0.976977709586838245 yearn Curve.fi renBTC/wBTC after deposit in a yearn-v1 vault',  # noqa: E501
             counterparty=CPT_YEARN_V1,
+            address=ZERO_ADDRESS,
         )]
     assert events == expected_events
 
@@ -427,7 +434,7 @@ def test_withdraw_yearn_v1(database, ethereum_inquirer, eth_transactions):
 
     assert len(events) == 3
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
@@ -442,7 +449,7 @@ def test_withdraw_yearn_v1(database, ethereum_inquirer, eth_transactions):
             location_label=user_address,
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=79,
             timestamp=TimestampMS(1646375440000),
@@ -454,7 +461,8 @@ def test_withdraw_yearn_v1(database, ethereum_inquirer, eth_transactions):
             location_label=user_address,
             notes='Return 0.1084 yvcrvRenWBTC to a yearn-v1 vault',
             counterparty=CPT_YEARN_V1,
-        ), HistoryBaseEntry(
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=80,
             timestamp=TimestampMS(1646375440000),
@@ -466,5 +474,6 @@ def test_withdraw_yearn_v1(database, ethereum_inquirer, eth_transactions):
             location_label=user_address,
             notes='Withdraw 0.109958510122911208 crvRenWBTC from yearn-v1 vault yearn Curve.fi renBTC/wBTC',  # noqa: E501
             counterparty=CPT_YEARN_V1,
+            address=string_to_evm_address('0x5334e150B938dd2b6bd040D9c4a03Cff0cED3765'),
         )]
     assert events == expected_events
