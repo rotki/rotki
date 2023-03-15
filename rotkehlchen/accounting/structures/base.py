@@ -1,7 +1,7 @@
-import json
 import logging
 from collections.abc import Iterator
 from dataclasses import dataclass
+from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
@@ -52,11 +52,9 @@ HISTORY_EVENT_DB_TUPLE_READ = tuple[
     Optional[str],  # notes
     str,            # type
     str,            # subtype
-    Optional[str],  # counterparty
-    Optional[str],  # extra_data
 ]
 
-HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
+HISTORY_BASE_ENTRY_DB_TUPLE_WRITE = tuple[
     bytes,          # event_identifier
     int,            # sequence_index
     int,            # timestamp
@@ -68,77 +66,101 @@ HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
     Optional[str],  # notes
     str,            # type
     str,            # subtype
-    Optional[str],  # counterparty
-    Optional[str],  # extra_data
 ]
 
-HISTORY_EVENT_DB_TUPLE_WRITE_NO_EXTRA_DATA = tuple[
-    bytes,          # event_identifier
-    int,            # sequence_index
-    int,            # timestamp
-    str,            # location
-    Optional[str],  # location label
-    str,            # asset
-    str,            # amount
-    str,            # usd value
-    Optional[str],  # notes
-    str,            # type
-    str,            # subtype
-    Optional[str],  # counterparty
-]
 
-SUB_SWAPS_DETAILS = 'sub_swaps'
-LIQUITY_STAKING_DETAILS = 'liquity_staking'
+class HistoryEntryType(Enum):
+    """Type of a history entry.
 
-ALL_DETAILS_KEYS = {
-    SUB_SWAPS_DETAILS,
-    LIQUITY_STAKING_DETAILS,
-}
+    TODO: think of a better name. `HistoryEntryType` can be easily confused with `HistoryEventType`
+    """
+    BASE_ENTRY = auto()
+    EVM_EVENT = auto()
 
 
-def get_tx_event_type_identifier(event_type: HistoryEventType, event_subtype: HistoryEventSubType, counterparty: str) -> str:  # noqa: E501
-    return str(event_type) + '__' + str(event_subtype) + '__' + counterparty
+def determine_event_type(event_identifier: bytes, location: Location) -> HistoryEntryType:
+    if location == Location.KRAKEN or event_identifier.startswith(b'rotki_events'):
+        return HistoryEntryType.BASE_ENTRY
+
+    return HistoryEntryType.EVM_EVENT
 
 
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class HistoryBaseEntry(AccountingEventMixin):
     """
     Intended to be the base unit of any type of accounting. All trades, deposits,
     swaps etc. are going to be made up of multiple HistoryBaseEntry
     """
-    event_identifier: bytes  # identifier shared between related events
-    sequence_index: int  # When this transaction was executed relative to other related events
-    timestamp: TimestampMS
-    location: Location
-    event_type: HistoryEventType
-    event_subtype: HistoryEventSubType
-    asset: Asset
-    balance: Balance
-    # location_label is a string field that allows to provide more information about the location.
-    # When we use this structure in blockchains can be used to specify addresses for example.
-    # currently we use to identify the exchange name assigned by the user.
-    location_label: Optional[str] = None
-    notes: Optional[str] = None
-    # identifier for counterparty.
-    # For a send it's the target
-    # For a receive it's the sender
-    # For bridged transfer it's the bridge's network identifier
-    # For a protocol interaction it's the protocol.
-    counterparty: Optional[str] = None
-    identifier: Optional[int] = None
-    # contains event specific extra data. Optional, only for events that need to keep
-    # extra information such as the CDP ID of a makerdao vault etc.
-    extra_data: Optional[dict[str, Any]] = None
 
-    def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE_WRITE:
-        extra_data = json.dumps(self.extra_data) if self.extra_data else None
-        return self.serialize_for_db_without_extra_data() + (extra_data,)
+    def __init__(
+            self,
+            # identifier shared between related events
+            event_identifier: bytes,
+            # When this transaction was executed relative to other related events
+            sequence_index: int,
+            timestamp: TimestampMS,
+            location: Location,
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
+            asset: Asset,
+            balance: Balance,
+            # location_label is a string field that allows to provide more information about
+            # the location. When we use this structure in blockchains can be used to specify
+            # addresses for example. Currently we use to identify the exchange name assigned
+            # by the user.
+            location_label: Optional[str] = None,
+            notes: Optional[str] = None,
+            identifier: Optional[int] = None,
+    ) -> None:
+        self.event_identifier = event_identifier
+        self.sequence_index = sequence_index
+        self.timestamp = timestamp
+        self.location = location
+        self.event_type = event_type
+        self.event_subtype = event_subtype
+        self.asset = asset
+        self.balance = balance
+        self.location_label = location_label
+        self.notes = notes
+        self.identifier = identifier
 
-    def serialize_for_db_without_extra_data(self) -> HISTORY_EVENT_DB_TUPLE_WRITE_NO_EXTRA_DATA:
-        """
-        Serialize information for the database excluding the extra data field.
-        This is used when writting information edited by the user
-        """
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, HistoryBaseEntry) is False:
+            return False
+
+        return all([
+            self.event_identifier == other.event_identifier,
+            self.sequence_index == other.sequence_index,
+            self.timestamp == other.timestamp,
+            self.location == other.location,
+            self.event_type == other.event_type,
+            self.event_subtype == other.event_subtype,
+            self.asset == other.asset,
+            self.balance == other.balance,
+            self.location_label == other.location_label,
+            self.notes == other.notes,
+            self.identifier == other.identifier,
+        ])
+
+    def _history_base_entry_repr_fields(self) -> list[str]:
+        """Returns a list of printable fields"""
+        return [
+            f'{self.event_identifier=}',
+            f'{self.sequence_index=}',
+            f'{self.timestamp=}',
+            f'{self.location=}',
+            f'{self.event_type=}',
+            f'{self.event_subtype=}',
+            f'{self.asset=}',
+            f'{self.balance=}',
+            f'{self.location_label=}',
+            f'{self.notes=}',
+            f'{self.identifier=}',
+        ]
+
+    def __repr__(self) -> str:
+        return f'HistoryBaseEntry({",".join(self._history_base_entry_repr_fields())})'
+
+    def serialize_for_db(self) -> HISTORY_BASE_ENTRY_DB_TUPLE_WRITE:
         return (
             self.event_identifier,
             self.sequence_index,
@@ -151,25 +173,15 @@ class HistoryBaseEntry(AccountingEventMixin):
             self.notes,
             self.event_type.serialize(),
             self.event_subtype.serialize(),
-            self.counterparty,
         )
 
     @classmethod
     def deserialize_from_db(cls, entry: HISTORY_EVENT_DB_TUPLE_READ) -> 'HistoryBaseEntry':
-        """May raise:
+        """
+        May raise:
         - DeserializationError
         - UnknownAsset
         """
-        extra_data = None
-        if entry[13] is not None:
-            try:
-                extra_data = json.loads(entry[13])
-            except json.JSONDecodeError as e:
-                log.debug(
-                    f'Failed to read extra_data when reading HistoryBaseEntry entry '
-                    f'{entry} from the DB due to {str(e)}. Setting it to null',
-                )
-
         try:
             return cls(
                 identifier=entry[0],
@@ -186,8 +198,6 @@ class HistoryBaseEntry(AccountingEventMixin):
                 notes=entry[9],
                 event_type=HistoryEventType.deserialize(entry[10]),
                 event_subtype=HistoryEventSubType.deserialize(entry[11]),
-                counterparty=entry[12],
-                extra_data=extra_data,
             )
         except ValueError as e:
             raise DeserializationError(
@@ -198,7 +208,8 @@ class HistoryBaseEntry(AccountingEventMixin):
     @property
     def serialized_event_identifier(self) -> str:
         """Take a HistoryBaseEntry's event_identifier and returns a string representation."""
-        if self.location == Location.KRAKEN or self.event_identifier.startswith(b'rotki_events'):  # noqa: E501
+        event_type = determine_event_type(self.event_identifier, self.location)
+        if event_type == HistoryEntryType.BASE_ENTRY:
             return self.event_identifier.decode()
 
         hex_representation = self.event_identifier.hex()
@@ -227,14 +238,7 @@ class HistoryBaseEntry(AccountingEventMixin):
             'event_subtype': self.event_subtype.serialize_or_none(),
             'location_label': self.location_label,
             'notes': self.notes,
-            'counterparty': self.counterparty,
-            'extra_data': self.extra_data,
         }
-
-    def serialize_without_extra_data(self) -> dict[str, Any]:
-        result = self.serialize()
-        result.pop('extra_data')
-        return result
 
     @classmethod
     def deserialize(cls, data: dict[str, Any]) -> 'HistoryBaseEntry':
@@ -254,7 +258,6 @@ class HistoryBaseEntry(AccountingEventMixin):
             location_label=deserialize_optional(data['location_label'], str),
             notes=deserialize_optional(data['notes'], str),
             identifier=deserialize_optional(data['identifier'], int),
-            counterparty=deserialize_optional(data['counterparty'], str),
             asset=Asset(data['asset']).check_existence(),
             balance=Balance(
                 amount=deserialize_fval(
@@ -286,8 +289,6 @@ class HistoryBaseEntry(AccountingEventMixin):
         `include_counterparty` is True.
         """
         identifier = str(self.event_type) + '__' + str(self.event_subtype)
-        if include_counterparty and self.counterparty and not self.counterparty.startswith('0x'):
-            identifier += '__' + self.counterparty
 
         return identifier
 
@@ -315,18 +316,6 @@ class HistoryBaseEntry(AccountingEventMixin):
 
     def get_assets(self) -> list[Asset]:
         return [self.asset]
-
-    def has_details(self) -> bool:
-        if self.extra_data is None:
-            return False
-        return len(self.extra_data.keys() & ALL_DETAILS_KEYS) > 0
-
-    def get_details(self) -> Optional[dict[str, Any]]:
-        if self.extra_data is None:
-            return None
-
-        details = {k: v for k, v in self.extra_data.items() if k in ALL_DETAILS_KEYS}
-        return details if len(details) > 0 else None
 
     def process(
             self,
@@ -356,8 +345,8 @@ class HistoryBaseEntry(AccountingEventMixin):
                 taxable=True,
             )
             return 1
-        # else it's a decoded transaction event and should be processed there
-        return accounting.transactions.process(self, events_iterator)
+
+        return 1
 
     def __hash__(self) -> int:
         if self.identifier is not None:
