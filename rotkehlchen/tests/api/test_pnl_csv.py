@@ -12,8 +12,9 @@ import requests
 from rotkehlchen.accounting.export.csv import FILENAME_ALL_CSV
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
@@ -100,8 +101,8 @@ def test_history_export_download_csv(
     with rotki.data.db.user_write() as write_cursor:
         event_id = dbevents.add_history_event(
             write_cursor=write_cursor,
-            event=HistoryBaseEntry(  # The event identifier needs (atm) to have specific format
-                event_identifier=b'rotki_events_whatever',
+            event=EvmEvent(
+                event_identifier=GENESIS_HASH,
                 sequence_index=0,
                 timestamp=1569924574 * 1000,
                 location=Location.ETHEREUM,
@@ -118,6 +119,7 @@ def test_history_export_download_csv(
         start_ts=0,
         end_ts=1601040361,
         prepare_mocks=True,
+        unicode_check=True,
     )
     csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
     csv_dir2 = str(tmpdir_factory.mktemp('test_csv_dir2'))
@@ -142,6 +144,7 @@ def test_history_export_download_csv(
         start_ts=0,
         end_ts=1601040361,
         prepare_mocks=True,
+        unicode_check=True,
     )
     response = requests.get(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource') +
@@ -164,6 +167,7 @@ def test_history_export_download_csv(
         start_ts=0,
         end_ts=1601040361,
         prepare_mocks=True,
+        unicode_check=True,
     )
     response = requests.get(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'historydownloadingresource'))

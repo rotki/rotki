@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
 from unittest.mock import _patch, patch
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -729,6 +729,7 @@ def mock_history_processing(
         remote_errors: bool = False,
         history_start_ts: Optional[Timestamp] = None,
         history_end_ts: Optional[Timestamp] = None,
+        unicode_check: bool = False,
 ):
     """ Patch away the processing of history """
     if remote_errors is True and should_mock_history_processing is False:
@@ -817,9 +818,9 @@ def mock_history_processing(
             assert asset_movements[12].category == AssetMovementCategory.WITHDRAWAL
             assert asset_movements[12].asset == A_BTC
 
-        tx_events = [x for x in events if isinstance(x, HistoryBaseEntry) and x.serialized_event_identifier.startswith('0x')]  # noqa: E501
+        tx_events = [x for x in events if isinstance(x, EvmEvent) and x.serialized_event_identifier.startswith('0x')]  # noqa: E501
         gas_in_eth = FVal('14.36963')
-        assert len(tx_events) == 6
+        assert len(tx_events) == 7 if unicode_check else len(tx_events) == 6
         assert tx_events[0].location_label == ETH_ADDRESS1
         assert tx_events[0].event_type == HistoryEventType.SPEND
         assert tx_events[0].event_subtype == HistoryEventSubType.FEE
@@ -837,7 +838,7 @@ def mock_history_processing(
         assert tx_events[3].location_label == ETH_ADDRESS2
         assert tx_events[3].event_type == HistoryEventType.TRANSFER
         assert tx_events[3].event_subtype == HistoryEventSubType.NONE
-        assert tx_events[3].counterparty == ETH_ADDRESS1
+        assert tx_events[3].address == ETH_ADDRESS1
         assert tx_events[3].balance.amount == FVal('4.00003E-11')
 
         assert tx_events[4].location_label == ETH_ADDRESS3
@@ -848,7 +849,7 @@ def mock_history_processing(
         assert tx_events[5].location_label == ETH_ADDRESS3
         assert tx_events[5].event_type == HistoryEventType.TRANSFER
         assert tx_events[5].event_subtype == HistoryEventSubType.NONE
-        assert tx_events[5].counterparty == ETH_ADDRESS1
+        assert tx_events[5].address == ETH_ADDRESS1
         assert tx_events[5].balance.amount == FVal('5.005203E-10')
 
         return 1  # need to return a report id
@@ -955,6 +956,7 @@ def mock_history_processing_and_exchanges(
         history_start_ts: Optional[Timestamp] = None,
         history_end_ts: Optional[Timestamp] = None,
         remote_errors: bool = False,
+        unicode_check: bool = False,
 ) -> TradesTestSetup:
     """Prepare patches to mock querying of trade history from various locations for testing
 
@@ -969,6 +971,7 @@ def mock_history_processing_and_exchanges(
         history_start_ts=history_start_ts,
         history_end_ts=history_end_ts,
         remote_errors=remote_errors,
+        unicode_check=unicode_check,
     )
 
     polo_patch, binance_patch, bittrex_patch, bitmex_patch = mock_exchange_responses(
@@ -995,6 +998,7 @@ def prepare_rotki_for_history_processing_test(
         history_start_ts: Optional[Timestamp] = None,
         history_end_ts: Optional[Timestamp] = None,
         remote_errors: bool = False,
+        unicode_check: bool = False,
 ) -> TradesTestSetup:
     """Prepares rotki for the history processing tests
 
@@ -1011,6 +1015,7 @@ def prepare_rotki_for_history_processing_test(
         history_start_ts=history_start_ts,
         history_end_ts=history_end_ts,
         remote_errors=remote_errors,
+        unicode_check=unicode_check,
     )
     return setup
 

@@ -1,7 +1,6 @@
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.constants import RAY
@@ -21,6 +20,9 @@ from rotkehlchen.utils.misc import (
 
 from ..constants import CPT_AAVE_V2
 
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
+
 ENABLE_COLLATERAL = b'\x00\x05\x8aV\xea\x94e<\xdfO\x15-"z\xce"\xd4\xc0\n\xd9\x9e*C\xf5\x8c\xb7\xd9\xe3\xfe\xb2\x95\xf2'  # noqa: E501
 DISABLE_COLLATERAL = b'D\xc5\x8d\x816[f\xddK\x1a\x7f6\xc2Z\xa9{\x8cq\xc3a\xeeI7\xad\xc1\xa0\x00\x00"}\xb5\xdd'  # noqa: E501
 DEPOSIT = b'\xdehW!\x95D\xbb[wF\xf4\x8e\xd3\x0b\xe68o\xef\xc6\x1b/\x86L\xac\xf5Y\x89;\xf5\x0f\xd9Q'
@@ -36,7 +38,7 @@ class Aavev2Decoder(DecoderInterface):
             token: 'EvmToken',
             transaction: EvmTransaction,
             tx_log: EvmTxReceiptLog,
-    ) -> Optional[EvmEvent]:
+    ) -> Optional['EvmEvent']:
         user = hex_or_bytes_to_address(tx_log.topics[2])
         if self.base.is_tracked(user) is False:
             return None
@@ -57,7 +59,7 @@ class Aavev2Decoder(DecoderInterface):
             self,
             token: 'EvmToken',
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
     ) -> None:
         """Decode aave v2 deposit event"""
         user = hex_or_bytes_to_address(tx_log.data[:32])
@@ -97,7 +99,7 @@ class Aavev2Decoder(DecoderInterface):
             self,
             token: 'EvmToken',
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
     ) -> None:
         """Decode aave v2 withdrawal event"""
         user = hex_or_bytes_to_address(tx_log.topics[2])
@@ -135,7 +137,7 @@ class Aavev2Decoder(DecoderInterface):
             self,
             token: 'EvmToken',
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
     ) -> None:
         """Decode aave v2 borrow event"""
         on_behalf_of = hex_or_bytes_to_address(tx_log.topics[2])
@@ -174,7 +176,7 @@ class Aavev2Decoder(DecoderInterface):
             self,
             token: 'EvmToken',
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
     ) -> None:
         """Decode aave v2 repay event"""
         user = hex_or_bytes_to_address(tx_log.topics[2])
@@ -212,10 +214,10 @@ class Aavev2Decoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         """Decodes AAVE V2 Lending Pool events"""
         event_signature = tx_log.topics[0]
         if event_signature not in (ENABLE_COLLATERAL, DISABLE_COLLATERAL, DEPOSIT, WITHDRAW, BORROW, REPAY):  # noqa: E501

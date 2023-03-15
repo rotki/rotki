@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.base import get_tx_event_type_identifier
+from rotkehlchen.accounting.structures.evm_event import get_tx_event_type_identifier
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V1
 from rotkehlchen.chain.evm.accounting.interfaces import DepositableAccountantInterface

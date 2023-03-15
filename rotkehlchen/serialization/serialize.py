@@ -5,7 +5,7 @@ from web3.datastructures import AttributeDict
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceType
-from rotkehlchen.accounting.structures.base import StakingEvent
+from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, StakingEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
@@ -188,6 +188,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             BalanceType,
             CostBasisMethod,
             EvmTokenKind,
+            HistoryBaseEntryType,
     )):
         return str(entry)
 

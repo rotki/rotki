@@ -2,7 +2,6 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
@@ -20,6 +19,7 @@ from .constants import CPT_CURVE
 from .pools_cache import read_curve_pools
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
@@ -59,12 +59,12 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             self,
             transaction: EvmTransaction,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             user_address: ChecksumEvmAddress,
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         """Decode information related to withdrawing assets from curve pools"""
-        withdrawal_events: list[EvmEvent] = []
-        return_event: Optional[EvmEvent] = None
+        withdrawal_events: list['EvmEvent'] = []
+        return_event: Optional['EvmEvent'] = None
         for event in decoded_events:
             try:
                 crypto_asset = event.asset.resolve_to_crypto_asset()
@@ -134,12 +134,12 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             self,
             transaction: EvmTransaction,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             user_address: ChecksumEvmAddress,
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         """Decode information related to depositing assets in curve pools"""
-        deposit_events: list[EvmEvent] = []
-        receive_event: Optional[EvmEvent] = None
+        deposit_events: list['EvmEvent'] = []
+        receive_event: Optional['EvmEvent'] = None
         for event in decoded_events:
             try:
                 crypto_asset = event.asset.resolve_to_crypto_asset()
@@ -225,10 +225,10 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         if tx_log.topics[0] in (
             REMOVE_LIQUIDITY,
             REMOVE_ONE,
@@ -263,7 +263,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            event: EvmEvent,
+            event: 'EvmEvent',
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> bool:

@@ -14,7 +14,6 @@ from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
@@ -209,6 +208,7 @@ from rotkehlchen.types import (
 from .types import EvmPendingTransactionDecodingApiData, EvmTransactionDecodingApiData
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
     from rotkehlchen.db.filtering import HistoryEventFilterQuery
     from rotkehlchen.exchanges.kraken import KrakenAccountType
@@ -1141,12 +1141,12 @@ class EvmEventResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')
-    def put(self, event: EvmEvent) -> Response:
+    def put(self, event: 'EvmEvent') -> Response:
         return self.rest_api.add_history_event(event=event)
 
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json')
-    def patch(self, event: EvmEvent) -> Response:
+    def patch(self, event: 'EvmEvent') -> Response:
         return self.rest_api.edit_history_event(event=event)
 
     @require_loggedin_user()

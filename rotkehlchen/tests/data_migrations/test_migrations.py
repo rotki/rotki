@@ -537,7 +537,7 @@ def test_migration_9(database) -> None:
         assert all([x[0] == 'J'] for x in cursor)
         cursor.execute('SELECT COUNT(*) from history_events_mappings WHERE name="chain_id"')
         assert cursor.fetchone()[0] == total_history_events
-        cursor.execute('SELECT COUNT(*) from history_events WHERE counterparty="curve"')
+        cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty="curve"')
         curve_events = cursor.fetchone()[0]
         assert curve_events == 5
 

@@ -788,6 +788,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             location_label=user_address,
             notes='Deposit 10 DAI in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',  # noqa: E501
             counterparty=CPT_CURVE,
+            address=string_to_evm_address('0xA5407eAE9Ba41422680e2e00537571bcC53efBfD'),
         ),
     ]
     assert events == expected_events

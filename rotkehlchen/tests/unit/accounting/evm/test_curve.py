@@ -4,7 +4,7 @@ from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
@@ -60,7 +60,7 @@ EVM_HASH = make_evm_tx_hash(make_random_bytes(32))
 USER_ADDRESS = make_evm_address()
 
 DEPOSIT_ENTRIES = [
-    HistoryBaseEntry(
+    EvmEvent(
         event_identifier=EVM_HASH,
         sequence_index=0,
         timestamp=TIMESTAMP_1_MS,
@@ -72,7 +72,7 @@ DEPOSIT_ENTRIES = [
         location_label=USER_ADDRESS,
         notes='Burned 0.011180845456491718 ETH for gas',
         counterparty=CPT_GAS,
-    ), HistoryBaseEntry(
+    ), EvmEvent(
         event_identifier=EVM_HASH,
         sequence_index=76,
         timestamp=TIMESTAMP_1_MS,
@@ -83,9 +83,9 @@ DEPOSIT_ENTRIES = [
         balance=Balance(amount=FVal('9.423568821947938716')),
         location_label=USER_ADDRESS,
         notes='Receive 9.423568821947938716 crvPlain3andSUSD after depositing in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',  # noqa: E501
-        counterparty='curve',
+        counterparty=CPT_CURVE,
         extra_data={'deposit_events_num': 4},
-    ), HistoryBaseEntry(
+    ), EvmEvent(
         event_identifier=EVM_HASH,
         sequence_index=77,
         timestamp=TIMESTAMP_1_MS,
@@ -97,7 +97,7 @@ DEPOSIT_ENTRIES = [
         location_label=USER_ADDRESS,
         notes='Deposit 10 DAI in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',
         counterparty=CPT_CURVE,
-    ), HistoryBaseEntry(
+    ), EvmEvent(
         event_identifier=EVM_HASH,
         sequence_index=77,
         timestamp=TIMESTAMP_1_MS,
@@ -109,7 +109,7 @@ DEPOSIT_ENTRIES = [
         location_label=USER_ADDRESS,
         notes='Deposit 0 USDC in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',
         counterparty=CPT_CURVE,
-    ), HistoryBaseEntry(
+    ), EvmEvent(
         event_identifier=EVM_HASH,
         sequence_index=78,
         timestamp=TIMESTAMP_1_MS,
@@ -121,7 +121,7 @@ DEPOSIT_ENTRIES = [
         location_label=USER_ADDRESS,
         notes='Deposit 5 USDT in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',
         counterparty=CPT_CURVE,
-    ), HistoryBaseEntry(
+    ), EvmEvent(
         event_identifier=EVM_HASH,
         sequence_index=79,
         timestamp=TIMESTAMP_1_MS,

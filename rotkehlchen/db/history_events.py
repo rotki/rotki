@@ -1,14 +1,10 @@
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union, overload
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.accounting.structures.base import (
-    HistoryBaseEntry,
-    HistoryEntryType,
-    determine_event_type,
-)
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryBaseEntryType
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
@@ -36,15 +32,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-HISTORY_BASE_ENTRY_INSERT = """INSERT OR IGNORE INTO history_events(event_identifier,
-sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes,
-type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
 
-EVM_EVENT_INSERT = """INSERT OR IGNORE INTO evm_events_info(identifier, counterparty, product,
-address, extra_data) VALUES (?, ?, ?, ?, ?);"""
-
-HISTORY_BASE_ENTRY_FIELDS = """history_events.identifier, event_identifier, sequence_index,
-timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype"""
+HISTORY_BASE_ENTRY_FIELDS = """entry_type, history_events.identifier, event_identifier,
+sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type,
+subtype"""
 
 EVM_EVENT_FIELDS = 'counterparty, product, address, extra_data'
 
@@ -74,14 +65,20 @@ class DBHistoryEvents():
         - sqlcipher.IntegrityError: If the asset of the added history event does not exist in
         the DB. Can only happen if an event with an unresolved asset is passed.
         """
-        write_cursor.execute(HISTORY_BASE_ENTRY_INSERT, event.serialize_for_db())
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO history_events(entry_type, event_identifier, sequence_index,'
+            'timestamp, location, location_label, asset, amount, usd_value, notes,'
+            'type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            event.serialize_for_db(),
+        )
         if write_cursor.rowcount == 0:
             return None  # already exists
 
         identifier = write_cursor.lastrowid
         if isinstance(event, EvmEvent):
             write_cursor.execute(
-                EVM_EVENT_INSERT,
+                'INSERT OR IGNORE INTO evm_events_info(identifier, counterparty, product,'
+                'address, extra_data) VALUES (?, ?, ?, ?, ?)',
                 (identifier, *event.serialize_evm_event_for_db()),
             )
 
@@ -118,9 +115,9 @@ class DBHistoryEvents():
         with self.db.user_write() as cursor:
             try:
                 cursor.execute(
-                    'UPDATE history_events SET event_identifier=?, sequence_index=?, timestamp=?, '
-                    'location=?, location_label=?, asset=?, amount=?, usd_value=?, notes=?, '
-                    'type=?, subtype=? WHERE identifier=?',
+                    'UPDATE history_events SET entry_type=?, event_identifier=?, '
+                    'sequence_index=?, timestamp=?, location=?, location_label=?, asset=?, '
+                    'amount=?, usd_value=?, notes=?, type=?, subtype=? WHERE identifier=?',
                     (*event.serialize_for_db(), event.identifier),
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
@@ -133,7 +130,7 @@ class DBHistoryEvents():
             if isinstance(event, EvmEvent):
                 cursor.execute(
                     'UPDATE evm_events_info SET counterparty=?, product=?, address=? WHERE identifier=?',    # noqa: E501
-                    (*event.serialize_evm_event_for_db_without_extra_data(), event.identifier),
+                    (*event.serialize_for_db_without_extra_data(), event.identifier),
                 )
 
             if cursor.rowcount != 1:
@@ -228,31 +225,49 @@ class DBHistoryEvents():
 
         return [x[0] for x in cursor]
 
-    def get_evm_event_by_identifier(self, identifier: int) -> Optional[EvmEvent]:
+    def get_evm_event_by_identifier(self, identifier: int) -> Optional['EvmEvent']:
         """Returns the history event with the given identifier"""
         with self.db.conn.read_ctx() as cursor:
             event_data = cursor.execute(
-                f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {EVM_EVENT_JOIN} WHERE history_events.identifier=?',  # noqa: E501
-                (identifier,),
+                f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {EVM_EVENT_JOIN} WHERE history_events.identifier=? AND entry_type=?',  # noqa: E501
+                (identifier, HistoryBaseEntryType.EVM_EVENT.value),
             ).fetchone()
             if event_data is None:
                 log.debug(f'Didnt find event with identifier {identifier}')
                 return None
 
         try:
-            deserialized = EvmEvent.deserialize_evm_event_from_db(event_data)
+            deserialized = EvmEvent.deserialize_from_db(event_data[1:])
         except (DeserializationError, UnknownAsset) as e:
             log.debug(f'Failed to deserialize evm event {event_data} due to {str(e)}')
             return None
 
         return deserialized
 
+    @overload
     def get_history_events(
             self,
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery,
             has_premium: bool,
     ) -> list[HistoryBaseEntry]:
+        ...
+
+    @overload
+    def get_history_events(  # type: ignore[misc]  # getting from mypy "Overloaded function signature 2 will never be matched: signature 1's parameter type(s) are the same or broader"  # noqa: E501
+            self,
+            cursor: 'DBCursor',
+            filter_query: EvmEventFilterQuery,
+            has_premium: bool,
+    ) -> list['EvmEvent']:
+        ...
+
+    def get_history_events(
+            self,
+            cursor: 'DBCursor',
+            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery],
+            has_premium: bool,
+    ) -> Union[list['HistoryBaseEntry'], list['EvmEvent']]:
         """
         Get history events using the provided query filter
         """
@@ -263,9 +278,10 @@ class DBHistoryEvents():
         else:
             join_query = ALL_EVENTS_DATA_JOIN
 
-        base_query = f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {join_query}'
-        if has_premium is False:
-            base_query = f'SELECT * FROM ({base_query} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
+        if has_premium is True:
+            base_query = f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {join_query}'
+        else:
+            base_query = f'SELECT * FROM (SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {join_query} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
             bindings.insert(0, FREE_HISTORY_EVENTS_LIMIT)
 
         cursor.execute(base_query + query, bindings)
@@ -273,11 +289,11 @@ class DBHistoryEvents():
         for entry in cursor:
             try:
                 # Deserialize event depending on its type
-                deserialized: Union[HistoryBaseEntry, EvmEvent]
-                if determine_event_type(entry[1], Location.deserialize_from_db(entry[4])) == HistoryEntryType.EVM_EVENT:  # noqa: E501
-                    deserialized = EvmEvent.deserialize_evm_event_from_db(entry)
+                deserialized: Union[HistoryBaseEntry, 'EvmEvent']
+                if HistoryBaseEntryType(entry[0]) == HistoryBaseEntryType.EVM_EVENT:
+                    deserialized = EvmEvent.deserialize_from_db(entry[1:])
                 else:
-                    deserialized = HistoryBaseEntry.deserialize_from_db(entry)
+                    deserialized = HistoryBaseEntry.deserialize_from_db(entry[1:])
             except (DeserializationError, UnknownAsset) as e:
                 log.debug(f'Failed to deserialize history event {entry} due to {str(e)}')
                 continue

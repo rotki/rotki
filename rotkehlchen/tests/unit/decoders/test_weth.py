@@ -156,7 +156,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
     https://etherscan.io/tx/0xab0dec3785632c567365c48ea1fd1178f0998773136a555912625d2668ef53e9
     """
     tx_hex = '0xab0dec3785632c567365c48ea1fd1178f0998773136a555912625d2668ef53e9'
-    timesatmp = TimestampMS(1666595591000)
+    timestamp = TimestampMS(1666595591000)
     evmhash = deserialize_evm_tx_hash(tx_hex)
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -168,7 +168,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
         EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
-            timestamp=timesatmp,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -180,7 +180,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
         ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
-            timestamp=timesatmp,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
@@ -193,7 +193,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
         ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=187,
-            timestamp=timesatmp,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
@@ -216,7 +216,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
     assert events[3] == EvmEvent(
         event_identifier=evmhash,
         sequence_index=191,
-        timestamp=timesatmp,
+        timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NFT,

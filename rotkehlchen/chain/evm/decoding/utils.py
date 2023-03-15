@@ -1,18 +1,19 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
 
 
-def _swap_event_indices(event1: EvmEvent, event2: EvmEvent) -> None:
+def _swap_event_indices(event1: 'EvmEvent', event2: 'EvmEvent') -> None:
     old_event1_index = event1.sequence_index
     event1.sequence_index = event2.sequence_index
     event2.sequence_index = old_event1_index
 
 
 def maybe_reshuffle_events(
-        out_event: Optional[EvmEvent],
-        in_event: Optional[EvmEvent],
-        events_list: Optional[list[EvmEvent]] = None,
+        out_event: Optional['EvmEvent'],
+        in_event: Optional['EvmEvent'],
+        events_list: Optional[list['EvmEvent']] = None,
 ) -> None:
     """Takes 2 events and makes sure that the sequence index of out_event comes first.
     Also make sure that the events are consecutive.

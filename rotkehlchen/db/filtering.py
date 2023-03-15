@@ -471,7 +471,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             if asset is not None:
                 filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
             if protocols is not None:
-                filters.append(DBPCounterpartyFilter(and_op=True, counterparties=protocols))
+                filters.append(DBCounterpartyFilter(and_op=True, counterparties=protocols))
             if exclude_ignored_assets is True:
                 filters.append(DBIgnoredAssetsFilter(and_op=True, asset_key='asset'))
             if event_types is not None:
@@ -1036,14 +1036,14 @@ class EvmEventFilterQuery(HistoryEventFilterQuery):
         filter_query = cast(EvmEventFilterQuery, filter_query)
         if counterparties is not None:
             filter_query.filters.append(
-                DBPCounterpartyFilter(and_op=True, counterparties=counterparties),
+                DBCounterpartyFilter(and_op=True, counterparties=counterparties),
             )
 
         return filter_query
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBPCounterpartyFilter(DBFilter):
+class DBCounterpartyFilter(DBFilter):
     """Counterparties should be not empty. Otherwise, it can break the query's logic"""
     counterparties: list[str]
 

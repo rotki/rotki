@@ -134,6 +134,7 @@ TABLES_AT_INIT = [
     'address_book',
     'rpc_nodes',
     'user_notes',
+    'evm_events_info',
 ]
 
 

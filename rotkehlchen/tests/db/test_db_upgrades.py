@@ -7,7 +7,6 @@ from unittest.mock import patch
 import pytest
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
@@ -27,10 +26,21 @@ from rotkehlchen.tests.utils.database import (
     mock_dbhandler_add_globaldb_assetids,
     mock_dbhandler_update_owned_assets,
 )
-from rotkehlchen.types import make_evm_tx_hash
+from rotkehlchen.types import Location, make_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.misc import ts_now
+
+
+def make_serialized_event_identifier(location: Location, raw_event_identifier: bytes) -> str:
+    """Creates a serialized event identifeir using the logic at the moment of v32_v33 upgrade"""
+    if location == Location.KRAKEN or raw_event_identifier.startswith(b'rotki_events'):
+        return raw_event_identifier.decode()
+
+    hex_representation = raw_event_identifier.hex()
+    if hex_representation.startswith('0x') is True:
+        return hex_representation
+    return '0x' + hex_representation
 
 
 def assert_tx_hash_is_bytes(
@@ -51,8 +61,10 @@ def assert_tx_hash_is_bytes(
         _old = list(_old)
         _new = list(_new)
         if is_history_event is True:
-            _new_deserialized = HistoryBaseEntry.deserialize_from_db(_new)
-            _new[tx_hash_index] = _new_deserialized.serialized_event_identifier
+            _new[tx_hash_index] = make_serialized_event_identifier(
+                location=Location.deserialize_from_db(_new[4]),
+                raw_event_identifier=_new[1],
+            )
         else:
             _new[tx_hash_index] = make_evm_tx_hash(_new[tx_hash_index]).hex()  # noqa: 501 pylint: disable=no-member
         assert _old == _new
@@ -1270,7 +1282,7 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', None, 'yabir everywhere'),
     ]
     cursor.execute('SELECT extra_data FROM history_events WHERE counterparty="liquity"')
-    res = cursor.fetchall()
+    assert cursor.fetchall() == []  # Check that it was reset
 
     # check that pnl for validators has been corrected on genesis
     cursor.execute('SELECT validator_index, pnl FROM eth2_daily_staking_details')
@@ -1322,9 +1334,9 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     new_history_events = cursor.execute('SELECT * FROM history_events;').fetchall()
     for idx, entry in enumerate(old_history_events):
         if entry[11] is None:
-            assert entry[0:11] + ('none',) + entry[12:] == new_history_events[idx]
+            assert entry[0:11] + ('none',) == new_history_events[idx][1:]
         else:
-            assert entry == new_history_events[idx]
+            assert entry[:12] == new_history_events[idx][1:]
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
@@ -1386,7 +1398,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     missing_views = views_before - views_after_upgrade
     assert missing_tables == removed_tables
     assert missing_views == removed_views
-    assert tables_after_creation - tables_after_upgrade == set()
+    assert tables_after_creation - tables_after_upgrade == {'evm_events_info'}
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
     assert new_tables == {

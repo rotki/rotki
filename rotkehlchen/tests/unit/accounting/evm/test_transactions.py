@@ -6,7 +6,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import (
     ActionType,
     HistoryEventSubType,
@@ -29,9 +29,9 @@ def test_receiving_value_from_tx(accountant, google_service):
     Test that receiving a transaction that provides value works fine
     """
     addr2 = make_evm_address()
-    tx_hash = HistoryBaseEntry.deserialize_event_identifier('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
+    tx_hash = EvmEvent.deserialize_event_identifier('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     history = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1569924574000,
@@ -42,7 +42,7 @@ def test_receiving_value_from_tx(accountant, google_service):
             notes=f'Received 1.5 ETH from {addr2}',
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
-            counterparty=addr2,
+            address=addr2,
         )]
     accounting_history_process(
         accountant,
@@ -63,7 +63,7 @@ def test_gas_fees_after_year(accountant, google_service):
     Test that for an expense like gas fees after year the "selling" part is tax free
     PnL, and the expense part is taxable pnl.
     """
-    tx_hash = HistoryBaseEntry.deserialize_event_identifier('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
+    tx_hash = EvmEvent.deserialize_event_identifier('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     history = [
         LedgerAction(
             identifier=0,
@@ -76,7 +76,7 @@ def test_gas_fees_after_year(accountant, google_service):
             rate_asset=None,
             link=None,
             notes='',
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1640493374000,  # 4072.51 EUR/ETH
@@ -113,9 +113,9 @@ def test_ignoring_transaction_from_accounting(accountant, google_service, databa
     But just to test that chain is taken into account during ignoring
     """
     addr2 = make_evm_address()
-    tx_hash = HistoryBaseEntry.deserialize_event_identifier('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
+    tx_hash = EvmEvent.deserialize_event_identifier('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     history = [
-        HistoryBaseEntry(
+        EvmEvent(
             identifier=1,
             event_identifier=tx_hash,
             sequence_index=0,
@@ -127,8 +127,8 @@ def test_ignoring_transaction_from_accounting(accountant, google_service, databa
             notes=f'Received 1.5 ETH from {addr2} in Optimism',
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
-            counterparty=addr2,
-        ), HistoryBaseEntry(
+            address=addr2,
+        ), EvmEvent(
             identifier=2,
             event_identifier=tx_hash,
             sequence_index=0,
@@ -140,7 +140,7 @@ def test_ignoring_transaction_from_accounting(accountant, google_service, databa
             notes=f'Received 1.5 ETH from {addr2} in Ethereum',
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
-            counterparty=addr2,
+            address=addr2,
         )]
     with database.user_write() as write_cursor:
         database.add_to_ignored_action_ids(

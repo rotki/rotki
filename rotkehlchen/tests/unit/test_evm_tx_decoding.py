@@ -9,6 +9,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -129,7 +130,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                 events = decoder.get_or_decode_transaction_events(tx, receipt, ignore_cache=False)  # noqa: E501
                 if tx.tx_hash == approve_tx_hash:
                     assert len(events) == 2
-                    assert_events_equal(events[0], HistoryBaseEntry(
+                    assert_events_equal(events[0], EvmEvent(
                         # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
                         event_identifier=approve_tx_hash,
                         sequence_index=0,
@@ -144,7 +145,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                         event_subtype=HistoryEventSubType.FEE,
                         counterparty=CPT_GAS,
                     ))
-                    assert_events_equal(events[1], HistoryBaseEntry(
+                    assert_events_equal(events[1], EvmEvent(
                         # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
                         event_identifier=approve_tx_hash,
                         sequence_index=163,
@@ -156,7 +157,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                         notes=f'Set SAI spending approval of {addr1} by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE to 1',  # noqa: E501
                         event_type=HistoryEventType.INFORMATIONAL,
                         event_subtype=HistoryEventSubType.APPROVE,
-                        counterparty='0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',
+                        address='0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',
                     ))
 
             assert decode_mock.call_count == len(transactions)
@@ -256,7 +257,7 @@ def test_genesis_remove_address(
     assert get_genesis_events() == all_events, 'Events should have not been modified'
 
     delete_transactions_for_address(genesis_address_1)
-    assert get_genesis_events() == [all_events[1]], 'One of the events should have been deleted'
+    assert get_genesis_events() == [all_events[1]], 'One of the events should have been deleted'  # pylint: disable=unsubscriptable-object  # noqa: E501
 
     delete_transactions_for_address(genesis_address_2)
     assert get_genesis_events() == [], 'There should be no events at this point'

@@ -5,7 +5,7 @@ from typing import Any, Optional, cast
 
 import gevent
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
@@ -397,7 +397,7 @@ def get_decoded_events_of_transaction(
         database: DBHandler,
         tx_hash: EVMTxHash,
         transactions: Optional[EvmTransactions] = None,
-) -> tuple[list[HistoryBaseEntry], EVMTransactionDecoder]:
+) -> tuple[list['EvmEvent'], EVMTransactionDecoder]:
     """A convenience function to ask get transaction, receipt and decoded event for a tx_hash
 
     It also accepts `transactions` in case the caller whants to apply some mocks (like call_count)

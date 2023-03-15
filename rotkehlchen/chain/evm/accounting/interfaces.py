@@ -10,7 +10,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
-    from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -59,8 +59,8 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
     def _process_deposit_or_withdrawal(
             self,
             pot: 'AccountingPot',
-            event: 'HistoryBaseEntry',
-            other_events: Iterator['HistoryBaseEntry'],
+            event: 'EvmEvent',
+            other_events: Iterator['EvmEvent'],
     ) -> None:
         """
         Process deposits and withdrawals from protocols that allow to deposit multiple assets

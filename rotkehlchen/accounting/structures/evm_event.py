@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Final, Optional, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryBaseEntryType
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -128,13 +128,14 @@ class EvmEvent(HistoryBaseEntry):
             location_label=location_label,
             notes=notes,
             identifier=identifier,
+            entry_type=HistoryBaseEntryType.EVM_EVENT,
         )
         self.address = address
         self.counterparty = counterparty
         self.product = product
         self.extra_data = extra_data
 
-    def serialize_evm_event_for_db_without_extra_data(self) -> EVM_EVENT_FIELDS_NO_EXTRA_DATA:
+    def serialize_for_db_without_extra_data(self) -> EVM_EVENT_FIELDS_NO_EXTRA_DATA:
         """
         Serialize information for the database excluding the extra data field.
         This is used when writting information edited by the user
@@ -147,7 +148,7 @@ class EvmEvent(HistoryBaseEntry):
 
     def serialize_evm_event_for_db(self) -> EVM_EVENT_FIELDS:
         extra_data = json.dumps(self.extra_data) if self.extra_data else None
-        return self.serialize_evm_event_for_db_without_extra_data() + (extra_data,)
+        return self.serialize_for_db_without_extra_data() + (extra_data,)
 
     def serialize(self) -> dict[str, Any]:
         return super().serialize() | {
@@ -163,7 +164,8 @@ class EvmEvent(HistoryBaseEntry):
         return result
 
     @classmethod
-    def deserialize_evm_event_from_db(cls, entry: EVM_EVENT_DB_TUPLE_READ) -> 'EvmEvent':
+    def deserialize_from_db(cls, entry: tuple) -> 'EvmEvent':
+        entry = cast(EVM_EVENT_DB_TUPLE_READ, entry)
         extra_data = None
         if entry[15] is not None:
             try:
@@ -214,7 +216,7 @@ class EvmEvent(HistoryBaseEntry):
         return details if len(details) > 0 else None
 
     @classmethod
-    def deserialize_evm_event(cls, data: dict[str, Any]) -> 'EvmEvent':
+    def deserialize(cls, data: dict[str, Any]) -> 'EvmEvent':
         instance = super().deserialize(data)
         # since we call super the type for the linter is HistoryBaseEntry, but in fact is EvmEvent
         instance = cast(EvmEvent, instance)
@@ -223,9 +225,13 @@ class EvmEvent(HistoryBaseEntry):
         instance.product = deserialize_optional(data['product'], str)
         return instance
 
-    def get_type_identifier(self) -> str:
+    def get_type_identifier(self, include_counterparty: bool = True) -> str:
+        """
+        Computes the identifier from event type, event subtype and counterparty if
+        `include_counterparty` is True.
+        """
         type_identifier = super().get_type_identifier()
-        if self.counterparty is not None:
+        if include_counterparty is True and self.counterparty is not None:
             type_identifier += '__' + self.counterparty
 
         return type_identifier
@@ -240,23 +246,17 @@ class EvmEvent(HistoryBaseEntry):
     def __eq__(self, other: Any) -> bool:
         """Performs a comparison.
 
-        If `other` is a history base entry but not an evm event then compares only fields of
-        history base entry. Otherwise compates evm event fields too.
+        If `other` is a history base entry but not an evm event then fail.
         """
         if isinstance(other, EvmEvent) is False:
-            return False  # Can't comapre with a non-evm-event
+            return False  # Can't compare with a non-evm-event
 
         return (
             HistoryBaseEntry.__eq__(self, other) is True and
-            (
-                isinstance(other, EvmEvent) is False or
-                all([
-                    self.counterparty == other.counterparty,
-                    self.product == other.product,
-                    self.address == other.address,
-                    self.extra_data == other.extra_data,
-                ])
-            )
+            self.counterparty == other.counterparty and
+            self.product == other.product and
+            self.address == other.address and
+            self.extra_data == other.extra_data
         )
 
     def __repr__(self) -> str:
@@ -267,3 +267,6 @@ class EvmEvent(HistoryBaseEntry):
             f'{self.extra_data=}',
         ]
         return f'EvmEvent({",".join(fields)})'
+
+    def __hash__(self) -> int:
+        return super().__hash__()  # Reuse hashing from HistoryBaseEntry

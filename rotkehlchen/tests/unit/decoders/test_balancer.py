@@ -375,7 +375,7 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
         )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
-    assert events == [
+    expected_events = [
         EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
@@ -437,6 +437,7 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
             extra_data=None,
         ),
     ]
+    assert events == expected_events
 
 
 @pytest.mark.vcr()
@@ -450,8 +451,8 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
         database=database,
         tx_hash=tx_hash,
     )
-    assert events == [
-        HistoryBaseEntry(
+    expected_events = [
+        EvmEvent(
             event_identifier=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1593186380000),
@@ -465,7 +466,7 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             counterparty='gas',
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=131,
             timestamp=TimestampMS(1593186380000),
@@ -479,7 +480,8 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             counterparty=CPT_BALANCER_V1,
             identifier=None,
             extra_data={'deposit_events_num': 4},
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=132,
             timestamp=TimestampMS(1593186380000),
@@ -493,7 +495,8 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             counterparty=CPT_BALANCER_V1,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=134,
             timestamp=TimestampMS(1593186380000),
@@ -507,7 +510,8 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             counterparty=CPT_BALANCER_V1,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=144,
             timestamp=TimestampMS(1593186380000),
@@ -521,7 +525,8 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             counterparty=CPT_BALANCER_V1,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=145,
             timestamp=TimestampMS(1593186380000),
@@ -535,7 +540,8 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             counterparty=CPT_BALANCER_V1,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
+        ), EvmEvent(
             event_identifier=tx_hash,
             sequence_index=146,
             timestamp=TimestampMS(1593186380000),
@@ -546,8 +552,10 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
             location_label=user_address,
             notes='Set mUSD spending approval of 0x549C0421c69Be943A2A60e76B19b4A801682cBD3 by 0x9ED47950144e51925166192Bf0aE95553939030a to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
-            counterparty='0x9ED47950144e51925166192Bf0aE95553939030a',
+            counterparty=None,
             identifier=None,
             extra_data=None,
+            address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ),
     ]
+    assert events == expected_events

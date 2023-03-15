@@ -24,12 +24,12 @@ def _reset_curve_decoded_events(write_cursor: 'DBCursor') -> None:
     The code is taken from `delete_events_by_tx_hash` right before 1.27 release and is
     modified to delete only transactions that have a decoded curve event.
     """
-    query = (
+    write_cursor.execute(
         'SELECT DISTINCT tx_hash from evm_transactions LEFT JOIN history_events '
         'ON history_events.event_identifier=tx_hash INNER JOIN evm_events_info ON '
-        'history_events.identifier=evm_events_info.identifier WHERE counterparty IS ?'
+        'history_events.identifier=evm_events_info.identifier WHERE counterparty IS ?',
+        (CPT_CURVE,),
     )
-    write_cursor.execute(query, (CPT_CURVE,))
     tx_hashes = [x[0] for x in write_cursor]
     write_cursor.execute(
         'SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?',
