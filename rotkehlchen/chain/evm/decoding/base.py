@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
 from rotkehlchen.constants import ONE
@@ -76,9 +76,14 @@ class BaseDecoderTools():
             self,
             from_address: ChecksumEvmAddress,
             to_address: Optional[ChecksumEvmAddress],
-    ) -> Optional[tuple[HistoryEventType, Optional[str], str, str]]:
+    ) -> Optional[tuple[HistoryEventType, Optional[str], ChecksumEvmAddress, str, str]]:
         """Depending on addresses, if they are tracked by the user or not, if they
-        are an exchange address etc. determine the type of event to classify the transfer as"""
+        are an exchange address etc. determine the type of event to classify the transfer as.
+
+        Returns event type, loation label, address, counterparty and verb.
+        address is the address on the opposite side of the event. counterparty is the exchange name
+        if it is a deposit / withdrawal to / from an exchange.
+        """
         tracked_from = from_address in self.tracked_accounts.get(self.chain_id.to_blockchain())
         tracked_to = to_address in self.tracked_accounts.get(self.chain_id.to_blockchain())
         if not tracked_from and not tracked_to:
@@ -87,11 +92,11 @@ class BaseDecoderTools():
         from_exchange = self.address_is_exchange(from_address)
         to_exchange = self.address_is_exchange(to_address) if to_address else None
 
-        counterparty: Optional[str]
+        counterparty: Optional[str] = None
         if tracked_from and tracked_to:
             event_type = HistoryEventType.TRANSFER
             location_label = from_address
-            counterparty = to_address
+            address = to_address
             verb = 'Transfer'
         elif tracked_from:
             if to_exchange is not None:
@@ -101,8 +106,8 @@ class BaseDecoderTools():
             else:
                 event_type = HistoryEventType.SPEND
                 verb = 'Send'
-                counterparty = to_address
 
+            address = to_address
             location_label = from_address
         else:  # can only be tracked_to
             if from_exchange:
@@ -112,18 +117,18 @@ class BaseDecoderTools():
             else:
                 event_type = HistoryEventType.RECEIVE
                 verb = 'Receive'
-                counterparty = from_address
 
+            address = from_address
             location_label = to_address  # type: ignore  # to_address can't be None here
 
-        return event_type, location_label, counterparty, verb  # type: ignore
+        return event_type, location_label, address, counterparty, verb  # type: ignore
 
     def decode_erc20_721_transfer(
             self,
             token: EvmToken,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-    ) -> Optional[HistoryBaseEntry]:
+    ) -> Optional[EvmEvent]:
         """
         Caller should know this is a transfer of either an ERC20 or an ERC721 token.
         Call this method to decode it.
@@ -142,14 +147,15 @@ class BaseDecoderTools():
             return None
 
         extra_data = None
-        event_type, location_label, counterparty, verb = direction_result
+        event_type, location_label, address, counterparty, verb = direction_result
+        notes_counterparty = counterparty or address  # counterparty if found, otherwise address
         amount_raw_or_token_id = hex_or_bytes_to_int(tx_log.data)
         if token.token_kind == EvmTokenKind.ERC20:
             amount = token_normalized_value(token_amount=amount_raw_or_token_id, token=token)
             if event_type in OUTGOING_EVENT_TYPES:
-                notes = f'{verb} {amount} {token.symbol} from {location_label} to {counterparty}'
+                notes = f'{verb} {amount} {token.symbol} from {location_label} to {notes_counterparty}'  # noqa: E501
             else:
-                notes = f'{verb} {amount} {token.symbol} from {counterparty} to {location_label}'
+                notes = f'{verb} {amount} {token.symbol} from {notes_counterparty} to {location_label}'  # noqa: E501
         elif token.token_kind == EvmTokenKind.ERC721:
             try:
                 if self.is_non_conformant_erc721(token.evm_address):  # id is in the data
@@ -186,6 +192,7 @@ class BaseDecoderTools():
             balance=Balance(amount=amount),
             location_label=location_label,
             notes=notes,
+            address=address,
             counterparty=counterparty,
             extra_data=extra_data,
         )
@@ -202,11 +209,13 @@ class BaseDecoderTools():
             location_label: Optional[str] = None,
             notes: Optional[str] = None,
             counterparty: Optional[str] = None,
+            product: Optional[str] = None,
+            address: Optional[ChecksumEvmAddress] = None,
             extra_data: Optional[dict[str, Any]] = None,
-    ) -> HistoryBaseEntry:
-        """A convenience function to create a HistoryBaseEntry depending on the
+    ) -> EvmEvent:
+        """A convenience function to create an EvmEvent depending on the
         decoder's chain id"""
-        return HistoryBaseEntry(
+        return EvmEvent(
             event_identifier=tx_hash,
             sequence_index=sequence_index,
             timestamp=ts_sec_to_ms(timestamp),
@@ -218,6 +227,8 @@ class BaseDecoderTools():
             location_label=location_label,
             notes=notes,
             counterparty=counterparty,
+            product=product,
+            address=address,
             extra_data=extra_data,
         )
 
@@ -232,8 +243,10 @@ class BaseDecoderTools():
             location_label: Optional[str] = None,
             notes: Optional[str] = None,
             counterparty: Optional[str] = None,
+            product: Optional[str] = None,
+            address: Optional[ChecksumEvmAddress] = None,
             extra_data: Optional[dict[str, Any]] = None,
-    ) -> HistoryBaseEntry:
+    ) -> EvmEvent:
         """Convenience function on top of make_event to use transaction and ReceiptLog"""
         return self.make_event(
             tx_hash=transaction.tx_hash,
@@ -246,6 +259,8 @@ class BaseDecoderTools():
             location_label=location_label,
             notes=notes,
             counterparty=counterparty,
+            product=product,
+            address=address,
             extra_data=extra_data,
         )
 
@@ -260,8 +275,10 @@ class BaseDecoderTools():
             location_label: Optional[str] = None,
             notes: Optional[str] = None,
             counterparty: Optional[str] = None,
+            product: Optional[str] = None,
+            address: Optional[ChecksumEvmAddress] = None,
             extra_data: Optional[dict[str, Any]] = None,
-    ) -> HistoryBaseEntry:
+    ) -> EvmEvent:
         """Convenience function on top of make_event to use next sequence index"""
         return self.make_event(
             tx_hash=tx_hash,
@@ -274,5 +291,7 @@ class BaseDecoderTools():
             location_label=location_label,
             notes=notes,
             counterparty=counterparty,
+            product=product,
+            address=address,
             extra_data=extra_data,
         )

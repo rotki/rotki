@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -60,7 +60,7 @@ class DecoderInterface(metaclass=ABCMeta):
         """
         return []
 
-    def notify_user(self, event: 'HistoryBaseEntry', counterparty: str) -> None:
+    def notify_user(self, event: 'EvmEvent', counterparty: str) -> None:
         """
         Notify the user about a problem during the decoding of ethereum transactions. At the
         moment it doesn't take any error type but in the future it could be added if needed.
