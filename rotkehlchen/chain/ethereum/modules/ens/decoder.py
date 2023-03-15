@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -61,10 +61,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
             action_items: Optional[list[ActionItem]],
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] == NAME_REGISTERED:
             return self._decode_name_registered(
                 tx_log=tx_log,
@@ -89,10 +89,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         try:
             _, decoded_data = decode_event_data_abi_str(tx_log, NAME_REGISTERED_ABI)
         except DeserializationError as e:
@@ -106,13 +106,13 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
         refund_from_registrar = None
         to_remove_indices = []
         for event_idx, event in enumerate(decoded_events):
-            if event.event_type == HistoryEventType.RECEIVE and event.asset == A_ETH and event.counterparty == ENS_REGISTRAR_CONTROLLER:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.asset == A_ETH and event.address == ENS_REGISTRAR_CONTROLLER:  # noqa: E501
                 # remove ETH refund event
                 refund_from_registrar = event.balance.amount
                 to_remove_indices.append(event_idx)
 
             # Find the ETH transfer event which should be before the registered event
-            if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.counterparty == tx_log.address:  # noqa: E501
+            if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.address == tx_log.address:  # noqa: E501
                 expected_amount = amount
                 if refund_from_registrar:
                     expected_amount = amount + refund_from_registrar
@@ -141,10 +141,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         try:
             _, decoded_data = decode_event_data_abi_str(tx_log, NAME_RENEWED_ABI)
         except DeserializationError as e:
@@ -157,7 +157,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
 
         for event in decoded_events:
             # Find the transfer event which should be before the name renewed event
-            if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.balance.amount == amount and event.counterparty == tx_log.address:  # noqa: E501
+            if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.balance.amount == amount and event.address == tx_log.address:  # noqa: E501
                 event.event_type = HistoryEventType.RENEW
                 event.event_subtype = HistoryEventSubType.NFT
                 event.counterparty = CPT_ENS
@@ -169,10 +169,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """Decode event where address is set for an ENS name."""
         if tx_log.topics[0] == NEW_RESOLVER:
             node = tx_log.topics[1]
@@ -203,6 +203,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                 location_label=transaction.from_address,
                 notes=notes,
                 counterparty=CPT_ENS,
+                address=transaction.to_address,
             ))
         return None, []
 
@@ -210,10 +211,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """Decode event where a text property (discord, telegram, etc.) is set for an ENS name."""
         if tx_log.topics[0] == TEXT_CHANGED:
             try:
@@ -257,6 +258,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                 location_label=transaction.from_address,
                 notes=notes,
                 counterparty=CPT_ENS,
+                address=transaction.to_address,
             ))
         return None, []
 

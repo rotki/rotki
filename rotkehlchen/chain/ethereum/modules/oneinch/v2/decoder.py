@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -22,9 +22,9 @@ class Oneinchv2Decoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         sender = hex_or_bytes_to_address(tx_log.topics[1])
         source_token_address = hex_or_bytes_to_address(tx_log.topics[2])
         destination_token_address = hex_or_bytes_to_address(tx_log.topics[3])
@@ -67,10 +67,10 @@ class Oneinchv2Decoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] == SWAPPED:
             return self._decode_swapped(tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
 

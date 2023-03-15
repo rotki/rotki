@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Callable, Literal, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
@@ -53,7 +53,7 @@ class CryptoAssetAmount(NamedTuple):
     amount: FVal
 
 
-def _find_from_asset_and_amount(events: list[HistoryBaseEntry]) -> Optional[tuple[Asset, FVal]]:
+def _find_from_asset_and_amount(events: list[EvmEvent]) -> Optional[tuple[Asset, FVal]]:
     """
     Searches for uniswap v2/v3 swaps, detects `from_asset` and sums up `from_amount`.
     Works only with `from_asset` being the same for all swaps.
@@ -78,7 +78,7 @@ def _find_from_asset_and_amount(events: list[HistoryBaseEntry]) -> Optional[tupl
     return from_asset, from_amount
 
 
-def _find_to_asset_and_amount(events: list[HistoryBaseEntry]) -> Optional[tuple[Asset, FVal]]:
+def _find_to_asset_and_amount(events: list[EvmEvent]) -> Optional[tuple[Asset, FVal]]:
     """
     Searches for uniswap v2/v3 swaps, detects `to_asset` and sums up `to_amount`.
     Works only with `to_asset` being the same for all swaps.
@@ -137,10 +137,10 @@ class Uniswapv3Decoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
             action_items: Optional[list[ActionItem]],
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] == INCREASE_LIQUIDITY_SIGNATURE:
             return self._maybe_decode_v3_deposit_or_withdrawal(
                 tx_log=tx_log,
@@ -167,10 +167,10 @@ class Uniswapv3Decoder(DecoderInterface):
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """
         Detect some basic uniswap v3 events. This method doesn't ensure the order of the events
         and other things, but just labels some of the events as uniswap v3 events.
@@ -207,9 +207,9 @@ class Uniswapv3Decoder(DecoderInterface):
 
     def _decode_eth_to_token_swap(
             self,
-            decoded_events: list[HistoryBaseEntry],
-            send_eth_event: HistoryBaseEntry,
-            receive_eth_event: Optional[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
+            send_eth_event: EvmEvent,
+            receive_eth_event: Optional[EvmEvent],
     ) -> Optional[SwapData]:
         """
         Decode a swap of ETH to a token. Such swap consists of 3 events:
@@ -234,8 +234,8 @@ class Uniswapv3Decoder(DecoderInterface):
 
     def _decode_token_to_eth_swap(
             self,
-            decoded_events: list[HistoryBaseEntry],
-            receive_eth_event: HistoryBaseEntry,
+            decoded_events: list[EvmEvent],
+            receive_eth_event: EvmEvent,
     ) -> Optional[SwapData]:
         from_data = _find_from_asset_and_amount(decoded_events)
         if from_data is None:
@@ -250,7 +250,7 @@ class Uniswapv3Decoder(DecoderInterface):
 
     def _decode_token_to_token_swap(
             self,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
     ) -> Optional[SwapData]:
         from_data = _find_from_asset_and_amount(decoded_events)
         to_data = _find_to_asset_and_amount(decoded_events)
@@ -267,9 +267,9 @@ class Uniswapv3Decoder(DecoderInterface):
     def _routers_post_decoding(
             self,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> list[HistoryBaseEntry]:
+    ) -> list[EvmEvent]:
         """
         Ensures that if an auto router (either v1 or v2) is used, events have correct order and
         are properly combined (i.e. each swap consists only of one spend and one receive event).
@@ -341,6 +341,7 @@ class Uniswapv3Decoder(DecoderInterface):
             location_label=transaction.from_address,
             notes=f'Swap {swap_data.from_amount} {from_crypto_asset.symbol} via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
+            address=transaction.to_address,
         )
 
         to_event = self.base.make_event(
@@ -354,6 +355,7 @@ class Uniswapv3Decoder(DecoderInterface):
             location_label=transaction.from_address,
             notes=f'Receive {swap_data.to_amount} {to_crypto_asset.symbol} as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
+            address=transaction.to_address,
         )
 
         return [gas_event, from_event, to_event]
@@ -362,11 +364,11 @@ class Uniswapv3Decoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
             event_action_type: Literal['addition', 'removal'],
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """
         This method decodes a Uniswap V3 LP liquidity increase or decrease.
 
@@ -512,7 +514,7 @@ class Uniswapv3Decoder(DecoderInterface):
             token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            event: HistoryBaseEntry,
+            event: EvmEvent,
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> bool:
@@ -520,7 +522,7 @@ class Uniswapv3Decoder(DecoderInterface):
         if (
             event.asset == self.uniswap_v3_nft and
             event.balance.amount == ONE and
-            event.counterparty == ZERO_ADDRESS and
+            event.address == ZERO_ADDRESS and
             event.event_type == HistoryEventType.RECEIVE and
             event.event_subtype == HistoryEventSubType.NONE
         ):

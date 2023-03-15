@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.aave.common import asset_to_atoken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
@@ -24,10 +24,10 @@ class Aavev1Decoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
             action_items: list[ActionItem],
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] == DEPOSIT:
             return self._decode_deposit_event(tx_log, transaction, decoded_events, all_logs, action_items)  # noqa: E501
         if tx_log.topics[0] == REDEEM_UNDERLYING:
@@ -39,10 +39,10 @@ class Aavev1Decoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         reserve_address = hex_or_bytes_to_address(tx_log.topics[1])
         reserve_asset = ethaddress_to_asset(reserve_address)
         if reserve_asset is None:
@@ -69,7 +69,7 @@ class Aavev1Decoder(DecoderInterface):
                 event.counterparty = CPT_AAVE_V1
                 event.notes = f'Receive {amount} {atoken.symbol} from aave-v1 for {event.location_label}'  # noqa: E501
                 receive_event = event
-            elif event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and event.counterparty == ZERO_ADDRESS and event.asset == atoken:  # noqa: E501
+            elif event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and event.address == ZERO_ADDRESS and event.asset == atoken:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_AAVE_V1
                 event.notes = f'Gain {event.balance.amount} {atoken.symbol} from aave-v1 as interest'  # noqa: E501
@@ -81,10 +81,10 @@ class Aavev1Decoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         reserve_address = hex_or_bytes_to_address(tx_log.topics[1])
         reserve_asset = ethaddress_to_asset(reserve_address)
         if reserve_asset is None:
@@ -111,7 +111,7 @@ class Aavev1Decoder(DecoderInterface):
                 event.counterparty = CPT_AAVE_V1
                 event.notes = f'Return {amount} {atoken.symbol} to aave-v1'
                 return_event = event
-            elif event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and event.counterparty == ZERO_ADDRESS and event.asset == atoken:  # noqa: E501
+            elif event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and event.address == ZERO_ADDRESS and event.asset == atoken:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_AAVE_V1
                 event.notes = f'Gain {event.balance.amount} {atoken.symbol} from aave-v1 as interest'  # noqa: E501

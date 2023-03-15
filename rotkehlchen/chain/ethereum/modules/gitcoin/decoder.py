@@ -1,7 +1,7 @@
 import logging
 from typing import Callable
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -23,7 +23,7 @@ class GitcoinDecoder(DecoderInterface):
             token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument
             transaction: EvmTransaction,
-            event: HistoryBaseEntry,
+            event: EvmEvent,
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> bool:
@@ -39,10 +39,10 @@ class GitcoinDecoder(DecoderInterface):
             return False
         crypto_asset = event.asset.resolve_to_crypto_asset()
         if event.event_type == HistoryEventType.SPEND:
-            to_address = event.counterparty
+            to_address = event.address
             event.notes = f'Donate {event.balance.amount} {crypto_asset.symbol} to {to_address} via gitcoin'  # noqa: E501
         else:  # can only be RECEIVE
-            from_address = event.counterparty
+            from_address = event.address
             event.notes = f'Receive donation of {event.balance.amount} {crypto_asset.symbol} from {from_address} via gitcoin'  # noqa: E501
 
         event.event_subtype = HistoryEventSubType.DONATE

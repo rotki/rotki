@@ -1,11 +1,8 @@
 import logging
 from typing import Any, Callable, Optional
 
-from rotkehlchen.accounting.structures.base import (
-    HistoryBaseEntry,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.base import HistoryEventSubType, HistoryEventType
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.convex.constants import (
     BOOSTER,
@@ -41,10 +38,10 @@ class ConvexDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         amount_raw = hex_or_bytes_to_int(tx_log.data[0:32])
         interacted_address = hex_or_bytes_to_address(tx_log.topics[1])
 
@@ -58,14 +55,14 @@ class ConvexDecoder(DecoderInterface):
             amount = asset_normalized_value(amount_raw, crypto_asset)
             if (
                 event.location_label == transaction.from_address == interacted_address is False or
-                (event.counterparty != ZERO_ADDRESS and event.balance.amount != amount)
+                (event.address != ZERO_ADDRESS and event.balance.amount != amount)
             ):
                 continue
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE
             ):
-                if event.counterparty == ZERO_ADDRESS:
+                if event.address == ZERO_ADDRESS:
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     event.counterparty = CPT_CONVEX
                     if tx_log.address in CONVEX_POOLS:
@@ -104,7 +101,7 @@ class ConvexDecoder(DecoderInterface):
             token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            event: HistoryBaseEntry,
+            event: EvmEvent,
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> bool:

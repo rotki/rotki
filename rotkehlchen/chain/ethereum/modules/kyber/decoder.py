@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Callable, Optional
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
@@ -46,13 +46,13 @@ def _legacy_contracts_basic_info(tx_log: EvmTxReceiptLog) -> tuple[ChecksumEvmAd
 
 
 def _maybe_update_events_legacy_contrats(
-        decoded_events: list[HistoryBaseEntry],
+        decoded_events: list[EvmEvent],
         sender: ChecksumEvmAddress,
         source_asset: CryptoAsset,
         destination_asset: CryptoAsset,
         spent_amount: FVal,
         return_amount: FVal,
-        notify_user: Callable[[HistoryBaseEntry, str], None],
+        notify_user: Callable[[EvmEvent, str], None],
 ) -> None:
     """
     Use the information from a trade transaction to modify the HistoryEvents from receive/send to
@@ -87,10 +87,10 @@ class KyberDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] == KYBER_TRADE_LEGACY:
             return None, []
 
@@ -118,10 +118,10 @@ class KyberDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] != KYBER_TRADE_LEGACY:
             return None, []
 

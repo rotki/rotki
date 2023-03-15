@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import ActionItem
@@ -23,10 +23,10 @@ class OptimismDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] != DELEGATE_CHANGED:
             return None, []
 
@@ -46,6 +46,7 @@ class OptimismDecoder(DecoderInterface):
             location_label=transaction.from_address,
             notes=f'Change OP Delegate from {from_delegate} to {to_delegate}',
             counterparty=CPT_OPTIMISM,
+            address=transaction.to_address,
         )
         return event, []
 

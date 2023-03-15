@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V2
@@ -48,10 +48,10 @@ class Balancerv2Decoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """
         Decode swap in Balancer v2. At the beggining of the transaction a SWAP event is created
         with the information of the tokens and amounts and later some transfers are executed.
@@ -119,7 +119,7 @@ class Balancerv2Decoder(DecoderInterface):
             token: 'EvmToken',  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            event: HistoryBaseEntry,
+            event: EvmEvent,
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> bool:

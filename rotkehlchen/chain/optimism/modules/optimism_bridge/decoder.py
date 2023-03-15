@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Optional
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -32,10 +32,10 @@ class OptimismBridgeDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """Decodes a bridging event. Either a deposit or a withdrawal"""
         if tx_log.topics[0] not in {DEPOSIT_FINALIZED, WITHDRAWAL_INITIATED}:
             return None, []
@@ -82,7 +82,7 @@ class OptimismBridgeDecoder(DecoderInterface):
             if (
                 event.event_type == expected_event_type and
                 event.location_label == expected_location_label and
-                event.counterparty == ZERO_ADDRESS and
+                event.address == ZERO_ADDRESS and
                 event.asset == asset and
                 event.balance.amount == amount
             ):

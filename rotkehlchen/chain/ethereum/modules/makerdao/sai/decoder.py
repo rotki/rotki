@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.makerdao.sai.constants import CPT_SAI
@@ -65,10 +65,10 @@ class MakerdaosaiDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
             action_items: Optional[list[ActionItem]],
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         decoder_function = self.topics_to_methods.get(tx_log.topics[0])
         if decoder_function is None:
             return None, []
@@ -85,10 +85,10 @@ class MakerdaosaiDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """
         This method decodes ETH withdrawal from a CDP.
 
@@ -122,10 +122,10 @@ class MakerdaosaiDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """
         This method decodes the event of a new CDP creation.
 
@@ -156,6 +156,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             location_label=cdp_creator,
             counterparty=CPT_SAI,
             notes=f'Create CDP {cdp_id}',
+            address=transaction.to_address,
         )
         # ensure that the cdp creation event comes before any deposit event
         maybe_reshuffle_events(
@@ -168,10 +169,10 @@ class MakerdaosaiDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """
         This method decodes the closing of an already existing CDP.
 
@@ -203,6 +204,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             location_label=cdp_creator,
             counterparty=CPT_SAI,
             notes=f'Close CDP {cdp_id}',
+            address=transaction.to_address,
         )
         return event, []
 
@@ -210,10 +212,10 @@ class MakerdaosaiDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """
         This method decodes an event of SAI being borrowed.
 
@@ -248,6 +250,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 location_label=withdrawer,
                 counterparty=CPT_SAI,
                 notes=f'Borrow {amount_withdrawn} {self.sai.symbol} from CDP {cdp_id}',
+                address=transaction.to_address,
             )
             return event, []
 
@@ -272,10 +275,10 @@ class MakerdaosaiDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """
         This method decodes an event of SAI loan repayment.
 
@@ -320,6 +323,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 location_label=depositor,
                 counterparty=CPT_SAI,
                 notes=f'Repay {amount_paid} {self.sai.symbol} to CDP {cdp_id}',
+                address=transaction.to_address,
             )
             return event, []
 
@@ -329,10 +333,10 @@ class MakerdaosaiDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """
         This method decodes a liquidation event in a CDP
 
@@ -373,6 +377,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                     location_label=liquidator,
                     notes=f'Liquidate {amount} {self.peth.symbol} for CDP {cdp_id}',
                     counterparty=CPT_SAI,
+                    address=transaction.to_address,
                 )
                 return event, []
 
@@ -382,10 +387,10 @@ class MakerdaosaiDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """
         This method decodes a deposit event of ETH into a CDP.
 
@@ -399,7 +404,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.counterparty == MAKERDAO_SAI_PROXY_CONTRACT and
+                event.address == MAKERDAO_SAI_PROXY_CONTRACT and
                 event.asset == self.eth
             ):
                 event.event_type = HistoryEventType.DEPOSIT
@@ -434,7 +439,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            event: HistoryBaseEntry,
+            event: EvmEvent,
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> bool:
@@ -442,7 +447,7 @@ class MakerdaosaiDecoder(DecoderInterface):
         if (
             event.event_type == HistoryEventType.SPEND and
             event.event_subtype == HistoryEventSubType.NONE and
-            event.counterparty in (MAKERDAO_SAITUB_CONTRACT, MAKERDAO_SAI_PROXY_CONTRACT)
+            event.address in (MAKERDAO_SAITUB_CONTRACT, MAKERDAO_SAI_PROXY_CONTRACT)
         ):
             if event.asset == self.weth:
                 event.event_type = HistoryEventType.DEPOSIT
@@ -461,7 +466,7 @@ class MakerdaosaiDecoder(DecoderInterface):
         if (
             event.event_type == HistoryEventType.RECEIVE and
             event.event_subtype == HistoryEventSubType.NONE and
-            event.counterparty == MAKERDAO_SAITUB_CONTRACT
+            event.address == MAKERDAO_SAITUB_CONTRACT
         ):
             if event.asset == self.weth:
                 event.event_type = HistoryEventType.WITHDRAWAL
@@ -483,10 +488,10 @@ class MakerdaosaiDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """
         This method decodes the receipt of PETH after WETH has been deposited.
 
@@ -508,6 +513,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 location_label=owner,
                 counterparty=CPT_SAI,
                 notes=f'Receive {amount} {self.peth.symbol} from Sai Vault',
+                address=transaction.to_address,
             )
             return event, []
 
@@ -518,10 +524,10 @@ class MakerdaosaiDecoder(DecoderInterface):
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """This method decodes the migration of a Sai CDP to Dai CDP."""
         if tx_log.topics[0] != SAI_CDP_MIGRATION_TOPIC:
             return None, []
@@ -540,6 +546,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             location_label=owner,
             notes=f'Migrate Sai CDP {old_cdp_id} to Dai CDP {new_cdp_id}',
             counterparty=CPT_SAI,
+            address=transaction.to_address,
         )
         return event, []
 

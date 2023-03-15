@@ -7,7 +7,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.evm.decoding.structures import ActionItem
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -47,7 +47,7 @@ class OptimismTransactionDecoder(EVMTransactionDecoder):
             token: 'EvmToken',
             tx_log: 'EvmTxReceiptLog',
             transaction: EvmTransaction,
-            event: 'HistoryBaseEntry',
+            event: 'EvmEvent',
             action_items: list['ActionItem'],
             all_logs: list['EvmTxReceiptLog'],
     ) -> None:
