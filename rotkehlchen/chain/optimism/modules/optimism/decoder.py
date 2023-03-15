@@ -1,7 +1,6 @@
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import ActionItem
@@ -11,6 +10,10 @@ from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
+
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
+
 
 OPTIMISM_TOKEN = string_to_evm_address('0x4200000000000000000000000000000000000042')
 
@@ -23,10 +26,10 @@ class OptimismDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
+            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         if tx_log.topics[0] != DELEGATE_CHANGED:
             return None, []
 

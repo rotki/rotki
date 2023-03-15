@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Optional
 from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -23,6 +22,7 @@ from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 from .constants import CPT_ENS
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
@@ -61,10 +61,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],
             action_items: Optional[list[ActionItem]],
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         if tx_log.topics[0] == NAME_REGISTERED:
             return self._decode_name_registered(
                 tx_log=tx_log,
@@ -89,10 +89,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         try:
             _, decoded_data = decode_event_data_abi_str(tx_log, NAME_REGISTERED_ABI)
         except DeserializationError as e:
@@ -141,10 +141,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         try:
             _, decoded_data = decode_event_data_abi_str(tx_log, NAME_RENEWED_ABI)
         except DeserializationError as e:
@@ -169,10 +169,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         """Decode event where address is set for an ENS name."""
         if tx_log.topics[0] == NEW_RESOLVER:
             node = tx_log.topics[1]
@@ -211,10 +211,10 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         """Decode event where a text property (discord, telegram, etc.) is set for an ENS name."""
         if tx_log.topics[0] == TEXT_CHANGED:
             try:

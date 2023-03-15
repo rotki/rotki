@@ -21,6 +21,7 @@ def query_api_create_and_get_report(
         events_offset: Optional[int] = None,
         events_limit: Optional[int] = None,
         events_ascending_timestamp: bool = False,
+        unicode_check: bool = False,
 ):
     async_query = random.choice([False, True])
     rotki = server.rest_api.rotkehlchen
@@ -31,6 +32,7 @@ def query_api_create_and_get_report(
             should_mock_history_processing=False,
             history_start_ts=start_ts,
             history_end_ts=end_ts,
+            unicode_check=unicode_check,
         )
 
     # Query history processing to start the history processing

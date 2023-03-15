@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.weth.constants import CPT_WETH
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -15,6 +14,7 @@ from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
@@ -43,10 +43,10 @@ class WethDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],
             action_items: Optional[list[ActionItem]],
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         if tx_log.topics[0] == WETH_DEPOSIT_TOPIC:
             return self._decode_deposit_event(
                 tx_log=tx_log,
@@ -71,10 +71,10 @@ class WethDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         depositor = hex_or_bytes_to_address(tx_log.topics[1])
         deposited_amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
         deposited_amount = asset_normalized_value(amount=deposited_amount_raw, asset=self.eth)
@@ -117,10 +117,10 @@ class WethDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         withdrawer = hex_or_bytes_to_address(tx_log.topics[1])
         withdrawn_amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
         withdrawn_amount = asset_normalized_value(amount=withdrawn_amount_raw, asset=self.eth)

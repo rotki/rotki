@@ -81,10 +81,10 @@ class AirdropsDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
+            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         if tx_log.topics[0] != UNISWAP_TOKEN_CLAIMED:
             return None, []
 
@@ -106,10 +106,10 @@ class AirdropsDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
+            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         if tx_log.topics[0] != FOX_CLAIMED:
             return None, []
 
@@ -131,10 +131,10 @@ class AirdropsDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
+            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         if tx_log.topics[0] != BADGER_HUNT_EVENT:
             return None, []
 
@@ -159,10 +159,10 @@ class AirdropsDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
+            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         if tx_log.topics[0] != ONEINCH_CLAIMED:
             return None, []
 
@@ -184,11 +184,11 @@ class AirdropsDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
+            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             airdrop: Literal['convex', 'fpis'],
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         if tx_log.topics[0] != FPIS_CONVEX_CLAIM:
             return None, []
 
@@ -228,10 +228,10 @@ class AirdropsDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
+            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         """Example:
         https://etherscan.io/tx/0x1e58aed1baf70b57e6e3e880e1890e7fe607fddc94d62986c38fe70e483e594b
         """

@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, Callable, Literal, Optional
 
 from web3 import Web3
 
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
@@ -23,6 +22,7 @@ from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction, 
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -32,13 +32,13 @@ SUSHISWAP_ROUTER = string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C37
 
 def decode_uniswap_v2_like_swap(
         tx_log: EvmTxReceiptLog,
-        decoded_events: list[EvmEvent],
+        decoded_events: list['EvmEvent'],
         transaction: EvmTransaction,
         counterparty: str,
         database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
-        notify_user: Callable[[EvmEvent, str], None],
-) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+        notify_user: Callable[['EvmEvent', str], None],
+) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
     """Common logic for decoding uniswap v2 like counterpartys (uniswap and sushiswap atm)
 
     Decode trade for uniswap v2 like amm. The approach is to read the events and detect the ones
@@ -156,7 +156,7 @@ def decode_uniswap_v2_like_swap(
 
 def decode_uniswap_like_deposit_and_withdrawals(
         tx_log: EvmTxReceiptLog,
-        decoded_events: list[EvmEvent],
+        decoded_events: list['EvmEvent'],
         all_logs: list[EvmTxReceiptLog],
         event_action_type: Literal['addition', 'removal'],
         counterparty: str,
@@ -165,7 +165,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
         factory_address: ChecksumEvmAddress,
         init_code_hash: str,
         tx_hash: EVMTxHash,
-) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
     """
     This is a common logic for Uniswap V2 like AMMs e.g Sushiswap.
     This method decodes a liquidity addition or removal to Uniswap V2 pool.
@@ -292,7 +292,7 @@ def enrich_uniswap_v2_like_lp_tokens_transfers(
         token: EvmToken,  # pylint: disable=unused-argument
         tx_log: EvmTxReceiptLog,
         transaction: EvmTransaction,  # pylint: disable=unused-argument
-        event: EvmEvent,
+        event: 'EvmEvent',
         action_items: list[ActionItem],  # pylint: disable=unused-argument
         all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
         counterparty: str,

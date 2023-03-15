@@ -1,8 +1,7 @@
 import logging
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryEventSubType, HistoryEventType
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.convex.constants import (
     BOOSTER,
@@ -28,6 +27,9 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -38,10 +40,10 @@ class ConvexDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         amount_raw = hex_or_bytes_to_int(tx_log.data[0:32])
         interacted_address = hex_or_bytes_to_address(tx_log.topics[1])
 
@@ -101,7 +103,7 @@ class ConvexDecoder(DecoderInterface):
             token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            event: EvmEvent,
+            event: 'EvmEvent',
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> bool:

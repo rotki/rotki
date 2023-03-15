@@ -11,7 +11,7 @@ from rotkehlchen.accounting.export.csv import FILENAME_ALL_CSV
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.types import MissingAcquisition
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
@@ -980,7 +980,7 @@ def test_swaps_taxability(accountant, taxable):
     transactions_accountant = pot.transactions
     transactions_accountant._process_tx_swap(
         timestamp=1469020840,
-        out_event=HistoryBaseEntry(
+        out_event=EvmEvent(
             event_identifier=make_evm_tx_hash(make_random_bytes(42)),
             sequence_index=1,
             timestamp=Timestamp(1469020840),
@@ -993,7 +993,7 @@ def test_swaps_taxability(accountant, taxable):
             event_subtype=HistoryEventSubType.SPEND,
             counterparty=CPT_UNISWAP_V2,
         ),
-        in_event=HistoryBaseEntry(
+        in_event=EvmEvent(
             event_identifier=make_evm_tx_hash(make_random_bytes(42)),
             sequence_index=2,
             timestamp=Timestamp(1469020840),

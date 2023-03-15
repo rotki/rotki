@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V1
@@ -15,6 +14,7 @@ from rotkehlchen.types import EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
@@ -79,7 +79,7 @@ class Balancerv1Decoder(DecoderInterface):
             token: 'EvmToken',
             tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            event: HistoryBaseEntry,
+            event: 'EvmEvent',
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],
     ) -> bool:
@@ -96,7 +96,7 @@ class Balancerv1Decoder(DecoderInterface):
             return False
 
         for proxied_event in events_information:
-            if proxied_event['ds_address'] != event.counterparty:
+            if proxied_event['ds_address'] != event.address:
                 continue
 
             if proxied_event['type'] == BalancerV1EventTypes.JOIN:
@@ -141,9 +141,9 @@ class Balancerv1Decoder(DecoderInterface):
     def _check_refunds_v1(
             self,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> list[HistoryBaseEntry]:
+    ) -> list['EvmEvent']:
         """
         It can happen that after sending tokens to the DSProxy in balancer V1 the amount of tokens
         required for the deposit is lower than the amount sent and then those tokens are returned
@@ -175,15 +175,15 @@ class Balancerv1Decoder(DecoderInterface):
     def _check_deposits_withdrawals_v1(
             self,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> list[HistoryBaseEntry]:
+    ) -> list['EvmEvent']:
         """
         Check for accounting in v1 that the deposits/withdrawals events have the needed information
         to process them during accounting.
         """
-        related_events: list[HistoryBaseEntry] = []
-        related_events_map: dict[HistoryBaseEntry, list[HistoryBaseEntry]] = {}
+        related_events: list['EvmEvent'] = []
+        related_events_map: dict['EvmEvent', list['EvmEvent']] = {}
         # last event is only tracked in the case of exiting a pool and contains the event
         # sending the BPT token
         last_event = None

@@ -56,9 +56,9 @@ class CompoundDecoder(DecoderInterface):
             self,
             transaction: EvmTransaction,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             compound_token: EvmToken,
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         minter = hex_or_bytes_to_address(tx_log.data[0:32])
         if not self.base.is_tracked(minter):
             return None, []
@@ -108,9 +108,9 @@ class CompoundDecoder(DecoderInterface):
     def _decode_redeem(
             self,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             compound_token: EvmToken,
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         redeemer = hex_or_bytes_to_address(tx_log.data[0:32])
         if not self.base.is_tracked(redeemer):
             return None, []
@@ -149,9 +149,9 @@ class CompoundDecoder(DecoderInterface):
     def _decode_borrow_and_repay(
             self,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             compound_token: EvmToken,
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         """
         Decode borrow and repayments for compound tokens
         """
@@ -206,11 +206,11 @@ class CompoundDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
             compound_token: EvmToken,
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         if tx_log.topics[0] == MINT_COMPOUND_TOKEN:
             log.debug(f'Hash: {transaction.tx_hash.hex()}')
             return self._decode_mint(transaction=transaction, tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
@@ -227,10 +227,10 @@ class CompoundDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         """Example tx:
         https://etherscan.io/tx/0x024bd402420c3ba2f95b875f55ce2a762338d2a14dac4887b78174254c9ab807
         https://etherscan.io/tx/0x25d341421044fa27006c0ec8df11067d80f69b2d2135065828f1992fa6868a49

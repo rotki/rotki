@@ -9,8 +9,11 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Protocol, Union
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
-from rotkehlchen.accounting.structures.types import ActionType, HistoryEventSubType, HistoryEventType
+from rotkehlchen.accounting.structures.types import (
+    ActionType,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
 from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -37,6 +40,7 @@ from .structures import ActionItem
 from .utils import maybe_reshuffle_events
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.transactions import EvmTransactions
     from rotkehlchen.db.dbhandler import DBHandler
@@ -55,10 +59,10 @@ class EventDecoderFunction(Protocol):
             token: Optional[EvmToken],
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         ...
 
 
@@ -215,10 +219,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             token: Optional[EvmToken],
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         for rule in self.rules.event_rules:
             event, new_action_items = rule(token=token, tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, action_items=action_items, all_logs=all_logs)  # noqa: E501
             if event is not None or len(new_action_items) > 0:
@@ -230,10 +234,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],
             action_items: list[ActionItem],
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         """
         Sees if the log is on an address for which we have specific decoders and calls it
 
@@ -263,9 +267,9 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
     def run_all_post_decoding_rules(
             self,
             transaction: EvmTransaction,
-            decoded_events: list[EvmEvent],
+            decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],
-    ) -> list[EvmEvent]:
+    ) -> list['EvmEvent']:
         """
         Runs all post-decoding rules from self.rules.post_decoding_rules.
         The post-decoding rules list consists of tuples (priority, rule) and must be sorted by
@@ -280,7 +284,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             self,
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
-    ) -> list[EvmEvent]:
+    ) -> list['EvmEvent']:
         """Decodes an evm transaction and its receipt and saves result in the DB"""
         self.base.reset_sequence_counter()
         # check if any eth transfer happened in the transaction, including in internal transactions
@@ -363,7 +367,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             self,
             ignore_cache: bool,
             tx_hashes: Optional[list[EVMTxHash]],
-    ) -> list[EvmEvent]:
+    ) -> list['EvmEvent']:
         """Make sure that receipts are pulled + events decoded for the given transaction hashes.
 
         The transaction hashes must exist in the DB at the time of the call
@@ -412,7 +416,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
             ignore_cache: bool,
-    ) -> list[EvmEvent]:
+    ) -> list['EvmEvent']:
         """Get a transaction's events if existing in the DB or decode them"""
         serialized_chain_id = self.evm_inquirer.chain_id.serialize_for_db()
         if ignore_cache is True:  # delete all decoded events
@@ -433,7 +437,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     (transaction.tx_hash, serialized_chain_id, HISTORY_MAPPING_STATE_DECODED),
                 )
                 if cursor.fetchone()[0] != 0:  # already decoded and in the DB
-                    events: list[EvmEvent] = self.dbevents.get_history_events(  # type: ignore[assignment]  # noqa: E501
+                    events: list['EvmEvent'] = self.dbevents.get_history_events(  # type: ignore[assignment]  # noqa: E501
                         cursor=cursor,
                         filter_query=EvmEventFilterQuery.make(
                             event_identifiers=[transaction.tx_hash],
@@ -450,7 +454,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             self,
             tx: EvmTransaction,
             tx_receipt: EvmTxReceipt,
-            events: list[EvmEvent],
+            events: list['EvmEvent'],
     ) -> None:
         """
         check for internal transactions if the transaction is not canceled. This function mutates
@@ -478,7 +482,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 continue
 
             event_type, location_label, address, counterparty, verb = direction_result
-            notes_counterparty = counterparty or address  # counterparty if found, otherwise address  # noqa: E501
+            counterparty_or_address = counterparty or address
             preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
             events.append(self.base.make_event_next_index(
                 tx_hash=tx.tx_hash,
@@ -488,12 +492,12 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 asset=self.value_asset,
                 balance=Balance(amount=amount),
                 location_label=location_label,
-                notes=f'{verb} {amount} {self.value_asset.symbol} {preposition} {notes_counterparty}',  # noqa: E501
+                notes=f'{verb} {amount} {self.value_asset.symbol} {preposition} {counterparty_or_address}',  # noqa: E501
                 address=address,
                 counterparty=counterparty,
             ))
 
-    def _get_eth_transfer_event(self, tx: EvmTransaction) -> Optional[EvmEvent]:
+    def _get_eth_transfer_event(self, tx: EvmTransaction) -> Optional['EvmEvent']:
         direction_result = self.base.decode_direction(
             from_address=tx.from_address,
             to_address=tx.to_address,
@@ -501,7 +505,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         if direction_result is None:
             return None
         event_type, location_label, address, counterparty, verb = direction_result
-        notes_counterparty = counterparty or address  # counterparty if found, otherwise address
+        counterparty_or_address = counterparty or address
         amount = ZERO if tx.value == 0 else from_wei(FVal(tx.value))
         preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
         return self.base.make_event_next_index(
@@ -512,7 +516,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             asset=self.value_asset,
             balance=Balance(amount=amount),
             location_label=location_label,
-            notes=f'{verb} {amount} {self.value_asset.symbol} {preposition} {notes_counterparty}',
+            notes=f'{verb} {amount} {self.value_asset.symbol} {preposition} {counterparty_or_address}',  # noqa: E501
             address=address,
             counterparty=counterparty,
         )
@@ -522,10 +526,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             token: Optional[EvmToken],
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
+            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         if tx_log.topics[0] != ERC20_APPROVE or token is None:
             return None, []
 
@@ -569,9 +573,9 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             self,
             tx: EvmTransaction,
             tx_receipt: EvmTxReceipt,
-    ) -> list[EvmEvent]:
+    ) -> list['EvmEvent']:
         """Decodes normal ETH transfers, internal transactions and gas cost payments"""
-        events: list[EvmEvent] = []
+        events: list['EvmEvent'] = []
         # check for gas spent
         direction_result = self.base.decode_direction(tx.from_address, tx.to_address)
         if direction_result is not None:
@@ -633,10 +637,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             token: Optional[EvmToken],
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
+            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         if tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
             return None, []
 
@@ -728,7 +732,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             token: EvmToken,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            event: EvmEvent,
+            event: 'EvmEvent',
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
     ) -> None:

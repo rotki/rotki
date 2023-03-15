@@ -4,7 +4,7 @@ from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
@@ -26,7 +26,7 @@ EVM_HASH = make_evm_tx_hash(make_random_bytes(32))
 USER_ADDRESS = make_evm_address()
 
 DEPOSIT_ENTRIES = [
-    HistoryBaseEntry(
+    EvmEvent(
         event_identifier=EVM_HASH,
         sequence_index=0,
         timestamp=TIMESTAMP_1_MS,
@@ -40,7 +40,7 @@ DEPOSIT_ENTRIES = [
         counterparty='gas',
         identifier=None,
         extra_data=None,
-    ), HistoryBaseEntry(
+    ), EvmEvent(
         event_identifier=EVM_HASH,
         sequence_index=131,
         timestamp=TIMESTAMP_1_MS,
@@ -54,7 +54,7 @@ DEPOSIT_ENTRIES = [
         counterparty=CPT_BALANCER_V1,
         identifier=None,
         extra_data={'deposit_events_num': 4},
-    ), HistoryBaseEntry(
+    ), EvmEvent(
         event_identifier=EVM_HASH,
         sequence_index=132,
         timestamp=TIMESTAMP_1_MS,
@@ -68,7 +68,7 @@ DEPOSIT_ENTRIES = [
         counterparty=CPT_BALANCER_V1,
         identifier=None,
         extra_data=None,
-    ), HistoryBaseEntry(
+    ), EvmEvent(
         event_identifier=EVM_HASH,
         sequence_index=134,
         timestamp=TIMESTAMP_1_MS,
@@ -82,7 +82,7 @@ DEPOSIT_ENTRIES = [
         counterparty=CPT_BALANCER_V1,
         identifier=None,
         extra_data=None,
-    ), HistoryBaseEntry(
+    ), EvmEvent(
         event_identifier=EVM_HASH,
         sequence_index=144,
         timestamp=TIMESTAMP_1_MS,
@@ -96,7 +96,7 @@ DEPOSIT_ENTRIES = [
         counterparty=CPT_BALANCER_V1,
         identifier=None,
         extra_data=None,
-    ), HistoryBaseEntry(
+    ), EvmEvent(
         event_identifier=EVM_HASH,
         sequence_index=145,
         timestamp=TIMESTAMP_1_MS,
@@ -110,7 +110,7 @@ DEPOSIT_ENTRIES = [
         counterparty=CPT_BALANCER_V1,
         identifier=None,
         extra_data=None,
-    ), HistoryBaseEntry(
+    ), EvmEvent(
         event_identifier=EVM_HASH,
         sequence_index=146,
         timestamp=TIMESTAMP_1_MS,

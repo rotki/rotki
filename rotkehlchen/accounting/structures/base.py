@@ -1,8 +1,7 @@
 import logging
 from collections.abc import Iterator
 from dataclasses import dataclass
-from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.types import (
@@ -28,6 +27,7 @@ from rotkehlchen.utils.misc import (
     ts_ms_to_sec,
     ts_sec_to_ms,
 )
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 from .balance import Balance
 
@@ -55,6 +55,7 @@ HISTORY_EVENT_DB_TUPLE_READ = tuple[
 ]
 
 HISTORY_BASE_ENTRY_DB_TUPLE_WRITE = tuple[
+    int,            # entry_type
     bytes,          # event_identifier
     int,            # sequence_index
     int,            # timestamp
@@ -69,20 +70,10 @@ HISTORY_BASE_ENTRY_DB_TUPLE_WRITE = tuple[
 ]
 
 
-class HistoryEntryType(Enum):
-    """Type of a history entry.
-
-    TODO: think of a better name. `HistoryEntryType` can be easily confused with `HistoryEventType`
-    """
-    BASE_ENTRY = auto()
-    EVM_EVENT = auto()
-
-
-def determine_event_type(event_identifier: bytes, location: Location) -> HistoryEntryType:
-    if location == Location.KRAKEN or event_identifier.startswith(b'rotki_events'):
-        return HistoryEntryType.BASE_ENTRY
-
-    return HistoryEntryType.EVM_EVENT
+class HistoryBaseEntryType(SerializableEnumMixin):
+    """Type of a history entry"""
+    BASE_ENTRY = 0
+    EVM_EVENT = 1
 
 
 class HistoryBaseEntry(AccountingEventMixin):
@@ -110,7 +101,9 @@ class HistoryBaseEntry(AccountingEventMixin):
             location_label: Optional[str] = None,
             notes: Optional[str] = None,
             identifier: Optional[int] = None,
+            entry_type: HistoryBaseEntryType = HistoryBaseEntryType.BASE_ENTRY,
     ) -> None:
+        self.entry_type = entry_type
         self.event_identifier = event_identifier
         self.sequence_index = sequence_index
         self.timestamp = timestamp
@@ -127,23 +120,25 @@ class HistoryBaseEntry(AccountingEventMixin):
         if isinstance(other, HistoryBaseEntry) is False:
             return False
 
-        return all([
-            self.event_identifier == other.event_identifier,
-            self.sequence_index == other.sequence_index,
-            self.timestamp == other.timestamp,
-            self.location == other.location,
-            self.event_type == other.event_type,
-            self.event_subtype == other.event_subtype,
-            self.asset == other.asset,
-            self.balance == other.balance,
-            self.location_label == other.location_label,
-            self.notes == other.notes,
-            self.identifier == other.identifier,
-        ])
+        return (
+            self.entry_type == other.entry_type and
+            self.event_identifier == other.event_identifier and
+            self.sequence_index == other.sequence_index and
+            self.timestamp == other.timestamp and
+            self.location == other.location and
+            self.event_type == other.event_type and
+            self.event_subtype == other.event_subtype and
+            self.asset == other.asset and
+            self.balance == other.balance and
+            self.location_label == other.location_label and
+            self.notes == other.notes and
+            self.identifier == other.identifier
+        )
 
     def _history_base_entry_repr_fields(self) -> list[str]:
         """Returns a list of printable fields"""
         return [
+            f'{self.entry_type=}',
             f'{self.event_identifier=}',
             f'{self.sequence_index=}',
             f'{self.timestamp=}',
@@ -162,6 +157,7 @@ class HistoryBaseEntry(AccountingEventMixin):
 
     def serialize_for_db(self) -> HISTORY_BASE_ENTRY_DB_TUPLE_WRITE:
         return (
+            self.entry_type.value,
             self.event_identifier,
             self.sequence_index,
             int(self.timestamp),
@@ -176,12 +172,13 @@ class HistoryBaseEntry(AccountingEventMixin):
         )
 
     @classmethod
-    def deserialize_from_db(cls, entry: HISTORY_EVENT_DB_TUPLE_READ) -> 'HistoryBaseEntry':
+    def deserialize_from_db(cls, entry: tuple) -> 'HistoryBaseEntry':
         """
         May raise:
         - DeserializationError
         - UnknownAsset
         """
+        entry = cast(HISTORY_EVENT_DB_TUPLE_READ, entry)
         try:
             return cls(
                 identifier=entry[0],
@@ -208,8 +205,7 @@ class HistoryBaseEntry(AccountingEventMixin):
     @property
     def serialized_event_identifier(self) -> str:
         """Take a HistoryBaseEntry's event_identifier and returns a string representation."""
-        event_type = determine_event_type(self.event_identifier, self.location)
-        if event_type == HistoryEntryType.BASE_ENTRY:
+        if self.entry_type == HistoryBaseEntryType.BASE_ENTRY:
             return self.event_identifier.decode()
 
         hex_representation = self.event_identifier.hex()
@@ -227,6 +223,7 @@ class HistoryBaseEntry(AccountingEventMixin):
 
     def serialize(self) -> dict[str, Any]:
         return {
+            'entry_type': str(self.entry_type),
             'identifier': self.identifier,
             'event_identifier': self.serialized_event_identifier,
             'sequence_index': self.sequence_index,
@@ -282,11 +279,10 @@ class HistoryBaseEntry(AccountingEventMixin):
     def get_timestamp_in_sec(self) -> Timestamp:
         return ts_ms_to_sec(self.timestamp)
 
-    def get_type_identifier(self, include_counterparty: bool = True) -> str:
+    def get_type_identifier(self, include_counterparty: bool = True) -> str:  # pylint: disable=unused-argument  # include_counterparty is to be compatible with EvmEvent class  # noqa: E501
         """
         A unique type identifier for known event types.
-        Computes the identifier from event type, event subtype and counterparty if
-        `include_counterparty` is True.
+        Computes the identifier from event type and event subtype.
         """
         identifier = str(self.event_type) + '__' + str(self.event_subtype)
 

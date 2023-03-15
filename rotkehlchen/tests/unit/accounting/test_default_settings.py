@@ -12,7 +12,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.transactions import TransactionsAccountant
@@ -98,7 +98,7 @@ def _gain_one_ether(
         event_subtype: 'HistoryEventSubType' = HistoryEventSubType.NONE,
 ) -> None:
     """Helper function to gain 1 ETH, so that spending events have something to spend"""
-    eth_gain_event = HistoryBaseEntry(
+    eth_gain_event = EvmEvent(
         event_identifier=EXAMPLE_EVM_HASH,
         sequence_index=0,
         timestamp=TIMESTAMP_1_MS,
@@ -119,7 +119,7 @@ def _gain_one_ether(
 
 def test_accounting_no_settings(accounting_pot: 'AccountingPot'):
     """Test that if there are no settings provided, the event is not taken into account"""
-    event = HistoryBaseEntry(
+    event = EvmEvent(
         event_identifier=EXAMPLE_EVM_HASH,
         sequence_index=0,
         timestamp=TimestampMS(0),
@@ -200,7 +200,7 @@ def test_accounting_spend_settings(
         include_crypto2crypto,
 ):
     _gain_one_ether(transactions=accounting_pot.transactions)
-    spend_event = HistoryBaseEntry(
+    spend_event = EvmEvent(
         event_identifier=EXAMPLE_EVM_HASH,
         sequence_index=0,
         timestamp=TIMESTAMP_2_MS,
@@ -272,7 +272,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
     Also checks that if counterparty is not known we fallback to default swaps treatment.
     """
     _gain_one_ether(transactions=accounting_pot.transactions)
-    swap_spend_event = HistoryBaseEntry(
+    swap_spend_event = EvmEvent(
         event_identifier=EXAMPLE_EVM_HASH,
         sequence_index=1,
         timestamp=TIMESTAMP_2_MS,
@@ -285,7 +285,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
         event_subtype=HistoryEventSubType.SPEND,
         counterparty=counterparty,
     )
-    swap_receive_event = HistoryBaseEntry(
+    swap_receive_event = EvmEvent(
         event_identifier=EXAMPLE_EVM_HASH,
         sequence_index=2,
         timestamp=TIMESTAMP_2_MS,

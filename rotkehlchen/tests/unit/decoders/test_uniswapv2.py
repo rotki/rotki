@@ -910,7 +910,7 @@ def test_uniswap_v2_swap_events_order(
 
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             timestamp=1672784687000,
             location=Location.ETHEREUM,
@@ -922,7 +922,7 @@ def test_uniswap_v2_swap_events_order(
             location_label=user_address,
             notes='Burned 0.00468942 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             timestamp=1672784687000,
             location=Location.ETHEREUM,
@@ -934,7 +934,8 @@ def test_uniswap_v2_swap_events_order(
             location_label=user_address,
             notes=f'Swap 23.084547675349898741 MTA in uniswap-v2 from {user_address}',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0x0d0d65E7A7dB277d3E0F5E1676325E75f3340455'),
+        ), EvmEvent(
             event_identifier=evmhash,
             timestamp=1672784687000,
             location=Location.ETHEREUM,
@@ -946,7 +947,8 @@ def test_uniswap_v2_swap_events_order(
             location_label=user_address,
             notes=f'Receive 58.517806710690769903 DAI in uniswap-v2 from {user_address}',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
-        ), HistoryBaseEntry(
+            address=string_to_evm_address('0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11'),
+        ), EvmEvent(
             event_identifier=evmhash,
             timestamp=1672784687000,
             location=Location.ETHEREUM,
@@ -957,7 +959,8 @@ def test_uniswap_v2_swap_events_order(
             balance=Balance(FVal('1.157920892373161954235709850E+59')),
             location_label=user_address,
             notes=f'Set MTA spending approval of {user_address} by 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
-            counterparty='0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
+            counterparty=None,
+            address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
         ),
     ]
     assert events == expected_events

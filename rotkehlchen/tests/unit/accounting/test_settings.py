@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
@@ -109,8 +109,8 @@ def test_include_gas_costs(accountant, google_service):
             fee=None,
             fee_currency=None,
             link=None,
-        ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hash),
+        ), EvmEvent(
+            event_identifier=EvmEvent.deserialize_event_identifier(tx_hash),
             sequence_index=0,
             timestamp=1569924574000,
             location=Location.ETHEREUM,

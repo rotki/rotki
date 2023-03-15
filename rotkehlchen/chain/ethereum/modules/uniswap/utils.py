@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 import requests
 from web3.types import BlockIdentifier
 
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
@@ -32,6 +31,7 @@ from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -247,10 +247,10 @@ def find_uniswap_v2_lp_price(
 def decode_basic_uniswap_info(
         amount_sent: int,
         amount_received: int,
-        decoded_events: list[EvmEvent],
+        decoded_events: list['EvmEvent'],
         counterparty: str,
-        notify_user: Callable[[EvmEvent, str], None],
-) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+        notify_user: Callable[['EvmEvent', str], None],
+) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
     """
     Check last three events and if they are related to the swap, label them as such.
     We check three events because potential events are: spend, (optionally) approval, receive.

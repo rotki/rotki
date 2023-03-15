@@ -128,7 +128,7 @@ class BaseDecoderTools():
             token: EvmToken,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-    ) -> Optional[EvmEvent]:
+    ) -> Optional['EvmEvent']:
         """
         Caller should know this is a transfer of either an ERC20 or an ERC721 token.
         Call this method to decode it.
@@ -148,14 +148,14 @@ class BaseDecoderTools():
 
         extra_data = None
         event_type, location_label, address, counterparty, verb = direction_result
-        notes_counterparty = counterparty or address  # counterparty if found, otherwise address
+        counterparty_or_address = counterparty or address
         amount_raw_or_token_id = hex_or_bytes_to_int(tx_log.data)
         if token.token_kind == EvmTokenKind.ERC20:
             amount = token_normalized_value(token_amount=amount_raw_or_token_id, token=token)
             if event_type in OUTGOING_EVENT_TYPES:
-                notes = f'{verb} {amount} {token.symbol} from {location_label} to {notes_counterparty}'  # noqa: E501
+                notes = f'{verb} {amount} {token.symbol} from {location_label} to {counterparty_or_address}'  # noqa: E501
             else:
-                notes = f'{verb} {amount} {token.symbol} from {notes_counterparty} to {location_label}'  # noqa: E501
+                notes = f'{verb} {amount} {token.symbol} from {counterparty_or_address} to {location_label}'  # noqa: E501
         elif token.token_kind == EvmTokenKind.ERC721:
             try:
                 if self.is_non_conformant_erc721(token.evm_address):  # id is in the data
@@ -212,7 +212,7 @@ class BaseDecoderTools():
             product: Optional[str] = None,
             address: Optional[ChecksumEvmAddress] = None,
             extra_data: Optional[dict[str, Any]] = None,
-    ) -> EvmEvent:
+    ) -> 'EvmEvent':
         """A convenience function to create an EvmEvent depending on the
         decoder's chain id"""
         return EvmEvent(
@@ -246,7 +246,7 @@ class BaseDecoderTools():
             product: Optional[str] = None,
             address: Optional[ChecksumEvmAddress] = None,
             extra_data: Optional[dict[str, Any]] = None,
-    ) -> EvmEvent:
+    ) -> 'EvmEvent':
         """Convenience function on top of make_event to use transaction and ReceiptLog"""
         return self.make_event(
             tx_hash=transaction.tx_hash,
@@ -278,7 +278,7 @@ class BaseDecoderTools():
             product: Optional[str] = None,
             address: Optional[ChecksumEvmAddress] = None,
             extra_data: Optional[dict[str, Any]] = None,
-    ) -> EvmEvent:
+    ) -> 'EvmEvent':
         """Convenience function on top of make_event to use next sequence index"""
         return self.make_event(
             tx_hash=tx_hash,

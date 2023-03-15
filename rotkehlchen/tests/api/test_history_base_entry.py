@@ -6,7 +6,8 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import SUB_SWAPS_DETAILS, HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -37,10 +38,11 @@ if TYPE_CHECKING:
 
 
 def entry_to_input_dict(
-        entry: HistoryBaseEntry,
+        entry: 'EvmEvent',
         include_identifier: bool,
 ) -> dict[str, Any]:
     serialized = entry.serialize_without_extra_data()
+    serialized.pop('entry_type')  # we don't need this for calling API
     if include_identifier:
         assert entry.identifier is not None
         serialized['identifier'] = entry.identifier
@@ -49,8 +51,8 @@ def entry_to_input_dict(
     return serialized
 
 
-def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list[HistoryBaseEntry]:
-    entries = [HistoryBaseEntry(
+def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list['EvmEvent']:
+    entries = [EvmEvent(
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
         sequence_index=162,
         timestamp=TimestampMS(1569924574000),
@@ -61,8 +63,8 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list[Histor
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         notes='Set DAI spending approval of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE to 1',  # noqa: E501
         event_subtype=HistoryEventSubType.APPROVE,
-        counterparty='0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',
-    ), HistoryBaseEntry(
+        address=string_to_evm_address('0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE'),
+    ), EvmEvent(
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
         sequence_index=163,
         timestamp=TimestampMS(1569924574000),
@@ -73,8 +75,8 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list[Histor
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         notes='Set USDT spending approval of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE to 1',  # noqa: E501
         event_subtype=HistoryEventSubType.APPROVE,
-        counterparty='0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',
-    ), HistoryBaseEntry(
+        address=string_to_evm_address('0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE'),
+    ), EvmEvent(
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
         sequence_index=2,
         timestamp=TimestampMS(1619924574000),
@@ -87,7 +89,7 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list[Histor
         event_subtype=HistoryEventSubType.FEE,
         counterparty=CPT_GAS,
         extra_data={'testing_data': 42},
-    ), HistoryBaseEntry(
+    ), EvmEvent(
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
         sequence_index=3,
         timestamp=TimestampMS(1619924574000),
@@ -99,7 +101,7 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list[Histor
         notes='Deposit something somewhere',
         event_subtype=HistoryEventSubType.NONE,
         counterparty='somewhere',
-    ), HistoryBaseEntry(
+    ), EvmEvent(
         event_identifier=HistoryBaseEntry.deserialize_event_identifier('0x4b5489ed325483db3a8c4831da1d5ac08fb9ab0fd8c570aa3657e0c267a7d023'),  # noqa: E501
         sequence_index=55,
         timestamp=TimestampMS(1629924574000),
@@ -110,7 +112,7 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list[Histor
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         notes='Receive 1 ETH from 0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a',
         event_subtype=HistoryEventSubType.NONE,
-        counterparty='0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a',
+        address=string_to_evm_address('0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a'),
     )]
 
     entries_added_using_api = 0
@@ -128,7 +130,7 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list[Histor
         else:
             json_data = entry_to_input_dict(entry, include_identifier=False)
             response = requests.put(
-                api_url_for(server, 'historybaseentryresource'),
+                api_url_for(server, 'evmeventresource'),
                 json=json_data,
             )
             result = assert_proper_response_with_result(response)
@@ -158,7 +160,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     json_data = entry_to_input_dict(entry, include_identifier=True)
     json_data['identifier'] = unknown_id
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
+        api_url_for(rotkehlchen_api_server, 'evmeventresource'),
         json=json_data,
     )
     assert_error_response(
@@ -171,7 +173,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     entry.timestamp = TimestampMS(1649924575000)
     json_data = entry_to_input_dict(entry, include_identifier=True)
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
+        api_url_for(rotkehlchen_api_server, 'evmeventresource'),
         json=json_data,
     )
     assert_error_response(
@@ -184,7 +186,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     entry.timestamp = TimestampMS(1649924575000)
     json_data = entry_to_input_dict(entry, include_identifier=False)
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
+        api_url_for(rotkehlchen_api_server, 'evmeventresource'),
         json=json_data,
     )
     assert_error_response(
@@ -202,12 +204,12 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     entry.location_label = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
     entry.notes = 'Deposit stuff for staking somewhere'
     entry.event_subtype = HistoryEventSubType.NONE
-    entry.counterparty = '0xAB8d71d59827dcc90fEDc5DDb97f87eFfB1B1A5B'
+    entry.address = string_to_evm_address('0xAB8d71d59827dcc90fEDc5DDb97f87eFfB1B1A5B')
     json_data = entry_to_input_dict(entry, include_identifier=True)
     assert entry.extra_data == {'testing_data': 42}
 
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
+        api_url_for(rotkehlchen_api_server, 'evmeventresource'),
         json=json_data,
     )
     assert_simple_ok_response(response)
@@ -216,7 +218,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     # check that the extra data information hasn't been overwritten
     with db.db.conn.read_ctx() as cursor:
         cursor.execute(
-            'SELECT extra_data FROM history_events WHERE identifier=?',
+            'SELECT extra_data FROM evm_events_info WHERE identifier=?',
             (entry.identifier,),
         )
         db_extra_data = json.loads(cursor.fetchone()[0])
@@ -231,7 +233,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
 
         # test deleting unknown fails
         response = requests.delete(
-            api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
+            api_url_for(rotkehlchen_api_server, 'evmeventresource'),
             json={'identifiers': [19, 1, 3]},
         )
         assert_error_response(
@@ -246,7 +248,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
 
         # test deleting works
         response = requests.delete(
-            api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
+            api_url_for(rotkehlchen_api_server, 'evmeventresource'),
             json={'identifiers': [2, 4]},
         )
         result = assert_proper_response_with_result(response)
@@ -257,7 +259,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
 
         # test that deleting last event of a transaction hash fails
         response = requests.delete(
-            api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
+            api_url_for(rotkehlchen_api_server, 'evmeventresource'),
             json={'identifiers': [1]},
         )
         assert_error_response(
@@ -288,7 +290,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
         input_data=b'',
         nonce=26,
     )
-    event1 = HistoryBaseEntry(
+    event1 = EvmEvent(
         event_identifier=transaction.tx_hash,
         sequence_index=221,
         timestamp=ts_sec_to_ms(transaction.timestamp),
@@ -298,7 +300,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
         asset=A_SUSHI,
         balance=Balance(amount=FVal(100)),
     )
-    event2 = HistoryBaseEntry(
+    event2 = EvmEvent(
         event_identifier=transaction.tx_hash,
         sequence_index=222,
         timestamp=ts_sec_to_ms(transaction.timestamp),

@@ -6,7 +6,7 @@ from typing import Any, Optional
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -122,10 +122,10 @@ def make_ethereum_event(
         counterparty: Optional[str] = None,
         event_type: HistoryEventType = HistoryEventType.UNKNOWN,
         event_subtype: HistoryEventSubType = HistoryEventSubType.NONE,
-) -> HistoryBaseEntry:
+) -> EvmEvent:
     if tx_hash is None:
         tx_hash = make_random_bytes(32)
-    return HistoryBaseEntry(
+    return EvmEvent(
         event_identifier=tx_hash,
         sequence_index=index,
         identifier=index,
@@ -140,7 +140,7 @@ def make_ethereum_event(
 
 
 def generate_tx_entries_response(
-        data: list[tuple[EvmTransaction, list[HistoryBaseEntry]]],
+        data: list[tuple[EvmTransaction, list['EvmEvent']]],
 ) -> list:
     result = []
     for tx, events in data:
