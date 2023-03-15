@@ -10,7 +10,11 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.accounting.structures.types import (
+    ActionType,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
 from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -321,10 +325,19 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             events = [eth_event]
 
         with self.database.user_write() as write_cursor:
-            self.dbevents.add_history_events(
-                write_cursor=write_cursor,
-                history=events,
-            )
+            if len(events) > 0:
+                self.dbevents.add_history_events(
+                    write_cursor=write_cursor,
+                    history=events,
+                )
+            else:
+                # This is probably a phishing zero value token transfer tx.
+                # Details here: https://github.com/rotki/rotki/issues/5749
+                self.database.add_to_ignored_action_ids(
+                    write_cursor=write_cursor,
+                    action_type=ActionType.EVM_TRANSACTION,
+                    identifiers=[transaction.identifier],
+                )
             write_cursor.execute(
                 'INSERT OR IGNORE INTO evm_tx_mappings(tx_hash, chain_id, value) VALUES(?, ?, ?)',
                 (transaction.tx_hash, self.evm_inquirer.chain_id.serialize_for_db(), HISTORY_MAPPING_STATE_DECODED),  # noqa: E501

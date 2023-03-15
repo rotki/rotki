@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.constants.assets import A_DAI, A_ETH
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -56,22 +56,5 @@ def test_makerdao_simple_transaction(
             counterparty='makerdao vault',
             identifier=None,
             extra_data={'vault_type': 'ETH-A'},
-        ), HistoryBaseEntry(
-            event_identifier=HexBytes('0x95de47059bcc084ebb8bdd60f48fbcf05619c2af84bf612fdc27a6bbf9b5097e'),  # noqa: E501
-            sequence_index=105,
-            timestamp=1593572988000,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
-            asset=A_DAI,
-            balance=Balance(amount=ZERO, usd_value=ZERO),
-            location_label='0x648aA14e4424e0825A5cE739C8C68610e143FB79',
-            notes='Payback 0 DAI of debt to makerdao vault 9842',
-            counterparty='makerdao vault',
-            identifier=None,
-            extra_data={
-                'vault_address': '0xdE3b5816b51d88C59C341A0EAbB486F5566542c0',
-                'cdp_id': 9842,
-            },
         ),
     ]
