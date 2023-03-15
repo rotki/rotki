@@ -632,12 +632,24 @@ CREATE TABLE IF NOT EXISTS history_events (
     notes TEXT,
     type TEXT NOT NULL,
     subtype TEXT NOT NULL,
-    counterparty TEXT,
-    extra_data TEXT,
     FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
     UNIQUE(event_identifier, sequence_index)
 );
 """
+
+
+# Table that extends history_events table and stores data specific to evm events.
+DB_CREATE_EVM_EVENTS_INFO = """
+CREATE TABLE IF NOT EXISTS evm_events_info(
+    identifier INTEGER PRIMARY KEY,
+    counterparty TEXT,
+    product TEXT,
+    address TEXT,
+    extra_data TEXT,
+    FOREIGN KEY(identifier) REFERENCES history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+);
+"""  # noqa: E501
+
 
 # This table is used to store for each history event it's chain id and whether it is customized.
 DB_CREATE_HISTORY_EVENTS_MAPPINGS = """
@@ -772,6 +784,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_ETH2_DEPOSITS}
 {DB_CREATE_ETH2_DAILY_STAKING_DETAILS}
 {DB_CREATE_HISTORY_EVENTS}
+{DB_CREATE_EVM_EVENTS_INFO}
 {DB_CREATE_HISTORY_EVENTS_MAPPINGS}
 {DB_CREATE_LEDGER_ACTION_TYPE}
 {DB_CREATE_LEDGER_ACTIONS}
