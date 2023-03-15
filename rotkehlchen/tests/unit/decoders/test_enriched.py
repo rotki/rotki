@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GNOSIS_CHAIN
@@ -14,7 +14,13 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChainID, EvmTransaction, Location, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChainID,
+    EvmTransaction,
+    Location,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
@@ -30,8 +36,8 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14351442,
-        from_address='0xc931De6d845846E332a52D045072E3feF540Bd5d',
-        to_address='0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe',
+        from_address=string_to_evm_address('0xc931De6d845846E332a52D045072E3feF540Bd5d'),
+        to_address=string_to_evm_address('0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe'),
         value=0,
         gas=171249,
         gas_price=22990000000,
@@ -78,13 +84,14 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
     )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
+    timestamp = TimestampMS(1646375440000)
     expected_events = [
-        HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
+        EvmEvent(
+            event_identifier=EvmEvent.deserialize_event_identifier(
                 '0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17',
             ),
             sequence_index=0,
-            timestamp=1646375440000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -96,12 +103,12 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
             location_label='0xc931De6d845846E332a52D045072E3feF540Bd5d',
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
+        ), EvmEvent(
+            event_identifier=EvmEvent.deserialize_event_identifier(
                 '0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17',
             ),
             sequence_index=298,
-            timestamp=1646375440000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
@@ -110,6 +117,7 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
             location_label='0xc931De6d845846E332a52D045072E3feF540Bd5d',
             notes='Claim 609.397099685988397871 1INCH from the 1INCH airdrop',
             counterparty=CPT_ONEINCH,
+            address=string_to_evm_address('0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe'),
         ),
     ]
     assert events == expected_events
@@ -127,8 +135,8 @@ def test_gnosis_chain_bridge(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14351442,
-        from_address='0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4',
-        to_address='0x88ad09518695c6c3712AC10a214bE5109a655671',
+        from_address=string_to_evm_address('0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4'),
+        to_address=string_to_evm_address('0x88ad09518695c6c3712AC10a214bE5109a655671'),
         value=0,
         gas=171249,
         gas_price=22990000000,
@@ -190,10 +198,8 @@ def test_gnosis_chain_bridge(database, ethereum_inquirer, eth_transactions):
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [
-        HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
-                '0x52f853d559d83b5303faf044e00e9109bd5c6a05b6633f9df34939f8e7c6de02',
-            ),
+        EvmEvent(
+            event_identifier=evmhash,
             sequence_index=0,
             timestamp=1646375440000,
             location=Location.ETHEREUM,
@@ -207,10 +213,8 @@ def test_gnosis_chain_bridge(database, ethereum_inquirer, eth_transactions):
             location_label='0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4',
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
-                '0x52f853d559d83b5303faf044e00e9109bd5c6a05b6633f9df34939f8e7c6de02',
-            ),
+        ), EvmEvent(
+            event_identifier=evmhash,
             sequence_index=474,
             timestamp=1646375440000,
             location=Location.ETHEREUM,
@@ -221,6 +225,7 @@ def test_gnosis_chain_bridge(database, ethereum_inquirer, eth_transactions):
             location_label='0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4',
             notes='Bridge 159137.254963 USDC from gnosis chain',
             counterparty=CPT_GNOSIS_CHAIN,
+            address=string_to_evm_address('0x88ad09518695c6c3712AC10a214bE5109a655671'),
         ),
     ]
     assert events == expected_events
@@ -238,8 +243,8 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14351442,
-        from_address='0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe',
-        to_address='0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E',
+        from_address=string_to_evm_address('0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe'),
+        to_address=string_to_evm_address('0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E'),
         value=0,
         gas=171249,
         gas_price=22990000000,
@@ -287,12 +292,10 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [
-        HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
-                '0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa',
-            ),
+        EvmEvent(
+            event_identifier=evmhash,
             sequence_index=0,
-            timestamp=1646375440000,
+            timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -304,12 +307,10 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
             location_label='0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe',
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
-                '0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa',
-            ),
+        ), EvmEvent(
+            event_identifier=evmhash,
             sequence_index=474,
-            timestamp=1646375440000,
+            timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
@@ -317,7 +318,8 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
             balance=Balance(amount=FVal('271.5872'), usd_value=ZERO),
             location_label='0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe',
             notes='Claim 271.5872 GTC from the GTC airdrop',
-            counterparty='0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E',
+            counterparty=None,
+            address=string_to_evm_address('0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E'),
         ),
     ]
     assert events == expected_events

@@ -1,11 +1,12 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BAL, A_BPT, A_DAI, A_ETH, A_USDC, A_WETH
@@ -99,7 +100,7 @@ def test_balancer_v2_swap(database, ethereum_manager, eth_transactions):
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
@@ -110,10 +111,10 @@ def test_balancer_v2_swap(database, ethereum_manager, eth_transactions):
             balance=Balance(amount=FVal('0.00393701451')),
             location_label='0x20A1CF262Cd3A42a50D226fD728104119e6fD0a1',
             notes='Burned 0.00393701451 ETH for gas',
-            counterparty='gas',
+            counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1646375440000),
@@ -125,9 +126,10 @@ def test_balancer_v2_swap(database, ethereum_manager, eth_transactions):
             location_label=user_address,
             notes='Swap 0.001 ETH in Balancer v2',
             counterparty=CPT_BALANCER_V2,
+            address=string_to_evm_address('0xBA12222222228d8Ba445958a75a0704d566BF2C8'),
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=100,
             timestamp=TimestampMS(1646375440000),
@@ -139,6 +141,7 @@ def test_balancer_v2_swap(database, ethereum_manager, eth_transactions):
             location_label=user_address,
             notes='Receive 1.207092929058998715 DAI from Balancer v2',
             counterparty=CPT_BALANCER_V2,
+            address=string_to_evm_address('0xBA12222222228d8Ba445958a75a0704d566BF2C8'),
             identifier=None,
             extra_data=None,
         ),
@@ -230,7 +233,7 @@ def test_balancer_v1_join(database, ethereum_manager, eth_transactions):
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
@@ -241,10 +244,10 @@ def test_balancer_v1_join(database, ethereum_manager, eth_transactions):
             balance=Balance(amount=FVal('0.00393701451')),
             location_label='0x7716a99194d758c8537F056825b75Dd0C8FDD89f',
             notes='Burned 0.00393701451 ETH for gas',
-            counterparty='gas',
+            counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=328,
             timestamp=TimestampMS(1646375440000),
@@ -256,9 +259,10 @@ def test_balancer_v1_join(database, ethereum_manager, eth_transactions):
             location_label='0x7716a99194d758c8537F056825b75Dd0C8FDD89f',
             notes='Receive 0.042569019597126949 BPT from a Balancer v1 pool',
             counterparty=CPT_BALANCER_V1,
+            address=string_to_evm_address('0x13830EB6444768cCea2C9d41308195Ceb18eF772'),
             identifier=None,
             extra_data={'deposit_events_num': 1},
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=335,
             timestamp=TimestampMS(1646375440000),
@@ -270,6 +274,7 @@ def test_balancer_v1_join(database, ethereum_manager, eth_transactions):
             location_label='0x7716a99194d758c8537F056825b75Dd0C8FDD89f',
             notes='Deposit 0.05 WETH to a Balancer v1 pool',
             counterparty=CPT_BALANCER_V1,
+            address=string_to_evm_address('0x13830EB6444768cCea2C9d41308195Ceb18eF772'),
             identifier=None,
             extra_data=None,
         ),
@@ -371,7 +376,7 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
@@ -382,10 +387,10 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
             balance=Balance(amount=FVal('0.00393701451')),
             location_label=user_address,
             notes='Burned 0.00393701451 ETH for gas',
-            counterparty='gas',
+            counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=91,
             timestamp=TimestampMS(1646375440000),
@@ -397,9 +402,10 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
             location_label=user_address,
             notes='Return 0.042569019597126949 BPT to a Balancer v1 pool',
             counterparty=CPT_BALANCER_V1,
+            address=string_to_evm_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4'),
             identifier=None,
             extra_data={'withdrawal_events_num': 2},
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=95,
             timestamp=TimestampMS(1646375440000),
@@ -411,9 +417,10 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
             location_label=user_address,
             notes='Receive 0.744372160905819159 BAL after removing liquidity from a Balancer v1 pool',  # noqa: E501
             counterparty=CPT_BALANCER_V1,
+            address=string_to_evm_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4'),
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=97,
             timestamp=TimestampMS(1646375440000),
@@ -425,6 +432,7 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
             location_label=user_address,
             notes='Receive 0.010687148200906598 WETH after removing liquidity from a Balancer v1 pool',  # noqa: E501
             counterparty=CPT_BALANCER_V1,
+            address=string_to_evm_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4'),
             identifier=None,
             extra_data=None,
         ),

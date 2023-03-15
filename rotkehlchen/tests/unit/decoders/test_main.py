@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import (
     ActionType,
     HistoryEventSubType,
@@ -12,6 +12,7 @@ from rotkehlchen.accounting.structures.types import (
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -159,7 +160,7 @@ def test_no_logs_and_zero_eth(
         tx_receipt=receipt,
     )
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=0,
@@ -170,7 +171,7 @@ def test_no_logs_and_zero_eth(
             balance=Balance(amount=ZERO, usd_value=ZERO),
             location_label=user_address,
             notes=f'Receive 0 ETH from {sender}',
-            counterparty=sender,
+            address=sender,
             identifier=None,
             extra_data=None,
         ),
@@ -241,7 +242,7 @@ def test_simple_erc20_transfer(
         tx_receipt=receipt,
     )
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=Timestamp(0),
@@ -252,10 +253,10 @@ def test_simple_erc20_transfer(
             balance=Balance(amount=FVal('0.00045')),
             location_label=from_address,
             notes='Burned 0.00045 ETH for gas',
-            counterparty='gas',
+            counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=74,
             timestamp=Timestamp(0),
@@ -266,7 +267,7 @@ def test_simple_erc20_transfer(
             balance=Balance(amount=FVal('38.002229')),
             location_label=from_address,
             notes=f'Transfer 38.002229 USDT from {from_address} to {to_address}',
-            counterparty=to_address,
+            address=to_address,
             identifier=None,
             extra_data=None,
         ),
@@ -324,7 +325,7 @@ def test_eth_transfer(
         tx_receipt=receipt,
     )
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=Timestamp(0),
@@ -335,11 +336,11 @@ def test_eth_transfer(
             balance=Balance(amount=FVal(0.001)),
             location_label=from_address,
             notes='Burned 0.001 ETH for gas',
-            counterparty='gas',
+            counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
         ),
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=0,
@@ -350,7 +351,7 @@ def test_eth_transfer(
             balance=Balance(amount=FVal(0.5)),
             location_label=from_address,
             notes=f'Transfer 0.5 ETH to {to_address}',
-            counterparty=to_address,
+            address=to_address,
             identifier=None,
             extra_data=None,
         ),
@@ -407,7 +408,7 @@ def test_eth_spend(
         tx_receipt=receipt,
     )
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=Timestamp(0),
@@ -418,11 +419,11 @@ def test_eth_spend(
             balance=Balance(amount=FVal(0.001)),
             location_label=from_address,
             notes='Burned 0.001 ETH for gas',
-            counterparty='gas',
+            counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
         ),
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=0,
@@ -433,7 +434,7 @@ def test_eth_spend(
             balance=Balance(amount=FVal(0.5)),
             location_label=from_address,
             notes=f'Send 0.5 ETH to {to_address}',
-            counterparty=to_address,
+            address=to_address,
             identifier=None,
             extra_data=None,
         ),
@@ -482,8 +483,8 @@ def test_eth_deposit(
         transaction=transaction,
         tx_receipt=receipt,
     )
-    assert events == [
-        HistoryBaseEntry(
+    expected_events = [
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=Timestamp(0),
@@ -494,11 +495,11 @@ def test_eth_deposit(
             balance=Balance(amount=FVal(0.001)),
             location_label=from_address,
             notes='Burned 0.001 ETH for gas',
-            counterparty='gas',
+            counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
         ),
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=0,
@@ -512,8 +513,10 @@ def test_eth_deposit(
             counterparty=CPT_KRAKEN,
             identifier=None,
             extra_data=None,
+            address=string_to_evm_address('0xAe2D4617c862309A3d75A0fFB358c7a5009c673F'),
         ),
     ]
+    assert events == expected_events
 
 
 def test_maybe_reshuffle_events():
@@ -567,7 +570,7 @@ def test_genesis_transaction(database, ethereum_inquirer, ethereum_accounts):
         assert query_mock.call_count == 1, 'Should have been called only once since one of the addresses already had transactions queried'  # noqa: E501
 
     expected_events = [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1438269973000),
@@ -578,8 +581,8 @@ def test_genesis_transaction(database, ethereum_inquirer, ethereum_accounts):
             balance=Balance(amount=FVal('200')),
             location_label=user_address_2,
             notes=f'Receive 200 ETH from {ZERO_ADDRESS}',
-            counterparty=ZERO_ADDRESS,
-        ), HistoryBaseEntry(
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1438269973000),
@@ -590,7 +593,7 @@ def test_genesis_transaction(database, ethereum_inquirer, ethereum_accounts):
             balance=Balance(amount=FVal('2000')),
             location_label=user_address_1,
             notes=f'Receive 2000 ETH from {ZERO_ADDRESS}',
-            counterparty=ZERO_ADDRESS,
+            address=ZERO_ADDRESS,
         ),
     ]
     assert events == expected_events

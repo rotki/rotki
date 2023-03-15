@@ -1,10 +1,11 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
+from rotkehlchen.chain.ethereum.modules.votium.constants import CPT_VOTIUM
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -12,7 +13,13 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChainID, EvmTransaction, Location, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChainID,
+    EvmTransaction,
+    Location,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
@@ -28,8 +35,8 @@ def test_votium_claim(database, ethereum_inquirer, eth_transactions):
         chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14318825,
-        from_address='0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA',
-        to_address='0x378Ba9B73309bE80BF4C2c027aAD799766a7ED5A',
+        from_address=string_to_evm_address('0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA'),
+        to_address=string_to_evm_address('0x378Ba9B73309bE80BF4C2c027aAD799766a7ED5A'),
         value=0,
         gas=171249,
         gas_price=22990000000,
@@ -78,14 +85,13 @@ def test_votium_claim(database, ethereum_inquirer, eth_transactions):
         transactions=eth_transactions,
     )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    timestamp = TimestampMS(1646375440000)
     assert len(events) == 2
     expected_events = [
-        HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
-                '0x75b81b2edd454a7b564cc55a6b676e2441e155401bde99a38d867028081d2c30',
-            ),
+        EvmEvent(
+            event_identifier=evmhash,
             sequence_index=0,
-            timestamp=1646375440000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -97,12 +103,10 @@ def test_votium_claim(database, ethereum_inquirer, eth_transactions):
             location_label='0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA',
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
-                '0x75b81b2edd454a7b564cc55a6b676e2441e155401bde99a38d867028081d2c30',
-            ),
+        ), EvmEvent(
+            event_identifier=evmhash,
             sequence_index=351,
-            timestamp=1646375440000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
@@ -110,6 +114,7 @@ def test_votium_claim(database, ethereum_inquirer, eth_transactions):
             balance=Balance(amount=FVal('12.369108326706528256'), usd_value=ZERO),
             location_label='0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA',
             notes='Receive 12.369108326706528256 FXS from votium bribe',
-            counterparty='votium',
+            counterparty=CPT_VOTIUM,
+            address=string_to_evm_address('0x378Ba9B73309bE80BF4C2c027aAD799766a7ED5A'),
         )]
     assert events == expected_events

@@ -1,9 +1,10 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
+from rotkehlchen.chain.ethereum.modules.kyber.constants import CPT_KYBER
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -34,8 +35,8 @@ def test_kyber_legacy_old_contract(database, ethereum_inquirer, eth_transactions
         chain_id=ChainID.ETHEREUM,
         timestamp=1591043988,
         block_number=10182160,
-        from_address='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b',
-        to_address='0x818E6FECD516Ecc3849DAf6845e3EC868087B755',
+        from_address=string_to_evm_address('0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b'),
+        to_address=string_to_evm_address('0x818E6FECD516Ecc3849DAf6845e3EC868087B755'),
         value=0,
         gas=600000,
         gas_price=22990000000,
@@ -78,14 +79,14 @@ def test_kyber_legacy_old_contract(database, ethereum_inquirer, eth_transactions
         trace_id=27,
         timestamp=Timestamp(1591043988),
         block_number=10182160,
-        from_address='0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd',
-        to_address='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b',
+        from_address=string_to_evm_address('0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd'),
+        to_address=string_to_evm_address('0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b'),
         value=187603293406027635,
     )
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b')  # noqa: E501
+        dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=string_to_evm_address('0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b'))  # noqa: E501
     decoder = EthereumTransactionDecoder(
         database=database,
         ethereum_inquirer=ethereum_inquirer,
@@ -95,10 +96,8 @@ def test_kyber_legacy_old_contract(database, ethereum_inquirer, eth_transactions
 
     assert len(events) == 3
     expected_events = [
-        HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
-                '0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87',
-            ),
+        EvmEvent(
+            event_identifier=evmhash,
             sequence_index=0,
             timestamp=1591043988000,
             location=Location.ETHEREUM,
@@ -112,10 +111,8 @@ def test_kyber_legacy_old_contract(database, ethereum_inquirer, eth_transactions
             location_label='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b',
             notes='Burned 0.01212979988 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
-                '0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87',
-            ),
+        ), EvmEvent(
+            event_identifier=evmhash,
             sequence_index=1,
             timestamp=1591043988000,
             location=Location.ETHEREUM,
@@ -125,11 +122,10 @@ def test_kyber_legacy_old_contract(database, ethereum_inquirer, eth_transactions
             balance=Balance(amount=FVal(45), usd_value=ZERO),
             location_label='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b',
             notes='Swap 45 USDC in kyber',
-            counterparty='kyber legacy',
-        ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
-                '0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87',
-            ),
+            counterparty=CPT_KYBER,
+            address=string_to_evm_address('0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd'),
+        ), EvmEvent(
+            event_identifier=evmhash,
             sequence_index=89,
             timestamp=1591043988000,
             location=Location.ETHEREUM,
@@ -142,7 +138,8 @@ def test_kyber_legacy_old_contract(database, ethereum_inquirer, eth_transactions
             ),
             location_label='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b',
             notes='Receive 0.187603293406027635 ETH from kyber swap',
-            counterparty='kyber legacy',
+            counterparty=CPT_KYBER,
+            address=string_to_evm_address('0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd'),
         )]
     assert events == expected_events
 
@@ -159,8 +156,8 @@ def test_kyber_legacy_new_contract(database, ethereum_inquirer, eth_transactions
         chain_id=ChainID.ETHEREUM,
         timestamp=1644182638,
         block_number=14154915,
-        from_address='0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0',
-        to_address='0x9AAb3f75489902f3a48495025729a0AF77d4b11e',
+        from_address=string_to_evm_address('0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0'),
+        to_address=string_to_evm_address('0x9AAb3f75489902f3a48495025729a0AF77d4b11e'),
         value=0,
         gas=2784000,
         gas_price=71000000000,
@@ -222,10 +219,8 @@ def test_kyber_legacy_new_contract(database, ethereum_inquirer, eth_transactions
 
     assert len(events) == 3
     expected_events = [
-        HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
-                '0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22',
-            ),
+        EvmEvent(
+            event_identifier=evmhash,
             sequence_index=0,
             timestamp=1644182638000,
             location=Location.ETHEREUM,
@@ -239,10 +234,8 @@ def test_kyber_legacy_new_contract(database, ethereum_inquirer, eth_transactions
             location_label='0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0',
             notes='Burned 0.066614401 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
-                '0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22',
-            ),
+        ), EvmEvent(
+            event_identifier=evmhash,
             sequence_index=350,
             timestamp=1644182638000,
             location=Location.ETHEREUM,
@@ -252,11 +245,10 @@ def test_kyber_legacy_new_contract(database, ethereum_inquirer, eth_transactions
             balance=Balance(amount=FVal(8139.77872), usd_value=ZERO),
             location_label='0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0',
             notes='Swap 8139.77872 USDC in kyber',
-            counterparty='kyber legacy',
-        ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
-                '0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22',
-            ),
+            counterparty=CPT_KYBER,
+            address=string_to_evm_address('0x7C66550C9c730B6fdd4C03bc2e73c5462c5F7ACC'),
+        ), EvmEvent(
+            event_identifier=evmhash,
             sequence_index=370, timestamp=1644182638000,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -265,7 +257,8 @@ def test_kyber_legacy_new_contract(database, ethereum_inquirer, eth_transactions
             balance=Balance(amount=FVal('2428.33585390706162556'), usd_value=ZERO),
             location_label='0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0',
             notes='Receive 2428.33585390706162556 CRV from kyber swap',
-            counterparty='kyber legacy',
+            counterparty=CPT_KYBER,
+            address=string_to_evm_address('0x7C66550C9c730B6fdd4C03bc2e73c5462c5F7ACC'),
         ),
     ]
     assert events == expected_events

@@ -2,10 +2,11 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -27,7 +28,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
         tx_hash=evmhash,
     )
     assert events == [
-        HistoryBaseEntry(
+        EvmEvent(
             event_identifier=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1674558203000),
@@ -39,7 +40,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Burned 0.000788637337054068 ETH for gas',
             counterparty=CPT_GAS,
-        ), HistoryBaseEntry(
+        ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1674558203000),
@@ -51,6 +52,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Deposit 32 ETH to validator with pubkey 0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda. Deposit index: 519464. Withdrawal credentials: 0x00c5af874f28011e2f559e1214131da5f11b12845921b0d8e436f0cd37d683a8',  # noqa: E501
             counterparty=CPT_ETH2,
+            address=string_to_evm_address('0x00000000219ab540356cBB839Cbe05303d7705Fa'),
             extra_data={'withdrawal_credentials': '0x00c5af874f28011e2f559e1214131da5f11b12845921b0d8e436f0cd37d683a8'},  # noqa: E501
         ),
     ]
