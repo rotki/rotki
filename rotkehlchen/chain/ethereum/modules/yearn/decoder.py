@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Callable
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V1, CPT_YEARN_V2
@@ -60,7 +60,7 @@ class YearnDecoder(DecoderInterface):
             token: 'EvmToken',
             tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument
             transaction: EvmTransaction,
-            event: HistoryBaseEntry,
+            event: EvmEvent,
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> bool:
@@ -73,9 +73,9 @@ class YearnDecoder(DecoderInterface):
         First we make sure that the contract is a yearn v1 or v2 contract and that the method
         executed in the contract is one of the expected.
         """
-        counterparty = CPT_YEARN_V2
+        protocol = CPT_YEARN_V2
         if transaction.to_address in self.vaults_v1:
-            counterparty = CPT_YEARN_V1
+            protocol = CPT_YEARN_V1
         elif transaction.to_address not in self.vaults_v2:
             return False
 
@@ -89,42 +89,42 @@ class YearnDecoder(DecoderInterface):
         if (
             is_deposit is True and
             event.event_type == HistoryEventType.SPEND and
-            event.counterparty == transaction.to_address
+            event.address == transaction.to_address
         ):
             event.event_type = HistoryEventType.DEPOSIT
             event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-            event.counterparty = counterparty
+            event.counterparty = protocol
             vault_token_name = _get_vault_token_name(transaction.to_address)
-            event.notes = f'Deposit {event.balance.amount} {token.symbol} in {counterparty} vault {vault_token_name}'  # noqa: E501
+            event.notes = f'Deposit {event.balance.amount} {token.symbol} in {protocol} vault {vault_token_name}'  # noqa: E501
         elif (
             is_deposit is True and
             event.event_type == HistoryEventType.RECEIVE and
-            event.counterparty == ZERO_ADDRESS
+            event.address == ZERO_ADDRESS
         ):
             event.event_type = HistoryEventType.DEPOSIT
             event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-            event.counterparty = counterparty
+            event.counterparty = protocol
             vault_token_name = _get_vault_token_name(transaction.to_address)
-            event.notes = f'Receive {event.balance.amount} {vault_token_name} after deposit in a {counterparty} vault'  # noqa: E501
+            event.notes = f'Receive {event.balance.amount} {vault_token_name} after deposit in a {protocol} vault'  # noqa: E501
         elif (
             is_deposit is False and
             event.event_type == HistoryEventType.RECEIVE and
-            event.counterparty == transaction.to_address
+            event.address == transaction.to_address
         ):
             event.event_type = HistoryEventType.WITHDRAWAL
             event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-            event.counterparty = counterparty
+            event.counterparty = protocol
             vault_token_name = _get_vault_token_name(transaction.to_address)
-            event.notes = f'Withdraw {event.balance.amount} {token.symbol} from {counterparty} vault {vault_token_name}'  # noqa: E501
+            event.notes = f'Withdraw {event.balance.amount} {token.symbol} from {protocol} vault {vault_token_name}'  # noqa: E501
         elif (
             is_deposit is False and
             event.event_type == HistoryEventType.SPEND and
-            event.counterparty == ZERO_ADDRESS
+            event.address == ZERO_ADDRESS
         ):
             event.event_type = HistoryEventType.WITHDRAWAL
             event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-            event.counterparty = counterparty
-            event.notes = f'Return {event.balance.amount} {token.symbol} to a {counterparty} vault'  # noqa: E501
+            event.counterparty = protocol
+            event.notes = f'Return {event.balance.amount} {token.symbol} to a {protocol} vault'  # noqa: E501
         else:
             # in this case we failed to find a valid transfer event. Inform about the failure
             return False

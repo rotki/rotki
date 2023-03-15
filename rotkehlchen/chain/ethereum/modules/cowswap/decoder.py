@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.modules.cowswap.constants import CPT_COWSWAP
@@ -56,10 +56,10 @@ class CowswapDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] == PLACE_ETH_ORDER_SIGNATURE:
             target_token_address = hex_or_bytes_to_address(tx_log.data[32:64])
             target_token = EvmToken(evm_address_to_identifier(
@@ -71,7 +71,7 @@ class CowswapDecoder(DecoderInterface):
                 if (
                     event.event_type == HistoryEventType.SPEND and
                     event.asset == A_ETH and
-                    event.counterparty == ETH_FLOW_ADDRESS
+                    event.address == ETH_FLOW_ADDRESS
                 ):
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.PLACE_ORDER
@@ -83,7 +83,7 @@ class CowswapDecoder(DecoderInterface):
                 if (
                     event.event_type == HistoryEventType.RECEIVE and
                     event.asset == A_ETH and
-                    event.counterparty == ETH_FLOW_ADDRESS
+                    event.address == ETH_FLOW_ADDRESS
                 ):
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.counterparty = CPT_COWSWAP
@@ -152,8 +152,8 @@ class CowswapDecoder(DecoderInterface):
             self,
             transaction: EvmTransaction,
             all_swap_data: list[SwapData],
-            decoded_events: list[HistoryBaseEntry],
-    ) -> list[tuple[HistoryBaseEntry, HistoryBaseEntry]]:
+            decoded_events: list[EvmEvent],
+    ) -> list[tuple[EvmEvent, EvmEvent]]:
         """
         This function does the following
         1. Detect trades that are relevant to the tracked accounts.
@@ -166,15 +166,15 @@ class CowswapDecoder(DecoderInterface):
 
         Returns a list of pairs (spend_event, receive_event) which represent the relevant trades.
         """
-        related_transfer_events: dict[tuple[HistoryEventType, Asset, FVal], HistoryBaseEntry] = {}
+        related_transfer_events: dict[tuple[HistoryEventType, Asset, FVal], EvmEvent] = {}
         for event in decoded_events:
             if (
                 event.event_type in (HistoryEventType.SPEND, HistoryEventType.RECEIVE) and
-                event.counterparty == GPV2_SETTLEMENT_ADDRESS
+                event.address == GPV2_SETTLEMENT_ADDRESS
             ):
                 related_transfer_events[(event.event_type, event.asset, event.balance.amount)] = event  # noqa: E501
 
-        trades_events: list[tuple[HistoryBaseEntry, HistoryBaseEntry]] = []
+        trades_events: list[tuple[EvmEvent, EvmEvent]] = []
         for swap_data in all_swap_data:
             receive_event = related_transfer_events.get((HistoryEventType.RECEIVE, swap_data.to_asset, swap_data.to_amount))  # noqa: E501
             if receive_event is None:
@@ -200,6 +200,7 @@ class CowswapDecoder(DecoderInterface):
                     location_label=receive_event.location_label,
                     notes=None,  # Is set later
                     counterparty=CPT_COWSWAP,
+                    address=transaction.to_address,
                 )
                 decoded_events.append(spend_event)
 
@@ -210,9 +211,9 @@ class CowswapDecoder(DecoderInterface):
     def _aggregator_post_decoding(
             self,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
-    ) -> list[HistoryBaseEntry]:
+    ) -> list[EvmEvent]:
         """
         Decodes cowswap trades.
         1. Goes through all the emitted Trade events.

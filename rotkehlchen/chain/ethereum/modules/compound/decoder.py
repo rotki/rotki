@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any, Optional, cast
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_crypto_asset_by_symbol
@@ -56,9 +56,9 @@ class CompoundDecoder(DecoderInterface):
             self,
             transaction: EvmTransaction,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             compound_token: EvmToken,
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         minter = hex_or_bytes_to_address(tx_log.data[0:32])
         if not self.base.is_tracked(minter):
             return None, []
@@ -108,9 +108,9 @@ class CompoundDecoder(DecoderInterface):
     def _decode_redeem(
             self,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             compound_token: EvmToken,
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         redeemer = hex_or_bytes_to_address(tx_log.data[0:32])
         if not self.base.is_tracked(redeemer):
             return None, []
@@ -149,9 +149,9 @@ class CompoundDecoder(DecoderInterface):
     def _decode_borrow_and_repay(
             self,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             compound_token: EvmToken,
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """
         Decode borrow and repayments for compound tokens
         """
@@ -185,15 +185,15 @@ class CompoundDecoder(DecoderInterface):
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
                 event.counterparty = CPT_COMPOUND
                 event.notes = f'Borrow {amount} {underlying_asset.symbol} from compound'
-            elif event.event_type == HistoryEventType.RECEIVE and event.location_label == payer and event.asset == A_COMP and event.counterparty == COMPTROLLER_PROXY_ADDRESS:  # noqa: E501
+            elif event.event_type == HistoryEventType.RECEIVE and event.location_label == payer and event.asset == A_COMP and event.address == COMPTROLLER_PROXY_ADDRESS:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_COMPOUND
                 event.notes = f'Collect {event.balance.amount} COMP from compound'
             elif (
                 event.event_type == HistoryEventType.SPEND and event.balance.amount == amount and  # noqa: E501
                 (
-                    (underlying_asset == self.eth and event.counterparty == MAXIMILLION_ADDR) or  # noqa: E501
-                    (event.location_label == payer and event.counterparty == compound_token.evm_address)  # noqa: E501
+                    (underlying_asset == self.eth and event.address == MAXIMILLION_ADDR) or  # noqa: E501
+                    (event.location_label == payer and event.address == compound_token.evm_address)  # noqa: E501
                 )
             ):
                 event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
@@ -206,11 +206,11 @@ class CompoundDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
             compound_token: EvmToken,
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] == MINT_COMPOUND_TOKEN:
             log.debug(f'Hash: {transaction.tx_hash.hex()}')
             return self._decode_mint(transaction=transaction, tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
@@ -227,10 +227,10 @@ class CompoundDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """Example tx:
         https://etherscan.io/tx/0x024bd402420c3ba2f95b875f55ce2a762338d2a14dac4887b78174254c9ab807
         https://etherscan.io/tx/0x25d341421044fa27006c0ec8df11067d80f69b2d2135065828f1992fa6868a49
@@ -252,13 +252,12 @@ class CompoundDecoder(DecoderInterface):
         # Transactions with comp claim have many such "distributed" events. We need to do a
         # decoded evens iteration only at the end but can't think of a good way to avoid
         # the possibility of checking all such events
-
         supplier_address = hex_or_bytes_to_address(tx_log.topics[2])
         if not self.base.is_tracked(supplier_address):
             return None, []
 
         for event in decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.location_label == supplier_address and event.asset == A_COMP and event.counterparty == COMPTROLLER_PROXY_ADDRESS:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.location_label == supplier_address and event.asset == A_COMP and event.address == COMPTROLLER_PROXY_ADDRESS:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_COMPOUND
                 event.notes = f'Collect {event.balance.amount} COMP from compound'

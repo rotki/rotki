@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.common import (
@@ -31,10 +31,10 @@ class SushiswapDecoder(DecoderInterface):
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] == SWAP_SIGNATURE and transaction.to_address == SUSHISWAP_ROUTER:
             return decode_uniswap_v2_like_swap(
                 tx_log=tx_log,
@@ -52,10 +52,10 @@ class SushiswapDecoder(DecoderInterface):
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] == MINT_SIGNATURE:
             return decode_uniswap_like_deposit_and_withdrawals(
                 tx_log=tx_log,
@@ -89,7 +89,7 @@ class SushiswapDecoder(DecoderInterface):
             token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            event: HistoryBaseEntry,
+            event: EvmEvent,
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> bool:

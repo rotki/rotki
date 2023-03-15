@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.ethereum.modules.uniswap.utils import decode_basic_uniswap_info
@@ -32,8 +32,8 @@ class Uniswapv2Decoder(DecoderInterface):
     def _decode_basic_swap_info(
             self,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[HistoryBaseEntry],
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+            decoded_events: list[EvmEvent],
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """
         Decodes only basic swap info. Basic swap info includes trying to find approval, spend and
         receive events for this particular swap but doesn't include ensuring order of events if the
@@ -62,10 +62,10 @@ class Uniswapv2Decoder(DecoderInterface):
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] == SWAP_SIGNATURE:
             if transaction.to_address == UNISWAP_V2_ROUTER:
                 # If uniswap v2 router is used, then we can decode an entire swap.
@@ -92,10 +92,10 @@ class Uniswapv2Decoder(DecoderInterface):
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] == MINT_SIGNATURE:
             return decode_uniswap_like_deposit_and_withdrawals(
                 tx_log=tx_log,
@@ -129,7 +129,7 @@ class Uniswapv2Decoder(DecoderInterface):
             token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            event: HistoryBaseEntry,
+            event: EvmEvent,
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> bool:

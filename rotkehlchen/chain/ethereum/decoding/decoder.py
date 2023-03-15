@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
@@ -61,10 +61,10 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] == GTC_CLAIM and tx_log.address == '0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E':  # noqa: E501
             for event in decoded_events:
                 if event.asset == A_GTC and event.event_type == HistoryEventType.RECEIVE:
@@ -106,15 +106,14 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] == GOVERNORALPHA_PROPOSE:
+            governance_name = None
             if tx_log.address == '0xDbD27635A534A3d3169Ef0498beB56Fb9c937489':
                 governance_name = 'Gitcoin'
-            else:
-                governance_name = tx_log.address
 
             try:
                 _, decoded_data = decode_event_data_abi_str(tx_log, GOVERNORALPHA_PROPOSE_ABI)
@@ -134,6 +133,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                 balance=Balance(),
                 location_label=transaction.from_address,
                 notes=notes,
+                address=tx_log.address,
                 counterparty=governance_name,
             )
             return event, []
@@ -147,7 +147,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             token: EvmToken,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            event: HistoryBaseEntry,
+            event: EvmEvent,
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
     ) -> None:

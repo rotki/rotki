@@ -1,7 +1,7 @@
 import logging
 from typing import Callable, Optional
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -31,17 +31,17 @@ class Uniswapv1Decoder(DecoderInterface):
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """Search for both events. Since the order is not guaranteed try reshuffle in both cases"""
         out_event = in_event = None
         if tx_log.topics[0] == TOKEN_PURCHASE:
             buyer = hex_or_bytes_to_address(tx_log.topics[1])
             # search for a send to buyer from a tracked address
             for event in decoded_events:
-                if event.event_type == HistoryEventType.SPEND and event.counterparty == buyer:
+                if event.event_type == HistoryEventType.SPEND and event.address == buyer:
                     try:
                         crypto_asset = event.asset.resolve_to_crypto_asset()
                     except (UnknownAsset, WrongAssetType):

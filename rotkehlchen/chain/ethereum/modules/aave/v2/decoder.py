@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.constants import RAY
@@ -36,7 +36,7 @@ class Aavev2Decoder(DecoderInterface):
             token: 'EvmToken',
             transaction: EvmTransaction,
             tx_log: EvmTxReceiptLog,
-    ) -> Optional[HistoryBaseEntry]:
+    ) -> Optional[EvmEvent]:
         user = hex_or_bytes_to_address(tx_log.topics[2])
         if self.base.is_tracked(user) is False:
             return None
@@ -50,13 +50,14 @@ class Aavev2Decoder(DecoderInterface):
             location_label=user,
             notes=f'{"Enable" if tx_log.topics[0] == ENABLE_COLLATERAL else "Disable"} {token.symbol} as collateral on AAVE v2',  # noqa: E501
             counterparty=CPT_AAVE_V2,
+            address=transaction.to_address,
         )
 
     def _decode_deposit(
             self,
             token: 'EvmToken',
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
     ) -> None:
         """Decode aave v2 deposit event"""
         user = hex_or_bytes_to_address(tx_log.data[:32])
@@ -89,14 +90,14 @@ class Aavev2Decoder(DecoderInterface):
                     resolved_asset = event.asset.resolve_to_asset_with_symbol()
                     event.notes = f'Receive {event.balance.amount} {resolved_asset.symbol} from AAVE v2'  # noqa: E501
                     event.counterparty = CPT_AAVE_V2
-                # Set counterparty for both events
+                # Set protocol for both events
                 event.counterparty = CPT_AAVE_V2
 
     def _decode_withdrawal(
             self,
             token: 'EvmToken',
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
     ) -> None:
         """Decode aave v2 withdrawal event"""
         user = hex_or_bytes_to_address(tx_log.topics[2])
@@ -127,14 +128,14 @@ class Aavev2Decoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     resolved_asset = event.asset.resolve_to_asset_with_symbol()
                     event.notes = f'Return {amount} {resolved_asset.symbol} to AAVE v2'  # noqa: E501
-                # Set counterparty for both events
+                # Set protocol for both events
                 event.counterparty = CPT_AAVE_V2
 
     def _decode_borrow(
             self,
             token: 'EvmToken',
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
     ) -> None:
         """Decode aave v2 borrow event"""
         on_behalf_of = hex_or_bytes_to_address(tx_log.topics[2])
@@ -166,14 +167,14 @@ class Aavev2Decoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                     resolved_asset = event.asset.resolve_to_asset_with_symbol()
                     event.notes = f'Receive {amount} {resolved_asset.symbol} from AAVE v2'  # noqa: E501
-                # Set counterparty for both events
+                # Set protocol for both events
                 event.counterparty = CPT_AAVE_V2
 
     def _decode_repay(
             self,
             token: 'EvmToken',
             tx_log: EvmTxReceiptLog,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
     ) -> None:
         """Decode aave v2 repay event"""
         user = hex_or_bytes_to_address(tx_log.topics[2])
@@ -195,7 +196,7 @@ class Aavev2Decoder(DecoderInterface):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE
             ):
-                if event.counterparty == ZERO_ADDRESS:
+                if event.address == ZERO_ADDRESS:
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     resolved_asset = event.asset.resolve_to_asset_with_symbol()
                     event.notes = f'Return {amount} {resolved_asset.symbol} to AAVE v2'
@@ -204,17 +205,17 @@ class Aavev2Decoder(DecoderInterface):
                 else:
                     event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
                     event.notes = notes
-                # Set counterparty for both events
+                # Set protocol for both events
                 event.counterparty = CPT_AAVE_V2
 
     def _decode_lending_pool_events(
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """Decodes AAVE V2 Lending Pool events"""
         event_signature = tx_log.topics[0]
         if event_signature not in (ENABLE_COLLATERAL, DISABLE_COLLATERAL, DEPOSIT, WITHDRAW, BORROW, REPAY):  # noqa: E501

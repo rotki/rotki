@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Callable, Literal, Optional
 
 from web3 import Web3
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
@@ -32,14 +32,14 @@ SUSHISWAP_ROUTER = string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C37
 
 def decode_uniswap_v2_like_swap(
         tx_log: EvmTxReceiptLog,
-        decoded_events: list[HistoryBaseEntry],
+        decoded_events: list[EvmEvent],
         transaction: EvmTransaction,
         counterparty: str,
         database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
-        notify_user: Callable[[HistoryBaseEntry, str], None],
-) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
-    """Common logic for decoding uniswap v2 like protocols (uniswap and sushiswap atm)
+        notify_user: Callable[[EvmEvent, str], None],
+) -> tuple[Optional[EvmEvent], list[ActionItem]]:
+    """Common logic for decoding uniswap v2 like counterpartys (uniswap and sushiswap atm)
 
     Decode trade for uniswap v2 like amm. The approach is to read the events and detect the ones
     where the user sends and receives any asset. The spend asset is the swap executed and
@@ -141,7 +141,7 @@ def decode_uniswap_v2_like_swap(
             ) and
             event.asset == A_ETH and
             transaction.from_address == event.location_label and
-            event.counterparty in (SUSHISWAP_ROUTER, UNISWAP_V2_ROUTER)
+            event.address in (SUSHISWAP_ROUTER, UNISWAP_V2_ROUTER)
         ):
             # this is to make sure it's the amm issuing the refund and not an aggregator making a swap  # noqa: E501
             # Those are assets returned due to a change in the swap price
@@ -156,7 +156,7 @@ def decode_uniswap_v2_like_swap(
 
 def decode_uniswap_like_deposit_and_withdrawals(
         tx_log: EvmTxReceiptLog,
-        decoded_events: list[HistoryBaseEntry],
+        decoded_events: list[EvmEvent],
         all_logs: list[EvmTxReceiptLog],
         event_action_type: Literal['addition', 'removal'],
         counterparty: str,
@@ -165,7 +165,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
         factory_address: ChecksumEvmAddress,
         init_code_hash: str,
         tx_hash: EVMTxHash,
-) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+) -> tuple[Optional[EvmEvent], list[ActionItem]]:
     """
     This is a common logic for Uniswap V2 like AMMs e.g Sushiswap.
     This method decodes a liquidity addition or removal to Uniswap V2 pool.
@@ -292,7 +292,7 @@ def enrich_uniswap_v2_like_lp_tokens_transfers(
         token: EvmToken,  # pylint: disable=unused-argument
         tx_log: EvmTxReceiptLog,
         transaction: EvmTransaction,  # pylint: disable=unused-argument
-        event: HistoryBaseEntry,
+        event: EvmEvent,
         action_items: list[ActionItem],  # pylint: disable=unused-argument
         all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
         counterparty: str,
@@ -304,7 +304,7 @@ def enrich_uniswap_v2_like_lp_tokens_transfers(
         resolved_asset.symbol == lp_token_symbol and
         event.event_type == HistoryEventType.RECEIVE and
         event.event_subtype == HistoryEventSubType.NONE and
-        event.counterparty == ZERO_ADDRESS
+        event.address == ZERO_ADDRESS
     ):
         event.counterparty = counterparty
         event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
@@ -315,7 +315,7 @@ def enrich_uniswap_v2_like_lp_tokens_transfers(
         resolved_asset.symbol == lp_token_symbol and
         event.event_type == HistoryEventType.SPEND and
         event.event_subtype == HistoryEventSubType.NONE and
-        event.counterparty == tx_log.address  # the recipient of the transfer is the pool
+        event.address == tx_log.address  # the recipient of the transfer is the pool
     ):
         event.counterparty = counterparty
         event.event_subtype = HistoryEventSubType.RETURN_WRAPPED

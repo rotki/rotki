@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -35,10 +35,10 @@ class HopDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] != TRANSFER_TO_L2:
             return None, []
 
@@ -50,7 +50,7 @@ class HopDecoder(DecoderInterface):
         amount = from_wei(FVal(amount_raw))
 
         for event in decoded_events:
-            if event.event_type == HistoryEventType.SPEND and event.counterparty == ETH_BRIDGE and event.asset == A_ETH and event.balance.amount == amount:  # noqa: E501
+            if event.event_type == HistoryEventType.SPEND and event.address == ETH_BRIDGE and event.asset == A_ETH and event.balance.amount == amount:  # noqa: E501
                 if recipient == event.location_label:
                     target_str = 'at the same address'
                 else:

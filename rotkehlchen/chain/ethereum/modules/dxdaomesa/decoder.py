@@ -3,7 +3,7 @@ import os
 from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
 from rotkehlchen.chain.evm.contracts import EvmContract
@@ -52,10 +52,10 @@ class DxdaomesaDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
             action_items: list[ActionItem],
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] == DEPOSIT:
             return self._decode_deposit(tx_log, transaction, decoded_events, all_logs, action_items)  # noqa: E501
         if tx_log.topics[0] == ORDER_PLACEMENT:
@@ -71,10 +71,10 @@ class DxdaomesaDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         topic_data, log_data = self.contract.decode_event(
             tx_log=tx_log,
             event_name='Deposit',
@@ -87,7 +87,7 @@ class DxdaomesaDecoder(DecoderInterface):
 
         for event in decoded_events:
             # Find the transfer event which should come before the deposit
-            if event.event_type == HistoryEventType.SPEND and event.asset == deposited_asset and event.balance.amount == amount and event.counterparty == self.contract.address:  # noqa: E501
+            if event.event_type == HistoryEventType.SPEND and event.asset == deposited_asset and event.balance.amount == amount and event.address == self.contract.address:  # noqa: E501
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_DXDAO_MESA
@@ -100,10 +100,10 @@ class DxdaomesaDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         topic_data, log_data = self.contract.decode_event(
             tx_log=tx_log,
             event_name='Withdraw',
@@ -116,7 +116,7 @@ class DxdaomesaDecoder(DecoderInterface):
 
         for event in decoded_events:
             # Find the transfer event which should come before the withdraw
-            if event.event_type == HistoryEventType.RECEIVE and event.asset == withdraw_asset and event.balance.amount == amount and event.counterparty == self.contract.address:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.asset == withdraw_asset and event.balance.amount == amount and event.address == self.contract.address:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_DXDAO_MESA
@@ -129,10 +129,10 @@ class DxdaomesaDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         topic_data, log_data = self.contract.decode_event(
             tx_log=tx_log,
             event_name='WithdrawRequest',
@@ -157,6 +157,7 @@ class DxdaomesaDecoder(DecoderInterface):
             balance=Balance(amount=amount),
             notes=f'Request a withdrawal of {amount} {token.symbol} from DXDao Mesa',
             counterparty=CPT_DXDAO_MESA,
+            address=transaction.to_address,
         )
         return event, []
 
@@ -164,10 +165,10 @@ class DxdaomesaDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """Some docs: https://docs.gnosis.io/protocol/docs/tutorial-limit-orders/"""
         topic_data, log_data = self.contract.decode_event(
             tx_log=tx_log,
@@ -202,6 +203,7 @@ class DxdaomesaDecoder(DecoderInterface):
             balance=Balance(amount=sell_amount),
             notes=f'Place an order in DXDao Mesa to sell {sell_amount} {sell_token.symbol} for {buy_amount} {buy_token.symbol}',  # noqa: E501
             counterparty=CPT_DXDAO_MESA,
+            address=transaction.to_address,
         )
         return event, []
 

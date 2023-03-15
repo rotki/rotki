@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry, get_tx_event_type_identifier
+from rotkehlchen.accounting.structures.evm_event import EvmEvent, get_tx_event_type_identifier
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
@@ -28,16 +28,16 @@ class Aavev2Accountant(ModuleAccountantInterface):
     def _process_borrow(
             self,
             pot: 'AccountingPot',  # pylint: disable=unused-argument
-            event: HistoryBaseEntry,
-            other_events: Iterator[HistoryBaseEntry],  # pylint: disable=unused-argument
+            event: EvmEvent,
+            other_events: Iterator[EvmEvent],  # pylint: disable=unused-argument
     ) -> None:
         self.assets_borrowed[(string_to_evm_address(event.location_label), event.asset)] += event.balance.amount  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
 
     def _process_payback(
             self,
             pot: 'AccountingPot',
-            event: HistoryBaseEntry,
-            other_events: Iterator[HistoryBaseEntry],  # pylint: disable=unused-argument
+            event: EvmEvent,
+            other_events: Iterator[EvmEvent],  # pylint: disable=unused-argument
     ) -> None:
         """
         Process payback events. If the payed back amount is higher that the borrowed amount,
@@ -63,16 +63,16 @@ class Aavev2Accountant(ModuleAccountantInterface):
     def _process_deposit(
             self,
             pot: 'AccountingPot',  # pylint: disable=unused-argument
-            event: HistoryBaseEntry,
-            other_events: Iterator[HistoryBaseEntry],  # pylint: disable=unused-argument
+            event: EvmEvent,
+            other_events: Iterator[EvmEvent],  # pylint: disable=unused-argument
     ) -> None:
         self.assets_supplied[(string_to_evm_address(event.location_label), event.asset)] += event.balance.amount  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
 
     def _process_withdraw(
             self,
             pot: 'AccountingPot',
-            event: HistoryBaseEntry,
-            other_events: Iterator[HistoryBaseEntry],  # pylint: disable=unused-argument
+            event: EvmEvent,
+            other_events: Iterator[EvmEvent],  # pylint: disable=unused-argument
     ) -> None:
         """
         Process withdrawal events. If the withdrawn amount is higher that the deposited amount,

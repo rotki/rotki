@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.weth.constants import CPT_WETH
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -43,10 +43,10 @@ class WethDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
             action_items: Optional[list[ActionItem]],
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] == WETH_DEPOSIT_TOPIC:
             return self._decode_deposit_event(
                 tx_log=tx_log,
@@ -71,10 +71,10 @@ class WethDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         depositor = hex_or_bytes_to_address(tx_log.topics[1])
         deposited_amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
         deposited_amount = asset_normalized_value(amount=deposited_amount_raw, asset=self.eth)
@@ -83,11 +83,11 @@ class WethDecoder(DecoderInterface):
         for event in decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
-                event.counterparty in (WETH_CONTRACT, depositor) and
+                event.address in (WETH_CONTRACT, depositor) and
                 event.balance.amount == deposited_amount and
                 event.asset == self.eth
             ):
-                if event.counterparty == depositor:
+                if event.address == depositor:
                     return None, []
 
                 event.counterparty = CPT_WETH
@@ -109,6 +109,7 @@ class WethDecoder(DecoderInterface):
             location_label=depositor,
             counterparty=CPT_WETH,
             notes=f'Receive {deposited_amount} {self.weth.symbol}',
+            address=transaction.to_address,
         )
         return in_event, []
 
@@ -116,10 +117,10 @@ class WethDecoder(DecoderInterface):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         withdrawer = hex_or_bytes_to_address(tx_log.topics[1])
         withdrawn_amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
         withdrawn_amount = asset_normalized_value(amount=withdrawn_amount_raw, asset=self.eth)
@@ -128,11 +129,11 @@ class WethDecoder(DecoderInterface):
         for event in decoded_events:
             if (
                 event.event_type == HistoryEventType.RECEIVE and
-                event.counterparty in (WETH_CONTRACT, withdrawer) and
+                event.address in (WETH_CONTRACT, withdrawer) and
                 event.balance.amount == withdrawn_amount and
                 event.asset == self.eth
             ):
-                if event.counterparty == withdrawer:
+                if event.address == withdrawer:
                     return None, []
 
                 in_event = event
@@ -152,6 +153,7 @@ class WethDecoder(DecoderInterface):
             location_label=withdrawer,
             counterparty=CPT_WETH,
             notes=f'Unwrap {withdrawn_amount} {self.weth.symbol}',
+            address=transaction.to_address,
         )
         maybe_reshuffle_events(
             out_event=out_event,
