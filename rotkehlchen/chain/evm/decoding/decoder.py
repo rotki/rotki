@@ -9,12 +9,8 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Protocol, Union
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.accounting.structures.types import (
-    ActionType,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
+from rotkehlchen.accounting.structures.types import ActionType, HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
 from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -23,7 +19,7 @@ from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
+from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError, ModuleLoadingError, NotERC20Conformant, RemoteError
@@ -59,10 +55,10 @@ class EventDecoderFunction(Protocol):
             token: Optional[EvmToken],
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         ...
 
 
@@ -219,10 +215,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             token: Optional[EvmToken],
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         for rule in self.rules.event_rules:
             event, new_action_items = rule(token=token, tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, action_items=action_items, all_logs=all_logs)  # noqa: E501
             if event is not None or len(new_action_items) > 0:
@@ -234,10 +230,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             self,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
             action_items: list[ActionItem],
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         """
         Sees if the log is on an address for which we have specific decoders and calls it
 
@@ -267,9 +263,9 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
     def run_all_post_decoding_rules(
             self,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
-    ) -> list[HistoryBaseEntry]:
+    ) -> list[EvmEvent]:
         """
         Runs all post-decoding rules from self.rules.post_decoding_rules.
         The post-decoding rules list consists of tuples (priority, rule) and must be sorted by
@@ -284,7 +280,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             self,
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
-    ) -> list[HistoryBaseEntry]:
+    ) -> list[EvmEvent]:
         """Decodes an evm transaction and its receipt and saves result in the DB"""
         self.base.reset_sequence_counter()
         # check if any eth transfer happened in the transaction, including in internal transactions
@@ -367,7 +363,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             self,
             ignore_cache: bool,
             tx_hashes: Optional[list[EVMTxHash]],
-    ) -> list[HistoryBaseEntry]:
+    ) -> list[EvmEvent]:
         """Make sure that receipts are pulled + events decoded for the given transaction hashes.
 
         The transaction hashes must exist in the DB at the time of the call
@@ -416,7 +412,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
             ignore_cache: bool,
-    ) -> list[HistoryBaseEntry]:
+    ) -> list[EvmEvent]:
         """Get a transaction's events if existing in the DB or decode them"""
         serialized_chain_id = self.evm_inquirer.chain_id.serialize_for_db()
         if ignore_cache is True:  # delete all decoded events
@@ -437,9 +433,9 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     (transaction.tx_hash, serialized_chain_id, HISTORY_MAPPING_STATE_DECODED),
                 )
                 if cursor.fetchone()[0] != 0:  # already decoded and in the DB
-                    events = self.dbevents.get_history_events(
+                    events: list[EvmEvent] = self.dbevents.get_history_events(  # type: ignore[assignment]  # noqa: E501
                         cursor=cursor,
-                        filter_query=HistoryEventFilterQuery.make(
+                        filter_query=EvmEventFilterQuery.make(
                             event_identifiers=[transaction.tx_hash],
                         ),
                         has_premium=True,  # for this function we don't limit anything
@@ -454,7 +450,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             self,
             tx: EvmTransaction,
             tx_receipt: EvmTxReceipt,
-            events: list[HistoryBaseEntry],
+            events: list[EvmEvent],
     ) -> None:
         """
         check for internal transactions if the transaction is not canceled. This function mutates
@@ -481,7 +477,8 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             if amount == ZERO:
                 continue
 
-            event_type, location_label, counterparty, verb = direction_result
+            event_type, location_label, address, counterparty, verb = direction_result
+            notes_counterparty = counterparty or address  # counterparty if found, otherwise address  # noqa: E501
             preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
             events.append(self.base.make_event_next_index(
                 tx_hash=tx.tx_hash,
@@ -491,18 +488,20 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 asset=self.value_asset,
                 balance=Balance(amount=amount),
                 location_label=location_label,
-                notes=f'{verb} {amount} {self.value_asset.symbol} {preposition} {counterparty}',
+                notes=f'{verb} {amount} {self.value_asset.symbol} {preposition} {notes_counterparty}',  # noqa: E501
+                address=address,
                 counterparty=counterparty,
             ))
 
-    def _get_eth_transfer_event(self, tx: EvmTransaction) -> Optional[HistoryBaseEntry]:
+    def _get_eth_transfer_event(self, tx: EvmTransaction) -> Optional[EvmEvent]:
         direction_result = self.base.decode_direction(
             from_address=tx.from_address,
             to_address=tx.to_address,
         )
         if direction_result is None:
             return None
-        event_type, location_label, counterparty, verb = direction_result
+        event_type, location_label, address, counterparty, verb = direction_result
+        notes_counterparty = counterparty or address  # counterparty if found, otherwise address
         amount = ZERO if tx.value == 0 else from_wei(FVal(tx.value))
         preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
         return self.base.make_event_next_index(
@@ -513,7 +512,8 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             asset=self.value_asset,
             balance=Balance(amount=amount),
             location_label=location_label,
-            notes=f'{verb} {amount} {self.value_asset.symbol} {preposition} {counterparty}',
+            notes=f'{verb} {amount} {self.value_asset.symbol} {preposition} {notes_counterparty}',
+            address=address,
             counterparty=counterparty,
         )
 
@@ -522,10 +522,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             token: Optional[EvmToken],
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] != ERC20_APPROVE or token is None:
             return None, []
 
@@ -561,7 +561,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             balance=Balance(amount=amount),
             location_label=owner_address,
             notes=notes,
-            counterparty=spender_address,
+            address=spender_address,
         )
         return event, []
 
@@ -569,13 +569,13 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             self,
             tx: EvmTransaction,
             tx_receipt: EvmTxReceipt,
-    ) -> list[HistoryBaseEntry]:
+    ) -> list[EvmEvent]:
         """Decodes normal ETH transfers, internal transactions and gas cost payments"""
-        events: list[HistoryBaseEntry] = []
+        events: list[EvmEvent] = []
         # check for gas spent
         direction_result = self.base.decode_direction(tx.from_address, tx.to_address)
         if direction_result is not None:
-            event_type, location_label, _, _ = direction_result
+            event_type, location_label, _, _, _ = direction_result
             if event_type in OUTGOING_EVENT_TYPES:
                 eth_burned_as_gas = from_wei(FVal(tx.gas_used * tx.gas_price))
                 events.append(self.base.make_event_next_index(
@@ -617,7 +617,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 balance=Balance(amount=amount),
                 location_label=tx.from_address,
                 notes='Contract deployment',
-                counterparty=None,  # TODO: Find out contract address
+                address=None,  # TODO: Find out contract address
             ))
             return events
 
@@ -633,10 +633,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             token: Optional[EvmToken],
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list[HistoryBaseEntry],  # pylint: disable=unused-argument
+            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional[HistoryBaseEntry], list[ActionItem]]:
+    ) -> tuple[Optional[EvmEvent], list[ActionItem]]:
         if tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
             return None, []
 
@@ -709,7 +709,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 action_items.pop(idx)
                 break  # found an action item and acted on it
 
-        # Add additional information to transfers for different protocols
+        # Add additional information to transfers for different counterparties
         self._enrich_protocol_tranfers(
             token=found_token,
             tx_log=tx_log,
@@ -728,7 +728,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             token: EvmToken,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            event: HistoryBaseEntry,
+            event: EvmEvent,
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
     ) -> None:
