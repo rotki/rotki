@@ -108,7 +108,7 @@ class EVMAccountingAggregators():
     def _get_internal_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:
         """
         Returns accounting settings for events that can come from various decoders and thus
-        don't have any particular counterparty.
+        don't have any particular protocol.
         """
         result = {}
         gas_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.FEE) + '__' + CPT_GAS  # noqa: E501
@@ -154,7 +154,7 @@ class EVMAccountingAggregators():
     ) -> dict[str, TxEventSettings]:
         """
         Returns accounting settings that allow users to customize events. Settings generated here
-        don't have any particular counterparty and thus can be easily set by the users in the UI.
+        don't have any particular protocol and thus can be easily set by the users in the UI.
         Users are supposed to apply these settings in Evm Trasactions view.
         """
         result = {}

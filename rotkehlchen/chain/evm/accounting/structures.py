@@ -2,10 +2,9 @@ from collections.abc import Iterator
 from enum import Enum
 from typing import TYPE_CHECKING, Literal, NamedTuple, Optional, Protocol
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
 
 
 class AccountantCallback(Protocol):
@@ -13,8 +12,8 @@ class AccountantCallback(Protocol):
     def __call__(
             self,
             pot: 'AccountingPot',
-            event: 'HistoryBaseEntry',
-            other_events: Iterator['HistoryBaseEntry'],
+            event: 'EvmEvent',
+            other_events: Iterator['EvmEvent'],
     ) -> None:
         """
         Callback to be called by the accounting module.
