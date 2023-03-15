@@ -14,7 +14,7 @@ from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
@@ -57,7 +57,7 @@ from rotkehlchen.api.v1.schemas import (
     DataImportSchema,
     DetectTokensSchema,
     EditCustomAssetSchema,
-    EditHistoryBaseEntrySchema,
+    EditEvmEventSchema,
     EditSettingsSchema,
     ERC20InfoSchema,
     Eth2DailyStatsSchema,
@@ -66,6 +66,7 @@ from rotkehlchen.api.v1.schemas import (
     Eth2ValidatorPutSchema,
     EventDetailsQuerySchema,
     EvmAccountsPutSchema,
+    EvmEventSchema,
     EvmPendingTransactionDecodingSchema,
     EvmTransactionDecodingSchema,
     EvmTransactionHashAdditionSchema,
@@ -81,7 +82,6 @@ from rotkehlchen.api.v1.schemas import (
     ExternalServicesResourceDeleteSchema,
     FileListSchema,
     HistoricalAssetsPriceSchema,
-    HistoryBaseEntrySchema,
     HistoryExportingSchema,
     HistoryProcessingDebugImportSchema,
     HistoryProcessingExportSchema,
@@ -1133,20 +1133,20 @@ class LedgerActionsResource(BaseMethodView):
         return self.rest_api.delete_ledger_actions(identifiers=identifiers)
 
 
-class HistoryBaseEntryResource(BaseMethodView):
+class EvmEventResource(BaseMethodView):
 
-    put_schema = HistoryBaseEntrySchema()
-    patch_schema = EditHistoryBaseEntrySchema()
+    put_schema = EvmEventSchema()
+    patch_schema = EditEvmEventSchema()
     delete_schema = IdentifiersListSchema()
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')
-    def put(self, event: HistoryBaseEntry) -> Response:
+    def put(self, event: EvmEvent) -> Response:
         return self.rest_api.add_history_event(event=event)
 
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json')
-    def patch(self, event: HistoryBaseEntry) -> Response:
+    def patch(self, event: EvmEvent) -> Response:
         return self.rest_api.edit_history_event(event=event)
 
     @require_loggedin_user()
