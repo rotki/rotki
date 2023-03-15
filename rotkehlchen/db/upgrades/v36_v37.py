@@ -12,8 +12,13 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+NEW_BASE_ENTRY_FIELDS_COUNT = 12
+
+
 def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection') -> None:
-    """Rewrite the DB schema of the history events to have subtype as non Optional
+    """
+    1. Rewrite the DB schema of the history events to have subtype as non Optional
+    2. Delete counterparty and extra_data fields
 
     Also turn all null subtype entries to have subtype none
     """
@@ -31,8 +36,6 @@ def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection'
     notes TEXT,
     type TEXT NOT NULL,
     subtype TEXT NOT NULL,
-    counterparty TEXT,
-    extra_data TEXT,
     FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
     UNIQUE(event_identifier, sequence_index)
     );""")
@@ -42,14 +45,33 @@ def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection'
 
         for entry in read_cursor:
             if entry[11] is None:
-                new_entries.append(entry[:11] + ('none',) + entry[12:])
+                new_entries.append(entry[:NEW_BASE_ENTRY_FIELDS_COUNT - 1] + ('none',))  # turn NULL values to text `none`  # noqa: E501
             else:
-                new_entries.append(entry)
+                new_entries.append(entry[:NEW_BASE_ENTRY_FIELDS_COUNT])  # Don't change NON-NULL values  # noqa: E501
 
-    write_cursor.executemany('INSERT INTO history_events_copy VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,? ,? ,?)', new_entries)  # noqa: E501
+    write_cursor.executemany('INSERT INTO history_events_copy VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', new_entries)  # noqa: E501
     write_cursor.execute('DROP TABLE history_events')
     write_cursor.execute('ALTER TABLE history_events_copy RENAME TO history_events')
     log.debug('Exit _update_history_events_schema')
+
+
+def _create_new_tables(write_cursor: 'DBCursor') -> None:
+    """
+    Creates evm_events_info table and moves there values previously stored in history_events.
+    """
+    log.debug('Enter _create_new_tables')
+    write_cursor.execute("""
+        CREATE TABLE IF NOT EXISTS evm_events_info(
+            identifier INTEGER PRIMARY KEY,
+            counterparty TEXT,
+            product TEXT,
+            address TEXT,
+            extra_data TEXT,
+            FOREIGN KEY(identifier) REFERENCES history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+        );
+    """)  # noqa: E501
+
+    log.debug('Exit _create_new_tables')
 
 
 def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
@@ -58,9 +80,11 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Replace null history event subtype
     """
     log.debug('Entered userdb v36->v36 upgrade')
-    progress_handler.set_total_steps(1)
+    progress_handler.set_total_steps(2)
     with db.user_write() as write_cursor:
         _update_history_events_schema(write_cursor, db.conn)
+        progress_handler.new_step()
+        _create_new_tables(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finished userdb v36->v36 upgrade')

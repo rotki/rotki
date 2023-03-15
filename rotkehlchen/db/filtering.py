@@ -139,7 +139,7 @@ class DBETHTransactionJoinsFilter(DBFilter):
         bindings: list[Union[ChecksumEvmAddress, int]] = []
         if self.should_join_events is True:
             query_filters.append(
-                'LEFT JOIN (SELECT event_identifier, counterparty, asset, type, subtype FROM history_events) '  # noqa: E501
+                'LEFT JOIN (SELECT event_identifier, counterparty, asset, type, subtype FROM history_events LEFT JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier) '  # noqa: E501
                 'ON evm_transactions.tx_hash=event_identifier',
             )
         if self.accounts is not None:
@@ -471,7 +471,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             if asset is not None:
                 filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
             if protocols is not None:
-                filters.append(DBProtocolsFilter(and_op=True, protocols=protocols))
+                filters.append(DBPCounterpartyFilter(and_op=True, counterparties=protocols))
             if exclude_ignored_assets is True:
                 filters.append(DBIgnoredAssetsFilter(and_op=True, asset_key='asset'))
             if event_types is not None:
@@ -904,7 +904,6 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             ignored_ids: Optional[list[str]] = None,
             null_columns: Optional[list[str]] = None,
             event_identifiers: Optional[list[bytes]] = None,
-            protocols: Optional[list[str]] = None,
             exclude_ignored_assets: bool = False,
     ) -> 'HistoryEventFilterQuery':
         if order_by_rules is None:
@@ -980,10 +979,6 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
                     values=event_identifiers,
                 ),
             )
-        if protocols is not None:
-            filters.append(
-                DBProtocolsFilter(and_op=True, protocols=protocols),
-            )
         if exclude_ignored_assets is True:
             filters.append(DBIgnoredAssetsFilter(and_op=True, asset_key='asset'))
 
@@ -998,15 +993,64 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
         return filter_query
 
 
+class EvmEventFilterQuery(HistoryEventFilterQuery):
+    @classmethod
+    def make(
+            cls,
+            and_op: bool = True,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+            assets: Optional[tuple[Asset, ...]] = None,
+            event_types: Optional[list[HistoryEventType]] = None,
+            event_subtypes: Optional[list[HistoryEventSubType]] = None,
+            exclude_subtypes: Optional[list[HistoryEventSubType]] = None,
+            location: Optional[Location] = None,
+            location_label: Optional[str] = None,
+            ignored_ids: Optional[list[str]] = None,
+            null_columns: Optional[list[str]] = None,
+            event_identifiers: Optional[list[bytes]] = None,
+            exclude_ignored_assets: bool = False,
+            counterparties: Optional[list[str]] = None,
+    ) -> 'EvmEventFilterQuery':
+        filter_query = super().make(
+            and_op=and_op,
+            order_by_rules=order_by_rules,
+            limit=limit,
+            offset=offset,
+            from_ts=from_ts,
+            to_ts=to_ts,
+            assets=assets,
+            event_types=event_types,
+            event_subtypes=event_subtypes,
+            exclude_subtypes=exclude_subtypes,
+            location=location,
+            location_label=location_label,
+            ignored_ids=ignored_ids,
+            null_columns=null_columns,
+            event_identifiers=event_identifiers,
+            exclude_ignored_assets=exclude_ignored_assets,
+        )
+        filter_query = cast(EvmEventFilterQuery, filter_query)
+        if counterparties is not None:
+            filter_query.filters.append(
+                DBPCounterpartyFilter(and_op=True, counterparties=counterparties),
+            )
+
+        return filter_query
+
+
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBProtocolsFilter(DBFilter):
-    """Protocols should be not empty. Otherwise, it can break the query's logic"""
-    protocols: list[str]
+class DBPCounterpartyFilter(DBFilter):
+    """Counterparties should be not empty. Otherwise, it can break the query's logic"""
+    counterparties: list[str]
 
     def prepare(self) -> tuple[list[str], list[Any]]:
-        questionmarks = ','.join('?' * len(self.protocols))
+        questionmarks = ','.join('?' * len(self.counterparties))
         filters = [f'counterparty IN ({questionmarks})']
-        bindings = self.protocols
+        bindings = self.counterparties
         return filters, bindings
 
 
