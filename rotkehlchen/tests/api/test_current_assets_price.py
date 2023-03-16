@@ -282,10 +282,15 @@ def test_remove_manual_current_price(rotkehlchen_api_server):
     assert (A_BTC, A_ETH) not in Inquirer()._cached_current_price
 
 
+@pytest.mark.vcr()
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_manual_current_prices_loop(inquirer):
     """Check that if we got a loop of manual current prices
-    (e.g. 1 ETH costs 2 BTC and 1 BTC costs 5 ETH), it is handled properly."""
+    (e.g. 1 ETH costs 2 BTC and 1 BTC costs 5 ETH), it is handled properly.
+
+    This test is mocked because we were seeing cases of tests failing due to
+    an exception from coingecko API.
+    """
     GlobalDBHandler().add_manual_latest_price(
         from_asset=A_ETH,
         to_asset=A_USD,
@@ -305,15 +310,20 @@ def test_manual_current_prices_loop(inquirer):
         from_asset=A_ETH.resolve_to_asset_with_oracles(),
         to_asset=A_EUR.resolve_to_asset_with_oracles(),
     )
-    assert price > 100  # should be real ETH price
+    assert price == FVal('1570.92')  # it must be equal to the mocked price at the time
     warnings = inquirer._msg_aggregator.consume_warnings()
     assert len(warnings) == 1
     assert 'from ETH(Ethereum) to EUR(Euro) since your manual latest' in warnings[0]
 
 
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ignore_mocked_prices_for', ['ETH'])
 def test_inquirer_oracles_affect_manual_price(inquirer):
-    """Checks that change of oracles order affects manual current price usage."""
+    """Checks that change of oracles order affects manual current price usage.
+
+    This test is mocked because we were seeing cases of tests failing due to
+    an exception from coingecko API.
+    """
     GlobalDBHandler().add_manual_latest_price(
         from_asset=A_ETH,
         to_asset=A_EUR,
@@ -325,7 +335,7 @@ def test_inquirer_oracles_affect_manual_price(inquirer):
     )
     assert inquirer.find_usd_price(A_ETH) == 3  # Should remain the same since cache should be hit
     inquirer.remove_cached_current_price_entry(cache_key=(A_ETH, A_USD))
-    assert inquirer.find_usd_price(A_ETH) > 100  # should have real price now
+    assert inquirer.find_usd_price(A_ETH) == FVal('1667.18')  # it must be equal to the mocked price at the time  # noqa: E501
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
