@@ -499,6 +499,49 @@ def test_get_all_assets(rotkehlchen_api_server):
         assert 'underlying_tokens' in entry
         assert entry['evm_chain'] in [x.to_name() for x in ChainID]
 
+    # test that wrong combination of evm_chain & asset_type fails.
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={'asset_type': 'fiat', 'evm_chain': 'ethereum'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Filtering by evm_chain is only supported by evm tokens',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # check that filtering by evm_chain & symbol works.
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={'evm_chain': 'ethereum', 'symbol': 'UNI'},
+    )
+    result = assert_proper_response_with_result(response)
+    assert all([i['evm_chain'] == 'ethereum' and 'UNI' in i['symbol'].upper() for i in result['entries']])  # noqa: E501
+
+    # check that filtering by address and evm_chain works.
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'evm_chain': 'ethereum',
+            'address': '0x6b175474e89094c44da98b954eedeac495271d0f',
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 1
+    assert result['entries'][0]['address'] == '0x6B175474E89094C44Da98b954EedeAC495271d0F'
+    assert result['entries'][0]['evm_chain'] == 'ethereum'
+    assert result['entries'][0]['name'] == 'Multi Collateral Dai'
+    assert result['entries'][0]['symbol'] == 'DAI'
+
 
 def test_get_assets_mappings(rotkehlchen_api_server):
     """Test that providing a list of asset identifiers, the appropriate assets mappings are returned."""  # noqa: E501

@@ -1073,6 +1073,7 @@ class AssetsFilterQuery(DBFilterQuery):
             offset: Optional[int] = None,
             name: Optional[str] = None,
             symbol: Optional[str] = None,
+            address: Optional[ChecksumEvmAddress] = None,
             substring_search: Optional[str] = None,
             search_column: Optional[str] = None,
             asset_type: Optional[AssetType] = None,
@@ -1144,6 +1145,12 @@ class AssetsFilterQuery(DBFilterQuery):
                 and_op=True,
                 column='chain',
                 value=chain_id.serialize_for_db(),
+            ))
+        if address is not None:
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='address',
+                value=address,
             ))
         filter_query.filters = filters
         return filter_query
