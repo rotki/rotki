@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import { type PropType } from 'vue';
+import { type ComputedRef, type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import EditBalancesSnapshotForm from '@/components/dashboard/EditBalancesSnapshotForm.vue';
 import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBalancesSnapshotLocationSelector.vue';
@@ -20,6 +20,7 @@ import {
 import { One, Zero, bigNumberify, sortDesc } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
 import { toSentenceCase } from '@/utils/text';
+import { assert } from '@/utils/assertions';
 
 type IndexedBalanceSnapshot = BalanceSnapshot & { index: number };
 
@@ -47,7 +48,6 @@ const locationToDelete = ref<string>('');
 const form = ref<(BalanceSnapshotPayload & { location: string }) | null>(null);
 const valid = ref<boolean>(false);
 const loading = ref<boolean>(false);
-const excludedAssets = ref<string[]>([]);
 
 const { exchangeRate } = useBalancePricesStore();
 const { tc } = useI18n();
@@ -55,11 +55,19 @@ const fiatExchangeRate = computed<BigNumber>(() => {
   return get(exchangeRate(get(currencySymbol))) ?? One;
 });
 
-const data = computed<IndexedBalanceSnapshot[]>(() => {
+const data: ComputedRef<IndexedBalanceSnapshot[]> = computed(() => {
   return get(value).balancesSnapshot.map((item, index) => ({
     ...item,
     index
   }));
+});
+
+const assetSearch: Ref<string> = ref('');
+const filteredData: ComputedRef<IndexedBalanceSnapshot[]> = computed(() => {
+  const allData = get(data);
+  const search = get(assetSearch);
+  if (!search) return allData;
+  return allData.filter(({ assetIdentifier }) => assetIdentifier === search);
 });
 
 const total = computed<BigNumber>(() => {
@@ -113,6 +121,39 @@ const updateStep = (step: number) => {
   emit('update:step', step);
 };
 
+const conflictedBalanceSnapshot: Ref<BalanceSnapshot | null> = ref(null);
+const checkAssetExist = (asset: string) => {
+  const assetFound = get(value).balancesSnapshot.find(
+    item => item.assetIdentifier === asset
+  );
+  set(conflictedBalanceSnapshot, assetFound || null);
+};
+
+const closeConvertToEditDialog = () => {
+  set(conflictedBalanceSnapshot, null);
+};
+
+const cancelConvertToEdit = () => {
+  set(form, {
+    ...get(form),
+    assetIdentifier: ''
+  });
+
+  closeConvertToEditDialog();
+};
+const convertToEdit = () => {
+  assert(conflictedBalanceSnapshot);
+  const item = get(data).find(
+    ({ assetIdentifier }) =>
+      assetIdentifier === get(conflictedBalanceSnapshot)?.assetIdentifier
+  );
+
+  if (item) {
+    editClick(item);
+  }
+  closeConvertToEditDialog();
+};
+
 const editClick = (item: IndexedBalanceSnapshot) => {
   set(indexToEdit, item.index);
 
@@ -127,13 +168,6 @@ const editClick = (item: IndexedBalanceSnapshot) => {
     usdValue: convertedFiatValue,
     location: ''
   });
-
-  set(
-    excludedAssets,
-    get(value)
-      .balancesSnapshot.map(item => item.assetIdentifier)
-      .filter(identifier => identifier !== item.assetIdentifier)
-  );
 
   set(showForm, true);
 };
@@ -160,10 +194,6 @@ const add = () => {
     usdValue: '',
     location: ''
   });
-  set(
-    excludedAssets,
-    get(value).balancesSnapshot.map(item => item.assetIdentifier)
-  );
   set(showForm, true);
 };
 
@@ -322,7 +352,6 @@ const clearEditDialog = () => {
   set(indexToEdit, null);
   set(showForm, false);
   set(form, null);
-  set(excludedAssets, []);
 };
 
 const updateForm = (newForm: BalanceSnapshotPayload & { location: string }) => {
@@ -357,11 +386,23 @@ const tableContainer = computed(() => {
 </script>
 <template>
   <div>
+    <v-row class="pa-4">
+      <v-col md="6">
+        <asset-select
+          v-model="assetSearch"
+          outlined
+          hide-details
+          clearable
+          :label="tc('dashboard.snapshot.search_asset')"
+        />
+      </v-col>
+    </v-row>
     <data-table
       ref="tableRef"
       class="table-inside-dialog"
+      :class="css['table-inside-dialog']"
       :headers="tableHeaders"
-      :items="data"
+      :items="filteredData"
       :container="tableContainer"
       :mobile-breakpoint="0"
     >
@@ -441,12 +482,52 @@ const tableContainer = computed(() => {
       <edit-balances-snapshot-form
         v-if="form"
         v-model="valid"
+        :edit="!!indexToEdit"
         :form="form"
-        :excluded-assets="excludedAssets"
         :preview-location-balance="previewLocationBalance"
         :locations="indexToEdit !== null ? existingLocations : []"
         @update:form="updateForm"
+        @update:asset="checkAssetExist"
       />
+
+      <confirm-dialog
+        max-width="700"
+        :display="!!conflictedBalanceSnapshot"
+        :title="tc('dashboard.snapshot.convert_to_edit.dialog.title')"
+        :message="tc('dashboard.snapshot.convert_to_edit.dialog.subtitle')"
+        :primary-action="
+          tc('dashboard.snapshot.convert_to_edit.dialog.actions.yes')
+        "
+        @cancel="cancelConvertToEdit"
+        @confirm="convertToEdit"
+      >
+        <v-sheet
+          v-if="conflictedBalanceSnapshot"
+          outlined
+          class="pa-4 mt-4 d-flex justify-center"
+          rounded
+        >
+          <balance-display
+            :asset="conflictedBalanceSnapshot.assetIdentifier"
+            :value="conflictedBalanceSnapshot"
+            class="mr-4"
+            no-icon
+          />
+          <asset-details
+            v-if="!isNft(conflictedBalanceSnapshot.assetIdentifier)"
+            :class="css.asset"
+            :asset="conflictedBalanceSnapshot.assetIdentifier"
+            :opens-details="false"
+            :enable-association="false"
+          />
+          <div v-else>
+            <nft-details
+              :identifier="conflictedBalanceSnapshot.assetIdentifier"
+              :class="css.asset"
+            />
+          </div>
+        </v-sheet>
+      </confirm-dialog>
     </big-dialog>
 
     <confirm-dialog
@@ -472,5 +553,9 @@ const tableContainer = computed(() => {
 <style module lang="scss">
 .asset {
   max-width: 640px;
+}
+
+.table-inside-dialog {
+  max-height: calc(100vh - 420px);
 }
 </style>

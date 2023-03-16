@@ -2,7 +2,6 @@
 import { type ComputedRef } from 'vue';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { Section } from '@/types/status';
 import { isVideo } from '@/utils/nft';
 
 const props = defineProps({
@@ -39,13 +38,8 @@ const name: ComputedRef<string | null> = computed(() => {
   return data?.name || get(collectionName);
 });
 
-const { shouldShowLoadingScreen: isLoading } = useSectionLoading();
-const loading = isLoading(Section.NON_FUNGIBLE_BALANCES);
-
 const { isPending } = useAssetCacheStore();
-const isNftDetailLoading: ComputedRef<boolean> = computed(
-  () => get(loading) || get(isPending(identifier))
-);
+const isNftDetailLoading = isPending(identifier);
 
 const fallbackData = computed(() => {
   const id = get(identifier);
