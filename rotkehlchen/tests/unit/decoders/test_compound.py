@@ -16,7 +16,7 @@ ADDY2 = '0x87Dd56068Af560B0D8472C4EF41CB902FCbF5ebE'
 ADDY3 = '0xb99CC7e10Fe0Acc68C50C7829F473d81e23249cc'
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_compound_ether_deposit(database, ethereum_inquirer):
     """Data taken from:
@@ -69,7 +69,7 @@ def test_compound_ether_deposit(database, ethereum_inquirer):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_compound_ether_withdraw(database, ethereum_inquirer):
     """Data taken from:
