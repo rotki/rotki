@@ -2406,19 +2406,19 @@
   },
   "input_mode_select": {
     "manual_add": {
-      "label": "Manual"
+      "label": "手册"
     },
     "metamask_import": {
       "label": "MetaMask",
-      "metamask": "* You will be prompted to import your addresses from MetaMask after pressing save.",
-      "missing": "* Importing addresses from MetaMask is disabled. MetaMask could not be detected.",
+      "metamask": "*按下保存后，系统会提示您从 MetaMask 导入地址。",
+      "missing": "* 从 MetaMask 导入地址被禁用。无法检测到 MetaMask。",
       "missing_tooltip": {
-        "copy_url": "copy this page URL",
-        "here": "here",
-        "metamask_is_not_enabled": "The MetaMask is not enabled yet. You can enable it in menu Extension / Add Ons, depends on your browser.",
-        "metamask_is_not_installed": "This browser doesn't have MetaMask installed. You can download MetaMask {link}.",
-        "metamask_is_not_supported_by_browser": "Make sure you open this page with a supported browser listed {link}. If not, please {copy} and open it manually on supported browser.",
-        "title": "Here are the common cause:"
+        "copy_url": "复制本页网址",
+        "here": "这儿",
+        "metamask_is_not_enabled": "MetaMask 尚未启用。您可以在菜单扩展/附加组件中启用它，具体取决于您的浏览器。",
+        "metamask_is_not_installed": "此浏览器未安装 MetaMask。您可以下载 MetaMask {link}。",
+        "metamask_is_not_supported_by_browser": "确保您使用列出的受支持浏览器{link}打开此页面。如果不是，请{copy}并在受支持的浏览器上手动打开它。",
+        "title": "以下是常见原因："
       }
     },
     "xpub_add": {
@@ -2426,49 +2426,49 @@
     }
   },
   "kraken_page": {
-    "loading": "Your Kraken staking information is loading...",
+    "loading": "您的 Kraken 质押信息正在加载中...",
     "page": {
       "api_key": "API key",
-      "description": "To see your staking information you need to add a Kraken {link}",
+      "description": "要查看您的质押信息，您需要添加一个 Kraken {link}",
       "title": "Kraken Staking"
     }
   },
   "kraken_staking_events": {
     "filter": {
-      "asset": "filter by the staked asset",
-      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
-      "end_date": "filter by the end date of the staking events",
-      "start_date": "filter by the start date of the staking events",
-      "type": "filter by the type of the staking events"
+      "asset": "按质押资产过滤",
+      "date_hint": "format {format} HH:mm:ss(时间/秒可选）",
+      "end_date": "按质押事件的结束日期过滤",
+      "start_date": "按质押事件的开始日期筛选",
+      "type": "按质押事件的类型过滤"
     },
-    "refresh_tooltip": "Refresh your Kraken staking events",
-    "titles": "Kraken Staking Events",
+    "refresh_tooltip": "刷新您的 Kraken 质押事件",
+    "titles": "Kraken 质押活动",
     "types": {
-      "receive_staked_asset": "receive staked asset",
-      "stake_asset": "stake asset",
-      "staking_reward": "staking reward",
-      "unstake_asset": "unstake asset"
+      "receive_staked_asset": "接收质押资产",
+      "stake_asset": "质押资产",
+      "staking_reward": "质押奖励",
+      "unstake_asset": "取消抵押资产"
     },
     "upgrade": {
-      "label": "Staking events"
+      "label": "质押事件"
     }
   },
   "kraken_staking_overview": {
-    "current": "current",
-    "earned": "Total Earned",
+    "current": "当前",
+    "earned": "总收入",
     "hint": {
-      "current": "Based on the current price of assets",
-      "historical": "Based on the historical price of assets"
+      "current": "基于当前资产价格",
+      "historical": "基于资产的历史价格"
     },
-    "historical": "historical",
-    "title": "Overview"
+    "historical": "历史",
+    "title": "概述"
   },
   "kraken_staking_received": {
     "switch": {
-      "current": "Current",
-      "historical": "Historical"
+      "current": "当前",
+      "historical": "历史"
     },
-    "title": "Earned Per Asset"
+    "title": "每项资产赚取"
   },
   "labeled_address_display": {
     "divider": "|",
@@ -2477,126 +2477,126 @@
   "ledger_action_form": {
     "amount": {
       "validation": {
-        "non_empty": "The amount field cannot be empty."
+        "non_empty": "金额字段不能为空。"
       }
     },
     "asset": {
       "validation": {
-        "non_empty": "The asset field cannot be empty"
+        "non_empty": "资产字段不能为空"
       }
     },
     "date": {
-      "hint": "The date of when the action happened",
-      "label": "Date"
+      "hint": "动作发生的日期",
+      "label": "日期"
     },
     "link": {
-      "hint": "[Optional] A link for the action. e.g. in an explorer",
-      "label": "Link"
+      "hint": "[Optional]操作链接。例如在资源管理器中",
+      "label": "链接"
     },
     "location": {
       "validation": {
-        "non_empty": "The location field cannot be empty."
+        "non_empty": "位置字段不能为空。"
       }
     },
     "notes": {
-      "hint": "[Optional] Additional notes to store for the action",
-      "label": "Notes"
+      "hint": "[Optional] 为操作存储的附加注释",
+      "label": "注释"
     },
     "rate": {
-      "hint": "[Optional] Custom rate of the action. If not given the rate for the asset at the given time will be used.",
-      "label": "Rate"
+      "hint": "[Optional] 动作的自定义速率。如果没有给出资产在给定时间的速率将被使用。",
+      "label": "率"
     },
     "rate_asset": {
-      "hint": "[Optional] The asset used for the rate",
-      "label": "Rate asset"
+      "hint": "[Optional] 用于汇率的资产",
+      "label": "评价资产"
     },
     "type": {
       "validation": {
-        "non_empty": "The type field cannot be empty."
+        "non_empty": "类型字段不能为空。"
       }
     }
   },
   "ledger_action_settings": {
     "header": {
-      "ledger_action": "Ledger Action",
-      "taxable": "Taxable"
+      "ledger_action": "账本操作",
+      "taxable": "应纳税"
     },
-    "subtitle": "Control which ledger actions are considered taxable or not during the profit/loss report generation. That means which ones will add/subtract to/from the profit loss. All ledger actions irrespective of this setting will be taken into account for cost basis calculation.",
-    "title": "Taxable ledger actions"
+    "subtitle": "在损益报告生成过程中控制哪些分类账行为被认为是应纳税的。这意味着哪些将增加/减去利润损失。无论此设置如何，所有分类账行为都将被考虑 成本基础计算。",
+    "title": "应税分类帐操作"
   },
   "ledger_actions": {
     "actions": {
-      "airdrop": "Airdrop",
-      "dividends": "Dividends Income",
-      "donation": "Donation Received",
-      "expense": "Expense",
-      "gift": "Gift",
-      "grant": "Grant",
-      "income": "Income",
-      "loss": "Loss"
+      "airdrop": "空投",
+      "dividends": "股息收入",
+      "donation": "收到捐赠",
+      "expense": "费用",
+      "gift": "礼物",
+      "grant": "授予",
+      "income": "收入",
+      "loss": "损失"
     },
     "delete": {
-      "message": "Are you sure you want to delete this ledger action?",
-      "multiple_message": "Are you sure you want to delete these {length} ledger actions?",
-      "title": "Delete Ledger Action"
+      "message": "你确定要删除这个账本操作吗？",
+      "multiple_message": "您确定要删除这些 {length} 个账本操作吗？",
+      "title": "删除账本操作"
     },
-    "delete_tooltip": "Delete the ledger action",
+    "delete_tooltip": "删除账本操作",
     "details": {
-      "link": "Link",
-      "link_data": "No link found.",
-      "rate_asset": "Rate",
-      "rate_data": "No custom rate used",
-      "title": "Details"
+      "link": "链接",
+      "link_data": "没有找到链接。",
+      "rate_asset": "利率",
+      "rate_data": "未使用自定义汇率",
+      "title": "详情"
     },
     "dialog": {
       "add": {
-        "subtitle": "Add a manual entry of income/loss/expense etc.",
-        "title": "Add a ledger action"
+        "subtitle": "添加收入/损失/支出等的手动输入。",
+        "title": "添加Ledger操作"
       },
       "edit": {
-        "subtitle": "Edit an existing ledger action",
-        "title": "Edit Ledger Action"
+        "subtitle": "编辑现有 ledger 操作",
+        "title": "编辑 Ledger 操作"
       }
     },
-    "edit_tooltip": "Edit the ledger action",
+    "edit_tooltip": "编辑 Ledger 操作",
     "filter": {
-      "action_type": "filter by the ledger action type (income, loss, etc...)",
-      "asset": "filter by the asset of the ledger action",
-      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
-      "end_date": "filter by the end date of the ledger action period",
-      "location": "filter by the ledger action location",
-      "start_date": "filter by the start date of the ledger action period"
+      "action_type": "按账本操作类型（收入、损失等...）过滤",
+      "asset": "按账本操作的资产过滤",
+      "date_hint": "format {format} HH:mm:ss （时间/秒可选）",
+      "end_date": "按账本操作期的结束日期筛选",
+      "location": "按分类帐操作位置过滤",
+      "start_date": "按账本操作期的开始日期过滤"
     },
     "headers": {
-      "actions": "Actions"
+      "actions": "动作"
     },
-    "label": "ledger actions",
-    "loading": "Please wait while your ledger actions are getting loaded...",
-    "refresh_tooltip": "Refresh your ledger actions",
-    "selected": "{count} item(s) selected",
-    "title": "Ledger Actions"
+    "label": "ledger 动作",
+    "loading": "正在加载您的分类帐操作，请稍候...",
+    "refresh_tooltip": "刷新你的ledger操作",
+    "selected": "{count} 个项目被选中",
+    "title": "Ledger 操作"
   },
   "lending": {
-    "currently_deposited": "Currently Deposited",
-    "effective_interest_rate": "Effective Savings Rate",
-    "effective_interest_rate_tooltip": "The savings rate across all of the protocols in which you are actively lending, weighted based on the relative position in each protocol.",
-    "history": "History",
-    "loading": "Please wait while your balances are getting loaded...",
-    "profit_earned": "Profit Earned",
+    "currently_deposited": "当前已存入",
+    "effective_interest_rate": "有效储蓄率",
+    "effective_interest_rate_tooltip": "你积极借贷的所有协议的储蓄率，根据每个协议中的相对位置加权。",
+    "history": "历史",
+    "loading": "正在加载您的余额，请稍候...",
+    "profit_earned": "获利",
     "reset": {
-      "protocol_selection": "Select protocol(s) to reset"
+      "protocol_selection": "选择要重置的协议"
     },
-    "reset_confirm": "This action will overwrite any cached history entries in the DB for the selected protocols and will fetch everything again. Depending on the number of accounts it may take a long time. Are you sure you want to continue?",
-    "reset_tooltip": "Refreshes the data overwriting cached Aave and yearn.finance Vaults historical entries"
+    "reset_confirm": "此操作将覆盖数据库中所选协议的任何缓存历史条目，并将再次获取所有内容。根据帐户数量，这可能需要很长时间。您确定要继续吗？",
+    "reset_tooltip": "刷新数据覆盖缓存的 Aave 和 yearn.finance Vaults 历史条目"
   },
   "lending_asset_table": {
     "headers": {
-      "effective_interest_rate": "Effective Interest Rate",
-      "usd_value": "{currency} value"
+      "effective_interest_rate": "实际利率",
+      "usd_value": "{currency} 价值"
     }
   },
   "liabilities": {
-    "no_selection": "Select a loan to view more information"
+    "no_selection": "选择贷款查看更多信息"
   },
   "liquidity_pool_details": {
     "liquidity": "Liquidity",
