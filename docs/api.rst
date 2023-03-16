@@ -7530,7 +7530,7 @@ Getting Liquity stability pool infomration
 
 
 Getting Liquity staking information
-=============================
+====================================
 
 .. http:get:: /api/(version)/blockchains/ETH/modules/liquity/stats
 
@@ -12203,6 +12203,7 @@ Get Binance Savings Interests History
 
    Doing a GET on this endpoint will return all history events relating to interest payments for the specified location.
    .. note::
+
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
 
    **Example Request**:
@@ -12232,33 +12233,47 @@ Get Binance Savings Interests History
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-    {
+      {
         "result": {
-            "events": [
-                {
-                    "timestamp": 1587233562,
-                    "location": "binance",
-                    "asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F",
-                    "amount": "0.00987654",
-                    "usd_value": "0.05432097"
-                },
-                {
-                    "timestamp": 1577233578,
-                    "location": "binance",
-                    "asset": "eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53",
-                    "amount": "0.00006408",
-                    "usd_value": "0.00070488"
-                }
-            ],
-            "entries_found": 2,
-            "entries_limit": 100,
-            "entries_total": 2,
-            "total_usd_value": "0.05502585",
-            "assets": ["eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53", "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F"],
-            "received": [{"asset": "eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53", "amount": "0.00006408", "usd_value": "0.00070488"}, {"asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F", "amount": "0.00987654", "usd_value": "0.05432097"}]
+          "events": [
+            {
+              "timestamp": 1587233562,
+              "location": "binance",
+              "asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F",
+              "amount": "0.00987654",
+              "usd_value": "0.05432097"
+            },
+            {
+              "timestamp": 1577233578,
+              "location": "binance",
+              "asset": "eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53",
+              "amount": "0.00006408",
+              "usd_value": "0.00070488"
+            }
+          ],
+          "entries_found": 2,
+          "entries_limit": 100,
+          "entries_total": 2,
+          "total_usd_value": "0.05502585",
+          "assets": [
+            "eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53",
+            "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F"
+          ],
+          "received": [
+            {
+              "asset": "eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53",
+              "amount": "0.00006408",
+              "usd_value": "0.00070488"
+            },
+            {
+              "asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F",
+              "amount": "0.00987654",
+              "usd_value": "0.05432097"
+            }
+          ]
         },
         "message": ""
-    }
+      }
 
    :resjsonarr int timestamp: The timestamp at which the event occurred.
    :resjsonarr string location: A valid location at which the event happened.

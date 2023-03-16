@@ -472,7 +472,7 @@ There is a nice way to run tests by disallowing network calls. This can help us 
 
 You can add ``--disable-socket`` to any pytest call and it will fail immediately for any network calls. You will probably need to also add ``--allow-hosts=127.0.0.1`` if the tests makes local network calls to the rotki api. This way you can discover all network calls and mock them.
 
-Mocking should happen with one of the following ways::
+Mocking should happen with one of the following ways:
 
 1. Using common fixtures for data mocking as started and shown `here <https://github.com/rotki/rotki/pull/5269>`__ . Read the PR description to get an idea.
 2. Using test specific mocking.
@@ -601,6 +601,59 @@ Before committing and pushing your commits ensure that you fix any lint issues. 
     While lint warnings are not fatal and will not fail the CI pipeline it would be better if a PR
     reduces the number of warnings and doesn't introduce new ones. Warnings are things that
     need to be fixed and they will be converted to errors in the future.
+
+
+Vue
+====
+
+Setup script macros
+--------------------
+
+When using the ``defineProps`` or ``defineEmits`` macros in the setup script the ``defineX<{}>()`` format should be used instead of the ``defineX({})``.
+
+Any instances of the ``defineX({})`` should eventually be replaced with ``defineX<{}>()``.
+
+style tag
+----------
+
+Initially the style tag was using scoped scss with `bem <https://getbem.com/naming/>`__ for naming.
+Any scoped style should be eventually replaced with `css modules <https://vuejs.org/api/sfc-css-features.html#css-modules>`__ and we should simplify naming and move away from BEM.
+
+Dependencies
+=============
+
+Adding new dependencies
+------------------------
+As a rule of thumb we should pick dependencies that are coming from well-known trusted sources. *e.g. known Vue ecosystem/nuxt maintainers with a good track record.*
+
+From experience these dependencies tend to have better support, and more regular updates.
+
+If the functionality implemented is simple enough, and it doesn't add a big maintenance overhead to the team, it would be preferable skip the extra dependency and just implement it as part of our codebase.
+
+Versions
+---------
+
+We always pin strict versions of our first party dependencies e.g:
+
+.. code-block:: json
+
+    {
+       "dependencies": {
+           "package": "1.0.0"
+       }
+    }
+
+instead of
+
+.. code-block:: json
+
+    {
+       "dependencies": {
+           "package": "^1.0.0"
+       }
+    }
+
+
 
 Manual Testing
 ***********************
