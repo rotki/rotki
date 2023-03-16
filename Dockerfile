@@ -69,6 +69,6 @@ EXPOSE 80
 
 COPY ./packaging/docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY ./packaging/docker/entrypoint.py /opt/rotki
-CMD ["sh", "-c", "/opt/rotki/entrypoint.py"]
+CMD ["/opt/rotki/entrypoint.py"]
 
 HEALTHCHECK CMD curl --fail http://localhost/api/1/ping || exit 1

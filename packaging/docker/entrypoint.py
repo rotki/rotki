@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import shutil
+from signal import signal, SIGINT, SIGTERM, SIGQUIT
 import subprocess
 import time
 from datetime import datetime, timedelta
@@ -169,6 +170,30 @@ nginx = subprocess.Popen('nginx -g "daemon off;"', shell=True)
 if nginx.returncode == 1:
     logger.error('Failed to start nginx')
     exit(1)
+
+
+def terminate_process(process_name: str, process: subprocess.Popen) -> None:
+    logger.info(f'Terminating {process_name}')
+    if process.poll() is not None:
+        logger.error(f'{process_name} was not running. This means that some error occurred.')
+        exit(1)
+
+    process.terminate()
+    process.wait()  # wait untill the process terminates
+
+
+def graceful_exit(signal, frame):
+    logger.info(f'Received signal {signal}. Exiting gracefully')
+    terminate_process('rotki', rotki)
+    terminate_process('nginx', nginx)
+    exit(0)
+
+
+# Handle exits via ctrl+c or via `docker stop` gracefully
+signal(SIGINT, graceful_exit)
+signal(SIGTERM, graceful_exit)
+signal(SIGQUIT, graceful_exit)
+
 
 while True:
     time.sleep(60)
