@@ -1884,6 +1884,11 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
     name = fields.String(load_default=None)
     symbol = fields.String(load_default=None)
     asset_type = SerializableEnumField(enum_class=AssetType, load_default=None)
+    address = EvmAddressField(load_default=None)
+    evm_chain = EvmChainNameField(
+        limit_to=get_args(SUPPORTED_CHAIN_IDS),  # type: ignore
+        load_default=None,
+    )
     ignored_assets_handling = SerializableEnumField(enum_class=IgnoredAssetsHandling, load_default=IgnoredAssetsHandling.NONE)  # noqa: E501
     show_user_owned_assets_only = fields.Boolean(load_default=False)
     identifiers = DelimitedOrNormalList(fields.String(required=True), load_default=None)
@@ -1903,6 +1908,15 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
             raise ValidationError(
                 message='Multiple fields ordering is not allowed.',
                 field_name='order_by_attributes',
+            )
+
+        if (
+            data['evm_chain'] is not None and
+            data['asset_type'] not in (None, AssetType.EVM_TOKEN)
+        ):
+            raise ValidationError(
+                message='Filtering by evm_chain is only supported by evm tokens',
+                field_name='evm_chain',
             )
 
     @post_load
@@ -1935,6 +1949,8 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
                 name=data['name'],
                 symbol=data['symbol'],
                 asset_type=data['asset_type'],
+                chain_id=data['evm_chain'],
+                address=data['address'],
                 identifiers=identifiers,
                 ignored_assets_filter_params=ignored_assets_filter_params,
             )
