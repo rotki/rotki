@@ -6,6 +6,7 @@ import {
 } from '@rotki/common/lib/history/tx-events';
 import { getEventType } from '@/utils/history';
 import { type EthTransactionEventEntry } from '@/types/history/tx';
+import { CURRENCY_USD } from '@/types/currencies';
 
 const props = withDefaults(
   defineProps<{
@@ -52,8 +53,10 @@ const extraDataPanel: Ref<number[]> = ref([]);
         </div>
         <div>
           <amount-display
+            :amount="event.balance.amount"
             :value="event.balance.usdValue"
-            fiat-currency="USD"
+            :price-asset="event.asset"
+            :fiat-currency="CURRENCY_USD"
             class="grey--text"
             :timestamp="event.timestamp"
           />

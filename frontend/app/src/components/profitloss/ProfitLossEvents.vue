@@ -106,6 +106,13 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     text: tc('profit_loss_events.headers.notes'),
     value: 'notes',
     sortable: false
+  },
+  {
+    text: tc('profit_loss_events.headers.actions'),
+    value: 'actions',
+    align: 'end',
+    width: 140,
+    sortable: false
   }
 ]);
 
@@ -280,6 +287,12 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
           />
           <template v-else>{{ item.notes }}</template>
         </div>
+      </template>
+      <template #item.actions="{ item }">
+        <report-profit-loss-event-action
+          :event="item"
+          :currency="report.settings.profitCurrency"
+        />
       </template>
       <template #expanded-item="{ headers, item }">
         <cost-basis-table

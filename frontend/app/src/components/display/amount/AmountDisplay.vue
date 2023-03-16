@@ -97,6 +97,25 @@ const isCurrentCurrency = isAssetPriceInCurrentCurrency(priceAsset);
 
 const { findCurrency } = useCurrencies();
 
+const priceHistoricRate = asyncComputed(
+  async () => {
+    assert(isDefined(priceAsset));
+    return await getHistoricPrice({
+      fromAsset: get(priceAsset),
+      toAsset: get(currentCurrency),
+      timestamp: get(timestamp)
+    });
+  },
+  One.negated(),
+  {
+    lazy: true,
+    evaluating,
+    onError(e: any) {
+      logger.error(e);
+    }
+  }
+);
+
 const historicExchangeRate = asyncComputed(
   async () => {
     assert(isDefined(sourceCurrency));
@@ -155,6 +174,13 @@ const internalValue: ComputedRef<BigNumber> = computed(() => {
     if (isCurrentCurrencyVal && isDefined(priceOfAsset)) {
       const priceOfAssetVal = get(priceOfAsset) || get(assetPrice(priceAsset));
       return get(amount).multipliedBy(priceOfAssetVal);
+    }
+  }
+
+  if (get(timestamp) > 0 && get(amount) && get(priceAsset)) {
+    const assetHistoricRate = get(priceHistoricRate);
+    if (assetHistoricRate.isPositive()) {
+      return get(amount).multipliedBy(assetHistoricRate);
     }
   }
 

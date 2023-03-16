@@ -40,19 +40,22 @@ export class TradeHistoryPage {
       .click();
     cy.get('[data-cy=amount] input').type(trade.amount);
     cy.wait('@priceTask').its('response.statusCode').should('equal', 200);
-    cy.get('[data-cy=rate]')
+    cy.get('[data-cy=trade-rate] [data-cy=primary]')
       .parent()
       .parent()
       .find('.v-progress-linear')
       .should('not.exist');
     if (trade.quote_amount) {
       cy.get('[data-cy=grouped-amount-input__swap-button]').click();
-      cy.get('[data-cy=quote-amount] input').type(
+      cy.get('[data-cy=trade-rate] [data-cy=secondary] input').type(
         `{selectall}{backspace}${trade.quote_amount}`
       );
-      cy.get('[data-cy=rate] input').should('have.value', trade.rate);
+      cy.get('[data-cy=trade-rate] [data-cy=primary] input').should(
+        'have.value',
+        trade.rate
+      );
     } else {
-      cy.get('[data-cy=rate] input').type(
+      cy.get('[data-cy=trade-rate] [data-cy=primary] input').type(
         `{selectall}{backspace}${trade.rate}`
       );
     }
