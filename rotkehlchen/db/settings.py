@@ -57,6 +57,7 @@ DEFAULT_LAST_DATA_MIGRATION = LAST_DATA_MIGRATION
 DEFAULT_COST_BASIS_METHOD = CostBasisMethod.FIFO
 DEFAULT_TREAT_ETH2_AS_ETH = False
 DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED = False
+DEFAULT_INCLUDE_FEES_IN_COST_BASIS = True
 
 
 JSON_KEYS = (
@@ -78,6 +79,7 @@ BOOLEAN_KEYS = (
     'pnl_csv_have_summary',
     'treat_eth2_as_eth',
     'eth_staking_taxable_after_withdrawal_enabled',
+    'include_fees_in_cost_basis',
 )
 INTEGER_KEYS = (
     'version',
@@ -132,6 +134,7 @@ class DBSettings(NamedTuple):
     treat_eth2_as_eth: bool = DEFAULT_TREAT_ETH2_AS_ETH
     eth_staking_taxable_after_withdrawal_enabled: bool = DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED  # noqa: 501
     address_name_priority: list[AddressNameSource] = DEFAULT_ADDRESS_NAME_PRIORITY
+    include_fees_in_cost_basis: bool = DEFAULT_INCLUDE_FEES_IN_COST_BASIS
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = self._asdict()   # pylint: disable=no-member
@@ -176,6 +179,7 @@ class ModifiableDBSettings(NamedTuple):
     treat_eth2_as_eth: Optional[bool] = None
     eth_staking_taxable_after_withdrawal_enabled: Optional[bool] = None
     address_name_priority: Optional[list[AddressNameSource]] = None
+    include_fees_in_cost_basis: Optional[bool] = None
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}

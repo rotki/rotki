@@ -4,7 +4,11 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.accounting.structures.types import (
+    ActionType,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
@@ -39,7 +43,8 @@ def test_decoders_initialization(ethereum_transaction_decoder):
         'Aavev1',
         'Aavev2',
         'Airdrops',
-        'Balancer',
+        'Balancerv1',
+        'Balancerv2',
         'Compound',
         'Cowswap',
         'Curve',
@@ -605,3 +610,25 @@ def test_genesis_transaction_no_address(database, ethereum_inquirer):
             database=database,
             tx_hash=tx_hex,
         )
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_phising_zero_transfers(database, ethereum_inquirer):
+    """Checks that zero transfer phishing transactions are marked as ignored."""
+    tx_hex = '0xb45ef1a202a8d9e983cf59129d28f79057969bb822f62e4b7d9f1ac8853d23ed'
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    assert events == []
+
+    with database.conn.read_ctx() as cursor:
+        ignored_actions = database.get_ignored_action_ids(
+            cursor=cursor,
+            action_type=ActionType.EVM_TRANSACTION,
+        )
+
+    assert ignored_actions == {ActionType.EVM_TRANSACTION: [f'{ChainID.ETHEREUM.value}{tx_hex}']}, 'Transaction with only zero transfers should have been marked as ignored'  # noqa: E501

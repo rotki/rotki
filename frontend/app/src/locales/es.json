@@ -161,11 +161,11 @@
   "actions": {
     "add_eth2_validator": {
       "error": {
-        "description": "There was an error while adding the Eth 2 validator {id}: {message}",
-        "title": "Adding ETH2 validator"
+        "description": "There was an error while adding the ETH staking validator {id}: {message}",
+        "title": "Adding ETH staking validator"
       },
       "task": {
-        "description": "Adding ETH2 validator",
+        "description": "Adding ETH staking validator",
         "title": "Adding validator: {id}"
       }
     },
@@ -518,24 +518,24 @@
     },
     "delete_eth2_validator": {
       "error": {
-        "description": "Deleting the Eth2 validators failed: {message}",
-        "title": "Deleting Eth2 validators"
+        "description": "Deleting the ETH staking validators failed: {message}",
+        "title": "Deleting ETH staking validators"
       }
     },
     "edit_eth2_validator": {
       "error": {
-        "description": "There was an error while editing the Eth2 validator {id}: {message}",
-        "title": "Editing ETH2 validator"
+        "description": "There was an error while editing the ETH staking validator {id}: {message}",
+        "title": "Editing ETH staking validator"
       }
     },
     "eth2_staking_stats": {
       "error": {
         "message": "Query failed with the following error: {message}",
-        "title": "Querying Eth2 daily stats"
+        "title": "Querying ETH staking daily stats"
       },
       "task": {
-        "description": "Querying your Eth2 daily stats",
-        "title": "Eth2 daily stats"
+        "description": "Querying your ETH staking daily stats",
+        "title": "ETH staking daily stats"
       }
     },
     "get_accounts": {
@@ -736,16 +736,16 @@
     "staking": {
       "eth2": {
         "error": {
-          "description": "Failed to query the Eth2 staking details: {error}",
-          "title": "Querying the Eth2 staking details"
+          "description": "Failed to query the ETH staking details: {error}",
+          "title": "Querying the ETH staking details"
         },
         "task": {
-          "title": "Querying Eth2 staking details"
+          "title": "Querying ETH staking details"
         }
       },
       "eth2_deposits": {
         "error": {
-          "description": "Failed to query the Eth2 staking deposits: {error}",
+          "description": "Failed to query the ETH staking deposits: {error}",
           "title": "Querying the Eth2 staking deposits"
         },
         "task": {
@@ -1129,7 +1129,7 @@
       "btc": "Bitcoin balances",
       "dot": "Polkadot balances",
       "eth": "Ethereum balances",
-      "eth2": "Eth2 balances",
+      "eth2": "ETH staking balances",
       "ksm": "Kusama balances",
       "loopring": "Loopring balances"
     },
@@ -1155,7 +1155,7 @@
     "btc": "Bitcoin",
     "dot": "Polkadot",
     "eth": "Ethereum",
-    "eth2": "Eth2",
+    "eth2": "ETH Staking",
     "ksm": "Kusama",
     "optimism": "Optimism"
   },
@@ -1707,11 +1707,11 @@
     "validator_index": "Validator Index"
   },
   "eth2_page": {
-    "loading": "Please wait while your eth2 staking details are getting loaded...",
-    "no_premium": "ETH2 Staking is",
+    "loading": "Please wait while your ETH staking details are getting loaded...",
+    "no_premium": "ETH Staking is",
     "toggle": {
       "depositor": "Depositor",
-      "hint": "Switch the filtering and display mode between ETH2 validators and ETH1 Addresses",
+      "hint": "Switch the filtering and display mode between ETH staking validators and ETH1 Addresses",
       "key": "Validator"
     }
   },
@@ -1839,7 +1839,7 @@
   "external_services": {
     "beaconchain": {
       "delete_tooltip": "Deletes the Beaconcha.in API key",
-      "description": "rotki uses Beaconcha.in to obtain information about eth2 staking in your portfolio. An API key is only needed if you are being rate-limited.",
+      "description": "rotki uses Beaconcha.in to obtain information about ETH staking in your portfolio. An API key is only needed if you are being rate-limited.",
       "hint": "Enter your Beaconcha.in API key",
       "label": "API key",
       "title": "Beaconcha.in"
@@ -2165,7 +2165,7 @@
         "success": "Thousand separator set to {thousandSeparator}"
       },
       "treat_eth2_as_eth": {
-        "error": "Error change setting for treat ETH2 as ETH"
+        "error": "Error change setting for treat ETH2 (Staked ETH) as ETH"
       },
       "version_update_check_frequency": {
         "error": "Error setting version update check frequency",
@@ -3472,7 +3472,7 @@
     }
   },
   "staking": {
-    "eth2": "ETH2",
+    "eth2": "ETH",
     "kraken": "Kraken",
     "liquity": "Liquity"
   },

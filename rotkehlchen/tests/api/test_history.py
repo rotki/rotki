@@ -49,11 +49,20 @@ from rotkehlchen.utils.misc import ts_now
     'start_ts,end_ts',
     [(0, 1601040361), (1539713237, 1539713238)],
 )
+@pytest.mark.parametrize('db_settings', [
+    {'include_fees_in_cost_basis': True},
+    {'include_fees_in_cost_basis': False},
+])
 def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     """Test that the history processing REST API endpoint works. Similar to test_history.py
 
     Both a test for full and limited time range.
+    Also tests different values of `include_fees_in_cost_basis`.
     """
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    with rotki.data.db.conn.read_ctx() as cursor:
+        fees_in_cost_basis = rotki.data.db.get_settings(cursor).include_fees_in_cost_basis
+
     report_id, report_result, events_result = query_api_create_and_get_report(
         server=rotkehlchen_api_server_with_exchanges,
         start_ts=start_ts,
@@ -78,13 +87,18 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
         assert overview[str(AccountingEventType.ASSET_MOVEMENT)] is not None
         assert overview[str(AccountingEventType.MARGIN_POSITION)] is not None
         assert overview[str(AccountingEventType.TRANSACTION_EVENT)] is not None
-    else:
+        assert overview[str(AccountingEventType.FEE)] is not None
+    elif fees_in_cost_basis is True:  # start_ts is 1539713237
+        assert len(overview) == 1
+        # Fees events are not taxable in this case, so they should not be included in total pnls.
+        assert str(AccountingEventType.FEE) not in overview
+    else:  # start_ts is 1539713237 and fees_in_cost_basis is False
         assert len(overview) == 2
+        assert overview[str(AccountingEventType.FEE)] is not None
     assert overview[str(AccountingEventType.TRADE)] is not None
-    assert overview[str(AccountingEventType.FEE)] is not None
 
     settings = report['settings']
-    assert len(settings) == 8
+    assert len(settings) == 9
     assert settings['profit_currency'] == 'EUR'
     assert settings['account_for_assets_movements'] is True
     assert settings['calculate_past_cost_basis'] is True
@@ -93,6 +107,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert settings['taxfree_after_period'] == 31536000
     assert settings['cost_basis_method'] == 'fifo'
     assert settings['eth_staking_taxable_after_withdrawal_enabled'] is False
+    assert settings['include_fees_in_cost_basis'] == fees_in_cost_basis
 
     assert events_result['entries_limit'] == FREE_PNL_EVENTS_LIMIT
     entries_length = 43 if start_ts == 0 else 40
@@ -130,7 +145,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
         ),
     )
     result = assert_proper_response_with_result(response=response, status_code=HTTPStatus.OK)
-    assert len(result['missing_acquisitions']) == 9
+    assert len(result['missing_acquisitions']) == 9 if fees_in_cost_basis is False else 8
     assert len(result['missing_prices']) == 0
     assert result['report_id'] == 1
 
@@ -247,7 +262,7 @@ def test_query_history_external_exchanges(rotkehlchen_api_server):
     )
     assert len(events_result['entries']) == 2
     overview = report_result['entries'][0]['overview']
-    assert FVal('5278.03086').is_close(FVal(overview[str(AccountingEventType.TRADE)]['taxable']))
+    assert FVal('4645.8444065096').is_close(FVal(overview[str(AccountingEventType.TRADE)]['taxable']))  # noqa: E501
 
 
 @pytest.mark.parametrize('have_decoders', [True])

@@ -6,6 +6,7 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
 from rotkehlchen.constants import ONE
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 if TYPE_CHECKING:
@@ -171,6 +172,9 @@ class BaseDecoderTools():
                 notes = f'{verb} {name} with id {token_id} from {counterparty} to {location_label}'  # noqa: E501
         else:
             return None  # unknown kind
+
+        if amount == ZERO:
+            return None  # Zero transfers are useless, so ignoring them
 
         return self.make_event(
             tx_hash=transaction.tx_hash,

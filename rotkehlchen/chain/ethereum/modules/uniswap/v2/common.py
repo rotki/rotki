@@ -114,6 +114,12 @@ def decode_uniswap_v2_like_swap(
             event.counterparty = counterparty
             event.notes = f'Swap {event.balance.amount} {crypto_asset.symbol} in {counterparty} from {event.location_label}'  # noqa: E501
             out_event = event
+        elif (  # out_event is already decoded
+            event.event_type == HistoryEventType.TRADE and
+            event.event_subtype == HistoryEventSubType.SPEND and
+            event.counterparty == counterparty
+        ):
+            out_event = event
         elif (
             (maybe_buyer == transaction.from_address or event.asset == A_ETH) and
             event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.TRANSFER) and
@@ -144,7 +150,7 @@ def decode_uniswap_v2_like_swap(
             event.counterparty = counterparty
             event.notes = f'Refund of {event.balance.amount} {crypto_asset.symbol} in {counterparty} due to price change'  # noqa: E501
 
-    maybe_reshuffle_events(out_event=out_event, in_event=in_event)
+    maybe_reshuffle_events(out_event=out_event, in_event=in_event, events_list=decoded_events)
     return None, []
 
 

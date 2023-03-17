@@ -279,10 +279,14 @@ class HistoryBaseEntry(AccountingEventMixin):
     def get_timestamp_in_sec(self) -> Timestamp:
         return ts_ms_to_sec(self.timestamp)
 
-    def get_type_identifier(self) -> str:
-        """A unique type identifier for known event types"""
+    def get_type_identifier(self, include_counterparty: bool = True) -> str:
+        """
+        A unique type identifier for known event types.
+        Computes the identifier from event type, event subtype and counterparty if
+        `include_counterparty` is True.
+        """
         identifier = str(self.event_type) + '__' + str(self.event_subtype)
-        if self.counterparty and not self.counterparty.startswith('0x'):
+        if include_counterparty and self.counterparty and not self.counterparty.startswith('0x'):
             identifier += '__' + self.counterparty
 
         return identifier
@@ -354,6 +358,12 @@ class HistoryBaseEntry(AccountingEventMixin):
             return 1
         # else it's a decoded transaction event and should be processed there
         return accounting.transactions.process(self, events_iterator)
+
+    def __hash__(self) -> int:
+        if self.identifier is not None:
+            return hash(self.identifier)
+
+        return hash(str(self.event_identifier) + str(self.sequence_index))
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)

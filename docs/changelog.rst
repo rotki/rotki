@@ -8,13 +8,19 @@ Changelog
 * :feature:`5587` Forward/Backward navigation for filters/pagination (using mouse buttons) will now be possible in the history section.
 * :feature:`5569` It is now possible to detect when an evm address is used in other chains and start tracking it. Also a background task runs periodically that performs this check.
 * :bug:`5491` Show original manual latest price asset in manual balance form.
-* :bug:`` Fixed a bug where balancer icon is not showed as transaction event counterparty.
+* :bug:`5572` Fix a detection error that caused some uniswap v2 trade edge cases not to be accounted for properly in pnl report.
+* :feature:`5592` Either include fees in the bought assets price or treat them as standalone events depending on the accounting settings.
+* :feature:`-` For known protocols like yearn, curve, uniswap etc, if the on-chain price query fails, external oracles will still be queried in case something is found there.
+* :bug:`-` Yearn vault price queries will now work more robustly. If the underlying token is not in rotki's DB it will be queried from the chain.
+* :bug:`-` Fixed a bug where balancer icon is not showed as transaction event counterparty.
 * :bug:`5672` Exported csv files after using ACB as the cost basis calculation algorithm will now reflect the same numbers as shown in the app.
 * :bug:`-` Ethereum transactions claiming COMP after comptroller's COMP ran out and has been refilled will now be decoded correctly as COMP rewards.
 * :bug:`-` Fixed an edge case where removing an EVM account multiple times in a row, while a transactions querying task ran, would result in an error.
 * :bug:`-` Ignoring forked assets ETC, BCH and BSV for accounting should now also remove any pre-fork references of them and completely omit them from the PnL report.
 * :bug:`-` Users with kraken accounts with old data that were never purged and repulled will no longer have missing events.
 * :bug:`-` PnL report will now correctly show progress bar percentage if user has connected but non-syncing exchanges.
+* :bug:`5749` Phishing zero token transfer transactions will now be hidden and ignored.
+* :bug:`5717` Swaps will now be processed in accounting correctly even if set manually.
 
 * :release:`1.27.1 <2023-02-24>`
 * :feature:`-` Transactions involving Sai CDP migration to Dai CDP are now properly decoded.

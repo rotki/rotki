@@ -756,10 +756,10 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             location_label=user_address,
             notes='Receive 9.423568821947938716 crvPlain3andSUSD after depositing in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',  # noqa: E501
             counterparty='curve',
-            extra_data={'deposit_events_num': 4},
+            extra_data={'deposit_events_num': 1},
         ), HistoryBaseEntry(
             event_identifier=evmhash,
-            sequence_index=77,
+            sequence_index=80,
             timestamp=TimestampMS(1675186487000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -768,42 +768,6 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             balance=Balance(amount=FVal('10')),
             location_label=user_address,
             notes='Deposit 10 DAI in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',  # noqa: E501
-            counterparty=CPT_CURVE,
-        ), HistoryBaseEntry(
-            event_identifier=evmhash,
-            sequence_index=78,
-            timestamp=TimestampMS(1675186487000),
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.DEPOSIT,
-            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
-            asset=A_USDC,
-            balance=Balance(amount=FVal('0')),
-            location_label=user_address,
-            notes='Deposit 0 USDC in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',  # noqa: E501
-            counterparty=CPT_CURVE,
-        ), HistoryBaseEntry(
-            event_identifier=evmhash,
-            sequence_index=79,
-            timestamp=TimestampMS(1675186487000),
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.DEPOSIT,
-            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
-            asset=A_USDT,
-            balance=Balance(amount=FVal('0')),
-            location_label=user_address,
-            notes='Deposit 0 USDT in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',  # noqa: E501
-            counterparty=CPT_CURVE,
-        ), HistoryBaseEntry(
-            event_identifier=evmhash,
-            sequence_index=80,
-            timestamp=TimestampMS(1675186487000),
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.DEPOSIT,
-            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
-            asset=Asset('eip155:1/erc20:0x57Ab1ec28D129707052df4dF418D58a2D46d5f51'),
-            balance=Balance(amount=FVal('0')),
-            location_label=user_address,
-            notes='Deposit 0 sUSD in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',  # noqa: E501
             counterparty=CPT_CURVE,
         ),
     ]

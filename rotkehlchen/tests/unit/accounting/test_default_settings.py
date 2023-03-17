@@ -265,8 +265,12 @@ def test_accounting_spend_settings(
 
 
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
-def test_accounting_swap_settings(accounting_pot: 'AccountingPot'):
-    """Test that the default accounting settings for swaps are correct"""
+@pytest.mark.parametrize('counterparty', [None, 'nonexistent_counterparty'])
+def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty: str):
+    """
+    Test that the default accounting settings for swaps are correct.
+    Also checks that if counterparty is not known we fallback to default swaps treatment.
+    """
     _gain_one_ether(transactions=accounting_pot.transactions)
     swap_spend_event = HistoryBaseEntry(
         event_identifier=EXAMPLE_EVM_HASH,
@@ -279,6 +283,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot'):
         notes='Swap 1 ETH in a uniswap pool',
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
+        counterparty=counterparty,
     )
     swap_receive_event = HistoryBaseEntry(
         event_identifier=EXAMPLE_EVM_HASH,
@@ -291,6 +296,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot'):
         notes='Receive 3000 DAI as the result of a swap',
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
+        counterparty=counterparty,
     )
     consumed_num = accounting_pot.transactions.process(
         event=swap_spend_event,

@@ -33,6 +33,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED,
     DEFAULT_HISTORICAL_PRICE_ORACLES,
     DEFAULT_INCLUDE_CRYPTO2CRYPTO,
+    DEFAULT_INCLUDE_FEES_IN_COST_BASIS,
     DEFAULT_INCLUDE_GAS_COSTS,
     DEFAULT_LAST_DATA_MIGRATION,
     DEFAULT_MAIN_CURRENCY,
@@ -380,6 +381,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'treat_eth2_as_eth': DEFAULT_TREAT_ETH2_AS_ETH,
         'eth_staking_taxable_after_withdrawal_enabled': DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED,  # noqa: E501
         'address_name_priority': DEFAULT_ADDRESS_NAME_PRIORITY,
+        'include_fees_in_cost_basis': DEFAULT_INCLUDE_FEES_IN_COST_BASIS,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 

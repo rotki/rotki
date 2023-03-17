@@ -1243,13 +1243,15 @@ class GlobalDBHandler():
     def add_single_historical_price(entry: HistoricalPrice) -> bool:
         """
         Adds the given historical price entries in the DB.
-        Returns True if the operation succeeded and False otherwise
+        Returns True if the operation succeeded and False otherwise.
+        If the price for the specified asset pair, oracle type and timestamp already exists,
+        it is replaced.
         """
         try:
             with GlobalDBHandler().conn.write_ctx() as write_cursor:
                 serialized = entry.serialize_for_db()
                 write_cursor.execute(
-                    """INSERT OR IGNORE INTO price_history(
+                    """INSERT OR REPLACE INTO price_history(
                     from_asset, to_asset, source_type, timestamp, price
                     ) VALUES (?, ?, ?, ?, ?)
                     """,

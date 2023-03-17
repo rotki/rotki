@@ -74,7 +74,7 @@ export const SUPPORTED_MODULES: SupportedModule[] = [
   },
   {
     identifier: Module.ETH2,
-    name: 'Eth2',
+    name: 'ETH Staking',
     icon: './assets/images/modules/eth.svg'
   },
   {

@@ -61,11 +61,18 @@ class TransactionsAccountant():
         type_identifier = event.get_type_identifier()
         event_settings = self.tx_event_settings.get(type_identifier, None)
         if event_settings is None:
-            log.debug(
-                f'During transaction accounting found transaction event {event} '
-                f'with no mapped event settings. Skipping...',
+            event_settings = self.tx_event_settings.get(
+                event.get_type_identifier(include_counterparty=False),
             )
-            return 1
+            if (  # For swaps we have a default treatment but for the rest we bail
+                event_settings is None or
+                event_settings.accounting_treatment != TxAccountingTreatment.SWAP
+            ):
+                log.debug(
+                    f'During transaction accounting found transaction event {event} '
+                    f'with no mapped event settings. Skipping...',
+                )
+                return 1
 
         # if there is any module specific accountant functionality call it
         if event_settings.accountant_cb is not None:
@@ -118,8 +125,7 @@ class TransactionsAccountant():
             asset_in=in_event.asset,
             amount_out=out_event.balance.amount,
             asset_out=out_event.asset,
-            fee=None,
-            fee_asset=None,
+            fee_info=None,
         )
         if prices is None:
             log.debug(f'Skipping {self} at accounting for a swap due to inability to find a price')

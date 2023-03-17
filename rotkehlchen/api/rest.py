@@ -3248,6 +3248,10 @@ class RestAPI():
             price: Price,
             timestamp: Timestamp,
     ) -> Response:
+        """
+        Add a manual historical price.
+        If the price for the specified pair and timestamp already exists, it is replaced.
+        """
         historical_price = HistoricalPrice(
             from_asset=from_asset,
             to_asset=to_asset,

@@ -51,7 +51,7 @@ def test_kfee_price_in_accounting(accountant, google_service):
             notes='',
         ), Trade(
             timestamp=1609537953,
-            location=Location.KRAKEN,  # 0.89 USDT/EUR -> PNL: 20 * 0.89 - 0.02*178.615 ->  14.2277
+            location=Location.KRAKEN,  # PNL: 598.26 ETH/EUR -> PNL: 0.02 * 598.26 - 0.02*178.615 ->  8.3929  # noqa: E501
             base_asset=A_ETH,
             quote_asset=A_USDT,
             trade_type=TradeType.SELL,
@@ -70,7 +70,7 @@ def test_kfee_price_in_accounting(accountant, google_service):
     )
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
-        AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('14.2277')),
+        AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('8.3929')),
         AccountingEventType.LEDGER_ACTION: PNL(taxable=FVal('187.227'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
@@ -92,8 +92,8 @@ def test_fees_count_in_cost_basis(accountant, google_service):
             fee_currency=A_EUR,
             link=None,
         ), Trade(
-            # PNL: 0.5 * 1862.06 - 0.5 * 599.26 -> 631.4
-            # fee: -0.5 * 1862.06 + 0.5 * 1862.06 - 0.5 * 599.26 -> -299.63
+            # fee: 0.5 * 1862.06 -> 931.03
+            # PNL: 0.5 * 1862.06 - 0.5 * 599.26 - fee -> -299.63
             timestamp=1624395186,
             location=Location.KRAKEN,
             base_asset=A_ETH,
@@ -105,6 +105,8 @@ def test_fees_count_in_cost_basis(accountant, google_service):
             fee_currency=A_ETH,
             link=None,
         ), Trade(
+            # No ETH is owned at this point.
+            # PNL: 0.5 * 1837.31 -> 918.655
             timestamp=1625001464,
             location=Location.KRAKEN,
             base_asset=A_ETH,
@@ -125,8 +127,7 @@ def test_fees_count_in_cost_basis(accountant, google_service):
     )
 
     expected_pnls = PnlTotals({
-        AccountingEventType.TRADE: PNL(taxable=FVal('1550.055'), free=ZERO),
-        AccountingEventType.FEE: PNL(taxable=FVal('-300.630'), free=ZERO),
+        AccountingEventType.TRADE: PNL(taxable=FVal('619.025'), free=ZERO),
     })
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_ETH) is None
     warnings = accountant.msg_aggregator.consume_warnings()
@@ -135,6 +136,7 @@ def test_fees_count_in_cost_basis(accountant, google_service):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('db_settings', [{'include_fees_in_cost_basis': False}])
 def test_fees_in_received_asset(accountant, google_service):
     """
     Test the sell trade where the fee is nominated in the asset received. We had a bug
@@ -162,7 +164,7 @@ def test_fees_in_received_asset(accountant, google_service):
             location=Location.BINANCE,
             base_asset=A_ETH,  # 598.26 EUR/ETH
             quote_asset=A_USDT,
-            trade_type=TradeType.SELL,
+            trade_type=TradeType.SELL,  # PNL: 598.26 ETH/EUR -> PNL: 0.02 * 598.26 - 0.02*178.615 ->  8.3929  # noqa: E501
             amount=FVal('0.02'),
             rate=FVal(1000),
             fee=FVal('0.10'),
@@ -180,8 +182,8 @@ def test_fees_in_received_asset(accountant, google_service):
     no_message_errors(accountant.msg_aggregator)
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_USDT.identifier).is_close('19.90')  # noqa: E501
     expected_pnls = PnlTotals({
-        AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('14.2277')),
-        AccountingEventType.FEE: PNL(taxable=FVal('-0.060271'), free=ZERO),
+        AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('8.3929')),
+        AccountingEventType.FEE: PNL(taxable=FVal('-0.059826'), free=ZERO),
         AccountingEventType.LEDGER_ACTION: PNL(taxable=FVal('178.615'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)

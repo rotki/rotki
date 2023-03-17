@@ -14,6 +14,7 @@ from rotkehlchen.types import Location, TradeType
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('ignored_assets', [[A_ETC], []])
+@pytest.mark.parametrize('db_settings', [{'include_fees_in_cost_basis': False}])
 def test_buying_selling_eth_before_daofork(accountant, ignored_assets, google_service):
     history3 = [
         Trade(
@@ -83,6 +84,7 @@ def test_buying_selling_eth_before_daofork(accountant, ignored_assets, google_se
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('db_settings', [{'include_fees_in_cost_basis': False}])
 def test_buying_selling_btc_before_bchfork(accountant, google_service):
     history = [
         Trade(
@@ -140,18 +142,19 @@ def test_buying_selling_btc_before_bchfork(accountant, google_service):
     assert len(buys) == 1
     assert buys[0].remaining_amount == amount_bch
     assert buys[0].timestamp == 1491593374
-    assert buys[0].rate.is_close('1128.98961538')
+    assert buys[0].rate.is_close('1128.905')
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BCH) == amount_bch
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BTC) == amount_btc
 
     expected_pnls = PnlTotals({
-        AccountingEventType.TRADE: PNL(taxable=FVal('13877.57646153846153846153846'), free=ZERO),
+        AccountingEventType.TRADE: PNL(taxable=FVal('13877.898'), free=ZERO),
         AccountingEventType.FEE: PNL(taxable=FVal('-1.48'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('db_settings', [{'include_fees_in_cost_basis': False}])
 def test_buying_selling_bch_before_bsvfork(accountant, google_service):
     history = [
         Trade(  # 6.5 BTC 6.5 BCH 6.5 BSV
@@ -259,8 +262,8 @@ def test_buying_selling_bch_before_bsvfork(accountant, google_service):
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BSV) == amount_bsv
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(
-            taxable=FVal('13877.57646153846153846153846'),
-            free=FVal('-464.4416923076923076923076920'),
+            taxable=FVal('13877.898'),
+            free=FVal('-464.374'),
         ),
         AccountingEventType.FEE: PNL(taxable=FVal('-3.04'), free=ZERO),
     })
