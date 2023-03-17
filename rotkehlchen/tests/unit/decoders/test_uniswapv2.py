@@ -942,7 +942,7 @@ def test_uniswap_v2_swap_events_order(
             asset=Asset('eip155:1/erc20:0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2'),
             balance=Balance(FVal('1.157920892373161954235709850E+59')),
             location_label=user_address,
-            notes=f'Approve 115792089237316195423570985000000000000000000000000000000000 MTA of {user_address} for spending by 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',  # noqa: E501
+            notes=f'Set MTA spending approval of {user_address} by 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
             counterparty='0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
         ),
     ]

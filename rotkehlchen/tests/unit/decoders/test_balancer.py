@@ -537,7 +537,7 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             asset=Asset('eip155:1/erc20:0xe2f2a5C287993345a840Db3B0845fbC70f5935a5'),
             balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
             location_label=user_address,
-            notes='Approve 115792089237316195423570985000000000000000000000000000000000 mUSD of 0x549C0421c69Be943A2A60e76B19b4A801682cBD3 for spending by 0x9ED47950144e51925166192Bf0aE95553939030a',  # noqa: E501
+            notes='Set mUSD spending approval of 0x549C0421c69Be943A2A60e76B19b4A801682cBD3 by 0x9ED47950144e51925166192Bf0aE95553939030a to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
             counterparty='0x9ED47950144e51925166192Bf0aE95553939030a',
             identifier=None,
             extra_data=None,
