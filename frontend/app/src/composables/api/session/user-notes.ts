@@ -2,7 +2,7 @@ import { type ActionResult } from '@rotki/common/lib/data';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse } from '@/services/utils';
-import { type Collection, type CollectionResponse } from '@/types/collection';
+import { type Collection } from '@/types/collection';
 import {
   type UserNote,
   UserNoteCollectionResponse,
@@ -18,7 +18,7 @@ export const useUserNotesApi = () => {
       ActionResult<Collection<UserNote>>
     >('/notes', snakeCaseTransformer(filter));
 
-    return mapCollectionResponse<CollectionResponse<UserNote>>(
+    return mapCollectionResponse(
       UserNoteCollectionResponse.parse(handleResponse(response))
     );
   };
