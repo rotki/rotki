@@ -4160,7 +4160,7 @@ class RestAPI():
                 bindings=value_bindings,
             )
             result = {
-                'events': events,
+                'entries': events,
                 'entries_found': entries_found,
                 'entries_limit': entries_limit,
                 'entries_total': entries_total,

@@ -11079,7 +11079,7 @@ Staking events
 
       {
           "result": {
-              "events": [
+              "entries": [
                 {
                     "event_type": "unstake asset",
                     "asset": "ETH2",
@@ -12277,7 +12277,7 @@ Get Binance Savings Interests History
 
       {
         "result": {
-          "events": [
+          "entries": [
             {
               "timestamp": 1587233562,
               "location": "binance",

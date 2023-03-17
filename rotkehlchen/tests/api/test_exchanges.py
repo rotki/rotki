@@ -1300,7 +1300,8 @@ def test_get_binance_savings_balance(rotkehlchen_api_server_with_exchanges):
             else:
                 assert value == 1
 
-        result.pop('events')
+        events = result.pop('entries')
+        assert len(events) == 4
         assert result == {
             'entries_found': 4,
             'entries_limit': 100,

@@ -761,7 +761,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert len(result['events']) == 0
+    assert len(result['entries']) == 0
 
     with rotki.data.db.user_write() as write_cursor:
         rotki.data.db.purge_exchange_data(write_cursor, Location.KRAKEN)
@@ -787,7 +787,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     )
 
     result = assert_proper_response_with_result(response)
-    events = result['events']
+    events = result['entries']
 
     assert len(events) == 3
     assert len(events) == result['entries_found']
@@ -839,7 +839,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
         },
     )
     result = assert_proper_response_with_result(response)
-    assert len(result['events']) == 1
+    assert len(result['entries']) == 1
     assert len(result['received']) == 1
 
     # test that we can correctly query subtypes
@@ -855,7 +855,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
         },
     )
     result = assert_proper_response_with_result(response)
-    assert len(result['events']) == 3
+    assert len(result['entries']) == 3
 
     response = requests.post(
         api_url_for(
@@ -872,9 +872,9 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
         },
     )
     result = assert_proper_response_with_result(response)
-    assert len(result['events']) == 4
+    assert len(result['entries']) == 4
 
-    # test that sorting for a non existing column is handled correctly
+    # test that sorting for a non-existing column is handled correctly
     response = requests.post(
         api_url_for(
             server,
