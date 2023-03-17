@@ -21,6 +21,7 @@ import { One, Zero, bigNumberify, sortDesc } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
 import { toSentenceCase } from '@/utils/text';
 import { assert } from '@/utils/assertions';
+import ConfirmSnapshotConfictReplacementDialog from '@/components/snapshots/ConfirmSnapshotConfictReplacementDialog.vue';
 
 type IndexedBalanceSnapshot = BalanceSnapshot & { index: number };
 
@@ -490,44 +491,11 @@ const tableContainer = computed(() => {
         @update:asset="checkAssetExist"
       />
 
-      <confirm-dialog
-        max-width="700"
-        :display="!!conflictedBalanceSnapshot"
-        :title="tc('dashboard.snapshot.convert_to_edit.dialog.title')"
-        :message="tc('dashboard.snapshot.convert_to_edit.dialog.subtitle')"
-        :primary-action="
-          tc('dashboard.snapshot.convert_to_edit.dialog.actions.yes')
-        "
+      <confirm-snapshot-confict-replacement-dialog
+        :snapshot="conflictedBalanceSnapshot"
         @cancel="cancelConvertToEdit"
         @confirm="convertToEdit"
-      >
-        <v-sheet
-          v-if="conflictedBalanceSnapshot"
-          outlined
-          class="pa-4 mt-4 d-flex justify-center"
-          rounded
-        >
-          <balance-display
-            :asset="conflictedBalanceSnapshot.assetIdentifier"
-            :value="conflictedBalanceSnapshot"
-            class="mr-4"
-            no-icon
-          />
-          <asset-details
-            v-if="!isNft(conflictedBalanceSnapshot.assetIdentifier)"
-            :class="css.asset"
-            :asset="conflictedBalanceSnapshot.assetIdentifier"
-            :opens-details="false"
-            :enable-association="false"
-          />
-          <div v-else>
-            <nft-details
-              :identifier="conflictedBalanceSnapshot.assetIdentifier"
-              :class="css.asset"
-            />
-          </div>
-        </v-sheet>
-      </confirm-dialog>
+      />
     </big-dialog>
 
     <confirm-dialog
@@ -550,6 +518,7 @@ const tableContainer = computed(() => {
     </confirm-dialog>
   </div>
 </template>
+
 <style module lang="scss">
 .asset {
   max-width: 640px;
