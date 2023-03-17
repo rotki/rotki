@@ -2599,206 +2599,206 @@
     "no_selection": "选择贷款查看更多信息"
   },
   "liquidity_pool_details": {
-    "liquidity": "Liquidity",
-    "title": "Total in pools",
-    "tooltip": "Show details about the pool assets",
-    "total_amount": "Total amount",
-    "total_value_in_symbol": "Total {symbol} value"
+    "liquidity": "流动性",
+    "title": "池中总数",
+    "tooltip": "显示池资产的详细信息",
+    "total_amount": "总金额",
+    "total_value_in_symbol": "总 {symbol} 值"
   },
   "liquidity_pool_selector": {
-    "label": "Filter by pool(s)"
+    "label": "按池过滤"
   },
   "liquity_lending": {
-    "header": "Liquity Trove {troveId}",
-    "trove_events": "Trove Events"
+    "header": "流动性宝库 {troveId}",
+    "trove_events": "宝藏事件"
   },
   "liquity_page": {
-    "loading": "Liquity Staking information is loading",
-    "no_premium": "Liquity Staking"
+    "loading": "Liquity Staking信息正在加载中",
+    "no_premium": "流动性质押"
   },
   "liquity_pools": {
-    "liquidation_gains": "Liquidation gains",
-    "no_lusd_deposited": "No LUSD deposited",
-    "rewards": "Rewards",
-    "title": "Stability pool deposits"
+    "liquidation_gains": "清算收益",
+    "no_lusd_deposited": "没有存入 LUSD",
+    "rewards": "奖励",
+    "title": "稳定池存款"
   },
   "liquity_staking_details": {
-    "refresh_tooltip": "Refresh the staked amounts and events",
-    "select_account": "Select account",
+    "refresh_tooltip": "刷新质押金额和事件",
+    "select_account": "选择账户",
     "view": {
-      "hide": "Hide liquity staking detail",
-      "show": "Show liquity staking detail"
+      "hide": "隐藏流动性质押细节",
+      "show": "显示流动性质押细节"
     }
   },
   "liquity_staking_events": {
-    "title": "Stake Events"
+    "title": "股权活动"
   },
   "loan_collateral": {
     "apy": "APY",
-    "current_ratio": "Current ratio",
-    "liquidation_price": "Liquidation Price",
-    "locked_collateral": "Locked up collateral",
-    "per_asset": "Collateral Assets",
-    "ratio": "Collateralization Ratio",
-    "stable_apr": "Stable APR",
-    "title": "Collateral",
-    "variable_apr": "Variable APR",
+    "current_ratio": "当前比率",
+    "liquidation_price": "强平价格",
+    "locked_collateral": "锁定抵押品",
+    "per_asset": "抵押资产",
+    "ratio": "抵押率",
+    "stable_apr": "稳定的年利率",
+    "title": "抵押品",
+    "variable_apr": "可变年利率",
     "watchers": {
-      "add": "Add collateralization ratio watcher",
+      "add": "添加抵押率观察器",
       "dialog": {
-        "label": "Collateralization Ratio",
-        "message": "Add / Edit / Delete watchers for Maker Vault #{identifier} with current collateralization ratio {collateralizationRatio} and liquidation ratio {liquidationRatio}.",
-        "title": "Collateralization watchers"
+        "label": "抵押率",
+        "message": "为 Maker Vault #{identifier} 添加/编辑/删除具有当前抵押比率 {collateralizationRatio} 和清算比率 {liquidationRatio} 的观察者。",
+        "title": "抵押观察者"
       },
-      "edit": "Edit {n} collateralization watcher | Edit {n} collateralization watchers"
+      "edit": "编辑 {n} 个抵押观察者 | 编辑 {n} 个抵押观察者"
     }
   },
   "loan_debt": {
-    "outstanding_debt": "Outstanding debt",
-    "title": "Debt"
+    "outstanding_debt": "未偿债务",
+    "title": "债务"
   },
   "loan_header": {
-    "owned_by": "Owned by:"
+    "owned_by": "拥有者："
   },
   "loan_liquidation": {
-    "liquidated_collateral": "Liquidated collateral",
-    "liquidation_events": "Liquidation Events",
-    "liquidation_price": "Liquidation price",
-    "minimum_ratio": "Minimum ratio",
-    "no_events": "No liquidation events have occurred for this loan.",
-    "outstanding_debt": "Outstanding debt at liquidation",
-    "title": "Liquidation",
-    "total_value_lost": "Total value lost"
+    "liquidated_collateral": "清算抵押品",
+    "liquidation_events": "清算事件",
+    "liquidation_price": "强平价格",
+    "minimum_ratio": "最小比率",
+    "no_events": "这笔贷款没有发生清算事件。",
+    "outstanding_debt": "清算时未偿债务",
+    "title": "清算",
+    "total_value_lost": "总价值损失"
   },
   "loan_stake": {
-    "no_lqty_staked": "No LQTY staked",
-    "rewards": "Rewards",
+    "no_lqty_staked": "没有质押的 LQTY",
+    "rewards": "奖励",
     "title": "Stake"
   },
   "locations": {
-    "total_asset_price": "Total Asset Price"
+    "total_asset_price": "总资产价格"
   },
   "login": {
-    "button_new_account": "Create New Account",
-    "button_signin": "Sign In",
+    "button_new_account": "创建新账户",
+    "button_signin": "登录",
     "custom_backend": {
-      "hint": "The url the backend you would like to connect (leave empty for default).",
-      "label": "Backend URL",
+      "hint": "你想要连接的后端的 url(默认留空)",
+      "label": "后台网址",
       "placeholder": "http://localhost:4242",
-      "session_only": "Save only for this session",
-      "tooltip": "Connect to a different rotki backend",
+      "session_only": "仅为本次会话保存",
+      "tooltip": "连接到不同的 rotki 后端",
       "validation": {
-        "non_empty": "The custom backend url cannot be empty",
-        "url": "The entry inserted is not in a valid url format"
+        "non_empty": "自定义后台url不能为空",
+        "url": "插入的条目不是有效的 url 格式"
       }
     },
-    "label_password": "Password",
-    "label_username": "Username",
-    "logout": "Logout",
+    "label_password": "密码",
+    "label_username": "用户名",
+    "logout": "注销",
     "migrating_data": {
-      "title": "Data Migration",
-      "current": "Step {currentStep} of {totalSteps} of data migration {currentVersion} is applied.",
-      "warning": "Data migration {currentVersion} is running. Please don't close the app until it's finished."
+      "title": "数据迁移",
+      "current": "已应用数据迁移 {currentVersion} 的 {totalSteps} 步 {currentStep}。.",
+      "warning": "数据迁移 {currentVersion} 正在运行。在完成之前请不要关闭应用程序。"
     },
-    "remember_password": "Remember Password",
-    "remember_password_tooltip": "The password will be saved on password management tool on your local machine (e.g. Keychain in MacOS)",
-    "remember_username": "Remember Username",
+    "remember_password": "记住密码d",
+    "remember_password_tooltip": "密码将保存在本地计算机上的密码管理工具中（例如 MacOS 中的钥匙串）",
+    "remember_username": "记住用户名",
     "sync_error": {
-      "local_modified": "Local last modified: {0}",
-      "question": "Do you want to replace your local database?",
-      "remote_modified": "Remote last modified: {0}",
-      "title": "User action required for DB sync"
+      "local_modified": "本地最后修改时间：{0}",
+      "question": "你想更换你的本地数据库吗？",
+      "remote_modified": "远程最后修改：{0}",
+      "title": "数据库同步所需的用户操作"
     },
-    "title": "Sign In",
+    "title": "登录",
     "upgrading_db": {
-      "title": "Database Upgrade",
-      "current": "Step {currentStep} of {totalSteps} of database upgrade v{currentVersion} is applied.",
-      "warning": "The database is being upgraded from version {fromVersion} to {toVersion}. Please don't close the app until it's finished."
+      "title": "数据库升级",
+      "current": "已应用数据库升级 v{currentVersion} 的 {totalSteps} 步 {currentStep}。",
+      "warning": "数据库正在从版本 {fromVersion} 升级到 {toVersion}。在完成之前请不要关闭应用程序。"
     },
     "validation": {
-      "non_empty_password": "Please provide a password",
-      "non_empty_username": "Please provide a user name",
-      "valid_username": "A username must contain only alphanumeric characters and have no spaces"
+      "non_empty_password": "请提供密码",
+      "non_empty_username": "请提供用户名",
+      "valid_username": "用户名必须只包含字母数字字符且不能有空格"
     }
   },
   "macos_unsupported": {
-    "header": "Unsupported macOS Version",
-    "message": "rotki's minimum supported macOs version is High Sierra(10.13)"
+    "header": "不支持的 macOS 版本",
+    "message": "rotki 支持的最低 macOs 版本是 High Sierra(10.13)"
   },
   "maker_dao_vault_loan": {
-    "borrowing_history": "Borrowing History",
+    "borrowing_history": "借阅历史",
     "header": "Maker Vault #{identifier} ({collateralType})"
   },
   "makerdao_vault_debt": {
-    "stability_fee": "Stability fee",
-    "total_lost": "Total lost due to interest"
+    "stability_fee": "稳定费",
+    "total_lost": "因利息而损失的总计"
   },
   "manage_user_assets": {
     "export": {
-      "button": "Export",
-      "subtitle": "Create a zip archive of your assets",
-      "success": "The archive was created successfully",
-      "title": "Export"
+      "button": "导出",
+      "subtitle": "为您的资产创建一个 zip 存档",
+      "success": "存档创建成功",
+      "title": "导出"
     },
     "import": {
-      "subtitle": "Restore user assets from a zip archive"
+      "subtitle": "从 zip 存档中恢复用户资产"
     },
-    "title": "Export/Import User Assets",
-    "warning": "This functionality is designed to allow you to easily move your assets from one instance of rotki to another. It requires both instances to be of the same version. Using this functionality across different versions might result in errors."
+    "title": "导出/导入用户资产",
+    "warning": "此功能旨在让您轻松地将资产从一个 rotki 实例移动到另一个实例。它要求两个实例具有相同的版本。在不同版本之间使用此功能可能会导致错误。"
   },
   "manual_balances": {
-    "add_manual_balance": "Add Manual Balance",
-    "balances": "Manually Tracked Balances",
+    "add_manual_balance": "添加手动余额",
+    "balances": "手动跟踪余额",
     "dialog": {
       "add": {
-        "title": "Add a manual balance"
+        "title": "添加手动余额"
       },
       "edit": {
-        "subtitle": "Modify balance amount, location, and tags",
-        "title": "Edit Manual Balance"
+        "subtitle": "修改余额、位置、标签",
+        "title": "编辑手动余额"
       }
     },
-    "liabilities": "Manually Tracked Liabilities"
+    "liabilities": "手动跟踪负债"
   },
   "manual_balances_form": {
     "fields": {
-      "balance_type": "Balance Type",
-      "create_a_custom_asset": "Create a custom asset",
-      "input_manual_price": "Add and use manual price",
-      "label": "Label",
-      "price_asset": "Asset Price",
-      "tags": "Tags"
+      "balance_type": "余额类型",
+      "create_a_custom_asset": "创建自定义资产",
+      "input_manual_price": "添加和使用手动价格",
+      "label": "标签",
+      "price_asset": "资产价格",
+      "tags": "标签"
     },
     "type": {
-      "liability": "Liability"
+      "liability": "责任"
     },
     "validation": {
-      "amount": "The amount cannot be empty",
-      "asset": "The asset cannot be empty",
-      "label_empty": "The label cannot be empty",
-      "label_exists": "Label {label} already exists"
+      "amount": "金额不能为空",
+      "asset": "资产不能为空",
+      "label_empty": "标签不能为空",
+      "label_exists": "标签 {label} 已经存在"
     }
   },
   "manual_balances_table": {
     "columns": {
-      "actions": "Actions",
-      "label": "Label"
+      "actions": "动作",
+      "label": "标签"
     },
     "delete_dialog": {
-      "message": "Are you sure you want to delete this entry?",
-      "title": "Delete manually tracked balance"
+      "message": "您确定要删除此条目吗？",
+      "title": "删除手动跟踪余额"
     },
-    "delete_tooltip": "Delete balance",
-    "edit_tooltip": "Edit balance",
+    "delete_tooltip": "删除余额",
+    "edit_tooltip": "编辑余额",
     "refresh": {
-      "tooltip": "Refresh manual balances"
+      "tooltip": "刷新手动余额"
     }
   },
   "merge_dialog": {
-    "done": "The asset merge is complete. The old asset will still appear in the frontend. To make sure the new one is shown everywhere either restart the application or manually refresh balances in each place the old asset appears.",
-    "error": "Merge was not successful",
-    "hint": "The source asset will be merged into the target asset and all its usages will be updated.",
-    "merge": "Merge",
+    "done": "资产合并完成。旧资产仍将出现在前端。为确保新资产在各处显示，请重新启动应用程序或在旧资产出现的每个地方手动刷新余额。",
+    "error": "合并不成功",
+    "hint": "源资产将合并到目标资产中，其所有用法都将更新。",
+    "merge": "合并",
     "source": {
       "label": "Source",
       "non_empty": "The source identifier cannot not be empty"
