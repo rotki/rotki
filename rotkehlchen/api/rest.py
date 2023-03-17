@@ -5014,3 +5014,12 @@ class RestAPI():
             return api_response(wrap_in_fail_result('No details found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
 
         return api_response(_wrap_in_ok_result(details), status_code=HTTPStatus.OK)
+
+    def get_all_evm_chains(self) -> Response:
+        """Returns a list of all EVM chain ids."""
+        return api_response(
+            result=_wrap_in_ok_result(result=[
+                {'id': chain.value, 'name': chain.to_name()}
+                for chain in ChainID
+            ]),
+        )

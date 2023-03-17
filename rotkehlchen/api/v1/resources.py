@@ -2797,3 +2797,9 @@ class EventDetailsResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, identifier: int) -> Response:
         return self.rest_api.get_event_details(identifier=identifier)
+
+
+class AllEvmChainsResource(BaseMethodView):
+
+    def get(self) -> Response:
+        return self.rest_api.get_all_evm_chains()

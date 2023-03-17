@@ -17,7 +17,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     assert_proper_response_with_result,
 )
-from rotkehlchen.types import SupportedBlockchain
+from rotkehlchen.types import ChainID, SupportedBlockchain
 from rotkehlchen.utils.misc import get_system_spec
 
 
@@ -403,3 +403,9 @@ def test_query_supported_chains(rotkehlchen_api_server):
                 break  # found
         else:  # internal for loop found nothing
             raise AssertionError(f'Did not find {entry} in the supported chains result')
+
+
+def test_query_all_chain_ids(rotkehlchen_api_server):
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'allevmchainsresource'))
+    result = assert_proper_response_with_result(response)
+    assert result == [{'id': chain.value, 'name': chain.to_name()} for chain in ChainID]
