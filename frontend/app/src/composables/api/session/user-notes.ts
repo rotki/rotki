@@ -18,7 +18,7 @@ export const useUserNotesApi = () => {
       ActionResult<Collection<UserNote>>
     >('/notes', snakeCaseTransformer(filter));
 
-    return mapCollectionResponse<UserNote>(
+    return mapCollectionResponse(
       UserNoteCollectionResponse.parse(handleResponse(response))
     );
   };

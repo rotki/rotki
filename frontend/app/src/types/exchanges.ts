@@ -1,8 +1,10 @@
-import { type BigNumber } from '@rotki/common';
+import { AssetBalance, type BigNumber, NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { type Nullable } from '@/types';
 import { type AssetBalances } from '@/types/balances';
 import { type EXTERNAL_EXCHANGES } from '@/data/defaults';
+import { type PaginationRequestPayload } from '@/types/common';
+import { type Collection, CollectionCommonFields } from '@/types/collection';
 
 export const KrakenAccountType = z.enum(['starter', 'intermediate', 'pro']);
 export type KrakenAccountType = z.infer<typeof KrakenAccountType>;
@@ -76,4 +78,35 @@ export interface ExchangePayload {
   readonly krakenAccountType: Nullable<KrakenAccountType>;
   readonly binanceMarkets: Nullable<string[]>;
   readonly ftxSubaccount: Nullable<string>;
+}
+
+const ExchangeSavingsEvent = AssetBalance.extend({
+  timestamp: z.number(),
+  location: z.string()
+});
+
+export type ExchangeSavingsEvent = z.infer<typeof ExchangeSavingsEvent>;
+
+export const ExchangeSavingsCollectionResponse = CollectionCommonFields.extend({
+  entries: z.array(ExchangeSavingsEvent),
+  totalUsdValue: NumericString,
+  assets: z.array(z.string()),
+  received: z.array(AssetBalance)
+});
+
+export type ExchangeSavingsCollectionResponse = z.infer<
+  typeof ExchangeSavingsCollectionResponse
+>;
+
+export interface ExchangeSavingsCollection
+  extends Collection<ExchangeSavingsEvent> {
+  assets: string[];
+  received: AssetBalance[];
+}
+
+export interface ExchangeSavingsRequestPayload
+  extends PaginationRequestPayload<ExchangeSavingsEvent> {
+  readonly location: string;
+  readonly fromTimestamp?: string | number;
+  readonly toTimestamp?: string | number;
 }

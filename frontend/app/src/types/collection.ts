@@ -1,4 +1,12 @@
-import { type BigNumber } from '@rotki/common';
+import { type BigNumber, NumericString } from '@rotki/common';
+import { z } from 'zod';
+
+export const CollectionCommonFields = z.object({
+  entriesFound: z.number(),
+  entriesLimit: z.number().default(-1),
+  entriesTotal: z.number(),
+  totalUsdValue: NumericString.nullish()
+});
 
 export interface Collection<T> {
   data: T[];

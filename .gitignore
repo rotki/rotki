@@ -28,3 +28,4 @@ libcrypto-1_1-x64.dll
 /.run/
 frontend/logs
 .venv
+.pnpm-debug.log

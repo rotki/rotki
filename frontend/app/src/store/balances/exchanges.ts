@@ -7,12 +7,15 @@ import {
   type Exchange,
   type ExchangeData,
   type ExchangeInfo,
+  type ExchangeSavingsCollection,
+  type ExchangeSavingsCollectionResponse,
+  type ExchangeSavingsRequestPayload,
   type ExchangeSetupPayload,
-  type SupportedExchange
+  SupportedExchange
 } from '@/types/exchanges';
 import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
-import { type ExchangeMeta } from '@/types/task';
+import { type ExchangeMeta, type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import {
@@ -28,6 +31,9 @@ import {
   type AssetBreakdown,
   type ExchangeBalancePayload
 } from '@/types/blockchain/accounts';
+import { logger } from '@/utils/logging';
+import { uniqueStrings } from '@/utils/data';
+import { mapCollectionResponse } from '@/utils/collection';
 
 export const useExchangeBalancesStore = defineStore(
   'balances/exchanges',
@@ -42,8 +48,13 @@ export const useExchangeBalancesStore = defineStore(
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
     const { isAssetIgnored } = useIgnoredAssetsStore();
     const { assetPrice } = useBalancePricesStore();
-    const { queryRemoveExchange, queryExchangeBalances, querySetupExchange } =
-      useExchangeApi();
+    const {
+      queryRemoveExchange,
+      queryExchangeBalances,
+      querySetupExchange,
+      getExchangeSavings,
+      getExchangeSavingsTask
+    } = useExchangeApi();
     const { connectedExchanges } = storeToRefs(useHistoryStore());
 
     const exchanges: ComputedRef<ExchangeInfo[]> = computed(() => {
@@ -341,6 +352,100 @@ export const useExchangeBalancesStore = defineStore(
       set(exchangeBalances, exchanges);
     };
 
+    const fetchExchangeSavings = async (
+      payload: MaybeRef<ExchangeSavingsRequestPayload>
+    ): Promise<ExchangeSavingsCollection> => {
+      const response = await getExchangeSavings({
+        ...get(payload),
+        onlyCache: true
+      });
+
+      return mapCollectionResponse(response);
+    };
+
+    const syncExchangeSavings = async (location: string): Promise<boolean> => {
+      const taskType = TaskType.QUERY_EXCHANGE_SAVINGS;
+
+      const defaults: ExchangeSavingsRequestPayload = {
+        limit: 0,
+        offset: 0,
+        ascending: [false],
+        orderByAttributes: ['timestamp'],
+        onlyCache: false,
+        location
+      };
+
+      const { taskId } = await getExchangeSavingsTask(defaults);
+
+      const taskMeta = {
+        title: tc('actions.balances.exchange_savings_interest.task.title', 0, {
+          location
+        })
+      };
+
+      try {
+        await awaitTask<ExchangeSavingsCollectionResponse, TaskMeta>(
+          taskId,
+          taskType,
+          taskMeta,
+          true
+        );
+        return true;
+      } catch {
+        notify({
+          title: tc(
+            'actions.balances.exchange_savings_interest.error.title',
+            0,
+            { location }
+          ),
+          message: tc(
+            'actions.balances.exchange_savings_interest.error.message',
+            0,
+            { location }
+          ),
+          display: true
+        });
+      }
+
+      return false;
+    };
+
+    const refreshExchangeSavings = async (
+      userInitiated = false
+    ): Promise<void> => {
+      const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(
+        Section.EXCHANGE_SAVINGS
+      );
+
+      if (fetchDisabled(userInitiated)) {
+        logger.info('skipping exchanges savings');
+        return;
+      }
+
+      setStatus(Status.REFRESHING);
+
+      try {
+        const locations = get(connectedExchanges)
+          .map(({ location }) => location)
+          .filter(uniqueStrings)
+          .filter(
+            location =>
+              location === SupportedExchange.BINANCE ||
+              location === SupportedExchange.BINANCEUS
+          );
+
+        if (locations.length > 0) {
+          await Promise.all(locations.map(syncExchangeSavings));
+        }
+        setStatus(
+          get(isTaskRunning(TaskType.TX)) ? Status.REFRESHING : Status.LOADED
+        );
+      } catch (e) {
+        logger.error(e);
+        resetStatus();
+      }
+    };
+
     return {
       exchanges,
       connectedExchanges,
@@ -358,7 +463,9 @@ export const useExchangeBalancesStore = defineStore(
       getBreakdown,
       getLocationBreakdown,
       getByLocationBalances,
-      updatePrices
+      updatePrices,
+      fetchExchangeSavings,
+      refreshExchangeSavings
     };
   }
 );

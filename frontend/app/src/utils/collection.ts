@@ -4,15 +4,19 @@ import { type Collection, type CollectionResponse } from '@/types/collection';
 import { Zero } from '@/utils/bignumbers';
 import { type TablePagination } from '@/types/pagination';
 
-export const mapCollectionResponse = <T>(
-  response: CollectionResponse<T>
-): Collection<T> => {
+type Entries = 'entries' | 'entriesFound' | 'entriesLimit' | 'entriesTotal';
+
+export const mapCollectionResponse = <T, C extends CollectionResponse<T>>(
+  response: C
+): Collection<T> & Omit<C, Entries> => {
+  const { entries, entriesLimit, entriesFound, entriesTotal, ...rest } =
+    response;
   return {
-    data: response.entries,
-    found: response.entriesFound,
-    limit: response.entriesLimit,
-    total: response.entriesTotal,
-    totalUsdValue: response.totalUsdValue
+    data: entries,
+    found: entriesFound,
+    limit: entriesLimit,
+    total: entriesTotal,
+    ...rest
   };
 };
 

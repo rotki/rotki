@@ -40,7 +40,7 @@ export const useNonFungibleBalancesStore = defineStore(
       ) {
         set(nonFungibleTotalValue, result.totalUsdValue);
       }
-      return mapCollectionResponse<NonFungibleBalance>(result);
+      return mapCollectionResponse(result);
     };
 
     const syncNonFungiblesTask = async (): Promise<boolean> => {

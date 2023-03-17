@@ -27,18 +27,17 @@ const { tc } = useI18n();
 
 const requiresPassphrase = computed(() => {
   const { location } = get(exchange);
-  return (
-    location === SupportedExchange.COINBASEPRO ||
-    location === SupportedExchange.KUCOIN ||
-    location === SupportedExchange.OKX
-  );
+  return [
+    SupportedExchange.COINBASEPRO,
+    SupportedExchange.KUCOIN,
+    SupportedExchange.OKX
+  ].includes(location);
 });
 
 const isBinance = computed(() => {
   const { location } = get(exchange);
-  return (
-    location === SupportedExchange.BINANCE ||
-    location === SupportedExchange.BINANCEUS
+  return [SupportedExchange.BINANCE, SupportedExchange.BINANCEUS].includes(
+    location
   );
 });
 

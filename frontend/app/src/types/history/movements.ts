@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { type PaginationRequestPayload } from '@/types/common';
 import { EntryMeta } from '@/types/history/meta';
 import { TradeLocation } from '@/types/history/trade/location';
+import { CollectionCommonFields } from '@/types/collection';
 
 export const MovementCategory = z.enum(['deposit', 'withdrawal']);
 export type MovementCategory = z.infer<typeof MovementCategory>;
@@ -21,18 +22,14 @@ export const AssetMovement = z.object({
   link: z.string()
 });
 export type AssetMovement = z.infer<typeof AssetMovement>;
-export const AssetMovementCollectionResponse = z.object({
+export const AssetMovementCollectionResponse = CollectionCommonFields.extend({
   entries: z.array(
     z
       .object({
         entry: AssetMovement
       })
       .merge(EntryMeta)
-  ),
-  entriesFound: z.number(),
-  entriesLimit: z.number().default(-1),
-  entriesTotal: z.number(),
-  totalUsdValue: NumericString.nullish()
+  )
 });
 export interface AssetMovementRequestPayload
   extends PaginationRequestPayload<AssetMovement> {
