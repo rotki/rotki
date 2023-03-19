@@ -111,9 +111,10 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
         if tx_log.topics[0] == GOVERNORALPHA_PROPOSE:
-            governance_name = None
             if tx_log.address == '0xDbD27635A534A3d3169Ef0498beB56Fb9c937489':
                 governance_name = 'Gitcoin'
+            else:
+                governance_name = tx_log.address
 
             try:
                 _, decoded_data = decode_event_data_abi_str(tx_log, GOVERNORALPHA_PROPOSE_ABI)

@@ -61,7 +61,12 @@ def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection'
 
 
 def _create_new_tables(write_cursor: 'DBCursor') -> None:
-    """Create new tables"""
+    """Create new tables
+
+    Data is not migrated to the evm_events_info as it will be done when redecoding.
+    Still left to do: delete all data except customized events and figure out what to do
+    with the custom events.
+    """
     log.debug('Enter _create_new_tables')
     write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS evm_events_info(

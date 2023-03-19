@@ -1,6 +1,6 @@
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.converters import asset_from_binance, asset_from_cryptocom
@@ -1560,7 +1560,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen):
 
 def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
     expected_history_events = [
-        HistoryBaseEntry(
+        HistoryEvent(
             identifier=1,
             event_identifier=b'1xyz',  # placeholder as this field is randomly generated on import
             sequence_index=0,
@@ -1574,7 +1574,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
                 usd_value=ZERO,
             ),
             notes='Deposit EUR to Kucoin',
-        ), HistoryBaseEntry(
+        ), HistoryEvent(
             identifier=2,
             event_identifier=b'2xyz',  # placeholder as this field is randomly generated on import
             sequence_index=1,
@@ -1588,7 +1588,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
                 usd_value=ZERO,
             ),
             notes='',
-        ), HistoryBaseEntry(
+        ), HistoryEvent(
             identifier=3,
             event_identifier=b'2xyz',  # placeholder as this field is randomly generated on import
             sequence_index=2,
@@ -1602,7 +1602,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
                 usd_value=ZERO,
             ),
             notes='',
-        ), HistoryBaseEntry(
+        ), HistoryEvent(
             identifier=4,
             event_identifier=b'3xyz',  # placeholder as this field is randomly generated on import
             sequence_index=2,
@@ -1616,7 +1616,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
                 usd_value=ZERO,
             ),
             notes='',
-        ), HistoryBaseEntry(
+        ), HistoryEvent(
             identifier=5,
             event_identifier=b'5xyz',  # placeholder as this field is randomly generated on import
             sequence_index=4,
@@ -1654,10 +1654,10 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
 
 
 def assert_is_equal_history_event(
-        actual: HistoryBaseEntry,
-        expected: HistoryBaseEntry,
+        actual: HistoryEvent,
+        expected: HistoryEvent,
 ) -> None:
-    """Compares two `HistoryBaseEntry` objects omitting the `event_identifier` as its
+    """Compares two `HistoryEvent` objects omitting the `event_identifier` as its
     generated randomly upon import."""
     actual_dict = actual.serialize()
     actual_dict.pop('event_identifier')

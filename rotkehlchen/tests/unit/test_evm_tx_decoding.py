@@ -16,7 +16,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
+from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
@@ -228,11 +228,11 @@ def test_genesis_remove_address(
     dbevents = DBHistoryEvents(database)
     genesis_address_1, genesis_address_2, no_genesis_address = ethereum_accounts
 
-    def get_genesis_events() -> list[HistoryBaseEntry]:
+    def get_genesis_events() -> list[EvmEvent]:
         with database.conn.read_ctx() as cursor:
             events = dbevents.get_history_events(
                 cursor=cursor,
-                filter_query=HistoryEventFilterQuery.make(event_identifiers=[GENESIS_HASH]),
+                filter_query=EvmEventFilterQuery.make(event_identifiers=[GENESIS_HASH]),
                 has_premium=True,
             )
 

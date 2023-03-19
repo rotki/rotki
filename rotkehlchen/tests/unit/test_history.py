@@ -4,7 +4,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats
 from rotkehlchen.constants import ONE, ZERO
@@ -116,8 +116,8 @@ def test_pnl_processing_with_eth2_staking_setting(accountant, db_settings):
             start_amount=FVal('32.05'),
             end_amount=FVal('32.045'),
             pnl=FVal('-0.005'),  # -0.005 * 469.82 + 0.005 * 469.82 - 0.005*449.68 = -2.2484
-        ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier('XXX'),
+        ), HistoryEvent(
+            event_identifier=HistoryEvent.deserialize_event_identifier('XXX'),
             sequence_index=0,
             timestamp=1625001464000,  # ETH price: 1837.31 ETH/EUR
             location=Location.KRAKEN,
@@ -130,8 +130,8 @@ def test_pnl_processing_with_eth2_staking_setting(accountant, db_settings):
             notes=None,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,  # 0.0000541090 * 1837.31 = 0.09941500679
-        ), HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier('XXX'),
+        ), HistoryEvent(
+            event_identifier=HistoryEvent.deserialize_event_identifier('XXX'),
             sequence_index=0,
             timestamp=1640493374000,  # ETH price: 4072.51 ETH/EUR
             location=Location.KRAKEN,

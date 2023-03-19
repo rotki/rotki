@@ -6,7 +6,6 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -42,7 +41,6 @@ def entry_to_input_dict(
         include_identifier: bool,
 ) -> dict[str, Any]:
     serialized = entry.serialize_without_extra_data()
-    serialized.pop('entry_type')  # we don't need this for calling API
     if include_identifier:
         assert entry.identifier is not None
         serialized['identifier'] = entry.identifier
@@ -53,7 +51,7 @@ def entry_to_input_dict(
 
 def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list['EvmEvent']:
     entries = [EvmEvent(
-        event_identifier=HistoryBaseEntry.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
+        event_identifier=EvmEvent.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
         sequence_index=162,
         timestamp=TimestampMS(1569924574000),
         location=Location.ETHEREUM,
@@ -65,7 +63,7 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list['EvmEv
         event_subtype=HistoryEventSubType.APPROVE,
         address=string_to_evm_address('0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE'),
     ), EvmEvent(
-        event_identifier=HistoryBaseEntry.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
+        event_identifier=EvmEvent.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
         sequence_index=163,
         timestamp=TimestampMS(1569924574000),
         location=Location.ETHEREUM,
@@ -77,7 +75,7 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list['EvmEv
         event_subtype=HistoryEventSubType.APPROVE,
         address=string_to_evm_address('0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE'),
     ), EvmEvent(
-        event_identifier=HistoryBaseEntry.deserialize_event_identifier('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
+        event_identifier=EvmEvent.deserialize_event_identifier('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
         sequence_index=2,
         timestamp=TimestampMS(1619924574000),
         location=Location.ETHEREUM,
@@ -90,7 +88,7 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list['EvmEv
         counterparty=CPT_GAS,
         extra_data={'testing_data': 42},
     ), EvmEvent(
-        event_identifier=HistoryBaseEntry.deserialize_event_identifier('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
+        event_identifier=EvmEvent.deserialize_event_identifier('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
         sequence_index=3,
         timestamp=TimestampMS(1619924574000),
         location=Location.ETHEREUM,
@@ -102,7 +100,7 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list['EvmEv
         event_subtype=HistoryEventSubType.NONE,
         counterparty='somewhere',
     ), EvmEvent(
-        event_identifier=HistoryBaseEntry.deserialize_event_identifier('0x4b5489ed325483db3a8c4831da1d5ac08fb9ab0fd8c570aa3657e0c267a7d023'),  # noqa: E501
+        event_identifier=EvmEvent.deserialize_event_identifier('0x4b5489ed325483db3a8c4831da1d5ac08fb9ab0fd8c570aa3657e0c267a7d023'),  # noqa: E501
         sequence_index=55,
         timestamp=TimestampMS(1629924574000),
         location=Location.ETHEREUM,
@@ -150,7 +148,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     db = DBHistoryEvents(rotki.data.db)
     entries = _add_entries(server=rotkehlchen_api_server, events_db=db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        saved_events = db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
+        saved_events = db.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True)
     for idx, event in enumerate(saved_events):
         assert event == entries[idx]
 
@@ -226,7 +224,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
 
     entries.sort(key=lambda x: x.timestamp)  # resort by timestamp
     with rotki.data.db.conn.read_ctx() as cursor:
-        saved_events = db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
+        saved_events = db.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True)
         assert len(saved_events) == 5
         for idx, event in enumerate(saved_events):
             assert event == entries[idx]
@@ -241,7 +239,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
             contained_in_msg='Tried to remove history event with id 19 which does not exist',
             status_code=HTTPStatus.CONFLICT,
         )
-        saved_events = db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
+        saved_events = db.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True)
         assert len(saved_events) == 5
         for idx, event in enumerate(saved_events):
             assert event == entries[idx]
@@ -253,7 +251,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
         )
         result = assert_proper_response_with_result(response)
         assert result is True
-        saved_events = db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
+        saved_events = db.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True)
         # entry is now last since the timestamp was modified
         assert saved_events == [entries[0], entries[3], entry]
 
@@ -267,7 +265,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
             contained_in_msg='Tried to remove history event with id 1 which was the last event of a transaction',  # noqa: E501
             status_code=HTTPStatus.CONFLICT,
         )
-        saved_events = db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
+        saved_events = db.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True)
         assert saved_events == [entries[0], entries[3], entry]
 
 

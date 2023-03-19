@@ -19,7 +19,7 @@ from requests import Response
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import (
-    HistoryBaseEntry,
+    HistoryEvent,
     HistoryEventSubType,
     HistoryEventType,
 )
@@ -111,7 +111,7 @@ def history_event_from_kraken(
         events: list[dict[str, Any]],
         name: str,
         msg_aggregator: MessagesAggregator,
-) -> tuple[list[HistoryBaseEntry], bool]:
+) -> tuple[list[HistoryEvent], bool]:
     """
     This function gets raw data from kraken and creates a list of related history events
     to be used in the app. It returns a list of events and a boolean in the case that an unknown
@@ -164,8 +164,8 @@ def history_event_from_kraken(
 
             # Make sure to not generate an event for KFEES that is not of type FEE
             if asset != A_KFEE:
-                group_events.append(HistoryBaseEntry(
-                    event_identifier=HistoryBaseEntry.deserialize_event_identifier(identifier),
+                group_events.append(HistoryEvent(
+                    event_identifier=HistoryEvent.deserialize_event_identifier(identifier),
                     sequence_index=idx,
                     timestamp=timestamp,
                     location=Location.KRAKEN,
@@ -180,8 +180,8 @@ def history_event_from_kraken(
                     event_subtype=event_subtype,
                 ))
             if fee_amount != ZERO:
-                group_events.append(HistoryBaseEntry(
-                    event_identifier=HistoryBaseEntry.deserialize_event_identifier(identifier),
+                group_events.append(HistoryEvent(
+                    event_identifier=HistoryEvent.deserialize_event_identifier(identifier),
                     sequence_index=current_fee_index,
                     timestamp=timestamp,
                     location=Location.KRAKEN,
@@ -814,8 +814,8 @@ class Kraken(ExchangeInterface):
 
     def process_kraken_events_for_trade(
             self,
-            trade_parts: list[HistoryBaseEntry],
-            adjustments: list[HistoryBaseEntry],
+            trade_parts: list[HistoryEvent],
+            adjustments: list[HistoryEvent],
     ) -> Optional[Trade]:
         """Processes events from trade parts to a trade. If it's an adjustment
         adds it to a separate list"""
@@ -967,7 +967,7 @@ class Kraken(ExchangeInterface):
 
     def process_kraken_trades(
             self,
-            raw_data: list[HistoryBaseEntry],
+            raw_data: list[HistoryEvent],
     ) -> tuple[list[Trade], Timestamp]:
         """
         Given a list of history events we process them to create Trade objects. The valid
@@ -994,7 +994,7 @@ class Kraken(ExchangeInterface):
         trades = []
         max_ts = 0
         get_attr = operator.attrgetter('event_identifier')
-        adjustments: list[HistoryBaseEntry] = []
+        adjustments: list[HistoryEvent] = []
         # Create a list of lists where each sublist has the events for the same event identifier
         grouped_events = [list(g) for k, g in itertools.groupby(sorted(raw_data, key=get_attr), get_attr)]  # noqa: E501
         for trade_parts in grouped_events:

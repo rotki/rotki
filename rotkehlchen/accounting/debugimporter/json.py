@@ -7,7 +7,7 @@ from marshmallow import EXCLUDE, ValidationError
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.v1.schemas import ModifiableSettingsSchema
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats
@@ -54,8 +54,8 @@ class DebugHistoryImporter:
                 event_type = AccountingEventType.deserialize(event['accounting_event_type'])
                 if event_type == AccountingEventType.ASSET_MOVEMENT:
                     events.append(AssetMovement.deserialize(event))
-                elif event_type == AccountingEventType.HISTORY_BASE_ENTRY:
-                    events.append(HistoryBaseEntry.deserialize(event))
+                elif event_type == AccountingEventType.HISTORY_EVENT:
+                    events.append(HistoryEvent.deserialize(event))
                 elif event_type == AccountingEventType.LOAN:
                     events.append(Loan.deserialize(event))
                 elif event_type == AccountingEventType.MARGIN_POSITION:

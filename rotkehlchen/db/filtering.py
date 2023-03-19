@@ -1,4 +1,5 @@
 import logging
+from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable
 from dataclasses import dataclass
 from typing import Any, Generic, Literal, NamedTuple, Optional, TypeVar, Union, cast
@@ -27,6 +28,11 @@ from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+ALL_EVENTS_DATA_JOIN = 'FROM history_events LEFT JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier '  # noqa: E501
+EVM_EVENT_JOIN = 'FROM history_events INNER JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier '  # noqa: E501
+
 
 T = TypeVar('T')
 
@@ -884,11 +890,14 @@ class DBNullFilter(DBFilter):
         return null_columns, []
 
 
-class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
+T_HistoryFilterQuery = TypeVar('T_HistoryFilterQuery', bound='HistoryBaseEntryFilterQuery')
+
+
+class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation, metaclass=ABCMeta):  # noqa: E501
 
     @classmethod
     def make(
-            cls,
+            cls: type[T_HistoryFilterQuery],
             and_op: bool = True,
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
@@ -905,7 +914,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             null_columns: Optional[list[str]] = None,
             event_identifiers: Optional[list[bytes]] = None,
             exclude_ignored_assets: bool = False,
-    ) -> 'HistoryEventFilterQuery':
+    ) -> T_HistoryFilterQuery:
         if order_by_rules is None:
             order_by_rules = [('timestamp', True), ('sequence_index', True)]
 
@@ -915,7 +924,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             offset=offset,
             order_by_rules=order_by_rules,
         )
-        filter_query = cast('HistoryEventFilterQuery', filter_query)
+        filter_query = cast(T_HistoryFilterQuery, filter_query)
         filters: list[DBFilter] = []
         if assets is not None:
             if len(assets) == 1:
@@ -992,8 +1001,29 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
         filter_query.filters = filters
         return filter_query
 
+    @staticmethod
+    @abstractmethod
+    def get_join_query() -> str:
+        """Returns the join query needed for this particular type of history event filter"""
 
-class EvmEventFilterQuery(HistoryEventFilterQuery):
+    @staticmethod
+    @abstractmethod
+    def get_count_query() -> str:
+        """Returns the count query needed for this particular type of history event filter"""
+
+
+class HistoryEventFilterQuery(HistoryBaseEntryFilterQuery):
+
+    @staticmethod
+    def get_join_query() -> str:
+        return ALL_EVENTS_DATA_JOIN
+
+    @staticmethod
+    def get_count_query() -> str:
+        return 'SELECT COUNT(*) FROM history_events '
+
+
+class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
     @classmethod
     def make(
             cls,
@@ -1033,13 +1063,20 @@ class EvmEventFilterQuery(HistoryEventFilterQuery):
             event_identifiers=event_identifiers,
             exclude_ignored_assets=exclude_ignored_assets,
         )
-        filter_query = cast(EvmEventFilterQuery, filter_query)
         if counterparties is not None:
             filter_query.filters.append(
                 DBCounterpartyFilter(and_op=True, counterparties=counterparties),
             )
 
         return filter_query
+
+    @staticmethod
+    def get_join_query() -> str:
+        return EVM_EVENT_JOIN
+
+    @staticmethod
+    def get_count_query() -> str:
+        return f'SELECT COUNT(*) {EVM_EVENT_JOIN}'
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)

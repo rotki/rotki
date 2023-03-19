@@ -39,7 +39,7 @@ def decode_uniswap_v2_like_swap(
         ethereum_inquirer: 'EthereumInquirer',
         notify_user: Callable[['EvmEvent', str], None],
 ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
-    """Common logic for decoding uniswap v2 like counterpartys (uniswap and sushiswap atm)
+    """Common logic for decoding uniswap v2 like protocols (uniswap and sushiswap atm)
 
     Decode trade for uniswap v2 like amm. The approach is to read the events and detect the ones
     where the user sends and receives any asset. The spend asset is the swap executed and

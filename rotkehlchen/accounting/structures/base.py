@@ -1,7 +1,9 @@
 import logging
+from abc import ABCMeta, abstractmethod
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, cast
+from enum import Enum, auto
+from typing import TYPE_CHECKING, Any, Optional, TypedDict, TypeVar
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.types import (
@@ -11,8 +13,6 @@ from rotkehlchen.accounting.structures.types import (
 )
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants.assets import A_ETH2
-from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -20,14 +20,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
 )
 from rotkehlchen.types import Location, Timestamp, TimestampMS
-from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.misc import (
-    is_valid_ethereum_tx_hash,
-    timestamp_to_date,
-    ts_ms_to_sec,
-    ts_sec_to_ms,
-)
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec, ts_sec_to_ms
 
 from .balance import Balance
 
@@ -54,8 +47,22 @@ HISTORY_EVENT_DB_TUPLE_READ = tuple[
     str,            # subtype
 ]
 
-HISTORY_BASE_ENTRY_DB_TUPLE_WRITE = tuple[
-    int,            # entry_type
+HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
+    bytes,          # event_identifier
+    int,            # sequence_index
+    int,            # timestamp
+    str,            # location
+    Optional[str],  # location label
+    str,            # asset
+    str,            # amount
+    str,            # usd value
+    Optional[str],  # notes
+    str,            # type
+    str,            # subtype
+]
+
+HISTORY_EVENT_DB_TUPLE_WRITE_WITH_TYPE = tuple[
+    int,            # entry type
     bytes,          # event_identifier
     int,            # sequence_index
     int,            # timestamp
@@ -70,23 +77,38 @@ HISTORY_BASE_ENTRY_DB_TUPLE_WRITE = tuple[
 ]
 
 
-class HistoryBaseEntryType(SerializableEnumMixin):
-    """Type of a history entry"""
-    BASE_ENTRY = 0
-    EVM_EVENT = 1
+class HistoryBaseEntryType(Enum):
+    """Type of a history entry. Value(int) is written/read into/from the DB"""
+    BASE_ENTRY = auto()
+    EVM_EVENT = auto()
 
 
-class HistoryBaseEntry(AccountingEventMixin):
+class HistoryBaseEntryData(TypedDict):
+    event_identifier: bytes
+    sequence_index: int
+    timestamp: TimestampMS
+    location: Location
+    event_type: HistoryEventType
+    event_subtype: HistoryEventSubType
+    asset: Asset
+    balance: Balance
+    location_label: Optional[str]
+    notes: Optional[str]
+    identifier: Optional[int]
+
+
+T = TypeVar('T', bound='HistoryBaseEntry')
+
+
+class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
     """
-    Intended to be the base unit of any type of accounting. All trades, deposits,
-    swaps etc. are going to be made up of multiple HistoryBaseEntry
+    Intended to be the base class for all types of event. All trades, deposits,
+    swaps etc. are going to be made up of multiple such entries.
     """
 
     def __init__(
             self,
-            # identifier shared between related events
             event_identifier: bytes,
-            # When this transaction was executed relative to other related events
             sequence_index: int,
             timestamp: TimestampMS,
             location: Location,
@@ -94,16 +116,17 @@ class HistoryBaseEntry(AccountingEventMixin):
             event_subtype: HistoryEventSubType,
             asset: Asset,
             balance: Balance,
-            # location_label is a string field that allows to provide more information about
-            # the location. When we use this structure in blockchains can be used to specify
-            # addresses for example. Currently we use to identify the exchange name assigned
-            # by the user.
             location_label: Optional[str] = None,
             notes: Optional[str] = None,
             identifier: Optional[int] = None,
-            entry_type: HistoryBaseEntryType = HistoryBaseEntryType.BASE_ENTRY,
     ) -> None:
-        self.entry_type = entry_type
+        """
+        - `event_identifier`: the identifier shared between related events
+        - `sequence_index`: When this event is executed relative to other related events
+        - `location_label`: a string field that allows to provide more information about
+           the location. When we use this structure in blockchains, it is used to specify
+           user address. For exchange events it's the exchange name assigned by the user
+        """
         self.event_identifier = event_identifier
         self.sequence_index = sequence_index
         self.timestamp = timestamp
@@ -117,11 +140,10 @@ class HistoryBaseEntry(AccountingEventMixin):
         self.identifier = identifier
 
     def __eq__(self, other: Any) -> bool:
-        if isinstance(other, HistoryBaseEntry) is False:
+        if type(self) != type(other):  # pylint: disable=unidiomatic-typecheck
             return False
 
         return (
-            self.entry_type == other.entry_type and
             self.event_identifier == other.event_identifier and
             self.sequence_index == other.sequence_index and
             self.timestamp == other.timestamp and
@@ -138,7 +160,6 @@ class HistoryBaseEntry(AccountingEventMixin):
     def _history_base_entry_repr_fields(self) -> list[str]:
         """Returns a list of printable fields"""
         return [
-            f'{self.entry_type=}',
             f'{self.event_identifier=}',
             f'{self.sequence_index=}',
             f'{self.timestamp=}',
@@ -152,12 +173,8 @@ class HistoryBaseEntry(AccountingEventMixin):
             f'{self.identifier=}',
         ]
 
-    def __repr__(self) -> str:
-        return f'HistoryBaseEntry({",".join(self._history_base_entry_repr_fields())})'
-
-    def serialize_for_db(self) -> HISTORY_BASE_ENTRY_DB_TUPLE_WRITE:
+    def _serialize_base_tuple_for_db(self) -> HISTORY_EVENT_DB_TUPLE_WRITE:
         return (
-            self.entry_type.value,
             self.event_identifier,
             self.sequence_index,
             int(self.timestamp),
@@ -171,59 +188,38 @@ class HistoryBaseEntry(AccountingEventMixin):
             self.event_subtype.serialize(),
         )
 
+    @abstractmethod
+    def serialize_for_db(self) -> tuple:
+        """Serialize the event for writing to DB.
+        May contain multiple tuples, one for each DB table"""
+
     @classmethod
-    def deserialize_from_db(cls, entry: tuple) -> 'HistoryBaseEntry':
+    @abstractmethod
+    def deserialize_from_db(cls: type[T], entry: tuple) -> T:
         """
+        Deserialize a DB tuple to a proper class object.
+
         May raise:
         - DeserializationError
         - UnknownAsset
         """
-        entry = cast(HISTORY_EVENT_DB_TUPLE_READ, entry)
-        try:
-            return cls(
-                identifier=entry[0],
-                event_identifier=entry[1],
-                sequence_index=entry[2],
-                timestamp=TimestampMS(entry[3]),
-                location=Location.deserialize_from_db(entry[4]),
-                location_label=entry[5],
-                asset=Asset(entry[6]).check_existence(),
-                balance=Balance(
-                    amount=FVal(entry[7]),
-                    usd_value=FVal(entry[8]),
-                ),
-                notes=entry[9],
-                event_type=HistoryEventType.deserialize(entry[10]),
-                event_subtype=HistoryEventSubType.deserialize(entry[11]),
-            )
-        except ValueError as e:
-            raise DeserializationError(
-                f'Failed to read FVal value from database history event with '
-                f'event identifier {str(entry[1])}. {str(e)}',
-            ) from e
 
     @property
+    @abstractmethod
     def serialized_event_identifier(self) -> str:
-        """Take a HistoryBaseEntry's event_identifier and returns a string representation."""
-        if self.entry_type == HistoryBaseEntryType.BASE_ENTRY:
-            return self.event_identifier.decode()
-
-        hex_representation = self.event_identifier.hex()
-        if hex_representation.startswith('0x') is True:
-            return hex_representation
-        return '0x' + hex_representation
+        """Returns a string representation of the event identifier depending on event entry"""
 
     @classmethod
+    @abstractmethod
     def deserialize_event_identifier(cls, val: str) -> bytes:
-        """Takes any arbitrary string and turns it into a bytes event_identifier."""
-        if is_valid_ethereum_tx_hash(val):
-            # `is_valid_ethereum_tx_hash` makes sure that it is a hex string, so no errors raised here  # noqa: E501
-            return hexstring_to_bytes(val)
-        return val.encode()
+        """Takes any arbitrary string and turns it into a bytes event_identifier.
+
+        May raise DeserializationError
+        """
 
     def serialize(self) -> dict[str, Any]:
+        """Serialize for api"""
         return {
-            'entry_type': str(self.entry_type),
             'identifier': self.identifier,
             'event_identifier': self.serialized_event_identifier,
             'sequence_index': self.sequence_index,
@@ -238,14 +234,15 @@ class HistoryBaseEntry(AccountingEventMixin):
         }
 
     @classmethod
-    def deserialize(cls, data: dict[str, Any]) -> 'HistoryBaseEntry':
-        """Deserializes a dict history base entry to HistoryBaseEntry object.
+    def _deserialize_base_history_data(cls: type[T], data: dict[str, Any]) -> HistoryBaseEntryData:
+        """Deserializes the base history event data to a typed dict
+
         May raise:
             - DeserializationError
             - KeyError
             - UnknownAsset
         """
-        return cls(
+        return HistoryBaseEntryData(
             event_identifier=cls.deserialize_event_identifier(data['event_identifier']),
             sequence_index=data['sequence_index'],
             timestamp=ts_sec_to_ms(deserialize_timestamp(data['timestamp'])),
@@ -270,6 +267,17 @@ class HistoryBaseEntry(AccountingEventMixin):
             ),
         )
 
+    @classmethod
+    @abstractmethod
+    def deserialize(cls: type[T], data: dict[str, Any]) -> T:
+        """Deserializes a dict history base entry to the specific event object.
+
+        May raise:
+            - DeserializationError
+            - KeyError
+            - UnknownAsset
+        """
+
     def __str__(self) -> str:
         return (
             f'{self.event_subtype} event at {self.location} and time '
@@ -279,32 +287,10 @@ class HistoryBaseEntry(AccountingEventMixin):
     def get_timestamp_in_sec(self) -> Timestamp:
         return ts_ms_to_sec(self.timestamp)
 
-    def get_type_identifier(self, include_counterparty: bool = True) -> str:  # pylint: disable=unused-argument  # include_counterparty is to be compatible with EvmEvent class  # noqa: E501
-        """
-        A unique type identifier for known event types.
-        Computes the identifier from event type and event subtype.
-        """
-        identifier = str(self.event_type) + '__' + str(self.event_subtype)
-
-        return identifier
-
     # -- Methods of AccountingEventMixin
 
     def get_timestamp(self) -> Timestamp:
         return self.get_timestamp_in_sec()
-
-    @staticmethod
-    def get_accounting_event_type() -> AccountingEventType:
-        return AccountingEventType.HISTORY_BASE_ENTRY
-
-    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
-        serialized_event_identifier = self.serialized_event_identifier
-        if not serialized_event_identifier.startswith('0x'):
-            return False
-
-        ignored_ids = ignored_ids_mapping.get(ActionType.EVM_TRANSACTION, set())
-        result = f'{self.location.to_chain_id()}{serialized_event_identifier}' in ignored_ids
-        return result
 
     def get_identifier(self) -> str:
         assert self.identifier is not None, 'Should never be called without identifier'
@@ -312,6 +298,97 @@ class HistoryBaseEntry(AccountingEventMixin):
 
     def get_assets(self) -> list[Asset]:
         return [self.asset]
+
+    def __hash__(self) -> int:
+        if self.identifier is not None:
+            return hash(self.identifier)
+
+        return hash(str(self.event_identifier) + str(self.sequence_index))
+
+
+class HistoryEvent(HistoryBaseEntry):
+    """General history events such as exchange events"""
+
+    def __init__(
+            self,
+            event_identifier: bytes,
+            sequence_index: int,
+            timestamp: TimestampMS,
+            location: Location,
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
+            asset: Asset,
+            balance: Balance,
+            location_label: Optional[str] = None,
+            notes: Optional[str] = None,
+            identifier: Optional[int] = None,
+    ) -> None:
+        super().__init__(
+            event_identifier=event_identifier,
+            sequence_index=sequence_index,
+            timestamp=timestamp,
+            location=location,
+            event_type=event_type,
+            event_subtype=event_subtype,
+            asset=asset,
+            balance=balance,
+            location_label=location_label,
+            notes=notes,
+            identifier=identifier,
+        )
+
+    def __repr__(self) -> str:
+        return f'HistoryEvent({",".join(self._history_base_entry_repr_fields())})'
+
+    def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE_WITH_TYPE]:
+        return ((HistoryBaseEntryType.BASE_ENTRY.value,) + self._serialize_base_tuple_for_db(),)
+
+    @classmethod
+    def deserialize_from_db(
+            cls: type['HistoryEvent'],
+            entry: tuple,
+    ) -> 'HistoryEvent':
+        """
+        May raise:
+        - DeserializationError
+        - UnknownAsset
+        """
+        amount = deserialize_fval(entry[7], 'amount', 'history event')
+        usd_value = deserialize_fval(entry[8], 'usd_value', 'history event')
+        return cls(
+            identifier=entry[0],
+            event_identifier=entry[1],
+            sequence_index=entry[2],
+            timestamp=TimestampMS(entry[3]),
+            location=Location.deserialize_from_db(entry[4]),
+            location_label=entry[5],
+            asset=Asset(entry[6]).check_existence(),
+            balance=Balance(amount, usd_value),
+            notes=entry[9],
+            event_type=HistoryEventType.deserialize(entry[10]),
+            event_subtype=HistoryEventSubType.deserialize(entry[11]),
+        )
+
+    @property
+    def serialized_event_identifier(self) -> str:
+        return self.event_identifier.decode()
+
+    @classmethod
+    def deserialize_event_identifier(cls: type['HistoryEvent'], val: str) -> bytes:
+        return val.encode()
+
+    @classmethod
+    def deserialize(cls: type['HistoryEvent'], data: dict[str, Any]) -> 'HistoryEvent':
+        return cls(**cls._deserialize_base_history_data(data))
+
+    # -- Methods of AccountingEventMixin
+
+    @staticmethod
+    def get_accounting_event_type() -> AccountingEventType:
+        return AccountingEventType.HISTORY_EVENT
+
+    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
+        return False  # TODO: How do we ignore general history events? Not possible yet, I think
 
     def process(
             self,
@@ -343,12 +420,6 @@ class HistoryBaseEntry(AccountingEventMixin):
             return 1
 
         return 1
-
-    def __hash__(self) -> int:
-        if self.identifier is not None:
-            return hash(self.identifier)
-
-        return hash(str(self.event_identifier) + str(self.sequence_index))
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)

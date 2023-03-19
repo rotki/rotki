@@ -1,9 +1,44 @@
 from enum import auto
-from typing import Optional
+from typing import Optional, get_args
 
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+
+EVM_EVENT_FIELDS = tuple[
+    Optional[str],  # counterparty
+    Optional[str],  # product
+    Optional[str],  # address
+    Optional[str],  # extra_data
+]
+
+EVM_EVENT_FIELDS_NO_EXTRA_DATA = tuple[
+    Optional[str],  # counterparty
+    Optional[str],  # product
+    Optional[str],  # address
+]
+
+EVM_EVENT_FIELDS_COUNT = len(get_args(EVM_EVENT_FIELDS))
+
+
+EVM_EVENT_DB_TUPLE_READ = tuple[
+    int,            # identifier
+    bytes,          # event_identifier
+    int,            # sequence_index
+    int,            # timestamp
+    str,            # location
+    Optional[str],  # location label
+    str,            # asset
+    str,            # amount
+    str,            # usd value
+    Optional[str],  # notes
+    str,            # type
+    str,            # subtype
+    str,            # address
+    Optional[str],  # counterparty
+    Optional[str],  # product
+    Optional[str],  # extra_data
+]
 
 
 class ActionType(DBEnumMixIn):

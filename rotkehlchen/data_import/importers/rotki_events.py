@@ -4,7 +4,7 @@ from typing import Any
 from uuid import uuid4
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
@@ -52,8 +52,8 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
             symbol_to_asset_or_token(csv_row['Fee Currency'])
             if csv_row['Fee Currency'] and fee is not None else None
         )
-        history_event = HistoryBaseEntry(
-            event_identifier=HistoryBaseEntry.deserialize_event_identifier(identifier),
+        history_event = HistoryEvent(
+            event_identifier=HistoryEvent.deserialize_event_identifier(identifier),
             sequence_index=sequence_index,
             timestamp=timestamp,
             location=location,
@@ -68,8 +68,8 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
         )
         events.append(history_event)
         if fee != ZERO and fee_currency is not None:
-            fee_event = HistoryBaseEntry(
-                event_identifier=HistoryBaseEntry.deserialize_event_identifier(identifier),
+            fee_event = HistoryEvent(
+                event_identifier=HistoryEvent.deserialize_event_identifier(identifier),
                 sequence_index=sequence_index + 1,
                 timestamp=timestamp,
                 location=location,
