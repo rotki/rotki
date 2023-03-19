@@ -427,8 +427,8 @@ def test_delete_addressbook(
         ) == 0
 
 
-def test_names_compilation(rotkehlchen_api_server: 'APIServer'):
-    def names_request(chain_addresses: list[OptionalChainAddress]):
+def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
+    def names_request(chain_addresses: list[OptionalChainAddress]) -> requests.Response:
         return requests.post(
             api_url_for(
                 rotkehlchen_api_server,
