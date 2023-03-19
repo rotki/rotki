@@ -1,13 +1,23 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.types import deserialize_evm_tx_hash
+from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.utils.misc import is_valid_ethereum_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
+
+
+def _deserialize_event_identifier(val: str) -> bytes:
+    """Takes the event identifer string as it was in the DB in v32 and encodes in bytes
+    depending on the string value
+    """
+    if is_valid_ethereum_tx_hash(val):
+        return hexstring_to_bytes(val)
+    return val.encode()
 
 
 def _refactor_xpubs_and_xpub_mappings(cursor: 'DBCursor') -> None:
@@ -455,7 +465,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     for history_event in history_events:
         history_event = list(history_event)
         try:
-            history_event[1] = HistoryBaseEntry.deserialize_event_identifier(history_event[1])
+            history_event[1] = _deserialize_event_identifier(history_event[1])
         except DeserializationError:
             continue
         new_history_events.append(tuple(history_event))

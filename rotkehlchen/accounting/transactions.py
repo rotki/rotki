@@ -18,8 +18,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 def evm_events_iterator(
         events_iterator: Iterator[AccountingEventMixin],
-        associated_event: 'EvmEvent',
-) -> Iterator['EvmEvent']:
+        associated_event: EvmEvent,
+) -> Iterator[EvmEvent]:
     """
     Takes an iterator of accounting events and transforms it into a history base entries iterator.
     Takes associated event as an argument to be able to log it in case of errors.
@@ -53,7 +53,7 @@ class TransactionsAccountant():
 
     def process(
             self,
-            event: 'EvmEvent',
+            event: EvmEvent,
             events_iterator: Iterator[AccountingEventMixin],
     ) -> int:
         """Process a transaction event and return amount of actions consumed from the iterator"""
@@ -115,8 +115,8 @@ class TransactionsAccountant():
     def _process_tx_swap(
             self,
             timestamp: Timestamp,
-            out_event: 'EvmEvent',
-            in_event: 'EvmEvent',
+            out_event: EvmEvent,
+            in_event: EvmEvent,
             event_settings: TxEventSettings,
     ) -> int:
         prices = self.pot.get_prices_for_swap(

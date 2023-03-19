@@ -21,7 +21,7 @@ class AccountingEventType(SerializableEnumMixin):
     PREFORK_ACQUISITION = auto()
     LEDGER_ACTION = auto()
     STAKING = auto()
-    HISTORY_BASE_ENTRY = auto()
+    HISTORY_EVENT = auto()
     TRANSACTION_EVENT = auto()
 
 

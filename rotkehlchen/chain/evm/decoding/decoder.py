@@ -437,7 +437,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     (transaction.tx_hash, serialized_chain_id, HISTORY_MAPPING_STATE_DECODED),
                 )
                 if cursor.fetchone()[0] != 0:  # already decoded and in the DB
-                    events: list['EvmEvent'] = self.dbevents.get_history_events(  # type: ignore[assignment]  # noqa: E501
+                    events = self.dbevents.get_history_events(
                         cursor=cursor,
                         filter_query=EvmEventFilterQuery.make(
                             event_identifiers=[transaction.tx_hash],
@@ -713,7 +713,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 action_items.pop(idx)
                 break  # found an action item and acted on it
 
-        # Add additional information to transfers for different counterparties
+        # Add additional information to transfers for different protocols
         self._enrich_protocol_tranfers(
             token=found_token,
             tx_log=tx_log,

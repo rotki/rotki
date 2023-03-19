@@ -80,7 +80,7 @@ class BaseDecoderTools():
         """Depending on addresses, if they are tracked by the user or not, if they
         are an exchange address etc. determine the type of event to classify the transfer as.
 
-        Returns event type, loation label, address, counterparty and verb.
+        Returns event type, location label, address, counterparty and verb.
         address is the address on the opposite side of the event. counterparty is the exchange name
         if it is a deposit / withdrawal to / from an exchange.
         """

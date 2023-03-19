@@ -4,13 +4,23 @@ from typing import TYPE_CHECKING, Any, Optional, Union, overload
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryBaseEntryType
+from rotkehlchen.accounting.structures.base import (
+    HistoryBaseEntry,
+    HistoryBaseEntryType,
+    HistoryEvent,
+)
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
-from rotkehlchen.db.filtering import EvmEventFilterQuery, HistoryEventFilterQuery
+from rotkehlchen.db.filtering import (
+    ALL_EVENTS_DATA_JOIN,
+    EVM_EVENT_JOIN,
+    EvmEventFilterQuery,
+    HistoryBaseEntryFilterQuery,
+    HistoryEventFilterQuery,
+)
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -39,9 +49,6 @@ subtype"""
 
 EVM_EVENT_FIELDS = 'counterparty, product, address, extra_data'
 
-EVM_EVENT_JOIN = 'FROM history_events INNER JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier '  # noqa: E501
-ALL_EVENTS_DATA_JOIN = 'FROM history_events LEFT JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier '  # noqa: E501
-
 
 class DBHistoryEvents():
 
@@ -65,11 +72,12 @@ class DBHistoryEvents():
         - sqlcipher.IntegrityError: If the asset of the added history event does not exist in
         the DB. Can only happen if an event with an unresolved asset is passed.
         """
+        db_tuples = event.serialize_for_db()
         write_cursor.execute(
             'INSERT OR IGNORE INTO history_events(entry_type, event_identifier, sequence_index,'
             'timestamp, location, location_label, asset, amount, usd_value, notes,'
             'type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            event.serialize_for_db(),
+            db_tuples[0],
         )
         if write_cursor.rowcount == 0:
             return None  # already exists
@@ -79,7 +87,7 @@ class DBHistoryEvents():
             write_cursor.execute(
                 'INSERT OR IGNORE INTO evm_events_info(identifier, counterparty, product,'
                 'address, extra_data) VALUES (?, ?, ?, ?, ?)',
-                (identifier, *event.serialize_evm_event_for_db()),
+                (identifier, *db_tuples[1]),
             )
 
         if mapping_values is not None:
@@ -113,12 +121,13 @@ class DBHistoryEvents():
         NOTE: It edits all the fields except the extra_data one.
         """
         with self.db.user_write() as cursor:
+            db_tuples = event.serialize_for_db()
             try:
                 cursor.execute(
                     'UPDATE history_events SET entry_type=?, event_identifier=?, '
                     'sequence_index=?, timestamp=?, location=?, location_label=?, asset=?, '
                     'amount=?, usd_value=?, notes=?, type=?, subtype=? WHERE identifier=?',
-                    (*event.serialize_for_db(), event.identifier),
+                    (*db_tuples[0], event.identifier),
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 msg = (
@@ -130,7 +139,7 @@ class DBHistoryEvents():
             if isinstance(event, EvmEvent):
                 cursor.execute(
                     'UPDATE evm_events_info SET counterparty=?, product=?, address=? WHERE identifier=?',    # noqa: E501
-                    (*event.serialize_for_db_without_extra_data(), event.identifier),
+                    (*db_tuples[1][:-1], event.identifier),  # -1 is without extra data
                 )
 
             if cursor.rowcount != 1:
@@ -250,11 +259,11 @@ class DBHistoryEvents():
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery,
             has_premium: bool,
-    ) -> list[HistoryBaseEntry]:
+    ) -> list[HistoryEvent]:
         ...
 
     @overload
-    def get_history_events(  # type: ignore[misc]  # getting from mypy "Overloaded function signature 2 will never be matched: signature 1's parameter type(s) are the same or broader"  # noqa: E501
+    def get_history_events(
             self,
             cursor: 'DBCursor',
             filter_query: EvmEventFilterQuery,
@@ -267,48 +276,56 @@ class DBHistoryEvents():
             cursor: 'DBCursor',
             filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery],
             has_premium: bool,
-    ) -> Union[list['HistoryBaseEntry'], list['EvmEvent']]:
+    ) -> Union[list['HistoryEvent'], list['EvmEvent']]:
         """
         Get history events using the provided query filter
         """
         query, bindings = filter_query.prepare()
-        if isinstance(filter_query, EvmEventFilterQuery):
-            # Select only evm events if `EvmEventFilterQuery` is used
-            join_query = EVM_EVENT_JOIN
-        else:
-            join_query = ALL_EVENTS_DATA_JOIN
-
         if has_premium is True:
-            base_query = f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {join_query}'
+            base_query = f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {filter_query.get_join_query()}'  # noqa: E501
         else:
-            base_query = f'SELECT * FROM (SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {join_query} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
+            base_query = f'SELECT * FROM (SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {filter_query.get_join_query()} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
             bindings.insert(0, FREE_HISTORY_EVENTS_LIMIT)
 
         cursor.execute(base_query + query, bindings)
+        deserialize_fn = EvmEvent.deserialize_from_db if isinstance(filter_query, EvmEventFilterQuery) else HistoryEvent.deserialize_from_db  # noqa: E501
         output = []
         for entry in cursor:
             try:
-                # Deserialize event depending on its type
-                deserialized: Union[HistoryBaseEntry, 'EvmEvent']
-                if HistoryBaseEntryType(entry[0]) == HistoryBaseEntryType.EVM_EVENT:
-                    deserialized = EvmEvent.deserialize_from_db(entry[1:])
-                else:
-                    deserialized = HistoryBaseEntry.deserialize_from_db(entry[1:])
+                deserialized_event = deserialize_fn(entry[1:])
             except (DeserializationError, UnknownAsset) as e:
                 log.debug(f'Failed to deserialize history event {entry} due to {str(e)}')
                 continue
 
-            output.append(deserialized)
+            output.append(deserialized_event)
 
-        return output
+        return output  # type: ignore[return-value]  # can't see different event types
 
-    def get_history_events_and_limit_info(
+    @overload
+    def get_specific_history_events_and_limit_info(
             self,
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery,
             has_premium: bool,
-    ) -> tuple[list[HistoryBaseEntry], int]:
-        """Gets all history events for the query from the DB
+    ) -> tuple[list[HistoryEvent], int]:
+        ...
+
+    @overload
+    def get_specific_history_events_and_limit_info(
+            self,
+            cursor: 'DBCursor',
+            filter_query: EvmEventFilterQuery,
+            has_premium: bool,
+    ) -> tuple[list[EvmEvent], int]:
+        ...
+
+    def get_specific_history_events_and_limit_info(
+            self,
+            cursor: 'DBCursor',
+            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery],
+            has_premium: bool,
+    ) -> tuple[Union[list[HistoryEvent], list[EvmEvent]], int]:
+        """Gets all history events for the specific type, based on the filter query.
 
         Also returns how many are the total found for the filter
         """
@@ -319,6 +336,38 @@ class DBHistoryEvents():
         )
         count = self.get_history_events_count(cursor=cursor, query_filter=filter_query)
         return events, count
+
+    def get_all_history_events(
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryBaseEntryFilterQuery,
+            has_premium: bool,
+    ) -> list[HistoryBaseEntry]:
+        """Get all events from the DB, deserialized depending on the event type"""
+        prepared_query, bindings = filter_query.prepare()
+        if has_premium is True:
+            base_query = f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
+        else:
+            base_query = f'SELECT * FROM (SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
+            bindings.insert(0, FREE_HISTORY_EVENTS_LIMIT)
+
+        cursor.execute(base_query + prepared_query, bindings)
+        output = []
+        for entry in cursor:
+            try:
+                deserialized_event: Union[HistoryEvent, EvmEvent]
+                # Deserialize event depending on its type
+                if HistoryBaseEntryType(entry[0]) == HistoryBaseEntryType.EVM_EVENT:
+                    deserialized_event = EvmEvent.deserialize_from_db(entry[1:])
+                else:
+                    deserialized_event = HistoryEvent.deserialize_from_db(entry[1:])
+            except (DeserializationError, UnknownAsset) as e:
+                log.debug(f'Failed to deserialize history event {entry} due to {str(e)}')
+                continue
+
+            output.append(deserialized_event)
+
+        return output  # type: ignore[return-value]  # expected only the two types
 
     def rows_missing_prices_in_base_entries(
             self,
@@ -379,15 +428,10 @@ class DBHistoryEvents():
                 )
         return assets
 
-    def get_history_events_count(self, cursor: 'DBCursor', query_filter: HistoryEventFilterQuery) -> int:  # noqa: E501
+    def get_history_events_count(self, cursor: 'DBCursor', query_filter: HistoryBaseEntryFilterQuery) -> int:  # noqa: E501
         """Returns how many of certain base entry events are in the database"""
         prepared_query, bindings = query_filter.prepare(with_pagination=False)
-        if isinstance(query_filter, EvmEventFilterQuery):
-            pure_query = f'SELECT COUNT(*) {EVM_EVENT_JOIN}'
-        else:
-            pure_query = 'SELECT COUNT(*) FROM history_events '
-
-        query = pure_query + prepared_query
+        query = query_filter.get_count_query() + prepared_query
         cursor.execute(query, bindings)
         return cursor.fetchone()[0]  # count(*) always returns
 

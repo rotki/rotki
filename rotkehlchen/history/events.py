@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Optional
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -261,7 +261,7 @@ class EventsHistorian:
             filter_query: HistoryEventFilterQuery,
             task_manager: Optional[TaskManager],
             only_cache: bool,
-    ) -> tuple[list[HistoryBaseEntry], int]:
+    ) -> tuple[list[HistoryEvent], int]:
         """
         May raise:
         - sqlcipher.OperationalError if a db error occurred while updating missing prices
@@ -302,7 +302,7 @@ class EventsHistorian:
 
         db = DBHistoryEvents(self.db)
         has_premium = self.chains_aggregator.premium is not None
-        events, filter_total_found = db.get_history_events_and_limit_info(
+        events, filter_total_found = db.get_specific_history_events_and_limit_info(
             cursor=cursor,
             filter_query=filter_query,
             has_premium=has_premium,
@@ -444,7 +444,7 @@ class EventsHistorian:
         # Include base history entries
         history_events_db = DBHistoryEvents(self.db)
         with self.db.conn.read_ctx() as cursor:
-            base_entries, _ = history_events_db.get_history_events_and_limit_info(
+            base_entries = history_events_db.get_all_history_events(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
                     # We need to have history since before the range

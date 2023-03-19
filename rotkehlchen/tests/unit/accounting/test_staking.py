@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats
 from rotkehlchen.constants import ZERO
@@ -21,7 +21,7 @@ def test_kraken_staking_events(accountant, google_service):
     Test that staking events from kraken are correctly processed
     """
     history = [
-        HistoryBaseEntry(
+        HistoryEvent(
             event_identifier=b'XXX',
             sequence_index=0,
             timestamp=1640493374000,
@@ -35,7 +35,7 @@ def test_kraken_staking_events(accountant, google_service):
             notes=None,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
-        ), HistoryBaseEntry(
+        ), HistoryEvent(
             event_identifier=b'YYY',
             sequence_index=0,
             timestamp=1636638550000,

@@ -2824,7 +2824,7 @@ class RestAPI():
                 if event_params['asset'] is not None:
                     asset = (event_params['asset'], )
                 for entry in transactions:
-                    events: list['EvmEvent'] = dbevents.get_history_events(  # type: ignore[assignment]  # noqa: E501
+                    events = dbevents.get_history_events(
                         cursor=cursor,
                         filter_query=EvmEventFilterQuery.make(
                             event_identifiers=[entry.tx_hash],

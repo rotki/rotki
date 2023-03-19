@@ -14,7 +14,7 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
@@ -616,7 +616,7 @@ class Binance(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> bool:
-        """Queries Binance lending interest history, transforms it into `HistoryBaseEntry` objects and saves it in the database.
+        """Queries Binance lending interest history, transforms it into `HistoryEvent` objects and saves it in the database.
 
         "DAILY" -> flexible savings.
         "CUSTOMIZED_FIXED" -> fixed savings.
@@ -707,7 +707,7 @@ class Binance(ExchangeInterface):
                         )
                         usd_value = ZERO
 
-                    event = HistoryBaseEntry(
+                    event = HistoryEvent(
                         event_identifier=uuid4().bytes,
                         sequence_index=0,  # since event_identifier is always different
                         timestamp=timestamp,
