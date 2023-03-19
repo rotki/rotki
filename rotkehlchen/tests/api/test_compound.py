@@ -2,12 +2,13 @@ import random
 import warnings as test_warnings
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.ethereum.modules.compound.compound import A_COMP, CompoundEvent
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -24,14 +25,17 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 TEST_ACC1 = '0x2bddEd18E2CA464355091266B7616956944ee7eE'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
 @pytest.mark.parametrize('ethereum_modules', [['compound']])
-def test_query_compound_balances(rotkehlchen_api_server, ethereum_accounts):
+def test_query_compound_balances(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+) -> None:
     """Check querying the compound balances endpoint works. Uses real data.
 
     TODO: Here we should use a test account for which we will know what balances
@@ -87,9 +91,9 @@ def test_query_compound_balances(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 def test_query_compound_balances_module_not_activated(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-):
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=None)
 
@@ -178,7 +182,10 @@ TEST_ACCOUNTS = [
 @pytest.mark.parametrize('mocked_price_queries', [mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
+def test_query_compound_history(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+) -> None:
     """Check querying the compound history endpoint works. Uses real data"""
     expected_events = [CompoundEvent(
         event_type='mint',
@@ -307,7 +314,7 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
         timestamp=Timestamp(1586159213),
         asset=A_ETH.resolve_to_crypto_asset(),
         value=Balance(amount=FVal('0.00168867571834735'), usd_value=FVal('0.2898780738115061010')),
-        to_asset=A_CUSDC,
+        to_asset=A_CUSDC.resolve_to_crypto_asset(),
         to_value=Balance(amount=FVal('13.06078395'), usd_value=FVal('0.2745376786290')),
         realized_pnl=None,
         tx_hash='0x160c0e6db0df5ea0c1cc9b1b31bd90c842ef793c9b2ab496efdc62bdd80eeb52',
@@ -358,7 +365,7 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
         timestamp=Timestamp(1588459991),
         asset=A_ETH.resolve_to_crypto_asset(),
         value=Balance(amount=FVal('0.0005'), usd_value=FVal('0.107075')),
-        to_asset=A_CUSDC,
+        to_asset=A_CUSDC.resolve_to_crypto_asset(),
         to_value=Balance(amount=FVal('5.48471654'), usd_value=FVal('0.1152887416708')),
         realized_pnl=None,
         tx_hash='0x02356347600dc86ba35effba30207277b022b05f5573f4dd66ba667c6656b3f3',
@@ -595,7 +602,9 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
 
 @pytest.mark.parametrize('ethereum_modules', [['compound']])
 @pytest.mark.parametrize('start_with_valid_premium', [False])
-def test_query_compound_history_non_premium(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
+def test_query_compound_history_non_premium(
+        rotkehlchen_api_server: APIServer,
+) -> None:
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'compoundhistoryresource',

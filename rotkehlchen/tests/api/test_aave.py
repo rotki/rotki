@@ -2,10 +2,11 @@ import random
 import warnings as test_warnings
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 import requests
+from eth_utils import to_checksum_address
 from flaky import flaky
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -47,7 +48,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balances
-from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp, deserialize_evm_tx_hash
 
 AAVE_BALANCESV1_TEST_ACC = '0xC2cB1040220768554cf699b0d863A3cd4324ce32'
 AAVE_BALANCESV2_TEST_ACC = '0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d'
@@ -57,7 +58,10 @@ AAVE_V2_TEST_ACC = '0x008C00c45D461d7E08acBC4755a4A0a3a94115ee'
 @flaky(max_runs=3, min_passes=1)  # open nodes some times time out
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_BALANCESV1_TEST_ACC, AAVE_BALANCESV2_TEST_ACC]])  # noqa: E501
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
-def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
+def test_query_aave_balances(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+) -> None:
     """Check querying the aave balances endpoint works. Uses real data.
 
     TODO: Here we should use a test account for which we will know what balances
@@ -128,7 +132,10 @@ def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_query_aave_history_with_borrowing_v2(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
+def test_query_aave_history_with_borrowing_v2(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+) -> None:
     """Check querying the aave histoy endpoint works. Uses real data."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
@@ -143,9 +150,9 @@ def test_query_aave_history_with_borrowing_v2(rotkehlchen_api_server, ethereum_a
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_BALANCESV1_TEST_ACC]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 def test_query_aave_balances_module_not_activated(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-):
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+) -> None:
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=None)
@@ -560,7 +567,10 @@ def _query_simple_aave_history_test_v2(
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
+def test_query_aave_history(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+) -> None:
     """Check querying the aave histoy endpoint works. Uses real data.
 
     Since this actually queries real blockchain data for aave it is a very slow test
@@ -587,7 +597,10 @@ def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts):  # pylin
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_query_aave_history2(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
+def test_query_aave_history2(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+) -> None:
     """Check querying the aave histoy endpoint works. Uses real data.
 
     Since this actually queries real blockchain data for aave it is a very slow test
@@ -801,7 +814,10 @@ def _query_borrowing_aave_history_test(setup: BalancesTestSetup, server: APIServ
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_query_aave_history_with_borrowing(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
+def test_query_aave_history_with_borrowing(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+) -> None:
     """Check querying the aave histoy endpoint works. Uses real data."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
@@ -816,7 +832,9 @@ def test_query_aave_history_with_borrowing(rotkehlchen_api_server, ethereum_acco
 
     # Make sure events end up in the DB
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert len(rotki.data.db.get_aave_events(cursor, AAVE_TEST_ACC_3)) != 0
+        assert len(rotki.data.db.get_aave_events(
+            cursor, to_checksum_address(AAVE_TEST_ACC_3)),
+        ) != 0
         # test aave data purging from the db works
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
@@ -824,7 +842,9 @@ def test_query_aave_history_with_borrowing(rotkehlchen_api_server, ethereum_acco
             module_name='aave',
         ))
         assert_simple_ok_response(response)
-        assert len(rotki.data.db.get_aave_events(cursor, AAVE_TEST_ACC_3)) == 0
+        assert len(rotki.data.db.get_aave_events(
+            cursor, to_checksum_address(AAVE_TEST_ACC_3)),
+        ) == 0
 
 
 def _test_for_duplicates_and_negatives(setup: BalancesTestSetup, server: APIServer) -> None:
@@ -864,7 +884,10 @@ def _test_for_duplicates_and_negatives(setup: BalancesTestSetup, server: APIServ
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_query_aave_history_no_duplicates(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
+def test_query_aave_history_no_duplicates(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+) -> None:
     """Check querying the aave histoy avoids duplicate event data and keeps totals positive"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
@@ -881,7 +904,9 @@ def test_query_aave_history_no_duplicates(rotkehlchen_api_server, ethereum_accou
 
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
 @pytest.mark.parametrize('start_with_valid_premium', [False])
-def test_query_aave_history_non_premium(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
+def test_query_aave_history_non_premium(
+        rotkehlchen_api_server: APIServer,
+) -> None:
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'aavehistoryresource',
@@ -895,7 +920,10 @@ def test_query_aave_history_non_premium(rotkehlchen_api_server, ethereum_account
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x01471dB828Cfb96Dcf215c57a7a6493702031EC1']])
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
-def test_query_aave_defi_borrowing(rotkehlchen_api_server, ethereum_accounts):
+def test_query_aave_defi_borrowing(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: Optional[list[ChecksumEvmAddress]],
+) -> None:
     """Checks that the apr/apy values are correctly returned from the API for a mocked position"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     addrs = string_to_evm_address('0x01471dB828Cfb96Dcf215c57a7a6493702031EC1')
