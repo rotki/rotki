@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import dropRight from 'lodash/dropRight';
-import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import isEqual from 'lodash/isEqual';
-import { type MaybeRef } from '@vueuse/core';
 import { Routes } from '@/router/routes';
 import {
   type AssetMovement,
@@ -13,14 +9,6 @@ import {
 import { type TradeLocation } from '@/types/history/trade/location';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
-import { type TablePagination } from '@/types/pagination';
-import {
-  type LocationQuery,
-  RouterPaginationOptionsSchema
-} from '@/types/route';
-import { type Collection } from '@/types/collection';
-import { defaultCollectionState, defaultOptions } from '@/utils/collection';
-import { assert } from '@/utils/assertions';
 import { SavedFilterLocation } from '@/types/filtering';
 
 const props = withDefaults(
@@ -36,34 +24,7 @@ const props = withDefaults(
 
 const { locationOverview, mainPage } = toRefs(props);
 
-const selected: Ref<AssetMovementEntry[]> = ref([]);
-const expanded: Ref<AssetMovementEntry[]> = ref([]);
-const options: Ref<TablePagination<AssetMovement>> = ref(defaultOptions());
-const userAction: Ref<boolean> = ref(false);
-
 const { tc } = useI18n();
-
-const pageParams: ComputedRef<AssetMovementRequestPayload> = computed(() => {
-  const { itemsPerPage, page, sortBy, sortDesc } = get(options);
-  const offset = (page - 1) * itemsPerPage;
-
-  const selectedFilters = get(filters);
-  const overview = get(locationOverview);
-  if (overview) {
-    selectedFilters.location = overview;
-  }
-
-  return {
-    ...(selectedFilters as Partial<AssetMovementRequestPayload>),
-    limit: itemsPerPage,
-    offset,
-    orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
-    ascending:
-      sortDesc && sortDesc.length > 1
-        ? dropRight(sortDesc).map(bool => !bool)
-        : [false]
-  };
-});
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const overview = get(locationOverview);
@@ -120,71 +81,24 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 const { fetchAssetMovements, refreshAssetMovements } = useAssetMovements();
 
 const {
+  options,
+  selected,
+  expanded,
   isLoading,
   state: assetMovements,
-  execute
-} = useAsyncState<
-  Collection<AssetMovementEntry>,
-  MaybeRef<AssetMovementRequestPayload>[]
->(args => fetchAssetMovements(args), defaultCollectionState(), {
-  immediate: false,
-  resetOnExecute: false,
-  delay: 0
-});
+  filters,
+  matchers,
+  setPage,
+  setOptions,
+  setFilter,
+  fetchData
+} = useHistoryPaginationFilter<
+  AssetMovement,
+  AssetMovementRequestPayload,
+  AssetMovementEntry
+>(locationOverview, mainPage, useAssetMovementFilters, fetchAssetMovements);
 
-const router = useRouter();
-const route = useRoute();
-
-const { filters, matchers, updateFilter, RouteFilterSchema } =
-  useAssetMovementFilters();
-
-const applyRouteFilter = () => {
-  if (!get(mainPage)) {
-    return;
-  }
-
-  const query = get(route).query;
-  const parsedOptions = RouterPaginationOptionsSchema.parse(query);
-  const parsedFilters = RouteFilterSchema.parse(query);
-
-  updateFilter(parsedFilters);
-  set(options, {
-    ...get(options),
-    ...parsedOptions
-  });
-};
-
-watch(route, () => {
-  set(userAction, false);
-  applyRouteFilter();
-});
-
-onBeforeMount(() => {
-  applyRouteFilter();
-});
-
-watch(filters, async (filters, oldFilters) => {
-  if (isEqual(filters, oldFilters)) {
-    return;
-  }
-
-  set(options, { ...get(options), page: 1 });
-});
-
-const setPage = (page: number) => {
-  set(userAction, true);
-  set(options, { ...get(options), page });
-};
-
-const setOptions = (newOptions: TablePagination<AssetMovement>) => {
-  set(userAction, true);
-  set(options, newOptions);
-};
-
-const setFilter = (newFilter: UnwrapRef<typeof filters>) => {
-  set(userAction, true);
-  updateFilter(newFilter);
-};
+useHistoryAutoRefresh(fetchData);
 
 const { ignore } = useIgnore(
   {
@@ -195,11 +109,6 @@ const { ignore } = useIgnore(
   () => fetchData()
 );
 
-onMounted(async () => {
-  await fetchData();
-  await refreshAssetMovements();
-});
-
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.ASSET_MOVEMENT);
 
@@ -208,47 +117,9 @@ const getItemClass = (item: AssetMovementEntry) =>
 
 const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS;
 
-const getQuery = (): LocationQuery => {
-  const opts = get(options);
-  assert(opts);
-  const { itemsPerPage, page, sortBy, sortDesc } = opts;
-
-  const selectedFilters = get(filters);
-
-  const overview = get(locationOverview);
-  if (overview) {
-    selectedFilters.location = overview;
-  }
-
-  return {
-    itemsPerPage: itemsPerPage.toString(),
-    page: page.toString(),
-    sortBy,
-    sortDesc: sortDesc.map(x => x.toString()),
-    ...selectedFilters
-  };
-};
-
-const fetchData = async (): Promise<void> => {
-  await execute(0, pageParams);
-};
-
-useHistoryAutoRefresh(() => fetchData());
-
-watch(pageParams, async (params, op) => {
-  if (isEqual(params, op)) {
-    return;
-  }
-  if (get(userAction) && get(mainPage)) {
-    // Route should only be updated on user action otherwise it messes with
-    // forward navigation.
-    await router.push({
-      query: getQuery()
-    });
-    set(userAction, false);
-  }
-
+onMounted(async () => {
   await fetchData();
+  await refreshAssetMovements();
 });
 
 watch(loading, async (isLoading, wasLoading) => {
