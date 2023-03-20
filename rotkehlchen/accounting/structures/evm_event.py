@@ -1,6 +1,7 @@
 import json
 import logging
 from collections.abc import Iterator
+from enum import auto
 from typing import TYPE_CHECKING, Any, Final, Optional, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
@@ -25,6 +26,7 @@ from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import is_valid_ethereum_tx_hash
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
@@ -43,6 +45,12 @@ ALL_DETAILS_KEYS = {
 }
 
 
+class EvmProduct(SerializableEnumMixin):
+    """The type of EVM product we interact with"""
+    POOL = auto()
+    STAKING = auto()
+
+
 def get_tx_event_type_identifier(event_type: HistoryEventType, event_subtype: HistoryEventSubType, counterparty: str) -> str:  # noqa: E501
     return str(event_type) + '__' + str(event_subtype) + '__' + counterparty
 
@@ -54,7 +62,8 @@ class EvmEvent(HistoryBaseEntry):
 
     1. counterparty: Optional[str] -- Used to mark the protocol name, for example curve or liquity.
 
-    2. product: Optional[str] -- For example if we are interacting with a pool, staking contract
+    2. product: Optional[EvmProduct] -- For example if we are interacting with a
+    pool, staking contract
     or others. This will help when filtering the events adding easier granularity to the searches.
 
     3. Optional[address]: ChecksumEvmAddress -- If we are working with evm information this would
@@ -66,6 +75,7 @@ class EvmEvent(HistoryBaseEntry):
     for events that need to keep extra information such as the CDP ID of a makerdao vault etc.
     """
 
+    # need explicitly define due to also changing eq: https://stackoverflow.com/a/53519136/110395
     __hash__ = HistoryBaseEntry.__hash__
 
     def __init__(
@@ -82,7 +92,7 @@ class EvmEvent(HistoryBaseEntry):
             notes: Optional[str] = None,
             identifier: Optional[int] = None,
             counterparty: Optional[str] = None,
-            product: Optional[str] = None,
+            product: Optional[EvmProduct] = None,
             address: Optional[ChecksumEvmAddress] = None,
             extra_data: Optional[dict[str, Any]] = None,
     ) -> None:
@@ -109,13 +119,18 @@ class EvmEvent(HistoryBaseEntry):
         extra_data = json.dumps(self.extra_data) if self.extra_data else None
         return (
             (HistoryBaseEntryType.EVM_EVENT.value,) + base_tuple,
-            (self.counterparty, self.product, self.address, extra_data),
+            (
+                self.counterparty,
+                self.product.serialize() if self.product is not None else None,
+                self.address,
+                extra_data,
+            ),
         )
 
     def serialize(self) -> dict[str, Any]:
         return super().serialize() | {
             'counterparty': self.counterparty,
-            'product': self.product,
+            'product': self.product.serialize() if self.product is not None else None,
             'address': self.address,
             'extra_data': self.extra_data,
         }
@@ -153,7 +168,7 @@ class EvmEvent(HistoryBaseEntry):
             event_type=HistoryEventType.deserialize(entry[10]),
             event_subtype=HistoryEventSubType.deserialize(entry[11]),
             counterparty=entry[12],
-            product=entry[13],
+            product=EvmProduct.deserialize(entry[13]) if entry[13] is not None else None,
             address=deserialize_optional(input_val=entry[14], fn=string_to_evm_address),
             extra_data=extra_data,
         )
@@ -191,7 +206,7 @@ class EvmEvent(HistoryBaseEntry):
             **base_data,
             address=deserialize_optional(data['address'], string_to_evm_address),
             counterparty=deserialize_optional(data['counterparty'], str),
-            product=deserialize_optional(data['product'], str),
+            product=deserialize_optional(data['product'], EvmProduct.deserialize),
         )
 
     def get_type_identifier(self, include_counterparty: bool = True) -> str:

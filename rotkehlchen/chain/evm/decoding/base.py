@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
+from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
 from rotkehlchen.constants import ONE
@@ -209,7 +209,7 @@ class BaseDecoderTools():
             location_label: Optional[str] = None,
             notes: Optional[str] = None,
             counterparty: Optional[str] = None,
-            product: Optional[str] = None,
+            product: Optional[EvmProduct] = None,
             address: Optional[ChecksumEvmAddress] = None,
             extra_data: Optional[dict[str, Any]] = None,
     ) -> 'EvmEvent':
@@ -243,7 +243,7 @@ class BaseDecoderTools():
             location_label: Optional[str] = None,
             notes: Optional[str] = None,
             counterparty: Optional[str] = None,
-            product: Optional[str] = None,
+            product: Optional[EvmProduct] = None,
             address: Optional[ChecksumEvmAddress] = None,
             extra_data: Optional[dict[str, Any]] = None,
     ) -> 'EvmEvent':
@@ -275,7 +275,7 @@ class BaseDecoderTools():
             location_label: Optional[str] = None,
             notes: Optional[str] = None,
             counterparty: Optional[str] = None,
-            product: Optional[str] = None,
+            product: Optional[EvmProduct] = None,
             address: Optional[ChecksumEvmAddress] = None,
             extra_data: Optional[dict[str, Any]] = None,
     ) -> 'EvmEvent':
