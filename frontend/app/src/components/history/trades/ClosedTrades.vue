@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { type Ref, type UnwrapRef } from 'vue';
+import { type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import isEqual from 'lodash/isEqual';
 import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
 import { type TradeLocation } from '@/types/history/trade/location';
@@ -12,13 +11,6 @@ import {
 } from '@/types/history/trade';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
-import { type TablePagination } from '@/types/pagination';
-import {
-  type LocationQuery,
-  RouterPaginationOptionsSchema
-} from '@/types/route';
-import { defaultOptions } from '@/utils/collection';
-import { assert } from '@/utils/assertions';
 import { SavedFilterLocation } from '@/types/filtering';
 
 const props = withDefaults(
@@ -35,40 +27,15 @@ const props = withDefaults(
 const { locationOverview, mainPage } = toRefs(props);
 
 const selected: Ref<TradeEntry[]> = ref([]);
-const options: Ref<TablePagination<Trade>> = ref(defaultOptions());
 const openDialog: Ref<boolean> = ref(false);
 const editableItem: Ref<TradeEntry | null> = ref(null);
 const tradesToDelete: Ref<TradeEntry[]> = ref([]);
 const confirmationMessage: Ref<string> = ref('');
 const expanded: Ref<TradeEntry[]> = ref([]);
-const userAction: Ref<boolean> = ref(false);
 
 const hideIgnoredTrades: Ref<boolean> = ref(false);
 
 const { tc } = useI18n();
-
-// const pageParams: ComputedRef<TradeRequestPayload> = computed(() => {
-//   const { itemsPerPage, page, sortBy, sortDesc } = get(options);
-//   const offset = (page - 1) * itemsPerPage;
-//
-//   const selectedFilters = get(filters);
-//   const overview = get(locationOverview);
-//   if (overview) {
-//     selectedFilters.location = overview;
-//   }
-//
-//   return {
-//     ...(selectedFilters as Partial<TradeRequestPayload>),
-//     includeIgnoredTrades: !get(hideIgnoredTrades),
-//     limit: itemsPerPage,
-//     offset,
-//     orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
-//     ascending:
-//       sortDesc && sortDesc.length > 1
-//         ? dropRight(sortDesc).map(bool => !bool)
-//         : [false]
-//   };
-// });
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const overview = get(locationOverview);
@@ -146,19 +113,23 @@ const { assetSymbol } = assetInfoRetrievalStore;
 
 const { deleteExternalTrade, fetchTrades, refreshTrades } = useTrades();
 
-// const {
-//   isLoading,
-//   state: trades,
-//   execute
-// } = useAsyncState<Collection<TradeEntry>, MaybeRef<TradeRequestPayload>[]>(
-//   args => fetchTrades(args),
-//   defaultCollectionState(),
-//   {
-//     immediate: false,
-//     resetOnExecute: false,
-//     delay: 0
-//   }
-// );
+useHistoryAutoRefresh(() => fetchData());
+const {
+  options,
+  isLoading,
+  state: trades,
+  filters,
+  matchers,
+  setPage,
+  setOptions,
+  setFilter,
+  fetchData
+} = useHistoryPaginationFilter<Trade, TradeRequestPayload, TradeEntry>(
+  locationOverview,
+  mainPage,
+  useTradeFilters,
+  fetchTrades
+);
 
 const newExternalTrade = () => {
   set(editableItem, null);
@@ -240,63 +211,9 @@ const deleteTradeHandler = async () => {
 const router = useRouter();
 const route = useRoute();
 
-const { filters, matchers, updateFilter, RouteFilterSchema } =
-  useTradeFilters();
-
-const applyRouteFilter = () => {
-  if (!get(mainPage)) {
-    return;
-  }
-
-  const query = get(route).query;
-  const parsedOptions = RouterPaginationOptionsSchema.parse(query);
-  const parsedFilters = RouteFilterSchema.parse(query);
-
-  const hideIgnoredTradesVal = query.includeIgnoredTrades === 'false';
-
-  updateFilter(parsedFilters);
-  set(options, {
-    ...get(options),
-    ...parsedOptions
-  });
-  set(hideIgnoredTrades, hideIgnoredTradesVal);
-};
-
-watch(route, () => {
-  set(userAction, false);
-  applyRouteFilter();
-});
-
-onBeforeMount(() => {
-  applyRouteFilter();
-});
-
-watch(filters, async (filters, oldFilters) => {
-  if (isEqual(filters, oldFilters)) {
-    return;
-  }
-
-  set(options, { ...get(options), page: 1 });
-});
-
 watch(hideIgnoredTrades, () => {
   setPage(1);
 });
-
-const setPage = (page: number) => {
-  set(userAction, true);
-  set(options, { ...get(options), page });
-};
-
-const setOptions = (newOptions: TablePagination<Trade>) => {
-  set(userAction, true);
-  set(options, newOptions);
-};
-
-const setFilter = (newFilter: UnwrapRef<typeof filters>) => {
-  set(userAction, true);
-  updateFilter(newFilter);
-};
 
 const { ignore } = useIgnore(
   {
@@ -338,61 +255,6 @@ const getItemClass = (item: TradeEntry) =>
   item.ignoredInAccounting ? 'darken-row' : '';
 
 const pageRoute = Routes.HISTORY_TRADES;
-
-const getQuery = (): LocationQuery => {
-  const opts = get(options);
-  assert(opts);
-  const { itemsPerPage, page, sortBy, sortDesc } = opts;
-
-  const selectedFilters = get(filters);
-
-  const overview = get(locationOverview);
-  if (overview) {
-    selectedFilters.location = overview;
-  }
-
-  return {
-    itemsPerPage: itemsPerPage.toString(),
-    page: page.toString(),
-    sortBy,
-    sortDesc: sortDesc.map(x => x.toString()),
-    includeIgnoredTrades: (!get(hideIgnoredTrades)).toString(),
-    ...selectedFilters
-  };
-};
-
-const fetchData = async (): Promise<void> => {
-  await execute(0, pageParams);
-};
-
-useHistoryAutoRefresh(() => fetchData());
-const {
-  pageParams,
-  isLoading,
-  state: trades,
-  execute
-} = useHistoryPagination<Trade, TradeRequestPayload, TradeEntry>(
-  locationOverview,
-  mainPage,
-  useTradeFilters,
-  fetchTrades
-);
-
-watch(pageParams, async (params, op) => {
-  if (isEqual(params, op)) {
-    return;
-  }
-  if (get(userAction) && get(mainPage)) {
-    // Route should only be updated on user action otherwise it messes with
-    // forward navigation.
-    await router.push({
-      query: getQuery()
-    });
-    set(userAction, false);
-  }
-
-  await fetchData();
-});
 
 watch(loading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading) {

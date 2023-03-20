@@ -289,7 +289,7 @@
     "useHistoryAutoRefresh": true,
     "useHistoryEventTypeData": true,
     "useHistoryIgnoringApi": true,
-    "useHistoryPagination": true,
+    "useHistoryPaginationFilter": true,
     "useHistoryStore": true,
     "useI18n": true,
     "useIdle": true,

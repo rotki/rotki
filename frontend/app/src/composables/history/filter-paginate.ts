@@ -5,8 +5,12 @@ import isEqual from 'lodash/isEqual';
 import { type MaybeRef } from '@vueuse/core';
 import { type TablePagination } from '@/types/pagination';
 import { defaultCollectionState, defaultOptions } from '@/utils/collection';
-import { RouterPaginationOptionsSchema } from '@/types/route';
+import {
+  type LocationQuery,
+  RouterPaginationOptionsSchema
+} from '@/types/route';
 import { type Collection } from '@/types/collection';
+import { assert } from '@/utils/assertions';
 
 interface FilterSchema {
   filters: Ref;
@@ -17,16 +21,24 @@ interface FilterSchema {
   RouteFilterSchema: ZodSchema;
 }
 
-export const useHistoryPagination = <T extends Object, R, S>(
+export const useHistoryPaginationFilter = <T extends Object, R, S>(
   locationOverview: Ref,
   mainPage: Ref<boolean>,
   filterSchema: () => FilterSchema,
   fetchAssetData: (payload: MaybeRef<R>) => Promise<Collection<S>>,
-  extraParams?: {}
+  extraParams?: Record<string, string | boolean>
 ) => {
+  const router = useRouter();
   const route = useRoute();
   const options: Ref<TablePagination<T>> = ref(defaultOptions<T>());
+  const selected: Ref<S[]> = ref([]);
+  const openDialog: Ref<boolean> = ref(false);
+  const editableItem: Ref<S | null> = ref(null);
+  const itemsToDelete: Ref<S[]> = ref([]);
+  const confirmationMessage: Ref<string> = ref('');
+  const expanded: Ref<S[]> = ref([]);
   const userAction: Ref<boolean> = ref(false);
+
   const { filters, matchers, updateFilter, RouteFilterSchema } = filterSchema();
 
   const pageParams: ComputedRef<R> = computed(() => {
@@ -77,26 +89,31 @@ export const useHistoryPagination = <T extends Object, R, S>(
     });
   };
 
-  // const fetchData = async (): Promise<void> => {
-  //     await execute(0, pageParams);
-  // };
+  const getQuery = (): LocationQuery => {
+    const opts = get(options);
+    assert(opts);
+    const { itemsPerPage, page, sortBy, sortDesc } = opts;
 
-  watch(route, () => {
-    set(userAction, false);
-    applyRouteFilter();
-  });
+    const selectedFilters = get(filters);
 
-  onBeforeMount(() => {
-    applyRouteFilter();
-  });
-
-  watch(filters, async (filters, oldFilters) => {
-    if (isEqual(filters, oldFilters)) {
-      return;
+    const overview = get(locationOverview);
+    if (overview) {
+      selectedFilters.location = overview;
     }
 
-    set(options, { ...get(options), page: 1 });
-  });
+    return {
+      itemsPerPage: itemsPerPage.toString(),
+      page: page.toString(),
+      sortBy,
+      sortDesc: sortDesc.map(x => x.toString()),
+      ...selectedFilters,
+      ...extraParams
+    };
+  };
+
+  const fetchData = async (): Promise<void> => {
+    await execute(0, pageParams);
+  };
 
   const setPage = (page: number) => {
     set(userAction, true);
@@ -113,15 +130,54 @@ export const useHistoryPagination = <T extends Object, R, S>(
     updateFilter(newFilter);
   };
 
+  onBeforeMount(() => {
+    applyRouteFilter();
+  });
+
+  watch(route, () => {
+    set(userAction, false);
+    applyRouteFilter();
+  });
+
+  watch(filters, async (filters, oldFilters) => {
+    if (isEqual(filters, oldFilters)) {
+      return;
+    }
+
+    set(options, { ...get(options), page: 1 });
+  });
+
+  watch(pageParams, async (params, op) => {
+    if (isEqual(params, op)) {
+      return;
+    }
+    if (get(userAction) && get(mainPage)) {
+      // Route should only be updated on user action otherwise it messes with
+      // forward navigation.
+      await router.push({
+        query: getQuery()
+      });
+      set(userAction, false);
+    }
+
+    await fetchData();
+  });
+
   return {
-    pageParams,
-    applyRouteFilter,
+    options,
+    selected,
+    openDialog,
+    editableItem,
+    itemsToDelete,
+    confirmationMessage,
+    expanded,
+    isLoading,
+    state,
+    filters,
     matchers,
     setPage,
     setOptions,
     setFilter,
-    isLoading,
-    state,
-    execute
+    fetchData
   };
 };
