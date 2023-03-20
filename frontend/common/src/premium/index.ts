@@ -117,6 +117,7 @@ export interface UserSettingsApi {
   shouldShowAmount: Ref<boolean>;
   shouldShowPercentage: Ref<boolean>;
   scrambleData: Ref<boolean>;
+  scrambleMultiplier: Ref<number>;
   selectedTheme: Ref<Theme>;
   dateInputFormat: Ref<string>;
   privacyMode: Ref<number>;

@@ -1,6 +1,5 @@
-import { type default as BigNumber } from 'bignumber.js';
 import { z } from 'zod';
-import { Balance, NumericString } from '../../index';
+import { Balance, type BigNumber, NumericString } from '../../index';
 import { XswapPool } from '../xswap';
 
 const BalancerUnderlyingToken = z.object({

@@ -75,8 +75,13 @@ export const statisticsApi = (): StatisticsApi => {
 };
 
 export const userSettings = (): UserSettingsApi => {
-  const { privacyMode, scrambleData, shouldShowAmount, shouldShowPercentage } =
-    storeToRefs(useSessionSettingsStore());
+  const {
+    privacyMode,
+    scrambleData,
+    shouldShowAmount,
+    shouldShowPercentage,
+    scrambleMultiplier
+  } = storeToRefs(useSessionSettingsStore());
   const { floatingPrecision, currencySymbol } = storeToRefs(
     useGeneralSettingsStore()
   );
@@ -95,6 +100,7 @@ export const userSettings = (): UserSettingsApi => {
     graphZeroBased,
     showGraphRangeSelector,
     privacyMode,
+    scrambleMultiplier,
     scrambleData,
     shouldShowAmount,
     shouldShowPercentage
