@@ -1887,10 +1887,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
     symbol = fields.String(load_default=None)
     asset_type = SerializableEnumField(enum_class=AssetType, load_default=None)
     address = EvmAddressField(load_default=None)
-    evm_chain = EvmChainNameField(
-        limit_to=get_args(SUPPORTED_CHAIN_IDS),  # type: ignore
-        load_default=None,
-    )
+    evm_chain = EvmChainNameField(load_default=None)
     ignored_assets_handling = SerializableEnumField(enum_class=IgnoredAssetsHandling, load_default=IgnoredAssetsHandling.NONE)  # noqa: E501
     show_user_owned_assets_only = fields.Boolean(load_default=False)
     identifiers = DelimitedOrNormalList(fields.String(required=True), load_default=None)
