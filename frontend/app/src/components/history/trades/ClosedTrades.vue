@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import dropRight from 'lodash/dropRight';
-import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
+import { type Ref, type UnwrapRef } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import isEqual from 'lodash/isEqual';
-import { type MaybeRef } from '@vueuse/core';
 import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
 import { type TradeLocation } from '@/types/history/trade/location';
@@ -19,8 +17,7 @@ import {
   type LocationQuery,
   RouterPaginationOptionsSchema
 } from '@/types/route';
-import { type Collection } from '@/types/collection';
-import { defaultCollectionState, defaultOptions } from '@/utils/collection';
+import { defaultOptions } from '@/utils/collection';
 import { assert } from '@/utils/assertions';
 import { SavedFilterLocation } from '@/types/filtering';
 
@@ -50,28 +47,28 @@ const hideIgnoredTrades: Ref<boolean> = ref(false);
 
 const { tc } = useI18n();
 
-const pageParams: ComputedRef<TradeRequestPayload> = computed(() => {
-  const { itemsPerPage, page, sortBy, sortDesc } = get(options);
-  const offset = (page - 1) * itemsPerPage;
-
-  const selectedFilters = get(filters);
-  const overview = get(locationOverview);
-  if (overview) {
-    selectedFilters.location = overview;
-  }
-
-  return {
-    ...(selectedFilters as Partial<TradeRequestPayload>),
-    includeIgnoredTrades: !get(hideIgnoredTrades),
-    limit: itemsPerPage,
-    offset,
-    orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
-    ascending:
-      sortDesc && sortDesc.length > 1
-        ? dropRight(sortDesc).map(bool => !bool)
-        : [false]
-  };
-});
+// const pageParams: ComputedRef<TradeRequestPayload> = computed(() => {
+//   const { itemsPerPage, page, sortBy, sortDesc } = get(options);
+//   const offset = (page - 1) * itemsPerPage;
+//
+//   const selectedFilters = get(filters);
+//   const overview = get(locationOverview);
+//   if (overview) {
+//     selectedFilters.location = overview;
+//   }
+//
+//   return {
+//     ...(selectedFilters as Partial<TradeRequestPayload>),
+//     includeIgnoredTrades: !get(hideIgnoredTrades),
+//     limit: itemsPerPage,
+//     offset,
+//     orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
+//     ascending:
+//       sortDesc && sortDesc.length > 1
+//         ? dropRight(sortDesc).map(bool => !bool)
+//         : [false]
+//   };
+// });
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const overview = get(locationOverview);
@@ -149,19 +146,19 @@ const { assetSymbol } = assetInfoRetrievalStore;
 
 const { deleteExternalTrade, fetchTrades, refreshTrades } = useTrades();
 
-const {
-  isLoading,
-  state: trades,
-  execute
-} = useAsyncState<Collection<TradeEntry>, MaybeRef<TradeRequestPayload>[]>(
-  args => fetchTrades(args),
-  defaultCollectionState(),
-  {
-    immediate: false,
-    resetOnExecute: false,
-    delay: 0
-  }
-);
+// const {
+//   isLoading,
+//   state: trades,
+//   execute
+// } = useAsyncState<Collection<TradeEntry>, MaybeRef<TradeRequestPayload>[]>(
+//   args => fetchTrades(args),
+//   defaultCollectionState(),
+//   {
+//     immediate: false,
+//     resetOnExecute: false,
+//     delay: 0
+//   }
+// );
 
 const newExternalTrade = () => {
   set(editableItem, null);
@@ -369,6 +366,17 @@ const fetchData = async (): Promise<void> => {
 };
 
 useHistoryAutoRefresh(() => fetchData());
+const {
+  pageParams,
+  isLoading,
+  state: trades,
+  execute
+} = useHistoryPagination<Trade, TradeRequestPayload, TradeEntry>(
+  locationOverview,
+  mainPage,
+  useTradeFilters,
+  fetchTrades
+);
 
 watch(pageParams, async (params, op) => {
   if (isEqual(params, op)) {
@@ -439,7 +447,7 @@ watch(loading, async (isLoading, wasLoading) => {
                     :disabled="selected.length === 0"
                     @click="massDelete"
                   >
-                    <v-icon> mdi-delete-outline </v-icon>
+                    <v-icon> mdi-delete-outline</v-icon>
                   </v-btn>
                 </v-col>
               </v-row>
@@ -499,7 +507,7 @@ watch(loading, async (isLoading, wasLoading) => {
             <template #item.ignoredInAccounting="{ item, isMobile }">
               <div v-if="item.ignoredInAccounting">
                 <badge-display v-if="isMobile" color="grey">
-                  <v-icon small> mdi-eye-off </v-icon>
+                  <v-icon small> mdi-eye-off</v-icon>
                   <span class="ml-2">
                     {{ tc('common.ignored_in_accounting') }}
                   </span>
@@ -507,7 +515,7 @@ watch(loading, async (isLoading, wasLoading) => {
                 <v-tooltip v-else bottom>
                   <template #activator="{ on }">
                     <badge-display color="grey" v-on="on">
-                      <v-icon small> mdi-eye-off </v-icon>
+                      <v-icon small> mdi-eye-off</v-icon>
                     </badge-display>
                   </template>
                   <span>
