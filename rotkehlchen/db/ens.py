@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Optional, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
+from rotkehlchen.errors.misc import InputError
 
 from rotkehlchen.types import ChecksumEvmAddress, EnsMapping, Timestamp
 from rotkehlchen.utils.misc import ts_now
@@ -86,3 +87,20 @@ class DBEns:
                 mappings_to_send[address] = name
 
         return mappings_to_send
+
+    def get_last_avatar_update(self, ens_name: str) -> Timestamp:
+        """
+        Returns the timestamp when the avatar for the given ens name was updated last time.
+        May raise:
+        - InputError if given `ens_name` is not in `ens_mappings` table
+        """
+        with self.db.conn.read_ctx() as cursor:
+            result = cursor.execute(
+                'SELECT last_avatar_update FROM ens_mappings WHERE ens_name=?',
+                (ens_name,),
+            ).fetchone()
+
+        if result is None:
+            raise InputError(f'ens name {ens_name} is not being tracked')
+
+        return Timestamp(result[0])

@@ -709,7 +709,8 @@ DB_CREATE_ENS_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS ens_mappings (
     address TEXT NOT NULL PRIMARY KEY,
     ens_name TEXT UNIQUE,
-    last_update INTEGER NOT NULL
+    last_update INTEGER NOT NULL,
+    last_avatar_update INTEGER
 );
 """
 

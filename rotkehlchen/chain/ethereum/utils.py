@@ -1,14 +1,18 @@
 import logging
-from typing import Optional
+from pathlib import Path
+from typing import TYPE_CHECKING, Optional
 
+import requests
+from ens.utils import normal_name_to_hash
 from eth_utils import to_checksum_address
+from requests.exceptions import RequestException
 from web3 import Web3
 
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, ETH_PROTOCOLS_CACHE_REFRESH
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_last_queried_ts_by_key
@@ -17,6 +21,10 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, GeneralCacheType
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -166,3 +174,41 @@ def should_update_protocol_cache(cache_key: GeneralCacheType, *args: str) -> boo
             key_parts=[cache_key, *args],
         )
     return ts_now() - last_update_ts >= ETH_PROTOCOLS_CACHE_REFRESH
+
+
+def try_download_ens_avatar(
+        eth_inquirer: 'EthereumInquirer',
+        avatars_dir: Path,
+        ens_name: str,
+) -> None:
+    """
+    Handles ens avatar downloading.
+    1. Checks whether given ens name has an avatar set
+    2. If it does, downloads the avatar and saves it in `avatars_dir`
+    3. Updates last avatar and checks timestamp for the given ens name
+
+    May raise:
+    - RemoteError if failed to query chain
+    """
+    avatar_url = eth_inquirer.contracts.contract('ENS_PUBLIC_RESOLVER_2').call(
+        node_inquirer=eth_inquirer,
+        method_name='text',
+        arguments=[normal_name_to_hash(ens_name), 'avatar'],
+    )
+    with eth_inquirer.database.conn.write_ctx() as cursor:
+        cursor.execute(  # Set timestamp of the last update of the avatar
+            'UPDATE ens_mappings SET last_avatar_update=? WHERE ens_name=?',
+            (ts_now(), ens_name),
+        )
+    if avatar_url == '':
+        return  # Avatar is not set
+
+    try:
+        avatar = requests.get(avatar_url, timeout=DEFAULT_TIMEOUT_TUPLE).content
+    except RequestException as e:
+        log.error(f'Got error {str(e)} during querying ens avatar for {ens_name}.')
+        return
+
+    avatars_dir.mkdir(exist_ok=True)  # Ensure that the avatars directory exists
+    with open(avatars_dir / f'{ens_name}.png', 'wb') as f:
+        f.write(avatar)

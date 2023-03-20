@@ -12376,3 +12376,35 @@ Get all EVM Chains
     :resjsonarr result: Returns a list of all EVM chains IDs and their names.
     :statuscode 200: Success
     :statuscode 500: Internal rotki error
+
+Get avatar for an ens name
+============================
+
+.. http:get:: /api/(version)/avatars/ens/<ens_name>
+
+   Doing a GET on this endpoint will return the avatar that is currently set for the provided ens name. If successful, responses include an `ETag` header for caching.
+
+   **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/avatars/ens/rotki.eth HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {}
+
+   :reqjson string ens_name: The ens name to check avatar for. It should have `.eth` postfix.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: image/png
+
+   :statuscode 200: The avatar was successfully found and returned.
+   :statuscode 304: Avatar image has not changed. Should be cached on the client. This is returned if the given `If-Match` or `If-None-Match` header match the `ETag` of the previous response.
+   :statuscode 400: Invalid ens name provided (it doesn't end with `.eth`).
+   :statuscode 404: There is no avatar set for the given ens name.
+   :statuscode 409: Avatar was requested for an ens name that is not currently in the database or we couldn't query the blockchain.

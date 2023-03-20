@@ -61,6 +61,7 @@ from rotkehlchen.api.v1.resources import (
     DBSnapshotsResource,
     DefiBalancesResource,
     DetectTokensResource,
+    EnsAvatarsResource,
     ERC20TokenInfo,
     Eth2DailyStatsResource,
     Eth2StakeDepositsResource,
@@ -304,6 +305,7 @@ URLS_V1: URLS = [
     ('/staking/kraken', StakingResource),
     ('/names', AllNamesResource),
     ('/names/ens/reverse', ReverseEnsResource),
+    ('/avatars/ens/<string:ens_name>', EnsAvatarsResource),
     ('/names/addressbook/<string:book_type>', AddressbookResource),
     ('/snapshots', DBSnapshotsResource),
     (

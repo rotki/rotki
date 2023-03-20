@@ -1335,6 +1335,8 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     ]
     assert all(x in old_history_events for x in kraken_events)
     assert all(x in old_history_events for x in custom_events)
+    old_ens_mappings = cursor.execute('SELECT * FROM ens_mappings').fetchall()
+    assert len(old_ens_mappings) == 10
 
     db_v36.logout()
     # Execute upgrade
@@ -1367,6 +1369,10 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     for entry in custom_events:
         assert (entry[0], 1, *entry[1:12]) in new_history_events
         assert (entry[0], entry[12], None, None, entry[13]) in new_evm_info
+
+    new_ens_mappings = cursor.execute('SELECT * FROM ens_mappings').fetchall()
+    expected_ens_mappings = [(*mapping, None) for mapping in old_ens_mappings]
+    assert new_ens_mappings == expected_ens_mappings
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

@@ -1,3 +1,4 @@
+import hashlib
 import itertools
 import logging
 import shutil
@@ -8,6 +9,7 @@ from typing import Optional
 
 import gevent
 import requests
+from flask import Response, make_response
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetType
@@ -24,6 +26,51 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 ALLOWED_ICON_EXTENSIONS = ('.png', '.svg', '.jpeg', '.jpg', '.webp')
+
+
+def check_if_image_is_cached(image_path: Path, match_header: Optional[str]) -> Optional[Response]:
+    """Checks whether the file at `image_path` is an already cached image.
+
+    Returns a response indicating the image has not been modified if that's the case,
+    otherwise None.
+    """
+    md5_hash = file_md5(image_path)
+    if md5_hash and match_header and match_header == md5_hash:
+        # Response content unmodified
+        return make_response(
+            (
+                b'',
+                HTTPStatus.NOT_MODIFIED,
+                {'mimetype': 'image/png', 'Content-Type': 'image/png'},
+            ),
+        )
+
+    return None
+
+
+def maybe_create_image_response(image_path: Optional[Path]) -> Response:
+    """Checks whether the file at `image_path` exists.
+
+    Returns a response with the image if it exists, otherwise a NOT FOUND response.
+    """
+    if image_path is None or image_path.is_file() is False:
+        return make_response(
+            (
+                b'',
+                HTTPStatus.NOT_FOUND, {'mimetype': 'image/png', 'Content-Type': 'image/png'},
+            ),
+        )
+
+    with open(image_path, 'rb') as f:
+        image_data = f.read()
+
+    response = make_response(
+        (
+            image_data,
+            HTTPStatus.OK, {'mimetype': 'image/png', 'Content-Type': 'image/png'}),
+    )
+    response.set_etag(hashlib.md5(image_data).hexdigest())
+    return response
 
 
 class IconManager():
@@ -56,20 +103,20 @@ class IconManager():
 
         return None
 
-    def iconfile_md5(
+    def asset_icon_path(
             self,
             asset: Asset,
-    ) -> Optional[str]:
+    ) -> Optional[Path]:
         # First try with the custom icon path
         custom_icon_path = self.custom_iconfile_path(asset)
         if custom_icon_path is not None:
-            return file_md5(custom_icon_path)
+            return custom_icon_path
 
         path = self.iconfile_path(asset)
         if not path.is_file():
             return None
 
-        return file_md5(path)
+        return path
 
     def query_coingecko_for_icon(self, asset: Asset, coingecko_id: str) -> bool:
         """Queries coingecko for icons of an asset
@@ -110,8 +157,8 @@ class IconManager():
     def get_icon(
             self,
             asset: Asset,
-    ) -> Optional[bytes]:
-        """Returns the byte data of the requested icon
+    ) -> Optional[Path]:
+        """Returns the file path of the requested icon
 
         If the icon can't be found it returns None.
 
@@ -123,9 +170,7 @@ class IconManager():
         # First search custom icons
         custom_icon_path = self.custom_iconfile_path(asset)
         if custom_icon_path is not None:
-            with open(custom_icon_path, 'rb') as f:
-                image_data = f.read()
-            return image_data
+            return custom_icon_path
 
         # check if the asset is in a collection
         collection_main_asset_id = GlobalDBHandler().get_collection_main_asset(asset.identifier)
@@ -137,9 +182,7 @@ class IconManager():
 
         needed_path = self.iconfile_path(asset_to_query_icon)
         if needed_path.is_file() is True:
-            with open(needed_path, 'rb') as f:
-                image_data = f.read()
-            return image_data
+            return needed_path
 
         # Then our only chance is coingecko
         # If we don't have the image check if this is a valid coingecko asset
@@ -155,9 +198,7 @@ class IconManager():
         if not needed_path.is_file():
             return None
 
-        with open(needed_path, 'rb') as f:
-            image_data = f.read()
-        return image_data
+        return needed_path
 
     def _assets_with_coingecko_id(self) -> dict[str, str]:
         """Create a mapping of all the assets identifiers to their coingecko id if it is set"""
