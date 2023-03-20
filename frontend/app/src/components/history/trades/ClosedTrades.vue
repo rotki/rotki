@@ -129,7 +129,7 @@ const {
   mainPage,
   useTradeFilters,
   fetchTrades,
-  { hideIgnoredTrades }
+  () => ({ includeIgnoredTrades: !get(hideIgnoredTrades) })
 );
 
 useHistoryAutoRefresh(fetchData);
@@ -260,6 +260,10 @@ watch(loading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading) {
     await fetchData();
   }
+});
+
+watch(route, ({ query }) => {
+  set(hideIgnoredTrades, query.includeIgnoredTrades === 'false');
 });
 </script>
 

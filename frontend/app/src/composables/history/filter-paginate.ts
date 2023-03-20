@@ -26,7 +26,7 @@ export const useHistoryPaginationFilter = <T extends Object, R, S>(
   mainPage: Ref<boolean>,
   filterSchema: () => FilterSchema,
   fetchAssetData: (payload: MaybeRef<R>) => Promise<Collection<S>>,
-  extraParams: Record<string, Ref<string | boolean>> = {}
+  extraParams?: () => Record<string, string | boolean | null>
 ) => {
   const router = useRouter();
   const route = useRoute();
@@ -53,7 +53,7 @@ export const useHistoryPaginationFilter = <T extends Object, R, S>(
 
     return {
       ...selectedFilters,
-      ...extraParams,
+      ...extraParams?.call(null),
       limit: itemsPerPage,
       offset,
       orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
@@ -107,10 +107,7 @@ export const useHistoryPaginationFilter = <T extends Object, R, S>(
       sortBy,
       sortDesc: sortDesc.map(x => x.toString()),
       ...selectedFilters,
-      ...Object.keys(extraParams).reduce((acc, k) => {
-        acc[k] = extraParams[k].value?.toString() ?? '';
-        return acc;
-      }, {} as Record<string, string>)
+      ...extraParams?.call(null)
     };
   };
 
