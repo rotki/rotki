@@ -55,8 +55,8 @@ def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection'
 
     _reset_decoded_events(write_cursor)
     write_cursor.execute("""CREATE TABLE IF NOT EXISTS history_events_copy (
-    entry_type INTEGER NOT NULL,
     identifier INTEGER NOT NULL PRIMARY KEY,
+    entry_type INTEGER NOT NULL,
     event_identifier BLOB NOT NULL,
     sequence_index INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
@@ -83,9 +83,9 @@ def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection'
             else:
                 entry_type = 1  # An evm event
             if entry[11] is None:
-                new_entries.append([entry_type, *entry[:11], 'none'])  # turn NULL values to text `none`  # noqa: E501
+                new_entries.append([entry[0], entry_type, *entry[1:11], 'none'])  # turn NULL values to text `none`  # noqa: E501
             else:
-                new_entries.append([entry_type, *entry[:12]])  # Don't change NON-NULL values  # noqa: E501
+                new_entries.append([entry[0], entry_type, *entry[1:12]])  # Don't change NON-NULL values  # noqa: E501
 
             if entry_type == 1:
                 extra_evm_info_entries.append((entry[0],) + entry[12:])

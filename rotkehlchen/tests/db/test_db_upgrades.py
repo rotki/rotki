@@ -1358,14 +1358,14 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     new_history_events = cursor.execute('SELECT * FROM history_events;').fetchall()
     for entry in kraken_events:
         if entry[11] is None:
-            assert (0,) + entry[0:11] + ('none',) in new_history_events
+            assert (entry[0], 0, *entry[1:11]) + ('none',) in new_history_events
         else:
-            assert (0,) + entry[:12] in new_history_events
+            assert (entry[0], 0, *entry[1:12]) in new_history_events
 
     new_evm_info = cursor.execute('SELECT * FROM evm_events_info;').fetchall()
     assert len(new_evm_info) == len(custom_events)
     for entry in custom_events:
-        assert (1,) + entry[:12] in new_history_events
+        assert (entry[0], 1, *entry[1:12]) in new_history_events
         assert (entry[0], entry[12], None, None, entry[13]) in new_evm_info
 
 
