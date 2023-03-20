@@ -21,27 +21,27 @@ interface FilterSchema {
   RouteFilterSchema: ZodSchema;
 }
 
-export const useHistoryPaginationFilter = <T extends Object, R, S>(
+export const useHistoryPaginationFilter = <T extends Object, U, V>(
   locationOverview: Ref,
   mainPage: Ref<boolean>,
   filterSchema: () => FilterSchema,
-  fetchAssetData: (payload: MaybeRef<R>) => Promise<Collection<S>>,
+  fetchAssetData: (payload: MaybeRef<U>) => Promise<Collection<V>>,
   extraParams?: () => Record<string, string | boolean | null>
 ) => {
   const router = useRouter();
   const route = useRoute();
   const options: Ref<TablePagination<T>> = ref(defaultOptions<T>());
-  const selected: Ref<S[]> = ref([]);
+  const selected: Ref<V[]> = ref([]);
   const openDialog: Ref<boolean> = ref(false);
-  const editableItem: Ref<S | null> = ref(null);
-  const itemsToDelete: Ref<S[]> = ref([]);
+  const editableItem: Ref<V | null> = ref(null);
+  const itemsToDelete: Ref<V[]> = ref([]);
   const confirmationMessage: Ref<string> = ref('');
-  const expanded: Ref<S[]> = ref([]);
+  const expanded: Ref<V[]> = ref([]);
   const userAction: Ref<boolean> = ref(false);
 
   const { filters, matchers, updateFilter, RouteFilterSchema } = filterSchema();
 
-  const pageParams: ComputedRef<R> = computed(() => {
+  const pageParams: ComputedRef<U> = computed(() => {
     const { itemsPerPage, page, sortBy, sortDesc } = get(options);
     const offset = (page - 1) * itemsPerPage;
 
@@ -65,8 +65,8 @@ export const useHistoryPaginationFilter = <T extends Object, R, S>(
   });
 
   const { isLoading, state, execute } = useAsyncState<
-    Collection<S>,
-    MaybeRef<R>[]
+    Collection<V>,
+    MaybeRef<U>[]
   >(fetchAssetData, defaultCollectionState(), {
     immediate: false,
     resetOnExecute: false,
