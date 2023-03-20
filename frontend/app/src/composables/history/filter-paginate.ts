@@ -26,7 +26,7 @@ export const useHistoryPaginationFilter = <T extends Object, R, S>(
   mainPage: Ref<boolean>,
   filterSchema: () => FilterSchema,
   fetchAssetData: (payload: MaybeRef<R>) => Promise<Collection<S>>,
-  extraParams?: Record<string, string | boolean>
+  extraParams: Record<string, Ref<string | boolean>> = {}
 ) => {
   const router = useRouter();
   const route = useRoute();
@@ -67,7 +67,7 @@ export const useHistoryPaginationFilter = <T extends Object, R, S>(
   const { isLoading, state, execute } = useAsyncState<
     Collection<S>,
     MaybeRef<R>[]
-  >(args => fetchAssetData(args), defaultCollectionState(), {
+  >(fetchAssetData, defaultCollectionState(), {
     immediate: false,
     resetOnExecute: false,
     delay: 0
@@ -107,7 +107,10 @@ export const useHistoryPaginationFilter = <T extends Object, R, S>(
       sortBy,
       sortDesc: sortDesc.map(x => x.toString()),
       ...selectedFilters,
-      ...extraParams
+      ...Object.keys(extraParams).reduce((acc, k) => {
+        acc[k] = extraParams[k].value?.toString() ?? '';
+        return acc;
+      }, {} as Record<string, string>)
     };
   };
 

@@ -26,16 +26,11 @@ const props = withDefaults(
 
 const { locationOverview, mainPage } = toRefs(props);
 
-const selected: Ref<TradeEntry[]> = ref([]);
-const openDialog: Ref<boolean> = ref(false);
-const editableItem: Ref<TradeEntry | null> = ref(null);
-const tradesToDelete: Ref<TradeEntry[]> = ref([]);
-const confirmationMessage: Ref<string> = ref('');
-const expanded: Ref<TradeEntry[]> = ref([]);
-
 const hideIgnoredTrades: Ref<boolean> = ref(false);
 
 const { tc } = useI18n();
+const router = useRouter();
+const route = useRoute();
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const overview = get(locationOverview);
@@ -113,9 +108,14 @@ const { assetSymbol } = assetInfoRetrievalStore;
 
 const { deleteExternalTrade, fetchTrades, refreshTrades } = useTrades();
 
-useHistoryAutoRefresh(() => fetchData());
 const {
   options,
+  selected,
+  openDialog,
+  editableItem,
+  itemsToDelete: tradesToDelete,
+  confirmationMessage,
+  expanded,
   isLoading,
   state: trades,
   filters,
@@ -128,8 +128,11 @@ const {
   locationOverview,
   mainPage,
   useTradeFilters,
-  fetchTrades
+  fetchTrades,
+  { hideIgnoredTrades }
 );
+
+useHistoryAutoRefresh(fetchData);
 
 const newExternalTrade = () => {
   set(editableItem, null);
@@ -208,13 +211,6 @@ const deleteTradeHandler = async () => {
   await fetchData();
 };
 
-const router = useRouter();
-const route = useRoute();
-
-watch(hideIgnoredTrades, () => {
-  setPage(1);
-});
-
 const { ignore } = useIgnore(
   {
     actionType: IgnoreActionType.TRADES,
@@ -223,18 +219,6 @@ const { ignore } = useIgnore(
   selected,
   () => fetchData()
 );
-
-onMounted(async () => {
-  const query = get(route).query;
-
-  if (query.add) {
-    newExternalTrade();
-    await router.replace({ query: {} });
-  } else {
-    await fetchData();
-    await refreshTrades();
-  }
-});
 
 const { show } = useConfirmStore();
 
@@ -255,6 +239,22 @@ const getItemClass = (item: TradeEntry) =>
   item.ignoredInAccounting ? 'darken-row' : '';
 
 const pageRoute = Routes.HISTORY_TRADES;
+
+onMounted(async () => {
+  const query = get(route).query;
+
+  if (query.add) {
+    newExternalTrade();
+    await router.replace({ query: {} });
+  } else {
+    await fetchData();
+    await refreshTrades();
+  }
+});
+
+watch(hideIgnoredTrades, () => {
+  setPage(1);
+});
 
 watch(loading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading) {
