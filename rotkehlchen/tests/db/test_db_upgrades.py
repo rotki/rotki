@@ -1313,10 +1313,28 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     cursor = db_v36.conn.cursor()
     # Test state of DB before upgrade is as expected
     result = cursor.execute('SELECT COUNT(*) FROM history_events;')
-    assert result.fetchone()[0] == 172
+    assert result.fetchone()[0] == 175
     result = cursor.execute('SELECT COUNT(*) FROM history_events WHERE subtype IS NULL;')
-    assert result.fetchone()[0] == 2
+    assert result.fetchone()[0] == 4
+    result = cursor.execute('SELECT * from history_events_mappings;')
+    assert result.fetchall() == [  # customized events
+        (1, 'state', 1),
+        (74, 'state', 1),
+    ]
     old_history_events = cursor.execute('SELECT * FROM history_events;').fetchall()
+    kraken_events = [
+        (171, 'SDASD-DSAD-DSAD', 0, 1638706007439, 'B', 'kraken', 'ETH', '-10.996', '-11843.777435000000', None, 'withdrawal', None, None, None),  # noqa: E501
+        (172, 'YDASD-YDSAD-YDSAD', 0, 1636553589350, 'B', 'kraken', 'ETH', '-5.1', '-6145.834', None, 'trade', None, None, None),  # noqa: E501
+        (173, 'TXZSDG-IUSNH2-OOAIE3U', 0, 1679243606179, 'B', 'kraken', 'BTC', '-0.0922995600', '-1391.564299579200', None, 'trade', None, None, None),  # noqa: E501
+        (174, 'TXZSDG-IUSNH2-OOAIE3U', 1, 1679243606179, 'B', 'kraken', 'EUR', '1100', '1391.564299579200', None, 'trade', None, None, None),  # noqa: E501
+        (175, 'TXZSDG-IUSNH2-OOAIE3U', 2, 1679243606179, 'B', 'kraken', 'EUR', '8.00', '8.53312', None, 'trade', 'fee', None, None),  # noqa: E501
+    ]
+    custom_events = [
+        (1, b'\xf1\xe0SX\xcbe\xed{3\xa6\xbb\x0f"\x8am>E\x9a\xf8\x18e\xccc6\x99M\xeciw\xc3\x1aM', 0, 1676042975000, 'g', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'ETH', '0.0000004061904', '0.000609801461808', 'Burned 0.0000004061904 ETH for gas for greater justice', 'spend', 'fee', 'gas', None),  # noqa: E501
+        (74, b'\xd1\x81W\xff\x16\xd3D\xcf-"\xf1D\xeb\xcf\xc3;\xff\x0b0\xcd\xcd\xddY\x97?\xd2\xf9\xf9%\xb3\xf5\xa3', 474, 1669664867000, 'f', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F', '125.835582561728229714', '125.6594127461418101924004', 'Receive 125.835582561728229714 DAI from 0x73043143e0A6418cc45d82D4505B096b802FD365 to 0xc37b40ABdB939635068d3c5f13E7faF686F03B65 because I am cool', 'receive', 'none', '0x73043143e0A6418cc45d82D4505B096b802FD365', None),  # noqa: E501
+    ]
+    assert all(x in old_history_events for x in kraken_events)
+    assert all(x in old_history_events for x in custom_events)
 
     db_v36.logout()
     # Execute upgrade
@@ -1328,15 +1346,27 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     cursor = db.conn.cursor()
 
     result = cursor.execute('SELECT COUNT(*) FROM history_events;')
-    assert result.fetchone()[0] == 172
+    assert result.fetchone()[0] == len(kraken_events) + len(custom_events)
     result = cursor.execute('SELECT COUNT(*) FROM history_events WHERE subtype IS NULL;')
     assert result.fetchone()[0] == 0
+
+    result = cursor.execute('SELECT * from history_events_mappings;')
+    assert result.fetchall() == [  # customized events mapping should persist
+        (1, 'state', 1),
+        (74, 'state', 1),
+    ]
     new_history_events = cursor.execute('SELECT * FROM history_events;').fetchall()
-    for idx, entry in enumerate(old_history_events):
+    for entry in kraken_events:
         if entry[11] is None:
-            assert entry[0:11] + ('none',) == new_history_events[idx][1:]
+            assert (0,) + entry[0:11] + ('none',) in new_history_events
         else:
-            assert entry[:12] == new_history_events[idx][1:]
+            assert (0,) + entry[:12] in new_history_events
+
+    new_evm_info = cursor.execute('SELECT * FROM evm_events_info;').fetchall()
+    assert len(new_evm_info) == len(custom_events)
+    for entry in custom_events:
+        assert (1,) + entry[:12] in new_history_events
+        assert (entry[0], entry[12], None, None, entry[13]) in new_evm_info
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
