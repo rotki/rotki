@@ -2,44 +2,40 @@
 import { type BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { type PropType } from 'vue';
 import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBalancesSnapshotLocationSelector.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type BalanceSnapshotPayload } from '@/types/snapshots';
 import { isNft } from '@/utils/nft';
 
-const props = defineProps({
-  value: {
-    required: false,
-    type: Boolean,
-    default: false
-  },
-  form: {
-    required: true,
-    type: Object as PropType<BalanceSnapshotPayload & { location: string }>
-  },
-  locations: {
-    required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
-  },
-  excludedAssets: {
-    required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
-  },
-  previewLocationBalance: {
-    required: false,
-    type: Object as PropType<Record<string, BigNumber> | null>,
-    default: () => null
-  }
-});
+interface BalanceSnapshotPayloadAndLocation extends BalanceSnapshotPayload {
+  location: string;
+}
 
-const emit = defineEmits(['update:form', 'input']);
+const props = withDefaults(
+  defineProps<{
+    value?: boolean;
+    edit?: boolean;
+    form: BalanceSnapshotPayloadAndLocation;
+    locations?: string[];
+    previewLocationBalance?: Record<string, BigNumber> | null;
+  }>(),
+  {
+    value: false,
+    edit: false,
+    locations: () => [],
+    previewLocationBalance: null
+  }
+);
+
+const emit = defineEmits<{
+  (e: 'input', valid: boolean): void;
+  (e: 'update:form', data: BalanceSnapshotPayloadAndLocation): void;
+  (e: 'update:asset', asset: string): void;
+}>();
 
 const { t, tc } = useI18n();
-const { form, excludedAssets } = toRefs(props);
+const { form } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const assetType = ref<string>('token');
@@ -48,11 +44,9 @@ const input = (valid: boolean) => {
   emit('input', valid);
 };
 
-const updateForm = (
-  partial: Partial<BalanceSnapshotPayload & { location: string }>
-) => {
+const updateForm = (partial: Partial<BalanceSnapshotPayloadAndLocation>) => {
   emit('update:form', {
-    ...(get(form) as BalanceSnapshotPayload),
+    ...get(form),
     ...partial
   });
 };
@@ -89,12 +83,6 @@ const rules = {
     required: helpers.withMessage(
       t('dashboard.snapshot.edit.dialog.balances.rules.asset').toString(),
       required
-    ),
-    nonDuplicate: helpers.withMessage(
-      t(
-        'dashboard.snapshot.edit.dialog.balances.rules.asset_non_duplicate'
-      ).toString(),
-      (v: string): boolean => !get(excludedAssets).includes(v)
     )
   },
   amount: {
@@ -118,6 +106,10 @@ const v$ = useVuelidate(rules, form, {
 watch(v$, ({ $invalid }) => {
   input(!$invalid);
 });
+
+const updateAsset = (asset: string) => {
+  emit('update:asset', asset);
+};
 </script>
 <template>
   <v-form :value="value" class="pt-4">
@@ -135,7 +127,7 @@ watch(v$, ({ $invalid }) => {
         {{ t('common.asset') }}
       </div>
       <div>
-        <v-radio-group v-model="assetType" row class="mt-2">
+        <v-radio-group v-model="assetType" row class="mt-2" :disabled="edit">
           <v-radio
             :label="t('dashboard.snapshot.edit.dialog.balances.token')"
             value="token"
@@ -150,21 +142,24 @@ watch(v$, ({ $invalid }) => {
         v-if="assetType === 'token'"
         :value="form.assetIdentifier"
         outlined
-        :excludes="excludedAssets"
+        :disabled="edit"
         :show-ignored="true"
         :label="tc('common.asset')"
         :enable-association="false"
         :error-messages="v$.assetIdentifier.$errors.map(e => e.$message)"
         @input="updateForm({ assetIdentifier: $event })"
+        @change="updateAsset"
       />
       <v-text-field
         v-if="assetType === 'nft'"
         :value="form.assetIdentifier"
         :label="t('common.asset')"
         outlined
+        :disabled="edit"
         :error-messages="v$.assetIdentifier.$errors.map(e => e.$message)"
         :hint="t('dashboard.snapshot.edit.dialog.balances.nft_hint')"
         @input="updateForm({ assetIdentifier: $event })"
+        @blur="updateAsset($event.target.value)"
       />
     </div>
     <div class="mb-4">

@@ -1474,7 +1474,6 @@
             "rules": {
               "amount": "The amount field cannot be empty",
               "asset": "The asset field cannot be empty",
-              "asset_non_duplicate": "The entry with this asset already exists, please use another asset.",
               "category": "The category field cannot be empty",
               "value": "The value field cannot be empty"
             },
