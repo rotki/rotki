@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Final, Optional, cast
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import (
-    HISTORY_EVENT_DB_TUPLE_WRITE_WITH_TYPE,
+    HISTORY_EVENT_DB_TUPLE_WRITE,
     HistoryBaseEntry,
     HistoryBaseEntryType,
 )
@@ -114,11 +114,11 @@ class EvmEvent(HistoryBaseEntry):
         self.product = product
         self.extra_data = extra_data
 
-    def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE_WITH_TYPE, EVM_EVENT_FIELDS]:
-        base_tuple = self._serialize_base_tuple_for_db()
+    def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE, EVM_EVENT_FIELDS]:
+        base_tuple = self._serialize_base_tuple_for_db(HistoryBaseEntryType.EVM_EVENT)
         extra_data = json.dumps(self.extra_data) if self.extra_data else None
         return (
-            (HistoryBaseEntryType.EVM_EVENT.value,) + base_tuple,
+            base_tuple,
             (
                 self.counterparty,
                 self.product.serialize() if self.product is not None else None,

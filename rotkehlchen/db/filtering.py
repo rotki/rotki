@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Generic, Literal, NamedTuple, Optional, TypeVar, Union, cast
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
+from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import Asset, EvmToken
@@ -914,6 +915,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             null_columns: Optional[list[str]] = None,
             event_identifiers: Optional[list[bytes]] = None,
             exclude_ignored_assets: bool = False,
+            limit_to_entry_type: bool = False,
     ) -> T_HistoryFilterQuery:
         if order_by_rules is None:
             order_by_rules = [('timestamp', True), ('sequence_index', True)]
@@ -990,6 +992,11 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             )
         if exclude_ignored_assets is True:
             filters.append(DBIgnoredAssetsFilter(and_op=True, asset_key='asset'))
+        if limit_to_entry_type is True:
+            entry_type = cls.get_entry_type()
+            filters.append(
+                DBEqualsFilter(and_op=True, column='entry_type', value=entry_type.value),
+            )
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -1011,6 +1018,11 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
     def get_count_query() -> str:
         """Returns the count query needed for this particular type of history event filter"""
 
+    @staticmethod
+    @abstractmethod
+    def get_entry_type() -> HistoryBaseEntryType:
+        """Returns the associated entry type with this filter"""
+
 
 class HistoryEventFilterQuery(HistoryBaseEntryFilterQuery):
 
@@ -1021,6 +1033,10 @@ class HistoryEventFilterQuery(HistoryBaseEntryFilterQuery):
     @staticmethod
     def get_count_query() -> str:
         return 'SELECT COUNT(*) FROM history_events '
+
+    @staticmethod
+    def get_entry_type() -> HistoryBaseEntryType:
+        return HistoryBaseEntryType.BASE_ENTRY
 
 
 class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
@@ -1043,6 +1059,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             null_columns: Optional[list[str]] = None,
             event_identifiers: Optional[list[bytes]] = None,
             exclude_ignored_assets: bool = False,
+            limit_to_entry_type: bool = False,
             counterparties: Optional[list[str]] = None,
     ) -> 'EvmEventFilterQuery':
         filter_query = super().make(
@@ -1062,6 +1079,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             null_columns=null_columns,
             event_identifiers=event_identifiers,
             exclude_ignored_assets=exclude_ignored_assets,
+            limit_to_entry_type=limit_to_entry_type,
         )
         if counterparties is not None:
             filter_query.filters.append(
@@ -1077,6 +1095,10 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
     @staticmethod
     def get_count_query() -> str:
         return f'SELECT COUNT(*) {EVM_EVENT_JOIN}'
+
+    @staticmethod
+    def get_entry_type() -> HistoryBaseEntryType:
+        return HistoryBaseEntryType.EVM_EVENT
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)

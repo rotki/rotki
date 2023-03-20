@@ -48,20 +48,6 @@ HISTORY_EVENT_DB_TUPLE_READ = tuple[
 ]
 
 HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
-    bytes,          # event_identifier
-    int,            # sequence_index
-    int,            # timestamp
-    str,            # location
-    Optional[str],  # location label
-    str,            # asset
-    str,            # amount
-    str,            # usd value
-    Optional[str],  # notes
-    str,            # type
-    str,            # subtype
-]
-
-HISTORY_EVENT_DB_TUPLE_WRITE_WITH_TYPE = tuple[
     int,            # entry type
     bytes,          # event_identifier
     int,            # sequence_index
@@ -173,8 +159,9 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             f'{self.identifier=}',
         ]
 
-    def _serialize_base_tuple_for_db(self) -> HISTORY_EVENT_DB_TUPLE_WRITE:
+    def _serialize_base_tuple_for_db(self, entry_type: HistoryBaseEntryType) -> HISTORY_EVENT_DB_TUPLE_WRITE:  # noqa: E501
         return (
+            entry_type.value,
             self.event_identifier,
             self.sequence_index,
             int(self.timestamp),
@@ -340,8 +327,8 @@ class HistoryEvent(HistoryBaseEntry):
     def __repr__(self) -> str:
         return f'HistoryEvent({",".join(self._history_base_entry_repr_fields())})'
 
-    def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE_WITH_TYPE]:
-        return ((HistoryBaseEntryType.BASE_ENTRY.value,) + self._serialize_base_tuple_for_db(),)
+    def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE]:
+        return (self._serialize_base_tuple_for_db(HistoryBaseEntryType.BASE_ENTRY),)
 
     @classmethod
     def deserialize_from_db(
