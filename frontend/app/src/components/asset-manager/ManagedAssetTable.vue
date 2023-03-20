@@ -173,6 +173,8 @@ const updatePaginationHandler = (updateOptions: AssetPaginationOptions) => {
     ...apiPagination,
     symbol: filter.symbol as string | undefined,
     name: filter.name as string | undefined,
+    evmChain: filter.evmChain as string | undefined,
+    address: filter.address as string | undefined,
     showUserOwnedAssetsOnly: onlyOwned,
     ignoredAssetsHandling: ignored
   });
