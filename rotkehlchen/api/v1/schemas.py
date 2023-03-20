@@ -2993,3 +2993,7 @@ class BinanceSavingsSchema(BaseStakingQuerySchema):
         )
         query_dict.update({'location': location})
         return query_dict
+
+
+class EnsAvatarsSchema(Schema):
+    ens_name = fields.String(required=True, validate=lambda x: x.endswith('.eth'))

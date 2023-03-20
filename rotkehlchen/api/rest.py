@@ -1,5 +1,4 @@
 import datetime
-import hashlib
 import json
 import logging
 import os
@@ -60,6 +59,7 @@ from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as get_liquity_stats
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
+from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import WeightedNode
@@ -82,10 +82,12 @@ from rotkehlchen.constants.misc import (
     ZERO,
 )
 from rotkehlchen.constants.resolver import ChainID, evm_address_to_identifier
+from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.custom_assets import DBCustomAssets
+from rotkehlchen.db.ens import DBEns
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -142,6 +144,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.icons import check_if_image_is_cached, maybe_create_image_response
 from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -178,7 +181,7 @@ from rotkehlchen.types import (
     TradeType,
     UserNote,
 )
-from rotkehlchen.utils.misc import combine_dicts
+from rotkehlchen.utils.misc import combine_dicts, ts_now
 from rotkehlchen.utils.snapshots import parse_import_snapshot_data
 from rotkehlchen.utils.version_check import get_current_version
 
@@ -2954,33 +2957,17 @@ class RestAPI():
             asset: Asset,
             match_header: Optional[str],
     ) -> Response:
-        file_md5 = self.rotkehlchen.icon_manager.iconfile_md5(asset)
-        if file_md5 and match_header and match_header == file_md5:
-            # Response content unmodified
-            return make_response(
-                (
-                    b'',
-                    HTTPStatus.NOT_MODIFIED,
-                    {'mimetype': 'image/png', 'Content-Type': 'image/png'},
-                ),
+        icon_path = self.rotkehlchen.icon_manager.asset_icon_path(asset)
+        if icon_path is not None:
+            response = check_if_image_is_cached(
+                image_path=icon_path,
+                match_header=match_header,
             )
+            if response is not None:
+                return response
 
-        image_data = self.rotkehlchen.icon_manager.get_icon(asset)
-        if image_data is None:
-            response = make_response(
-                (
-                    b'',
-                    HTTPStatus.NOT_FOUND, {'mimetype': 'image/png', 'Content-Type': 'image/png'}),
-            )
-        else:
-            response = make_response(
-                (
-                    image_data,
-                    HTTPStatus.OK, {'mimetype': 'image/png', 'Content-Type': 'image/png'}),
-            )
-            response.set_etag(hashlib.md5(image_data).hexdigest())
-
-        return response
+        image_path = self.rotkehlchen.icon_manager.get_icon(asset)
+        return maybe_create_image_response(image_path=image_path)
 
     def upload_asset_icon(self, asset: Asset, filepath: Path) -> Response:
         self.rotkehlchen.icon_manager.add_icon(asset=asset, icon_path=filepath)
@@ -4200,3 +4187,50 @@ class RestAPI():
                 for chain in ChainID
             ]),
         )
+
+    def get_ens_avatar(self, ens_name: str, match_header: Optional[str]) -> Response:
+        """
+        Searches for the ENS avatar of the given `ens_name`.
+        If found returns a response with the avatar, otherwise a 404 empty response if
+        the avatar is not found or a 409 empty response if there is any error.
+
+        Also supports etag mechanism that helps with caching on the client side.
+        """
+        avatars_dir = self.rotkehlchen.data_dir / 'icons' / 'avatars'
+        avatar_path = avatars_dir / f'{ens_name}.png'
+        if avatar_path.is_file():
+            response = check_if_image_is_cached(image_path=avatar_path, match_header=match_header)
+            if response is not None:
+                return response
+
+        dbens = DBEns(self.rotkehlchen.data.db)
+        try:
+            last_update = dbens.get_last_avatar_update(ens_name)
+        except InputError:
+            log.error(f'Got unexpected ens name {ens_name} at ens avatars endpoint')
+            return make_response(
+                (
+                    b'',
+                    HTTPStatus.CONFLICT, {'mimetype': 'image/png', 'Content-Type': 'image/png'},
+                ),
+            )
+
+        if last_update is None or ts_now() - last_update > ENS_AVATARS_REFRESH:
+            # If avatar for this ens name has never been checked or the avatar has expired
+            # then we try to download.
+            try:
+                try_download_ens_avatar(
+                    eth_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+                    avatars_dir=avatars_dir,
+                    ens_name=ens_name,
+                )
+            except RemoteError as e:
+                log.error(f'Got a remote error during querying an ens avatar: {str(e)}')
+                return make_response(
+                    (
+                        b'',
+                        HTTPStatus.CONFLICT, {'mimetype': 'image/png', 'Content-Type': 'image/png'},  # noqa: E501
+                    ),
+                )
+
+        return maybe_create_image_response(image_path=avatar_path)

@@ -174,7 +174,7 @@ def get_cassette_dir(request: pytest.FixtureRequest) -> Path:
 
 def is_etherscan_rate_limited(response: dict[str, Any]) -> bool:
     result = False
-    with suppress(JSONDecodeError, KeyError):
+    with suppress(JSONDecodeError, KeyError, UnicodeDecodeError):
         body = jsonloads_dict(response['body']['string'])
         result = int(body['status']) == 0 and 'rate limit reached' in body['result']
     return result

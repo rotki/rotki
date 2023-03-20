@@ -128,17 +128,36 @@ def _create_new_tables(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _create_new_tables')
 
 
+def _update_ens_mappings_schema(write_cursor: 'DBCursor') -> None:
+    log.debug('Enter _update_ens_mappings_schema')
+    write_cursor.execute("""CREATE TABLE ens_mappings_copy (
+        address TEXT NOT NULL PRIMARY KEY,
+        ens_name TEXT UNIQUE,
+        last_update INTEGER NOT NULL,
+        last_avatar_update INTEGER
+    )""")
+    write_cursor.execute(
+        'INSERT INTO ens_mappings_copy(address, ens_name, last_update) '
+        'SELECT address, ens_name, last_update FROM ens_mappings',
+    )
+    write_cursor.execute('DROP TABLE ens_mappings')
+    write_cursor.execute('ALTER TABLE ens_mappings_copy RENAME TO ens_mappings')
+    log.debug('Exit _update_ens_mappings_schema')
+
+
 def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v36 to v37. This was in v1.28.0 release.
 
         - Replace null history event subtype
     """
-    log.debug('Entered userdb v36->v36 upgrade')
-    progress_handler.set_total_steps(2)
+    log.debug('Entered userdb v36->v37 upgrade')
+    progress_handler.set_total_steps(3)
     with db.user_write() as write_cursor:
         _create_new_tables(write_cursor)
         progress_handler.new_step()
         _update_history_events_schema(write_cursor, db.conn)
+        progress_handler.new_step()
+        _update_ens_mappings_schema(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finished userdb v36->v36 upgrade')

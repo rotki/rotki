@@ -58,6 +58,7 @@ from rotkehlchen.api.v1.schemas import (
     EditCustomAssetSchema,
     EditEvmEventSchema,
     EditSettingsSchema,
+    EnsAvatarsSchema,
     ERC20InfoSchema,
     Eth2DailyStatsSchema,
     Eth2ValidatorDeleteSchema,
@@ -346,6 +347,20 @@ def create_blueprint(url_prefix: str) -> Blueprint:
     # API with flask:
     # http://stackoverflow.com/questions/28795561/support-multiple-api-versions-in-flask#28797512
     return Blueprint('v1_resources', __name__, url_prefix=url_prefix)
+
+
+def get_match_header() -> Optional[str]:
+    """
+    Process the if-match and if-none-match headers to get final header so that comparison with
+    etag can be done.
+    """
+    match_header = flask_request.headers.get('If-Match', None)
+    if not match_header:
+        match_header = flask_request.headers.get('If-None-Match', None)
+    if match_header:
+        match_header = match_header[1:-1]  # remove enclosing quotes
+
+    return match_header
 
 
 class BaseMethodView(MethodView):
@@ -2185,14 +2200,7 @@ class AssetIconFileResource(BaseMethodView):
 
     @use_kwargs(get_schema, location='query')
     def get(self, asset: Asset) -> Response:
-        # Process the if-match and if-none-match headers so that comparison with etag can be done
-        match_header = flask_request.headers.get('If-Match', None)
-        if not match_header:
-            match_header = flask_request.headers.get('If-None-Match', None)
-        if match_header:
-            match_header = match_header[1:-1]  # remove enclosing quotes
-
-        return self.rest_api.get_asset_icon(asset=asset, match_header=match_header)
+        return self.rest_api.get_asset_icon(asset=asset, match_header=get_match_header())
 
 
 class AssetIconsResource(BaseMethodView):
@@ -2841,3 +2849,12 @@ class AllEvmChainsResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.get_all_evm_chains()
+
+
+class EnsAvatarsResource(BaseMethodView):
+    get_schema = EnsAvatarsSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='view_args')
+    def get(self, ens_name: str) -> Response:
+        return self.rest_api.get_ens_avatar(ens_name=ens_name, match_header=get_match_header())
