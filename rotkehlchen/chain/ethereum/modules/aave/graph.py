@@ -240,14 +240,15 @@ def _calculate_loss(
 
     for b_asset, amount in historical_borrow_balances.items():
         borrow_balance = balances.borrowing.get(b_asset, None)
+        this_amount = amount
         if borrow_balance is not None:
-            amount += borrow_balance.balance.amount
+            this_amount += borrow_balance.balance.amount
 
         usd_price = Inquirer().find_usd_price(b_asset)
         total_lost[b_asset] = Balance(
             # add total_lost amount in case of liquidations
-            amount=total_lost[b_asset].amount + amount,
-            usd_value=amount * usd_price,
+            amount=total_lost[b_asset].amount + this_amount,
+            usd_value=this_amount * usd_price,
         )
 
     return total_lost, total_earned
@@ -645,17 +646,11 @@ class AaveGraphInquirer(AaveInquirer):
         borrow_actions: list[AaveEvent] = []
         db_interest_events: set[AaveInterestEvent] = set()
         for db_event in db_events:
-            if db_event.event_type == 'deposit':
-                actions.append(db_event)  # type: ignore
-            elif db_event.event_type == 'withdrawal':
+            if db_event.event_type in ('deposit', 'withdrawal'):
                 actions.append(db_event)  # type: ignore
             elif db_event.event_type == 'interest':
                 db_interest_events.add(db_event)  # type: ignore
-            elif db_event.event_type == 'borrow':
-                borrow_actions.append(db_event)
-            elif db_event.event_type == 'repay':
-                borrow_actions.append(db_event)
-            elif db_event.event_type == 'liquidation':
+            elif db_event.event_type in ('borrow', 'repay', 'liquidation'):
                 borrow_actions.append(db_event)
 
         interest_events, total_earned = self._calculate_interest_and_profit(

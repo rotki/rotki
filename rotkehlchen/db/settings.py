@@ -227,17 +227,14 @@ def db_settings_from_dict(
             else:
                 int_value = int(value)
                 if int_value <= 0:
-                    value = None
                     msg_aggregator.add_warning(
                         f'A negative or zero value ({int_value}) for taxfree_after_period '
                         f'ended up in the DB. Setting it to None. Please open an issue in '
                         f'Github: https://github.com/rotki/rotki/issues/new/choose',
                     )
+                    int_value = None  # type: ignore[assignment]  # we do it on purpose
+                specified_args[key] = int_value
 
-                else:
-                    value = int_value
-
-                specified_args[key] = value
         elif key == 'main_currency':
             specified_args[key] = Asset(str(value)).resolve_to_asset_with_oracles()
         elif key in TIMESTAMP_KEYS:
@@ -284,10 +281,7 @@ def serialize_db_setting(value: Any, setting: Any, is_modifiable: bool) -> Any:
         value = None
     elif setting == 'active_modules' and is_modifiable is True:
         value = json.dumps(value)
-    # main currency needs to have only its identifier
-    elif setting == 'main_currency':
-        value = value.serialize()  # pylint: disable=no-member
-    elif setting == 'cost_basis_method':
+    elif setting in ('main_currency', 'cost_basis_method'):
         value = value.serialize()  # pylint: disable=no-member
     elif setting == 'address_name_priority' and is_modifiable is True:
         value = json.dumps(value)

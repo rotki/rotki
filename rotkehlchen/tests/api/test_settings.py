@@ -71,7 +71,7 @@ def test_set_settings(rotkehlchen_api_server):
         'have_premium',
         'last_data_migration',
     )
-    for setting, value in original_settings.items():
+    for setting, raw_value in original_settings.items():
         if setting in unmodifiable_settings:
             continue
 
@@ -79,12 +79,12 @@ def test_set_settings(rotkehlchen_api_server):
             value = '%d/%m/%Y-%H:%M:%S'
         elif setting == 'main_currency':
             value = 'JPY'
-        elif type(value) == bool:  # pylint: disable=unidiomatic-typecheck
+        elif type(raw_value) == bool:  # pylint: disable=unidiomatic-typecheck
             # here and below we HAVE to use type() equality checks since
             # isinstance of a bool succeeds for both bool and int (due to inheritance)
-            value = not value
-        elif type(value) == int:  # pylint: disable=unidiomatic-typecheck
-            value += 1
+            value = not raw_value
+        elif type(raw_value) == int:  # pylint: disable=unidiomatic-typecheck
+            value = raw_value + 1
         elif setting == 'active_modules':
             value = ['makerdao_vaults']
         elif setting == 'frontend_settings':

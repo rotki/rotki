@@ -2,7 +2,7 @@ from collections import defaultdict
 from collections.abc import Iterator
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union, get_args, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, get_args, overload
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -24,9 +24,9 @@ if TYPE_CHECKING:
 
 
 ALL_BALANCE_TYPES = Union[
-    DefaultDict[ChecksumEvmAddress, BalanceSheet],
+    defaultdict[ChecksumEvmAddress, BalanceSheet],
     dict[BTCAddress, Balance],
-    DefaultDict[Eth2PubKey, BalanceSheet],
+    defaultdict[Eth2PubKey, BalanceSheet],
     dict[SubstrateAddress, BalanceSheet],
 ]
 
@@ -34,17 +34,17 @@ ALL_BALANCE_TYPES = Union[
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class BlockchainBalances:
     db: 'DBHandler'  # Need this to serialize BTC accounts with xpub mappings
-    eth: DefaultDict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
-    optimism: DefaultDict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
-    eth2: DefaultDict[Eth2PubKey, BalanceSheet] = field(init=False)
+    eth: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
+    optimism: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
+    eth2: defaultdict[Eth2PubKey, BalanceSheet] = field(init=False)
     btc: dict[BTCAddress, Balance] = field(init=False)
     bch: dict[BTCAddress, Balance] = field(init=False)
     ksm: dict[SubstrateAddress, BalanceSheet] = field(init=False)
     dot: dict[SubstrateAddress, BalanceSheet] = field(init=False)
-    avax: DefaultDict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
+    avax: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
 
     @overload
-    def get(self, chain: SUPPORTED_EVM_CHAINS) -> DefaultDict[ChecksumEvmAddress, BalanceSheet]:
+    def get(self, chain: SUPPORTED_EVM_CHAINS) -> defaultdict[ChecksumEvmAddress, BalanceSheet]:
         ...
 
     @overload
@@ -52,7 +52,7 @@ class BlockchainBalances:
         ...
 
     @overload
-    def get(self, chain: Literal[SupportedBlockchain.ETHEREUM_BEACONCHAIN]) -> DefaultDict[Eth2PubKey, BalanceSheet]:  # noqa: E501
+    def get(self, chain: Literal[SupportedBlockchain.ETHEREUM_BEACONCHAIN]) -> defaultdict[Eth2PubKey, BalanceSheet]:  # noqa: E501
         ...
 
     @overload

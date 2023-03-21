@@ -146,12 +146,12 @@ def query_ilk_registry(
             require_success=False,
             calls=info_calls,
         )
-        for idx, output in enumerate(outputs):
+        for output_idx, output in enumerate(outputs):
             status, result = output
             if status is False:
-                log.error(f'Part of a multicall to ilk registry failed: {info_calls[idx]}')
+                log.error(f'Part of a multicall to ilk registry failed: {info_calls[output_idx]}')
                 continue
-            ilk = ilks[idx]
+            ilk = ilks[output_idx]
             collateral_type = ilk.split(b'\0', 1)[0].decode()
             info = ilk_registry.decode(result, 'info', arguments=[ilk])
             gem_address = to_checksum_address(info[4])

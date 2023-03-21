@@ -2,7 +2,7 @@ import copy
 import logging
 import random
 from collections import defaultdict
-from typing import TYPE_CHECKING, Callable, DefaultDict, NamedTuple
+from typing import TYPE_CHECKING, Callable, NamedTuple
 
 import gevent
 
@@ -115,8 +115,8 @@ class TaskManager():
         self.cryptocompare_queries: set[CCHistoQuery] = set()
         self.chains_aggregator = chains_aggregator
         self.last_xpub_derivation_ts = 0
-        self.last_evm_tx_query_ts: DefaultDict[tuple[ChecksumEvmAddress, SupportedBlockchain], int] = defaultdict(int)  # noqa: E501
-        self.last_exchange_query_ts: DefaultDict[ExchangeLocationID, int] = defaultdict(int)
+        self.last_evm_tx_query_ts: defaultdict[tuple[ChecksumEvmAddress, SupportedBlockchain], int] = defaultdict(int)  # noqa: E501
+        self.last_exchange_query_ts: defaultdict[ExchangeLocationID, int] = defaultdict(int)
         self.base_entries_ignore_set: set[str] = set()
         self.prepared_cryptocompare_query = False
         self.running_greenlets: dict[Callable, list[gevent.Greenlet]] = {}
@@ -190,9 +190,9 @@ class TaskManager():
         with self.database.conn.read_ctx() as cursor:
             assets = self.database.query_owned_assets(cursor)
             main_currency = self.database.get_setting(cursor=cursor, name='main_currency')
-        for asset in assets:
+        for raw_asset in assets:
             try:
-                asset = asset.resolve_to_asset_with_oracles()
+                asset = raw_asset.resolve_to_asset_with_oracles()
             except (UnknownAsset, WrongAssetType):
                 continue  # cryptocompare does not work with non-oracles assets
 

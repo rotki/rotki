@@ -916,7 +916,7 @@ def test_asset_deletion(globaldb):
                 res = cursor.execute(query, (asset_id,)).fetchall()
                 results.append(len(res))
 
-        assert all([x == expected_count for x in results])
+        assert all(x == expected_count for x in results)
 
     # Creating custom evm token to also check that underlying tokens are cleared
     token_data = EvmToken.initialize(

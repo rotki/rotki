@@ -1,5 +1,6 @@
 import collections
-from typing import Generic, Optional, OrderedDict, TypeVar
+from collections import OrderedDict
+from typing import Generic, Optional, TypeVar
 
 RT = TypeVar('RT')
 

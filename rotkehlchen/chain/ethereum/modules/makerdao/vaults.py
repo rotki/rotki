@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from enum import Enum
-from typing import TYPE_CHECKING, Any, DefaultDict, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from gevent.lock import Semaphore
 
@@ -715,7 +715,7 @@ class MakerdaoVaults(HasDSProxy):
         """Return a mapping of all assets locked as collateral in the vaults and
         all DAI owed as debt
         """
-        balances: DefaultDict[ChecksumEvmAddress, BalanceSheet] = defaultdict(BalanceSheet)
+        balances: defaultdict[ChecksumEvmAddress, BalanceSheet] = defaultdict(BalanceSheet)
         for vault in self.get_vaults():
             balances[vault.owner] += vault.get_balance()
         return balances
@@ -728,4 +728,3 @@ class MakerdaoVaults(HasDSProxy):
         if proxy_address:
             # get any vaults the proxy owns
             self._get_vaults_of_address(user_address=address, proxy_address=proxy_address)
-        return None

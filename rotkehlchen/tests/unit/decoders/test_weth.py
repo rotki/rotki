@@ -343,7 +343,7 @@ def test_weth_interaction_errors(database, ethereum_inquirer):
             asset=A_USDC,
             balance=Balance(amount=FVal(103.562282)),
             location_label='0xF5f5C8924db9aa5E70Bdf7842473Ee8C7F1F4c9d',
-            notes='Receive 103.562282 USDC from 0xe66B31678d6C16E9ebf358268a790B763C133750 to 0xF5f5C8924db9aa5E70Bdf7842473Ee8C7F1F4c9d',  # noqa: E501,
+            notes='Receive 103.562282 USDC from 0xe66B31678d6C16E9ebf358268a790B763C133750 to 0xF5f5C8924db9aa5E70Bdf7842473Ee8C7F1F4c9d',  # noqa: E501
             address=string_to_evm_address('0xe66B31678d6C16E9ebf358268a790B763C133750'),
         ),
     ]

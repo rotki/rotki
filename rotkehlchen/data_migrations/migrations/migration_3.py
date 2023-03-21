@@ -22,9 +22,7 @@ def _validate_asset_icons(icon_manager: 'IconManager') -> None:
     for icon_entry in icons_directory.iterdir():
         if icon_entry.is_file():
             icon_file_type = filetype.guess(icon_entry)
-            if icon_file_type is None:
-                icon_entry.unlink()
-            elif icon_file_type.extension not in ALLOWED_ICON_EXTENSIONS:
+            if icon_file_type is None or icon_file_type.extension not in ALLOWED_ICON_EXTENSIONS:
                 icon_entry.unlink()
 
 

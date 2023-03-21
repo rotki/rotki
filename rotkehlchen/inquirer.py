@@ -836,14 +836,14 @@ class Inquirer():
         )
 
         # Check that the output has the correct structure
-        if not all([len(call_result) == 2 for call_result in output]):
+        if not all(len(call_result) == 2 for call_result in output):
             log.debug(
                 f'Failed to query contract methods while finding curve pool price. '
                 f'Not every outcome has length 2. {output}',
             )
             return None
         # Check that all the requests were successful
-        if not all([contract_output[0] for contract_output in output]):
+        if not all(contract_output[0] for contract_output in output):
             log.debug(f'Failed to query contract methods while finding curve price. {output}')
             return None
         # Deserialize information obtained in the multicall execution

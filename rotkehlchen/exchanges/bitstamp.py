@@ -166,13 +166,13 @@ class Bitstamp(ExchangeInterface):
             raise RemoteError(msg) from e
 
         assets_balance: dict[AssetWithOracles, Balance] = {}
-        for entry, amount in response_dict.items():
+        for entry, raw_amount in response_dict.items():
             if not entry.endswith('_balance'):
                 continue
 
             symbol = entry.split('_')[0]  # If no `_`, defaults to entry
             try:
-                amount = deserialize_asset_amount(amount)
+                amount = deserialize_asset_amount(raw_amount)
                 if amount == ZERO:
                     continue
                 asset = asset_from_bitstamp(symbol)

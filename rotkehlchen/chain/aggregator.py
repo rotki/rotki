@@ -4,17 +4,7 @@ from collections import defaultdict
 from collections.abc import Iterator
 from importlib import import_module
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    DefaultDict,
-    Literal,
-    Optional,
-    TypeVar,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, cast, overload
 
 from gevent.lock import Semaphore
 from web3.exceptions import BadFunctionCallOutput
@@ -437,9 +427,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             else:
                 existent = account in self.accounts.get(blockchain)
 
-            if existent is True and append_or_remove == 'append':
-                bad_accounts.append(account)
-            elif existent is False and append_or_remove == 'remove':
+            if (
+                    (existent is True and append_or_remove == 'append') or
+                    (existent is False and append_or_remove == 'remove')
+            ):
                 bad_accounts.append(account)
 
         if len(bad_accounts) != 0:
@@ -798,7 +789,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             dsr_proxy_append: bool,
             balance_result: dict[ChecksumEvmAddress, dict[EvmToken, FVal]],
             token_usd_price: dict[EvmToken, Price],
-            balances: DefaultDict[ChecksumEvmAddress, BalanceSheet],
+            balances: defaultdict[ChecksumEvmAddress, BalanceSheet],
     ) -> None:
         # Update the per account token balance and usd value
         for account, token_balances in balance_result.items():
@@ -815,7 +806,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def query_evm_tokens(
             self,
             manager: 'EvmManager',
-            balances: DefaultDict[ChecksumEvmAddress, BalanceSheet],
+            balances: defaultdict[ChecksumEvmAddress, BalanceSheet],
     ) -> None:
         """Queries evm token balance via either etherscan or evm node
 
@@ -925,7 +916,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.query_defi_balances()
         self._add_eth_protocol_balances(eth_balances=self.balances.eth)
 
-    def _add_eth_protocol_balances(self, eth_balances: DefaultDict[ChecksumEvmAddress, BalanceSheet]) -> None:  # noqa: E501
+    def _add_eth_protocol_balances(self, eth_balances: defaultdict[ChecksumEvmAddress, BalanceSheet]) -> None:  # noqa: E501
         """Also count token balances that may come from various eth protocols"""
         # If we have anything in DSR also count it towards total blockchain balances
         dsr_module = self.get_module('makerdao_dsr')

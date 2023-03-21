@@ -80,7 +80,7 @@ SKIPPED_UNISWAP_TEST_OPTIONS = [UNISWAP_TEST_OPTIONS[-1]]
 @pytest.mark.parametrize('ethereum_accounts', [[LP_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize(
-    'start_with_valid_premium,ethereum_manager_connect_at_start',
+    ('start_with_valid_premium', 'ethereum_manager_connect_at_start'),
     SKIPPED_UNISWAP_TEST_OPTIONS,
 )
 def test_get_balances(

@@ -6,7 +6,7 @@ from base64 import b64encode
 from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, overload
 
 import gevent
 import requests
@@ -73,7 +73,7 @@ def gemini_symbol_to_base_quote(symbol: str) -> tuple[AssetWithOracles, AssetWit
             base_asset = asset_from_gemini(symbol[:3].upper())
             quote_asset = asset_from_gemini(symbol[3:].upper())
     elif len(symbol) == 8:
-        if any([asset in symbol for asset in five_letter_assets]):
+        if any(asset in symbol for asset in five_letter_assets):
             base_asset = asset_from_gemini(symbol[:5].upper())
             quote_asset = asset_from_gemini(symbol[5:].upper())
         else:
@@ -309,7 +309,7 @@ class Gemini(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        returned_balances: DefaultDict[AssetWithOracles, Balance] = defaultdict(Balance)
+        returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for entry in balances:
             try:
                 balance_type = entry['type']

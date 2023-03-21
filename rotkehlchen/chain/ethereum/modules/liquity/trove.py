@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, DefaultDict, NamedTuple, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypedDict
 
 from gevent.lock import Semaphore
 
@@ -199,7 +199,7 @@ class Liquity(HasDSProxy):
 
         # the structure of the queried data is:
         # staked address 1, reward 1 of address 1, reward 2 of address 1, staked address 2, reward 1 of address 2, ...  # noqa: E501
-        data: DefaultDict[ChecksumEvmAddress, LiquityBalanceWithProxy] = defaultdict(
+        data: defaultdict[ChecksumEvmAddress, LiquityBalanceWithProxy] = defaultdict(
             lambda: LiquityBalanceWithProxy(
                 proxies=defaultdict(lambda: defaultdict(AssetBalance)),  # type: ignore[arg-type]  # noqa: E501
                 balances=defaultdict(AssetBalance),  # type: ignore[arg-type]

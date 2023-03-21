@@ -163,7 +163,7 @@ def test_ledger_action_can_be_edited(database, function_scope_messages_aggregato
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('db_settings, expected', [
+@pytest.mark.parametrize(('db_settings', 'expected'), [
     ({'taxable_ledger_actions': [
         LedgerActionType.INCOME,
         LedgerActionType.AIRDROP,

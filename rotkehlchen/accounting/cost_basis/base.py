@@ -4,16 +4,7 @@ from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    DefaultDict,
-    Literal,
-    NamedTuple,
-    Optional,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, Literal, NamedTuple, Optional, overload
 
 from rotkehlchen.accounting.types import MissingAcquisition, MissingPrice
 from rotkehlchen.assets.asset import Asset
@@ -576,7 +567,7 @@ class CostBasisCalculator(CustomizableDateMixin):
     def reset(self, settings: DBSettings) -> None:
         self.settings = settings
         self.profit_currency = settings.main_currency
-        self._events: DefaultDict[Asset, CostBasisEvents] = defaultdict(lambda: CostBasisEvents(settings.cost_basis_method))  # noqa: E501
+        self._events: defaultdict[Asset, CostBasisEvents] = defaultdict(lambda: CostBasisEvents(settings.cost_basis_method))  # noqa: E501
         self.missing_acquisitions: list[MissingAcquisition] = []
         self.missing_prices: set[MissingPrice] = set()
 

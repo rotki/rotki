@@ -492,7 +492,7 @@ class AssetsUpdater:
         lines = text.splitlines()
         for action, full_insert in zip(*[iter(lines)] * 2):
             if full_insert.strip() == '*':
-                full_insert = action
+                full_insert = action  # noqa: PLW2901
 
             if update_file_type == UpdateFileType.ASSETS:
                 remote_asset_data = None
@@ -735,7 +735,5 @@ class AssetsUpdater:
                 UpdateFileType.ASSET_COLLECTIONS: asset_collections_file,
                 UpdateFileType.ASSET_COLLECTIONS_MAPPINGS: asset_collections_mappings_file,
             }
-
-            version += 1
 
         return updates

@@ -1229,7 +1229,7 @@ def test_ignoring_trades_with_pagination(rotkehlchen_api_server):
     assert len(result['entries']) == 7
     assert result['entries_found'] == 8
     assert result['entries_total'] == len(trades)
-    assert all([entry['entry']['trade_id'] not in trades_to_ignore for entry in result['entries']])
+    assert all(entry['entry']['trade_id'] not in trades_to_ignore for entry in result['entries'])
 
     # now fetch trades with pagination and `include_ignored_trades` is True
     response = requests.get(

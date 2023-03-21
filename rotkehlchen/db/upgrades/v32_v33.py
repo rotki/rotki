@@ -130,7 +130,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     aave_events = cursor.execute('SELECT * FROM aave_events')
     new_aave_events = []
     for aave_event in aave_events:
-        aave_event = list(aave_event)
+        aave_event = list(aave_event)  # noqa: PLW2901
         try:
             aave_event[4] = deserialize_evm_tx_hash(aave_event[4])
         except DeserializationError:
@@ -169,7 +169,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     adex_events = cursor.execute('SELECT * FROM adex_events')
     new_adex_events = []
     for adex_event in adex_events:
-        adex_event = list(adex_event)
+        adex_event = list(adex_event)  # noqa: PLW2901
         try:
             adex_event[0] = deserialize_evm_tx_hash(adex_event[0])
         except DeserializationError:
@@ -209,7 +209,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     balancer_events = cursor.execute('SELECT * FROM balancer_events')
     new_balance_events = []
     for balancer_event in balancer_events:
-        balancer_event = list(balancer_event)
+        balancer_event = list(balancer_event)  # noqa: PLW2901
         try:
             balancer_event[0] = deserialize_evm_tx_hash(balancer_event[0])
         except DeserializationError:
@@ -249,7 +249,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     yearn_vaults_events = cursor.execute('SELECT * FROM yearn_vaults_events')
     new_yearn_vaults_events = []
     for yearn_vault_event in yearn_vaults_events:
-        yearn_vault_event = list(yearn_vault_event)
+        yearn_vault_event = list(yearn_vault_event)  # noqa: PLW2901
         try:
             yearn_vault_event[12] = deserialize_evm_tx_hash(yearn_vault_event[12])
         except DeserializationError:
@@ -286,7 +286,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     amm_events = cursor.execute('SELECT * FROM amm_events')
     new_amm_events = []
     for amm_event in amm_events:
-        amm_event = list(amm_event)
+        amm_event = list(amm_event)  # noqa: PLW2901
         try:
             amm_event[0] = deserialize_evm_tx_hash(amm_event[0])
         except DeserializationError:
@@ -326,7 +326,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     amm_swaps = cursor.execute('SELECT * FROM amm_swaps')
     new_amm_swaps = []
     for amm_swap in amm_swaps:
-        amm_swap = list(amm_swap)
+        amm_swap = list(amm_swap)  # noqa: PLW2901
         try:
             amm_swap[0] = deserialize_evm_tx_hash(amm_swap[0])
         except DeserializationError:
@@ -463,7 +463,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     history_events = cursor.execute('SELECT * FROM history_events')
     new_history_events = []
     for history_event in history_events:
-        history_event = list(history_event)
+        history_event = list(history_event)  # noqa: PLW2901
         try:
             history_event[1] = _deserialize_event_identifier(history_event[1])
         except DeserializationError:

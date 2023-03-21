@@ -86,7 +86,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
         new_dict = {}
         for k, v in entry.items():
             if isinstance(k, Asset):
-                k = k.identifier
+                k = k.identifier  # noqa: PLW2901
             new_dict[k] = _process_entry(v)
         return new_dict
     if isinstance(entry, HexBytes):

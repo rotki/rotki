@@ -7,7 +7,7 @@ from enum import Enum, auto
 from functools import partial
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, overload
 from urllib.parse import urlencode
 
 import gevent
@@ -457,7 +457,7 @@ class Kucoin(ExchangeInterface):
             log.error(msg, response_dict)
             raise RemoteError(msg) from e
 
-        assets_balance: DefaultDict[AssetWithOracles, Balance] = defaultdict(Balance)
+        assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for raw_result in accounts_data:
             try:
                 amount = deserialize_asset_amount(raw_result['balance'])

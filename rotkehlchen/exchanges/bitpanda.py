@@ -2,7 +2,7 @@ import json
 import logging
 from collections import defaultdict
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
 from urllib.parse import urlencode
 
 import gevent
@@ -470,7 +470,7 @@ class Bitpanda(ExchangeInterface):
             msg = f'Failed to query Bitpanda balances. {str(e)}'
             return None, msg
 
-        assets_balance: DefaultDict[AssetWithOracles, Balance] = defaultdict(Balance)
+        assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         wallets_len = len(wallets)
         for idx, entry in enumerate(wallets + fiat_wallets):
 

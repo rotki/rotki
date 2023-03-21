@@ -4,7 +4,7 @@ import logging
 import time
 from collections import defaultdict
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, DefaultDict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import urlencode
 
 import requests
@@ -429,7 +429,7 @@ class Coinbase(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        returned_balances: DefaultDict[AssetWithOracles, Balance] = defaultdict(Balance)
+        returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for account in resp:
             try:
                 if not account['balance']:

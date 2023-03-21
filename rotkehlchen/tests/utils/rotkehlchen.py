@@ -104,12 +104,11 @@ def setup_balances(
             'element representing balance of an account'
         )
         assert len(eth_balances) == len(ethereum_accounts)
+    elif len(ethereum_accounts) != 0:  # Default test values
+        eth_balances = ['1000000', '2000000']
     else:
-        # Default test values
-        if len(ethereum_accounts) != 0:
-            eth_balances = ['1000000', '2000000']
-        else:
-            eth_balances = []
+        eth_balances = []
+
     if token_balances is not None:
         msg = 'token balances length does not match number of owned eth tokens'
         for _, balances in token_balances.items():
@@ -118,24 +117,21 @@ def setup_balances(
                 'element representing balance of an account'
             )
             assert len(balances) == len(ethereum_accounts), msg
+    elif len(ethereum_accounts) != 0:  # default test values
+        token_balances = {A_RDN.resolve_to_evm_token(): ['0', '4000000']}
     else:
-        # Default test values
-        if len(ethereum_accounts) != 0:
-            token_balances = {A_RDN.resolve_to_evm_token(): ['0', '4000000']}
-        else:
-            token_balances = {}
+        token_balances = {}
+
     if btc_balances is not None:
         msg = (
             'The btc balances should be a list with each '
             'element representing balance of an account'
         )
         assert len(btc_balances) == len(btc_accounts)
+    elif len(btc_accounts) != 0:  # default test values
+        btc_balances = ['3000000', '5000000']
     else:
-        # Default test values
-        if len(btc_accounts) != 0:
-            btc_balances = ['3000000', '5000000']
-        else:
-            btc_balances = []
+        btc_balances = []
 
     eth_map: dict[ChecksumEvmAddress, dict[Union[str, EvmToken], Any]] = {}
     with rotki.data.db.user_write() as write_cursor:
@@ -163,8 +159,8 @@ def setup_balances(
                 }
 
             for token, balances in d_liabilities.items():
-                for idx, balance in enumerate(balances):
-                    balance = FVal(balance)
+                for idx, raw_balance in enumerate(balances):
+                    balance = FVal(raw_balance)
                     if balance == ZERO:
                         continue
 

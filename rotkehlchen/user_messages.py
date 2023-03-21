@@ -1,7 +1,7 @@
 import json
 import logging
 from collections import deque
-from typing import TYPE_CHECKING, Any, Deque, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -21,8 +21,8 @@ class MessagesAggregator():
     """
 
     def __init__(self) -> None:
-        self.warnings: Deque = deque()
-        self.errors: Deque = deque()
+        self.warnings: deque = deque()
+        self.errors: deque = deque()
         self.rotki_notifier: Optional['RotkiNotifier'] = None
 
     def _append_warning(self, msg: str) -> None:
@@ -85,9 +85,9 @@ class MessagesAggregator():
                 failure_callback=self._append_error,
                 failure_callback_args={'msg': fallback_msg},
             )
-        else:  # Fallback to polling for error messages
-            if message_type in ERROR_MESSAGE_TYPES:
-                self.errors.appendleft(fallback_msg)
+
+        elif message_type in ERROR_MESSAGE_TYPES:  # Fallback to polling for error messages
+            self.errors.appendleft(fallback_msg)
 
     def consume_errors(self) -> list[str]:
         result = []

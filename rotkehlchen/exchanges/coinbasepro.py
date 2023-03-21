@@ -10,7 +10,7 @@ from collections.abc import Iterator
 from contextlib import suppress
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 from urllib.parse import urlencode
 
 import gevent
@@ -329,7 +329,7 @@ class Coinbasepro(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        assets_balance: DefaultDict[AssetWithOracles, Balance] = defaultdict(Balance)
+        assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for account in accounts:
             try:
                 amount = deserialize_asset_amount(account['balance'])

@@ -1795,7 +1795,7 @@ class IgnoredActionsModifySchema(Schema):
                     raise ValidationError(f'Did not find {str(e)} at the given data') from e
                 new_data.append(f'{chain_id.value}{tx_hash.hex()}')  # pylint: disable=no-member
         else:
-            if not all([isinstance(x, str) for x in given_data]):
+            if not all(isinstance(x, str) for x in given_data):
                 raise ValidationError(
                     f'The ignored action data for {action_type.serialize()} need to be a list of strings',  # noqa: E501
                 )
