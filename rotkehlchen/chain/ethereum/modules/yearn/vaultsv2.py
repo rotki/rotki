@@ -107,22 +107,22 @@ class YearnVaultsV2(EthereumModule):
                 if asset.is_evm_token() is False:
                     continue
 
-                asset = asset.resolve_to_evm_token()
-                if asset.protocol == YEARN_VAULTS_V2_PROTOCOL:
-                    underlying = globaldb.fetch_underlying_tokens(cursor, ethaddress_to_identifier(asset.evm_address))  # noqa: E501
+                token = asset.resolve_to_evm_token()
+                if token.protocol == YEARN_VAULTS_V2_PROTOCOL:
+                    underlying = globaldb.fetch_underlying_tokens(cursor, ethaddress_to_identifier(token.evm_address))  # noqa: E501
                     if underlying is None:
-                        log.error(f'Found yearn asset {asset} without underlying asset')
+                        log.error(f'Found yearn asset {token} without underlying asset')
                         continue
                     underlying_token = EvmToken(ethaddress_to_identifier(underlying[0].address))
-                    vault_address = asset.evm_address
+                    vault_address = token.evm_address
 
                     roi = roi_cache.get(vault_address, None)
                     pps = pps_cache.get(vault_address, None)
                     if roi is None:
-                        roi, pps = self._calculate_vault_roi(asset)
+                        roi, pps = self._calculate_vault_roi(token)
                         if roi == ZERO:
                             self.msg_aggregator.add_warning(
-                                f'Ignoring vault {asset} because information failed to '
+                                f'Ignoring vault {token} because information failed to '
                                 f'be correctly queried.',
                             )
                             continue
@@ -130,12 +130,12 @@ class YearnVaultsV2(EthereumModule):
                         pps_cache[vault_address] = pps
 
                     underlying_balance = Balance(
-                        amount=balance.amount * FVal(pps * 10**-asset.decimals),
+                        amount=balance.amount * FVal(pps * 10**-token.decimals),
                         usd_value=balance.usd_value,
                     )
-                    result[asset.evm_address] = YearnVaultBalance(
+                    result[token.evm_address] = YearnVaultBalance(
                         underlying_token=underlying_token,
-                        vault_token=asset,
+                        vault_token=token,
                         underlying_value=underlying_balance,
                         vault_value=balance,
                         roi=roi,

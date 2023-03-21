@@ -3,7 +3,7 @@ import os
 from collections import deque
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Deque, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import gevent
 import requests
@@ -543,7 +543,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
             to_asset: AssetWithOracles,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> Deque[dict[str, Any]]:
+    ) -> deque[dict[str, Any]]:
         """Query histohour data from cryptocompare for a time range going backwards in time
 
         Will stop when to_timestamp is reached OR when no more prices are returned
@@ -557,7 +557,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
         msg = '_get_histohour_data_for_range from_timestamp should be bigger than to_timestamp'
         assert from_timestamp >= to_timestamp, msg
 
-        calculated_history: Deque[dict[str, Any]] = deque()
+        calculated_history: deque[dict[str, Any]] = deque()
         end_date = from_timestamp
         while True:
             log.debug(

@@ -51,7 +51,7 @@ def test_get_balances_module_not_activated(
 @pytest.mark.parametrize('ethereum_modules', [['sushiswap']])
 @pytest.mark.parametrize(
     'start_with_valid_premium',
-    (True,),
+    [True],
 )
 def test_get_balances(
         rotkehlchen_api_server,

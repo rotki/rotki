@@ -531,11 +531,11 @@ def patch_binance_balances_query(binance: 'Binance'):
             response = '{"crossCollaterals":[]}'
         elif 'lending' in url:
             response = '{"positionAmountVos":[]}'
-        elif 'https://fapi' in url:
-            response = '[]'
-        elif 'https://dapi' in url:
-            response = '[]'
-        elif 'bswap/liquidity' in url:
+        elif (
+                'https://fapi' in url or
+                'https://dapi' in url or
+                'bswap/liquidity' in url
+        ):
             response = '[]'
         else:
             response = BINANCE_BALANCES_RESPONSE
@@ -1304,11 +1304,7 @@ def kraken_to_world_pair(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]
     elif pair[0:2] in KRAKEN_TO_WORLD:
         base_asset_str = pair[0:2]
         quote_asset_str = pair[2:]
-    elif pair[0:3] in KRAKEN_TO_WORLD:
-        base_asset_str = pair[0:3]
-        quote_asset_str = pair[3:]
-    elif pair[0:3] in ('XBT', 'ETH', 'XDG', 'LTC', 'XRP'):
-        # Some assets can have the 'X' prefix omitted for some pairs
+    elif pair[0:3] in KRAKEN_TO_WORLD or pair[0:3] in ('XBT', 'ETH', 'XDG', 'LTC', 'XRP'):
         base_asset_str = pair[0:3]
         quote_asset_str = pair[3:]
     elif pair[0:4] in KRAKEN_TO_WORLD:

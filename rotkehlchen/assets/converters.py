@@ -864,7 +864,7 @@ def asset_from_kraken(kraken_name: str) -> AssetWithOracles:
     if not isinstance(kraken_name, str):
         raise DeserializationError(f'Got non-string type {type(kraken_name)} for kraken asset')
 
-    if kraken_name.endswith('.S') or kraken_name.endswith('.M'):
+    if kraken_name.endswith(('.S', '.M')):
         # this is a staked coin. For now since we don't show staked coins
         # consider it as the normal version. In the future we may perhaps
         # differentiate between them in the balances https://github.com/rotki/rotki/issues/569

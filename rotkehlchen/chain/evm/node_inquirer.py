@@ -1095,7 +1095,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
         for prop, value in zip_longest(properties, decoded):
             if isinstance(value, bytes):
-                value = value.rstrip(b'\x00').decode()
+                value = value.rstrip(b'\x00').decode()  # noqa: PLW2901
             info[prop] = value
 
         self.contract_info_erc20_cache[address] = info
@@ -1144,7 +1144,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
         for prop, value in zip_longest(properties, decoded):
             if isinstance(value, bytes):
-                value = value.rstrip(b'\x00').decode()
+                value = value.rstrip(b'\x00').decode()  # noqa: PLW2901
             info[prop] = value
 
         self.contract_info_erc721_cache[address] = info

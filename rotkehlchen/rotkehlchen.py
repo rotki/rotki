@@ -8,7 +8,7 @@ import time
 from collections import defaultdict
 from pathlib import Path
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast, overload
 
 import gevent
 
@@ -886,7 +886,7 @@ class Rotkehlchen():
             db=self.data.db,
             balance_type=BalanceType.LIABILITY,
         )
-        manual_liabilities_as_dict: DefaultDict[Asset, Balance] = defaultdict(Balance)
+        manual_liabilities_as_dict: defaultdict[Asset, Balance] = defaultdict(Balance)
         for manual_liability in manually_tracked_liabilities:
             manual_liabilities_as_dict[manual_liability.asset] += manual_liability.value
 
@@ -933,7 +933,7 @@ class Rotkehlchen():
         balances = account_for_manually_tracked_asset_balances(db=self.data.db, balances=balances)
 
         # Calculate usd totals
-        assets_total_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
+        assets_total_balance: defaultdict[Asset, Balance] = defaultdict(Balance)
         total_usd_per_location: dict[str, FVal] = {}
         for location, asset_balance in balances.items():
             total_usd_per_location[location] = ZERO
@@ -949,7 +949,7 @@ class Rotkehlchen():
         location_stats: dict[str, Any] = {}
         for location, total_usd in total_usd_per_location.items():
             if location == str(Location.BLOCKCHAIN):
-                total_usd -= liabilities_total_usd
+                total_usd -= liabilities_total_usd  # noqa: PLW2901
 
             percentage = (total_usd / net_usd).to_percentage() if net_usd != ZERO else '0%'
             location_stats[location] = {

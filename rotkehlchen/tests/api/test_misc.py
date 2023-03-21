@@ -184,7 +184,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='ETH'),
     )
     result = assert_proper_response_with_result(response)
-    assert not any([node['name'] == 'cloudflare' for node in result])
+    assert not any(node['name'] == 'cloudflare' for node in result)
 
     # now try to add it again
     response = requests.put(

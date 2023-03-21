@@ -1450,7 +1450,7 @@ class DBHandler:
 
         for key2, val2 in data['location'].items():
             # Here we know val2 is just a Dict since the key to data is 'location'
-            val2 = cast(dict, val2)
+            val2 = cast(dict, val2)  # noqa: PLW2901
             location = Location.deserialize(key2).serialize_for_db()
             locations.append(LocationData(
                 time=timestamp, location=location, usd_value=str(val2['usd_value']),

@@ -4,7 +4,7 @@ import time
 from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
 from urllib.parse import quote, urlencode
 
 import gevent
@@ -409,7 +409,7 @@ class Ftx(ExchangeInterface):
             balances = resp_lst
 
         # extract the balances and aggregate them
-        returned_balances: DefaultDict[AssetWithOracles, Balance] = defaultdict(Balance)
+        returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for balance_info in balances:
             try:
                 amount = deserialize_asset_amount(balance_info['total'])

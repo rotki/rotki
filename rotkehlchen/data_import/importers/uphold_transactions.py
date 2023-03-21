@@ -121,24 +121,24 @@ Activity from uphold with uphold transaction id:
                     link='',
                 )
                 self.add_asset_movement(cursor, asset_movement)
-            else:  # Trades (sell)
-                if origin_amount > 0:
-                    trade = Trade(
-                        timestamp=timestamp,
-                        location=Location.UPHOLD,
-                        base_asset=origin_asset,
-                        quote_asset=destination_asset,
-                        trade_type=TradeType.SELL,
-                        amount=origin_amount,
-                        rate=Price(destination_amount / origin_amount),
-                        fee=Fee(fee),
-                        fee_currency=fee_asset,
-                        link='',
-                        notes=notes,
-                    )
-                    self.add_trade(cursor, trade)
-                else:
-                    log.debug(f'Ignoring trade with Origin Amount: {origin_amount}.')
+            elif origin_amount > 0:  # Trades (sell)
+                trade = Trade(
+                    timestamp=timestamp,
+                    location=Location.UPHOLD,
+                    base_asset=origin_asset,
+                    quote_asset=destination_asset,
+                    trade_type=TradeType.SELL,
+                    amount=origin_amount,
+                    rate=Price(destination_amount / origin_amount),
+                    fee=Fee(fee),
+                    fee_currency=fee_asset,
+                    link='',
+                    notes=notes,
+                )
+                self.add_trade(cursor, trade)
+            else:
+                log.debug(f'Ignoring trade with Origin Amount: {origin_amount}.')
+
         elif destination == 'uphold' and transaction_type == 'in':
             if origin_asset == destination_asset:  # Deposits
                 asset_movement = AssetMovement(
@@ -154,24 +154,23 @@ Activity from uphold with uphold transaction id:
                     link='',
                 )
                 self.add_asset_movement(cursor, asset_movement)
-            else:  # Trades (buy)
-                if destination_amount > 0:
-                    trade = Trade(
-                        timestamp=timestamp,
-                        location=Location.UPHOLD,
-                        base_asset=destination_asset,
-                        quote_asset=origin_asset,
-                        trade_type=TradeType.BUY,
-                        amount=destination_amount,
-                        rate=Price(origin_amount / destination_amount),
-                        fee=Fee(fee),
-                        fee_currency=fee_asset,
-                        link='',
-                        notes=notes,
-                    )
-                    self.add_trade(cursor, trade)
-                else:
-                    log.debug(f'Ignoring trade with Destination Amount: {destination_amount}.')
+            elif destination_amount > 0:  # Trades (buy)
+                trade = Trade(
+                    timestamp=timestamp,
+                    location=Location.UPHOLD,
+                    base_asset=destination_asset,
+                    quote_asset=origin_asset,
+                    trade_type=TradeType.BUY,
+                    amount=destination_amount,
+                    rate=Price(origin_amount / destination_amount),
+                    fee=Fee(fee),
+                    fee_currency=fee_asset,
+                    link='',
+                    notes=notes,
+                )
+                self.add_trade(cursor, trade)
+            else:
+                log.debug(f'Ignoring trade with Destination Amount: {destination_amount}.')
 
     def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """

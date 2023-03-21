@@ -154,8 +154,8 @@ def test_nft_ids_are_unique(rotkehlchen_api_server):
     ids_2 = [nft['token_identifier'] for nft in result['addresses'][TEST_ACC3]]
     # Check that two possible duplicates are between the NFT ids
     expected_id = '_nft_0xfaff15c6cdaca61a4f87d329689293e07c98f578_1'
-    assert any([expected_id in nft_id for nft_id in ids_1])
-    assert any([expected_id in nft_id for nft_id in ids_2])
+    assert any(expected_id in nft_id for nft_id in ids_1)
+    assert any(expected_id in nft_id for nft_id in ids_2)
     all_ids = ids_1 + ids_2
     set_of_ids = set(all_ids)
     assert len(all_ids) == len(set_of_ids)

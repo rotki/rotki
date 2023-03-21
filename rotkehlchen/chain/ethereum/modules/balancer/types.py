@@ -1,6 +1,7 @@
+from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, DefaultDict, NamedTuple, Optional, Union, cast
+from typing import Any, NamedTuple, Optional, Union, cast
 
 from eth_typing.evm import ChecksumAddress
 
@@ -70,7 +71,7 @@ class BalancerPoolBalance:
 
 
 AddressToPoolBalances = dict[ChecksumEvmAddress, list[BalancerPoolBalance]]
-DDAddressToPoolBalances = DefaultDict[ChecksumEvmAddress, list[BalancerPoolBalance]]
+DDAddressToPoolBalances = defaultdict[ChecksumEvmAddress, list[BalancerPoolBalance]]
 TokenToPrices = dict[ChecksumEvmAddress, Price]
 
 
@@ -147,9 +148,9 @@ class BalancerEventsData(NamedTuple):
 
 
 AddressToInvestEvents = dict[ChecksumEvmAddress, list[BalancerInvestEvent]]
-DDAddressToUniqueInvestEvents = DefaultDict[ChecksumEvmAddress, set[BalancerInvestEvent]]
+DDAddressToUniqueInvestEvents = defaultdict[ChecksumEvmAddress, set[BalancerInvestEvent]]
 AddressToBPTEvents = dict[ChecksumEvmAddress, list[BalancerBPTEvent]]
-DDAddressToUniqueBPTEvents = DefaultDict[ChecksumEvmAddress, set[BalancerBPTEvent]]
+DDAddressToUniqueBPTEvents = defaultdict[ChecksumEvmAddress, set[BalancerBPTEvent]]
 AddressToEventsData = dict[ChecksumAddress, BalancerEventsData]
 PoolAddrToTokenAddrToIndex = dict[EvmToken, dict[ChecksumAddress, int]]
 
@@ -281,7 +282,7 @@ class BalancerEvent(NamedTuple):
 
 
 AddressToEvents = dict[ChecksumAddress, list[BalancerEvent]]
-DDAddressToEvents = DefaultDict[EvmToken, list[BalancerEvent]]
+DDAddressToEvents = defaultdict[EvmToken, list[BalancerEvent]]
 
 
 class BalancerPoolEventsBalance(NamedTuple):
@@ -312,4 +313,4 @@ class BalancerPoolEventsBalance(NamedTuple):
 
 
 AddressToPoolEventsBalances = dict[ChecksumEvmAddress, list[BalancerPoolEventsBalance]]
-DDAddressToProfitLossAmounts = DefaultDict[EvmToken, list[AssetAmount]]
+DDAddressToProfitLossAmounts = defaultdict[EvmToken, list[AssetAmount]]

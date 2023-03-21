@@ -10,7 +10,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    DefaultDict,
     Literal,
     NamedTuple,
     Optional,
@@ -548,17 +547,16 @@ class Bitfinex(ExchangeInterface):
         bfx_pair = self._process_bfx_pair(raw_result[1])
         if bfx_pair in self.pair_bfx_symbols_map:
             bfx_base_asset_symbol, bfx_quote_asset_symbol = self.pair_bfx_symbols_map[bfx_pair]
-        else:
+        elif len(bfx_pair) == 6:
             # Could not see it in the listed pairs. Probably delisted. Gotta try and figure it out
             # TODO: The whole pair logic in bitfinex seems complicated. Simplify!
-            if len(bfx_pair) == 6:
-                bfx_base_asset_symbol = bfx_pair[:3]
-                bfx_quote_asset_symbol = bfx_pair[3:]
-            else:
-                raise DeserializationError(
-                    f'Could not deserialize bitfinex trade pair {raw_result[1]}. '
-                    f'Raw trade: {raw_result}',
-                )
+            bfx_base_asset_symbol = bfx_pair[:3]
+            bfx_quote_asset_symbol = bfx_pair[3:]
+        else:
+            raise DeserializationError(
+                f'Could not deserialize bitfinex trade pair {raw_result[1]}. '
+                f'Raw trade: {raw_result}',
+            )
 
         base_asset = asset_from_bitfinex(
             bitfinex_name=bfx_base_asset_symbol,
@@ -893,7 +891,7 @@ class Bitfinex(ExchangeInterface):
         # Wallet items indices
         currency_index = 1
         balance_index = 2
-        assets_balance: DefaultDict[AssetWithOracles, Balance] = defaultdict(Balance)
+        assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for wallet in response_list:
             if len(wallet) < API_WALLET_MIN_RESULT_LENGTH:
                 log.error(

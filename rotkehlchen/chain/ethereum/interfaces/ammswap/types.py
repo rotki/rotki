@@ -1,7 +1,8 @@
 import logging
+from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, DefaultDict, NamedTuple, Optional
+from typing import Any, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
@@ -63,7 +64,7 @@ class LiquidityPool:
 
 
 AddressToLPBalances = dict[ChecksumEvmAddress, list[LiquidityPool]]
-DDAddressToLPBalances = DefaultDict[ChecksumEvmAddress, list[LiquidityPool]]
+DDAddressToLPBalances = defaultdict[ChecksumEvmAddress, list[LiquidityPool]]
 AssetToPrice = dict[ChecksumEvmAddress, Price]
 
 
@@ -264,5 +265,5 @@ class AggregatedAmount:
 
 
 AddressEvents = dict[ChecksumEvmAddress, list[LiquidityPoolEvent]]
-DDAddressEvents = DefaultDict[ChecksumEvmAddress, list[LiquidityPoolEvent]]
+DDAddressEvents = defaultdict[ChecksumEvmAddress, list[LiquidityPoolEvent]]
 AddressEventsBalances = dict[ChecksumEvmAddress, list[LiquidityPoolEventsBalance]]

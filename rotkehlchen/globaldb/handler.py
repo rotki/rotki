@@ -1808,12 +1808,11 @@ class GlobalDBHandler():
                 asset_type=asset.asset_type,
                 data=asset_data,
             )
-        else:
+        elif asset.asset_type == AssetType.EVM_TOKEN:
             # in this case the asset exists and needs to be updated
-            if asset.asset_type == AssetType.EVM_TOKEN:
-                GlobalDBHandler().edit_evm_token(cast(EvmToken, asset_data))
-            else:
-                GlobalDBHandler().edit_user_asset(cast(dict[str, Any], asset_data))
+            GlobalDBHandler().edit_evm_token(cast(EvmToken, asset_data))
+        else:
+            GlobalDBHandler().edit_user_asset(cast(dict[str, Any], asset_data))
 
         return asset
 

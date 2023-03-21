@@ -237,7 +237,7 @@ def test_margin_events_affect_gained_lost_amount(accountant, google_service):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('db_settings, expected', [
+@pytest.mark.parametrize(('db_settings', 'expected'), [
     ({'account_for_assets_movements': False, 'taxfree_after_period': -1}, ZERO),
     ({'account_for_assets_movements': True, 'taxfree_after_period': -1}, FVal('-0.07814830147911')),  # noqa: E501
 ])
@@ -307,7 +307,7 @@ def test_assets_movements_not_accounted_for(accountant, expected, google_service
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('db_settings, expected', [
+@pytest.mark.parametrize(('db_settings', 'expected'), [
     (
         {
             'calculate_past_cost_basis': False,

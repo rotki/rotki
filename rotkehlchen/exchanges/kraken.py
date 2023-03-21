@@ -9,7 +9,7 @@ import logging
 import operator
 import time
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, DefaultDict, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 from urllib.parse import urlencode
 
 import gevent
@@ -528,7 +528,7 @@ class Kraken(ExchangeInterface):
                 log.error(msg)
                 return None, msg
 
-        assets_balance: DefaultDict[AssetWithOracles, Balance] = defaultdict(Balance)
+        assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for kraken_name, amount_ in kraken_balances.items():
             try:
                 amount = deserialize_asset_amount(amount_)
@@ -1098,10 +1098,10 @@ class Kraken(ExchangeInterface):
                 raw_events_groupped[raw_event['refid']].append(raw_event)
 
             new_events = []
-            for events in raw_events_groupped.values():
+            for raw_events in raw_events_groupped.values():
                 try:
                     events = sorted(
-                        events,
+                        raw_events,
                         key=lambda x: deserialize_fval(x['time'], 'time', 'kraken ledgers') * 1000,
                     )
                 except DeserializationError as e:
@@ -1109,7 +1109,7 @@ class Kraken(ExchangeInterface):
                         f'Failed to read timestamp in kraken event group '
                         f'due to {str(e)}. For more information read the logs. Skipping event',
                     )
-                    log.error(f'Failed to read timestamp for {events}')
+                    log.error(f'Failed to read timestamp for {raw_events}')
                     continue
                 group_events, found_unknown_event = history_event_from_kraken(
                     events=events,

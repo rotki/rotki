@@ -4,7 +4,7 @@ import hashlib
 import hmac
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 from urllib.parse import urlencode, urljoin
 
 import requests
@@ -250,7 +250,7 @@ class Okx(ExchangeInterface):
                 f'{self.name} balance API request failed due to unexpected response {msg}',
             ) from e
 
-        assets_balance: DefaultDict[AssetWithOracles, Balance] = defaultdict(Balance)
+        assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for currency_data in currencies_data:
             try:
                 asset = asset_from_okx(okx_name=currency_data['ccy'])

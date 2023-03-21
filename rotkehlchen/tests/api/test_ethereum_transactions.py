@@ -545,16 +545,11 @@ def test_query_over_10k_transactions(rotkehlchen_api_server):
         This test just needs to see that pagination works on the tx endpoint
         """
         def mocked_request_dict(url, *_args, **_kwargs):
-            if '=txlistinternal&' in url:
-                # don't return any internal transactions
+            if '=txlistinternal&' in url or '=tokentx&' in url:
+                # don't return any internal or token transactions
                 payload = '{"status":"1","message":"OK","result":[]}'
-            elif '=tokentx&' in url:
-                # don't return any token transactions
-                payload = '{"status":"1","message":"OK","result":[]}'
-            elif '=getblocknobytime&' in url:
-                # we don't really care about this in this test so return whatever
-                return original_get(url)
-            elif '=txlist&' in url:
+            elif '=getblocknobytime&' in url or '=txlist&' in url:
+                # we don't really care about this in this test so return original
                 return original_get(url)
             else:
                 raise AssertionError(f'Unexpected etherscan query {url} at test mock')
@@ -940,11 +935,8 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
 
             addr1_tx = f"""{{"blockNumber":"1","timeStamp":"1","hash":"0x9c81f44c29ff0226f835cd0a8a2f2a7eca6db52a711f8211b566fd15d3e0e8d4","nonce":"0","blockHash":"0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{eth_accounts[0]}","to":"{eth_accounts[1]}","value":"1","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"0x","contractAddress":"","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"1"}}"""  # noqa: E501
             addr2_txs = f"""{addr1_tx}, {{"blockNumber":"2","timeStamp":"2","hash":"0x1c81f54c29ff0226f835cd0a2a2f2a7eca6db52a711f8211b566fd15d3e0e8d4","nonce":"1","blockHash":"0xd1cabad2adab0b56ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{eth_accounts[1]}","to":"{make_evm_address()}","value":"1","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"0x","contractAddress":"","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"1"}}"""  # noqa: E501
-            if '=txlistinternal&' in url:
-                # don't return any internal transactions
-                payload = '{"status":"1","message":"OK","result":[]}'
-            elif 'action=tokentx&' in url:
-                # don't return any token transactions
+            if '=txlistinternal&' in url or 'action=tokentx&' in url:
+                # don't return any internal or token transactions
                 payload = '{"status":"1","message":"OK","result":[]}'
             elif '=txlist&' in url:
                 if eth_accounts[0] in url:

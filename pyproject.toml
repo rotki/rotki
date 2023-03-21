@@ -137,6 +137,7 @@ extend-select = [
     "PTH109",
 ]
 ignore = [
+    "B028",  # no explicit stack level argument for warnings. Is fine due to the way we use them for now
     "E402",  # module level import at file top. https://www.flake8rules.com/rules/E402.html
     "N818",  # error suffix in exception names
     "C901",  # function too complex
@@ -154,12 +155,16 @@ ignore = [
     "PLR2004", # we try to use constant vars where possile but this complains abouttoo many things
     "PLR0913", # too many arguments to function call. This is a bit too much to enforce in the codebase
     "PLR0915", # too many statements -- we probably could use this ... but with custom statements number?
+    "PLR0911", # too many return statements -- we dont care
+    "PLR0912", # too many branches -- we dont care
+    "PLC1901", # we prefer direct comparison to empty string for explicitness
     # Some bandit rules we don't check for
     "S101",  # asserts are fine
     "S103",  # permissive mask on file/directory
     "S105",  # hard coded password checks got false positives
     "S106",  # hard coded password checks got false positives
     "S324",  # insecure hash function. We use it for image md5 for etag. TODO: Change and enable?
+    "S608",  # possible sql-injection is overkill since we control the variables in question
     "G004",  # Our logs do use f-strings everywhere at least for now
     # Some pytest-styles rules we don't check for
     "PT011", # pytest.raises() too broad is fine, since there is functions that raise ValueError

@@ -46,7 +46,7 @@ from rotkehlchen.utils.misc import ts_now
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize(
-    'start_ts,end_ts',
+    ('start_ts', 'end_ts'),
     [(0, 1601040361), (1539713237, 1539713238)],
 )
 @pytest.mark.parametrize('db_settings', [

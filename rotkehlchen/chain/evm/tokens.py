@@ -77,7 +77,8 @@ def generate_multicall_chunks(
     multicall_chunks = []
     free_space = chunk_length
     new_chunk = []
-    for address, tokens in addresses_to_tokens.items():
+    for address, address_tokens in addresses_to_tokens.items():
+        tokens = address_tokens
         while len(tokens) > 0:
             free_space -= PURE_TOKENS_BALANCE_ARGUMENTS
             if free_space > len(tokens):

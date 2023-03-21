@@ -253,13 +253,12 @@ prices = {
 }
 
 
-def check_result_of_history_creation_for_remote_errors(  # pylint: disable=useless-return
+def check_result_of_history_creation_for_remote_errors(  # type: ignore[return] # pylint: disable=useless-return  # noqa: E501
         start_ts: Timestamp,  # pylint: disable=unused-argument
         end_ts: Timestamp,  # pylint: disable=unused-argument
         events: list[AccountingEventMixin],
 ) -> Optional[int]:
     assert len(events) == 0
-    return None  # fake report id
 
 
 def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
@@ -300,15 +299,13 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
                 "isMaker": false,
                 "isBestMatch": true
                 }]"""
-        elif 'capital/deposit' in url:
-            payload = '[]'
-        elif 'capital/withdraw' in url:
-            payload = '[]'
-        elif 'fiat/orders' in url:
-            payload = '[]'
-        elif 'fiat/payments' in url:
-            payload = '[]'
-        elif 'lending/union/interestHistory':
+        elif (
+                'capital/deposit' in url or
+                'capital/withdraw' in url or
+                'fiat/orders' in url or
+                'fiat/payments' in url or
+                'lending/union/interestHistory' in url
+        ):
             payload = '[]'
         else:
             raise RuntimeError(f'Binance test mock got unexpected/unmocked url {url}')

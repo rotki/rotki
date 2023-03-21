@@ -9,17 +9,7 @@ import traceback
 from collections import defaultdict
 from http import HTTPStatus
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    DefaultDict,
-    Literal,
-    Optional,
-    Union,
-    get_args,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, get_args, overload
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -3074,7 +3064,7 @@ class RestAPI():
             f'{", ".join(f"{asset.identifier} at {ts}" for asset, ts in assets_timestamp)}',
             assets_timestamp=assets_timestamp,
         )
-        assets_price: DefaultDict[Asset, DefaultDict] = defaultdict(lambda: defaultdict(lambda: Price(ZERO)))  # noqa: E501
+        assets_price: defaultdict[Asset, defaultdict] = defaultdict(lambda: defaultdict(lambda: Price(ZERO)))  # noqa: E501
         for asset, timestamp in assets_timestamp:
             try:
                 price = PriceHistorian().query_historical_price(

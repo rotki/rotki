@@ -3,7 +3,7 @@ import logging
 from collections import defaultdict
 from contextlib import suppress
 from operator import add, sub
-from typing import TYPE_CHECKING, DefaultDict, Literal, Optional
+from typing import TYPE_CHECKING, Literal, Optional
 
 from gevent.lock import Semaphore
 
@@ -142,7 +142,7 @@ class Balancer(EthereumModule):
         pool_addr_to_profit_loss_amounts: DDAddressToProfitLossAmounts = (
             defaultdict(lambda: [AssetAmount(ZERO)] * POOL_MAX_NUMBER_TOKENS)
         )
-        pool_addr_to_usd_value: DefaultDict[EvmToken, FVal] = defaultdict(lambda: ZERO)
+        pool_addr_to_usd_value: defaultdict[EvmToken, FVal] = defaultdict(lambda: ZERO)
         pool_events_balances: list[BalancerPoolEventsBalance] = []
         # Calculate the profit and loss of the pool events
         for event in events:

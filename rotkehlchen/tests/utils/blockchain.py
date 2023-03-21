@@ -250,12 +250,7 @@ def mock_etherscan_query(
             account = url[131:173]
             value = eth_map[account].get(token.identifier, 0)
             response = f'{{"status":"1","message":"OK","result":"{value}"}}'
-        elif 'api.etherscan.io/api?module=account&action=txlistinternal&' in url:
-            if 'transactions' in original_queries:
-                return original_requests_get(url, *args, **kwargs)
-            # By default when mocking, don't query for transactions
-            response = '{"status":"1","message":"OK","result":[]}'
-        elif 'api.etherscan.io/api?module=account&action=txlist&' in url:
+        elif ('api.etherscan.io/api?module=account&action=txlistinternal&' in url or 'api.etherscan.io/api?module=account&action=txlist&' in url):  # noqa: E501
             if 'transactions' in original_queries:
                 return original_requests_get(url, *args, **kwargs)
             # By default when mocking, don't query for transactions
@@ -421,8 +416,8 @@ def mock_etherscan_query(
                 output_types = get_abi_output_types(fn_abi)
                 decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
                 args = []
-                for account_address in decoded_input[0]:  # pylint: disable=unsubscriptable-object  # noqa: E501
-                    account_address = deserialize_evm_address(account_address)
+                for raw_account_address in decoded_input[0]:  # pylint: disable=unsubscriptable-object  # noqa: E501
+                    account_address = deserialize_evm_address(raw_account_address)
                     args.append(int(eth_map[account_address]['ETH']))
                 result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
@@ -440,18 +435,18 @@ def mock_etherscan_query(
                 output_types = get_abi_output_types(fn_abi)
                 decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
                 args = []
-                for account_address in decoded_input[0]:  # pylint: disable=unsubscriptable-object  # noqa: E501
-                    account_address = deserialize_evm_address(account_address)
+                for raw_account_address in decoded_input[0]:  # pylint: disable=unsubscriptable-object  # noqa: E501
+                    account_address = deserialize_evm_address(raw_account_address)
                     x = []
-                    for token_address in decoded_input[1]:  # pylint: disable=unsubscriptable-object  # noqa: E501
-                        token_address = deserialize_evm_address(token_address)
+                    for raw_token_address in decoded_input[1]:  # pylint: disable=unsubscriptable-object  # noqa: E501
+                        token_address = deserialize_evm_address(raw_token_address)
                         value_to_add = 0
                         for given_asset, value in eth_map[account_address].items():
-                            given_asset = _get_token(given_asset)
-                            if given_asset is None:
+                            given_token = _get_token(given_asset)
+                            if given_token is None:
                                 # not a token
                                 continue
-                            if token_address != given_asset.evm_address:
+                            if token_address != given_token.evm_address:
                                 continue
                             value_to_add = int(value)
                             break
@@ -477,16 +472,16 @@ def mock_etherscan_query(
                 args = []
                 account_address = deserialize_evm_address(decoded_input[0])  # pylint: disable=unsubscriptable-object  # noqa: E501
                 x = []
-                for token_address in decoded_input[1]:  # pylint: disable=unsubscriptable-object  # noqa: E501
-                    token_address = deserialize_evm_address(token_address)
+                for raw_token_address in decoded_input[1]:  # pylint: disable=unsubscriptable-object  # noqa: E501
+                    token_address = deserialize_evm_address(raw_token_address)
                     value_to_add = 0
                     for given_asset, value in eth_map[account_address].items():
-                        given_asset = _get_token(given_asset)
-                        if given_asset is None:
+                        given_token = _get_token(given_asset)
+                        if given_token is None:
                             # not a token
                             continue
 
-                        if token_address != given_asset.evm_address:
+                        if token_address != given_token.evm_address:
                             continue
                         value_to_add = int(value)
                         break

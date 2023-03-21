@@ -1,7 +1,7 @@
 import json
 from collections import deque
 from collections.abc import Generator
-from typing import Any, Deque
+from typing import Any
 
 import gevent
 import pytest
@@ -11,7 +11,7 @@ from websocket import create_connection
 class WebsocketReader():
 
     def __init__(self, websocket) -> None:
-        self.messages: Deque = deque()
+        self.messages: deque = deque()
         self.ws = websocket
         self.should_read = True
 

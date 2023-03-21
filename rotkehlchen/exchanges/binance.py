@@ -5,7 +5,7 @@ import logging
 from collections import defaultdict
 from contextlib import suppress
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, DefaultDict, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 from urllib.parse import urlencode
 from uuid import uuid4
 
@@ -484,8 +484,8 @@ class Binance(ExchangeInterface):
 
     def _query_spot_balances(
             self,
-            balances: DefaultDict[AssetWithOracles, Balance],
-    ) -> DefaultDict[AssetWithOracles, Balance]:
+            balances: defaultdict[AssetWithOracles, Balance],
+    ) -> defaultdict[AssetWithOracles, Balance]:
         account_data = self.api_query_dict('api', 'account')
         binance_balances = account_data.get('balances', None)
         if not binance_balances:
@@ -550,8 +550,8 @@ class Binance(ExchangeInterface):
 
     def _query_lending_balances(
             self,
-            balances: DefaultDict[AssetWithOracles, Balance],
-    ) -> DefaultDict[AssetWithOracles, Balance]:
+            balances: defaultdict[AssetWithOracles, Balance],
+    ) -> defaultdict[AssetWithOracles, Balance]:
         """Queries binance lending balances and if any found adds them to `balances`
 
         May raise:
@@ -746,8 +746,8 @@ class Binance(ExchangeInterface):
 
     def _query_cross_collateral_futures_balances(
             self,
-            balances: DefaultDict[AssetWithOracles, Balance],
-    ) -> DefaultDict[AssetWithOracles, Balance]:
+            balances: defaultdict[AssetWithOracles, Balance],
+    ) -> defaultdict[AssetWithOracles, Balance]:
         """Queries binance collateral future balances and if any found adds them to `balances`
 
         May raise:
@@ -804,19 +804,19 @@ class Binance(ExchangeInterface):
 
         return balances
 
-    def _query_margined_fapi(self, balances: DefaultDict[AssetWithOracles, Balance]) -> DefaultDict[AssetWithOracles, Balance]:  # noqa: E501
+    def _query_margined_fapi(self, balances: defaultdict[AssetWithOracles, Balance]) -> defaultdict[AssetWithOracles, Balance]:  # noqa: E501
         """Only a convenience function to give same interface as other query methods"""
         return self._query_margined_futures_balances('fapi', balances)
 
-    def _query_margined_dapi(self, balances: DefaultDict[AssetWithOracles, Balance]) -> DefaultDict[AssetWithOracles, Balance]:  # noqa: E501
+    def _query_margined_dapi(self, balances: defaultdict[AssetWithOracles, Balance]) -> defaultdict[AssetWithOracles, Balance]:  # noqa: E501
         """Only a convenience function to give same interface as other query methods"""
         return self._query_margined_futures_balances('dapi', balances)
 
     def _query_margined_futures_balances(
             self,
             api_type: Literal['fapi', 'dapi'],
-            balances: DefaultDict[AssetWithOracles, Balance],
-    ) -> DefaultDict[AssetWithOracles, Balance]:
+            balances: defaultdict[AssetWithOracles, Balance],
+    ) -> defaultdict[AssetWithOracles, Balance]:
         """Queries binance margined future balances and if any found adds them to `balances`
 
         May raise:
@@ -882,8 +882,8 @@ class Binance(ExchangeInterface):
 
     def _query_pools_balances(
             self,
-            balances: DefaultDict[AssetWithOracles, Balance],
-    ) -> DefaultDict[AssetWithOracles, Balance]:
+            balances: defaultdict[AssetWithOracles, Balance],
+    ) -> defaultdict[AssetWithOracles, Balance]:
         """Queries binance pool balances and if any found adds them to `balances`
 
         May raise:
@@ -964,7 +964,7 @@ class Binance(ExchangeInterface):
     def query_balances(self) -> ExchangeQueryBalances:
         try:
             self.first_connection()
-            returned_balances: DefaultDict[AssetWithOracles, Balance] = defaultdict(Balance)
+            returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
             returned_balances = self._query_spot_balances(returned_balances)
             if self.location != Location.BINANCEUS:
                 for method in (

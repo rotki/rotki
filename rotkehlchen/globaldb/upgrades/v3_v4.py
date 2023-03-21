@@ -206,9 +206,9 @@ def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
             )
         else:  # need to add the abi to the DB
             if contract_key == 'ETH_SCAN':
-                contract_key = 'BALANCE_SCAN'  # let's rename to non eth-specific
+                contract_key = 'BALANCE_SCAN'  # let's rename to non eth-specific  # noqa: E501, PLW2901
             elif contract_key == 'ETH_MULTICALL_2':
-                contract_key = 'MULTICALL2'  # let's rename to non eth-specific
+                contract_key = 'MULTICALL2'  # let's rename to non eth-specific  # noqa: E501, PLW2901
             abi_id = _insert_abi_return_id(
                 cursor=cursor,
                 name=contract_key,

@@ -7,9 +7,10 @@ import platform
 import re
 import sys
 import time
+from collections import defaultdict
 from collections.abc import Iterable, Iterator
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Literal, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union, overload
 
 import pkg_resources
 from eth_utils import is_hexstr
@@ -144,18 +145,18 @@ def combine_dicts(a: dict[K, V], b: dict[K, V], op: Callable = operator.add) -> 
 
 @overload
 def combine_dicts(
-        a: DefaultDict[K, V],
-        b: DefaultDict[K, V],
+        a: defaultdict[K, V],
+        b: defaultdict[K, V],
         op: Callable = operator.add,
-) -> DefaultDict[K, V]:
+) -> defaultdict[K, V]:
     ...
 
 
 def combine_dicts(
-        a: Union[dict[K, V], DefaultDict[K, V]],
-        b: Union[dict[K, V], DefaultDict[K, V]],
+        a: Union[dict[K, V], defaultdict[K, V]],
+        b: Union[dict[K, V], defaultdict[K, V]],
         op: Callable = operator.add,
-) -> Union[dict[K, V], DefaultDict[K, V]]:
+) -> Union[dict[K, V], defaultdict[K, V]]:
     new_dict = a.copy()
     # issue for pylint's false positive here: https://github.com/PyCQA/pylint/issues/3987
     if op == operator.sub:  # pylint: disable=comparison-with-callable
