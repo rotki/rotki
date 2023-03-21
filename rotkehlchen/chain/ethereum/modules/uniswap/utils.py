@@ -15,7 +15,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import _decode_result
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.constants import ZERO
@@ -250,7 +250,7 @@ def decode_basic_uniswap_info(
         decoded_events: list['EvmEvent'],
         counterparty: str,
         notify_user: Callable[['EvmEvent', str], None],
-) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+) -> DecodingOutput:
     """
     Check last three events and if they are related to the swap, label them as such.
     We check three events because potential events are: spend, (optionally) approval, receive.
@@ -262,7 +262,7 @@ def decode_basic_uniswap_info(
             crypto_asset = event.asset.resolve_to_crypto_asset()
         except (UnknownAsset, WrongAssetType):
             notify_user(event, counterparty)
-            return None, []
+            return DecodingOutput(counterparty=counterparty)
 
         if (
             event.event_type == HistoryEventType.INFORMATIONAL and
@@ -325,4 +325,4 @@ def decode_basic_uniswap_info(
     if spend_event is not None and receive_event is not None:
         maybe_reshuffle_events(out_event=spend_event, in_event=receive_event)
 
-    return None, []
+    return DecodingOutput(counterparty=counterparty)

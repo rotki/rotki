@@ -1,11 +1,11 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.aave.common import asset_to_atoken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 DEPOSIT = b'\xc1,W\xb1\xc7:,:.\xa4a>\x94v\xab\xb3\xd8\xd1F\x85z\xabs)\xe2BC\xfbYq\x0c\x82'
 REDEEM_UNDERLYING = b'\x9cN\xd5\x99\xcd\x85U\xb9\xc1\xe8\xcdvC$\r}q\xebv\xb7\x92\x94\x8cI\xfc\xb4\xd4\x11\xf7\xb6\xb3\xc6'  # noqa: E501
+DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_AAVE_V1)
 
 
 class Aavev1Decoder(DecoderInterface):
@@ -29,13 +30,13 @@ class Aavev1Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],
             action_items: list[ActionItem],
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] == DEPOSIT:
             return self._decode_deposit_event(tx_log, transaction, decoded_events, all_logs, action_items)  # noqa: E501
         if tx_log.topics[0] == REDEEM_UNDERLYING:
             return self._decode_redeem_underlying_event(tx_log, transaction, decoded_events, all_logs, action_items)  # noqa: E501
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_deposit_event(
             self,
@@ -44,17 +45,17 @@ class Aavev1Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         reserve_address = hex_or_bytes_to_address(tx_log.topics[1])
         reserve_asset = ethaddress_to_asset(reserve_address)
         if reserve_asset is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
         user_address = hex_or_bytes_to_address(tx_log.topics[2])
         raw_amount = hex_or_bytes_to_int(tx_log.data[0:32])
         amount = asset_normalized_value(raw_amount, reserve_asset)
         atoken = asset_to_atoken(asset=reserve_asset, version=1)
         if atoken is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         deposit_event = receive_event = None
         for event in decoded_events:
@@ -77,7 +78,7 @@ class Aavev1Decoder(DecoderInterface):
                 event.notes = f'Gain {event.balance.amount} {atoken.symbol} from aave-v1 as interest'  # noqa: E501
 
         maybe_reshuffle_events(out_event=deposit_event, in_event=receive_event)
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_redeem_underlying_event(
             self,
@@ -86,17 +87,17 @@ class Aavev1Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         reserve_address = hex_or_bytes_to_address(tx_log.topics[1])
         reserve_asset = ethaddress_to_asset(reserve_address)
         if reserve_asset is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
         user_address = hex_or_bytes_to_address(tx_log.topics[2])
         raw_amount = hex_or_bytes_to_int(tx_log.data[0:32])
         amount = asset_normalized_value(raw_amount, reserve_asset)
         atoken = asset_to_atoken(asset=reserve_asset, version=1)
         if atoken is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         receive_event = return_event = None
         for event in decoded_events:
@@ -119,7 +120,7 @@ class Aavev1Decoder(DecoderInterface):
                 event.notes = f'Gain {event.balance.amount} {atoken.symbol} from aave-v1 as interest'  # noqa: E501
 
         maybe_reshuffle_events(out_event=return_event, in_event=receive_event, events_list=decoded_events)  # noqa: E501
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

@@ -7,7 +7,12 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    ActionItem,
+    DecodingOutput,
+    TransferEnrichmentOutput,
+)
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_GTC
@@ -64,20 +69,20 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] == GTC_CLAIM and tx_log.address == '0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E':  # noqa: E501
             for event in decoded_events:
                 if event.asset == A_GTC and event.event_type == HistoryEventType.RECEIVE:
                     event.event_subtype = HistoryEventSubType.AIRDROP
                     event.notes = f'Claim {event.balance.amount} GTC from the GTC airdrop'
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         if tx_log.topics[0] == ONEINCH_CLAIM and tx_log.address == '0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe':  # noqa: E501
             for event in decoded_events:
                 if event.asset == A_1INCH and event.event_type == HistoryEventType.RECEIVE:
                     event.event_subtype = HistoryEventSubType.AIRDROP
                     event.notes = f'Claim {event.balance.amount} 1INCH from the 1INCH airdrop'  # noqa: E501
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         if tx_log.topics[0] == GNOSIS_CHAIN_BRIDGE_RECEIVE and tx_log.address == '0x88ad09518695c6c3712AC10a214bE5109a655671':  # noqa: E501
             for event in decoded_events:
@@ -99,7 +104,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                         f'Bridge {event.balance.amount} {crypto_asset.symbol} from gnosis chain'
                     )
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _maybe_decode_governance(
             self,
@@ -109,7 +114,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] == GOVERNORALPHA_PROPOSE:
             if tx_log.address == '0xDbD27635A534A3d3169Ef0498beB56Fb9c937489':
                 governance_name = 'Gitcoin'
@@ -120,7 +125,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                 _, decoded_data = decode_event_data_abi_str(tx_log, GOVERNORALPHA_PROPOSE_ABI)
             except DeserializationError as e:
                 log.debug(f'Failed to decode governor alpha event due to {str(e)}')
-                return None, []
+                return DEFAULT_DECODING_OUTPUT
 
             proposal_id = decoded_data[0]
             proposal_text = decoded_data[8]
@@ -137,9 +142,9 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                 address=tx_log.address,
                 counterparty=governance_name,
             )
-            return event, []
+            return DecodingOutput(event=event)
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     # -- methods that need to be implemented by child classes --
 
@@ -151,10 +156,10 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             event: 'EvmEvent',
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
-    ) -> None:
+    ) -> Optional[str]:
         for enrich_call in self.rules.token_enricher_rules:
             try:
-                transfer_enriched = enrich_call(
+                transfer_enrich: TransferEnrichmentOutput = enrich_call(
                     token=token,
                     tx_log=tx_log,
                     transaction=transaction,
@@ -167,10 +172,12 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                     f'Failed to enrich transfer due to unknown asset {event.asset}. {str(e)}',
                 )
                 # Don't try other rules since all of them will fail to resolve the asset
-                break
+                return None
 
-            if transfer_enriched:
-                break
+            if transfer_enrich.counterparty is not None:
+                return transfer_enrich.counterparty
+
+        return None
 
     @staticmethod
     def _is_non_conformant_erc721(address: ChecksumEvmAddress) -> bool:

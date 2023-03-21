@@ -49,7 +49,7 @@ class DecoderInterface(metaclass=ABCMeta):
         """
         return []
 
-    def post_decoding_rules(self) -> list[tuple[int, Callable]]:
+    def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         """
         Subclasses may implement this to add post processing of the decoded events.
         This will run after the normal decoding step and will only process decoded history events.
@@ -58,7 +58,7 @@ class DecoderInterface(metaclass=ABCMeta):
         a function and the second element is the function to run. The higher the priority number
         the later the function will be run.
         """
-        return []
+        return {}
 
     def notify_user(self, event: 'EvmEvent', counterparty: str) -> None:
         """

@@ -1,12 +1,12 @@
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
@@ -25,6 +25,7 @@ BRIDGE_ADDRESS = string_to_evm_address('0x42000000000000000000000000000000000000
 
 DEPOSIT_FINALIZED = b'\xb0DE#&\x87\x17\xa0&\x98\xbeG\xd0\x80:\xa7F\x8c\x00\xac\xbe\xd2\xf8\xbd\x93\xa0E\x9c\xdea\xdd\x89'  # noqa: E501
 WITHDRAWAL_INITIATED = b's\xd1p\x91\n\xba\x9emP\xb1\x02\xdbR+\x1d\xbc\xd7\x96!oQ(\xb4E\xaa!5\'(\x86I~'  # noqa: E501
+DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_OPTIMISM)
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -38,10 +39,10 @@ class OptimismBridgeDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         """Decodes a bridging event. Either a deposit or a withdrawal"""
         if tx_log.topics[0] not in {DEPOSIT_FINALIZED, WITHDRAWAL_INITIATED}:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         # Read information from event's topics & data
         ethereum_token_address = hex_or_bytes_to_address(tx_log.topics[1])
@@ -64,7 +65,7 @@ class OptimismBridgeDecoder(DecoderInterface):
             except (UnknownAsset, WrongAssetType):
                 # can't call `notify_user`` since we don't have any particular event here.
                 log.error(f'Failed to resolve asset with address {optimism_token_address} to an optimism token')  # noqa: E501
-                return None, []
+                return DEFAULT_DECODING_OUTPUT
 
         amount = asset_normalized_value(asset=asset, amount=raw_amount)
 
@@ -97,7 +98,7 @@ class OptimismBridgeDecoder(DecoderInterface):
                     f'{to_chain} address {to_address} via optimism bridge'
                 )
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

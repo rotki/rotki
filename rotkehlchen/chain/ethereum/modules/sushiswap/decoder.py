@@ -9,7 +9,11 @@ from rotkehlchen.chain.ethereum.modules.uniswap.v2.common import (
     enrich_uniswap_v2_like_lp_tokens_transfers,
 )
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import (
+    ActionItem,
+    DecodingOutput,
+    TransferEnrichmentOutput,
+)
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import SUSHISWAP_PROTOCOL, EvmTransaction
@@ -24,6 +28,7 @@ BURN_SIGNATURE = b'\xdc\xcdA/\x0b\x12R\x81\x9c\xb1\xfd3\x0b\x93"L\xa4&\x12\x89+\
 
 SUSHISWAP_V2_FACTORY = string_to_evm_address('0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac')
 SUSHISWAP_V2_INIT_CODE_HASH = '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303'  # noqa: E501
+DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_SUSHISWAP_V2)
 
 
 class SushiswapDecoder(DecoderInterface):
@@ -36,7 +41,7 @@ class SushiswapDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] == SWAP_SIGNATURE and transaction.to_address == SUSHISWAP_ROUTER:
             return decode_uniswap_v2_like_swap(
                 tx_log=tx_log,
@@ -47,7 +52,7 @@ class SushiswapDecoder(DecoderInterface):
                 ethereum_inquirer=self.evm_inquirer,  # type: ignore[arg-type]  # is ethereum
                 notify_user=self.notify_user,
             )
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _maybe_decode_v2_liquidity_addition_and_removal(
             self,
@@ -57,7 +62,7 @@ class SushiswapDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] == MINT_SIGNATURE:
             return decode_uniswap_like_deposit_and_withdrawals(
                 tx_log=tx_log,
@@ -84,7 +89,7 @@ class SushiswapDecoder(DecoderInterface):
                 init_code_hash=SUSHISWAP_V2_INIT_CODE_HASH,
                 tx_hash=transaction.tx_hash,
             )
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     @staticmethod
     def _maybe_enrich_lp_tokens_transfers(
@@ -94,7 +99,7 @@ class SushiswapDecoder(DecoderInterface):
             event: 'EvmEvent',
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> bool:
+    ) -> TransferEnrichmentOutput:
         return enrich_uniswap_v2_like_lp_tokens_transfers(
             token=token,
             tx_log=tx_log,

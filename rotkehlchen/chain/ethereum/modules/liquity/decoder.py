@@ -1,11 +1,11 @@
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.evm_event import LIQUITY_STAKING_DETAILS, EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
@@ -35,6 +35,7 @@ STAKING_GAINS = b'\xf7D\xd3L\xa1\xcb%\xac\xfaA\x80\xdf_\t\xa6s\x06\x10q\x10\xa9\
 STAKING_ETH_SENT = b'a\t\xe2U\x9d\xfavj\xae\xc7\x11\x83Q\xd4\x8aR?\nAW\xf4\x9c\x8dht\x9c\x8a\xc4\x13\x18\xad\x12'  # noqa: E501
 STAKING_LQTY_EVENTS = {STAKING_LQTY_CHANGE, STAKING_ETH_SENT}
 STAKING_REWARDS_ASSETS = {A_ETH, A_LUSD}
+DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_LIQUITY)
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -64,9 +65,9 @@ class LiquityDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] != BALANCE_UPDATE:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         for event in decoded_events:
             try:
@@ -94,7 +95,7 @@ class LiquityDecoder(DecoderInterface):
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_LIQUITY
                 event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} collateral from liquity'  # noqa: E501
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_stability_pool_event(
             self,
@@ -103,9 +104,9 @@ class LiquityDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] not in STABILITY_POOL_EVENTS:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         collected_eth, collected_lqty = ZERO, ZERO
         if tx_log.topics[0] == STABILITY_POOL_GAIN_WITHDRAW:
@@ -147,7 +148,7 @@ class LiquityDecoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.counterparty = CPT_LIQUITY
                     event.notes = f"Withdraw {event.balance.amount} {self.lusd.symbol} from liquity's stability pool"  # noqa: E501
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_lqty_staking_deposits(
             self,
@@ -156,9 +157,9 @@ class LiquityDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] not in STAKING_LQTY_EVENTS:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         user, lqty_amount = None, ZERO
         if tx_log.topics[0] == STAKING_LQTY_CHANGE:
@@ -202,7 +203,7 @@ class LiquityDecoder(DecoderInterface):
                 event.counterparty = CPT_LIQUITY
                 event.notes = f"Receive reward of {event.balance.amount} {event.asset.resolve_to_crypto_asset().symbol} from Liquity's staking"  # noqa: E501
 
-        return informational_event, []
+        return DecodingOutput(event=informational_event)
 
     # -- DecoderInterface methods
 

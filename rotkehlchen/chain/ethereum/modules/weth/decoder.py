@@ -5,7 +5,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.modules.weth.constants import CPT_WETH
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 WETH_CONTRACT = string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2')
 WETH_DEPOSIT_TOPIC = b'\xe1\xff\xfc\xc4\x92=\x04\xb5Y\xf4\xd2\x9a\x8b\xfcl\xda\x04\xeb[\r<F\x07Q\xc2@,\\\\\xc9\x10\x9c'  # noqa: E501
 WETH_WITHDRAW_TOPIC = b'\x7f\xcfS,\x15\xf0\xa6\xdb\x0b\xd6\xd0\xe08\xbe\xa7\x1d0\xd8\x08\xc7\xd9\x8c\xb3\xbfrh\xa9[\xf5\x08\x1be'  # noqa: E501
+DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_WETH)
 
 
 class WethDecoder(DecoderInterface):
@@ -46,7 +47,7 @@ class WethDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],
             action_items: Optional[list[ActionItem]],
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] == WETH_DEPOSIT_TOPIC:
             return self._decode_deposit_event(
                 tx_log=tx_log,
@@ -65,7 +66,7 @@ class WethDecoder(DecoderInterface):
                 action_items=action_items,
             )
 
-        return None, []
+        return DecodingOutput(counterparty=CPT_WETH)
 
     def _decode_deposit_event(
             self,
@@ -74,7 +75,7 @@ class WethDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         depositor = hex_or_bytes_to_address(tx_log.topics[1])
         deposited_amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
         deposited_amount = asset_normalized_value(amount=deposited_amount_raw, asset=self.eth)
@@ -88,7 +89,7 @@ class WethDecoder(DecoderInterface):
                 event.asset == self.eth
             ):
                 if event.address == depositor:
-                    return None, []
+                    return DEFAULT_DECODING_OUTPUT
 
                 event.counterparty = CPT_WETH
                 event.event_type = HistoryEventType.DEPOSIT
@@ -97,7 +98,7 @@ class WethDecoder(DecoderInterface):
                 out_event = event
 
         if out_event is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         in_event = self.base.make_event_next_index(
             tx_hash=transaction.tx_hash,
@@ -111,7 +112,7 @@ class WethDecoder(DecoderInterface):
             notes=f'Receive {deposited_amount} {self.weth.symbol}',
             address=transaction.to_address,
         )
-        return in_event, []
+        return DecodingOutput(event=in_event, counterparty=CPT_WETH)
 
     def _decode_withdrawal_event(
             self,
@@ -120,7 +121,7 @@ class WethDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         withdrawer = hex_or_bytes_to_address(tx_log.topics[1])
         withdrawn_amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
         withdrawn_amount = asset_normalized_value(amount=withdrawn_amount_raw, asset=self.eth)
@@ -134,14 +135,14 @@ class WethDecoder(DecoderInterface):
                 event.asset == self.eth
             ):
                 if event.address == withdrawer:
-                    return None, []
+                    return DEFAULT_DECODING_OUTPUT
 
                 in_event = event
                 event.notes = f'Receive {withdrawn_amount} {self.eth.symbol}'
                 event.counterparty = CPT_WETH
 
         if in_event is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         out_event = self.base.make_event_next_index(
             tx_hash=transaction.tx_hash,
@@ -160,7 +161,7 @@ class WethDecoder(DecoderInterface):
             in_event=in_event,
             events_list=decoded_events + [out_event],
         )
-        return out_event, []
+        return DecodingOutput(event=out_event, counterparty=CPT_WETH)
 
     # -- DecoderInterface methods
 

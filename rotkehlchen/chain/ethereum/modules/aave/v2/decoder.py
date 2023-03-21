@@ -7,7 +7,7 @@ from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
@@ -29,6 +29,7 @@ DEPOSIT = b'\xdehW!\x95D\xbb[wF\xf4\x8e\xd3\x0b\xe68o\xef\xc6\x1b/\x86L\xac\xf5Y
 WITHDRAW = b'1\x15\xd1D\x9a{s,\x98l\xba\x18$N\x89zE\x0fa\xe1\xbb\x8dX\x9c\xd2\xe6\x9el\x89$\xf9\xf7'  # noqa: E501
 BORROW = b'\xc6\xa8\x980\x9e\x82>\xe5\x0b\xacd\xe4\\\xa8\xad\xbaf\x90\xe9\x9exA\xc4]uN*8\xe9\x01\x9d\x9b'  # noqa: E501
 REPAY = b'L\xdd\xe6\xe0\x9b\xb7U\xc9\xa5X\x9e\xba\xecd\x0b\xbf\xed\xff\x13b\xd4\xb2U\xeb\xf83\x97\x82\xb9\x94/\xaa'  # noqa: E501
+DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_AAVE_V2)
 
 
 class Aavev2Decoder(DecoderInterface):
@@ -217,11 +218,11 @@ class Aavev2Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         """Decodes AAVE V2 Lending Pool events"""
         event_signature = tx_log.topics[0]
         if event_signature not in (ENABLE_COLLATERAL, DISABLE_COLLATERAL, DEPOSIT, WITHDRAW, BORROW, REPAY):  # noqa: E501
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         token = EvmToken(evm_address_to_identifier(
             address=hex_or_bytes_to_address(tx_log.topics[1]),
@@ -231,7 +232,7 @@ class Aavev2Decoder(DecoderInterface):
 
         if tx_log.topics[0] in (ENABLE_COLLATERAL, DISABLE_COLLATERAL):
             event = self._decode_collateral_events(token, transaction, tx_log)
-            return event, []
+            return DecodingOutput(event=event)
         if tx_log.topics[0] == DEPOSIT:
             self._decode_deposit(token, tx_log, decoded_events)
         elif tx_log.topics[0] == WITHDRAW:
@@ -241,7 +242,7 @@ class Aavev2Decoder(DecoderInterface):
         else:  # Repay
             self._decode_repay(token, tx_log, decoded_events)
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

@@ -6,7 +6,7 @@ from eth_utils import encode_hex
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -33,9 +33,9 @@ class Eth2Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] != DEPOSIT_EVENT:
-            return None, []
+            return DecodingOutput(counterparty=CPT_ETH2)
 
         pubkey = encode_hex(tx_log.data[192:240])
         withdrawal_credentials = encode_hex(tx_log.data[288:320])
@@ -54,7 +54,7 @@ class Eth2Decoder(DecoderInterface):
                 event.notes = f'Deposit {amount} ETH to validator with pubkey {pubkey}. Deposit index: {deposit_index}. Withdrawal credentials: {withdrawal_credentials}'  # noqa: E501
                 event.extra_data = {'withdrawal_credentials': withdrawal_credentials}
 
-        return None, []
+        return DecodingOutput(counterparty=CPT_ETH2)
 
     # -- DecoderInterface methods
 

@@ -5,7 +5,11 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_ENRICHMENT_OUTPUT,
+    ActionItem,
+    TransferEnrichmentOutput,
+)
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -48,7 +52,7 @@ class PickleFinanceDecoder(DecoderInterface):
             event: 'EvmEvent',
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> bool:
+    ) -> TransferEnrichmentOutput:
         """
         Enrich tranfer transactions to address for jar deposits and withdrawals
         May raise:
@@ -61,7 +65,7 @@ class PickleFinanceDecoder(DecoderInterface):
             hex_or_bytes_to_address(tx_log.topics[1]) in self.pickle_contracts or
             tx_log.address in self.pickle_contracts
         ):
-            return False
+            return DEFAULT_ENRICHMENT_OUTPUT
 
         if (  # Deposit give asset
             event.event_type == HistoryEventType.SPEND and
@@ -70,7 +74,7 @@ class PickleFinanceDecoder(DecoderInterface):
             hex_or_bytes_to_address(tx_log.topics[2]) in self.pickle_contracts
         ):
             if EvmToken(ethaddress_to_identifier(tx_log.address)) != event.asset:
-                return True
+                return TransferEnrichmentOutput(counterparty=CPT_PICKLE)
             amount_raw = hex_or_bytes_to_int(tx_log.data)
             amount = asset_normalized_value(
                 amount=amount_raw,
@@ -104,7 +108,7 @@ class PickleFinanceDecoder(DecoderInterface):
             hex_or_bytes_to_address(tx_log.topics[1]) in transaction.from_address
         ):
             if event.asset != EvmToken(ethaddress_to_identifier(tx_log.address)):
-                return True
+                return TransferEnrichmentOutput(counterparty=CPT_PICKLE)
             amount_raw = hex_or_bytes_to_int(tx_log.data)
             amount = asset_normalized_value(
                 amount=amount_raw,
@@ -123,7 +127,7 @@ class PickleFinanceDecoder(DecoderInterface):
             hex_or_bytes_to_address(tx_log.topics[1]) in self.pickle_contracts
         ):
             if event.asset != EvmToken(ethaddress_to_identifier(tx_log.address)):
-                return True
+                return TransferEnrichmentOutput(counterparty=CPT_PICKLE)
             amount_raw = hex_or_bytes_to_int(tx_log.data)
             amount = asset_normalized_value(
                 amount=amount_raw,
@@ -135,7 +139,7 @@ class PickleFinanceDecoder(DecoderInterface):
                 event.counterparty = CPT_PICKLE
                 event.notes = f'Unstake {event.balance.amount} {crypto_asset.symbol} from the pickle contract'  # noqa: E501
 
-        return True
+        return TransferEnrichmentOutput(counterparty=CPT_PICKLE)
 
     # -- DecoderInterface methods
 

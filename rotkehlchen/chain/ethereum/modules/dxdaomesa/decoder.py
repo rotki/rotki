@@ -1,13 +1,13 @@
 import json
 import os
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
@@ -23,6 +23,7 @@ DEPOSIT = b'\xc1\x1c\xc3N\x93\xc6z\x938+\x99\xf2I\x8e\x997\x19\x87\x98\xf3\xc1\x
 ORDER_PLACEMENT = b'\xde\xcfo\xde\x82C\x98\x12\x99\xf7\xb7\xa7v\xf2\x9a\x9f\xc6z,\x98H\xe2]w\xc5\x0e\xb1\x1f\xa5\x8a~!'  # noqa: E501
 WITHDRAW_REQUEST = b',bE\xafPo\x0f\xc1\x08\x99\x18\xc0,\x1d\x01\xbd\xe9\xcc\x80v\t\xb34\xb3\xe7dMm\xfbZl^'  # noqa: E501
 WITHDRAW = b'\x9b\x1b\xfa\x7f\xa9\xeeB\n\x16\xe1$\xf7\x94\xc3Z\xc9\xf9\x04r\xac\xc9\x91@\xeb/dG\xc7\x14\xca\xd8\xeb'  # noqa: E501
+DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_DXDAO_MESA)
 
 
 class DxdaomesaDecoder(DecoderInterface):
@@ -55,7 +56,7 @@ class DxdaomesaDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],
             action_items: list[ActionItem],
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] == DEPOSIT:
             return self._decode_deposit(tx_log, transaction, decoded_events, all_logs, action_items)  # noqa: E501
         if tx_log.topics[0] == ORDER_PLACEMENT:
@@ -65,7 +66,7 @@ class DxdaomesaDecoder(DecoderInterface):
         if tx_log.topics[0] == WITHDRAW:
             return self._decode_withdraw(tx_log, transaction, decoded_events, all_logs, action_items)  # noqa: E501
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_deposit(
             self,
@@ -74,7 +75,7 @@ class DxdaomesaDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         topic_data, log_data = self.contract.decode_event(
             tx_log=tx_log,
             event_name='Deposit',
@@ -82,7 +83,7 @@ class DxdaomesaDecoder(DecoderInterface):
         )
         deposited_asset = ethaddress_to_asset(topic_data[1])
         if deposited_asset is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
         amount = asset_normalized_value(amount=log_data[0], asset=deposited_asset)
 
         for event in decoded_events:
@@ -94,7 +95,7 @@ class DxdaomesaDecoder(DecoderInterface):
                 event.notes = f'Deposit {amount} {deposited_asset.symbol} to DXDao mesa exchange'  # noqa: E501
                 break
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_withdraw(
             self,
@@ -103,7 +104,7 @@ class DxdaomesaDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         topic_data, log_data = self.contract.decode_event(
             tx_log=tx_log,
             event_name='Withdraw',
@@ -111,7 +112,7 @@ class DxdaomesaDecoder(DecoderInterface):
         )
         withdraw_asset = ethaddress_to_asset(topic_data[1])
         if withdraw_asset is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
         amount = asset_normalized_value(amount=log_data[0], asset=withdraw_asset)
 
         for event in decoded_events:
@@ -123,7 +124,7 @@ class DxdaomesaDecoder(DecoderInterface):
                 event.notes = f'Withdraw {amount} {withdraw_asset.symbol} from DXDao mesa exchange'  # noqa: E501
                 break
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_withdraw_request(
             self,
@@ -132,7 +133,7 @@ class DxdaomesaDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         topic_data, log_data = self.contract.decode_event(
             tx_log=tx_log,
             event_name='WithdrawRequest',
@@ -140,11 +141,11 @@ class DxdaomesaDecoder(DecoderInterface):
         )
         user = topic_data[0]
         if not self.base.is_tracked(user):
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         token = ethaddress_to_asset(topic_data[1])
         if token is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
         amount = asset_normalized_value(amount=log_data[0], asset=token)
 
         event = self.base.make_event_from_transaction(
@@ -159,7 +160,7 @@ class DxdaomesaDecoder(DecoderInterface):
             counterparty=CPT_DXDAO_MESA,
             address=transaction.to_address,
         )
-        return event, []
+        return DecodingOutput(event=event)
 
     def _decode_order_placement(
             self,
@@ -168,7 +169,7 @@ class DxdaomesaDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         """Some docs: https://docs.gnosis.io/protocol/docs/tutorial-limit-orders/"""
         topic_data, log_data = self.contract.decode_event(
             tx_log=tx_log,
@@ -177,7 +178,7 @@ class DxdaomesaDecoder(DecoderInterface):
         )
         owner = topic_data[0]
         if not self.base.is_tracked(owner):
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         result = self.evm_inquirer.multicall_specific(
             contract=self.contract,
@@ -186,10 +187,10 @@ class DxdaomesaDecoder(DecoderInterface):
         )  # The resulting addresses are non checksumed but they can be found in the DB
         buy_token = ethaddress_to_asset(result[0][0])
         if buy_token is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
         sell_token = ethaddress_to_asset(result[1][0])
         if sell_token is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         buy_amount = asset_normalized_value(amount=log_data[3], asset=buy_token)
         sell_amount = asset_normalized_value(amount=log_data[4], asset=sell_token)
@@ -205,7 +206,7 @@ class DxdaomesaDecoder(DecoderInterface):
             counterparty=CPT_DXDAO_MESA,
             address=transaction.to_address,
         )
-        return event, []
+        return DecodingOutput(event=event)
 
     # -- DecoderInterface methods
 

@@ -5,7 +5,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -24,6 +24,7 @@ KYBER_TRADE_LEGACY = b'\xf7$\xb4\xdff\x17G6\x12\xb5=\x7f\x88\xec\xc6\xea\x980t\x
 KYBER_LEGACY_CONTRACT = string_to_evm_address('0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950')
 KYBER_LEGACY_CONTRACT_MIGRATED = string_to_evm_address('0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd')  # noqa: E501
 KYBER_LEGACY_CONTRACT_UPGRADED = string_to_evm_address('0x9AAb3f75489902f3a48495025729a0AF77d4b11e')  # noqa: E501
+DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_KYBER)
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -92,13 +93,13 @@ class KyberDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] == KYBER_TRADE_LEGACY:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         sender, source_asset, destination_asset = _legacy_contracts_basic_info(tx_log)
         if source_asset is None or destination_asset is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         spent_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
         return_amount_raw = hex_or_bytes_to_int(tx_log.data[96:128])
@@ -114,7 +115,7 @@ class KyberDecoder(DecoderInterface):
             notify_user=self.notify_user,
         )
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_legacy_upgraded_trade(
             self,
@@ -123,13 +124,13 @@ class KyberDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] != KYBER_TRADE_LEGACY:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         sender, source_asset, destination_asset = _legacy_contracts_basic_info(tx_log)
         if source_asset is None or destination_asset is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         spent_amount_raw = hex_or_bytes_to_int(tx_log.data[96:128])
         return_amount_raw = hex_or_bytes_to_int(tx_log.data[128:160])
@@ -145,7 +146,7 @@ class KyberDecoder(DecoderInterface):
             notify_user=self.notify_user,
         )
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

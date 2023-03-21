@@ -4,7 +4,11 @@ from typing import TYPE_CHECKING, Callable
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_ENRICHMENT_OUTPUT,
+    ActionItem,
+    TransferEnrichmentOutput,
+)
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EvmTransaction
@@ -28,7 +32,7 @@ class GitcoinDecoder(DecoderInterface):
             event: 'EvmEvent',
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> bool:
+    ) -> TransferEnrichmentOutput:
         """
         May raise:
         - UnknownAsset
@@ -38,7 +42,7 @@ class GitcoinDecoder(DecoderInterface):
                 '0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',
                 '0x7d655c57f71464B6f83811C55D84009Cd9f5221C',
         ):
-            return False
+            return DEFAULT_ENRICHMENT_OUTPUT
         crypto_asset = event.asset.resolve_to_crypto_asset()
         if event.event_type == HistoryEventType.SPEND:
             to_address = event.address
@@ -49,7 +53,7 @@ class GitcoinDecoder(DecoderInterface):
 
         event.event_subtype = HistoryEventSubType.DONATE
         event.counterparty = CPT_GITCOIN
-        return True
+        return TransferEnrichmentOutput(counterparty=CPT_GITCOIN)
 
     # -- DecoderInterface methods
 

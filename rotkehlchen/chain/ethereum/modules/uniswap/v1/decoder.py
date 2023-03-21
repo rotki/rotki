@@ -3,8 +3,9 @@ from typing import TYPE_CHECKING, Callable, Optional
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.ethereum.modules.aave.v1.decoder import DEFAULT_DECODING_OUTPUT
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -37,7 +38,7 @@ class Uniswapv1Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         """Search for both events. Since the order is not guaranteed try reshuffle in both cases"""
         out_event = in_event = None
         if tx_log.topics[0] == TOKEN_PURCHASE:
@@ -77,7 +78,7 @@ class Uniswapv1Decoder(DecoderInterface):
                     out_event = event
 
         maybe_reshuffle_events(out_event=out_event, in_event=in_event)
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

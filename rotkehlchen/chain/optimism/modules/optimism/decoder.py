@@ -1,9 +1,9 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
@@ -29,13 +29,13 @@ class OptimismDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] != DELEGATE_CHANGED:
-            return None, []
+            return DecodingOutput(counterparty=CPT_OPTIMISM)
 
         delegator = hex_or_bytes_to_address(tx_log.topics[1])
         if not self.base.is_tracked(delegator):
-            return None, []
+            return DecodingOutput(counterparty=CPT_OPTIMISM)
 
         from_delegate = hex_or_bytes_to_address(tx_log.topics[2])
         to_delegate = hex_or_bytes_to_address(tx_log.topics[3])
@@ -51,7 +51,7 @@ class OptimismDecoder(DecoderInterface):
             counterparty=CPT_OPTIMISM,
             address=transaction.to_address,
         )
-        return event, []
+        return DecodingOutput(event=event, counterparty=CPT_OPTIMISM)
 
     # -- DecoderInterface methods
 
