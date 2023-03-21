@@ -138,8 +138,8 @@ const {
   useTradeFilters,
   fetchTrades,
   {
-    onUpdateFilters: () => {
-      set(hideIgnoredTrades, route.query.includeIgnoredTrades === 'false');
+    onUpdateFilters(query) {
+      set(hideIgnoredTrades, query.includeIgnoredTrades === 'false');
     },
     extraParams
   }

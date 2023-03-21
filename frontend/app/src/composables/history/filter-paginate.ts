@@ -1,5 +1,4 @@
 import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
-import dropRight from 'lodash/dropRight';
 import { type ZodSchema } from 'zod';
 import isEqual from 'lodash/isEqual';
 import { type MaybeRef } from '@vueuse/core';
@@ -37,8 +36,11 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
   filterSchema: () => FilterSchema,
   fetchAssetData: (payload: MaybeRef<U>) => Promise<Collection<V>>,
   options: {
-    onUpdateFilters?: () => void;
-    extraParams?: ComputedRef<Record<string, string | boolean | null>>;
+    onUpdateFilters?: (query: LocationQuery) => void;
+    extraParams?: ComputedRef<
+      Record<string, string | string[] | boolean | null>
+    >;
+    customPageParams?: ComputedRef<Partial<U>>;
   } = {}
 ) => {
   const router = useRouter();
@@ -52,7 +54,7 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
   const expanded: Ref<V[]> = ref([]);
   const userAction: Ref<boolean> = ref(false);
 
-  const { onUpdateFilters, extraParams } = options;
+  const { onUpdateFilters, extraParams, customPageParams } = options;
 
   const { filters, matchers, updateFilter, RouteFilterSchema } = filterSchema();
 
@@ -69,13 +71,11 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
     return {
       ...selectedFilters,
       ...get(extraParams),
+      ...get(customPageParams),
       limit: itemsPerPage,
       offset,
       orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
-      ascending:
-        sortDesc && sortDesc.length > 1
-          ? dropRight(sortDesc).map(bool => !bool)
-          : [false]
+      ascending: sortBy?.length > 0 ? sortDesc.map(bool => !bool) : [false]
     };
   });
 
@@ -97,7 +97,7 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
     const parsedOptions = RouterPaginationOptionsSchema.parse(query);
     const parsedFilters = RouteFilterSchema.parse(query);
 
-    onUpdateFilters?.call(null);
+    onUpdateFilters?.call(null, query);
 
     updateFilter(parsedFilters);
     set(paginationOptions, {
@@ -195,6 +195,7 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
     setPage,
     setOptions,
     setFilter,
+    updateFilter,
     fetchData
   };
 };
