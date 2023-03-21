@@ -2800,137 +2800,137 @@
     "hint": "源资产将合并到目标资产中，其所有用法都将更新。",
     "merge": "合并",
     "source": {
-      "label": "Source",
-      "non_empty": "The source identifier cannot not be empty"
+      "label": "来源",
+      "non_empty": "源标识符不能为空"
     },
-    "source_hint": "The asset identifier that you want to merge into the target",
-    "subtitle": "Merge two assets",
+    "source_hint": "要合并到目标中的资产标识符",
+    "subtitle": "合并两个资产",
     "target": {
-      "label": "Target",
-      "non_empty": "The target asset cannot be empty"
+      "label": "目标",
+      "non_empty": "目标资产不能为空"
     },
-    "title": "Merge Assets"
+    "title": "合并资产"
   },
   "message": {
     "error": {
-      "title": "Error"
+      "title": "错误"
     },
     "success": {
-      "title": "Success"
+      "title": "成功"
     }
   },
   "missing_exchange_rate": {
-    "message": "This session of rotki may have errors if you use this currency.",
-    "title": "Missing exchange rate"
+    "message": "如果您使用此货币，本次 rotki 会话可能会出错。",
+    "title": "缺少汇率"
   },
   "module_activator": {
-    "hint": "* Modules that are activated for all addresses will not appear here",
-    "subtitle": "Select which modules should be queried for this account",
-    "title": "Enabled modules"
+    "hint": "* 为所有地址激活的模块不会出现在这里",
+    "subtitle": "选择应该为这个账户查询哪些模块",
+    "title": "启用模块"
   },
   "module_not_active": {
-    "at_least_one": "You need to activate at least one of them.",
-    "not_active": "{module} module(s) not active. Please visit the {link}. {text}",
-    "settings_link": "Module settings"
+    "at_least_one": "你需要至少激活其中一个。",
+    "not_active": "{module} 模块未激活。请访问{link}。{text}",
+    "settings_link": "模块设置"
   },
   "module_selector": {
-    "label": "Select module(s)"
+    "label": "选择模块"
   },
   "module_settings": {
-    "active_modules": "Active modules",
-    "active_modules_description": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled.",
-    "hint": "* Please remember that after activating a module, you need to logout and login again for the activation to take effect",
-    "select_accounts": "Selected accounts",
-    "select_accounts_description": "If no accounts are selected for a protocol, data for all accounts will be queried for that protocol.",
-    "title": "Module Settings"
+    "active_modules": "活动模块",
+    "active_modules_description": "仅查询所选模块的数据。如果未选择任何模块，将禁用查询所有支持的模块。",
+    "hint": "请记住，激活模块后，您需要注销并重新登录才能使激活生效",
+    "select_accounts": "选择的账户",
+    "select_accounts_description": "如果没有为协议选择账户，将查询该协议的所有账户数据。",
+    "title": "模块设置"
   },
   "navigation_menu": {
-    "accounts_balances": "Accounts & Balances",
+    "accounts_balances": "账户与余额",
     "accounts_balances_sub": {
-      "blockchain_balances": "Blockchain Balances",
-      "exchange_balances": "Exchange Balances",
-      "manual_balances": "Manual Balances",
-      "non_fungible_balances": "Non Fungible Balances"
+      "blockchain_balances": "区块链余额",
+      "exchange_balances": "外汇余额",
+      "manual_balances": "手动余额",
+      "non_fungible_balances": "不可替代余额"
     },
     "api_keys": "API Keys",
     "api_keys_sub": {
-      "exchanges": "Exchanges",
-      "external_services": "External Services",
-      "premium": "rotki Premium"
+      "exchanges": "交换",
+      "external_services": "外部服务",
+      "premium": "rotki 高级"
     },
-    "dashboard": "Dashboard",
+    "dashboard": "仪表板",
     "defi": "DeFi",
     "defi_sub": {
-      "airdrops": "Airdrops",
+      "airdrops": "空投",
       "deposits_sub": {
-        "liquidity": "Liquidity Pools",
+        "liquidity": "流动性池",
         "liquidity_sub": {
           "balancer": "Balancer",
           "sushiswap": "Sushiswap",
           "uniswap_v2": "Uniswap v2",
           "uniswap_v3": "Uniswap v3"
         },
-        "protocols": "Protocols"
+        "protocols": "协议"
       },
-      "liabilities": "Liabilities",
-      "overview": "Overview"
+      "liabilities": "负债",
+      "overview": "概述"
     },
-    "history": "History",
+    "history": "历史",
     "history_sub": {
-      "deposits_withdrawals": "Deposits & Withdrawals",
-      "ethereum_transactions": "Evm Transactions",
-      "ledger_actions": "Ledger Actions",
-      "trades": "Trades"
+      "deposits_withdrawals": "存款和取款",
+      "ethereum_transactions": "Evm 交易",
+      "ledger_actions": "Ledger 操作",
+      "trades": "交易"
     },
-    "import_data": "Import Data",
-    "locations": "Locations",
-    "manage_assets": "Manage Assets",
+    "import_data": "导入数据",
+    "locations": "地点",
+    "manage_assets": "管理资产",
     "manage_assets_sub": {
-      "custom_assets": "Custom Assets",
-      "managed_assets": "Managed Assets",
-      "newly_detected": "Newly Detected Tokens"
+      "custom_assets": "自定义资产",
+      "managed_assets": "托管资产",
+      "newly_detected": "新检测到的令牌"
     },
-    "manage_address_book": "Manage Address Book",
-    "manage_prices": "Manage Prices",
+    "manage_address_book": "管理地址簿",
+    "manage_prices": "管理价格",
     "manage_prices_sub": {
-      "historic_prices": "Historic Prices",
-      "latest_prices": "Latest Prices"
+      "historic_prices": "历史价格",
+      "latest_prices": "最新价格"
     },
     "nfts": "NFTs",
-    "profit_loss_report": "Profit and Loss Report",
-    "settings": "Settings",
+    "profit_loss_report": "盈亏报告",
+    "settings": "设置",
     "settings_sub": {
-      "accounting": "Accounting",
-      "data_security": "Data & Security",
-      "general": "General",
-      "modules": "Modules"
+      "accounting": "会计",
+      "data_security": "数据与安全",
+      "general": "一般",
+      "modules": "模块"
     },
-    "staking": "Staking",
-    "statistics": "Statistics"
+    "staking": "质押",
+    "statistics": "统计"
   },
   "nft_balance_table": {
     "column": {
-      "percentage": "% of net Value",
-      "price_in_asset": "Price in asset"
+      "percentage": "净值%",
+      "price_in_asset": "资产价格"
     },
-    "contract_address": "Contract address",
-    "refresh": "Refresh the NFT balances",
-    "title": "NFT Balances",
-    "token_id": "Token ID"
+    "contract_address": "合约地址",
+    "refresh": "刷新NFT余额",
+    "title": "NFT 余额",
+    "token_id": "代币 ID"
   },
   "nft_gallery": {
-    "empty_filter": "No NFTs matching the filter parameters",
-    "empty_subtitle": "No NFTs have been detected",
-    "empty_title": "No NFTs detected",
-    "error_title": "Error while loading NFTs",
-    "loading": "Loading NFTs",
-    "refresh_tooltip": "Reload NFTs",
-    "select_account": "Select account",
-    "select_collection": "Select collection",
+    "empty_filter": "没有匹配过滤器参数的 NFT",
+    "empty_subtitle": "没有检测到 NFT",
+    "empty_title": "未检测到 NFT",
+    "error_title": "加载 NFT 时出错",
+    "loading": "加载 NFT",
+    "refresh_tooltip": "重新加载 NFT",
+    "select_account": "选择账户",
+    "select_collection": "选择收藏",
     "sort": {
-      "collection": "Collection"
+      "collection": "收藏"
     },
-    "upgrade": "Displaying {limit} NFTs. To view more please upgrade to {link}"
+    "upgrade": "显示 {limit} 个 NFT。要查看更多,请升级到 {link}"
   },
   "no_premium_placeholder": {
     "get_premium": "@:common.visit_website",
@@ -2938,66 +2938,66 @@
     "premium_only": " {text} @:common.available_to_premium"
   },
   "no_task_running": {
-    "description": "No Pending tasks"
+    "description": "没有待处理的任务"
   },
   "non_fungible_balances": {
     "column": {
-      "actions": "Actions",
-      "custom_price": "Custom Price",
-      "price_in_asset": "Price in Asset"
+      "actions": "动作",
+      "custom_price": "自定义价格",
+      "price_in_asset": "资产价格"
     },
     "delete": {
       "error": {
-        "message": "Could not delete the latest price for {asset}",
-        "title": "Deleting custom latest price"
+        "message": "无法删除 {asset} 的最新价格",
+        "title": "删除自定义最新价格"
       },
-      "message": "Are you sure you want to delete the custom price for {asset}?",
-      "title": "Delete custom price"
+      "message": "您确定要删除 {asset} 的自定义价格吗？",
+      "title": "删除自定义价格"
     },
     "edit": {
-      "title": "Edit or set the price for the asset"
+      "title": "编辑或设置资产价格"
     },
-    "ignore": "Ignore NFT",
-    "refresh": "Refresh the balances",
+    "ignore": "忽略 NFT",
+    "refresh": "刷新余额",
     "row": {
-      "delete": "Delete the custom price",
-      "edit": "Edit or set the custom price"
+      "delete": "删除自定义价格",
+      "edit": "编辑或设置自定义价格"
     },
-    "title": "Non Fungible Balances"
+    "title": "不可替代余额"
   },
   "notes_display": {
-    "empty_notes": "No notes found for this entry",
-    "notes": "Notes"
+    "empty_notes": "找不到该条目的注释",
+    "notes": "备注"
   },
   "notes_menu": {
-    "delete_confirmation": "Are you sure you want to delete this note?",
+    "delete_confirmation": "你确定要删除这条笔记吗？",
     "dialog": {
-      "add_title": "Add note",
-      "edit_title": "Edit note"
+      "add_title": "添加备注",
+      "edit_title": "编辑笔记"
     },
-    "empty_notes": "No notes found/saved",
+    "empty_notes": "没有找到/保存笔记",
     "labels": {
-      "content": "Take a note...",
-      "title": "Title"
+      "content": "记笔记...",
+      "title": "标题"
     },
-    "last_updated": "Last updated: {datetime}",
-    "limit_warning": "The limit of {limit} user notes has been reached in the free plan. To get more notes you can upgrade to {link}",
+    "last_updated": "最后更新时间：{datetime}",
+    "limit_warning": "免费计划中已达到 {limit} 个用户笔记的限制。要获得更多笔记，您可以升级到 {link}",
     "rules": {
       "content": {
-        "non_empty": "Please fill the note"
+        "non_empty": "请填写备注"
       }
     },
-    "search": "Search",
+    "search": "搜索",
     "tabs": {
-      "general": "General",
+      "general": "一般",
       "in_this_page": "In \"{page}\" ",
-      "in_this_page_tooltip": "Notes specialize for  \"{page}\" section"
+      "in_this_page_tooltip": "专用于 \"{page}\" 部分的注释"
     },
-    "tooltip": "Notes"
+    "tooltip": "注释"
   },
   "notification": {
-    "copy_tooltip": "Copy the message to clipboard",
-    "dismiss_tooltip": "Dismiss Notification"
+    "copy_tooltip": "将消息复制到剪贴板",
+    "dismiss_tooltip": "关闭通知"
   },
   "notification_indicator": {
     "tooltip": "Notifications"
