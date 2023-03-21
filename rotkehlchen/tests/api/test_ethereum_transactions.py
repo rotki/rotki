@@ -17,7 +17,7 @@ from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_MKR, A_USDT, A_W
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -367,8 +367,9 @@ def test_query_transactions(rotkehlchen_api_server):
             assert isinstance(receipt, EvmTxReceipt) and receipt.tx_hash == hexstring_to_bytes(tx_hash_hex)  # noqa: E501
             events = dbevents.get_history_events(
                 cursor=cursor,
-                filter_query=HistoryEventFilterQuery.make(
+                filter_query=EvmEventFilterQuery.make(
                     event_identifiers=[TXHASH_HEX_TO_BYTES[tx_hash_hex]],
+                    limit_to_entry_type=True,
                 ),
                 has_premium=True,  # for this function we don't limit. We only limit txs.
             )
@@ -397,8 +398,9 @@ def test_query_transactions(rotkehlchen_api_server):
             assert isinstance(receipt, EvmTxReceipt) and receipt.tx_hash == hexstring_to_bytes(tx_hash_hex)  # noqa: E501
             events = dbevents.get_history_events(
                 cursor=cursor,
-                filter_query=HistoryEventFilterQuery.make(
+                filter_query=EvmEventFilterQuery.make(
                     event_identifiers=[TXHASH_HEX_TO_BYTES[tx_hash_hex]],
+                    limit_to_entry_type=True,
                 ),
                 has_premium=True,  # for this function we don't limit. We only limit txs.
             )
@@ -1230,7 +1232,7 @@ def test_query_transactions_check_decoded_events(
                 ('history_events_mappings', 2),
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
-        customized_events = dbevents.get_history_events(cursor, HistoryEventFilterQuery.make(), True)  # noqa: E501
+        customized_events = dbevents.get_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True)  # noqa: E501
 
     assert customized_events[0].serialize_without_extra_data() == tx4_events[0]['entry']  # pylint: disable=unsubscriptable-object  # noqa: E501
     assert customized_events[1].serialize_without_extra_data() == tx2_events[1]['entry']  # pylint: disable=unsubscriptable-object  # noqa: E501
@@ -1259,7 +1261,7 @@ def test_query_transactions_check_decoded_events(
                 'history_events_mappings',
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == 0
-        assert dbevents.get_history_events(cursor, HistoryEventFilterQuery.make(), True) == []
+        assert dbevents.get_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True) == []  # noqa: E501
 
 
 @pytest.mark.skip('LEFTERIS TODO')  # Unskip after Lefteris' changes to the evm transactions endpoint  # noqa: E501
@@ -1539,16 +1541,18 @@ def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> N
     with rotki.data.db.conn.read_ctx() as cursor:
         events = dbevents.get_history_events(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(
+            filter_query=EvmEventFilterQuery.make(
                 event_identifiers=[transactions[0].tx_hash],
+                limit_to_entry_type=True,
             ),
             has_premium=True,
         )
         assert len(events) == 3
         events = dbevents.get_history_events(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(
+            filter_query=EvmEventFilterQuery.make(
                 event_identifiers=[transactions[1].tx_hash],
+                limit_to_entry_type=True,
             ),
             has_premium=True,
         )
@@ -1598,24 +1602,27 @@ def test_decoding_missing_transactions_by_address(rotkehlchen_api_server: 'APISe
     with rotki.data.db.conn.read_ctx() as cursor:
         events = dbevents.get_history_events(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(
+            filter_query=EvmEventFilterQuery.make(
                 event_identifiers=[transactions[0].tx_hash],
+                limit_to_entry_type=True,
             ),
             has_premium=True,
         )
         assert len(events) == 3
         events = dbevents.get_history_events(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(
+            filter_query=EvmEventFilterQuery.make(
                 event_identifiers=[transactions[1].tx_hash],
+                limit_to_entry_type=True,
             ),
             has_premium=True,
         )
         assert len(events) == 0
         events = dbevents.get_history_events(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(
+            filter_query=EvmEventFilterQuery.make(
                 event_identifiers=[transactions[2].tx_hash],
+                limit_to_entry_type=True,
             ),
             has_premium=True,
         )

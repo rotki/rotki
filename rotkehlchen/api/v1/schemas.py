@@ -537,6 +537,7 @@ class BaseStakingQuerySchema(
             event_subtypes=query_event_subtypes,
             exclude_subtypes=exclude_event_subtypes,
             assets=asset_list,
+            limit_to_entry_type=True,
         )
 
         value_filter = HistoryEventFilterQuery.make(
@@ -549,6 +550,7 @@ class BaseStakingQuerySchema(
             event_subtypes=value_event_subtypes,
             order_by_rules=None,
             assets=asset_list,
+            limit_to_entry_type=True,
         )
 
         return {

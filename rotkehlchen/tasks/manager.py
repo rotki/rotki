@@ -22,6 +22,7 @@ from rotkehlchen.db.filtering import (
     DBEqualsFilter,
     DBIgnoreValuesFilter,
     EvmTransactionsFilterQuery,
+    HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -409,7 +410,7 @@ class TaskManager():
 
     def get_base_entries_missing_prices(
             self,
-            query_filter: HistoryEventFilterQuery,
+            query_filter: HistoryBaseEntryFilterQuery,
     ) -> list[tuple[str, FVal, Asset, Timestamp]]:
         """
         Searches base entries missing usd prices that have not previously been checked in

@@ -2898,8 +2898,9 @@ class RestAPI():
                 )
                 if entry['tx_hashes'] is not None and task_manager is not None:
                     # Trigger the task to query the missing prices for the decoded events
-                    events_filter = HistoryEventFilterQuery.make(
+                    events_filter = EvmEventFilterQuery.make(
                         event_identifiers=[event.event_identifier for event in decoded_events],
+                        limit_to_entry_type=True,
                     )
                     entries = task_manager.get_base_entries_missing_prices(events_filter)
                     task_manager.query_missing_prices_of_base_entries(
@@ -4110,6 +4111,7 @@ class RestAPI():
             event_types=event_types,
             event_subtypes=event_subtypes,
             exclude_subtypes=exclude_subtypes,
+            limit_to_entry_type=True,
         )
 
         message = ''

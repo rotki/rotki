@@ -371,7 +371,7 @@ class DBHistoryEvents():
 
     def rows_missing_prices_in_base_entries(
             self,
-            filter_query: HistoryEventFilterQuery,
+            filter_query: HistoryBaseEntryFilterQuery,
     ) -> list[tuple[str, FVal, Asset, Timestamp]]:
         """
         Get missing prices for history base entries based on filter query
