@@ -103,6 +103,14 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
   return headers;
 });
 
+const extraParams = computed(() => ({
+  includeIgnoredTrades: !get(hideIgnoredTrades)
+}));
+
+watch(hideIgnoredTrades, () => {
+  setPage(1);
+});
+
 const assetInfoRetrievalStore = useAssetInfoRetrieval();
 const { assetSymbol } = assetInfoRetrievalStore;
 
@@ -129,7 +137,12 @@ const {
   mainPage,
   useTradeFilters,
   fetchTrades,
-  () => ({ includeIgnoredTrades: !get(hideIgnoredTrades) })
+  {
+    onUpdateFilters: () => {
+      set(hideIgnoredTrades, route.query.includeIgnoredTrades === 'false');
+    },
+    extraParams
+  }
 );
 
 useHistoryAutoRefresh(fetchData);
@@ -252,18 +265,10 @@ onMounted(async () => {
   }
 });
 
-watch(hideIgnoredTrades, () => {
-  setPage(1);
-});
-
 watch(loading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading) {
     await fetchData();
   }
-});
-
-watch(route, ({ query }) => {
-  set(hideIgnoredTrades, query.includeIgnoredTrades === 'false');
 });
 </script>
 

@@ -31,7 +31,7 @@ enum TradeFilterValueKeys {
 }
 
 type Matcher = SearchMatcher<TradeFilterKeys, TradeFilterValueKeys>;
-type Filters = MatchedKeyword<TradeFilterValueKeys>;
+export type Filters = MatchedKeyword<TradeFilterValueKeys>;
 
 export const useTradeFilters = () => {
   const filters: Ref<Filters> = ref({});

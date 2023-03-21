@@ -11,12 +11,22 @@ import {
 } from '@/types/route';
 import { type Collection } from '@/types/collection';
 import { assert } from '@/utils/assertions';
+import type { Filters as TransactionsFilter } from '@/composables/filters/transactions';
+import type { Filters as TradesFilters } from '@/composables/filters/trades';
+import type { Filters as LedgerActionsFilters } from '@/composables/filters/ledger-actions';
+import type { Filters as AssetMovementFilters } from '@/composables/filters/asset-movement';
 
 interface FilterSchema {
   filters: Ref;
   matchers: ComputedRef;
 
-  updateFilter(v: any): void;
+  updateFilter(
+    filter:
+      | TransactionsFilter
+      | TradesFilters
+      | LedgerActionsFilters
+      | AssetMovementFilters
+  ): void;
 
   RouteFilterSchema: ZodSchema;
 }
@@ -26,11 +36,14 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
   mainPage: Ref<boolean>,
   filterSchema: () => FilterSchema,
   fetchAssetData: (payload: MaybeRef<U>) => Promise<Collection<V>>,
-  extraParams?: () => Record<string, string | boolean | null>
+  options: {
+    onUpdateFilters?: () => void;
+    extraParams?: ComputedRef<Record<string, string | boolean | null>>;
+  } = {}
 ) => {
   const router = useRouter();
   const route = useRoute();
-  const options: Ref<TablePagination<T>> = ref(defaultOptions<T>());
+  const paginationOptions: Ref<TablePagination<T>> = ref(defaultOptions<T>());
   const selected: Ref<V[]> = ref([]);
   const openDialog: Ref<boolean> = ref(false);
   const editableItem: Ref<V | null> = ref(null);
@@ -39,10 +52,12 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
   const expanded: Ref<V[]> = ref([]);
   const userAction: Ref<boolean> = ref(false);
 
+  const { onUpdateFilters, extraParams } = options;
+
   const { filters, matchers, updateFilter, RouteFilterSchema } = filterSchema();
 
   const pageParams: ComputedRef<U> = computed(() => {
-    const { itemsPerPage, page, sortBy, sortDesc } = get(options);
+    const { itemsPerPage, page, sortBy, sortDesc } = get(paginationOptions);
     const offset = (page - 1) * itemsPerPage;
 
     const selectedFilters = get(filters);
@@ -53,7 +68,7 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
 
     return {
       ...selectedFilters,
-      ...extraParams?.call(null),
+      ...get(extraParams),
       limit: itemsPerPage,
       offset,
       orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
@@ -82,15 +97,17 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
     const parsedOptions = RouterPaginationOptionsSchema.parse(query);
     const parsedFilters = RouteFilterSchema.parse(query);
 
+    onUpdateFilters?.call(null);
+
     updateFilter(parsedFilters);
-    set(options, {
-      ...get(options),
+    set(paginationOptions, {
+      ...get(paginationOptions),
       ...parsedOptions
     });
   };
 
   const getQuery = (): LocationQuery => {
-    const opts = get(options);
+    const opts = get(paginationOptions);
     assert(opts);
     const { itemsPerPage, page, sortBy, sortDesc } = opts;
 
@@ -107,7 +124,7 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
       sortBy,
       sortDesc: sortDesc.map(x => x.toString()),
       ...selectedFilters,
-      ...extraParams?.call(null)
+      ...get(extraParams)
     };
   };
 
@@ -117,12 +134,12 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
 
   const setPage = (page: number) => {
     set(userAction, true);
-    set(options, { ...get(options), page });
+    set(paginationOptions, { ...get(paginationOptions), page });
   };
 
   const setOptions = (newOptions: TablePagination<T>) => {
     set(userAction, true);
-    set(options, newOptions);
+    set(paginationOptions, newOptions);
   };
 
   const setFilter = (newFilter: UnwrapRef<typeof filters>) => {
@@ -144,7 +161,7 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
       return;
     }
 
-    set(options, { ...get(options), page: 1 });
+    set(paginationOptions, { ...get(paginationOptions), page: 1 });
   });
 
   watch(pageParams, async (params, op) => {
@@ -164,7 +181,7 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
   });
 
   return {
-    options,
+    options: paginationOptions,
     selected,
     openDialog,
     editableItem,
