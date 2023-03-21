@@ -1,5 +1,6 @@
 import groupBy from 'lodash/groupBy';
 import { type MaybeRef } from '@vueuse/core';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { type EntryWithMeta } from '@/types/history/meta';
 import {
@@ -104,7 +105,10 @@ export const useTransactions = () => {
     return false;
   };
 
-  const refreshTransactions = async (userInitiated = false): Promise<void> => {
+  const refreshTransactions = async (
+    chains: Blockchain[],
+    userInitiated = false
+  ): Promise<void> => {
     const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(
       Section.TX
     );
@@ -115,7 +119,12 @@ export const useTransactions = () => {
     }
 
     const txAccounts: EvmChainAddress[] = get(accounts)
-      .filter(({ chain }) => supportsTransactions(chain))
+      .filter(({ chain }) => {
+        return (
+          supportsTransactions(chain) &&
+          (chains.length === 0 || chains.includes(chain))
+        );
+      })
       .map(({ address, chain }) => ({
         address,
         evmChain: getEvmChainName(chain)!

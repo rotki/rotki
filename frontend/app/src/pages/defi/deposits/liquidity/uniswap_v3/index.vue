@@ -233,6 +233,7 @@ const getIdentifier = (item: XswapBalance) => item.nftId;
         HistoryEventType.DEPOSIT
       ]"
       :external-account-filter="selectedAccounts"
+      :only-chains="chains"
     />
   </div>
 </template>

@@ -28,12 +28,17 @@ body {
 
 .theme {
   &--light {
+    --border-color: rgba(0, 0, 0, 0.12);
     /* stylelint-disable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators */
 
     .v-btn:not(.v-btn--flat):not(.v-btn--text):not(.v-btn--outlined):not(.primary) {
       /* stylelint-enable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators */
       background-color: transparent;
     }
+  }
+
+  &--dark {
+    --border-color: rgba(255, 255, 255, 0.12);
   }
 }
 

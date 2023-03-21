@@ -174,7 +174,7 @@ const { getBlockie } = useBlockie();
   &__actions {
     height: 32px;
     background-color: var(--v-rotki-light-grey-base);
-    border: 1px solid rgba(0, 0, 0, 0.12);
+    border: 1px solid var(--border-color);
     border-left-width: 0;
     border-radius: 0 4px 4px 0;
     display: inline-block;

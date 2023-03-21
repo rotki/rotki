@@ -1,7 +1,8 @@
 import {
   LiquityBalances,
   LiquityPoolDetails,
-  LiquityStakingDetails
+  LiquityStakingDetails,
+  LiquityStatistics
 } from '@rotki/common/lib/liquity';
 import { type Ref } from 'vue';
 import { Module } from '@/types/modules';
@@ -15,6 +16,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
   const balances: Ref<LiquityBalances> = ref({});
   const staking: Ref<LiquityStakingDetails> = ref({});
   const stakingPools: Ref<LiquityPoolDetails> = ref({});
+  const statistics: Ref<LiquityStatistics | null> = ref(null);
 
   const isPremium = usePremium();
   const { activeModules } = useModules();
@@ -22,7 +24,8 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
   const {
     fetchLiquityStakingPools,
     fetchLiquityBalances,
-    fetchLiquityStaking
+    fetchLiquityStaking,
+    fetchLiquityStatistics
   } = useLiquityApi();
 
   const fetchPools = async (refresh = false): Promise<void> => {
@@ -136,23 +139,64 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
     );
   };
 
+  const fetchStatistics = async (refresh = false): Promise<void> => {
+    const meta: TaskMeta = {
+      title: tc('actions.defi.liquity_pools.task.title')
+    };
+
+    const onError: OnError = {
+      title: tc('actions.defi.liquity_pools.error.title'),
+      error: message =>
+        tc('actions.defi.liquity_pools.error.description', 0, {
+          message
+        })
+    };
+
+    await fetchDataAsync(
+      {
+        task: {
+          type: TaskType.LIQUITY_STATISTICS,
+          section: Section.DEFI_LIQUITY_STATISTICS,
+          meta,
+          query: async () => await fetchLiquityStatistics(),
+          parser: result => LiquityStatistics.parse(result),
+          onError
+        },
+        state: {
+          isPremium,
+          activeModules
+        },
+        requires: {
+          premium: true,
+          module: Module.LIQUITY
+        },
+        refresh
+      },
+      statistics
+    );
+  };
+
   const reset = (): void => {
     const { resetStatus } = useStatusUpdater(Section.DEFI_LIQUITY_BALANCES);
 
     set(balances, {});
     set(staking, {});
+    set(statistics, null);
 
     resetStatus(Section.DEFI_LIQUITY_BALANCES);
     resetStatus(Section.DEFI_LIQUITY_STAKING);
+    resetStatus(Section.DEFI_LIQUITY_STATISTICS);
   };
 
   return {
     balances,
     staking,
     stakingPools,
+    statistics,
     fetchBalances,
     fetchStaking,
     fetchPools,
+    fetchStatistics,
     reset
   };
 });

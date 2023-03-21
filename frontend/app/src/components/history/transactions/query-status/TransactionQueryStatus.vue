@@ -1,7 +1,18 @@
 <script setup lang="ts">
+import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type EvmTransactionQueryData } from '@/types/websocket-messages';
 
-defineProps<{ colspan: number }>();
+const props = withDefaults(
+  defineProps<{
+    colspan: number;
+    onlyChains?: Blockchain[];
+  }>(),
+  {
+    onlyChains: () => []
+  }
+);
+
+const { onlyChains } = toRefs(props);
 
 const openStatusDropdown = ref<boolean>(false);
 
@@ -10,8 +21,13 @@ const { queryStatus, isAllFinished, length } = toRefs(store);
 
 const { isStatusFinished, resetQueryStatus } = store;
 
+const { getChain } = useSupportedChains();
+
 const sortedQueryStatus = computed<EvmTransactionQueryData[]>(() => {
-  const statuses = Object.values(get(queryStatus));
+  const chains = get(onlyChains);
+  const statuses = Object.values(get(queryStatus)).filter(status => {
+    return chains.length === 0 || chains.includes(getChain(status.evmChain));
+  });
 
   return statuses.sort(
     (a: EvmTransactionQueryData, b: EvmTransactionQueryData) =>

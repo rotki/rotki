@@ -382,6 +382,7 @@
     "useQueriedAddressesStore": true,
     "useRafFn": true,
     "useRefHistory": true,
+    "useRefMap": true,
     "useRefresh": true,
     "useReportsApi": true,
     "useReportsStore": true,

@@ -2564,11 +2564,11 @@
     "title": "Stability pool deposits"
   },
   "liquity_staking_details": {
-    "refresh_tooltip": "Refresh the staked amounts and events",
+    "refresh_tooltip": "Refresh the staked amounts and prices",
     "select_account": "Select account",
     "view": {
-      "hide": "Hide liquity staking detail",
-      "show": "Show liquity staking detail"
+      "hide": "Hide details",
+      "show": "Show details"
     }
   },
   "liquity_staking_events": {

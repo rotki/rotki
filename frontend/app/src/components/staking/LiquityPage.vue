@@ -1,29 +1,41 @@
 <script setup lang="ts">
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
+import { useBalancePricesStore } from '@/store/balances/prices';
 
 const modules = [Module.LIQUITY];
 const { isModuleEnabled } = useModules();
-const { fetchStaking, fetchPools } = useLiquityStore();
+const { fetchStaking, fetchPools, fetchStatistics } = useLiquityStore();
 const { shouldShowLoadingScreen } = useStatusStore();
 const moduleEnabled = isModuleEnabled(modules[0]);
 const loading = shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING);
 const premium = usePremium();
+const { fetchPrices } = useBalancePricesStore();
 
-const load = async () => {
-  await fetchStaking();
-  await fetchPools();
+const LUSD_ID = 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0';
+const LQTY_ID = 'eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D';
+
+const fetch = async (refresh = false) => {
+  await Promise.all([
+    fetchStaking(refresh),
+    fetchPools(refresh),
+    fetchStatistics(refresh),
+    fetchPrices({
+      ignoreCache: refresh,
+      selectedAssets: [LUSD_ID, LQTY_ID, 'ETH']
+    })
+  ]);
 };
 
 onMounted(async () => {
   if (get(moduleEnabled)) {
-    await load();
+    await fetch();
   }
 });
 
 watch(moduleEnabled, async enabled => {
   if (enabled) {
-    await load();
+    await fetch();
   }
 });
 
@@ -43,7 +55,7 @@ const { tc } = useI18n();
       </template>
     </progress-screen>
     <div v-else>
-      <liquity-staking-details>
+      <liquity-staking-details @refresh="fetch">
         <template #modules>
           <active-modules :modules="modules" />
         </template>

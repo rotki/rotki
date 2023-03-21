@@ -7604,7 +7604,7 @@ Getting Liquity staking information
         "result": {
           "global_stats": {
             "total_usd_gains_stability_pool": "41902.74041824219",
-            "total_usd_gains_stacking": "190.09104568340678",
+            "total_usd_gains_staking": "190.09104568340678",
             "total_deposited_stability_pool": "1915600.7290263602",
             "total_withdrawn_stability_pool": "914454.5094041774",
             "total_deposited_stability_pool_usd_value": "0.0",
@@ -7642,7 +7642,7 @@ Getting Liquity staking information
           "by_address": {
             "0xF662f831361c8Ab48d807f7753eb3d641be25d24": {
               "total_usd_gains_stability_pool": "0.0",
-              "total_usd_gains_stacking": "0.0",
+              "total_usd_gains_staking": "0.0",
               "total_deposited_stability_pool": "1519146.7290263602",
               "total_withdrawn_stability_pool": "914454.5094041774",
               "total_deposited_stability_pool_usd_value": "0.0",
@@ -7679,7 +7679,7 @@ Getting Liquity staking information
             },
             "0xbB8311c7bAD518f0D8f907Cad26c5CcC85a06dC4": {
               "total_usd_gains_stability_pool": "41902.74041824219",
-              "total_usd_gains_stacking": "190.09104568340678",
+              "total_usd_gains_staking": "190.09104568340678",
               "total_deposited_stability_pool": "396454.0",
               "total_withdrawn_stability_pool": "0",
               "total_deposited_stability_pool_usd_value": "0.0",
@@ -7718,7 +7718,7 @@ Getting Liquity staking information
    :resjson object global_stats: Stats aggregating the information for all the addresses tracked in the liquity module.
    :resjson object global_stats: Breakdown by tracked address of the stats.
    :resjson string total_usd_gains_stability_pool: Sum of all the gains valued at the moment of the event for the stability pool.
-   :resjson string total_usd_gains_stacking: Sum of all the gains valued at the moment of the event for liquity staking.
+   :resjson string total_usd_gains_staking: Sum of all the gains valued at the moment of the event for liquity staking.
    :resjson string total_deposited_stability_pool: Total amount of LUSD deposited in the stability pool.
    :resjson string total_withdrawn_stability_pool: Total amount of LUSD withdrawn from the stability pool.
    :resjson string total_deposited_stability_pool_usd_value: Sum of the USD value deposited in the stability pool at the time of the events.

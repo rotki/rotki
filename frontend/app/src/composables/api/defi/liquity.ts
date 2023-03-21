@@ -18,9 +18,15 @@ export const useLiquityApi = () => {
     return fetchExternalAsync(api.instance, url);
   };
 
+  const fetchLiquityStatistics = async (): Promise<PendingTask> => {
+    const url = 'blockchains/ETH/modules/liquity/stats';
+    return fetchExternalAsync(api.instance, url);
+  };
+
   return {
     fetchLiquityBalances,
     fetchLiquityStaking,
-    fetchLiquityStakingPools
+    fetchLiquityStakingPools,
+    fetchLiquityStatistics
   };
 };

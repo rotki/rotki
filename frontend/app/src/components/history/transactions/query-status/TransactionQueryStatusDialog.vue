@@ -1,8 +1,34 @@
 <script setup lang="ts">
+import { type Blockchain } from '@rotki/common/lib/blockchain';
+
+const props = withDefaults(
+  defineProps<{
+    onlyChains?: Blockchain[];
+  }>(),
+  {
+    onlyChains: () => []
+  }
+);
+
+const { onlyChains } = toRefs(props);
+
 const { t } = useI18n();
 const css = useCssModule();
 
 const { queryStatus } = toRefs(useTxQueryStatusStore());
+const { getChain } = useSupportedChains();
+
+const filtered = computed(() => {
+  const chains = get(onlyChains);
+  const statuses = Object.values(get(queryStatus));
+  if (chains.length === 0) {
+    return statuses;
+  }
+
+  return statuses.filter(({ evmChain }) => {
+    return chains.includes(getChain(evmChain));
+  });
+});
 </script>
 
 <template>
@@ -28,7 +54,7 @@ const { queryStatus } = toRefs(useTxQueryStatusStore());
 
         <div class="px-6 pb-4">
           <div
-            v-for="item in queryStatus"
+            v-for="item in filtered"
             :key="item.address + item.evmChain"
             :class="css.item"
           >
