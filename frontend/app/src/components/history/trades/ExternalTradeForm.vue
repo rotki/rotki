@@ -9,7 +9,7 @@ import {
   type TradeType
 } from '@/types/history/trade';
 import { TaskType } from '@/types/task-type';
-import { Zero, bigNumberify, bigNumberifyFromRef } from '@/utils/bignumbers';
+import { Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useTrades } from '@/composables/history/trades';
 import { toMessages } from '@/utils/validation-errors';
@@ -42,7 +42,6 @@ const datetime = ref<string>('');
 const amount = ref<string>('');
 const rate = ref<string>('');
 const quoteAmount = ref<string>('');
-const selectedCalculationInput = ref<'rate' | 'quoteAmount'>('rate');
 const fee = ref<string>('');
 const feeCurrency = ref<string>('');
 const link = ref<string>('');
@@ -51,8 +50,7 @@ const type = ref<TradeType>('buy');
 
 const errorMessages = ref<Record<string, string[]>>({});
 
-const quoteAmountInput = ref<any>(null);
-const rateInput = ref<any>(null);
+const quoteAmountInputFocused = ref<boolean>(false);
 const feeInput = ref<any>(null);
 const feeCurrencyInput = ref<any>(null);
 
@@ -150,6 +148,7 @@ const shouldRenderSummary = computed<boolean>(() => {
 const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
 
 const numericAmount = bigNumberifyFromRef(amount);
+const numericQuoteAmount = bigNumberifyFromRef(quoteAmount);
 const numericFee = bigNumberifyFromRef(fee);
 const numericRate = bigNumberifyFromRef(rate);
 
@@ -235,25 +234,11 @@ const save = async (): Promise<boolean> => {
 
 defineExpose({ save, reset, focus });
 
-const swapAmountInput = () => {
-  if (get(selectedCalculationInput) === 'rate') {
-    set(selectedCalculationInput, 'quoteAmount');
-    nextTick(() => {
-      get(quoteAmountInput)?.focus();
-    });
-  } else {
-    set(selectedCalculationInput, 'rate');
-    nextTick(() => {
-      get(rateInput)?.focus();
-    });
-  }
-};
-
 const updateRate = (forceUpdate = false) => {
   if (
     get(amount) &&
     get(rate) &&
-    (get(selectedCalculationInput) === 'rate' || forceUpdate)
+    (!get(quoteAmountInputFocused) || forceUpdate)
   ) {
     set(
       quoteAmount,
@@ -292,12 +277,8 @@ const fetchPrice = async () => {
 };
 
 const onQuoteAmountChange = () => {
-  if (
-    get(amount) &&
-    get(quoteAmount) &&
-    get(selectedCalculationInput) === 'quoteAmount'
-  ) {
-    set(rate, bigNumberify(get(quoteAmount)).div(get(numericAmount)).toFixed());
+  if (get(amount) && get(quoteAmount) && get(quoteAmountInputFocused)) {
+    set(rate, get(numericQuoteAmount).div(get(numericAmount)).toFixed());
   }
 };
 
@@ -407,62 +388,26 @@ onMounted(() => {
                 :hint="t('external_trade_form.amount.hint')"
                 @blur="v$.amount.$touch()"
               />
-              <div
-                :class="`external-trade-form__grouped-amount-input d-flex ${
-                  selectedCalculationInput === 'quoteAmount'
-                    ? 'flex-column-reverse'
-                    : 'flex-column'
-                }`"
-              >
-                <amount-input
-                  ref="rateInput"
-                  v-model="rate"
-                  :disabled="selectedCalculationInput !== 'rate'"
-                  :label="t('external_trade_form.rate.label')"
-                  :loading="fetching"
-                  :error-messages="v$.rate.$errors.map(e => e.$message)"
-                  data-cy="rate"
-                  :hide-details="selectedCalculationInput !== 'rate'"
-                  :class="`${
-                    selectedCalculationInput === 'rate'
-                      ? 'v-input--is-enabled'
-                      : ''
-                  }`"
-                  filled
-                  persistent-hint
-                  @blur="v$.rate.$touch()"
-                />
-                <amount-input
-                  ref="quoteAmountInput"
-                  v-model="quoteAmount"
-                  :disabled="selectedCalculationInput !== 'quoteAmount'"
-                  :error-messages="toMessages(v$.quoteAmount)"
-                  data-cy="quote-amount"
-                  :hide-details="selectedCalculationInput !== 'quoteAmount'"
-                  :class="`${
-                    selectedCalculationInput === 'quoteAmount'
-                      ? 'v-input--is-enabled'
-                      : ''
-                  }`"
-                  :label="t('external_trade_form.quote_amount.label')"
-                  filled
-                  @blur="v$.quoteAmount.$touch()"
-                />
-                <v-btn
-                  class="external-trade-form__grouped-amount-input__swap-button"
-                  fab
-                  small
-                  dark
-                  color="primary"
-                  data-cy="grouped-amount-input__swap-button"
-                  @click="swapAmountInput"
-                >
-                  <v-icon>mdi-swap-vertical</v-icon>
-                </v-btn>
-              </div>
+              <two-fields-amount-input
+                class="mb-5"
+                :primary-value.sync="rate"
+                :secondary-value.sync="quoteAmount"
+                :loading="fetching"
+                :disabled="fetching"
+                data-cy="trade-rate"
+                :label="{
+                  primary: t('external_trade_form.rate.label'),
+                  secondary: t('external_trade_form.quote_amount.label')
+                }"
+                :error-messages="{
+                  primary: toMessages(v$.rate),
+                  secondary: toMessages(v$.quoteAmount)
+                }"
+                @update:reversed="quoteAmountInputFocused = $event"
+              />
               <div
                 v-if="shouldRenderSummary"
-                class="text-caption green--text mt-n5"
+                class="text-caption green--text mt-n4 mb-n1"
               >
                 <v-icon small class="mr-2 green--text">
                   mdi-comment-quote
@@ -589,100 +534,6 @@ onMounted(() => {
   &__action-hint {
     width: 60px;
     margin-top: -2rem;
-  }
-
-  &__grouped-amount-input {
-    position: relative;
-    margin-bottom: 30px;
-
-    :deep(.v-input) {
-      position: static;
-
-      .v-input {
-        &__slot {
-          margin-bottom: 0;
-          background: transparent !important;
-        }
-      }
-
-      &.v-input {
-        &--is-disabled {
-          .v-input {
-            &__control {
-              .v-input {
-                &__slot {
-                  &::before {
-                    content: none;
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        &--is-enabled {
-          &::before {
-            content: '';
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            border: 1px solid rgba(0, 0, 0, 0.42);
-            border-radius: 4px;
-          }
-
-          &.v-input {
-            &--is-focused {
-              &::before {
-                border: 2px solid var(--v-primary-base) !important;
-              }
-            }
-          }
-
-          &.error {
-            &--text {
-              &::before {
-                border: 2px solid var(--v-error-base) !important;
-              }
-            }
-          }
-        }
-      }
-
-      .v-text-field {
-        &__details {
-          position: absolute;
-          bottom: -30px;
-          width: 100%;
-        }
-      }
-    }
-
-    &__swap-button {
-      position: absolute;
-      right: 20px;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-  }
-}
-
-.theme {
-  &--dark {
-    .external-trade-form {
-      &__grouped-amount-input {
-        /* stylelint-disable selector-class-pattern,selector-nested-pattern */
-
-        :deep(.v-input--is-enabled),
-        :deep(.v-input__slot) {
-          &::before {
-            border-color: hsla(0, 0%, 100%, 0.24);
-          }
-        }
-        /* stylelint-enable selector-class-pattern,selector-nested-pattern */
-      }
-    }
   }
 }
 </style>

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import dayjs from 'dayjs';
@@ -8,6 +7,7 @@ import {
   HistoryEventSubType,
   type HistoryEventType
 } from '@rotki/common/lib/history/tx-events';
+import { type BigNumber } from '@rotki/common';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { type Writeable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
@@ -17,12 +17,7 @@ import {
   type NewEthTransactionEvent
 } from '@/types/history/tx';
 import { TaskType } from '@/types/task-type';
-import {
-  One,
-  Zero,
-  bigNumberify,
-  bigNumberifyFromRef
-} from '@/utils/bignumbers';
+import { Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useEventTypeData } from '@/utils/history';
 import { toMessages } from '@/utils/validation-errors';
@@ -50,10 +45,15 @@ const { edit, transaction } = toRefs(props);
 
 const { isTaskRunning } = useTaskStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { exchangeRate, getHistoricPrice } = useBalancePricesStore();
+const { getHistoricPrice } = useBalancePricesStore();
+const { addHistoricalPrice } = useAssetPricesApi();
 const { getEventTypeData } = useEventTypeData();
 const { historyEventTypeData, historyEventSubTypeData } =
   useHistoryEventTypeData();
+
+const isCurrentCurrencyUsd: ComputedRef<boolean> = computed(() => {
+  return get(currencySymbol) === CURRENCY_USD;
+});
 
 const lastLocation = useLocalStorage(
   'rotki.ledger_action.location',
@@ -70,12 +70,14 @@ const eventSubtype = ref<string>('');
 const transactionEventType = ref<string | null>();
 const asset = ref<string>('');
 const amount = ref<string>('');
+const assetToUsdPrice = ref<string>('');
+const assetToFiatPrice = ref<string>('');
+const usdValue = ref<string>('');
 const fiatValue = ref<string>('');
 const locationLabel = ref<string>('');
 const notes = ref<string>('');
 const counterparty = ref<string>('');
 
-const rate = ref<string>('');
 const errorMessages = ref<Record<string, string[]>>({});
 
 const rules = {
@@ -148,7 +150,7 @@ const v$ = useVuelidate(
     location,
     asset,
     amount,
-    usdValue: fiatValue,
+    usdValue,
     sequenceIndex,
     eventType,
     eventSubtype,
@@ -170,22 +172,18 @@ const reset = () => {
     datetime,
     convertFromTimestamp(get(transaction)?.timestamp || dayjs().unix(), true)
   );
-  set(location, '');
+  set(location, get(transaction)?.evmChain || get(lastLocation));
   set(eventType, '');
   set(eventSubtype, '');
   set(asset, '');
   set(amount, '0');
-  set(fiatValue, '0');
-  set(location, get(lastLocation));
+  set(usdValue, '0');
   set(notes, '');
   set(counterparty, '');
-  set(rate, '');
+  set(fetchedAssetToUsdPrice, '');
+  set(fetchedAssetToFiatPrice, '');
   set(errorMessages, {});
 };
-
-const fiatExchangeRate = computed<BigNumber>(() => {
-  return get(exchangeRate(get(currencySymbol))) ?? One;
-});
 
 const setEditMode = async () => {
   const editVal = get(edit);
@@ -195,12 +193,6 @@ const setEditMode = async () => {
   }
 
   const event: EthTransactionEvent = editVal;
-
-  const convertedFiatValue =
-    get(currencySymbol) === CURRENCY_USD
-      ? event.balance.usdValue.toFixed()
-      : event.balance.usdValue.multipliedBy(get(fiatExchangeRate)).toFixed();
-
   set(identifier, event.identifier ?? null);
   set(eventIdentifier, event.eventIdentifier);
   set(sequenceIndex, event.sequenceIndex?.toString() ?? '');
@@ -210,12 +202,10 @@ const setEditMode = async () => {
   set(eventSubtype, event.eventSubtype || HistoryEventSubType.NONE);
   set(asset, event.asset);
   set(amount, event.balance.amount.toFixed());
-  set(fiatValue, convertedFiatValue);
+  set(usdValue, event.balance.usdValue.toFixed());
   set(locationLabel, event.locationLabel ?? '');
   set(notes, event.notes ?? '');
   set(counterparty, event.counterparty ?? '');
-
-  await fetchPrice();
 };
 
 const { setMessage } = useMessageStore();
@@ -223,30 +213,43 @@ const { setMessage } = useMessageStore();
 const { editTransactionEvent, addTransactionEvent } = useTransactions();
 
 const save = async (): Promise<boolean> => {
-  const numericAmount = get(bigNumberifyFromRef(amount));
-  const numericFiatValue = get(bigNumberifyFromRef(fiatValue));
-
-  const convertedUsdValue =
-    get(currencySymbol) === CURRENCY_USD
-      ? numericFiatValue
-      : numericFiatValue.dividedBy(get(fiatExchangeRate));
+  const timestamp = convertToTimestamp(get(datetime));
+  const assetVal = get(asset);
 
   const transactionEventPayload: Writeable<NewEthTransactionEvent> = {
     eventIdentifier: get(eventIdentifier),
     sequenceIndex: get(sequenceIndex) || '0',
-    timestamp: convertToTimestamp(get(datetime)),
+    timestamp,
     location: get(location),
     eventType: get(eventType) as HistoryEventType,
     eventSubtype: get(eventSubtype) as HistoryEventSubType,
-    asset: get(asset),
+    asset: assetVal,
     balance: {
-      amount: numericAmount.isNaN() ? Zero : numericAmount,
-      usdValue: convertedUsdValue.isNaN() ? Zero : convertedUsdValue
+      amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
+      usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue)
     },
-    locationLabel: get(locationLabel) ? get(locationLabel) : undefined,
-    notes: get(notes) ? get(notes) : undefined,
-    counterparty: get(counterparty) ? get(counterparty) : undefined
+    locationLabel: get(locationLabel) || undefined,
+    notes: get(notes) || undefined,
+    counterparty: get(counterparty) || undefined
   };
+
+  if (get(isCurrentCurrencyUsd)) {
+    if (get(assetToUsdPrice) !== get(fetchedAssetToUsdPrice)) {
+      await addHistoricalPrice({
+        fromAsset: assetVal,
+        toAsset: CURRENCY_USD,
+        timestamp,
+        price: get(assetToUsdPrice)
+      });
+    }
+  } else if (get(assetToFiatPrice) !== get(fetchedAssetToFiatPrice)) {
+    await addHistoricalPrice({
+      fromAsset: assetVal,
+      toAsset: get(currencySymbol),
+      timestamp,
+      price: get(assetToFiatPrice)
+    });
+  }
 
   const id = get(identifier);
   const result = !id
@@ -275,52 +278,139 @@ const save = async (): Promise<boolean> => {
   return false;
 };
 
-const updateUsdValue = () => {
-  if (get(amount) && get(rate)) {
+const fiatValueFocused = ref<boolean>(false);
+
+const fetchedAssetToUsdPrice: Ref<string> = ref('');
+const fetchedAssetToFiatPrice: Ref<string> = ref('');
+
+const numericAmount = bigNumberifyFromRef(amount);
+const numericAssetToUsdPrice = bigNumberifyFromRef(assetToUsdPrice);
+const numericUsdValue = bigNumberifyFromRef(usdValue);
+const numericAssetToFiatPrice = bigNumberifyFromRef(assetToFiatPrice);
+const numericFiatValue = bigNumberifyFromRef(fiatValue);
+
+const onAssetToUsdPriceChange = (forceUpdate = false) => {
+  if (
+    get(amount) &&
+    get(assetToUsdPrice) &&
+    (!get(fiatValueFocused) || forceUpdate)
+  ) {
     set(
-      fiatValue,
-      bigNumberify(get(amount))
-        .multipliedBy(bigNumberify(get(rate)))
-        .toFixed()
+      usdValue,
+      get(numericAmount).multipliedBy(get(numericAssetToUsdPrice)).toFixed()
     );
   }
 };
 
-const fetchPrice = async () => {
-  if ((get(fiatValue) && get(edit)) || !get(datetime) || !get(asset)) {
+const onAssetToFiatPriceChanged = (forceUpdate = false) => {
+  if (
+    get(amount) &&
+    get(assetToFiatPrice) &&
+    (!get(fiatValueFocused) || forceUpdate)
+  ) {
+    set(
+      fiatValue,
+      get(numericAmount).multipliedBy(get(numericAssetToFiatPrice)).toFixed()
+    );
+  }
+};
+
+const onUsdValueChange = () => {
+  if (get(amount) && get(fiatValueFocused)) {
+    set(
+      assetToUsdPrice,
+      get(numericUsdValue).div(get(numericAmount)).toFixed()
+    );
+  }
+};
+
+const onFiatValueChange = () => {
+  if (get(amount) && get(fiatValueFocused)) {
+    set(
+      assetToFiatPrice,
+      get(numericFiatValue).div(get(numericAmount)).toFixed()
+    );
+  }
+};
+
+const fetchHistoricPrices = async () => {
+  const datetimeVal = get(datetime);
+  const assetVal = get(asset);
+  if (!datetimeVal || !assetVal) {
     return;
   }
 
   const timestamp = convertToTimestamp(get(datetime));
-  const fromAsset = get(asset);
-  const toAsset = get(currencySymbol);
 
-  const rateFromHistoricPrice = await getHistoricPrice({
+  let price: BigNumber = Zero;
+  price = await getHistoricPrice({
     timestamp,
-    fromAsset,
-    toAsset
+    fromAsset: assetVal,
+    toAsset: CURRENCY_USD
   });
 
-  if (rateFromHistoricPrice.gt(0)) {
-    set(rate, rateFromHistoricPrice.toFixed());
-    updateUsdValue();
+  if (price.gt(0)) {
+    set(fetchedAssetToUsdPrice, price.toFixed());
+  }
+
+  if (!get(isCurrentCurrencyUsd)) {
+    const currentCurrency = get(currencySymbol);
+
+    price = await getHistoricPrice({
+      timestamp,
+      fromAsset: assetVal,
+      toAsset: currentCurrency
+    });
+
+    if (price.gt(0)) {
+      set(fetchedAssetToFiatPrice, price.toFixed());
+    }
   }
 };
 
-watch(edit, async () => {
-  await setEditMode();
+watch([datetime, asset], async () => {
+  await fetchHistoricPrices();
 });
 
-watch([datetime, asset], async () => {
-  await fetchPrice();
+watch(fetchedAssetToUsdPrice, price => {
+  set(assetToUsdPrice, price);
+  onAssetToUsdPriceChange(true);
+});
+
+watch(assetToUsdPrice, () => {
+  onAssetToUsdPriceChange();
+});
+
+watch(usdValue, () => {
+  onUsdValueChange();
+});
+
+watch(fetchedAssetToFiatPrice, price => {
+  set(assetToFiatPrice, price);
+  onAssetToFiatPriceChanged(true);
+});
+
+watch(assetToFiatPrice, () => {
+  onAssetToFiatPriceChanged();
+});
+
+watch(fiatValue, () => {
+  onFiatValueChange();
 });
 
 watch(amount, () => {
-  updateUsdValue();
+  if (get(isCurrentCurrencyUsd)) {
+    onAssetToUsdPriceChange();
+    onUsdValueChange();
+  } else {
+    onAssetToFiatPriceChanged();
+    onFiatValueChange();
+  }
 });
 
 watch(transaction, transaction => {
   set(eventIdentifier, transaction?.txHash || '');
+  set(location, transaction?.evmChain || get(lastLocation));
 });
 
 watch(location, (location: string) => {
@@ -329,26 +419,17 @@ watch(location, (location: string) => {
   }
 });
 
-watch([eventType, eventSubtype], ([type, subType]) => {
-  const typeData = getEventTypeData(
-    { eventType: type, eventSubtype: subType },
-    false
-  );
-
+watch([eventType, eventSubtype], ([eventType, eventSubtype]) => {
+  const typeData = getEventTypeData({ eventType, eventSubtype }, false);
   set(transactionEventType, typeData.label);
-
-  if (
-    subType &&
-    !get(historyEventSubTypeFilteredData)
-      .map(({ identifier }) => identifier)
-      .includes(subType)
-  ) {
-    set(eventSubtype, '');
-  }
 });
 
 watch(v$, ({ $invalid }) => {
   emit('input', !$invalid);
+});
+
+watch(edit, async () => {
+  await setEditMode();
 });
 
 onMounted(async () => {
@@ -383,39 +464,41 @@ const { counterparties } = storeToRefs(useHistoryStore());
     data-cy="transaction-event-form"
     class="transaction-event-form"
   >
-    <location-selector
-      v-model="location"
-      class="pt-1"
-      required
-      outlined
-      data-cy="location"
-      :label="t('common.location')"
-      :error-messages="toMessages(v$.location)"
-      @blur="v$.location.$touch()"
-    />
-
-    <date-time-picker
-      v-model="datetime"
-      outlined
-      :label="t('transactions.events.form.datetime.label')"
-      persistent-hint
-      required
-      seconds
-      limit-now
-      data-cy="datetime"
-      :hint="t('transactions.events.form.datetime.hint')"
-      :error-messages="errorMessages['datetime']"
-    />
-
+    <v-row class="pt-1" align="center">
+      <v-col cols="12" md="6">
+        <location-selector
+          v-model="location"
+          required
+          outlined
+          data-cy="location"
+          :label="t('common.location')"
+          :error-messages="toMessages(v$.location)"
+          @blur="v$.location.$touch()"
+        />
+      </v-col>
+      <v-col cols="12" md="6">
+        <date-time-picker
+          v-model="datetime"
+          outlined
+          :label="t('transactions.events.form.datetime.label')"
+          persistent-hint
+          required
+          seconds
+          limit-now
+          data-cy="datetime"
+          :hint="t('transactions.events.form.datetime.hint')"
+          :error-messages="errorMessages['datetime']"
+        />
+      </v-col>
+    </v-row>
     <v-row
-      align="center"
       :class="
         $vuetify.breakpoint.mdAndUp
           ? 'transaction-event-form__amount-wrapper'
           : null
       "
     >
-      <v-col cols="12" md="4">
+      <v-col cols="12" md="6">
         <asset-select
           v-model="asset"
           outlined
@@ -426,7 +509,7 @@ const { counterparties } = storeToRefs(useHistoryStore());
         />
       </v-col>
 
-      <v-col cols="12" md="4">
+      <v-col cols="12" md="6">
         <amount-input
           v-model="amount"
           outlined
@@ -438,27 +521,46 @@ const { counterparties } = storeToRefs(useHistoryStore());
         />
       </v-col>
 
-      <v-col cols="12" md="4">
-        <amount-input
-          v-model="fiatValue"
-          outlined
-          required
-          data-cy="fiatValue"
+      <v-col cols="12">
+        <two-fields-amount-input
+          v-if="isCurrentCurrencyUsd"
+          class="mb-5"
+          :primary-value.sync="assetToUsdPrice"
+          :secondary-value.sync="usdValue"
           :loading="fetching"
-          :label="
-            t('common.value_in_symbol', {
+          :disabled="fetching"
+          :label="{
+            primary: t('transactions.events.form.asset_price.label', {
+              symbol: currencySymbol
+            }),
+            secondary: t('common.value_in_symbol', {
               symbol: currencySymbol
             })
-          "
-          :error-messages="toMessages(v$.usdValue)"
-          @blur="v$.usdValue.$touch()"
-        >
-          <template #append>
-            <div class="pt-1">
-              <value-accuracy-hint />
-            </div>
-          </template>
-        </amount-input>
+          }"
+          :error-messages="{
+            secondary: toMessages(v$.usdValue)
+          }"
+          :hint="t('transactions.events.form.asset_price.hint')"
+          @update:reversed="fiatValueFocused = $event"
+        />
+
+        <two-fields-amount-input
+          v-else
+          class="mb-5"
+          :primary-value.sync="assetToFiatPrice"
+          :secondary-value.sync="fiatValue"
+          :loading="fetching"
+          :disabled="fetching"
+          :label="{
+            primary: t('transactions.events.form.asset_price.label', {
+              symbol: currencySymbol
+            }),
+            secondary: t('common.value_in_symbol', {
+              symbol: currencySymbol
+            })
+          }"
+          @update:reversed="fiatValueFocused = $event"
+        />
       </v-col>
     </v-row>
 
@@ -532,7 +634,7 @@ const { counterparties } = storeToRefs(useHistoryStore());
           :label="t('transactions.events.form.counterparty.label')"
           :items="counterparties"
           data-cy="counterparty"
-          :error-messages="v$.counterparty.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.counterparty)"
           @blur="v$.counterparty.$touch()"
         />
       </v-col>

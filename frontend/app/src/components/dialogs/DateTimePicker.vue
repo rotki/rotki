@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
-import { type PropType, type Ref } from 'vue';
+import { type Ref } from 'vue';
 import { timezones } from '@/data/timezones';
 import { DateFormat } from '@/types/date-format';
 import {
@@ -72,27 +72,35 @@ const useRules = (
 
 type ValidationRules = ((v: string) => boolean | string)[];
 
-const props = defineProps({
-  label: { required: true, type: String },
-  hint: { required: false, default: '', type: String },
-  persistentHint: { required: false, default: false, type: Boolean },
-  value: { default: '', required: false, type: String },
-  rules: {
-    default: () => [],
-    required: false,
-    type: Array as PropType<ValidationRules>
-  },
-  limitNow: { required: false, default: false, type: Boolean },
-  allowEmpty: { required: false, default: false, type: Boolean },
-  seconds: { required: false, default: false, type: Boolean },
-  outlined: { required: false, default: false, type: Boolean },
-  disabled: { required: false, default: false, type: Boolean },
-  errorMessages: {
-    required: false,
-    default: () => [],
-    type: Array as PropType<string[]>
+const props = withDefaults(
+  defineProps<{
+    label: string;
+    hint?: string;
+    persistentHint?: boolean;
+    value?: string;
+    rules?: ValidationRules;
+    limitNow?: boolean;
+    allowEmpty?: boolean;
+    seconds?: boolean;
+    outlined?: boolean;
+    disabled?: boolean;
+    errorMessages?: string[];
+    hideDetails?: boolean;
+  }>(),
+  {
+    hint: '',
+    persistentHint: false,
+    value: '',
+    rules: () => [],
+    limitNow: false,
+    allowEmpty: false,
+    seconds: false,
+    outlined: false,
+    disabled: false,
+    errorMessages: () => [],
+    hideDetails: false
   }
-});
+);
 
 const emit = defineEmits<{ (e: 'input', value: string): void }>();
 
@@ -287,6 +295,7 @@ defineExpose({
           :label="label"
           :hint="hint"
           :disabled="disabled"
+          :hide-details="hideDetails"
           prepend-inner-icon="mdi-calendar"
           :persistent-hint="persistentHint"
           :rules="allRules"
