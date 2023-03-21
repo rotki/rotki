@@ -441,7 +441,7 @@ class EventsHistorian:
 
         step = self._increase_progress(step, total_steps)
         self.processing_state_name = 'Querying base history events'
-        # Include base history entries
+        # Include all base history entries
         history_events_db = DBHistoryEvents(self.db)
         with self.db.conn.read_ctx() as cursor:
             base_entries = history_events_db.get_all_history_events(

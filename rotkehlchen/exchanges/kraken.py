@@ -683,6 +683,7 @@ class Kraken(ExchangeInterface):
                 ],
                 location=Location.KRAKEN,
                 location_label=self.name,
+                limit_to_entry_type=True,
             )
             trades_raw = self.history_events_db.get_history_events(
                 cursor=cursor,
@@ -728,6 +729,7 @@ class Kraken(ExchangeInterface):
                 ],
                 location=Location.KRAKEN,
                 location_label=self.name,
+                limit_to_entry_type=True,
             )
             events = self.history_events_db.get_history_events(
                 cursor=cursor,

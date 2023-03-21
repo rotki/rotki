@@ -13,7 +13,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_SUSHI, A_USDT
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -148,7 +148,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     db = DBHistoryEvents(rotki.data.db)
     entries = _add_entries(server=rotkehlchen_api_server, events_db=db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        saved_events = db.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True)
+        saved_events = db.get_all_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True)  # noqa: E501
     for idx, event in enumerate(saved_events):
         assert event == entries[idx]
 
@@ -224,7 +224,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
 
     entries.sort(key=lambda x: x.timestamp)  # resort by timestamp
     with rotki.data.db.conn.read_ctx() as cursor:
-        saved_events = db.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True)
+        saved_events = db.get_all_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True)  # noqa: E501
         assert len(saved_events) == 5
         for idx, event in enumerate(saved_events):
             assert event == entries[idx]
@@ -239,7 +239,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
             contained_in_msg='Tried to remove history event with id 19 which does not exist',
             status_code=HTTPStatus.CONFLICT,
         )
-        saved_events = db.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True)
+        saved_events = db.get_all_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True)  # noqa: E501
         assert len(saved_events) == 5
         for idx, event in enumerate(saved_events):
             assert event == entries[idx]
@@ -251,7 +251,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
         )
         result = assert_proper_response_with_result(response)
         assert result is True
-        saved_events = db.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True)
+        saved_events = db.get_all_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True)  # noqa: E501
         # entry is now last since the timestamp was modified
         assert saved_events == [entries[0], entries[3], entry]
 
@@ -265,7 +265,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
             contained_in_msg='Tried to remove history event with id 1 which was the last event of a transaction',  # noqa: E501
             status_code=HTTPStatus.CONFLICT,
         )
-        saved_events = db.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True)
+        saved_events = db.get_all_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True)  # noqa: E501
         assert saved_events == [entries[0], entries[3], entry]
 
 
