@@ -241,7 +241,7 @@ const showDeleteConfirmation = () => {
       title: tc('closed_trades.confirmation.title'),
       message: get(confirmationMessage)
     },
-    () => deleteTradeHandler()
+    deleteTradeHandler
   );
 };
 
