@@ -8,7 +8,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.names import find_ens_mappings
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -43,6 +43,7 @@ NAME_RENEWED_ABI = '{"anonymous":false,"inputs":[{"indexed":false,"internalType"
 NEW_RESOLVER = b'3W!\xb0\x18f\xdc#\xfb\xee\x8bk,{\x1e\x14\xd6\xf0\\(\xcd5\xa2\xc94#\x9f\x94\tV\x02\xa0'  # noqa: E501
 TEXT_CHANGED = b'\xd8\xc93K\x1a\x9c/\x9d\xa3B\xa0\xa2\xb3&)\xc1\xa2)\xb6D]\xadx\x94\x7fgKDDJuP'
 TEXT_CHANGED_ABI = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":true,"internalType":"string","name":"indexedKey","type":"string"},{"indexed":false,"internalType":"string","name":"key","type":"string"}],"name":"TextChanged","type":"event"}'  # noqa: E501
+DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_ENS)
 
 
 class EnsDecoder(DecoderInterface, CustomizableDateMixin):
@@ -64,7 +65,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],
             action_items: Optional[list[ActionItem]],
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] == NAME_REGISTERED:
             return self._decode_name_registered(
                 tx_log=tx_log,
@@ -83,7 +84,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                 action_items=action_items,
             )
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_name_registered(
             self,
@@ -92,12 +93,12 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         try:
             _, decoded_data = decode_event_data_abi_str(tx_log, NAME_REGISTERED_ABI)
         except DeserializationError as e:
             log.debug(f'Failed to decode ENS name registered event due to {str(e)}')
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         name = decoded_data[0]
         amount = from_wei(decoded_data[1])
@@ -117,7 +118,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                 if refund_from_registrar:
                     expected_amount = amount + refund_from_registrar
                 if event.balance.amount != expected_amount:
-                    return None, []  # registration amount did not match
+                    return DEFAULT_DECODING_OUTPUT  # registration amount did not match
 
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
@@ -135,7 +136,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
         for index in to_remove_indices:
             del decoded_events[index]
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_name_renewed(
             self,
@@ -144,12 +145,12 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         try:
             _, decoded_data = decode_event_data_abi_str(tx_log, NAME_RENEWED_ABI)
         except DeserializationError as e:
             log.debug(f'Failed to decode ENS name renewed event due to {str(e)}')
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         name = decoded_data[0]
         amount = from_wei(decoded_data[1])
@@ -163,7 +164,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                 event.counterparty = CPT_ENS
                 event.notes = f'Renew ENS name {name} for {amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_ens_registry_with_fallback_event(
             self,
@@ -172,7 +173,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         """Decode event where address is set for an ENS name."""
         if tx_log.topics[0] == NEW_RESOLVER:
             node = tx_log.topics[1]
@@ -184,11 +185,11 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                 )
             except RemoteError as e:
                 log.debug(f'Failed to decode ENS set-text event due to {str(e)}')
-                return None, []
+                return DEFAULT_DECODING_OUTPUT
 
             if ens_name == '':
                 # By checking the contract code, I don't think it can happen. But just in case.
-                return None, []
+                return DEFAULT_DECODING_OUTPUT
 
             # Not able to give more info to the user such as address that was set since
             # we don't have historical info and event doesn't provide it
@@ -205,7 +206,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                 counterparty=CPT_ENS,
                 address=transaction.to_address,
             ))
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_ens_public_resolver_2_events(
             self,
@@ -214,7 +215,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         """Decode event where a text property (discord, telegram, etc.) is set for an ENS name."""
         if tx_log.topics[0] == TEXT_CHANGED:
             try:
@@ -226,7 +227,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                     msg = f'missing key {msg}'
 
                 log.debug(f'Failed to decode ENS set-text event due to {msg}')
-                return None, []
+                return DEFAULT_DECODING_OUTPUT
 
             node = tx_log.topics[1]
             try:
@@ -243,7 +244,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                 )
             except RemoteError as e:
                 log.debug(f'Failed to decode ENS set-text event due to {str(e)}')
-                return None, []
+                return DEFAULT_DECODING_OUTPUT
 
             name_to_show = ens_mapping.get(address, address)
 
@@ -260,7 +261,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                 counterparty=CPT_ENS,
                 address=transaction.to_address,
             ))
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

@@ -7,7 +7,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_crypto_asset_by_symbol
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -35,6 +35,7 @@ BORROW_COMPOUND = b'\x13\xedhf\xd4\xe1\xeem\xa4o\x84\\F\xd7\xe5A \x88=u\xc5\xea\
 REPAY_COMPOUND = b'\x1a*"\xcb\x03M&\xd1\x85K\xdcff\xa5\xb9\x1f\xe2^\xfb\xbb]\xca\xd3\xb05Tx\xd6\xf5\xc3b\xa1'  # noqa: E501
 DISTRIBUTED_SUPPLIER_COMP = b',\xae\xcd\x17\xd0/V\xfa\x89w\x05\xdc\xc7@\xda-#|7?phoN\r\x9b\xd3\xbf\x04\x00\xeaz'  # noqa: E501
 DISTRIBUTED_BORROWER_COMP = b'\x1f\xc3\xec\xc0\x87\xd8\xd2\xd1^#\xd0\x03*\xf5\xa4pY\xc3\x89-\x00=\x8e\x13\x9f\xdc\xb6\xbb2|\x99\xa6'  # noqa: E501
+DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_COMPOUND)
 
 
 class CompoundDecoder(DecoderInterface):
@@ -58,10 +59,10 @@ class CompoundDecoder(DecoderInterface):
             tx_log: EvmTxReceiptLog,
             decoded_events: list['EvmEvent'],
             compound_token: EvmToken,
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         minter = hex_or_bytes_to_address(tx_log.data[0:32])
         if not self.base.is_tracked(minter):
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         mint_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
         minted_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
@@ -70,7 +71,7 @@ class CompoundDecoder(DecoderInterface):
             chain_id=compound_token.chain_id,
         )
         if underlying_asset is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
         underlying_asset = underlying_asset.resolve_to_crypto_asset()
 
         mint_amount = asset_normalized_value(mint_amount_raw, underlying_asset)
@@ -88,7 +89,7 @@ class CompoundDecoder(DecoderInterface):
 
         if out_event is None:
             log.debug(f'At compound mint decoding of tx {transaction.tx_hash.hex()} the out event was not found')  # noqa: E501
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         # also create an action item for the receive of the cTokens
         action_item = ActionItem(
@@ -103,17 +104,17 @@ class CompoundDecoder(DecoderInterface):
             to_counterparty=CPT_COMPOUND,
             paired_event_data=(out_event, True),
         )
-        return None, [action_item]
+        return DecodingOutput(action_items=[action_item])
 
     def _decode_redeem(
             self,
             tx_log: EvmTxReceiptLog,
             decoded_events: list['EvmEvent'],
             compound_token: EvmToken,
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         redeemer = hex_or_bytes_to_address(tx_log.data[0:32])
         if not self.base.is_tracked(redeemer):
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         redeem_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
         redeem_tokens_raw = hex_or_bytes_to_int(tx_log.data[64:96])
@@ -122,7 +123,7 @@ class CompoundDecoder(DecoderInterface):
             chain_id=compound_token.chain_id,
         )
         if underlying_token is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         underlying_token = underlying_token.resolve_to_crypto_asset()
         redeem_amount = asset_normalized_value(redeem_amount_raw, underlying_token)
@@ -144,14 +145,14 @@ class CompoundDecoder(DecoderInterface):
                 out_event = event
 
         maybe_reshuffle_events(out_event=out_event, in_event=in_event, events_list=decoded_events)
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_borrow_and_repay(
             self,
             tx_log: EvmTxReceiptLog,
             decoded_events: list['EvmEvent'],
             compound_token: EvmToken,
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         """
         Decode borrow and repayments for compound tokens
         """
@@ -168,7 +169,7 @@ class CompoundDecoder(DecoderInterface):
             if underlying_asset is not None:
                 underlying_asset = cast(EvmToken, underlying_asset)
             else:
-                return None, []
+                return DEFAULT_DECODING_OUTPUT
 
         if tx_log.topics[0] == BORROW_COMPOUND:
             amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
@@ -200,7 +201,7 @@ class CompoundDecoder(DecoderInterface):
                 event.counterparty = CPT_COMPOUND
                 event.notes = f'Repay {amount} {underlying_asset.symbol} to compound'
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def decode_compound_token_movement(
             self,
@@ -210,7 +211,7 @@ class CompoundDecoder(DecoderInterface):
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
             compound_token: EvmToken,
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] == MINT_COMPOUND_TOKEN:
             log.debug(f'Hash: {transaction.tx_hash.hex()}')
             return self._decode_mint(transaction=transaction, tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
@@ -221,7 +222,7 @@ class CompoundDecoder(DecoderInterface):
         if tx_log.topics[0] == REDEEM_COMPOUND_TOKEN:
             return self._decode_redeem(tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def decode_comp_claim(
             self,
@@ -230,7 +231,7 @@ class CompoundDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         """Example tx:
         https://etherscan.io/tx/0x024bd402420c3ba2f95b875f55ce2a762338d2a14dac4887b78174254c9ab807
         https://etherscan.io/tx/0x25d341421044fa27006c0ec8df11067d80f69b2d2135065828f1992fa6868a49
@@ -247,14 +248,14 @@ class CompoundDecoder(DecoderInterface):
         contract code: https://etherscan.io/address/0xBafE01ff935C7305907c33BF824352eE5979B526#code
         """
         if tx_log.topics[0] not in (DISTRIBUTED_SUPPLIER_COMP, DISTRIBUTED_BORROWER_COMP):
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         # Transactions with comp claim have many such "distributed" events. We need to do a
         # decoded evens iteration only at the end but can't think of a good way to avoid
         # the possibility of checking all such events
         supplier_address = hex_or_bytes_to_address(tx_log.topics[2])
         if not self.base.is_tracked(supplier_address):
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         for event in decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.location_label == supplier_address and event.asset == A_COMP and event.address == COMPTROLLER_PROXY_ADDRESS:  # noqa: E501
@@ -263,7 +264,7 @@ class CompoundDecoder(DecoderInterface):
                 event.notes = f'Collect {event.balance.amount} COMP from compound'
                 break
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

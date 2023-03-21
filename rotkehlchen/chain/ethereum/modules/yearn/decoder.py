@@ -5,7 +5,11 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V1, CPT_YEARN_V2
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_ENRICHMENT_OUTPUT,
+    ActionItem,
+    TransferEnrichmentOutput,
+)
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -63,7 +67,7 @@ class YearnDecoder(DecoderInterface):
             event: 'EvmEvent',
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> bool:
+    ) -> TransferEnrichmentOutput:
         """
         Enrich ethereum transfers made during the execution of yearn contracts.
         This enricher detects:
@@ -77,14 +81,14 @@ class YearnDecoder(DecoderInterface):
         if transaction.to_address in self.vaults_v1:
             protocol = CPT_YEARN_V1
         elif transaction.to_address not in self.vaults_v2:
-            return False
+            return DEFAULT_ENRICHMENT_OUTPUT
 
         is_deposit = False
         if transaction.input_data.startswith(YEARN_DEPOSIT_4_BYTES):
             is_deposit = True
         elif not transaction.input_data.startswith(YEARN_WITHDRAW_4_BYTES):
             # a yearn contract method that we don't need to handle
-            return False
+            return DEFAULT_ENRICHMENT_OUTPUT
 
         if (
             is_deposit is True and
@@ -127,9 +131,9 @@ class YearnDecoder(DecoderInterface):
             event.notes = f'Return {event.balance.amount} {token.symbol} to a {protocol} vault'  # noqa: E501
         else:
             # in this case we failed to find a valid transfer event. Inform about the failure
-            return False
+            return DEFAULT_ENRICHMENT_OUTPUT
 
-        return True
+        return TransferEnrichmentOutput(counterparty=protocol)
 
     # -- DecoderInterface methods
 

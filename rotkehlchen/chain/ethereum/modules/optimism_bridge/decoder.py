@@ -1,10 +1,10 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
@@ -33,7 +33,7 @@ class OptimismBridgeDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         """Decodes a bridging event. Either a deposit or a withdrawal."""
         if tx_log.topics[0] not in {
             ETH_DEPOSIT_INITIATED,
@@ -41,7 +41,8 @@ class OptimismBridgeDecoder(DecoderInterface):
             ERC20_DEPOSIT_INITIATED,
             ERC20_WITHDRAWAL_FINALIZED,
         }:
-            return None, []  # Make sure that we are decoding a supported event.
+            # Make sure that we are decoding a supported event.
+            return DecodingOutput(counterparty=CPT_OPTIMISM)
 
         # Read information from event's topics & data
         if tx_log.topics[0] in {ETH_DEPOSIT_INITIATED, ETH_WITHDRAWAL_FINALIZED}:
@@ -91,7 +92,7 @@ class OptimismBridgeDecoder(DecoderInterface):
                     f'{to_chain} address {to_address} via optimism bridge'
                 )
 
-        return None, []
+        return DecodingOutput(counterparty=CPT_OPTIMISM)
 
     # -- DecoderInterface methods
 

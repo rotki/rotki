@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -9,7 +9,7 @@ from rotkehlchen.chain.ethereum.modules.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -59,7 +59,8 @@ class CowswapDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
+        counterparty = None
         if tx_log.topics[0] == PLACE_ETH_ORDER_SIGNATURE:
             target_token_address = hex_or_bytes_to_address(tx_log.data[32:64])
             target_token = EvmToken(evm_address_to_identifier(
@@ -77,6 +78,7 @@ class CowswapDecoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.PLACE_ORDER
                     event.notes = f'Deposit {event.balance.amount} ETH to swap it for {target_token.symbol} in cowswap'  # noqa: E501
                     event.counterparty = CPT_COWSWAP
+                    counterparty = event.counterparty
 
         elif tx_log.topics[0] in (INVALIDATE_ETH_ORDER_SIGNATURE, REFUND_ETH_ORDER_SIGNATURE):
             for event in decoded_events:
@@ -87,6 +89,7 @@ class CowswapDecoder(DecoderInterface):
                 ):
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.counterparty = CPT_COWSWAP
+                    counterparty = event.counterparty
                     if tx_log.topics[0] == INVALIDATE_ETH_ORDER_SIGNATURE:
                         event.event_subtype = HistoryEventSubType.CANCEL_ORDER
                         event.notes = f'Invalidate an order that intended to swap {event.balance.amount} ETH in cowswap'  # noqa: E501
@@ -94,7 +97,7 @@ class CowswapDecoder(DecoderInterface):
                         event.event_subtype = HistoryEventSubType.REFUND
                         event.notes = f'Refund {event.balance.amount} unused ETH from cowswap'
 
-        return None, []
+        return DecodingOutput(counterparty=counterparty)
 
     # --- Aggregator methods ---
 
@@ -251,5 +254,5 @@ class CowswapDecoder(DecoderInterface):
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {ETH_FLOW_ADDRESS: (self._decode_eth_orders,)}
 
-    def post_decoding_rules(self) -> list[tuple[int, Callable]]:
-        return [(0, self._aggregator_post_decoding)]
+    def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
+        return {GPV2_SETTLEMENT_ADDRESS: [(0, self._aggregator_post_decoding)]}

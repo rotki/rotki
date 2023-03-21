@@ -50,7 +50,7 @@ class OptimismTransactionDecoder(EVMTransactionDecoder):
             event: 'EvmEvent',
             action_items: list['ActionItem'],
             all_logs: list['EvmTxReceiptLog'],
-    ) -> None:
+    ) -> Optional[str]:
         return None
 
     @staticmethod

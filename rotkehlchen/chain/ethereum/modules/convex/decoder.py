@@ -1,7 +1,8 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import Any, Callable
 
 from rotkehlchen.accounting.structures.base import HistoryEventSubType, HistoryEventType
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.convex.constants import (
     BOOSTER,
@@ -20,15 +21,17 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_ENRICHMENT_OUTPUT,
+    ActionItem,
+    DecodingOutput,
+    TransferEnrichmentOutput,
+)
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
-
-if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -43,7 +46,7 @@ class ConvexDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         amount_raw = hex_or_bytes_to_int(tx_log.data[0:32])
         interacted_address = hex_or_bytes_to_address(tx_log.topics[1])
 
@@ -96,7 +99,7 @@ class ConvexDecoder(DecoderInterface):
                         event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
                     else:
                         event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex'  # noqa: E501
-        return None, []
+        return DecodingOutput(counterparty=CPT_CONVEX)
 
     @staticmethod
     def _maybe_enrich_convex_transfers(
@@ -106,7 +109,7 @@ class ConvexDecoder(DecoderInterface):
             event: 'EvmEvent',
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> bool:
+    ) -> TransferEnrichmentOutput:
         """
         Used for rewards paid with abracadabras. Problem is that the transfer event in this
         case happens at the end of the transaction and there is no reward event after it to
@@ -130,8 +133,8 @@ class ConvexDecoder(DecoderInterface):
             else:
                 event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex'  # noqa: E501
             event.counterparty = CPT_CONVEX
-            return True
-        return False
+            return TransferEnrichmentOutput(counterparty=event.counterparty)
+        return DEFAULT_ENRICHMENT_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         decoder_mappings: dict[ChecksumEvmAddress, tuple[Callable, ...]] = {

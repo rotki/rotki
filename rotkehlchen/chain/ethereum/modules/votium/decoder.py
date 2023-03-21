@@ -4,7 +4,11 @@ from typing import TYPE_CHECKING, Any, Optional
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    ActionItem,
+    DecodingOutput,
+)
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -34,14 +38,14 @@ class VotiumDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] != VOTIUM_CLAIM:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         claimed_token_address = hex_or_bytes_to_address(tx_log.topics[1])
         claimed_token = ethaddress_to_asset(claimed_token_address)
         if claimed_token is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         receiver = hex_or_bytes_to_address(tx_log.topics[2])
         claimed_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
@@ -58,7 +62,7 @@ class VotiumDecoder(DecoderInterface):
                 event.counterparty = CPT_VOTIUM
                 event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} from votium bribe'  # noqa: E501
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

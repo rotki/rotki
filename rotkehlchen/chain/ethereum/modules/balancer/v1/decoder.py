@@ -6,7 +6,11 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V1
 from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerV1EventTypes
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_ENRICHMENT_OUTPUT,
+    ActionItem,
+    TransferEnrichmentOutput,
+)
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -82,7 +86,7 @@ class Balancerv1Decoder(DecoderInterface):
             event: 'EvmEvent',
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],
-    ) -> bool:
+    ) -> TransferEnrichmentOutput:
         """
         Enrich balancer v1 transfer to read pool events of:
         - Depositing in the pool
@@ -93,7 +97,7 @@ class Balancerv1Decoder(DecoderInterface):
         """
         events_information = self._decode_v1_pool_event(all_logs=all_logs)
         if events_information is None:
-            return False
+            return DEFAULT_ENRICHMENT_OUTPUT
 
         for proxied_event in events_information:
             if proxied_event['ds_address'] != event.address:
@@ -107,7 +111,7 @@ class Balancerv1Decoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                     event.counterparty = CPT_BALANCER_V1
                     event.notes = f'Receive {event.balance.amount} {token.symbol} from a Balancer v1 pool'  # noqa: E501
-                    return True
+                    return TransferEnrichmentOutput(counterparty=CPT_BALANCER_V1)
                 if (
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE
@@ -116,7 +120,7 @@ class Balancerv1Decoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.counterparty = CPT_BALANCER_V1
                     event.notes = f'Deposit {event.balance.amount} {token.symbol} to a Balancer v1 pool'  # noqa: E501
-                    return True
+                    return TransferEnrichmentOutput(counterparty=CPT_BALANCER_V1)
             elif proxied_event['type'] == BalancerV1EventTypes.EXIT:
                 if (
                     event.event_type == HistoryEventType.RECEIVE and
@@ -126,7 +130,7 @@ class Balancerv1Decoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.counterparty = CPT_BALANCER_V1
                     event.notes = f'Receive {event.balance.amount} {token.symbol} after removing liquidity from a Balancer v1 pool'  # noqa: E501
-                    return True
+                    return TransferEnrichmentOutput(counterparty=CPT_BALANCER_V1)
                 if (
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE
@@ -134,9 +138,9 @@ class Balancerv1Decoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     event.counterparty = CPT_BALANCER_V1
                     event.notes = f'Return {event.balance.amount} {token.symbol} to a Balancer v1 pool'  # noqa: E501
-                    return True
+                    return TransferEnrichmentOutput(counterparty=CPT_BALANCER_V1)
 
-        return False
+        return DEFAULT_ENRICHMENT_OUTPUT
 
     def _check_refunds_v1(
             self,
@@ -273,5 +277,10 @@ class Balancerv1Decoder(DecoderInterface):
     def counterparties(self) -> list[str]:
         return [CPT_BALANCER_V1]
 
-    def post_decoding_rules(self) -> list[tuple[int, Callable]]:
-        return [(0, self._check_refunds_v1), (1, self._check_deposits_withdrawals_v1)]
+    def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
+        return {
+            CPT_BALANCER_V1: [
+                (0, self._check_refunds_v1),
+                (1, self._check_deposits_withdrawals_v1),
+            ],
+        }

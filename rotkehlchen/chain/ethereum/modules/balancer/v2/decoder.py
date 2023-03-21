@@ -1,12 +1,18 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V2
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_ENRICHMENT_OUTPUT,
+    ActionItem,
+    DecodingOutput,
+    TransferEnrichmentOutput,
+)
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
@@ -51,7 +57,7 @@ class Balancerv2Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: list[ActionItem],
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         """
         Decode swap in Balancer v2. At the beggining of the transaction a SWAP event is created
         with the information of the tokens and amounts and later some transfers are executed.
@@ -61,7 +67,7 @@ class Balancerv2Decoder(DecoderInterface):
         In this case the token is WETH but we have a tranfer of ETH from the user.
         """
         if tx_log.topics[0] != V2_SWAP:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         # The transfer event appears after the swap event, so we need to propagate information
         from_token_address = hex_or_bytes_to_address(tx_log.topics[2])
@@ -112,7 +118,7 @@ class Balancerv2Decoder(DecoderInterface):
                     event.notes = f'Swap {event.balance.amount} {self.eth.symbol} in Balancer v2'  # noqa: E501
                     event.counterparty = CPT_BALANCER_V2
 
-        return None, [action_item]
+        return DecodingOutput(action_items=[action_item])
 
     def _maybe_enrich_balancer_v2_transfers(
             self,
@@ -122,7 +128,7 @@ class Balancerv2Decoder(DecoderInterface):
             event: 'EvmEvent',
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> bool:
+    ) -> TransferEnrichmentOutput:
         """
         Enrich tranfer transactions to account for swaps in balancer v2 protocol.
         May raise:
@@ -130,10 +136,10 @@ class Balancerv2Decoder(DecoderInterface):
         - WrongAssetType
         """
         if action_items is None or len(action_items) == 0 or transaction.to_address != VAULT_ADDRESS:  # noqa: E501
-            return False
+            return DEFAULT_ENRICHMENT_OUTPUT
 
         if action_items[-1].extra_data is None:
-            return False
+            return DEFAULT_ENRICHMENT_OUTPUT
 
         asset = event.asset.resolve_to_evm_token()
         if (
@@ -141,7 +147,7 @@ class Balancerv2Decoder(DecoderInterface):
             action_items[-1].asset.evm_address != tx_log.address or  # type: ignore[attr-defined]  # noqa: E501 mypy fails to understand that due the previous statmenet in the or this check won't be evaluated if the asset isn't a token
             action_items[-1].amount != event.balance.amount
         ):
-            return False
+            return DEFAULT_ENRICHMENT_OUTPUT
 
         event.counterparty = CPT_BALANCER_V2
         event.event_type = HistoryEventType.TRADE
@@ -151,7 +157,7 @@ class Balancerv2Decoder(DecoderInterface):
         else:
             event.event_subtype = HistoryEventSubType.SPEND
 
-        return True
+        return TransferEnrichmentOutput(counterparty=CPT_BALANCER_V2)
 
     # -- DecoderInterface methods
 

@@ -36,7 +36,7 @@ from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .base import BaseDecoderTools
 from .constants import CPT_GAS, ERC20_APPROVE, ERC20_OR_ERC721_TRANSFER, OUTGOING_EVENT_TYPES
-from .structures import ActionItem
+from .structures import DEFAULT_DECODING_OUTPUT, ActionItem, DecodingOutput
 from .utils import maybe_reshuffle_events
 
 if TYPE_CHECKING:
@@ -62,16 +62,16 @@ class EventDecoderFunction(Protocol):
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         ...
 
 
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DecodingRules():
     address_mappings: dict[ChecksumEvmAddress, tuple[Any, ...]]
     event_rules: list[EventDecoderFunction]
     token_enricher_rules: list[Callable]  # enrichers to run for token transfers
-    post_decoding_rules: list[tuple[int, Callable]]  # rules to run after the main decoding loop
+    post_decoding_rules: dict[str, list[tuple[int, Callable]]]  # noqa: E501 rules to run after the main decoding loop
     all_counterparties: set[str]
 
     def __add__(self, other: 'DecodingRules') -> 'DecodingRules':
@@ -80,10 +80,10 @@ class DecodingRules():
                 f'Can only add DecodingRules to DecodingRules. Got {type(other)}',
             )
         return DecodingRules(
-            address_mappings={**self.address_mappings, **other.address_mappings},
+            address_mappings=self.address_mappings | other.address_mappings,
             event_rules=self.event_rules + other.event_rules,
             token_enricher_rules=self.token_enricher_rules + other.token_enricher_rules,
-            post_decoding_rules=self.post_decoding_rules + other.post_decoding_rules,
+            post_decoding_rules=self.post_decoding_rules | other.post_decoding_rules,
             all_counterparties=self.all_counterparties | other.all_counterparties,
         )
 
@@ -133,7 +133,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 self._maybe_decode_erc20_721_transfer,
             ],
             token_enricher_rules=[],
-            post_decoding_rules=[],
+            post_decoding_rules={},
             all_counterparties=set(self.misc_counterparties),
         )
         self.rules.event_rules.extend(event_rules)
@@ -143,7 +143,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         rules = self._recursively_initialize_decoders(self.chain_modules_root)
         self.rules += rules
         # Sort post decoding rules by priority (which is the first element of the tuple)
-        self.rules.post_decoding_rules.sort(key=lambda x: x[0])
         self.undecoded_tx_query_lock = Semaphore()
 
     def _recursively_initialize_decoders(
@@ -157,7 +156,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             address_mappings={},
             event_rules=[],
             token_enricher_rules=[],
-            post_decoding_rules=[],
+            post_decoding_rules={},
             all_counterparties=set(),
         )
 
@@ -194,7 +193,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     results.address_mappings.update(self.decoders[class_name].addresses_to_decoders())  # noqa: E501
                     results.event_rules.extend(self.decoders[class_name].decoding_rules())
                     results.token_enricher_rules.extend(self.decoders[class_name].enricher_rules())
-                    results.post_decoding_rules.extend(self.decoders[class_name].post_decoding_rules())  # noqa: E501
+                    results.post_decoding_rules |= self.decoders[class_name].post_decoding_rules()
                     results.all_counterparties.update(self.decoders[class_name].counterparties())
 
                 recursive_results = self._recursively_initialize_decoders(full_name)
@@ -222,13 +221,13 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         for rule in self.rules.event_rules:
-            event, new_action_items = rule(token=token, tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, action_items=action_items, all_logs=all_logs)  # noqa: E501
-            if event is not None or len(new_action_items) > 0:
-                return event, new_action_items
+            decoding_output = rule(token=token, tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, action_items=action_items, all_logs=all_logs)  # noqa: E501
+            if decoding_output.event is not None or len(decoding_output.action_items) > 0:
+                return decoding_output
 
-        return None, []
+        return DecodingOutput()
 
     def decode_by_address_rules(
             self,
@@ -237,7 +236,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],
             action_items: list[ActionItem],
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         """
         Sees if the log is on an address for which we have specific decoders and calls it
 
@@ -248,7 +247,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         """
         mapping_result = self.rules.address_mappings.get(tx_log.address)
         if mapping_result is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
         method = mapping_result[0]
 
         try:
@@ -260,7 +259,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             log.debug(
                 f'Decoding tx log with index {tx_log.log_index} of transaction '
                 f'{transaction.tx_hash.hex()} through {method.__name__} failed due to {str(e)}')
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         return result
 
@@ -269,13 +268,25 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],
+            counterparties: set[str],
     ) -> list['EvmEvent']:
         """
         Runs all post-decoding rules from self.rules.post_decoding_rules.
         The post-decoding rules list consists of tuples (priority, rule) and must be sorted by
         priority in ascending order. The higher the priority number the later the rule is run.
         """
-        for (_, rule) in self.rules.post_decoding_rules:
+        if transaction.to_address is not None:
+            rules = self.rules.post_decoding_rules.get(transaction.to_address, [])
+        else:
+            rules = []
+
+        for counterparty in counterparties:
+            new_rules = self.rules.post_decoding_rules.get(counterparty)
+            if new_rules is not None:
+                rules.extend(new_rules)
+
+        rules.sort(key=lambda x: x[0])
+        for (_, rule) in rules:
             decoded_events = rule(transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
 
         return decoded_events
@@ -290,11 +301,15 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         # check if any eth transfer happened in the transaction, including in internal transactions
         events = self._maybe_decode_simple_transactions(transaction, tx_receipt)
         action_items: list[ActionItem] = []
+        counterparties = set()
 
         # decode transaction logs from the receipt
         for tx_log in tx_receipt.logs:
-            event, new_action_items = self.decode_by_address_rules(tx_log, transaction, events, tx_receipt.logs, action_items)  # noqa: E501
+            decoding_output = self.decode_by_address_rules(tx_log, transaction, events, tx_receipt.logs, action_items)  # noqa: E501
+            event, new_action_items, counterparty = decoding_output
             action_items.extend(new_action_items)
+            if counterparty is not None:
+                counterparties.add(counterparty)
             if event:
                 events.append(event)
                 continue
@@ -303,7 +318,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 address=tx_log.address,
                 chain_id=self.evm_inquirer.chain_id,
             )
-            event, new_action_items = self.try_all_rules(
+            event, new_action_items, counterparty = self.try_all_rules(
                 token=token,
                 tx_log=tx_log,
                 transaction=transaction,
@@ -312,6 +327,8 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 all_logs=tx_receipt.logs,
             )
             action_items.extend(new_action_items)
+            if counterparty is not None:
+                counterparties.add(counterparty)
             if event is not None:
                 events.append(event)
 
@@ -319,6 +336,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             transaction=transaction,
             decoded_events=events,
             all_logs=tx_receipt.logs,
+            counterparties=counterparties,
         )
 
         if len(events) == 0 and (eth_event := self._get_eth_transfer_event(transaction)) is not None:  # noqa: E501
@@ -529,9 +547,9 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] != ERC20_APPROVE or token is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         if len(tx_log.topics) == 3:
             owner_address = hex_or_bytes_to_address(tx_log.topics[1])
@@ -546,10 +564,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 f'Got an ERC20 approve event with unknown structure '
                 f'in transaction {transaction.tx_hash.hex()}',
             )
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         if not any(self.base.is_tracked(x) for x in (owner_address, spender_address)):
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         amount = token_normalized_value(token_amount=amount_raw, token=token)
         if amount == ZERO:
@@ -567,7 +585,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             notes=notes,
             address=spender_address,
         )
-        return event, []
+        return DecodingOutput(event=event)
 
     def _maybe_decode_simple_transactions(
             self,
@@ -640,9 +658,9 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         if self._is_non_conformant_erc721(tx_log.address) or len(tx_log.topics) == 4:  # typical ERC721 has 3 indexed args  # noqa: E501
             token_kind = EvmTokenKind.ERC721
@@ -650,7 +668,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             token_kind = EvmTokenKind.ERC20
         else:
             log.debug(f'Failed to decode token with address {tx_log.address} due to inability to match token type')  # noqa: E501
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         if token is None:
             try:
@@ -663,7 +681,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     seen=TokenSeenAt(tx_hash=transaction.tx_hash),
                 )
             except NotERC20Conformant:
-                return None, []  # ignore non-ERC20 transfers for now
+                return DEFAULT_DECODING_OUTPUT  # ignore non-ERC20 transfers for now
         else:
             found_token = token
 
@@ -673,13 +691,13 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             transaction=transaction,
         )
         if transfer is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         for idx, action_item in enumerate(action_items):
             if action_item.asset == found_token and action_item.amount == transfer.balance.amount and action_item.from_event_type == transfer.event_type and action_item.from_event_subtype == transfer.event_subtype:  # noqa: E501
                 if action_item.action == 'skip':
                     action_items.pop(idx)
-                    return None, []
+                    return DEFAULT_DECODING_OUTPUT
                 if action_item.action == 'skip & keep':
                     # the action item is skipped but kept in the list of action items. Is used
                     # to propagate information between event decoders and enrichers
@@ -714,7 +732,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 break  # found an action item and acted on it
 
         # Add additional information to transfers for different protocols
-        self._enrich_protocol_tranfers(
+        maybe_counterparty = self._enrich_protocol_tranfers(
             token=found_token,
             tx_log=tx_log,
             transaction=transaction,
@@ -722,7 +740,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             action_items=action_items,
             all_logs=all_logs,
         )
-        return transfer, []
+        return DecodingOutput(event=transfer, counterparty=maybe_counterparty)
 
     # -- methods to be implemented by child classes --
 
@@ -735,7 +753,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             event: 'EvmEvent',
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
-    ) -> None:
+    ) -> Optional[str]:
         """
         Decode special transfers made by contract execution for example at the moment
         of depositing assets or withdrawing.

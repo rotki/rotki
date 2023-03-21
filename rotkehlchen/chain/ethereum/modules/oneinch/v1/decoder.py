@@ -5,7 +5,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.modules.constants import AMM_POSSIBLE_COUNTERPARTIES
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 HISTORY = b'\x89M\xbf\x12b\x19\x9c$\xe1u\x02\x98\xa3\x84\xc7\t\x16\x0fI\xd1cB,\xc6\xce\xe6\x94\xc77\x13\xf1\xd2'  # noqa: E501
 SWAPPED = b'\xe2\xce\xe3\xf6\x83`Y\x82\x0bg9C\x85:\xfe\xbd\x9b0&\x12]\xab\rwB\x84\xe6\xf2\x8aHU\xbe'  # noqa: E501
+DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_ONEINCH_V1)
 
 
 class Oneinchv1Decoder(DecoderInterface):
@@ -30,17 +31,17 @@ class Oneinchv1Decoder(DecoderInterface):
             transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         sender = hex_or_bytes_to_address(tx_log.topics[1])
         if not self.base.is_tracked(sender):
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         from_token_address = hex_or_bytes_to_address(tx_log.data[0:32])
         to_token_address = hex_or_bytes_to_address(tx_log.data[32:64])
         from_asset = ethaddress_to_asset(from_token_address)
         to_asset = ethaddress_to_asset(to_token_address)
         if None in (from_asset, to_asset):
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         from_raw = hex_or_bytes_to_int(tx_log.data[64:96])
         from_amount = asset_normalized_value(from_raw, from_asset)  # type: ignore
@@ -76,7 +77,7 @@ class Oneinchv1Decoder(DecoderInterface):
                 out_event = event
 
         maybe_reshuffle_events(out_event=out_event, in_event=in_event, events_list=decoded_events)
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_swapped(
             self,
@@ -84,17 +85,17 @@ class Oneinchv1Decoder(DecoderInterface):
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         """We use the Swapped event to get the fee kept by 1inch"""
         to_token_address = hex_or_bytes_to_address(tx_log.topics[2])
         to_asset = ethaddress_to_asset(to_token_address)
         if to_asset is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         to_raw = hex_or_bytes_to_int(tx_log.data[32:64])
         fee_raw = hex_or_bytes_to_int(tx_log.data[96:128])
         if fee_raw == 0:
-            return None, []  # no need to do anything for zero fee taken
+            return DEFAULT_DECODING_OUTPUT  # no need to do anything for zero fee taken
 
         full_amount = asset_normalized_value(to_raw + fee_raw, to_asset)
         sender_address = None
@@ -108,7 +109,7 @@ class Oneinchv1Decoder(DecoderInterface):
                 break
 
         if sender_address is None:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         # And now create a new event for the fee
         fee_amount = asset_normalized_value(fee_raw, to_asset)
@@ -124,7 +125,7 @@ class Oneinchv1Decoder(DecoderInterface):
             counterparty=CPT_ONEINCH_V1,
             address=transaction.to_address,
         )
-        return fee_event, []
+        return DecodingOutput(event=fee_event, counterparty=CPT_ONEINCH_V1)
 
     def decode_action(
             self,
@@ -133,13 +134,13 @@ class Oneinchv1Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] == HISTORY:
             return self._decode_history(tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
         if tx_log.topics[0] == SWAPPED:
             return self._decode_swapped(tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

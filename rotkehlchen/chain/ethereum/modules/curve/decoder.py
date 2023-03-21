@@ -5,7 +5,12 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_ENRICHMENT_OUTPUT,
+    ActionItem,
+    DecodingOutput,
+    TransferEnrichmentOutput,
+)
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -34,6 +39,7 @@ REMOVE_LIQUIDITY_3_ASSETS = b'\xa4\x9dL\xf0&V\xae\xbf\x8cw\x1fZ\x85\x85c\x8a*\x1
 REMOVE_LIQUIDITY_4_ASSETS = b'\x98x\xca7^\x10o*C\xc3\xb5\x99\xfcbEh\x13\x1cL\x9aK\xa6j\x14V7\x15v;\xe9\xd5\x9d'  # noqa: E501
 REMOVE_LIQUIDITY_IMBALANCE = b'\xb9d\xb7/s\xf5\xef[\xf0\xfd\xc5Y\xb2\xfa\xb9\xa7\xb1*9\xe4x\x17\xa5G\xf1\xf0\xae\xe4\x7f\xeb\xd6\x02'  # noqa: E501
 CURVE_Y_DEPOSIT = string_to_evm_address('0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3')
+DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_CURVE)
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -61,7 +67,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             tx_log: EvmTxReceiptLog,
             decoded_events: list['EvmEvent'],
             user_address: ChecksumEvmAddress,
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         """Decode information related to withdrawing assets from curve pools"""
         withdrawal_events: list['EvmEvent'] = []
         return_event: Optional['EvmEvent'] = None
@@ -121,14 +127,14 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 f'but have not found them. Tx_hash: {transaction.tx_hash.hex()} '
                 f'User address: {user_address}',
             )
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         return_event.extra_data = {'withdrawal_events_num': len(withdrawal_events)}  # for accounting  # noqa: E501
         previous_event = return_event
         for event in withdrawal_events:
             maybe_reshuffle_events(previous_event, event, decoded_events)
             previous_event = event
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_curve_deposit_events(
             self,
@@ -136,7 +142,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             tx_log: EvmTxReceiptLog,
             decoded_events: list['EvmEvent'],
             user_address: ChecksumEvmAddress,
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         """Decode information related to depositing assets in curve pools"""
         deposit_events: list['EvmEvent'] = []
         receive_event: Optional['EvmEvent'] = None
@@ -212,14 +218,14 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 f'but have not found them. Tx_hash: {transaction.tx_hash.hex()} '
                 f'User address: {user_address}',
             )
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         receive_event.extra_data = {'deposit_events_num': len(deposit_events)}  # for accounting
         previous_event = receive_event
         for event in deposit_events:
             maybe_reshuffle_events(previous_event, event, decoded_events)
             previous_event = event
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_curve_events(
             self,
@@ -228,7 +234,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] in (
             REMOVE_LIQUIDITY,
             REMOVE_ONE,
@@ -256,7 +262,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 user_address=user_address,
             )
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     @staticmethod
     def _maybe_enrich_curve_transfers(
@@ -266,7 +272,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             event: 'EvmEvent',
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> bool:
+    ) -> TransferEnrichmentOutput:
         """
         May raise:
         - UnknownAsset
@@ -285,8 +291,8 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             event.event_subtype = HistoryEventSubType.REMOVE_ASSET
             event.counterparty = CPT_CURVE
             event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} from the curve pool {CURVE_Y_DEPOSIT}'  # noqa: E501
-            return True
-        return False
+            return TransferEnrichmentOutput(counterparty=CPT_CURVE)
+        return DEFAULT_ENRICHMENT_OUTPUT
 
     # -- DecoderInterface methods
 

@@ -10,7 +10,13 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    DEFAULT_ENRICHMENT_OUTPUT,
+    ActionItem,
+    DecodingOutput,
+    TransferEnrichmentOutput,
+)
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
@@ -140,7 +146,7 @@ class Uniswapv3Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list[EvmTxReceiptLog],
             action_items: Optional[list[ActionItem]],
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         if tx_log.topics[0] == INCREASE_LIQUIDITY_SIGNATURE:
             return self._maybe_decode_v3_deposit_or_withdrawal(
                 tx_log=tx_log,
@@ -160,7 +166,7 @@ class Uniswapv3Decoder(DecoderInterface):
                 event_action_type='removal',
             )
 
-        return None, []
+        return DEFAULT_DECODING_OUTPUT
 
     def _maybe_decode_v3_swap(
             self,
@@ -170,14 +176,14 @@ class Uniswapv3Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         """
         Detect some basic uniswap v3 events. This method doesn't ensure the order of the events
         and other things, but just labels some of the events as uniswap v3 events.
         The order should be ensured by the post-decoding rules.
         """
         if tx_log.topics[0] != SWAP_SIGNATURE:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         # Uniswap V3 represents the delta of tokens in the pool with a signed integer
         # for each token. In the transaction we have the difference of tokens in the pool
@@ -368,7 +374,7 @@ class Uniswapv3Decoder(DecoderInterface):
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
             event_action_type: Literal['addition', 'removal'],
-    ) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+    ) -> DecodingOutput:
         """
         This method decodes a Uniswap V3 LP liquidity increase or decrease.
 
@@ -410,7 +416,7 @@ class Uniswapv3Decoder(DecoderInterface):
                 arguments=[liquidity_pool_id],
             )
         except RemoteError:
-            return None, []
+            return DEFAULT_DECODING_OUTPUT
 
         resolved_assets_and_amounts: list[CryptoAssetAmount] = []
         # index 2 -> first token in pair; index 3 -> second token in pair
@@ -507,7 +513,7 @@ class Uniswapv3Decoder(DecoderInterface):
                 ),
             )
 
-        return None, new_action_items
+        return DecodingOutput(action_items=new_action_items)
 
     def _maybe_enrich_liquidity_pool_creation(
             self,
@@ -517,7 +523,7 @@ class Uniswapv3Decoder(DecoderInterface):
             event: 'EvmEvent',
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> bool:
+    ) -> TransferEnrichmentOutput:
         """This method enriches Uniswap V3 LP creation transactions."""
         if (
             event.asset == self.uniswap_v3_nft and
@@ -529,9 +535,9 @@ class Uniswapv3Decoder(DecoderInterface):
             event.event_subtype = HistoryEventSubType.NFT
             event.notes = f'Create {CPT_UNISWAP_V3} LP with id {hex_or_bytes_to_int(tx_log.topics[3])}'  # noqa: E501
             event.counterparty = CPT_UNISWAP_V3
-            return True
+            return TransferEnrichmentOutput(counterparty=CPT_UNISWAP_V3)
 
-        return False
+        return DEFAULT_ENRICHMENT_OUTPUT
     # -- DecoderInterface methods
 
     def decoding_rules(self) -> list[Callable]:
@@ -552,5 +558,5 @@ class Uniswapv3Decoder(DecoderInterface):
     def counterparties(self) -> list[str]:
         return [CPT_UNISWAP_V3]
 
-    def post_decoding_rules(self) -> list[tuple[int, Callable]]:
-        return [(0, self._routers_post_decoding)]
+    def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
+        return {router_address: [(0, self._routers_post_decoding)] for router_address in UNISWAP_ROUTERS}  # noqa: E501

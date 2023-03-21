@@ -9,7 +9,12 @@ from rotkehlchen.chain.ethereum.modules.constants import AMM_ASSETS_SYMBOLS
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.structures import ActionItem
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_ENRICHMENT_OUTPUT,
+    ActionItem,
+    DecodingOutput,
+    TransferEnrichmentOutput,
+)
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -38,7 +43,7 @@ def decode_uniswap_v2_like_swap(
         database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
         notify_user: Callable[['EvmEvent', str], None],
-) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+) -> DecodingOutput:
     """Common logic for decoding uniswap v2 like protocols (uniswap and sushiswap atm)
 
     Decode trade for uniswap v2 like amm. The approach is to read the events and detect the ones
@@ -66,7 +71,7 @@ def decode_uniswap_v2_like_swap(
     if pool_token.symbol in exclude_amms.values():
         # If the symbol for the current counterparty matches the expected symbol for another
         # counterparty skip the decoding using this rule.
-        return None, []
+        return DecodingOutput(counterparty=counterparty)
 
     # When the router chains multiple swaps in one transaction only the last swap has
     # the buyer in the topic. In that case we know it is the last swap and the receiver is
@@ -97,7 +102,7 @@ def decode_uniswap_v2_like_swap(
             crypto_asset = event.asset.resolve_to_crypto_asset()
         except (UnknownAsset, WrongAssetType):
             notify_user(event, counterparty)
-            return None, []
+            return DecodingOutput(counterparty=counterparty)
 
         if (
             event.event_type == HistoryEventType.SPEND and
@@ -151,7 +156,7 @@ def decode_uniswap_v2_like_swap(
             event.notes = f'Refund of {event.balance.amount} {crypto_asset.symbol} in {counterparty} due to price change'  # noqa: E501
 
     maybe_reshuffle_events(out_event=out_event, in_event=in_event, events_list=decoded_events)
-    return None, []
+    return DecodingOutput(counterparty=counterparty)
 
 
 def decode_uniswap_like_deposit_and_withdrawals(
@@ -165,7 +170,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
         factory_address: ChecksumEvmAddress,
         init_code_hash: str,
         tx_hash: EVMTxHash,
-) -> tuple[Optional['EvmEvent'], list[ActionItem]]:
+) -> DecodingOutput:
     """
     This is a common logic for Uniswap V2 like AMMs e.g Sushiswap.
     This method decodes a liquidity addition or removal to Uniswap V2 pool.
@@ -217,7 +222,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
             token1 = resolved_eth if token1 == A_WETH else token1
 
     if token0 is None or token1 is None:
-        return None, []
+        return DecodingOutput(counterparty=counterparty)
 
     amount0 = asset_normalized_value(amount0_raw, token0)
     amount1 = asset_normalized_value(amount1_raw, token1)
@@ -285,7 +290,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 pool_address=pool_address,
             )
 
-    return None, new_action_items
+    return DecodingOutput(action_items=new_action_items, counterparty=counterparty)
 
 
 def enrich_uniswap_v2_like_lp_tokens_transfers(
@@ -297,7 +302,7 @@ def enrich_uniswap_v2_like_lp_tokens_transfers(
         all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
         counterparty: str,
         lp_token_symbol: Literal['UNI-V2', 'SLP'],
-) -> bool:
+) -> TransferEnrichmentOutput:
     """This function enriches LP tokens transfers of Uniswap V2 like AMMs."""
     resolved_asset = event.asset.resolve_to_crypto_asset()
     if (
@@ -309,7 +314,7 @@ def enrich_uniswap_v2_like_lp_tokens_transfers(
         event.counterparty = counterparty
         event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
         event.notes = f'Receive {event.balance.amount} {resolved_asset.symbol} from {counterparty} pool'  # noqa: E501
-        return True
+        return TransferEnrichmentOutput(counterparty=counterparty)
 
     if (
         resolved_asset.symbol == lp_token_symbol and
@@ -320,9 +325,9 @@ def enrich_uniswap_v2_like_lp_tokens_transfers(
         event.counterparty = counterparty
         event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
         event.notes = f'Send {event.balance.amount} {resolved_asset.symbol} to {counterparty} pool'
-        return True
+        return TransferEnrichmentOutput(counterparty=counterparty)
 
-    return False
+    return DEFAULT_ENRICHMENT_OUTPUT
 
 
 def _compute_uniswap_v2_like_pool_address(
