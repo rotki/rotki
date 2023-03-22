@@ -30,6 +30,7 @@ class ActionItem(NamedTuple):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class BasicContext:
+    """Common elements between different contexts in the decoding logic"""
     tx_log: 'EvmTxReceiptLog'
     transaction: 'EvmTransaction'
     action_items: list[ActionItem]
@@ -38,19 +39,22 @@ class BasicContext:
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DecoderContext(BasicContext):
-    """
-    Context given to decoding rules
-    """
+    """Context given to decoding rules"""
     decoded_events: list['EvmEvent']
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class EnricherContext(BasicContext):
+    """Context for enrichment rules"""
     token: 'EvmToken'
     event: 'EvmEvent'
 
 
 class DecodingOutput(NamedTuple):
+    """
+    Output of decoding functions
+    Counterparty is set to the counterparty that modified the transaction
+    """
     event: Optional['EvmEvent'] = None
     action_items: list[ActionItem] = []
     counterparty: Optional[str] = None

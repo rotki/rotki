@@ -4,23 +4,16 @@ from typing import TYPE_CHECKING, Optional
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
-    from rotkehlchen.assets.asset import EvmToken
-    from rotkehlchen.chain.evm.decoding.structures import ActionItem
-    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+    from rotkehlchen.chain.evm.decoding.structures import EnricherContext
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.chain.optimism.transactions import OptimismTransactions
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-def _address_is_exchange(address: ChecksumEvmAddress) -> Optional[str]:  # pylint: disable=unused-argument # noqa: E501
-    return None
 
 
 class OptimismTransactionDecoder(EVMTransactionDecoder):
@@ -42,15 +35,7 @@ class OptimismTransactionDecoder(EVMTransactionDecoder):
 
     # -- methods that need to be implemented by child classes --
 
-    def _enrich_protocol_tranfers(
-            self,
-            token: 'EvmToken',
-            tx_log: 'EvmTxReceiptLog',
-            transaction: EvmTransaction,
-            event: 'EvmEvent',
-            action_items: list['ActionItem'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> Optional[str]:
+    def _enrich_protocol_tranfers(self, context: 'EnricherContext') -> Optional[str]:  # pylint: disable=unused-argument # noqa: E501
         return None
 
     @staticmethod

@@ -36,7 +36,13 @@ from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .base import BaseDecoderTools
 from .constants import CPT_GAS, ERC20_APPROVE, ERC20_OR_ERC721_TRANSFER, OUTGOING_EVENT_TYPES
-from .structures import DEFAULT_DECODING_OUTPUT, ActionItem, DecoderContext, DecodingOutput
+from .structures import (
+    DEFAULT_DECODING_OUTPUT,
+    ActionItem,
+    DecoderContext,
+    DecodingOutput,
+    EnricherContext,
+)
 from .utils import maybe_reshuffle_events
 
 if TYPE_CHECKING:
@@ -66,13 +72,14 @@ class EventDecoderFunction(Protocol):
         ...
 
 
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class DecodingRules():
     address_mappings: dict[ChecksumEvmAddress, tuple[Any, ...]]
     event_rules: list[EventDecoderFunction]
     token_enricher_rules: list[Callable]  # enrichers to run for token transfers
     post_decoding_rules: dict[str, list[tuple[int, Callable]]]  # noqa: E501 rules to run after the main decoding loop
     all_counterparties: set[str]
+    addresses_to_counterparties: dict[ChecksumEvmAddress, str]
 
     def __add__(self, other: 'DecodingRules') -> 'DecodingRules':
         if not isinstance(other, DecodingRules):
@@ -85,6 +92,7 @@ class DecodingRules():
             token_enricher_rules=self.token_enricher_rules + other.token_enricher_rules,
             post_decoding_rules=self.post_decoding_rules | other.post_decoding_rules,
             all_counterparties=self.all_counterparties | other.all_counterparties,
+            addresses_to_counterparties=self.addresses_to_counterparties | other.addresses_to_counterparties,  # noqa: E501
         )
 
 
@@ -135,6 +143,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             token_enricher_rules=[],
             post_decoding_rules={},
             all_counterparties=set(self.misc_counterparties),
+            addresses_to_counterparties={},
         )
         self.rules.event_rules.extend(event_rules)
         self.value_asset = value_asset
@@ -142,7 +151,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         # Recursively check all submodules to get all decoder address mappings and rules
         rules = self._recursively_initialize_decoders(self.chain_modules_root)
         self.rules += rules
-        # Sort post decoding rules by priority (which is the first element of the tuple)
         self.undecoded_tx_query_lock = Semaphore()
 
     def _recursively_initialize_decoders(
@@ -158,6 +166,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             token_enricher_rules=[],
             post_decoding_rules={},
             all_counterparties=set(),
+            addresses_to_counterparties={},
         )
 
         for _, name, is_pkg in pkgutil.walk_packages(package.__path__):
@@ -193,8 +202,9 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     results.address_mappings.update(self.decoders[class_name].addresses_to_decoders())  # noqa: E501
                     results.event_rules.extend(self.decoders[class_name].decoding_rules())
                     results.token_enricher_rules.extend(self.decoders[class_name].enricher_rules())
-                    results.post_decoding_rules |= self.decoders[class_name].post_decoding_rules()
+                    results.post_decoding_rules.update(self.decoders[class_name].post_decoding_rules())  # noqa: E501
                     results.all_counterparties.update(self.decoders[class_name].counterparties())
+                    results.addresses_to_counterparties.update(self.decoders[class_name].addresses_to_counterparties())  # noqa: E501
 
                 recursive_results = self._recursively_initialize_decoders(full_name)
                 results += recursive_results
@@ -278,22 +288,27 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             counterparties: set[str],
     ) -> list['EvmEvent']:
         """
-        Runs all post-decoding rules from self.rules.post_decoding_rules.
-        The post-decoding rules list consists of tuples (priority, rule) and must be sorted by
-        priority in ascending order. The higher the priority number the later the rule is run.
+        Runs post-decoding rules using counterparties and the transaction.to_address as filter
+        criteria. The post-decoding rules list consists of tuples (priority, rule) and must be
+        sorted by priority in ascending order. The higher the priority number the later
+        the rule is run.
         """
+        # check if the to_address of the transaction has a matching counterparty
         if transaction.to_address is not None:
-            rules = self.rules.post_decoding_rules.get(transaction.to_address, [])
-        else:
-            rules = []
+            address_counterparty = self.rules.addresses_to_counterparties.get(transaction.to_address)  # noqa: E501
+            if address_counterparty is not None:
+                counterparties.add(address_counterparty)
 
+        rules = []
+        # get the rules that need to be applied by counterparty
         for counterparty in counterparties:
             new_rules = self.rules.post_decoding_rules.get(counterparty)
             if new_rules is not None:
                 rules.extend(new_rules)
 
+        # Sort post decoding rules by priority (which is the first element of the tuple)
         rules.sort(key=lambda x: x[0])
-        for (_, rule) in rules:
+        for _, rule in rules:
             decoded_events = rule(transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
 
         return decoded_events
@@ -740,27 +755,21 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
 
         # Add additional information to transfers for different protocols
         maybe_counterparty = self._enrich_protocol_tranfers(
-            token=found_token,
-            tx_log=tx_log,
-            transaction=transaction,
-            event=transfer,
-            action_items=action_items,
-            all_logs=all_logs,
+            context=EnricherContext(
+                tx_log=tx_log,
+                transaction=transaction,
+                action_items=action_items,
+                all_logs=all_logs,
+                token=found_token,
+                event=transfer,
+            ),
         )
         return DecodingOutput(event=transfer, counterparty=maybe_counterparty)
 
     # -- methods to be implemented by child classes --
 
     @abstractmethod
-    def _enrich_protocol_tranfers(
-            self,
-            token: EvmToken,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            event: 'EvmEvent',
-            action_items: list[ActionItem],
-            all_logs: list[EvmTxReceiptLog],
-    ) -> Optional[str]:
+    def _enrich_protocol_tranfers(self, context: EnricherContext) -> Optional[str]:
         """
         Decode special transfers made by contract execution for example at the moment
         of depositing assets or withdrawing.

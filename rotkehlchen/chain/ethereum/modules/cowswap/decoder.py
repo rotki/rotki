@@ -250,4 +250,7 @@ class CowswapDecoder(DecoderInterface):
         return {ETH_FLOW_ADDRESS: (self._decode_eth_orders,)}
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
-        return {GPV2_SETTLEMENT_ADDRESS: [(0, self._aggregator_post_decoding)]}
+        return {CPT_COWSWAP: [(0, self._aggregator_post_decoding)]}
+
+    def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
+        return {GPV2_SETTLEMENT_ADDRESS: CPT_COWSWAP}

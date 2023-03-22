@@ -149,29 +149,14 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
 
     # -- methods that need to be implemented by child classes --
 
-    def _enrich_protocol_tranfers(
-            self,
-            token: EvmToken,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            event: 'EvmEvent',
-            action_items: list[ActionItem],
-            all_logs: list[EvmTxReceiptLog],
-    ) -> Optional[str]:
-        context = EnricherContext(
-            tx_log=tx_log,
-            transaction=transaction,
-            action_items=action_items,
-            all_logs=all_logs,
-            token=token,
-            event=event,
-        )
+    def _enrich_protocol_tranfers(self, context: EnricherContext) -> Optional[str]:
         for enrich_call in self.rules.token_enricher_rules:
             try:
                 transfer_enrich: TransferEnrichmentOutput = enrich_call(context)
             except (UnknownAsset, WrongAssetType) as e:
                 log.error(
-                    f'Failed to enrich transfer due to unknown asset {event.asset}. {str(e)}',
+                    f'Failed to enrich transfer due to unknown asset '
+                    f'{context.event.asset}. {str(e)}',
                 )
                 # Don't try other rules since all of them will fail to resolve the asset
                 return None

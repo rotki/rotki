@@ -54,9 +54,17 @@ class DecoderInterface(metaclass=ABCMeta):
         Subclasses may implement this to add post processing of the decoded events.
         This will run after the normal decoding step and will only process decoded history events.
 
-        This function should return a list of tuples where the first element is the priority of
-        a function and the second element is the function to run. The higher the priority number
-        the later the function will be run.
+        This function should return a dict where values are tuples where the first element is the
+        priority of a function and the second element is the function to run. The higher the
+        priority number the later the function will be run.
+        The keys of the dictionary are counterparties.
+        """
+        return {}
+
+    def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
+        """
+        Map addresses to counterparties so they can be filtered in the post
+        decoding step.
         """
         return {}
 
