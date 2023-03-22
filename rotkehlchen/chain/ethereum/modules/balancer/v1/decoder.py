@@ -2,13 +2,12 @@ import logging
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V1
 from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerV1EventTypes
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_ENRICHMENT_OUTPUT,
-    ActionItem,
+    EnricherContext,
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
@@ -80,12 +79,7 @@ class Balancerv1Decoder(DecoderInterface):
 
     def _maybe_enrich_balancer_v1_events(
             self,
-            token: 'EvmToken',
-            tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            event: 'EvmEvent',
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],
+            context: EnricherContext,
     ) -> TransferEnrichmentOutput:
         """
         Enrich balancer v1 transfer to read pool events of:
@@ -95,7 +89,8 @@ class Balancerv1Decoder(DecoderInterface):
         In balancer v1 pools are managed using a DSProxy so the account doesn't interact
         directly with the pools.
         """
-        events_information = self._decode_v1_pool_event(all_logs=all_logs)
+        event, token = context.event, context.token
+        events_information = self._decode_v1_pool_event(all_logs=context.all_logs)
         if events_information is None:
             return DEFAULT_ENRICHMENT_OUTPUT
 

@@ -16,6 +16,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     ActionItem,
     DecoderContext,
     DecodingOutput,
+    EnricherContext,
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
@@ -499,14 +500,10 @@ class Uniswapv3Decoder(DecoderInterface):
 
     def _maybe_enrich_liquidity_pool_creation(
             self,
-            token: EvmToken,  # pylint: disable=unused-argument
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            event: 'EvmEvent',
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            context: EnricherContext,
     ) -> TransferEnrichmentOutput:
         """This method enriches Uniswap V3 LP creation transactions."""
+        event = context.event
         if (
             event.asset == self.uniswap_v3_nft and
             event.balance.amount == ONE and
@@ -515,7 +512,7 @@ class Uniswapv3Decoder(DecoderInterface):
             event.event_subtype == HistoryEventSubType.NONE
         ):
             event.event_subtype = HistoryEventSubType.NFT
-            event.notes = f'Create {CPT_UNISWAP_V3} LP with id {hex_or_bytes_to_int(tx_log.topics[3])}'  # noqa: E501
+            event.notes = f'Create {CPT_UNISWAP_V3} LP with id {hex_or_bytes_to_int(context.tx_log.topics[3])}'  # noqa: E501
             event.counterparty = CPT_UNISWAP_V3
             return TransferEnrichmentOutput(counterparty=CPT_UNISWAP_V3)
 

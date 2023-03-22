@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
     DecodingOutput,
+    EnricherContext,
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -157,16 +158,17 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
     ) -> Optional[str]:
+        context = EnricherContext(
+            tx_log=tx_log,
+            transaction=transaction,
+            action_items=action_items,
+            all_logs=all_logs,
+            token=token,
+            event=event,
+        )
         for enrich_call in self.rules.token_enricher_rules:
             try:
-                transfer_enrich: TransferEnrichmentOutput = enrich_call(
-                    token=token,
-                    tx_log=tx_log,
-                    transaction=transaction,
-                    event=event,
-                    action_items=action_items,
-                    all_logs=all_logs,
-                )
+                transfer_enrich: TransferEnrichmentOutput = enrich_call(context)
             except (UnknownAsset, WrongAssetType) as e:
                 log.error(
                     f'Failed to enrich transfer due to unknown asset {event.asset}. {str(e)}',

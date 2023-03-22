@@ -12,18 +12,17 @@ from rotkehlchen.chain.evm.decoding.structures import (
     ActionItem,
     DecoderContext,
     DecodingOutput,
+    EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
@@ -116,12 +115,7 @@ class Balancerv2Decoder(DecoderInterface):
 
     def _maybe_enrich_balancer_v2_transfers(
             self,
-            token: 'EvmToken',  # pylint: disable=unused-argument
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            event: 'EvmEvent',
-            action_items: list[ActionItem],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            context: EnricherContext,
     ) -> TransferEnrichmentOutput:
         """
         Enrich tranfer transactions to account for swaps in balancer v2 protocol.
@@ -129,7 +123,8 @@ class Balancerv2Decoder(DecoderInterface):
         - UnknownAsset
         - WrongAssetType
         """
-        if action_items is None or len(action_items) == 0 or transaction.to_address != VAULT_ADDRESS:  # noqa: E501
+        event, action_items = context.event, context.action_items
+        if action_items is None or len(action_items) == 0 or context.transaction.to_address != VAULT_ADDRESS:  # noqa: E501
             return DEFAULT_ENRICHMENT_OUTPUT
 
         if action_items[-1].extra_data is None:
@@ -138,7 +133,7 @@ class Balancerv2Decoder(DecoderInterface):
         asset = event.asset.resolve_to_evm_token()
         if (
             isinstance(action_items[-1].asset, EvmToken) is False or
-            action_items[-1].asset.evm_address != tx_log.address or  # type: ignore[attr-defined]  # noqa: E501 mypy fails to understand that due the previous statmenet in the or this check won't be evaluated if the asset isn't a token
+            action_items[-1].asset.evm_address != context.tx_log.address or  # type: ignore[attr-defined]  # noqa: E501 mypy fails to understand that due the previous statmenet in the or this check won't be evaluated if the asset isn't a token
             action_items[-1].amount != event.balance.amount
         ):
             return DEFAULT_ENRICHMENT_OUTPUT
