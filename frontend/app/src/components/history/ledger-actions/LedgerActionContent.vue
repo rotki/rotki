@@ -11,7 +11,7 @@ import {
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
-import { type Matcher } from '@/composables/filters/ledger-actions';
+import type { Filters, Matcher } from '@/composables/filters/ledger-actions';
 
 const props = withDefaults(
   defineProps<{
@@ -103,6 +103,7 @@ const {
   LedgerAction,
   LedgerActionRequestPayload,
   LedgerActionEntry,
+  Filters,
   Matcher
 >(locationOverview, mainPage, useLedgerActionsFilter, fetchLedgerActions);
 

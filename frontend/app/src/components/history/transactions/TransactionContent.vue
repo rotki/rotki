@@ -25,7 +25,7 @@ import { getCollectionData } from '@/utils/collection';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { RouterAccountsSchema } from '@/types/route';
 import { SavedFilterLocation } from '@/types/filtering';
-import { type Matcher } from '@/composables/filters/transactions';
+import type { Filters, Matcher } from '@/composables/filters/transactions';
 
 const props = withDefaults(
   defineProps<{
@@ -169,6 +169,7 @@ const {
   EthTransaction,
   TransactionRequestPayload,
   EthTransactionEntry,
+  Filters,
   Matcher
 >(
   null,

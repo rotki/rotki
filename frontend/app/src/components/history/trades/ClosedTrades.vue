@@ -12,7 +12,7 @@ import {
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
-import { type Matcher } from '@/composables/filters/trades';
+import type { Filters, Matcher } from '@/composables/filters/trades';
 
 const props = withDefaults(
   defineProps<{
@@ -133,18 +133,18 @@ const {
   setOptions,
   setFilter,
   fetchData
-} = useHistoryPaginationFilter<Trade, TradeRequestPayload, TradeEntry, Matcher>(
-  locationOverview,
-  mainPage,
-  useTradeFilters,
-  fetchTrades,
-  {
-    onUpdateFilters(query) {
-      set(hideIgnoredTrades, query.includeIgnoredTrades === 'false');
-    },
-    extraParams
-  }
-);
+} = useHistoryPaginationFilter<
+  Trade,
+  TradeRequestPayload,
+  TradeEntry,
+  Filters,
+  Matcher
+>(locationOverview, mainPage, useTradeFilters, fetchTrades, {
+  onUpdateFilters(query) {
+    set(hideIgnoredTrades, query.includeIgnoredTrades === 'false');
+  },
+  extraParams
+});
 
 useHistoryAutoRefresh(fetchData);
 

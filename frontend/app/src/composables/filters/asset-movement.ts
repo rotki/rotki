@@ -32,7 +32,7 @@ export type Matcher = SearchMatcher<
   AssetMovementFilterKeys,
   AssetMovementFilterValueKeys
 >;
-type Filters = MatchedKeyword<AssetMovementFilterValueKeys>;
+export type Filters = MatchedKeyword<AssetMovementFilterValueKeys>;
 
 export const useAssetMovementFilters = () => {
   const filters: Ref<Filters> = ref({});

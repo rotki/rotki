@@ -11,19 +11,25 @@ import {
 import { type Collection } from '@/types/collection';
 import { assert } from '@/utils/assertions';
 
-interface FilterSchema<M> {
-  filters: Ref<LocationQuery>;
+interface FilterSchema<F, M> {
+  filters: Ref<F>;
   matchers: ComputedRef<M[]>;
 
-  updateFilter(filter: LocationQuery): void;
+  updateFilter(filter: F): void;
 
   RouteFilterSchema: ZodSchema;
 }
 
-export const useHistoryPaginationFilter = <T extends Object, U, V, X>(
+export const useHistoryPaginationFilter = <
+  T extends Object,
+  U,
+  V,
+  W extends Object,
+  X
+>(
   locationOverview: MaybeRef<string | null>,
   mainPage: Ref<boolean>,
-  filterSchema: () => FilterSchema<X>,
+  filterSchema: () => FilterSchema<W, X>,
   fetchAssetData: (payload: MaybeRef<U>) => Promise<Collection<V>>,
   options: {
     onUpdateFilters?: (query: LocationQuery) => void;
@@ -52,8 +58,8 @@ export const useHistoryPaginationFilter = <T extends Object, U, V, X>(
 
     const selectedFilters = get(filters);
     const overview = get(locationOverview);
-    if (overview) {
-      selectedFilters['location'] = overview;
+    if (overview && 'location' in selectedFilters) {
+      selectedFilters.location = overview;
     }
 
     return {
@@ -102,7 +108,7 @@ export const useHistoryPaginationFilter = <T extends Object, U, V, X>(
     const selectedFilters = get(filters);
 
     const overview = get(locationOverview);
-    if (overview) {
+    if (overview && 'location' in selectedFilters) {
       selectedFilters.location = overview;
     }
 
@@ -130,7 +136,7 @@ export const useHistoryPaginationFilter = <T extends Object, U, V, X>(
     set(paginationOptions, newOptions);
   };
 
-  const setFilter = (newFilter: UnwrapRef<Ref<LocationQuery>>) => {
+  const setFilter = (newFilter: UnwrapRef<Ref<W>>) => {
     set(userAction, true);
     updateFilter(newFilter);
   };
