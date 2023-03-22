@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import { type PropType } from 'vue';
+import { type ComputedRef, type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
@@ -11,6 +11,7 @@ import {
 import { One, Zero, bigNumberify, sortDesc } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
 import { toSentenceCase } from '@/utils/text';
+import { assert } from '@/utils/assertions';
 import { BalanceType } from '@/types/balances';
 import { bigNumberSum } from '@/utils/calculation';
 
@@ -40,7 +41,6 @@ const locationToDelete = ref<string>('');
 const form = ref<(BalanceSnapshotPayload & { location: string }) | null>(null);
 const valid = ref<boolean>(false);
 const loading = ref<boolean>(false);
-const excludedAssets = ref<string[]>([]);
 
 const { exchangeRate } = useBalancePricesStore();
 const { tc } = useI18n();
@@ -48,11 +48,21 @@ const fiatExchangeRate = computed<BigNumber>(() => {
   return get(exchangeRate(get(currencySymbol))) ?? One;
 });
 
-const data = computed<IndexedBalanceSnapshot[]>(() => {
+const data: ComputedRef<IndexedBalanceSnapshot[]> = computed(() => {
   return get(value).balancesSnapshot.map((item, index) => ({
     ...item,
     index
   }));
+});
+
+const assetSearch: Ref<string> = ref('');
+const filteredData: ComputedRef<IndexedBalanceSnapshot[]> = computed(() => {
+  const allData = get(data);
+  const search = get(assetSearch);
+  if (!search) {
+    return allData;
+  }
+  return allData.filter(({ assetIdentifier }) => assetIdentifier === search);
 });
 
 const total = computed<BigNumber>(() => {
@@ -108,6 +118,39 @@ const updateStep = (step: number) => {
   emit('update:step', step);
 };
 
+const conflictedBalanceSnapshot: Ref<BalanceSnapshot | null> = ref(null);
+const checkAssetExist = (asset: string) => {
+  const assetFound = get(value).balancesSnapshot.find(
+    item => item.assetIdentifier === asset
+  );
+  set(conflictedBalanceSnapshot, assetFound || null);
+};
+
+const closeConvertToEditDialog = () => {
+  set(conflictedBalanceSnapshot, null);
+};
+
+const cancelConvertToEdit = () => {
+  set(form, {
+    ...get(form),
+    assetIdentifier: ''
+  });
+
+  closeConvertToEditDialog();
+};
+const convertToEdit = () => {
+  assert(conflictedBalanceSnapshot);
+  const item = get(data).find(
+    ({ assetIdentifier }) =>
+      assetIdentifier === get(conflictedBalanceSnapshot)?.assetIdentifier
+  );
+
+  if (item) {
+    editClick(item);
+  }
+  closeConvertToEditDialog();
+};
+
 const editClick = (item: IndexedBalanceSnapshot) => {
   set(indexToEdit, item.index);
 
@@ -122,13 +165,6 @@ const editClick = (item: IndexedBalanceSnapshot) => {
     usdValue: convertedFiatValue,
     location: ''
   });
-
-  set(
-    excludedAssets,
-    get(value)
-      .balancesSnapshot.map(item => item.assetIdentifier)
-      .filter(identifier => identifier !== item.assetIdentifier)
-  );
 
   set(showForm, true);
 };
@@ -155,10 +191,6 @@ const add = () => {
     usdValue: '',
     location: ''
   });
-  set(
-    excludedAssets,
-    get(value).balancesSnapshot.map(item => item.assetIdentifier)
-  );
   set(showForm, true);
 };
 
@@ -325,7 +357,6 @@ const clearEditDialog = () => {
   set(indexToEdit, null);
   set(showForm, false);
   set(form, null);
-  set(excludedAssets, []);
 };
 
 const updateForm = (newForm: BalanceSnapshotPayload & { location: string }) => {
@@ -362,11 +393,23 @@ const tableContainer = computed(() => {
 </script>
 <template>
   <div>
+    <v-row class="pa-4">
+      <v-col md="6">
+        <asset-select
+          v-model="assetSearch"
+          outlined
+          hide-details
+          clearable
+          :label="tc('dashboard.snapshot.search_asset')"
+        />
+      </v-col>
+    </v-row>
     <data-table
       ref="tableRef"
       class="table-inside-dialog"
+      :class="css['table-inside-dialog']"
       :headers="tableHeaders"
-      :items="data"
+      :items="filteredData"
       :container="tableContainer"
       :mobile-breakpoint="0"
     >
@@ -446,11 +489,18 @@ const tableContainer = computed(() => {
       <edit-balances-snapshot-form
         v-if="form"
         v-model="valid"
+        :edit="!!indexToEdit"
         :form="form"
-        :excluded-assets="excludedAssets"
         :preview-location-balance="previewLocationBalance"
         :locations="indexToEdit !== null ? existingLocations : []"
         @update:form="updateForm"
+        @update:asset="checkAssetExist"
+      />
+
+      <confirm-snapshot-confict-replacement-dialog
+        :snapshot="conflictedBalanceSnapshot"
+        @cancel="cancelConvertToEdit"
+        @confirm="convertToEdit"
       />
     </big-dialog>
 
@@ -474,8 +524,13 @@ const tableContainer = computed(() => {
     </confirm-dialog>
   </div>
 </template>
+
 <style module lang="scss">
 .asset {
   max-width: 640px;
+}
+
+.table-inside-dialog {
+  max-height: calc(100vh - 420px);
 }
 </style>

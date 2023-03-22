@@ -10541,7 +10541,7 @@ Data imports
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
-   
+
    .. note::
       If you want to provide a stream of data instead of a path, you can call POST on this endpoint and provide the stream in `filepath` variable.
 
@@ -12334,3 +12334,47 @@ Get Binance Savings Interests History
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as binance could not be reached or returned unexpected response.
+
+
+Get all EVM Chains
+===================
+
+.. http:get:: /api/(version)/blockchains/evm/all
+
+    Doing a GET request on this endpoint will return a list of all EVM chain IDs and their names.
+
+    **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+    GET /api/(version)/blockchains/evm/all HTTP/1.1
+    Host: localhost:5042
+    Content-Type: application/json;charset=UTF-8
+
+    {}
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "result": [
+                {"id": 1, "name": "ethereum"},
+                {"id": 10, "name": "optimism"},
+                {"id": 56, "name": "binance"},
+                {"id": 100, "name": "gnosis"},
+                {"id": 137, "name": "matic"},
+                {"id": 250, "name": "fantom"},
+                {"id": 42161, "name": "arbitrum"},
+                {"id": 43114, "name": "avalanche"},
+                {"id": 42220, "name": "celo"}
+            ],
+            "message": ""
+        }
+
+    :resjsonarr result: Returns a list of all EVM chains IDs and their names.
+    :statuscode 200: Success
+    :statuscode 500: Internal rotki error

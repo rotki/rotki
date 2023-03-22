@@ -4191,3 +4191,12 @@ class RestAPI():
             query_filter=query_filter,
             value_filter=value_filter,
         )
+
+    def get_all_evm_chains(self) -> Response:
+        """Returns a list of all EVM chain ids."""
+        return api_response(
+            result=_wrap_in_ok_result(result=[
+                {'id': chain.value, 'name': chain.to_name()}
+                for chain in ChainID
+            ]),
+        )
