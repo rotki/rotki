@@ -15,12 +15,14 @@ import { logger } from '@/utils/logging';
 import { isValidEthAddress } from '@/utils/text';
 import { type Chains } from '@/types/asset/asset-urls';
 import { isBlockchain } from '@/types/blockchain/chains';
+import { api } from '@/services/rotkehlchen-api';
 
 export const useAddressesNamesStore = defineStore('addresses', () => {
   const { enableAliasNames } = storeToRefs(useFrontendSettingsStore());
 
   const fetchedEntries = ref<AddressBookSimplePayload[]>([]);
   const addressesNames = ref<AddressBookEntries>([]);
+  const ensNames = ref<EthNames>({});
 
   const addressBookGlobal = ref<AddressBookEntries>([]);
   const addressBookPrivate = ref<AddressBookEntries>([]);
@@ -76,11 +78,20 @@ export const useAddressesNamesStore = defineStore('addresses', () => {
     if (forceUpdate) {
       const taskType = TaskType.FETCH_ENS_NAMES;
       const { taskId } = await getEnsNamesTask(filteredAddresses);
-      await awaitTask<EthNames, TaskMeta>(taskId, taskType, {
+      const { result } = await awaitTask<EthNames, TaskMeta>(taskId, taskType, {
         title: tc('ens_names.task.title')
       });
+      set(ensNames, {
+        ...get(ensNames),
+        ...result
+      });
     } else {
-      await getEnsNames(filteredAddresses);
+      const result = await getEnsNames(filteredAddresses);
+
+      set(ensNames, {
+        ...get(ensNames),
+        ...result
+      });
     }
 
     await fetchAddressesNames(filteredAddresses, Blockchain.ETH);
@@ -149,6 +160,25 @@ export const useAddressesNamesStore = defineStore('addresses', () => {
       });
     }
   };
+
+  const ensNameSelector = (address: MaybeRef<string>) =>
+    computed<string | null>(() => {
+      if (!get(enableAliasNames)) {
+        return null;
+      }
+
+      return get(ensNames)[get(address)] || null;
+    });
+
+  const ensAvatarUrl = (address: MaybeRef<string>) =>
+    computed<string | null>(() => {
+      const ens = get(ensNameSelector(address));
+      if (!ens) {
+        return null;
+      }
+
+      return `${api.instance.defaults.baseURL}avatars/ens/${ens}`;
+    });
 
   const addressNameSelector = (
     address: MaybeRef<string>,
@@ -254,6 +284,8 @@ export const useAddressesNamesStore = defineStore('addresses', () => {
     fetchedEntries,
     getFetchedAddressesList,
     addressesNames,
+    ensNameSelector,
+    ensAvatarUrl,
     addressNameSelector,
     addressBookEntries,
     fetchAddressesNames,

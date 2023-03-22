@@ -107,15 +107,13 @@ const displayUrl = computed<string>(() => {
 
 const { t } = useI18n();
 const { href, onLinkClick } = useLinks(url);
-
-const { getBlockie } = useBlockie();
 </script>
 
 <template>
   <div class="d-flex flex-row shrink align-center">
     <span>
       <v-avatar v-if="showIcon && !tx" size="22" class="mr-2">
-        <v-img :src="getBlockie(displayText)" />
+        <ens-avatar :address="displayText" />
       </v-avatar>
     </span>
     <span v-if="!linkOnly && !buttons">
