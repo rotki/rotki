@@ -141,10 +141,6 @@ export const useHistoryPaginationFilter = <
     updateFilter(newFilter);
   };
 
-  onBeforeMount(() => {
-    applyRouteFilter();
-  });
-
   watch(route, () => {
     set(userAction, false);
     applyRouteFilter();
@@ -190,6 +186,7 @@ export const useHistoryPaginationFilter = <
     setPage,
     setOptions,
     setFilter,
+    applyRouteFilter,
     updateFilter,
     fetchData
   };

@@ -163,6 +163,7 @@ const {
   setPage,
   setOptions,
   setFilter,
+  applyRouteFilter,
   updateFilter,
   fetchData
 } = useHistoryPaginationFilter<
@@ -355,10 +356,6 @@ watch(
   }
 );
 
-onUnmounted(() => {
-  pause();
-});
-
 const { show } = useConfirmStore();
 
 const resetPendingDeletion = () => {
@@ -381,9 +378,17 @@ const showDeleteConfirmation = () => {
 const { txEvmChains, getEvmChainName, getChain } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
 
+onBeforeMount(() => {
+  applyRouteFilter();
+});
+
 onMounted(async () => {
   await fetchData();
   await refreshTransactions(get(onlyChains));
+});
+
+onUnmounted(() => {
+  pause();
 });
 
 watch(loading, async (isLoading, wasLoading) => {
