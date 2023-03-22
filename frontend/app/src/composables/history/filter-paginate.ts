@@ -31,7 +31,7 @@ interface FilterSchema {
 }
 
 export const useHistoryPaginationFilter = <T extends Object, U, V>(
-  locationOverview: Ref,
+  locationOverview: MaybeRef<string | null>,
   mainPage: Ref<boolean>,
   filterSchema: () => FilterSchema,
   fetchAssetData: (payload: MaybeRef<U>) => Promise<Collection<V>>,

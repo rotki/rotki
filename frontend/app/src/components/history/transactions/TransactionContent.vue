@@ -169,7 +169,7 @@ const {
   TransactionRequestPayload,
   EthTransactionEntry
 >(
-  ref(null),
+  null,
   mainPage,
   () => useTransactionFilter(get(protocols).length > 0),
   fetchTransactions,
