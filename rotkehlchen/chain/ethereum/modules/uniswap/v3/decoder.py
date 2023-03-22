@@ -538,4 +538,7 @@ class Uniswapv3Decoder(DecoderInterface):
         return [CPT_UNISWAP_V3]
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
-        return {router_address: [(0, self._routers_post_decoding)] for router_address in UNISWAP_ROUTERS}  # noqa: E501
+        return {CPT_UNISWAP_V3: [(0, self._routers_post_decoding)]}
+
+    def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
+        return {router_address: CPT_UNISWAP_V3 for router_address in UNISWAP_ROUTERS}
