@@ -3,16 +3,14 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_OP
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.user_messages import MessagesAggregator
@@ -37,22 +35,15 @@ class AirdropsDecoder(DecoderInterface):
         )
         self.op_token = A_OP.resolve_to_evm_token()
 
-    def _decode_optimism_airdrop_claim(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
-        if tx_log.topics[0] != OP_CLAIMED:
+    def _decode_optimism_airdrop_claim(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != OP_CLAIMED:
             return DecodingOutput(counterparty=CPT_OPTIMISM)
 
-        user_address = hex_or_bytes_to_address(tx_log.data[32:64])
-        raw_amount = hex_or_bytes_to_int(tx_log.data[64:96])
+        user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
+        raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
         amount = asset_normalized_value(amount=raw_amount, asset=self.op_token)
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and self.op_token == event.asset:  # noqa: E501
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.AIRDROP

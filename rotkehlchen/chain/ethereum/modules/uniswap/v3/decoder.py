@@ -14,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DEFAULT_ENRICHMENT_OUTPUT,
     ActionItem,
+    DecoderContext,
     DecodingOutput,
     TransferEnrichmentOutput,
 )
@@ -139,30 +140,15 @@ class Uniswapv3Decoder(DecoderInterface):
         )
         self.eth = A_ETH.resolve_to_crypto_asset()
 
-    def _decode_deposits_and_withdrawals(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],
-            action_items: Optional[list[ActionItem]],
-    ) -> DecodingOutput:
-        if tx_log.topics[0] == INCREASE_LIQUIDITY_SIGNATURE:
+    def _decode_deposits_and_withdrawals(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == INCREASE_LIQUIDITY_SIGNATURE:
             return self._maybe_decode_v3_deposit_or_withdrawal(
-                tx_log=tx_log,
-                transaction=transaction,
-                decoded_events=decoded_events,
-                all_logs=all_logs,
-                action_items=action_items,
+                context=context,
                 event_action_type='addition',
             )
-        if tx_log.topics[0] == COLLECT_LIQUIDITY_SIGNATURE:
+        if context.tx_log.topics[0] == COLLECT_LIQUIDITY_SIGNATURE:
             return self._maybe_decode_v3_deposit_or_withdrawal(
-                tx_log=tx_log,
-                transaction=transaction,
-                decoded_events=decoded_events,
-                all_logs=all_logs,
-                action_items=action_items,
+                context=context,
                 event_action_type='removal',
             )
 
@@ -368,11 +354,7 @@ class Uniswapv3Decoder(DecoderInterface):
 
     def _maybe_decode_v3_deposit_or_withdrawal(
             self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+            context: DecoderContext,
             event_action_type: Literal['addition', 'removal'],
     ) -> DecodingOutput:
         """
@@ -383,9 +365,9 @@ class Uniswapv3Decoder(DecoderInterface):
         https://etherscan.io/tx/0x76c312fe1c8604de5175c37dcbbb99cc8699336f3e4840e9e29e3383970f6c6d (withdrawal)
         """  # noqa: E501
         new_action_items = []
-        liquidity_pool_id = hex_or_bytes_to_int(tx_log.topics[1])
-        amount0_raw = hex_or_bytes_to_int(tx_log.data[32:64])
-        amount1_raw = hex_or_bytes_to_int(tx_log.data[64:96])
+        liquidity_pool_id = hex_or_bytes_to_int(context.tx_log.topics[1])
+        amount0_raw = hex_or_bytes_to_int(context.tx_log.data[32:64])
+        amount1_raw = hex_or_bytes_to_int(context.tx_log.data[64:96])
 
         if event_action_type == 'addition':
             notes = 'Deposit {amount} {asset} to uniswap-v3 LP {pool_id}'
@@ -427,7 +409,7 @@ class Uniswapv3Decoder(DecoderInterface):
                 chain_id=ChainID.ETHEREUM,
                 token_kind=EvmTokenKind.ERC20,
                 evm_inquirer=self.evm_inquirer,
-                seen=TokenSeenAt(tx_hash=transaction.tx_hash),
+                seen=TokenSeenAt(tx_hash=context.transaction.tx_hash),
             )
             token_with_data = self.eth if token_with_data == A_WETH else token_with_data
             resolved_assets_and_amounts.append(CryptoAssetAmount(
@@ -436,7 +418,7 @@ class Uniswapv3Decoder(DecoderInterface):
             ))
 
         found_event_for_token0 = found_event_for_token1 = False
-        for event in decoded_events:
+        for event in context.decoded_events:
             # search for the event of the first token
             if (
                 event.asset == resolved_assets_and_amounts[0].asset and

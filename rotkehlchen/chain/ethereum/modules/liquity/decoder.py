@@ -1,18 +1,17 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.evm_event import LIQUITY_STAKING_DETAILS, EvmEvent
+from rotkehlchen.accounting.structures.evm_event import LIQUITY_STAKING_DETAILS
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_LIQUITY
@@ -58,18 +57,11 @@ class LiquityDecoder(DecoderInterface):
         self.eth = A_ETH.resolve_to_crypto_asset()
         self.lqty = A_LQTY.resolve_to_evm_token()
 
-    def _decode_trove_operations(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
-        if tx_log.topics[0] != BALANCE_UPDATE:
+    def _decode_trove_operations(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != BALANCE_UPDATE:
             return DEFAULT_DECODING_OUTPUT
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             try:
                 crypto_asset = event.asset.resolve_to_crypto_asset()
             except (UnknownAsset, WrongAssetType):
@@ -97,14 +89,8 @@ class LiquityDecoder(DecoderInterface):
                 event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} collateral from liquity'  # noqa: E501
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_stability_pool_event(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_stability_pool_event(self, context: DecoderContext) -> DecodingOutput:
+        tx_log = context.tx_log
         if tx_log.topics[0] not in STABILITY_POOL_EVENTS:
             return DEFAULT_DECODING_OUTPUT
 
@@ -120,7 +106,7 @@ class LiquityDecoder(DecoderInterface):
                 asset=self.lqty,
             )
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             if event.event_type == HistoryEventType.SPEND and event.asset == A_LUSD:
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
@@ -150,14 +136,8 @@ class LiquityDecoder(DecoderInterface):
                     event.notes = f"Withdraw {event.balance.amount} {self.lusd.symbol} from liquity's stability pool"  # noqa: E501
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_lqty_staking_deposits(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_lqty_staking_deposits(self, context: DecoderContext) -> DecodingOutput:
+        tx_log = context.tx_log
         if tx_log.topics[0] not in STAKING_LQTY_EVENTS:
             return DEFAULT_DECODING_OUTPUT
 
@@ -170,7 +150,7 @@ class LiquityDecoder(DecoderInterface):
             )
 
         informational_event = None
-        for event in decoded_events:
+        for event in context.decoded_events:
             if (
                 tx_log.topics[0] == STAKING_LQTY_CHANGE and
                 event.asset == A_LQTY

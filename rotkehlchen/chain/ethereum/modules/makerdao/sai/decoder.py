@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DEFAULT_ENRICHMENT_OUTPUT,
     ActionItem,
+    DecoderContext,
     DecodingOutput,
     TransferEnrichmentOutput,
 )
@@ -67,54 +68,34 @@ class MakerdaosaiDecoder(DecoderInterface):
         self.sai = A_SAI.resolve_to_evm_token()
         self.peth = A_PETH.resolve_to_evm_token()
 
-    def _decode_sai_tub(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],
-            action_items: Optional[list[ActionItem]],
-    ) -> DecodingOutput:
-        decoder_function = self.topics_to_methods.get(tx_log.topics[0])
+    def _decode_sai_tub(self, context: DecoderContext) -> DecodingOutput:
+        decoder_function = self.topics_to_methods.get(context.tx_log.topics[0])
         if decoder_function is None:
             return DEFAULT_DECODING_OUTPUT
 
-        return decoder_function(
-            tx_log=tx_log,
-            transaction=transaction,
-            decoded_events=decoded_events,
-            all_logs=all_logs,
-            action_items=action_items,
-        )
+        return decoder_function(context=context)
 
-    def _decode_withdraw_eth(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_withdraw_eth(self, context: DecoderContext) -> DecodingOutput:
         """
         This method decodes ETH withdrawal from a CDP.
 
         An example of such transaction is:
         https://etherscan.io/tx/0x4e569aa1f23dc771f1c9ad05ab7cdb0af2607358b166a8137b702f81b88e37b9
         """
-        cdp_id = hex_or_bytes_to_int(tx_log.topics[2])
-        for event in decoded_events:
+        cdp_id = hex_or_bytes_to_int(context.tx_log.topics[2])
+        for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == self.eth
             ):
                 # look for the pooled ether burn event to match the withdrawal
-                for log in all_logs:
+                for log in context.all_logs:
                     if (
                         log.topics[0] == PETH_BURN_EVENT_TOPIC and
                         log.address == POOLED_ETHER_ADDRESS and
                         # checks that the amount to be withdrawn matches the amount of PETH burnt
-                        hex_or_bytes_to_int(tx_log.topics[3]) == hex_or_bytes_to_int(log.data[:32])  # noqa: E501
+                        hex_or_bytes_to_int(context.tx_log.topics[3]) == hex_or_bytes_to_int(log.data[:32])  # noqa: E501
                     ):
                         event.event_type = HistoryEventType.WITHDRAWAL
                         event.event_subtype = HistoryEventSubType.REMOVE_ASSET
@@ -124,14 +105,7 @@ class MakerdaosaiDecoder(DecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_new_cdp_event(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_new_cdp_event(self, context: DecoderContext) -> DecodingOutput:
         """
         This method decodes the event of a new CDP creation.
 
@@ -139,7 +113,7 @@ class MakerdaosaiDecoder(DecoderInterface):
         https://etherscan.io/tx/0xf7049668cb7cbb9c00d80092b2dce7ea59984f4c52c83e5c0940535a93f3d5a0
         """
         deposit_event = None
-        for event in decoded_events:
+        for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype.NONE and
@@ -150,11 +124,11 @@ class MakerdaosaiDecoder(DecoderInterface):
                 deposit_event = event
                 break
 
-        cdp_creator = hex_or_bytes_to_address(tx_log.topics[1])
-        cdp_id = hex_or_bytes_to_int(tx_log.data[:32])
+        cdp_creator = hex_or_bytes_to_address(context.tx_log.topics[1])
+        cdp_id = hex_or_bytes_to_int(context.tx_log.data[:32])
         event = self.base.make_event_from_transaction(
-            transaction=transaction,
-            tx_log=tx_log,
+            transaction=context.transaction,
+            tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=self.eth,
@@ -162,7 +136,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             location_label=cdp_creator,
             counterparty=CPT_SAI,
             notes=f'Create CDP {cdp_id}',
-            address=transaction.to_address,
+            address=context.transaction.to_address,
         )
         # ensure that the cdp creation event comes before any deposit event
         maybe_reshuffle_events(
@@ -171,24 +145,17 @@ class MakerdaosaiDecoder(DecoderInterface):
         )
         return DecodingOutput(event=event)
 
-    def _decode_close_cdp(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_close_cdp(self, context: DecoderContext) -> DecodingOutput:
         """
         This method decodes the closing of an already existing CDP.
 
         An example of such transaction is:
         https://etherscan.io/tx/0xc851e18df6dec02ac2efff000298001e839dde3d6e99d25d1d98ecb0d390c9a6
         """
-        cdp_creator = hex_or_bytes_to_address(tx_log.topics[1])
-        cdp_id = hex_or_bytes_to_int(tx_log.data[128:])
+        cdp_creator = hex_or_bytes_to_address(context.tx_log.topics[1])
+        cdp_id = hex_or_bytes_to_int(context.tx_log.data[128:])
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.INFORMATIONAL and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -201,8 +168,8 @@ class MakerdaosaiDecoder(DecoderInterface):
                 return DEFAULT_DECODING_OUTPUT
 
         event = self.base.make_event_from_transaction(
-            transaction=transaction,
-            tx_log=tx_log,
+            transaction=context.transaction,
+            tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=self.eth,
@@ -210,30 +177,24 @@ class MakerdaosaiDecoder(DecoderInterface):
             location_label=cdp_creator,
             counterparty=CPT_SAI,
             notes=f'Close CDP {cdp_id}',
-            address=transaction.to_address,
+            address=context.transaction.to_address,
         )
         return DecodingOutput(event=event)
 
-    def _decode_borrow_sai_event(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_borrow_sai_event(self, context: DecoderContext) -> DecodingOutput:
         """
         This method decodes an event of SAI being borrowed.
 
         An example of such transaction is:
         https://etherscan.io/tx/0x4aed2d2fe5712a5b65cb6866c51ae672a53e39fa25f343e4c6ebaa8eae21de80
         """
+        tx_log = context.tx_log
         cdp_id = hex_or_bytes_to_int(tx_log.topics[2])
         withdrawer = hex_or_bytes_to_address(tx_log.topics[1])
         amount_withdrawn_raw = hex_or_bytes_to_int(tx_log.topics[3])
         amount_withdrawn = asset_normalized_value(amount=amount_withdrawn_raw, asset=self.sai)
 
-        for decoded_event in decoded_events:
+        for decoded_event in context.decoded_events:
             if (
                 decoded_event.asset == self.sai and
                 decoded_event.event_type == HistoryEventType.RECEIVE and
@@ -247,7 +208,7 @@ class MakerdaosaiDecoder(DecoderInterface):
 
         if self.base.is_tracked(withdrawer) is True:
             event = self.base.make_event_from_transaction(
-                transaction=transaction,
+                transaction=context.transaction,
                 tx_log=tx_log,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.GENERATE_DEBT,
@@ -256,7 +217,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 location_label=withdrawer,
                 counterparty=CPT_SAI,
                 notes=f'Borrow {amount_withdrawn} {self.sai.symbol} from CDP {cdp_id}',
-                address=transaction.to_address,
+                address=context.transaction.to_address,
             )
             return DecodingOutput(event=event, counterparty=CPT_SAI)
 
@@ -277,26 +238,20 @@ class MakerdaosaiDecoder(DecoderInterface):
         )
         return DecodingOutput(action_items=[action_item], counterparty=CPT_SAI)
 
-    def _decode_repay_sai_event(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_repay_sai_event(self, context: DecoderContext) -> DecodingOutput:
         """
         This method decodes an event of SAI loan repayment.
 
         An example of such transaction is:
         https://etherscan.io/tx/0xe964cb12f4bbfa1ba4b6db8464eb3f2d4234ceafb0b5ec5f4a2188b0264bab27
         """
+        tx_log = context.tx_log
         cdp_id = hex_or_bytes_to_int(tx_log.topics[2])
         depositor = hex_or_bytes_to_address(tx_log.topics[1])
         amount_paid_raw = hex_or_bytes_to_int(tx_log.topics[3])
         amount_paid = asset_normalized_value(amount=amount_paid_raw, asset=self.sai)
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -320,7 +275,7 @@ class MakerdaosaiDecoder(DecoderInterface):
 
         if self.base.is_tracked(depositor) is True:
             event = self.base.make_event_from_transaction(
-                transaction=transaction,
+                transaction=context.transaction,
                 tx_log=tx_log,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.PAYBACK_DEBT,
@@ -329,30 +284,23 @@ class MakerdaosaiDecoder(DecoderInterface):
                 location_label=depositor,
                 counterparty=CPT_SAI,
                 notes=f'Repay {amount_paid} {self.sai.symbol} to CDP {cdp_id}',
-                address=transaction.to_address,
+                address=context.transaction.to_address,
             )
             return DecodingOutput(event=event)
 
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_liquidate_event(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_liquidate_event(self, context: DecoderContext) -> DecodingOutput:
         """
         This method decodes a liquidation event in a CDP
 
         An example of such transaction is:
         https://etherscan.io/tx/0x65d53653c584cde22e559cec4667a7278f75966360590b725d87055fb17552ba
         """
-        liquidator = hex_or_bytes_to_address(tx_log.topics[1])
-        cdp_id = hex_or_bytes_to_int(tx_log.topics[2])
+        liquidator = hex_or_bytes_to_address(context.tx_log.topics[1])
+        cdp_id = hex_or_bytes_to_int(context.tx_log.topics[2])
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.LIQUIDATE and
@@ -364,7 +312,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 return DEFAULT_DECODING_OUTPUT
 
         # check for the transfer event of the liquidation to Maker SaiTap contract
-        for log in all_logs:
+        for log in context.all_logs:
             if (
                 log.topics[0] == ERC20_OR_ERC721_TRANSFER and
                 hex_or_bytes_to_address(log.topics[1]) == MAKERDAO_SAITUB_CONTRACT and
@@ -374,8 +322,8 @@ class MakerdaosaiDecoder(DecoderInterface):
                 amount = asset_normalized_value(amount=amount_raw, asset=self.weth)
 
                 event = self.base.make_event_from_transaction(
-                    transaction=transaction,
-                    tx_log=tx_log,
+                    transaction=context.transaction,
+                    tx_log=context.tx_log,
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.LIQUIDATE,
                     asset=self.peth,
@@ -383,20 +331,13 @@ class MakerdaosaiDecoder(DecoderInterface):
                     location_label=liquidator,
                     notes=f'Liquidate {amount} {self.peth.symbol} for CDP {cdp_id}',
                     counterparty=CPT_SAI,
-                    address=transaction.to_address,
+                    address=context.transaction.to_address,
                 )
                 return DecodingOutput(event=event)
 
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_deposit_eth_event(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_deposit_eth_event(self, context: DecoderContext) -> DecodingOutput:
         """
         This method decodes a deposit event of ETH into a CDP.
 
@@ -406,7 +347,7 @@ class MakerdaosaiDecoder(DecoderInterface):
         # check if ETH is sent to sai proxy contract or a proxy and mark it
         # as a deposit since the proxy handles the conversion to WETH
         # and transfer to the sai tub contract
-        for event in decoded_events:
+        for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -425,12 +366,12 @@ class MakerdaosaiDecoder(DecoderInterface):
                 event.asset == self.eth
             ):
                 # check for PETH mint event to match the deposit
-                for log in all_logs:
+                for log in context.all_logs:
                     if (
                         log.topics[0] == PETH_MINT_EVENT_TOPIC and
                         log.address == POOLED_ETHER_ADDRESS and
                         # checks that the amount to be deposited matches the amount of PETH minted
-                        hex_or_bytes_to_int(log.data[:32]) == hex_or_bytes_to_int(tx_log.topics[2])
+                        hex_or_bytes_to_int(log.data[:32]) == hex_or_bytes_to_int(context.tx_log.topics[2])  # noqa: E501
                     ):
                         event.event_type = HistoryEventType.DEPOSIT
                         event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
@@ -490,28 +431,21 @@ class MakerdaosaiDecoder(DecoderInterface):
 
         return DEFAULT_ENRICHMENT_OUTPUT
 
-    def _decode_peth_mint_after_deposit(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_peth_mint_after_deposit(self, context: DecoderContext) -> DecodingOutput:
         """
         This method decodes the receipt of PETH after WETH has been deposited.
 
         An example of such transaction is:
         https://etherscan.io/tx/0x5a7849ab4b7f7de2b005deddef24a094387c248c3bcb06066109bd7852c1d8af
         """
-        if tx_log.topics[0] == PETH_MINT_EVENT_TOPIC:
-            owner = hex_or_bytes_to_address(tx_log.topics[1])
-            amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
+        if context.tx_log.topics[0] == PETH_MINT_EVENT_TOPIC:
+            owner = hex_or_bytes_to_address(context.tx_log.topics[1])
+            amount_raw = hex_or_bytes_to_int(context.tx_log.data[:32])
             amount = asset_normalized_value(amount=amount_raw, asset=self.peth)
 
             event = self.base.make_event_from_transaction(
-                transaction=transaction,
-                tx_log=tx_log,
+                transaction=context.transaction,
+                tx_log=context.tx_log,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
                 asset=self.peth,
@@ -519,7 +453,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 location_label=owner,
                 counterparty=CPT_SAI,
                 notes=f'Receive {amount} {self.peth.symbol} from Sai Vault',
-                address=transaction.to_address,
+                address=context.transaction.to_address,
             )
             return DecodingOutput(event=event)
 

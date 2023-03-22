@@ -24,6 +24,7 @@ from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_ENRICHMENT_OUTPUT,
     ActionItem,
+    DecoderContext,
     DecodingOutput,
     TransferEnrichmentOutput,
 )
@@ -39,18 +40,12 @@ log = RotkehlchenLogsAdapter(logger)
 
 class ConvexDecoder(DecoderInterface):
 
-    def _decode_convex_events(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
-        amount_raw = hex_or_bytes_to_int(tx_log.data[0:32])
-        interacted_address = hex_or_bytes_to_address(tx_log.topics[1])
+    def _decode_convex_events(self, context: DecoderContext) -> DecodingOutput:
+        tx_log = context.tx_log
+        amount_raw = hex_or_bytes_to_int(context.tx_log.data[0:32])
+        interacted_address = hex_or_bytes_to_address(context.tx_log.topics[1])
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             try:
                 crypto_asset = event.asset.resolve_to_crypto_asset()
             except (UnknownAsset, WrongAssetType):
@@ -59,7 +54,7 @@ class ConvexDecoder(DecoderInterface):
 
             amount = asset_normalized_value(amount_raw, crypto_asset)
             if (
-                event.location_label == transaction.from_address == interacted_address is False or
+                event.location_label == context.transaction.from_address == interacted_address is False or  # noqa: E501
                 (event.address != ZERO_ADDRESS and event.balance.amount != amount)
             ):
                 continue

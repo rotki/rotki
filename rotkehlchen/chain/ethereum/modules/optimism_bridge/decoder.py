@@ -1,20 +1,16 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
-
-if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
 
 
 BRIDGE_ADDRESS = string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1')
@@ -26,15 +22,9 @@ ETH_WITHDRAWAL_FINALIZED = b'*\xc6\x9e\xe8\x04\xd9\xa7\xa0\x98BI\xf5\x08\xdf\xab
 
 
 class OptimismBridgeDecoder(DecoderInterface):
-    def _decode_bridge(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_bridge(self, context: DecoderContext) -> DecodingOutput:
         """Decodes a bridging event. Either a deposit or a withdrawal."""
+        tx_log = context.tx_log
         if tx_log.topics[0] not in {
             ETH_DEPOSIT_INITIATED,
             ETH_WITHDRAWAL_FINALIZED,
@@ -76,7 +66,7 @@ class OptimismBridgeDecoder(DecoderInterface):
             from_chain, to_chain = 'optimism', 'ethereum'
 
         # Find the corresponding transfer event and update it
-        for event in decoded_events:
+        for event in context.decoded_events:
             if (
                 event.event_type == expected_event_type and
                 event.location_label == expected_location_label and

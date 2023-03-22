@@ -7,7 +7,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_crypto_asset_by_symbol
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -205,15 +205,14 @@ class CompoundDecoder(DecoderInterface):
 
     def decode_compound_token_movement(
             self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
+            context: DecoderContext,
             compound_token: EvmToken,
     ) -> DecodingOutput:
+        tx_log = context.tx_log
+        transaction = context.transaction
+        decoded_events = context.decoded_events
         if tx_log.topics[0] == MINT_COMPOUND_TOKEN:
-            log.debug(f'Hash: {transaction.tx_hash.hex()}')
+            log.debug(f'Hash: {context.transaction.tx_hash.hex()}')
             return self._decode_mint(transaction=transaction, tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
 
         if tx_log.topics[0] in (BORROW_COMPOUND, REPAY_COMPOUND):
@@ -224,14 +223,7 @@ class CompoundDecoder(DecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
-    def decode_comp_claim(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def decode_comp_claim(self, context: DecoderContext) -> DecodingOutput:
         """Example tx:
         https://etherscan.io/tx/0x024bd402420c3ba2f95b875f55ce2a762338d2a14dac4887b78174254c9ab807
         https://etherscan.io/tx/0x25d341421044fa27006c0ec8df11067d80f69b2d2135065828f1992fa6868a49
@@ -247,17 +239,17 @@ class CompoundDecoder(DecoderInterface):
 
         contract code: https://etherscan.io/address/0xBafE01ff935C7305907c33BF824352eE5979B526#code
         """
-        if tx_log.topics[0] not in (DISTRIBUTED_SUPPLIER_COMP, DISTRIBUTED_BORROWER_COMP):
+        if context.tx_log.topics[0] not in (DISTRIBUTED_SUPPLIER_COMP, DISTRIBUTED_BORROWER_COMP):
             return DEFAULT_DECODING_OUTPUT
 
         # Transactions with comp claim have many such "distributed" events. We need to do a
         # decoded evens iteration only at the end but can't think of a good way to avoid
         # the possibility of checking all such events
-        supplier_address = hex_or_bytes_to_address(tx_log.topics[2])
+        supplier_address = hex_or_bytes_to_address(context.tx_log.topics[2])
         if not self.base.is_tracked(supplier_address):
             return DEFAULT_DECODING_OUTPUT
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.location_label == supplier_address and event.asset == A_COMP and event.address == COMPTROLLER_PROXY_ADDRESS:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_COMPOUND

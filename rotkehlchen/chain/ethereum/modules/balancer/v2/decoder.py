@@ -10,6 +10,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DEFAULT_ENRICHMENT_OUTPUT,
     ActionItem,
+    DecoderContext,
     DecodingOutput,
     TransferEnrichmentOutput,
 )
@@ -50,14 +51,7 @@ class Balancerv2Decoder(DecoderInterface):
         self.eth = A_ETH.resolve_to_crypto_asset()
         self.weth = A_WETH.resolve_to_evm_token()
 
-    def decode_swap_creation(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],
-    ) -> DecodingOutput:
+    def decode_swap_creation(self, context: DecoderContext) -> DecodingOutput:
         """
         Decode swap in Balancer v2. At the beggining of the transaction a SWAP event is created
         with the information of the tokens and amounts and later some transfers are executed.
@@ -66,14 +60,14 @@ class Balancerv2Decoder(DecoderInterface):
         in the swap event. A special case is the swap of ETH that is wrapped before being sent.
         In this case the token is WETH but we have a tranfer of ETH from the user.
         """
-        if tx_log.topics[0] != V2_SWAP:
+        if context.tx_log.topics[0] != V2_SWAP:
             return DEFAULT_DECODING_OUTPUT
 
         # The transfer event appears after the swap event, so we need to propagate information
-        from_token_address = hex_or_bytes_to_address(tx_log.topics[2])
-        to_token_address = hex_or_bytes_to_address(tx_log.topics[3])
-        amount_in = hex_or_bytes_to_int(tx_log.data[0:32])
-        amount_out = hex_or_bytes_to_int(tx_log.data[32:64])
+        from_token_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+        to_token_address = hex_or_bytes_to_address(context.tx_log.topics[3])
+        amount_in = hex_or_bytes_to_int(context.tx_log.data[0:32])
+        amount_out = hex_or_bytes_to_int(context.tx_log.data[32:64])
 
         # Create action item to propagate the information about the swap to the transfer enrichers
         to_token = EvmToken(ethaddress_to_identifier(to_token_address))
@@ -83,7 +77,7 @@ class Balancerv2Decoder(DecoderInterface):
         )
         action_item = ActionItem(
             action='skip & keep',
-            sequence_index=tx_log.log_index,
+            sequence_index=context.tx_log.log_index,
             from_event_type=HistoryEventType.RECEIVE,
             from_event_subtype=HistoryEventSubType.NONE,
             asset=to_token,
@@ -100,14 +94,14 @@ class Balancerv2Decoder(DecoderInterface):
 
         # When ETH is swapped it is wrapped to WETH and the ETH transfer happens before the SWAP
         # event. We need to detect it if we haven't done it yet.
-        if len(action_items) == 0 and from_token_address == self.weth.evm_address:
+        if len(context.action_items) == 0 and from_token_address == self.weth.evm_address:
             # when swapping eth the transfer event appears before the V2_SWAP event so we need
             # to check if the asset swapped was ETH or not.
             amount_of_eth = asset_normalized_value(
                 amount=amount_in,
                 asset=self.eth,
             )
-            for event in decoded_events:
+            for event in context.decoded_events:
                 if (
                     event.asset == A_ETH and event.balance.amount == amount_of_eth and
                     event.event_type == HistoryEventType.SPEND and

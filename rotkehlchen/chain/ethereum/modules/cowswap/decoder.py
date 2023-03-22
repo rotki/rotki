@@ -9,7 +9,7 @@ from rotkehlchen.chain.ethereum.modules.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -52,15 +52,10 @@ class CowswapDecoder(DecoderInterface):
         )
         self.eth = A_ETH.resolve_to_crypto_asset()
 
-    def _decode_eth_orders(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_eth_orders(self, context: DecoderContext) -> DecodingOutput:
         counterparty = None
+        tx_log = context.tx_log
+        decoded_events = context.decoded_events
         if tx_log.topics[0] == PLACE_ETH_ORDER_SIGNATURE:
             target_token_address = hex_or_bytes_to_address(tx_log.data[32:64])
             target_token = EvmToken(evm_address_to_identifier(

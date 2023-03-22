@@ -8,6 +8,7 @@ from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, Reloadab
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_ENRICHMENT_OUTPUT,
     ActionItem,
+    DecoderContext,
     DecodingOutput,
     TransferEnrichmentOutput,
 )
@@ -227,14 +228,8 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             previous_event = event
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_curve_events(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_curve_events(self, context: DecoderContext) -> DecodingOutput:
+        tx_log = context.tx_log
         if tx_log.topics[0] in (
             REMOVE_LIQUIDITY,
             REMOVE_ONE,
@@ -245,8 +240,8 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             user_address = hex_or_bytes_to_address(tx_log.topics[1])
             return self._decode_curve_remove_events(
                 tx_log=tx_log,
-                transaction=transaction,
-                decoded_events=decoded_events,
+                transaction=context.transaction,
+                decoded_events=context.decoded_events,
                 user_address=user_address,
             )
         if tx_log.topics[0] in (
@@ -256,9 +251,9 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         ):
             user_address = hex_or_bytes_to_address(tx_log.topics[1])
             return self._decode_curve_deposit_events(
-                transaction=transaction,
+                transaction=context.transaction,
                 tx_log=tx_log,
-                decoded_events=decoded_events,
+                decoded_events=context.decoded_events,
                 user_address=user_address,
             )
 
