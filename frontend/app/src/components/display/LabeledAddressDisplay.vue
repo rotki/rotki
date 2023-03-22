@@ -89,8 +89,6 @@ const label = computed<string>(() => {
 
   return label;
 });
-
-const { getBlockie } = useBlockie();
 </script>
 
 <template>
@@ -105,7 +103,7 @@ const { getBlockie } = useBlockie();
         >
           <v-chip label outlined class="labeled-address-display__chip">
             <v-avatar size="24" class="mr-2">
-              <v-img :src="getBlockie(address)" />
+              <ens-avatar :address="address" />
             </v-avatar>
             <template v-if="!!label && !aliasName">
               <span class="text-truncate">

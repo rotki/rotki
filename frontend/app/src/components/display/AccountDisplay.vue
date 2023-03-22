@@ -41,7 +41,6 @@ const aliasName = computed<string | null>(() => {
 });
 
 const { tc } = useI18n();
-const { getBlockie } = useBlockie();
 </script>
 
 <template>
@@ -67,7 +66,7 @@ const { getBlockie } = useBlockie();
 
         <div>
           <v-avatar size="24" class="mr-2">
-            <v-img :src="getBlockie(address)" />
+            <ens-avatar :address="address" />
           </v-avatar>
         </div>
 
