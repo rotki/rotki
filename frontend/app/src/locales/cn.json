@@ -1520,7 +1520,6 @@
             "rules": {
               "amount": "金额字段不能为空",
               "asset": "资产字段不能为空",
-              "asset_non_duplicate": "该资产条目已存在，请使用其他资产。",
               "category": "类别字段不能为空",
               "value": "值字段不能为空"
             },

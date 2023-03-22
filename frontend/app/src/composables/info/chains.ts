@@ -3,6 +3,7 @@ import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef, type Ref } from 'vue';
 import {
   type ChainInfo,
+  type EvmChainEntries,
   type EvmChainInfo,
   type SupportedChains
 } from '@/types/api/chains';
@@ -13,7 +14,7 @@ const isEvmChain = (info: ChainInfo): info is EvmChainInfo => {
 };
 
 export const useSupportedChains = createSharedComposable(() => {
-  const { fetchSupportedChains } = useSupportedChainsApi();
+  const { fetchSupportedChains, fetchAllEvmChains } = useSupportedChainsApi();
 
   const { connected } = toRefs(useMainStore());
 
@@ -21,6 +22,19 @@ export const useSupportedChains = createSharedComposable(() => {
     () => {
       if (get(connected)) {
         return fetchSupportedChains();
+      }
+      return [];
+    },
+    [],
+    {
+      lazy: true
+    }
+  );
+
+  const allEvmChains: Ref<EvmChainEntries> = asyncComputed<EvmChainEntries>(
+    () => {
+      if (get(connected)) {
+        return fetchAllEvmChains();
       }
       return [];
     },
@@ -88,6 +102,7 @@ export const useSupportedChains = createSharedComposable(() => {
   };
 
   return {
+    allEvmChains,
     supportedChains,
     evmChains,
     evmChainNames,

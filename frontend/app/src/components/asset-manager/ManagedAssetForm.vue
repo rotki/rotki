@@ -73,7 +73,7 @@ const isEvmToken = computed<boolean>(() => {
   return get(assetType) === EVM_TOKEN;
 });
 
-const { evmChainNames } = useSupportedChains();
+const { allEvmChains } = useSupportedChains();
 
 const { setMessage } = useMessageStore();
 
@@ -311,7 +311,9 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             outlined
             :label="t('asset_form.labels.chain')"
             :disabled="!isEvmToken || !!edit"
-            :items="evmChainNames"
+            :items="allEvmChains"
+            item-value="name"
+            item-text="name"
             :error-messages="errors['evm_chain']"
             @focus="delete errors['evm_chain']"
           />

@@ -2835,3 +2835,9 @@ class EvmTransactionsHashResource(BaseMethodView):
             tx_hash=tx_hash,
             associated_address=associated_address,
         )
+
+
+class AllEvmChainsResource(BaseMethodView):
+
+    def get(self) -> Response:
+        return self.rest_api.get_all_evm_chains()
