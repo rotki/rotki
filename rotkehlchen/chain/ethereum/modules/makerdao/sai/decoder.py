@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     ActionItem,
     DecoderContext,
     DecodingOutput,
+    EnricherContext,
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
@@ -383,14 +384,10 @@ class MakerdaosaiDecoder(DecoderInterface):
 
     def _maybe_enrich_sai_tub_transfers(
             self,
-            token: EvmToken,  # pylint: disable=unused-argument
-            tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            event: 'EvmEvent',
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            context: EnricherContext,
     ) -> TransferEnrichmentOutput:
         """This method enriches relevant asset transfers to and from the SaiTub contract."""
+        event = context.event
         if (
             event.event_type == HistoryEventType.SPEND and
             event.event_subtype == HistoryEventSubType.NONE and

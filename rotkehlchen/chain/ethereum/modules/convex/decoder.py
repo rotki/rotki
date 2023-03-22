@@ -2,8 +2,6 @@ import logging
 from typing import Any, Callable
 
 from rotkehlchen.accounting.structures.base import HistoryEventSubType, HistoryEventType
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.convex.constants import (
     BOOSTER,
     CONVEX_ABRAS_HEX,
@@ -23,15 +21,14 @@ from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_ENRICHMENT_OUTPUT,
-    ActionItem,
     DecoderContext,
     DecodingOutput,
+    EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 logger = logging.getLogger(__name__)
@@ -97,14 +94,7 @@ class ConvexDecoder(DecoderInterface):
         return DecodingOutput(counterparty=CPT_CONVEX)
 
     @staticmethod
-    def _maybe_enrich_convex_transfers(
-            token: EvmToken,  # pylint: disable=unused-argument
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            event: 'EvmEvent',
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> TransferEnrichmentOutput:
+    def _maybe_enrich_convex_transfers(context: EnricherContext) -> TransferEnrichmentOutput:
         """
         Used for rewards paid with abracadabras. Problem is that the transfer event in this
         case happens at the end of the transaction and there is no reward event after it to
@@ -114,10 +104,11 @@ class ConvexDecoder(DecoderInterface):
         - UnknownAsset
         - WrongAssetType
         """
+        event, tx_log = context.event, context.tx_log
         if (
             tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
             tx_log.topics[1] in CONVEX_ABRAS_HEX and
-            event.location_label == transaction.from_address and
+            event.location_label == context.transaction.from_address and
             event.event_type == HistoryEventType.RECEIVE and
             event.event_subtype == HistoryEventSubType.NONE
         ):

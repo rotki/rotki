@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Callable, Literal, Optional
 from web3 import Web3
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.constants import AMM_ASSETS_SYMBOLS
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_ENRICHMENT_OUTPUT,
     ActionItem,
     DecodingOutput,
+    EnricherContext,
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
@@ -294,16 +295,12 @@ def decode_uniswap_like_deposit_and_withdrawals(
 
 
 def enrich_uniswap_v2_like_lp_tokens_transfers(
-        token: EvmToken,  # pylint: disable=unused-argument
-        tx_log: EvmTxReceiptLog,
-        transaction: EvmTransaction,  # pylint: disable=unused-argument
-        event: 'EvmEvent',
-        action_items: list[ActionItem],  # pylint: disable=unused-argument
-        all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+        context: EnricherContext,
         counterparty: str,
         lp_token_symbol: Literal['UNI-V2', 'SLP'],
 ) -> TransferEnrichmentOutput:
     """This function enriches LP tokens transfers of Uniswap V2 like AMMs."""
+    event = context.event
     resolved_asset = event.asset.resolve_to_crypto_asset()
     if (
         resolved_asset.symbol == lp_token_symbol and
@@ -320,7 +317,7 @@ def enrich_uniswap_v2_like_lp_tokens_transfers(
         resolved_asset.symbol == lp_token_symbol and
         event.event_type == HistoryEventType.SPEND and
         event.event_subtype == HistoryEventSubType.NONE and
-        event.address == tx_log.address  # the recipient of the transfer is the pool
+        event.address == context.tx_log.address  # the recipient of the transfer is the pool
     ):
         event.counterparty = counterparty
         event.event_subtype = HistoryEventSubType.RETURN_WRAPPED

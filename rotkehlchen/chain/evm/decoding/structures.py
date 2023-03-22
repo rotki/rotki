@@ -1,9 +1,10 @@
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple, Optional
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.assets.asset import Asset, EvmToken
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.fval import FVal
     from rotkehlchen.types import EvmTransaction
@@ -27,15 +28,26 @@ class ActionItem(NamedTuple):
     paired_event_data: Optional[tuple['EvmEvent', bool]] = None
 
 
-class DecoderContext(NamedTuple):
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class BasicContext:
+    tx_log: 'EvmTxReceiptLog'
+    transaction: 'EvmTransaction'
+    action_items: list[ActionItem]
+    all_logs: list['EvmTxReceiptLog']
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DecoderContext(BasicContext):
     """
     Context given to decoding rules
     """
-    tx_log: 'EvmTxReceiptLog'
-    transaction: 'EvmTransaction'
     decoded_events: list['EvmEvent']
-    all_logs: list['EvmTxReceiptLog']
-    action_items: list[ActionItem]
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class EnricherContext(BasicContext):
+    token: 'EvmToken'
+    event: 'EvmEvent'
 
 
 class DecodingOutput(NamedTuple):

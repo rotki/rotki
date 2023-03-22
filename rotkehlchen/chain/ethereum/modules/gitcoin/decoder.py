@@ -1,22 +1,17 @@
 import logging
-from typing import TYPE_CHECKING, Callable
+from typing import Callable
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_ENRICHMENT_OUTPUT,
-    ActionItem,
+    EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EvmTransaction
 
 from .constants import CPT_GITCOIN
 
-if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -26,19 +21,15 @@ class GitcoinDecoder(DecoderInterface):
 
     def _maybe_enrich_gitcoin_transfers(
             self,
-            token: EvmToken,  # pylint: disable=unused-argument
-            tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument
-            transaction: EvmTransaction,
-            event: 'EvmEvent',
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            context: EnricherContext,
     ) -> TransferEnrichmentOutput:
         """
         May raise:
         - UnknownAsset
         - WrongAssetType
         """
-        if transaction.to_address not in (
+        event = context.event
+        if context.transaction.to_address not in (
                 '0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',
                 '0x7d655c57f71464B6f83811C55D84009Cd9f5221C',
         ):

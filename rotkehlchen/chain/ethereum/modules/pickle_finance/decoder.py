@@ -7,19 +7,17 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_ENRICHMENT_OUTPUT,
-    ActionItem,
+    EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.types import PICKLE_JAR_PROTOCOL, EvmTransaction
+from rotkehlchen.types import PICKLE_JAR_PROTOCOL
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_PICKLE
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
@@ -46,12 +44,7 @@ class PickleFinanceDecoder(DecoderInterface):
 
     def _maybe_enrich_pickle_transfers(
             self,
-            token: EvmToken,  # pylint: disable=unused-argument
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            event: 'EvmEvent',
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            context: EnricherContext,
     ) -> TransferEnrichmentOutput:
         """
         Enrich tranfer transactions to address for jar deposits and withdrawals
@@ -59,6 +52,7 @@ class PickleFinanceDecoder(DecoderInterface):
         - UnknownAsset
         - WrongAssetType
         """
+        event, tx_log, transaction = context.event, context.tx_log, context.transaction
         crypto_asset = event.asset.resolve_to_crypto_asset()
         if not (
             hex_or_bytes_to_address(tx_log.topics[2]) in self.pickle_contracts or

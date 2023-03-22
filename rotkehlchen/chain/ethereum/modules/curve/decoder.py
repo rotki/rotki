@@ -3,13 +3,12 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_ENRICHMENT_OUTPUT,
-    ActionItem,
     DecoderContext,
     DecodingOutput,
+    EnricherContext,
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
@@ -260,26 +259,20 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         return DEFAULT_DECODING_OUTPUT
 
     @staticmethod
-    def _maybe_enrich_curve_transfers(
-            token: EvmToken,  # pylint: disable=unused-argument
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            event: 'EvmEvent',
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> TransferEnrichmentOutput:
+    def _maybe_enrich_curve_transfers(context: EnricherContext) -> TransferEnrichmentOutput:
         """
         May raise:
         - UnknownAsset
         - WrongAssetType
         """
+        event, tx_log = context.event, context.tx_log
         source_address = hex_or_bytes_to_address(tx_log.topics[1])
         to_address = hex_or_bytes_to_address(tx_log.topics[2])
         if (  # deposit give asset
             event.event_type == HistoryEventType.RECEIVE and
             event.event_subtype == HistoryEventSubType.NONE and
             source_address == CURVE_Y_DEPOSIT and
-            transaction.from_address == to_address
+            context.transaction.from_address == to_address
         ):
             crypto_asset = event.asset.resolve_to_crypto_asset()
             event.event_type = HistoryEventType.WITHDRAWAL

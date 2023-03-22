@@ -7,22 +7,15 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_ENRICHMENT_OUTPUT,
-    ActionItem,
+    EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.types import (
-    YEARN_VAULTS_V1_PROTOCOL,
-    YEARN_VAULTS_V2_PROTOCOL,
-    ChainID,
-    EvmTransaction,
-)
+from rotkehlchen.types import YEARN_VAULTS_V1_PROTOCOL, YEARN_VAULTS_V2_PROTOCOL, ChainID
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.ethereum.manager import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.types import ChecksumEvmAddress
@@ -61,12 +54,7 @@ class YearnDecoder(DecoderInterface):
 
     def _maybe_enrich_yearn_transfers(
             self,
-            token: 'EvmToken',
-            tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument
-            transaction: EvmTransaction,
-            event: 'EvmEvent',
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+            context: EnricherContext,
     ) -> TransferEnrichmentOutput:
         """
         Enrich ethereum transfers made during the execution of yearn contracts.
@@ -77,6 +65,7 @@ class YearnDecoder(DecoderInterface):
         First we make sure that the contract is a yearn v1 or v2 contract and that the method
         executed in the contract is one of the expected.
         """
+        event, transaction, token = context.event, context.transaction, context.token
         protocol = CPT_YEARN_V2
         if transaction.to_address in self.vaults_v1:
             protocol = CPT_YEARN_V1

@@ -14,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
     DecodingOutput,
+    EnricherContext,
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -133,21 +134,9 @@ class Uniswapv2Decoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     @staticmethod
-    def _maybe_enrich_lp_tokens_transfers(
-            token: EvmToken,  # pylint: disable=unused-argument
-            tx_log: EvmTxReceiptLog,  # pylint: disable=unused-argument
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            event: 'EvmEvent',
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> TransferEnrichmentOutput:
+    def _maybe_enrich_lp_tokens_transfers(context: EnricherContext) -> TransferEnrichmentOutput:
         return enrich_uniswap_v2_like_lp_tokens_transfers(
-            token=token,
-            tx_log=tx_log,
-            transaction=transaction,
-            event=event,
-            action_items=action_items,
-            all_logs=all_logs,
+            context=context,
             counterparty=CPT_UNISWAP_V2,
             lp_token_symbol=UNISWAP_PROTOCOL,
         )
