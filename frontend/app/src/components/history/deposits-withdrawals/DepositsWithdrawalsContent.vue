@@ -10,6 +10,7 @@ import { type TradeLocation } from '@/types/history/trade/location';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
+import { type Matcher } from '@/composables/filters/asset-movement';
 
 const props = withDefaults(
   defineProps<{
@@ -95,7 +96,8 @@ const {
 } = useHistoryPaginationFilter<
   AssetMovement,
   AssetMovementRequestPayload,
-  AssetMovementEntry
+  AssetMovementEntry,
+  Matcher
 >(locationOverview, mainPage, useAssetMovementFilters, fetchAssetMovements);
 
 useHistoryAutoRefresh(fetchData);

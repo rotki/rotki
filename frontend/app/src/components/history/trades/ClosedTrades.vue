@@ -12,6 +12,7 @@ import {
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
+import { type Matcher } from '@/composables/filters/trades';
 
 const props = withDefaults(
   defineProps<{
@@ -104,7 +105,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 });
 
 const extraParams = computed(() => ({
-  includeIgnoredTrades: !get(hideIgnoredTrades)
+  includeIgnoredTrades: (!get(hideIgnoredTrades)).toString()
 }));
 
 watch(hideIgnoredTrades, () => {
@@ -132,7 +133,7 @@ const {
   setOptions,
   setFilter,
   fetchData
-} = useHistoryPaginationFilter<Trade, TradeRequestPayload, TradeEntry>(
+} = useHistoryPaginationFilter<Trade, TradeRequestPayload, TradeEntry, Matcher>(
   locationOverview,
   mainPage,
   useTradeFilters,

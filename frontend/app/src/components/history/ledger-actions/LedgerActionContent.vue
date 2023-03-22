@@ -11,6 +11,7 @@ import {
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
+import { type Matcher } from '@/composables/filters/ledger-actions';
 
 const props = withDefaults(
   defineProps<{
@@ -101,7 +102,8 @@ const {
 } = useHistoryPaginationFilter<
   LedgerAction,
   LedgerActionRequestPayload,
-  LedgerActionEntry
+  LedgerActionEntry,
+  Matcher
 >(locationOverview, mainPage, useLedgerActionsFilter, fetchLedgerActions);
 
 const newLedgerAction = () => {

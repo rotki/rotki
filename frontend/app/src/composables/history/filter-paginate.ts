@@ -10,36 +10,24 @@ import {
 } from '@/types/route';
 import { type Collection } from '@/types/collection';
 import { assert } from '@/utils/assertions';
-import type { Filters as TransactionsFilter } from '@/composables/filters/transactions';
-import type { Filters as TradesFilters } from '@/composables/filters/trades';
-import type { Filters as LedgerActionsFilters } from '@/composables/filters/ledger-actions';
-import type { Filters as AssetMovementFilters } from '@/composables/filters/asset-movement';
 
-interface FilterSchema {
-  filters: Ref;
-  matchers: ComputedRef;
+interface FilterSchema<M> {
+  filters: Ref<LocationQuery>;
+  matchers: ComputedRef<M[]>;
 
-  updateFilter(
-    filter:
-      | TransactionsFilter
-      | TradesFilters
-      | LedgerActionsFilters
-      | AssetMovementFilters
-  ): void;
+  updateFilter(filter: LocationQuery): void;
 
   RouteFilterSchema: ZodSchema;
 }
 
-export const useHistoryPaginationFilter = <T extends Object, U, V>(
+export const useHistoryPaginationFilter = <T extends Object, U, V, X>(
   locationOverview: MaybeRef<string | null>,
   mainPage: Ref<boolean>,
-  filterSchema: () => FilterSchema,
+  filterSchema: () => FilterSchema<X>,
   fetchAssetData: (payload: MaybeRef<U>) => Promise<Collection<V>>,
   options: {
     onUpdateFilters?: (query: LocationQuery) => void;
-    extraParams?: ComputedRef<
-      Record<string, string | string[] | boolean | null>
-    >;
+    extraParams?: ComputedRef<LocationQuery>;
     customPageParams?: ComputedRef<Partial<U>>;
   } = {}
 ) => {
@@ -65,7 +53,7 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
     const selectedFilters = get(filters);
     const overview = get(locationOverview);
     if (overview) {
-      selectedFilters.location = overview;
+      selectedFilters['location'] = overview;
     }
 
     return {
@@ -76,7 +64,7 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
       offset,
       orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
       ascending: sortBy?.length > 0 ? sortDesc.map(bool => !bool) : [false]
-    };
+    } as U;
   });
 
   const { isLoading, state, execute } = useAsyncState<
@@ -121,7 +109,7 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
     return {
       itemsPerPage: itemsPerPage.toString(),
       page: page.toString(),
-      sortBy,
+      sortBy: sortBy.map(s => s.toString()),
       sortDesc: sortDesc.map(x => x.toString()),
       ...selectedFilters,
       ...get(extraParams)
@@ -142,7 +130,7 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
     set(paginationOptions, newOptions);
   };
 
-  const setFilter = (newFilter: UnwrapRef<typeof filters>) => {
+  const setFilter = (newFilter: UnwrapRef<Ref<LocationQuery>>) => {
     set(userAction, true);
     updateFilter(newFilter);
   };
@@ -189,6 +177,7 @@ export const useHistoryPaginationFilter = <T extends Object, U, V>(
     confirmationMessage,
     expanded,
     isLoading,
+    userAction,
     state,
     filters,
     matchers,

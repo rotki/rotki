@@ -25,6 +25,7 @@ import { getCollectionData } from '@/utils/collection';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { RouterAccountsSchema } from '@/types/route';
 import { SavedFilterLocation } from '@/types/filtering';
+import { type Matcher } from '@/composables/filters/transactions';
 
 const props = withDefaults(
   defineProps<{
@@ -62,7 +63,6 @@ const {
   onlyChains
 } = toRefs(props);
 
-const userAction = ref(false);
 const editableItem: Ref<EthTransactionEventEntry | null> = ref(null);
 const selectedTransaction: Ref<EthTransactionEntry | null> = ref(null);
 const eventToDelete: Ref<EthTransactionEventEntry | null> = ref(null);
@@ -156,6 +156,7 @@ const {
   openDialog,
   confirmationMessage,
   isLoading,
+  userAction,
   state: transactions,
   filters,
   matchers,
@@ -167,7 +168,8 @@ const {
 } = useHistoryPaginationFilter<
   EthTransaction,
   TransactionRequestPayload,
-  EthTransactionEntry
+  EthTransactionEntry,
+  Matcher
 >(
   null,
   mainPage,
