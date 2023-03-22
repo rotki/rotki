@@ -37,7 +37,7 @@ class ZksyncDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_deposit(self, context: DecoderContext, user_address: ChecksumEvmAddress) -> DecodingOutput:  # noqa: E501
-        """Match a zksync deposit with the transfer to decode it
+        """Match a zksync lite deposit with the transfer to decode it
 
         TODO: This is now quite bad. We don't use the token id of zksync as we should.
         Example: https://etherscan.io/tx/0xdd6d1f92980faf622c09acd84dbff4fe0bd7ae466a23c2479df709f8996d250e#eventlog

@@ -30,6 +30,7 @@ from rotkehlchen.chain.bitcoin.xpub import (
     deserialize_derivation_path_for_db,
 )
 from rotkehlchen.chain.ethereum.modules.balancer import BALANCER_EVENTS_PREFIX
+from rotkehlchen.chain.ethereum.modules.l2.constants import ZKSYNCLITE_TX_SAVEPREFIX
 from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     YEARN_VAULTS_PREFIX,
     YEARN_VAULTS_V2_PREFIX,
@@ -173,6 +174,7 @@ DB_BACKUP_RE = re.compile(r'(\d+)_rotkehlchen_db_v(\d+).backup')
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
 # http://www.sql-join.com/sql-join-types
+
 
 class DBHandler:
     def __init__(
@@ -2087,6 +2089,7 @@ class DBHandler:
             loopring = DBLoopring(self)
             loopring.remove_accountid_mapping(write_cursor, address)
 
+        write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'{ZKSYNCLITE_TX_SAVEPREFIX}{address}',))  # noqa: E501
         write_cursor.execute(
             'DELETE FROM evm_accounts_details WHERE account=? AND chain_id=?',
             (address, blockchain.to_chain_id().serialize_for_db()),
