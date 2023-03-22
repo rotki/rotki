@@ -1089,6 +1089,8 @@
       "missing_directory": "Please select a directory"
     },
     "filter": {
+      "address": "Filter by the address",
+      "chain": "Filter by evm chain",
       "name": "Filter by the name of the asset",
       "name_hint": "Search using the asset name",
       "symbol": "Filter by the symbol of the asset",

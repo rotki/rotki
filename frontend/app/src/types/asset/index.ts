@@ -64,6 +64,8 @@ export interface AssetPagination extends ApiPagination<SupportedAsset> {
   assetType?: string;
   name?: string;
   symbol?: string;
+  evmChain?: string;
+  address?: string;
   showUserOwnedAssetsOnly?: boolean;
   ignoredAssetsHandling?: string;
   identifiers?: string[];
@@ -73,6 +75,8 @@ export interface AssetPaginationOptions
   extends TablePagination<SupportedAsset> {
   name?: string;
   symbol?: string;
+  evmChain?: string;
+  address?: string;
   showUserOwnedAssetsOnly?: boolean;
   ignoredAssetsHandling?: string;
 }
