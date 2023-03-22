@@ -286,7 +286,7 @@ watch(loading, async (isLoading, wasLoading) => {
         data-cy="closed-trades__add-trade"
         @click="newExternalTrade()"
       >
-        <v-icon> mdi-plus</v-icon>
+        <v-icon> mdi-plus </v-icon>
       </v-btn>
       <template #title>
         <refresh-button
@@ -318,7 +318,7 @@ watch(loading, async (isLoading, wasLoading) => {
                     :disabled="selected.length === 0"
                     @click="massDelete"
                   >
-                    <v-icon> mdi-delete-outline</v-icon>
+                    <v-icon> mdi-delete-outline </v-icon>
                   </v-btn>
                 </v-col>
               </v-row>
