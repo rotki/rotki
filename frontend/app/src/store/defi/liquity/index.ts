@@ -141,13 +141,13 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
 
   const fetchStatistics = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: tc('actions.defi.liquity_pools.task.title')
+      title: tc('actions.defi.liquity_statistics.task.title')
     };
 
     const onError: OnError = {
-      title: tc('actions.defi.liquity_pools.error.title'),
+      title: tc('actions.defi.liquity_statistics.error.title'),
       error: message =>
-        tc('actions.defi.liquity_pools.error.description', 0, {
+        tc('actions.defi.liquity_statistics.error.description', 0, {
           message
         })
     };

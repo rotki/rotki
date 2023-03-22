@@ -20,23 +20,28 @@ defineProps({
 });
 
 const error: Ref<boolean> = ref(false);
+const success: Ref<boolean> = ref(false);
 </script>
 <template>
-  <v-img
-    v-if="error"
-    :width="width"
-    :height="height"
-    contain
-    src="./assets/images/rotkehlchen_no_text.png"
-  />
-  <v-img
-    v-else
-    :width="width"
-    :height="height"
-    contain
-    :src="url"
-    @loadstart="error = false"
-    @load="error = false"
-    @error="error = true"
-  />
+  <div>
+    <v-img
+      v-if="error || !success"
+      :width="width"
+      :height="height"
+      contain
+      src="./assets/images/rotkehlchen_no_text.png"
+    />
+    <v-img
+      :width="width"
+      :height="success ? height : 0"
+      contain
+      :src="url"
+      @loadstart="error = false"
+      @load="
+        error = false;
+        success = true;
+      "
+      @error="error = true"
+    />
+  </div>
 </template>

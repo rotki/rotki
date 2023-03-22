@@ -3,21 +3,17 @@ import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef, type Ref } from 'vue';
 import { AssetBalances } from '@/types/balances';
 import {
-  type EditExchange,
-  type Exchange,
   type ExchangeData,
   type ExchangeInfo,
   type ExchangeSavingsCollection,
   type ExchangeSavingsCollectionResponse,
   type ExchangeSavingsRequestPayload,
-  type ExchangeSetupPayload,
   SupportedExchange
 } from '@/types/exchanges';
 import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
 import { type ExchangeMeta, type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { assert } from '@/utils/assertions';
 import {
   appendAssetBalance,
   mergeAssociatedAssets,
@@ -34,6 +30,7 @@ import {
 import { logger } from '@/utils/logging';
 import { uniqueStrings } from '@/utils/data';
 import { mapCollectionResponse } from '@/utils/collection';
+import { useSessionSettingsStore } from '@/store/settings/session';
 
 export const useExchangeBalancesStore = defineStore(
   'balances/exchanges',
@@ -44,18 +41,15 @@ export const useExchangeBalancesStore = defineStore(
 
     const { awaitTask, isTaskRunning, metadata } = useTaskStore();
     const { notify } = useNotificationsStore();
-    const { setMessage } = useMessageStore();
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
     const { isAssetIgnored } = useIgnoredAssetsStore();
+    const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
     const { assetPrice } = useBalancePricesStore();
     const {
-      queryRemoveExchange,
       queryExchangeBalances,
-      querySetupExchange,
       getExchangeSavings,
       getExchangeSavingsTask
     } = useExchangeApi();
-    const { connectedExchanges } = storeToRefs(useHistoryStore());
 
     const exchanges: ComputedRef<ExchangeInfo[]> = computed(() => {
       const balances = get(exchangeBalances);
@@ -124,16 +118,6 @@ export const useExchangeBalancesStore = defineStore(
         return balances;
       });
 
-    const getExchangeNonce = (
-      exchange: SupportedExchange
-    ): ComputedRef<number> =>
-      computed(
-        () =>
-          get(connectedExchanges).filter(
-            ({ location }) => location === exchange
-          ).length + 1
-      );
-
     const getBalances = (
       exchange: SupportedExchange,
       hideIgnored = true
@@ -156,82 +140,6 @@ export const useExchangeBalancesStore = defineStore(
 
         return [];
       });
-
-    const addExchange = (exchange: Exchange): void => {
-      set(connectedExchanges, [...get(connectedExchanges), exchange]);
-    };
-
-    const editExchange = ({
-      exchange: { location, name: oldName, krakenAccountType, ftxSubaccount },
-      newName
-    }: EditExchange): void => {
-      const exchanges = [...get(connectedExchanges)];
-      const name = newName ?? oldName;
-      const index = exchanges.findIndex(
-        value => value.name === oldName && value.location === location
-      );
-      exchanges[index] = {
-        ...exchanges[index],
-        name,
-        location,
-        krakenAccountType,
-        ftxSubaccount
-      };
-      set(connectedExchanges, exchanges);
-    };
-
-    const removeExchange = async (exchange: Exchange): Promise<boolean> => {
-      try {
-        const success = await queryRemoveExchange(exchange);
-        const connected = get(connectedExchanges);
-        if (success) {
-          const exchangeIndex = connected.findIndex(
-            ({ location, name }) =>
-              name === exchange.name && location === exchange.location
-          );
-          assert(
-            exchangeIndex >= 0,
-            `${exchange} not found in ${connected
-              .map(exchange => `${exchange.name} on ${exchange.location}`)
-              .join(', ')}`
-          );
-
-          const exchanges = [...connected];
-          const balances = { ...get(exchangeBalances) };
-          const index = exchanges.findIndex(
-            ({ location, name }) =>
-              name === exchange.name && location === exchange.location
-          );
-          // can't modify in place or else the vue reactivity does not work
-          exchanges.splice(index, 1);
-          delete balances[exchange.location];
-          set(connectedExchanges, exchanges);
-          set(exchangeBalances, balances);
-
-          if (exchanges.length > 0) {
-            await fetchExchangeBalances({
-              location: exchange.location,
-              ignoreCache: false
-            });
-          }
-        }
-
-        return success;
-      } catch (e: any) {
-        setMessage({
-          title: tc('actions.balances.exchange_removal.title'),
-          description: tc('actions.balances.exchange_removal.description', 0, {
-            exchange,
-            error: e.message
-          })
-        });
-        return false;
-      }
-    };
-
-    const setExchanges = (exchanges: Exchange[]): void => {
-      set(connectedExchanges, exchanges);
-    };
 
     const fetchExchangeBalances = async (
       payload: ExchangeBalancePayload
@@ -299,46 +207,6 @@ export const useExchangeBalancesStore = defineStore(
           location: exchange.location,
           ignoreCache: refresh
         });
-      }
-    };
-
-    const setupExchange = async ({
-      exchange,
-      edit
-    }: ExchangeSetupPayload): Promise<boolean> => {
-      try {
-        const success = await querySetupExchange(exchange, edit);
-        const exchangeEntry: Exchange = {
-          name: exchange.name,
-          location: exchange.location,
-          krakenAccountType: exchange.krakenAccountType ?? undefined,
-          ftxSubaccount: exchange.ftxSubaccount ?? undefined
-        };
-
-        if (!edit) {
-          addExchange(exchangeEntry);
-        } else {
-          editExchange({
-            exchange: exchangeEntry,
-            newName: exchange.newName
-          });
-        }
-
-        await fetchExchangeBalances({
-          location: exchange.location,
-          ignoreCache: false
-        });
-
-        return success;
-      } catch (e: any) {
-        setMessage({
-          title: t('actions.balances.exchange_setup.title').toString(),
-          description: t('actions.balances.exchange_setup.description', {
-            exchange: exchange.location,
-            error: e.message
-          }).toString()
-        });
-        return false;
       }
     };
 
@@ -447,16 +315,9 @@ export const useExchangeBalancesStore = defineStore(
 
     return {
       exchanges,
-      connectedExchanges,
       exchangeBalances,
       balances,
-      setExchanges,
-      setupExchange,
-      addExchange,
-      editExchange,
-      removeExchange,
       getBalances,
-      getExchangeNonce,
       fetchExchangeBalances,
       fetchConnectedExchangeBalances,
       getBreakdown,

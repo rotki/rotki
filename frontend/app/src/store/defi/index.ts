@@ -1,4 +1,3 @@
-import { type AddressIndexed } from '@rotki/common';
 import { type DefiAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
 import sortBy from 'lodash/sortBy';
@@ -25,7 +24,6 @@ import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
-import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
 import { ProtocolVersion } from '@/types/defi';
 import {
@@ -53,50 +51,28 @@ export const useDefiStore = defineStore('defi', () => {
   const balancerStore = useBalancerStore();
   const sushiswapStore = useSushiswapStore();
   const uniswapStore = useUniswapStore();
-  const lendingStore = useDefiSupportedProtocols();
+  const { loanSummary, totalLendingDeposit } = useDefiLending();
   const { t, tc } = useI18n();
 
   const { fetchAllDefi: fetchAllDefiCaller } = useDefiApi();
 
-  const {
-    vaultsBalances: yearnV1Balances,
-    vaultsHistory: yearnV1History,
-    vaultsV2Balances: yearnV2Balances,
-    vaultsV2History: yearnV2History
-  } = storeToRefs(yearnStore);
-  const { history: aaveHistory, balances: aaveBalances } =
-    storeToRefs(aaveStore);
-  const { history: compoundHistory, balances: compoundBalances } =
-    storeToRefs(compoundStore);
-  const { dsrHistory, dsrBalances } = storeToRefs(makerDaoStore);
+  const { addressesV1: yearnV1Addresses, addressesV2: yearnV2Addresses } =
+    storeToRefs(yearnStore);
+  const { addresses: aaveAddresses } = storeToRefs(aaveStore);
+  const { addresses: compoundAddresses } = storeToRefs(compoundStore);
+  const { addresses: makerDaoAddresses } = storeToRefs(makerDaoStore);
+
+  type DefiProtocols = Exclude<
+    DefiProtocol,
+    DefiProtocol.MAKERDAO_VAULTS | DefiProtocol.UNISWAP | DefiProtocol.LIQUITY
+  >;
 
   const defiAccounts = (
     protocols: DefiProtocol[]
   ): ComputedRef<DefiAccount[]> =>
     computed(() => {
-      const getProtocolAddresses = (
-        protocol: DefiProtocol,
-        balances: AddressIndexed<any>,
-        history: AddressIndexed<any> | string[]
-      ): string[] => {
-        const addresses: string[] = [];
-        if (protocols.length === 0 || protocols.includes(protocol)) {
-          const uniqueAddresses: string[] = [
-            ...Object.keys(balances),
-            ...(Array.isArray(history) ? history : Object.keys(history))
-          ].filter(uniqueStrings);
-          addresses.push(...uniqueAddresses);
-        }
-        return addresses;
-      };
-
       const addresses: {
-        [key in Exclude<
-          DefiProtocol,
-          | DefiProtocol.MAKERDAO_VAULTS
-          | DefiProtocol.UNISWAP
-          | DefiProtocol.LIQUITY
-        >]: string[];
+        [key in DefiProtocols]: string[];
       } = {
         [DefiProtocol.MAKERDAO_DSR]: [],
         [DefiProtocol.AAVE]: [],
@@ -105,44 +81,38 @@ export const useDefiStore = defineStore('defi', () => {
         [DefiProtocol.YEARN_VAULTS_V2]: []
       };
 
-      addresses[DefiProtocol.AAVE] = getProtocolAddresses(
-        DefiProtocol.AAVE,
-        get(aaveBalances),
-        get(aaveHistory)
-      );
+      if (
+        protocols.length === 0 ||
+        protocols.includes(DefiProtocol.MAKERDAO_DSR)
+      ) {
+        addresses[DefiProtocol.MAKERDAO_DSR] = get(makerDaoAddresses);
+      }
 
-      addresses[DefiProtocol.COMPOUND] = getProtocolAddresses(
-        DefiProtocol.COMPOUND,
-        get(compoundBalances),
-        get(compoundHistory).events.map(({ address }) => address)
-      );
+      if (protocols.length === 0 || protocols.includes(DefiProtocol.AAVE)) {
+        addresses[DefiProtocol.AAVE] = get(aaveAddresses);
+      }
 
-      addresses[DefiProtocol.YEARN_VAULTS] = getProtocolAddresses(
-        DefiProtocol.YEARN_VAULTS,
-        get(yearnV1Balances),
-        get(yearnV1History)
-      );
+      if (protocols.length === 0 || protocols.includes(DefiProtocol.COMPOUND)) {
+        addresses[DefiProtocol.COMPOUND] = get(compoundAddresses);
+      }
 
-      addresses[DefiProtocol.YEARN_VAULTS_V2] = getProtocolAddresses(
-        DefiProtocol.YEARN_VAULTS_V2,
-        get(yearnV2Balances),
-        get(yearnV2History)
-      );
+      if (
+        protocols.length === 0 ||
+        protocols.includes(DefiProtocol.YEARN_VAULTS)
+      ) {
+        addresses[DefiProtocol.YEARN_VAULTS] = get(yearnV1Addresses);
+      }
 
-      addresses[DefiProtocol.MAKERDAO_DSR] = getProtocolAddresses(
-        DefiProtocol.MAKERDAO_DSR,
-        get(dsrBalances).balances,
-        get(dsrHistory)
-      );
+      if (
+        protocols.length === 0 ||
+        protocols.includes(DefiProtocol.YEARN_VAULTS_V2)
+      ) {
+        addresses[DefiProtocol.YEARN_VAULTS_V2] = get(yearnV2Addresses);
+      }
 
       const accounts: Record<string, DefiAccount> = {};
       for (const protocol in addresses) {
-        const selectedProtocol = protocol as Exclude<
-          DefiProtocol,
-          | DefiProtocol.MAKERDAO_VAULTS
-          | DefiProtocol.UNISWAP
-          | DefiProtocol.LIQUITY
-        >;
+        const selectedProtocol = protocol as DefiProtocols;
         const perProtocolAddresses = addresses[selectedProtocol];
         for (const address of perProtocolAddresses) {
           if (accounts[address]) {
@@ -190,7 +160,7 @@ export const useDefiStore = defineStore('defi', () => {
       const filter: DefiProtocol[] = [protocol];
       const { totalCollateralUsd, totalDebt } = noLiabilities
         ? { totalCollateralUsd: Zero, totalDebt: Zero }
-        : get(lendingStore.loanSummary(filter));
+        : get(loanSummary(filter));
       return {
         protocol: {
           name,
@@ -210,7 +180,7 @@ export const useDefiStore = defineStore('defi', () => {
         totalDebtUsd: totalDebt,
         totalLendingDepositUsd: noDeposits
           ? Zero
-          : get(lendingStore.totalLendingDeposit(filter, []))
+          : get(totalLendingDeposit(filter, []))
       };
     };
     const summary: Record<string, Writeable<DefiProtocolSummary>> = {};
@@ -347,13 +317,11 @@ export const useDefiStore = defineStore('defi', () => {
         liabilities: false,
         totalCollateralUsd: Zero,
         totalDebtUsd: Zero,
-        totalLendingDepositUsd: get(
-          lendingStore.totalLendingDeposit(filter, [])
-        )
+        totalLendingDepositUsd: get(totalLendingDeposit(filter, []))
       };
 
       const { totalCollateralUsd, totalDebt } = get(
-        lendingStore.loanSummary([DefiProtocol.MAKERDAO_VAULTS])
+        loanSummary([DefiProtocol.MAKERDAO_VAULTS])
       );
       const makerDAOVaultSummary: DefiProtocolSummary = {
         protocol: {

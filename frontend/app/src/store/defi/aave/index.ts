@@ -1,12 +1,13 @@
 import { type ProfitLossModel } from '@rotki/common/lib/defi';
 import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
-import { type Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { balanceSum } from '@/utils/calculation';
 import { logger } from '@/utils/logging';
+import { getProtocolAddresses } from '@/utils/addresses';
 
 export const useAaveStore = defineStore('defi/aave', () => {
   const balances: Ref<AaveBalances> = ref({});
@@ -151,9 +152,14 @@ export const useAaveStore = defineStore('defi/aave', () => {
     resetStatus(Section.DEFI_AAVE_HISTORY);
   };
 
+  const addresses: ComputedRef<string[]> = computed(() =>
+    getProtocolAddresses(get(balances), get(history))
+  );
+
   return {
     balances,
     history,
+    addresses,
     aaveTotalEarned,
     fetchBalances,
     fetchHistory,

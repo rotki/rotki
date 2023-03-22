@@ -436,11 +436,20 @@
       },
       "liquity_staking": {
         "error": {
-          "description": "Failed to retreive liquity staking: {message}",
+          "description": "Failed to retreive Liquity staking: {message}",
           "title": "Liquity staking"
         },
         "task": {
           "title": "Querying Liquity staking"
+        }
+      },
+      "liquity_statistics": {
+        "error": {
+          "description": "Failed to query Liquity statistics: {message}",
+          "title": "Liquity Statistics"
+        },
+        "task": {
+          "title": "Querying Liquity Statistics"
         }
       },
       "makerdao_vault_details": {

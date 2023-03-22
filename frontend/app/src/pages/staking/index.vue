@@ -12,12 +12,14 @@ interface StakingInfo {
 const iconSize = '64px';
 
 const pages = {
-  eth2: defineAsyncComponent(() => import('@/components/staking/Eth2Page.vue')),
+  eth2: defineAsyncComponent(
+    () => import('@/components/staking/eth2/Eth2Page.vue')
+  ),
   liquity: defineAsyncComponent(
-    () => import('@/components/staking/LiquityPage.vue')
+    () => import('@/components/staking/liquity/LiquityPage.vue')
   ),
   kraken: defineAsyncComponent(
-    () => import('@/components/staking/KrakenPage.vue')
+    () => import('@/components/staking/kraken/KrakenPage.vue')
   )
 };
 

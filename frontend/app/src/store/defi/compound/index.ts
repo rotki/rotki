@@ -1,4 +1,4 @@
-import { type Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import { CompoundBalances, CompoundHistory } from '@/types/defi/compound';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
@@ -6,6 +6,7 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { toProfitLossModel } from '@/utils/defi';
+import { getProtocolAddresses } from '@/utils/addresses';
 
 const defaultCompoundHistory = (): CompoundHistory => ({
   events: [],
@@ -124,6 +125,13 @@ export const useCompoundStore = defineStore('defi/compound', () => {
     resetStatus(Section.DEFI_COMPOUND_HISTORY);
   };
 
+  const addresses: ComputedRef<string[]> = computed(() =>
+    getProtocolAddresses(
+      get(balances),
+      get(history).events.map(({ address }) => address)
+    )
+  );
+
   return {
     balances,
     history,
@@ -131,6 +139,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
     interestProfit,
     debtLoss,
     liquidationProfit,
+    addresses,
     fetchBalances,
     fetchHistory,
     reset

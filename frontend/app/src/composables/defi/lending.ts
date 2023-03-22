@@ -38,7 +38,7 @@ type NullableLoan =
   | LiquityLoan
   | null;
 
-export const useDefiSupportedProtocols = () => {
+export const useDefiLending = () => {
   const { assetInfo } = useAssetInfoRetrieval();
   const premium = usePremium();
 

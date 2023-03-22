@@ -239,8 +239,8 @@ declare global {
   const useDebounceFn: typeof import('@vueuse/core')['useDebounceFn']
   const useDebouncedRefHistory: typeof import('@vueuse/core')['useDebouncedRefHistory']
   const useDefiApi: typeof import('./composables/api/defi/index')['useDefiApi']
+  const useDefiLending: typeof import('./composables/defi/lending')['useDefiLending']
   const useDefiStore: typeof import('./store/defi/index')['useDefiStore']
-  const useDefiSupportedProtocols: typeof import('./composables/defi/supported-protocols')['useDefiSupportedProtocols']
   const useDeviceMotion: typeof import('@vueuse/core')['useDeviceMotion']
   const useDeviceOrientation: typeof import('@vueuse/core')['useDeviceOrientation']
   const useDevicePixelRatio: typeof import('@vueuse/core')['useDevicePixelRatio']
@@ -265,6 +265,7 @@ declare global {
   const useEvmNodesApi: typeof import('./composables/api/settings/evm-nodes-api')['useEvmNodesApi']
   const useExchangeApi: typeof import('./composables/api/balances/exchanges')['useExchangeApi']
   const useExchangeBalancesStore: typeof import('./store/balances/exchanges')['useExchangeBalancesStore']
+  const useExchangesStore: typeof import('./store/exchanges/index')['useExchangesStore']
   const useExternalServicesApi: typeof import('./composables/api/settings/external-services-api')['useExternalServicesApi']
   const useEyeDropper: typeof import('@vueuse/core')['useEyeDropper']
   const useFavicon: typeof import('@vueuse/core')['useFavicon']
@@ -748,8 +749,8 @@ declare module 'vue' {
     readonly useDebounceFn: UnwrapRef<typeof import('@vueuse/core')['useDebounceFn']>
     readonly useDebouncedRefHistory: UnwrapRef<typeof import('@vueuse/core')['useDebouncedRefHistory']>
     readonly useDefiApi: UnwrapRef<typeof import('./composables/api/defi/index')['useDefiApi']>
+    readonly useDefiLending: UnwrapRef<typeof import('./composables/defi/lending')['useDefiLending']>
     readonly useDefiStore: UnwrapRef<typeof import('./store/defi/index')['useDefiStore']>
-    readonly useDefiSupportedProtocols: UnwrapRef<typeof import('./composables/defi/supported-protocols')['useDefiSupportedProtocols']>
     readonly useDeviceMotion: UnwrapRef<typeof import('@vueuse/core')['useDeviceMotion']>
     readonly useDeviceOrientation: UnwrapRef<typeof import('@vueuse/core')['useDeviceOrientation']>
     readonly useDevicePixelRatio: UnwrapRef<typeof import('@vueuse/core')['useDevicePixelRatio']>
@@ -774,6 +775,7 @@ declare module 'vue' {
     readonly useEvmNodesApi: UnwrapRef<typeof import('./composables/api/settings/evm-nodes-api')['useEvmNodesApi']>
     readonly useExchangeApi: UnwrapRef<typeof import('./composables/api/balances/exchanges')['useExchangeApi']>
     readonly useExchangeBalancesStore: UnwrapRef<typeof import('./store/balances/exchanges')['useExchangeBalancesStore']>
+    readonly useExchangesStore: UnwrapRef<typeof import('./store/exchanges/index')['useExchangesStore']>
     readonly useExternalServicesApi: UnwrapRef<typeof import('./composables/api/settings/external-services-api')['useExternalServicesApi']>
     readonly useEyeDropper: UnwrapRef<typeof import('@vueuse/core')['useEyeDropper']>
     readonly useFavicon: UnwrapRef<typeof import('@vueuse/core')['useFavicon']>

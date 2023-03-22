@@ -6,6 +6,7 @@ import {
   type ExchangePayload,
   SupportedExchange
 } from '@/types/exchanges';
+import { useExchangesStore } from '@/store/exchanges';
 
 const placeholder: () => ExchangePayload = () => ({
   location: SupportedExchange.KRAKEN,
@@ -21,7 +22,7 @@ const placeholder: () => ExchangePayload = () => ({
 
 const nonSyncingExchanges = ref<Exchange[]>([]);
 
-const store = useExchangeBalancesStore();
+const store = useExchangesStore();
 const { setupExchange, removeExchange } = store;
 const { connectedExchanges } = storeToRefs(store);
 

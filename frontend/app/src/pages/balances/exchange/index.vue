@@ -6,6 +6,7 @@ import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 import { type Nullable } from '@/types';
+import { useExchangesStore } from '@/store/exchanges';
 
 const props = withDefaults(
   defineProps<{
@@ -19,7 +20,7 @@ const props = withDefaults(
 const { exchange } = toRefs(props);
 const { isTaskRunning } = useTaskStore();
 const { getBalances, refreshExchangeSavings } = useExchangeBalancesStore();
-const { connectedExchanges } = storeToRefs(useHistoryStore());
+const { connectedExchanges } = storeToRefs(useExchangesStore());
 
 const { refreshBalance } = useRefresh();
 

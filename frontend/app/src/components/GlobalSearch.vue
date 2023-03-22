@@ -4,6 +4,7 @@ import { type Ref } from 'vue';
 import { useAppRoutes } from '@/router/routes';
 import { type Exchange } from '@/types/exchanges';
 import { type TradeLocationData } from '@/types/history/trade/location';
+import { useExchangesStore } from '@/store/exchanges';
 
 interface SearchItem {
   value: number;
@@ -40,7 +41,7 @@ const key = '/';
 const router = useRouter();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());
+const { connectedExchanges } = storeToRefs(useExchangesStore());
 const { balances } = useAggregatedBalances();
 const { balancesByLocation } = useBalancesBreakdown();
 const { getLocation } = useLocationInfo();

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { SupportedExchange } from '@/types/exchanges';
 import { Section } from '@/types/status';
+import { useExchangesStore } from '@/store/exchanges';
 
 const { shouldShowLoadingScreen } = useStatusStore();
-const { load } = useKrakenStakingStore();
+const { load, $reset } = useKrakenStakingStore();
 
-const { connectedExchanges } = storeToRefs(useHistoryStore());
+const { connectedExchanges } = storeToRefs(useExchangesStore());
 const isKrakenConnected = computed(() => {
   const exchanges = get(connectedExchanges);
   return exchanges.some(
@@ -17,6 +18,10 @@ onMounted(async () => {
   if (get(isKrakenConnected)) {
     await load(false);
   }
+});
+
+onUnmounted(() => {
+  $reset();
 });
 
 watch(isKrakenConnected, async isKrakenConnected => {

@@ -241,18 +241,24 @@ const routes = setupLayouts([
   },
   {
     path: Routes.PROFIT_LOSS_REPORTS,
-    meta: {
-      noteLocation: NoteLocation.PROFIT_LOSS_REPORTS
-    },
-    component: async () => import('../pages/reports/index.vue')
-  },
-  {
-    path: Routes.PROFIT_LOSS_REPORT,
-    component: async () => import('../pages/report/[id].vue'),
-    meta: {
-      canNavigateBack: true,
-      noteLocation: NoteLocation.PROFIT_LOSS_REPORTS
-    }
+    component: async () => import('../pages/reports/wrapper.vue'),
+    children: [
+      {
+        path: '',
+        component: async () => import('../pages/reports/index.vue'),
+        meta: {
+          noteLocation: NoteLocation.PROFIT_LOSS_REPORTS
+        }
+      },
+      {
+        path: Routes.PROFIT_LOSS_REPORT,
+        component: async () => import('../pages/reports/[id].vue'),
+        meta: {
+          canNavigateBack: true,
+          noteLocation: NoteLocation.PROFIT_LOSS_REPORTS
+        }
+      }
+    ]
   },
   {
     path: Routes.ASSET_MANAGER,

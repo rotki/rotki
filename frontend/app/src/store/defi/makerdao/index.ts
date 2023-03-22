@@ -1,5 +1,5 @@
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { type Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import {
   type ApiMakerDAOVault,
   ApiMakerDAOVaults,
@@ -14,6 +14,7 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { Zero, bigNumberify } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
+import { getProtocolAddresses } from '@/utils/addresses';
 
 const convertMakerDAOVaults = (vaults: ApiMakerDAOVault[]): MakerDAOVault[] =>
   vaults.map(vault => ({
@@ -249,11 +250,16 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
     }
   };
 
+  const addresses: ComputedRef<string[]> = computed(() =>
+    getProtocolAddresses(get(dsrBalances).balances, get(dsrHistory))
+  );
+
   return {
     dsrHistory,
     dsrBalances,
     makerDAOVaults,
     makerDAOVaultDetails,
+    addresses,
     fetchDSRBalances,
     fetchDSRHistory,
     fetchMakerDAOVaults,

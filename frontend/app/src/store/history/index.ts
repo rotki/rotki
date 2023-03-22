@@ -1,14 +1,12 @@
 import { type Ref } from 'vue';
 import { type TradeLocation } from '@/types/history/trade/location';
 import { logger } from '@/utils/logging';
-import { type Exchange } from '@/types/exchanges';
 
 export const useHistoryStore = defineStore('history', () => {
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
   const counterparties: Ref<string[]> = ref([]);
   const associatedLocations: Ref<TradeLocation[]> = ref([]);
-  const connectedExchanges: Ref<Exchange[]> = ref([]);
   const {
     fetchAssociatedLocations: fetchAssociatedLocationsApi,
     fetchAvailableCounterparties
@@ -40,7 +38,6 @@ export const useHistoryStore = defineStore('history', () => {
 
   return {
     counterparties,
-    connectedExchanges,
     associatedLocations,
     fetchAssociatedLocations,
     fetchCounterparties
