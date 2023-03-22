@@ -1,18 +1,15 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
 
-if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
 
 # https://github.com/hop-protocol/hop/blob/develop/packages/core/src/addresses/mainnet.ts
 ETH_BRIDGE = string_to_evm_address('0xb8901acB165ed027E32754E0FFe830802919727f')
@@ -33,14 +30,8 @@ chainid_to_name = {
 
 class HopDecoder(DecoderInterface):
 
-    def _decode_send_eth(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_send_eth(self, context: DecoderContext) -> DecodingOutput:
+        tx_log = context.tx_log
         if tx_log.topics[0] != TRANSFER_TO_L2:
             return DecodingOutput(counterparty=CPT_HOP)
 
@@ -51,7 +42,7 @@ class HopDecoder(DecoderInterface):
         name = chainid_to_name.get(chain_id, f'Unknown Chain with id {chain_id}')
         amount = from_wei(FVal(amount_raw))
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             if event.event_type == HistoryEventType.SPEND and event.address == ETH_BRIDGE and event.asset == A_ETH and event.balance.amount == amount:  # noqa: E501
                 if recipient == event.location_label:
                     target_str = 'at the same address'

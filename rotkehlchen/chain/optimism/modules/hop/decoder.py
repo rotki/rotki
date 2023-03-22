@@ -4,15 +4,13 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_HETH_OPT, A_WETH_OPT
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.user_messages import MessagesAggregator
@@ -38,25 +36,18 @@ class HopDecoder(DecoderInterface):
         self.weth = A_WETH_OPT.resolve_to_evm_token()
         self.heth = A_HETH_OPT.resolve_to_evm_token()
 
-    def _decode_receive_eth(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
-        if tx_log.topics[0] != TRANSFER_FROM_L1_COMPLETED:
+    def _decode_receive_eth(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != TRANSFER_FROM_L1_COMPLETED:
             return DecodingOutput(counterparty=CPT_HOP)
 
-        recipient = hex_or_bytes_to_address(tx_log.topics[1])
+        recipient = hex_or_bytes_to_address(context.tx_log.topics[1])
         if not self.base.is_tracked(recipient):
             return DecodingOutput(counterparty=CPT_HOP)
 
-        amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
+        amount_raw = hex_or_bytes_to_int(context.tx_log.data[:32])
         heth_amount = token_normalized_value_decimals(amount_raw, 18)
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and recipient == event.location_label and event.asset == A_ETH:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.BRIDGE

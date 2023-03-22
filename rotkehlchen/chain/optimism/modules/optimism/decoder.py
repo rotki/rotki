@@ -1,18 +1,14 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
-
-if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
 
 
 OPTIMISM_TOKEN = string_to_evm_address('0x4200000000000000000000000000000000000042')
@@ -22,14 +18,8 @@ DELEGATE_CHANGED = b'14\xe8\xa2\xe6\xd9~\x92\x9a~T\x01\x1e\xa5H]}\x19m\xd5\xf0\x
 
 class OptimismDecoder(DecoderInterface):
 
-    def _decode_delegate_changed(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_delegate_changed(self, context: DecoderContext) -> DecodingOutput:
+        tx_log = context.tx_log
         if tx_log.topics[0] != DELEGATE_CHANGED:
             return DecodingOutput(counterparty=CPT_OPTIMISM)
 
@@ -40,16 +30,16 @@ class OptimismDecoder(DecoderInterface):
         from_delegate = hex_or_bytes_to_address(tx_log.topics[2])
         to_delegate = hex_or_bytes_to_address(tx_log.topics[3])
         event = self.base.make_event_from_transaction(
-            transaction=transaction,
+            transaction=context.transaction,
             tx_log=tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_ETH,
             balance=Balance(),
-            location_label=transaction.from_address,
+            location_label=context.transaction.from_address,
             notes=f'Change OP Delegate from {from_delegate} to {to_delegate}',
             counterparty=CPT_OPTIMISM,
-            address=transaction.to_address,
+            address=context.transaction.to_address,
         )
         return DecodingOutput(event=event, counterparty=CPT_OPTIMISM)
 

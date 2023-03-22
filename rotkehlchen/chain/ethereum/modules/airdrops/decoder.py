@@ -7,7 +7,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_ELFI, A_FOX, A_FPIS, A_UNI
@@ -77,22 +77,15 @@ class AirdropsDecoder(DecoderInterface):
         self.fpis = A_FPIS.resolve_to_evm_token()
         self.elfi = A_ELFI.resolve_to_evm_token()
 
-    def _decode_uniswap_claim(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
-        if tx_log.topics[0] != UNISWAP_TOKEN_CLAIMED:
+    def _decode_uniswap_claim(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != UNISWAP_TOKEN_CLAIMED:
             return DecodingOutput(counterparty=CPT_UNISWAP)
 
-        user_address = hex_or_bytes_to_address(tx_log.data[32:64])
-        raw_amount = hex_or_bytes_to_int(tx_log.data[64:96])
+        user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
+        raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
         amount = asset_normalized_value(amount=raw_amount, asset=self.uni)
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and self.uni == event.asset:  # noqa: E501
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.AIRDROP
@@ -127,25 +120,18 @@ class AirdropsDecoder(DecoderInterface):
 
         return DecodingOutput(counterparty=CPT_SHAPESHIFT)
 
-    def _decode_badger_claim(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
-        if tx_log.topics[0] != BADGER_HUNT_EVENT:
+    def _decode_badger_claim(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != BADGER_HUNT_EVENT:
             return DecodingOutput(counterparty=CPT_BADGER)
 
-        user_address = hex_or_bytes_to_address(tx_log.topics[1])
-        raw_amount = hex_or_bytes_to_int(tx_log.data[32:64])
+        user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
         amount = asset_normalized_value(
             amount=raw_amount,
             asset=self.badger,
         )
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and self.badger == event.asset:  # noqa: E501
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.AIRDROP
@@ -155,22 +141,15 @@ class AirdropsDecoder(DecoderInterface):
 
         return DecodingOutput(counterparty=CPT_BADGER)
 
-    def _decode_oneinch_claim(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
-        if tx_log.topics[0] != ONEINCH_CLAIMED:
+    def _decode_oneinch_claim(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != ONEINCH_CLAIMED:
             return DecodingOutput(counterparty=CPT_ONEINCH)
 
-        user_address = hex_or_bytes_to_address(tx_log.data[32:64])
-        raw_amount = hex_or_bytes_to_int(tx_log.data[64:96])
+        user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
+        raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
         amount = asset_normalized_value(amount=raw_amount, asset=self.oneinch)
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and self.oneinch == event.asset:  # noqa: E501
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.AIRDROP
@@ -182,18 +161,14 @@ class AirdropsDecoder(DecoderInterface):
 
     def _decode_fpis_claim(
             self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
+            context: DecoderContext,
             airdrop: Literal['convex', 'fpis'],
     ) -> DecodingOutput:
-        if tx_log.topics[0] != FPIS_CONVEX_CLAIM:
+        if context.tx_log.topics[0] != FPIS_CONVEX_CLAIM:
             return DecodingOutput(counterparty=CPT_FRAX)
 
-        user_address = hex_or_bytes_to_address(tx_log.data[0:32])
-        raw_amount = hex_or_bytes_to_int(tx_log.data[32:64])
+        user_address = hex_or_bytes_to_address(context.tx_log.data[0:32])
+        raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
         if airdrop == CPT_CONVEX:
             amount = asset_normalized_value(
                 amount=raw_amount,
@@ -209,7 +184,7 @@ class AirdropsDecoder(DecoderInterface):
             note_location = 'from FPIS airdrop'
             counterparty = CPT_FRAX
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and self.fpis == event.asset:  # noqa: E501
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.AIRDROP
@@ -224,23 +199,16 @@ class AirdropsDecoder(DecoderInterface):
 
         return DecodingOutput(counterparty=counterparty)
 
-    def _decode_elfi_claim(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_elfi_claim(self, context: DecoderContext) -> DecodingOutput:
         """Example:
         https://etherscan.io/tx/0x1e58aed1baf70b57e6e3e880e1890e7fe607fddc94d62986c38fe70e483e594b
         """
-        if tx_log.topics[0] != ELFI_VOTE_CHANGE:
+        if context.tx_log.topics[0] != ELFI_VOTE_CHANGE:
             return DecodingOutput(counterparty=CPT_ELEMENT_FINANCE)
 
-        user_address = hex_or_bytes_to_address(tx_log.topics[1])
-        delegate_address = hex_or_bytes_to_address(tx_log.topics[2])
-        raw_amount = hex_or_bytes_to_int(tx_log.data[0:32])
+        user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        delegate_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+        raw_amount = hex_or_bytes_to_int(context.tx_log.data[0:32])
         amount = asset_normalized_value(amount=raw_amount, asset=self.elfi)
 
         # now we need to find the transfer, but can't use decoded events
@@ -248,7 +216,7 @@ class AirdropsDecoder(DecoderInterface):
         # vote/locking contract. Since neither the from, nor the to is a
         # tracked address there won't be a decoded transfer. So we search for
         # the raw log
-        for other_log in all_logs:
+        for other_log in context.all_logs:
             if other_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
                 continue
 
@@ -259,8 +227,8 @@ class AirdropsDecoder(DecoderInterface):
             ):
                 delegate_str = 'self-delegate' if user_address == delegate_address else f'delegate it to {delegate_address}'  # noqa: E501
                 event = self.base.make_event_from_transaction(
-                    transaction=transaction,
-                    tx_log=tx_log,
+                    transaction=context.transaction,
+                    tx_log=context.tx_log,
                     event_type=HistoryEventType.RECEIVE,
                     event_subtype=HistoryEventSubType.AIRDROP,
                     asset=self.elfi,
@@ -268,7 +236,7 @@ class AirdropsDecoder(DecoderInterface):
                     location_label=user_address,
                     notes=f'Claim {amount} ELFI from element-finance airdrop and {delegate_str}',
                     counterparty=CPT_ELEMENT_FINANCE,
-                    address=transaction.to_address,
+                    address=context.transaction.to_address,
                 )
                 return DecodingOutput(event=event)
 

@@ -1,18 +1,14 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_raw_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_ZKSYNC
-
-if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
 
 
 DEPOSIT = b'\xb6\x86k\x02\x9f:\xa2\x9c\xd9\xe2\xbf\xf8\x15\x9a\x8c\xca\xa48\x9fz\x08|q\th\xe0\xb2\x00\xc0\xc7;\x08'  # noqa: E501
@@ -22,27 +18,13 @@ ZKSYNC_BRIDGE = string_to_evm_address('0xaBEA9132b05A70803a4E85094fD0e1800777fBE
 
 class ZksyncDecoder(DecoderInterface):
 
-    def _decode_event(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],
-            action_items: list[ActionItem],
-    ) -> DecodingOutput:
-        if tx_log.topics[0] == DEPOSIT:
-            return self._decode_deposit(tx_log, transaction, decoded_events, all_logs, action_items)  # noqa: E501
+    def _decode_event(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == DEPOSIT:
+            return self._decode_deposit(context)
 
         return DecodingOutput(counterparty=CPT_ZKSYNC)
 
-    def _decode_deposit(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_deposit(self, context: DecoderContext) -> DecodingOutput:
         """Match a zksync deposit with the transfer to decode it
 
         TODO: This is now quite bad. We don't use the token id of zksync as we should.
@@ -51,10 +33,10 @@ class ZksyncDecoder(DecoderInterface):
         https://github.com/rotki/rotki/pull/3985/files
         to get the ids of tokens and then match them to what is deposited.
         """  # noqa: E501
-        user_address = hex_or_bytes_to_address(tx_log.topics[1])
-        amount_raw = hex_or_bytes_to_int(tx_log.data)
+        user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        amount_raw = hex_or_bytes_to_int(context.tx_log.data)
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             if event.event_type == HistoryEventType.SPEND and event.location_label == user_address:
                 resolved_event_asset = event.asset.resolve_to_crypto_asset()
                 event_raw_amount = asset_raw_value(

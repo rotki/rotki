@@ -36,7 +36,7 @@ from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .base import BaseDecoderTools
 from .constants import CPT_GAS, ERC20_APPROVE, ERC20_OR_ERC721_TRANSFER, OUTGOING_EVENT_TYPES
-from .structures import DEFAULT_DECODING_OUTPUT, ActionItem, DecodingOutput
+from .structures import DEFAULT_DECODING_OUTPUT, ActionItem, DecoderContext, DecodingOutput
 from .utils import maybe_reshuffle_events
 
 if TYPE_CHECKING:
@@ -250,11 +250,18 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             return DEFAULT_DECODING_OUTPUT
         method = mapping_result[0]
 
+        context = DecoderContext(
+            tx_log=tx_log,
+            transaction=transaction,
+            decoded_events=decoded_events,
+            all_logs=all_logs,
+            action_items=action_items,
+        )
         try:
             if len(mapping_result) == 1:
-                result = method(tx_log, transaction, decoded_events, all_logs, action_items)
+                result = method(context)
             else:
-                result = method(tx_log, transaction, decoded_events, all_logs, action_items, *mapping_result[1:])  # noqa: E501
+                result = method(context, *mapping_result[1:])
         except (DeserializationError, ConversionError, UnknownAsset) as e:
             log.debug(
                 f'Decoding tx log with index {tx_log.log_index} of transaction '

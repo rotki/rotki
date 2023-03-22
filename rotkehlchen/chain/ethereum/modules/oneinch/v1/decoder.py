@@ -1,21 +1,17 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.constants import AMM_POSSIBLE_COUNTERPARTIES
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from ..constants import CPT_ONEINCH_V1
-
-if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
 
 
 HISTORY = b'\x89M\xbf\x12b\x19\x9c$\xe1u\x02\x98\xa3\x84\xc7\t\x16\x0fI\xd1cB,\xc6\xce\xe6\x94\xc77\x13\xf1\xd2'  # noqa: E501
@@ -25,13 +21,8 @@ DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_ONEINCH_V1)
 
 class Oneinchv1Decoder(DecoderInterface):
 
-    def _decode_history(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_history(self, context: DecoderContext) -> DecodingOutput:
+        tx_log = context.tx_log
         sender = hex_or_bytes_to_address(tx_log.topics[1])
         if not self.base.is_tracked(sender):
             return DEFAULT_DECODING_OUTPUT
@@ -49,7 +40,7 @@ class Oneinchv1Decoder(DecoderInterface):
         to_amount = asset_normalized_value(to_raw, to_asset)  # type: ignore
 
         out_event = in_event = None
-        for event in decoded_events:
+        for event in context.decoded_events:
             if event.event_type == HistoryEventType.SPEND and event.location_label == sender and from_amount == event.balance.amount and from_asset == event.asset:  # noqa: E501
                 # find the send event
                 event.event_type = HistoryEventType.TRADE
@@ -76,17 +67,16 @@ class Oneinchv1Decoder(DecoderInterface):
                 # cases we need to take the out event as the other amm event
                 out_event = event
 
-        maybe_reshuffle_events(out_event=out_event, in_event=in_event, events_list=decoded_events)
+        maybe_reshuffle_events(
+            out_event=out_event,
+            in_event=in_event,
+            events_list=context.decoded_events,
+        )
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_swapped(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
+    def _decode_swapped(self, context: DecoderContext) -> DecodingOutput:
         """We use the Swapped event to get the fee kept by 1inch"""
+        tx_log = context.tx_log
         to_token_address = hex_or_bytes_to_address(tx_log.topics[2])
         to_asset = ethaddress_to_asset(to_token_address)
         if to_asset is None:
@@ -99,7 +89,7 @@ class Oneinchv1Decoder(DecoderInterface):
 
         full_amount = asset_normalized_value(to_raw + fee_raw, to_asset)
         sender_address = None
-        for event in decoded_events:
+        for event in context.decoded_events:
             # Edit the full amount in the swap's receive event
             crypto_asset = event.asset.resolve_to_crypto_asset()
             if event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE and event.counterparty == CPT_ONEINCH_V1:  # noqa: E501
@@ -114,7 +104,7 @@ class Oneinchv1Decoder(DecoderInterface):
         # And now create a new event for the fee
         fee_amount = asset_normalized_value(fee_raw, to_asset)
         fee_event = self.base.make_event_from_transaction(
-            transaction=transaction,
+            transaction=context.transaction,
             tx_log=tx_log,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -123,22 +113,15 @@ class Oneinchv1Decoder(DecoderInterface):
             location_label=sender_address,
             notes=f'Deduct {fee_amount} {to_asset.symbol} from {sender_address} as {CPT_ONEINCH_V1} fees',  # noqa: E501
             counterparty=CPT_ONEINCH_V1,
-            address=transaction.to_address,
+            address=context.transaction.to_address,
         )
         return DecodingOutput(event=fee_event, counterparty=CPT_ONEINCH_V1)
 
-    def decode_action(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
-        if tx_log.topics[0] == HISTORY:
-            return self._decode_history(tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
-        if tx_log.topics[0] == SWAPPED:
-            return self._decode_swapped(tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
+    def decode_action(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == HISTORY:
+            return self._decode_history(context=context)
+        if context.tx_log.topics[0] == SWAPPED:
+            return self._decode_swapped(context=context)
 
         return DEFAULT_DECODING_OUTPUT
 

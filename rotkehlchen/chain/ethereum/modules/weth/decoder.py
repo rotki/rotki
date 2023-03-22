@@ -1,20 +1,18 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.weth.constants import CPT_WETH
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
@@ -40,48 +38,23 @@ class WethDecoder(DecoderInterface):
         self.weth = A_WETH.resolve_to_evm_token()
         self.eth = A_ETH.resolve_to_crypto_asset()
 
-    def _decode_weth(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],
-            action_items: Optional[list[ActionItem]],
-    ) -> DecodingOutput:
-        if tx_log.topics[0] == WETH_DEPOSIT_TOPIC:
-            return self._decode_deposit_event(
-                tx_log=tx_log,
-                transaction=transaction,
-                decoded_events=decoded_events,
-                all_logs=all_logs,
-                action_items=action_items,
-            )
+    def _decode_weth(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == WETH_DEPOSIT_TOPIC:
+            return self._decode_deposit_event(context)
 
-        if tx_log.topics[0] == WETH_WITHDRAW_TOPIC:
-            return self._decode_withdrawal_event(
-                tx_log=tx_log,
-                transaction=transaction,
-                decoded_events=decoded_events,
-                all_logs=all_logs,
-                action_items=action_items,
-            )
+        if context.tx_log.topics[0] == WETH_WITHDRAW_TOPIC:
+            return self._decode_withdrawal_event(context)
 
         return DecodingOutput(counterparty=CPT_WETH)
 
-    def _decode_deposit_event(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
-        depositor = hex_or_bytes_to_address(tx_log.topics[1])
-        deposited_amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
+    def _decode_deposit_event(self, context: DecoderContext) -> DecodingOutput:
+        transaction = context.transaction
+        depositor = hex_or_bytes_to_address(context.tx_log.topics[1])
+        deposited_amount_raw = hex_or_bytes_to_int(context.tx_log.data[:32])
         deposited_amount = asset_normalized_value(amount=deposited_amount_raw, asset=self.eth)
 
         out_event = None
-        for event in decoded_events:
+        for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.address in (WETH_CONTRACT, depositor) and
@@ -114,20 +87,13 @@ class WethDecoder(DecoderInterface):
         )
         return DecodingOutput(event=in_event, counterparty=CPT_WETH)
 
-    def _decode_withdrawal_event(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
-        withdrawer = hex_or_bytes_to_address(tx_log.topics[1])
-        withdrawn_amount_raw = hex_or_bytes_to_int(tx_log.data[:32])
+    def _decode_withdrawal_event(self, context: DecoderContext) -> DecodingOutput:
+        withdrawer = hex_or_bytes_to_address(context.tx_log.topics[1])
+        withdrawn_amount_raw = hex_or_bytes_to_int(context.tx_log.data[:32])
         withdrawn_amount = asset_normalized_value(amount=withdrawn_amount_raw, asset=self.eth)
 
         in_event = None
-        for event in decoded_events:
+        for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.address in (WETH_CONTRACT, withdrawer) and
@@ -145,8 +111,8 @@ class WethDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         out_event = self.base.make_event_next_index(
-            tx_hash=transaction.tx_hash,
-            timestamp=transaction.timestamp,
+            tx_hash=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=self.weth,
@@ -154,12 +120,12 @@ class WethDecoder(DecoderInterface):
             location_label=withdrawer,
             counterparty=CPT_WETH,
             notes=f'Unwrap {withdrawn_amount} {self.weth.symbol}',
-            address=transaction.to_address,
+            address=context.transaction.to_address,
         )
         maybe_reshuffle_events(
             out_event=out_event,
             in_event=in_event,
-            events_list=decoded_events + [out_event],
+            events_list=context.decoded_events + [out_event],
         )
         return DecodingOutput(event=out_event, counterparty=CPT_WETH)
 

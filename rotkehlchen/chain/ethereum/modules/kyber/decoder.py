@@ -5,14 +5,14 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_KYBER
@@ -86,27 +86,20 @@ def _maybe_update_events_legacy_contrats(
 
 class KyberDecoder(DecoderInterface):
 
-    def _decode_legacy_trade(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
-        if tx_log.topics[0] == KYBER_TRADE_LEGACY:
+    def _decode_legacy_trade(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == KYBER_TRADE_LEGACY:
             return DEFAULT_DECODING_OUTPUT
 
-        sender, source_asset, destination_asset = _legacy_contracts_basic_info(tx_log)
+        sender, source_asset, destination_asset = _legacy_contracts_basic_info(context.tx_log)
         if source_asset is None or destination_asset is None:
             return DEFAULT_DECODING_OUTPUT
 
-        spent_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
-        return_amount_raw = hex_or_bytes_to_int(tx_log.data[96:128])
+        spent_amount_raw = hex_or_bytes_to_int(context.tx_log.data[64:96])
+        return_amount_raw = hex_or_bytes_to_int(context.tx_log.data[96:128])
         spent_amount = asset_normalized_value(amount=spent_amount_raw, asset=source_asset)
         return_amount = asset_normalized_value(amount=return_amount_raw, asset=destination_asset)
         _maybe_update_events_legacy_contrats(
-            decoded_events=decoded_events,
+            decoded_events=context.decoded_events,
             sender=sender,
             source_asset=source_asset,
             destination_asset=destination_asset,
@@ -117,27 +110,20 @@ class KyberDecoder(DecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_legacy_upgraded_trade(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
-        if tx_log.topics[0] != KYBER_TRADE_LEGACY:
+    def _decode_legacy_upgraded_trade(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != KYBER_TRADE_LEGACY:
             return DEFAULT_DECODING_OUTPUT
 
-        sender, source_asset, destination_asset = _legacy_contracts_basic_info(tx_log)
+        sender, source_asset, destination_asset = _legacy_contracts_basic_info(context.tx_log)
         if source_asset is None or destination_asset is None:
             return DEFAULT_DECODING_OUTPUT
 
-        spent_amount_raw = hex_or_bytes_to_int(tx_log.data[96:128])
-        return_amount_raw = hex_or_bytes_to_int(tx_log.data[128:160])
+        spent_amount_raw = hex_or_bytes_to_int(context.tx_log.data[96:128])
+        return_amount_raw = hex_or_bytes_to_int(context.tx_log.data[128:160])
         spent_amount = asset_normalized_value(amount=spent_amount_raw, asset=source_asset)
         return_amount = asset_normalized_value(amount=return_amount_raw, asset=destination_asset)
         _maybe_update_events_legacy_contrats(
-            decoded_events=decoded_events,
+            decoded_events=context.decoded_events,
             sender=sender,
             source_asset=source_asset,
             destination_asset=destination_asset,

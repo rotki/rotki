@@ -1,25 +1,21 @@
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
-    ActionItem,
+    DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_VOTIUM
-
-if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
 
 
 logger = logging.getLogger(__name__)
@@ -31,27 +27,20 @@ VOTIUM_CONTRACT = string_to_evm_address('0x378Ba9B73309bE80BF4C2c027aAD799766a7E
 
 class VotiumDecoder(DecoderInterface):
 
-    def _decode_claim(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: Optional[list[ActionItem]],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
-        if tx_log.topics[0] != VOTIUM_CLAIM:
+    def _decode_claim(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != VOTIUM_CLAIM:
             return DEFAULT_DECODING_OUTPUT
 
-        claimed_token_address = hex_or_bytes_to_address(tx_log.topics[1])
+        claimed_token_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         claimed_token = ethaddress_to_asset(claimed_token_address)
         if claimed_token is None:
             return DEFAULT_DECODING_OUTPUT
 
-        receiver = hex_or_bytes_to_address(tx_log.topics[2])
-        claimed_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
+        receiver = hex_or_bytes_to_address(context.tx_log.topics[2])
+        claimed_amount_raw = hex_or_bytes_to_int(context.tx_log.data[32:64])
         amount = asset_normalized_value(amount=claimed_amount_raw, asset=claimed_token)
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.location_label == receiver and event.balance.amount == amount and claimed_token == event.asset:  # noqa: E501
                 try:
                     crypto_asset = event.asset.resolve_to_crypto_asset()
