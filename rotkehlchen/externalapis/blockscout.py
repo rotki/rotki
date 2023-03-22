@@ -160,7 +160,7 @@ class Blockscout(ExternalServiceWithApiKey):
                             location='blockscout staking withdrawals query',
                         ))),
                         withdrawal_address=address,
-                        is_exit=False,  # TODO: needs to be figured out later, possibly in another task  # noqa: E501
+                        is_exit=False,  # is figured out later in a periodic task
                     ))
                 except (ValueError, KeyError) as e:
                     msg = str(e)

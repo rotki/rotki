@@ -470,6 +470,40 @@ CREATE TABLE IF NOT EXISTS evmtx_address_mappings (
 );
 """
 
+
+# Custom enum table for zksyn transaction types
+DB_CREATE_ZKSYNCLITE_TX_TYPE = """
+CREATE TABLE IF NOT EXISTS zksynclite_tx_type (
+  type    CHAR(1)       PRIMARY KEY NOT NULL,
+  seq     INTEGER UNIQUE
+);
+/* Transfer Type */
+INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('A', 1);
+/* Deposit Type */
+INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('B', 2);
+/* Withdraw Type */
+INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('C', 3);
+/* ChangePubKey Type */
+INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('D', 4);
+/* ForcedExit Type */
+INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('E', 5);
+"""
+
+DB_CREATE_ZKSYNCLITE_TRANSACTIONS = """
+CREATE TABLE IF NOT EXISTS zksynclite_transactions (
+    tx_hash BLOB NOT NULL PRIMARY KEY,
+    type CHAR(1) NOT NULL DEFAULT('A') REFERENCES zksynclite_tx_type(type),
+    timestamp INTEGER NOT NULL,
+    block_number INTEGER NOT NULL,
+    from_address TEXT NULL,
+    to_address TEXT,
+    token_identifier TEXT NOT NULL,
+    amount TEXT NOT NULL,
+    fee TEXT,
+    FOREIGN KEY(token_identifier) REFERENCES assets(identifier) ON UPDATE CASCADE
+);
+"""
+
 DB_CREATE_USED_QUERY_RANGES = """
 CREATE TABLE IF NOT EXISTS used_query_ranges (
     name VARCHAR[24] NOT NULL PRIMARY KEY,
@@ -733,6 +767,8 @@ BEGIN TRANSACTION;
 {DB_CREATE_EVMTX_RECEIPT_LOGS}
 {DB_CREATE_EVMTX_RECEIPT_LOG_TOPICS}
 {DB_CREATE_EVMTX_ADDRESS_MAPPINGS}
+{DB_CREATE_ZKSYNCLITE_TX_TYPE}
+{DB_CREATE_ZKSYNCLITE_TRANSACTIONS}
 {DB_CREATE_MARGIN}
 {DB_CREATE_ASSET_MOVEMENTS}
 {DB_CREATE_USED_QUERY_RANGES}
