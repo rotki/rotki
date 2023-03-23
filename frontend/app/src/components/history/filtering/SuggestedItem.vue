@@ -37,9 +37,9 @@ const displayValue = computed(() => {
   return usedAsset.isCustomAsset ? usedAsset.name : usedAsset.symbol;
 });
 
-const displayText = computed(() => {
-  return `${get(suggestion).key}: ${get(displayValue)}`;
-});
+const displayText = computed(
+  () => `${get(suggestion).key}: ${get(displayValue)}`
+);
 </script>
 
 <template>

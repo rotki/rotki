@@ -13,9 +13,8 @@ const props = defineProps({
 const { item } = toRefs(props);
 const { scrambleData } = storeToRefs(useSessionSettingsStore());
 
-const getIcon = ({ protocol }: DefiProtocolInfo): string => {
-  return protocol.startsWith('makerdao') ? 'makerdao' : protocol;
-};
+const getIcon = ({ protocol }: DefiProtocolInfo): string =>
+  protocol.startsWith('makerdao') ? 'makerdao' : protocol;
 
 const { t } = useI18n();
 

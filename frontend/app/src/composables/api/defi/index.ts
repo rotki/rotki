@@ -9,9 +9,8 @@ import { api } from '@/services/rotkehlchen-api';
 import { type PendingTask } from '@/types/task';
 
 export const useDefiApi = () => {
-  const fetchAllDefi = async (): Promise<PendingTask> => {
-    return fetchExternalAsync(api.instance, '/blockchains/ETH/defi');
-  };
+  const fetchAllDefi = async (): Promise<PendingTask> =>
+    fetchExternalAsync(api.instance, '/blockchains/ETH/defi');
 
   const fetchAirdrops = async (): Promise<PendingTask> => {
     const response = await api.instance.get<ActionResult<PendingTask>>(

@@ -9,9 +9,8 @@ import {
 } from '@/types/api/chains';
 import { isBlockchain } from '@/types/blockchain/chains';
 
-const isEvmChain = (info: ChainInfo): info is EvmChainInfo => {
-  return info.type === 'evm';
-};
+const isEvmChain = (info: ChainInfo): info is EvmChainInfo =>
+  info.type === 'evm';
 
 export const useSupportedChains = createSharedComposable(() => {
   const { fetchSupportedChains, fetchAllEvmChains } = useSupportedChainsApi();
@@ -44,10 +43,10 @@ export const useSupportedChains = createSharedComposable(() => {
     }
   );
 
-  const evmChainsData: ComputedRef<EvmChainInfo[]> = computed(() => {
+  const evmChainsData: ComputedRef<EvmChainInfo[]> = computed(() =>
     // isEvmChain guard does not work the same with useArrayFilter
-    return get(supportedChains).filter(isEvmChain);
-  });
+    get(supportedChains).filter(isEvmChain)
+  );
 
   const txEvmChains: ComputedRef<EvmChainInfo[]> = useArrayFilter(
     evmChainsData,
@@ -79,9 +78,7 @@ export const useSupportedChains = createSharedComposable(() => {
   const getChainInfoById = (
     chain: MaybeRef<Blockchain>
   ): ComputedRef<ChainInfo | null> =>
-    computed(() => {
-      return get(supportedChains).find(x => x.id === get(chain)) || null;
-    });
+    computed(() => get(supportedChains).find(x => x.id === get(chain)) || null);
 
   const getNativeAsset = (chain: MaybeRef<Blockchain>) => {
     const blockchain = get(chain);

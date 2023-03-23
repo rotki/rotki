@@ -13,17 +13,16 @@ const { isTaskRunning } = useTaskStore();
 const { t } = useI18n();
 
 const { locationBreakdown: breakdown } = useBalancesBreakdown();
-const locationBreakdown: ComputedRef<AssetBalanceWithPrice[]> = computed(() => {
-  return get(breakdown(get(identifier)));
-});
+const locationBreakdown: ComputedRef<AssetBalanceWithPrice[]> = computed(() =>
+  get(breakdown(get(identifier)))
+);
 
-const loadingData = computed<boolean>(() => {
-  return (
+const loadingData = computed<boolean>(
+  () =>
     get(isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES)) ||
     get(isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES)) ||
     get(isTaskRunning(TaskType.QUERY_BALANCES))
-  );
-});
+);
 </script>
 <template>
   <card v-if="loadingData || locationBreakdown.length > 0" outlined-body>

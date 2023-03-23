@@ -21,14 +21,14 @@ const hasAddresses = (module: Module) => {
   return false;
 };
 
-const visibleModules = computed(() => {
-  return SUPPORTED_MODULES.filter(module => {
+const visibleModules = computed(() =>
+  SUPPORTED_MODULES.filter(module => {
     const identifier = module.identifier;
     const isActive = get(activeModules).includes(identifier);
     const activeWithQueried = isActive && hasAddresses(identifier);
     return activeWithQueried || !isActive;
-  });
-});
+  })
+);
 
 onMounted(async () => await queriedAddressesStore.fetchQueriedAddresses());
 

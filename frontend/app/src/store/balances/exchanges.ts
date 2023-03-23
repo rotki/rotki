@@ -68,12 +68,12 @@ export const useExchangeBalancesStore = defineStore(
         .sort((a, b) => sortDesc(a.total, b.total));
     });
 
-    const balances: ComputedRef<AssetBalances> = computed(() => {
-      return sumAssetBalances(
+    const balances: ComputedRef<AssetBalances> = computed(() =>
+      sumAssetBalances(
         Object.values(get(exchangeBalances)),
         getAssociatedAssetIdentifier
-      );
-    });
+      )
+    );
 
     const getBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> =>
       computed(() => {
@@ -127,13 +127,12 @@ export const useExchangeBalancesStore = defineStore(
     const getExchangeNonce = (
       exchange: SupportedExchange
     ): ComputedRef<number> =>
-      computed(() => {
-        return (
+      computed(
+        () =>
           get(connectedExchanges).filter(
             ({ location }) => location === exchange
           ).length + 1
-        );
-      });
+      );
 
     const getBalances = (
       exchange: SupportedExchange,

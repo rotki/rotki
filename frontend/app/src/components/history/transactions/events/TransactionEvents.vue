@@ -68,17 +68,15 @@ const headers: DataTableHeader[] = [
   }
 ];
 
-const events = computed<EthTransactionEventEntry[]>(() => {
-  return get(transaction).decodedEvents!.map(
-    (event: EthTransactionEventWithMeta) => {
-      const { entry, ...entriesMeta } = event;
-      return {
-        ...entry,
-        ...entriesMeta
-      };
-    }
-  );
-});
+const events = computed<EthTransactionEventEntry[]>(() =>
+  get(transaction).decodedEvents!.map((event: EthTransactionEventWithMeta) => {
+    const { entry, ...entriesMeta } = event;
+    return {
+      ...entry,
+      ...entriesMeta
+    };
+  })
+);
 
 const editEvent = (item: EthTransactionEventEntry) => emit('edit:event', item);
 const deleteEvent = (item: EthTransactionEventEntry) =>
@@ -94,12 +92,9 @@ watch(transaction, (current, old) => {
   }
 });
 
-const isNoTxHash = (item: EthTransactionEventEntry) => {
-  return (
-    item.counterparty === TransactionEventProtocol.ETH2 &&
-    item.eventSubtype === HistoryEventSubType.DEPOSIT_ASSET
-  );
-};
+const isNoTxHash = (item: EthTransactionEventEntry) =>
+  item.counterparty === TransactionEventProtocol.ETH2 &&
+  item.eventSubtype === HistoryEventSubType.DEPOSIT_ASSET;
 </script>
 
 <template>

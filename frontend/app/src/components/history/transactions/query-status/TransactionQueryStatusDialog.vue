@@ -25,9 +25,7 @@ const filtered = computed(() => {
     return statuses;
   }
 
-  return statuses.filter(({ evmChain }) => {
-    return chains.includes(getChain(evmChain));
-  });
+  return statuses.filter(({ evmChain }) => chains.includes(getChain(evmChain)));
 });
 </script>
 

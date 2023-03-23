@@ -22,8 +22,8 @@ const LIQUIDITY_POSITION = DashboardTableType.LIQUIDITY_POSITION;
 const createTableHeaders = (
   currency: Ref<string>,
   dashboardTablesVisibleColumns: Ref<DashboardTablesVisibleColumns>
-) => {
-  return computed<DataTableHeader[]>(() => {
+) =>
+  computed<DataTableHeader[]>(() => {
     const visibleColumns = get(dashboardTablesVisibleColumns)[
       LIQUIDITY_POSITION
     ];
@@ -77,7 +77,6 @@ const createTableHeaders = (
 
     return headers;
   });
-};
 
 const route = Routes.DEFI_DEPOSITS_LIQUIDITY;
 const expanded = ref<XswapBalance[]>([]);
@@ -122,9 +121,8 @@ const percentageOfTotalNetValue = (value: BigNumber) => {
   return calculatePercentage(value, total);
 };
 
-const percentageOfCurrentGroup = (value: BigNumber) => {
-  return calculatePercentage(value, get(totalInUsd));
-};
+const percentageOfCurrentGroup = (value: BigNumber) =>
+  calculatePercentage(value, get(totalInUsd));
 
 const premium = usePremium();
 
@@ -158,9 +156,7 @@ watch(premium, async (curr, prev) => {
   }
 });
 
-const getAssets = (assets: XswapAsset[]) => {
-  return assets.map(({ asset }) => asset);
-};
+const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
 </script>
 <template>
   <dashboard-expandable-table v-if="balances.length > 0 || loading">

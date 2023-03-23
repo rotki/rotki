@@ -44,9 +44,7 @@ const redetectAllTokens = async () => {
 
 const { tc } = useI18n();
 
-const isEth2 = computed<boolean>(() => {
-  return get(blockchain) === Blockchain.ETH2;
-});
+const isEth2 = computed<boolean>(() => get(blockchain) === Blockchain.ETH2);
 
 const hasTokenDetection = computed<boolean>(() =>
   isTokenChain(get(blockchain))
@@ -63,12 +61,11 @@ const isLoading = computed<boolean>(() => {
   return get(isQueryingBlockchain) || get(isLoopringLoading);
 });
 
-const operationRunning = computed<boolean>(() => {
-  return (
+const operationRunning = computed<boolean>(
+  () =>
     get(isTaskRunning(TaskType.ADD_ACCOUNT)) ||
     get(isTaskRunning(TaskType.REMOVE_ACCOUNT))
-  );
-});
+);
 
 const editAccount = (account: BlockchainAccountWithBalance) => {
   set(editedAccount, account.address);

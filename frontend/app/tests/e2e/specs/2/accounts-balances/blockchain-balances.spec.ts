@@ -72,9 +72,11 @@ describe('blockchain balances', () => {
 
   it('data is reflected in dashboard', () => {
     blockchainBalancesPage.getBlockchainBalances().then($blockchainBalances => {
-      const total = $blockchainBalances.reduce((sum: BigNumber, location) => {
-        return sum.plus(location.value.toFixed(2, BigNumber.ROUND_DOWN));
-      }, Zero);
+      const total = $blockchainBalances.reduce(
+        (sum: BigNumber, location) =>
+          sum.plus(location.value.toFixed(2, BigNumber.ROUND_DOWN)),
+        Zero
+      );
 
       dashboardPage.visit();
       dashboardPage.getOverallBalance().then($overallBalance => {

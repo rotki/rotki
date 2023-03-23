@@ -36,11 +36,11 @@ const { tc } = useI18n();
 const { queryAllAssets, deleteEthereumToken, deleteAsset } =
   useAssetManagementApi();
 
-const dialogTitle = computed<string>(() => {
-  return get(asset)
+const dialogTitle = computed<string>(() =>
+  get(asset)
     ? tc('asset_management.edit_title')
-    : tc('asset_management.add_title');
-});
+    : tc('asset_management.add_title')
+);
 
 const add = () => {
   set(asset, null);

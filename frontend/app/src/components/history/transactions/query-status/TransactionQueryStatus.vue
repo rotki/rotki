@@ -25,9 +25,9 @@ const { getChain } = useSupportedChains();
 
 const sortedQueryStatus = computed<EvmTransactionQueryData[]>(() => {
   const chains = get(onlyChains);
-  const statuses = Object.values(get(queryStatus)).filter(status => {
-    return chains.length === 0 || chains.includes(getChain(status.evmChain));
-  });
+  const statuses = Object.values(get(queryStatus)).filter(
+    status => chains.length === 0 || chains.includes(getChain(status.evmChain))
+  );
 
   return statuses.sort(
     (a: EvmTransactionQueryData, b: EvmTransactionQueryData) =>

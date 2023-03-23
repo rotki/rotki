@@ -16,13 +16,13 @@ export const useBtcAccountBalances = () => {
   const { balances } = storeToRefs(useBtcBalancesStore());
   const { btc, bch } = storeToRefs(useBtcAccountsStore());
 
-  const btcAccounts = computed<BlockchainAccountWithBalance[]>(() => {
-    return btcAccountsWithBalances(get(btc), get(balances).BTC, Blockchain.BTC);
-  });
+  const btcAccounts = computed<BlockchainAccountWithBalance[]>(() =>
+    btcAccountsWithBalances(get(btc), get(balances).BTC, Blockchain.BTC)
+  );
 
-  const bchAccounts = computed<BlockchainAccountWithBalance[]>(() => {
-    return btcAccountsWithBalances(get(bch), get(balances).BCH, Blockchain.BCH);
-  });
+  const bchAccounts = computed<BlockchainAccountWithBalance[]>(() =>
+    btcAccountsWithBalances(get(bch), get(balances).BCH, Blockchain.BCH)
+  );
 
   const { shouldShowLoadingScreen } = useStatusStore();
   const bitcoinTotals: ComputedRef<BlockchainTotal[]> = computed(() => [

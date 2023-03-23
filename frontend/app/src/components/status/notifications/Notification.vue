@@ -44,9 +44,7 @@ const color = computed(() => {
   return '';
 });
 
-const date = computed(() => {
-  return dayjs(get(notification).date).format('LLL');
-});
+const date = computed(() => dayjs(get(notification).date).format('LLL'));
 
 const copy = async () => {
   await navigator.clipboard.writeText(get(notification).message);

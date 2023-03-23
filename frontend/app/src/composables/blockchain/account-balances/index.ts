@@ -23,8 +23,8 @@ export const useAccountBalances = () => {
     chainTotals
   } = chainStore;
 
-  const accounts: ComputedRef<GeneralAccount[]> = computed(() => {
-    return get(ethAccounts)
+  const accounts: ComputedRef<GeneralAccount[]> = computed(() =>
+    get(ethAccounts)
       .concat(get(btcAccounts))
       .concat(get(bchAccounts))
       .concat(get(ksmAccounts))
@@ -37,18 +37,18 @@ export const useAccountBalances = () => {
         address: account.address,
         label: account.label,
         tags: account.tags
-      }));
-  });
+      }))
+  );
 
   const getAccountByAddress = (
     address: string,
     location: string
   ): ComputedRef<GeneralAccount | undefined> =>
-    computed(() => {
-      return get(accounts).find(
+    computed(() =>
+      get(accounts).find(
         acc => acc.address === address && acc.chain === location
-      );
-    });
+      )
+    );
 
   const getAccountsByChain = (blockchain: Blockchain): string[] => {
     const mapping: Record<Blockchain, Ref<BlockchainAccountWithBalance[]>> = {
@@ -74,13 +74,13 @@ export const useAccountBalances = () => {
       .filter(uniqueStrings);
   };
 
-  const blockchainTotals: ComputedRef<BlockchainTotal[]> = computed(() => {
-    return get(ethTotals)
+  const blockchainTotals: ComputedRef<BlockchainTotal[]> = computed(() =>
+    get(ethTotals)
       .concat(get(bitcoinTotals))
       .concat(get(chainTotals))
       .filter(item => item.usdValue.gt(0))
-      .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
-  });
+      .sort((a, b) => sortDesc(a.usdValue, b.usdValue))
+  );
 
   const getBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> =>
     computed(() =>

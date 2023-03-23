@@ -1,3 +1,1 @@
-export const checkIfDevelopment = (): boolean => {
-  return import.meta.env.DEV;
-};
+export const checkIfDevelopment = (): boolean => import.meta.env.DEV;

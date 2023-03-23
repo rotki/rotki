@@ -203,9 +203,8 @@ onMounted(async () => {
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.ASSET_MOVEMENT);
 
-const getItemClass = (item: AssetMovementEntry) => {
-  return item.ignoredInAccounting ? 'darken-row' : '';
-};
+const getItemClass = (item: AssetMovementEntry) =>
+  item.ignoredInAccounting ? 'darken-row' : '';
 
 const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS;
 

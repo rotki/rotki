@@ -13,9 +13,9 @@ watch(message, message => {
   set(visible, message.length > 0);
 });
 
-const icon = computed<string>(() => {
-  return get(success) ? 'mdi-check-circle ' : 'mdi-alert-circle';
-});
+const icon = computed<string>(() =>
+  get(success) ? 'mdi-check-circle ' : 'mdi-alert-circle'
+);
 
 const dismiss = () => emit('dismiss');
 

@@ -51,9 +51,9 @@ const { getEventTypeData } = useEventTypeData();
 const { historyEventTypeData, historyEventSubTypeData } =
   useHistoryEventTypeData();
 
-const isCurrentCurrencyUsd: ComputedRef<boolean> = computed(() => {
-  return get(currencySymbol) === CURRENCY_USD;
-});
+const isCurrentCurrencyUsd: ComputedRef<boolean> = computed(
+  () => get(currencySymbol) === CURRENCY_USD
+);
 
 const lastLocation = useLocalStorage(
   'rotki.ledger_action.location',

@@ -203,11 +203,10 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
 
     const onError: OnError = {
       title: t('actions.defi.balancer_events.error.title').toString(),
-      error: message => {
-        return t('actions.defi.balancer_events.error.description', {
+      error: message =>
+        t('actions.defi.balancer_events.error.description', {
           message
-        }).toString();
-      }
+        }).toString()
     };
 
     await fetchDataAsync(

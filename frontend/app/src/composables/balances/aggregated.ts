@@ -90,8 +90,8 @@ export const useAggregatedBalances = () => {
   const assetPriceInfo = (
     identifier: MaybeRef<string>,
     groupMultiChain: MaybeRef<boolean> = ref(false)
-  ): ComputedRef<AssetPriceInfo> => {
-    return computed(() => {
+  ): ComputedRef<AssetPriceInfo> =>
+    computed(() => {
       const id = get(identifier);
       const assetValue = get(balances(true, get(groupMultiChain))).find(
         (value: AssetBalanceWithPrice) => value.asset === id
@@ -103,7 +103,6 @@ export const useAggregatedBalances = () => {
         usdValue: assetValue?.usdValue ?? Zero
       };
     });
-  };
 
   return {
     balances,

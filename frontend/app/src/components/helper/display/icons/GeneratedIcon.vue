@@ -29,21 +29,17 @@ const dimensions = computed<Dimension>(() => {
   };
 });
 
-const wrapperStyle = computed<Style>(() => {
-  return {
-    width: get(size),
-    height: get(size),
-    background: get(backgroundColor),
-    color: get(textColor)
-  };
-});
+const wrapperStyle = computed<Style>(() => ({
+  width: get(size),
+  height: get(size),
+  background: get(backgroundColor),
+  color: get(textColor)
+}));
 
-const circle = computed<Style>(() => {
-  return {
-    width: get(size),
-    height: get(size)
-  };
-});
+const circle = computed<Style>(() => ({
+  width: get(size),
+  height: get(size)
+}));
 
 const text = computed<string>(() => {
   if (get(asset).length > 3) {
@@ -63,9 +59,9 @@ const textStyle = computed<Style>(() => {
   };
 });
 
-const textColor = computed<string>(() => {
-  return `#${invertColor(get(backgroundColor), true)}`;
-});
+const textColor = computed<string>(
+  () => `#${invertColor(get(backgroundColor), true)}`
+);
 </script>
 
 <template>

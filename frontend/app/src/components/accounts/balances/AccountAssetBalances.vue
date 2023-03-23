@@ -44,9 +44,7 @@ const headers = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-const getPrice = (asset: string) => {
-  return get(assetPrice(asset)) ?? Zero;
-};
+const getPrice = (asset: string) => get(assetPrice(asset)) ?? Zero;
 </script>
 
 <template>

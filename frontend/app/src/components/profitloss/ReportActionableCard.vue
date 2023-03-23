@@ -124,9 +124,9 @@ const confirmationDialogOpen = ref<boolean>(false);
 
 const submitActionableItems = (missingPrices: EditableMissingPrice[]) => {
   const total = missingPrices.length;
-  const filled = missingPrices.filter((missingPrice: EditableMissingPrice) => {
-    return !!missingPrice.price;
-  }).length;
+  const filled = missingPrices.filter(
+    (missingPrice: EditableMissingPrice) => !!missingPrice.price
+  ).length;
   set(totalMissingPrices, total);
   set(filledMissingPrices, filled);
   set(skippedMissingPrices, total - filled);

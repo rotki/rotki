@@ -28,11 +28,11 @@ const refreshExchangeBalances = async () => {
 };
 
 const selectedExchange = ref<string>('');
-const usedExchanges = computed<SupportedExchange[]>(() => {
-  return get(connectedExchanges)
+const usedExchanges = computed<SupportedExchange[]>(() =>
+  get(connectedExchanges)
     .map(({ location }) => location)
-    .filter(uniqueStrings);
-});
+    .filter(uniqueStrings)
+);
 
 const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
 

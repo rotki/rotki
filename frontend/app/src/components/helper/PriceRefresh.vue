@@ -17,14 +17,13 @@ const { isLoading } = useStatusStore();
 
 const refreshing = isLoading(Section.PRICES);
 
-const loadingData = computed<boolean>(() => {
-  return (
+const loadingData = computed<boolean>(
+  () =>
     get(isTaskRunning(TaskType.QUERY_BALANCES)) ||
     get(isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES)) ||
     get(isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES)) ||
     get(isTaskRunning(TaskType.MANUAL_BALANCES))
-  );
-});
+);
 
 const { assets } = useAggregatedBalances();
 const { additionalAssets } = toRefs(props);
@@ -36,9 +35,9 @@ const refresh = async () => {
 
 const { t } = useI18n();
 
-const disabled: ComputedRef<boolean> = computed(() => {
-  return get(refreshing) || get(loadingData);
-});
+const disabled: ComputedRef<boolean> = computed(
+  () => get(refreshing) || get(loadingData)
+);
 </script>
 
 <template>

@@ -93,13 +93,11 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
   return headers;
 });
 
-const percentageOfTotalNetValue = (value: BigNumber) => {
-  return calculatePercentage(value, get(totalNetWorthUsd) as BigNumber);
-};
+const percentageOfTotalNetValue = (value: BigNumber) =>
+  calculatePercentage(value, get(totalNetWorthUsd) as BigNumber);
 
-const percentageOfCurrentGroup = (value: BigNumber) => {
-  return calculatePercentage(value, get(totalUsdValue) as BigNumber);
-};
+const percentageOfCurrentGroup = (value: BigNumber) =>
+  calculatePercentage(value, get(totalUsdValue) as BigNumber);
 
 const { dashboardTablesVisibleColumns } = storeToRefs(
   useFrontendSettingsStore()

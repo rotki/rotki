@@ -15,9 +15,8 @@ const details = ref<boolean>(false);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { tc } = useI18n();
 
-const getTotal = ({ totalAmount, usdPrice }: XswapAsset) => {
-  return usdPrice.multipliedBy(totalAmount ?? One);
-};
+const getTotal = ({ totalAmount, usdPrice }: XswapAsset) =>
+  usdPrice.multipliedBy(totalAmount ?? One);
 </script>
 
 <template>

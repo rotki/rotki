@@ -29,23 +29,17 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
   const uniswapV2Balances = (
     addresses: string[]
   ): ComputedRef<XswapBalance[]> =>
-    computed(() => {
-      return getBalances(get(v2Balances), addresses);
-    });
+    computed(() => getBalances(get(v2Balances), addresses));
 
   const uniswapV3Balances = (
     addresses: string[]
   ): ComputedRef<XswapBalance[]> =>
-    computed(() => {
-      return getBalances(get(v3Balances), addresses, false);
-    });
+    computed(() => getBalances(get(v3Balances), addresses, false));
 
   const uniswapPoolProfit = (
     addresses: string[]
   ): ComputedRef<XswapPoolProfit[]> =>
-    computed(() => {
-      return getPoolProfit(get(events), addresses);
-    });
+    computed(() => getPoolProfit(get(events), addresses));
 
   const uniswapV2Addresses = computed(() => {
     const uniswapBalances = get(v2Balances);

@@ -8,11 +8,9 @@ const isAnimationEnabledSetting = useSharedLocalStorage(
   true
 );
 
-const generateRandomScrambleMultiplier = () => {
+const generateRandomScrambleMultiplier = () =>
   // Generate random number from 0.5 to 10
-  return Math.floor(500 + Math.random() * 9500) / 1000;
-};
-
+  Math.floor(500 + Math.random() * 9500) / 1000;
 const defaultSessionSettings = (): SessionSettings => ({
   privacyMode: PrivacyMode.NORMAL,
   scrambleData: false,
@@ -30,13 +28,13 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
   const timeframe = computed(() => settings.timeframe);
   const animationsEnabled = computed(() => settings.animationsEnabled);
 
-  const shouldShowAmount = computed(() => {
-    return settings.privacyMode < PrivacyMode.SEMI_PRIVATE;
-  });
+  const shouldShowAmount = computed(
+    () => settings.privacyMode < PrivacyMode.SEMI_PRIVATE
+  );
 
-  const shouldShowPercentage = computed(() => {
-    return settings.privacyMode < PrivacyMode.PRIVATE;
-  });
+  const shouldShowPercentage = computed(
+    () => settings.privacyMode < PrivacyMode.PRIVATE
+  );
 
   const setAnimationsEnabled = (enabled: boolean): void => {
     set(isAnimationEnabledSetting, enabled);

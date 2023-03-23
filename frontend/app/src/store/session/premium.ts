@@ -6,9 +6,7 @@ export const usePremiumStore = defineStore('session/premium', () => {
   const premiumSync = ref(false);
   const componentsReady = ref(false);
 
-  const showComponents = computed(() => {
-    return get(premium) && get(componentsReady);
-  });
+  const showComponents = computed(() => get(premium) && get(componentsReady));
 
   const api = usePremiumCredentialsApi();
 

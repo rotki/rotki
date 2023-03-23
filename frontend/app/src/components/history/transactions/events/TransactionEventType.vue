@@ -14,18 +14,16 @@ const { event } = toRefs(props);
 const { dark } = useTheme();
 const { getEventTypeData } = useEventTypeData();
 
-const attrs = computed<ActionDataEntry>(() => {
-  return getEventTypeData(get(event));
-});
+const attrs = computed<ActionDataEntry>(() => getEventTypeData(get(event)));
 
 const { scrambleData, scrambleHex } = useScramble();
 
-const counterparty = computed<ActionDataEntry | null>(() => {
-  return getEventCounterpartyData(
+const counterparty = computed<ActionDataEntry | null>(() =>
+  getEventCounterpartyData(
     get(event),
     get(scrambleData) ? scrambleHex : undefined
-  );
-});
+  )
+);
 
 const { t } = useI18n();
 </script>

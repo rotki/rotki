@@ -31,9 +31,9 @@ const { value, enableForAllChains } = toRefs(props);
 const addressesNamesStore = useAddressesNamesStore();
 const { getFetchedAddressesList } = addressesNamesStore;
 
-const addressSuggestions: ComputedRef<string[]> = computed(() => {
-  return get(getFetchedAddressesList(get(value).blockchain));
-});
+const addressSuggestions: ComputedRef<string[]> = computed(() =>
+  get(getFetchedAddressesList(get(value).blockchain))
+);
 
 const input = (payload: Partial<AddressBookPayload>) => {
   emit('input', { ...get(value), ...payload });

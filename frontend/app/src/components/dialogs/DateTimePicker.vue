@@ -280,7 +280,6 @@ defineExpose({
 <template>
   <div>
     <v-menu
-      ref="menu"
       v-model="showMenu"
       :close-on-content-click="false"
       transition="scale-transition"

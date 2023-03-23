@@ -97,13 +97,11 @@ const copyText = async (text: string) => {
   await copy();
 };
 
-const url = computed<string>(() => {
-  return get(base) + get(text);
-});
+const url = computed<string>(() => get(base) + get(text));
 
-const displayUrl = computed<string>(() => {
-  return get(base) + truncateAddress(get(text), 10);
-});
+const displayUrl = computed<string>(
+  () => get(base) + truncateAddress(get(text), 10)
+);
 
 const { t } = useI18n();
 const { href, onLinkClick } = useLinks(url);

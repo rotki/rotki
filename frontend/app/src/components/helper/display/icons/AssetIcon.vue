@@ -34,9 +34,9 @@ const css = useCssModule();
 
 const { currencies } = useCurrencies();
 
-const mappedIdentifier: ComputedRef<string> = computed(() => {
-  return getIdentifierFromSymbolMap(get(identifier));
-});
+const mappedIdentifier: ComputedRef<string> = computed(() =>
+  getIdentifierFromSymbolMap(get(identifier))
+);
 
 const currency = computed<string | undefined>(() => {
   const id = get(mappedIdentifier);
@@ -97,9 +97,9 @@ const chainWrapperSize = computed(
   () => `${Number.parseInt(get(chainIconSize)) + 4}px`
 );
 const chainIconMargin = computed(() => `-${get(chainIconSize)}`);
-const chainIconPosition = computed(() => {
-  return `${(Number.parseInt(get(chainIconSize)) * 50) / 100}px`;
-});
+const chainIconPosition = computed(
+  () => `${(Number.parseInt(get(chainIconSize)) * 50) / 100}px`
+);
 
 const placeholderStyle = computed(() => {
   const pad = get(padding);

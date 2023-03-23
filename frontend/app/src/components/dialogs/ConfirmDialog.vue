@@ -37,13 +37,13 @@ const { tc } = useI18n();
 const color = computed(() => themes[get(confirmType)].color);
 const icon = computed(() => themes[get(confirmType)].icon);
 
-const primaryText = computed(() => {
-  return get(primaryAction) || tc('common.actions.confirm');
-});
+const primaryText = computed(
+  () => get(primaryAction) || tc('common.actions.confirm')
+);
 
-const secondaryText = computed(() => {
-  return get(secondaryAction) || tc('common.actions.cancel');
-});
+const secondaryText = computed(
+  () => get(secondaryAction) || tc('common.actions.cancel')
+);
 </script>
 
 <template>

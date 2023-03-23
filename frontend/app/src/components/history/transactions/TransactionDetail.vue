@@ -16,9 +16,7 @@ const emit = defineEmits(['close']);
 const { t } = useI18n();
 const { transaction } = toRefs(props);
 
-const toGwei = (value: BigNumber) => {
-  return toUnit(value, Unit.GWEI);
-};
+const toGwei = (value: BigNumber) => toUnit(value, Unit.GWEI);
 
 const gwei = 'Gwei';
 

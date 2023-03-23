@@ -90,9 +90,7 @@ const items = computed(() => {
   return get(nfts).sort((a, b) => sortNfts(sortBy, sortDesc, a, b));
 });
 
-const pages = computed(() => {
-  return Math.ceil(get(items).length / get(itemsPerPage));
-});
+const pages = computed(() => Math.ceil(get(items).length / get(itemsPerPage)));
 
 const visibleNfts = computed(() => {
   const start = (get(page) - 1) * get(itemsPerPage);

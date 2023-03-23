@@ -37,20 +37,16 @@ export const useTxQueryStatusStore = defineStore(
       set(queryStatus, {});
     };
 
-    const isStatusFinished = (item: EvmTransactionQueryData): boolean => {
-      return (
-        item.status ===
-        EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED
-      );
-    };
+    const isStatusFinished = (item: EvmTransactionQueryData): boolean =>
+      item.status === EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
 
     const isAllFinished: ComputedRef<boolean> = computed(() => {
       const queryStatusVal = get(queryStatus);
       const addresses = Object.keys(queryStatusVal);
 
-      return addresses.every((address: string) => {
-        return isStatusFinished(queryStatusVal[address]);
-      });
+      return addresses.every((address: string) =>
+        isStatusFinished(queryStatusVal[address])
+      );
     });
 
     const queryingLength: ComputedRef<number> = computed(

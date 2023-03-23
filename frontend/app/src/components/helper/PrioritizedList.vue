@@ -44,17 +44,13 @@ const itemNameTr = computed(() => {
   };
 });
 
-const missing = computed<string[]>(() => {
-  return get(allItems).itemIdsNotIn(get(value));
-});
+const missing = computed<string[]>(() =>
+  get(allItems).itemIdsNotIn(get(value))
+);
 
-const noResults = computed<boolean>(() => {
-  return get(value).length === 0;
-});
+const noResults = computed<boolean>(() => get(value).length === 0);
 
-const isFirst = (item: string): boolean => {
-  return get(value)[0] === item;
-};
+const isFirst = (item: string): boolean => get(value)[0] === item;
 
 const isLast = (item: string): boolean => {
   const items = get(value);

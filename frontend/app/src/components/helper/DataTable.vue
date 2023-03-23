@@ -86,15 +86,13 @@ const pageSelectorData = (props: {
   const perPage = get(itemsPerPage);
   const totalPage = Math.ceil(itemsLength / perPage);
 
-  return new Array(totalPage).fill(0).map((item, index) => {
-    return {
-      value: index + 1,
-      text: `${index * perPage + 1} - ${Math.min(
-        (index + 1) * perPage,
-        itemsLength
-      )}`
-    };
-  });
+  return new Array(totalPage).fill(0).map((item, index) => ({
+    value: index + 1,
+    text: `${index * perPage + 1} - ${Math.min(
+      (index + 1) * perPage,
+      itemsLength
+    )}`
+  }));
 };
 
 const { tc } = useI18n();

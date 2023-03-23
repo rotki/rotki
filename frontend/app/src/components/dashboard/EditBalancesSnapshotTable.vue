@@ -45,16 +45,16 @@ const loading = ref<boolean>(false);
 
 const { exchangeRate } = useBalancePricesStore();
 const { tc } = useI18n();
-const fiatExchangeRate = computed<BigNumber>(() => {
-  return get(exchangeRate(get(currencySymbol))) ?? One;
-});
+const fiatExchangeRate = computed<BigNumber>(
+  () => get(exchangeRate(get(currencySymbol))) ?? One
+);
 
-const data: ComputedRef<IndexedBalanceSnapshot[]> = computed(() => {
-  return get(value).balancesSnapshot.map((item, index) => ({
+const data: ComputedRef<IndexedBalanceSnapshot[]> = computed(() =>
+  get(value).balancesSnapshot.map((item, index) => ({
     ...item,
     index
-  }));
-});
+  }))
+);
 
 const assetSearch: Ref<string> = ref('');
 const filteredData: ComputedRef<IndexedBalanceSnapshot[]> = computed(() => {
@@ -170,11 +170,11 @@ const editClick = (item: IndexedBalanceSnapshot) => {
   set(showForm, true);
 };
 
-const existingLocations = computed<string[]>(() => {
-  return get(value)
+const existingLocations = computed<string[]>(() =>
+  get(value)
     .locationDataSnapshot.filter(item => item.location !== 'total')
-    .map(item => item.location);
-});
+    .map(item => item.location)
+);
 
 const deleteClick = (item: IndexedBalanceSnapshot) => {
   set(indexToDelete, item.index);
@@ -388,9 +388,7 @@ const confirmDelete = () => {
 
 const tableRef = ref<any>(null);
 
-const tableContainer = computed(() => {
-  return get(tableRef)?.$el;
-});
+const tableContainer = computed(() => get(tableRef)?.$el);
 </script>
 <template>
   <div>

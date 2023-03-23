@@ -26,13 +26,13 @@ export const useManualAssetBalances = () => {
     useManualBalancesStore()
   );
 
-  const balances: ComputedRef<AssetBalances> = computed(() => {
-    return toAssetBalances(get(manualBalances));
-  });
+  const balances: ComputedRef<AssetBalances> = computed(() =>
+    toAssetBalances(get(manualBalances))
+  );
 
-  const liabilities: ComputedRef<AssetBalances> = computed(() => {
-    return toAssetBalances(get(manualLiabilities));
-  });
+  const liabilities: ComputedRef<AssetBalances> = computed(() =>
+    toAssetBalances(get(manualLiabilities))
+  );
 
   return {
     balances,

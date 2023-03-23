@@ -41,9 +41,9 @@ const { fetchLoopringBalances } = useEthBalancesStore();
 const { tc } = useI18n();
 const api = useExternalServicesApi();
 
-const isLoopringActive = computed(() => {
-  return get(activeModules).includes(Module.LOOPRING);
-});
+const isLoopringActive = computed(() =>
+  get(activeModules).includes(Module.LOOPRING)
+);
 
 const updateKeys = ({
   cryptocompare,

@@ -169,19 +169,13 @@ export const toSortedAssetBalanceWithPrice = (
   isIgnored: (asset: string) => boolean,
   getPrice: (asset: string) => ComputedRef<BigNumber | null | undefined>,
   groupMultiChain = true
-): AssetBalanceWithPrice[] => {
-  return toSortedAndGroupedArray(
-    ownedAssets,
-    isIgnored,
-    groupMultiChain,
-    asset => ({
-      asset,
-      amount: ownedAssets[asset].amount,
-      usdValue: ownedAssets[asset].usdValue,
-      usdPrice: get(getPrice(asset)) ?? NoPrice
-    })
-  );
-};
+): AssetBalanceWithPrice[] =>
+  toSortedAndGroupedArray(ownedAssets, isIgnored, groupMultiChain, asset => ({
+    asset,
+    amount: ownedAssets[asset].amount,
+    usdValue: ownedAssets[asset].usdValue,
+    usdPrice: get(getPrice(asset)) ?? NoPrice
+  }));
 
 export const toSortedAssetBalanceArray = (
   ownedAssets: AssetBalances,
@@ -282,9 +276,8 @@ export const btcAccountsWithBalances = (
   return accounts;
 };
 
-export const sum = (accounts: HasBalance[]): BigNumber => {
-  return bigNumberSum(accounts.map(account => account.balance.usdValue));
-};
+export const sum = (accounts: HasBalance[]): BigNumber =>
+  bigNumberSum(accounts.map(account => account.balance.usdValue));
 
 export const getBlockchainBreakdown = (
   blockchain: Blockchain,

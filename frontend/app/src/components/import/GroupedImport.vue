@@ -77,10 +77,9 @@ const sources = [
 
 const selectedSource = ref<string>('');
 
-const form = computed(() => {
-  return sources.find(source => source.identifier === get(selectedSource))
-    ?.form;
-});
+const form = computed(
+  () => sources.find(source => source.identifier === get(selectedSource))?.form
+);
 </script>
 <template>
   <card>

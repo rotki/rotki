@@ -54,9 +54,8 @@ export const useTransactionsApi = () => {
 
   const fetchEthTransactionsTask = async (
     payload: TransactionRequestPayload
-  ): Promise<PendingTask> => {
-    return internalEthTransactions<PendingTask>(payload, true);
-  };
+  ): Promise<PendingTask> =>
+    internalEthTransactions<PendingTask>(payload, true);
 
   const fetchEthTransactions = async (
     payload: TransactionRequestPayload

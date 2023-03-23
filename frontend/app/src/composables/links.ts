@@ -16,9 +16,7 @@ export const useLinks = (url?: Ref<string>) => {
         openUrl(get(targetUrl));
       };
 
-  const hasLink = computed(() => {
-    return get(url)?.startsWith('http');
-  });
+  const hasLink = computed(() => get(url)?.startsWith('http'));
 
   return {
     href,

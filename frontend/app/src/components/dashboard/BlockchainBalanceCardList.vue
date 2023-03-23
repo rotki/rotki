@@ -36,25 +36,18 @@ const name = computed<string>(() => {
   );
 });
 
-const childData = (identifier: string): ActionDataEntry | null => {
-  return (
-    SupportedSubBlockchainProtocolData.find(
-      item => item.identifier === identifier
-    ) || null
-  );
-};
+const childData = (identifier: string): ActionDataEntry | null =>
+  SupportedSubBlockchainProtocolData.find(
+    item => item.identifier === identifier
+  ) || null;
 
-const amount: ComputedRef<BigNumber> = computed<BigNumber>(() => {
-  return get(total).usdValue;
-});
+const amount: ComputedRef<BigNumber> = computed<BigNumber>(
+  () => get(total).usdValue
+);
 
-const chain = computed<Blockchain>(() => {
-  return get(total).chain;
-});
+const chain = computed<Blockchain>(() => get(total).chain);
 
-const loading = computed<boolean>(() => {
-  return get(total).loading;
-});
+const loading = computed<boolean>(() => get(total).loading);
 
 const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
 </script>

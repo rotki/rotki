@@ -25,9 +25,9 @@ const { breakpoint, currentBreakpoint } = useTheme();
 const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
 const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 
-const mobileClass = computed<string | null>(() => {
-  return get(xsOnly) ? 'v-data-table__mobile-row' : null;
-});
+const mobileClass = computed<string | null>(() =>
+  get(xsOnly) ? 'v-data-table__mobile-row' : null
+);
 
 const xpub: ComputedRef<XpubAccountWithBalance> = computed(() => {
   const account = get(items).find(item => !item.address);
@@ -35,35 +35,24 @@ const xpub: ComputedRef<XpubAccountWithBalance> = computed(() => {
   return account;
 });
 
-const label = computed<string>(() => {
-  return get(xpub).label;
-});
+const label = computed<string>(() => get(xpub).label);
 
-const xpubTags = computed<string[]>(() => {
-  return get(xpub).tags;
-});
+const xpubTags = computed<string[]>(() => get(xpub).tags);
 
-const displayXpub = computed<string>(() => {
-  return truncateAddress(
-    get(xpub).xpub,
-    truncationPoints[get(breakpoint)] ?? 4
-  );
-});
+const displayXpub = computed<string>(() =>
+  truncateAddress(get(xpub).xpub, truncationPoints[get(breakpoint)] ?? 4)
+);
 
-const sum = computed<BigNumber>(() => {
-  return bigNumberSum(get(items).map(({ balance: { amount } }) => amount));
-});
+const sum = computed<BigNumber>(() =>
+  bigNumberSum(get(items).map(({ balance: { amount } }) => amount))
+);
 
-const usdSum = computed<BigNumber>(() => {
-  return balanceUsdValueSum(get(items));
-});
+const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
 
-const balance = computed<Balance>(() => {
-  return {
-    amount: get(sum),
-    usdValue: get(usdSum)
-  };
-});
+const balance = computed<Balance>(() => ({
+  amount: get(sum),
+  usdValue: get(usdSum)
+}));
 
 const deleteClicked = (_payload: XpubAccountWithBalance) =>
   emit('delete-clicked', _payload);

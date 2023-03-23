@@ -207,18 +207,16 @@ const aggregatedStatistic: ComputedRef<LiquityStatisticDetails | null> =
             .map(({ asset }) => asset)
             .filter(uniqueStrings);
 
-          return uniqueAssets.map(asset => {
-            return {
-              asset,
-              ...aggregated
-                .filter((item: AssetBalance) => asset === item.asset)
-                .reduce(
-                  (previous: Balance, current: Balance) =>
-                    balanceSum(previous, current),
-                  zeroBalance()
-                )
-            };
-          });
+          return uniqueAssets.map(asset => ({
+            asset,
+            ...aggregated
+              .filter((item: AssetBalance) => asset === item.asset)
+              .reduce(
+                (previous: Balance, current: Balance) =>
+                  balanceSum(previous, current),
+                zeroBalance()
+              )
+          }));
         };
 
         aggregatedStatistic.stakingGains = mergeAssetBalances(
@@ -235,12 +233,11 @@ const aggregatedStatistic: ComputedRef<LiquityStatisticDetails | null> =
     return aggregatedStatistic;
   });
 
-const availableAddresses = computed(() => {
-  return [
-    ...Object.keys(get(staking)),
-    ...Object.keys(get(stakingPools))
-  ].filter(uniqueStrings);
-});
+const availableAddresses = computed(() =>
+  [...Object.keys(get(staking)), ...Object.keys(get(stakingPools))].filter(
+    uniqueStrings
+  )
+);
 
 const refresh = async () => {
   emit('refresh', true);

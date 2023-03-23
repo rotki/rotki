@@ -27,9 +27,9 @@ const { t } = useI18n();
 
 const onlyTags = ref<string[]>([]);
 
-const totalUsdValue = computed<BigNumber>(() => {
-  return get(assetPriceInfo(identifier)).usdValue;
-});
+const totalUsdValue = computed<BigNumber>(
+  () => get(assetPriceInfo(identifier)).usdValue
+);
 
 const getAccount = (
   item: AssetBreakdown

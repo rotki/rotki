@@ -36,9 +36,7 @@ export const useTradesApi = () => {
 
   const getTradesTask = async (
     payload: TradeRequestPayload
-  ): Promise<PendingTask> => {
-    return internalTrades<PendingTask>(payload, true);
-  };
+  ): Promise<PendingTask> => internalTrades<PendingTask>(payload, true);
 
   const getTrades = async (
     payload: TradeRequestPayload

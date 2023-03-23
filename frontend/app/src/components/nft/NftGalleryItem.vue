@@ -15,13 +15,11 @@ const name = computed(() =>
   get(item).name ? get(item).name : get(item).collection.name
 );
 
-const imageUrl = computed(() => {
-  return get(item).imageUrl ?? './assets/images/placeholder.svg';
-});
+const imageUrl = computed(
+  () => get(item).imageUrl ?? './assets/images/placeholder.svg'
+);
 
-const isMediaVideo = computed(() => {
-  return isVideo(get(item).imageUrl);
-});
+const isMediaVideo = computed(() => isVideo(get(item).imageUrl));
 </script>
 
 <template>

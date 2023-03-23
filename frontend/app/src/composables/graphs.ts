@@ -41,17 +41,11 @@ export const useGraph = (canvasId: string) => {
     return areaGradient;
   });
 
-  const secondaryColor = computed(() => {
-    return get(dark) ? white : secondaryBlack;
-  });
+  const secondaryColor = computed(() => (get(dark) ? white : secondaryBlack));
 
-  const fontColor = computed(() => {
-    return get(dark) ? white : 'rgba(0,0,0,.6)';
-  });
+  const fontColor = computed(() => (get(dark) ? white : 'rgba(0,0,0,.6)'));
 
-  const gridColor = computed(() => {
-    return get(dark) ? '#555' : '#ddd';
-  });
+  const gridColor = computed(() => (get(dark) ? '#555' : '#ddd'));
 
   return {
     getCanvasCtx,
@@ -69,16 +63,14 @@ export interface TooltipContent {
 }
 
 export const useTooltip = (id: string) => {
-  const getDefaultTooltipDisplayOption = (): TooltipDisplayOption => {
-    return {
-      visible: false,
-      left: 0,
-      top: 0,
-      xAlign: 'left',
-      yAlign: 'center',
-      id
-    };
-  };
+  const getDefaultTooltipDisplayOption = (): TooltipDisplayOption => ({
+    visible: false,
+    left: 0,
+    top: 0,
+    xAlign: 'left',
+    yAlign: 'center',
+    id
+  });
 
   const getDefaultTooltipContent = (): TooltipContent => ({
     time: '',

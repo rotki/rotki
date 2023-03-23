@@ -33,12 +33,12 @@ const displayTimestamp = computed<number>(() => {
   return new Date(start + Math.random() * (now - start)).getTime() / 1000;
 });
 
-const formattedDate = computed<string>(() => {
-  return displayDateFormatter.format(
+const formattedDate = computed<string>(() =>
+  displayDateFormatter.format(
     new Date(get(displayTimestamp) * 1000),
     get(dateFormat)
-  );
-});
+  )
+);
 </script>
 
 <template>

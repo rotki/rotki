@@ -14,16 +14,12 @@ export const uniqueStrings = <T = string>(
   value: T,
   index: number,
   array: T[]
-): boolean => {
-  return array.indexOf(value) === index;
-};
+): boolean => array.indexOf(value) === index;
 
 export const uniqueObjects = <T>(
   arr: T[],
   getUniqueId: (item: T) => string
-) => {
-  return [...new Map(arr.map(item => [getUniqueId(item), item])).values()];
-};
+) => [...new Map(arr.map(item => [getUniqueId(item), item])).values()];
 
 /**
  * Takes an object and returns the same object without any null values

@@ -69,9 +69,7 @@ const assetIconFormRef: Ref<InstanceType<typeof AssetIconForm> | null> =
   ref(null);
 const errors = ref<Record<string, string[]>>({});
 
-const isEvmToken = computed<boolean>(() => {
-  return get(assetType) === EVM_TOKEN;
-});
+const isEvmToken = computed<boolean>(() => get(assetType) === EVM_TOKEN);
 
 const { allEvmChains } = useSupportedChains();
 

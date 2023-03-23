@@ -25,13 +25,11 @@ export const useStatusUpdater = (section: Section, ignore = false) => {
   const isFirstLoad = (otherSection?: Section) =>
     get(getStatus(otherSection ?? section)) === Status.NONE;
 
-  const fetchDisabled = (refresh: boolean, otherSection?: Section) => {
-    return !(isFirstLoad(otherSection) || refresh) || loading(otherSection);
-  };
+  const fetchDisabled = (refresh: boolean, otherSection?: Section) =>
+    !(isFirstLoad(otherSection) || refresh) || loading(otherSection);
 
-  const getSectionStatus = (otherSection?: Section) => {
-    return get(getStatus(otherSection ?? section));
-  };
+  const getSectionStatus = (otherSection?: Section) =>
+    get(getStatus(otherSection ?? section));
 
   return {
     loading,

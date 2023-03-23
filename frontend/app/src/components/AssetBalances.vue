@@ -24,50 +24,48 @@ const { balances } = toRefs(props);
 const expanded: Ref<AssetBalanceWithPrice[]> = ref([]);
 
 const { t, tc } = useI18n();
-const total = computed(() => {
-  return bigNumberSum(balances.value.map(({ usdValue }) => usdValue));
-});
+const total = computed(() =>
+  bigNumberSum(balances.value.map(({ usdValue }) => usdValue))
+);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { assetInfo } = useAssetInfoRetrieval();
 
-const tableHeaders = computed<DataTableHeader[]>(() => {
-  return [
-    {
-      text: t('common.asset').toString(),
-      value: 'asset',
-      class: 'text-no-wrap'
-    },
-    {
-      text: t('common.price_in_symbol', {
-        symbol: get(currencySymbol)
-      }).toString(),
-      value: 'usdPrice',
-      align: 'end',
-      class: 'text-no-wrap'
-    },
-    {
-      text: t('common.amount').toString(),
-      value: 'amount',
-      align: 'end',
-      width: '50%'
-    },
-    {
-      text: t('common.value_in_symbol', {
-        symbol: get(currencySymbol)
-      }).toString(),
-      value: 'usdValue',
-      align: 'end',
-      class: 'text-no-wrap'
-    },
-    {
-      text: '',
-      width: '48px',
-      value: 'expand',
-      sortable: false
-    }
-  ];
-});
+const tableHeaders = computed<DataTableHeader[]>(() => [
+  {
+    text: t('common.asset').toString(),
+    value: 'asset',
+    class: 'text-no-wrap'
+  },
+  {
+    text: t('common.price_in_symbol', {
+      symbol: get(currencySymbol)
+    }).toString(),
+    value: 'usdPrice',
+    align: 'end',
+    class: 'text-no-wrap'
+  },
+  {
+    text: t('common.amount').toString(),
+    value: 'amount',
+    align: 'end',
+    width: '50%'
+  },
+  {
+    text: t('common.value_in_symbol', {
+      symbol: get(currencySymbol)
+    }).toString(),
+    value: 'usdValue',
+    align: 'end',
+    class: 'text-no-wrap'
+  },
+  {
+    text: '',
+    width: '48px',
+    value: 'expand',
+    sortable: false
+  }
+]);
 
 const sortItems = getSortItems(asset => get(assetInfo(asset)));
 </script>

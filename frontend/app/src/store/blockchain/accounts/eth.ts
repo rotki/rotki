@@ -204,9 +204,9 @@ export const useEthAccountsStore = defineStore(
       set(eth, removeTags(get(eth), tag));
     };
 
-    const ethAddresses: ComputedRef<string[]> = computed(() => {
-      return get(eth).map(({ address }) => address);
-    });
+    const ethAddresses: ComputedRef<string[]> = computed(() =>
+      get(eth).map(({ address }) => address)
+    );
 
     return {
       eth,

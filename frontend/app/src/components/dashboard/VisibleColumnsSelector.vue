@@ -15,32 +15,27 @@ const props = defineProps({
 
 const { group, groupLabel } = toRefs(props);
 
-const availableColumns = computed(() => {
-  return [
-    {
-      value: TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
-      text: t(
-        'dashboard_asset_table.headers.percentage_of_total_net_value'
-      ).toString()
-    },
-    {
-      value: TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP,
-      text: t(
-        'dashboard_asset_table.headers.percentage_of_total_current_group',
-        {
-          group: get(groupLabel) || get(group)
-        }
-      ).toString()
-    }
-  ];
-});
+const availableColumns = computed(() => [
+  {
+    value: TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
+    text: t(
+      'dashboard_asset_table.headers.percentage_of_total_net_value'
+    ).toString()
+  },
+  {
+    value: TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP,
+    text: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
+      group: get(groupLabel) || get(group)
+    }).toString()
+  }
+]);
 
 const store = useFrontendSettingsStore();
 const { dashboardTablesVisibleColumns } = storeToRefs(store);
 
-const currentVisibleColumns = computed(() => {
-  return get(dashboardTablesVisibleColumns)[get(group)];
-});
+const currentVisibleColumns = computed(
+  () => get(dashboardTablesVisibleColumns)[get(group)]
+);
 
 const onVisibleColumnsChange = async (visibleColumns: TableColumn[]) => {
   const payload: FrontendSettingsPayload = {

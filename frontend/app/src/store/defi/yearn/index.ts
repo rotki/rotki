@@ -128,15 +128,16 @@ export const useYearnStore = defineStore('defi/yearn', () => {
         const underlyingValue = zeroBalance();
         const vaultValue = zeroBalance();
         const values = { underlyingValue, vaultValue };
-        const summary = allBalances.reduce((sum, current) => {
-          return {
+        const summary = allBalances.reduce(
+          (sum, current) => ({
             vaultValue: balanceSum(sum.vaultValue, current.vaultValue),
             underlyingValue: balanceSum(
               sum.underlyingValue,
               current.underlyingValue
             )
-          };
-        }, values);
+          }),
+          values
+        );
         vaultAssets.push({
           vault: key,
           version,

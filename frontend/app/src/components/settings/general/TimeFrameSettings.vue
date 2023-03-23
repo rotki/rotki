@@ -45,46 +45,40 @@ const timeframes = Object.values(TimeFramePeriod);
 const { t } = useI18n();
 const premium = usePremium();
 
-const appendedVisibleTimeframes = computed(() => {
-  return [TimeFramePersist.REMEMBER, ...get(visibleTimeframes)];
-});
+const appendedVisibleTimeframes = computed(() => [
+  TimeFramePersist.REMEMBER,
+  ...get(visibleTimeframes)
+]);
 
-const invisibleTimeframes = computed(() => {
-  return timeframes.filter(item => {
-    return !isTimeframeVisible(item);
-  });
-});
+const invisibleTimeframes = computed(() =>
+  timeframes.filter(item => !isTimeframeVisible(item))
+);
 
-const selectableTimeframes = computed(() => {
-  return timeframes.filter(item => {
-    return !isTimeframeDisabled(item) && isTimeframeVisible(item);
-  });
-});
+const selectableTimeframes = computed(() =>
+  timeframes.filter(
+    item => !isTimeframeDisabled(item) && isTimeframeVisible(item)
+  )
+);
 
 const text = computed<string>(() => {
   const { success, error } = get(message);
   return success ? success : error;
 });
 
-const isTimeframeVisible = (timeframe: TimeFramePeriod): boolean => {
-  return get(visibleTimeframes).includes(timeframe);
-};
+const isTimeframeVisible = (timeframe: TimeFramePeriod): boolean =>
+  get(visibleTimeframes).includes(timeframe);
 
-const isTimeframesToggleable = (timeframe: TimeFrameSetting) => {
-  return timeframe !== TimeFramePersist.REMEMBER;
-};
+const isTimeframesToggleable = (timeframe: TimeFrameSetting) =>
+  timeframe !== TimeFramePersist.REMEMBER;
 
-const worksWithoutPremium = (period: TimeFrameSetting): boolean => {
-  return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
-};
+const worksWithoutPremium = (period: TimeFrameSetting): boolean =>
+  isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
 
-const isTimeframeDisabled = (timeframe: TimeFrameSetting) => {
-  return !get(premium) && !worksWithoutPremium(timeframe);
-};
+const isTimeframeDisabled = (timeframe: TimeFrameSetting) =>
+  !get(premium) && !worksWithoutPremium(timeframe);
 
-const chipClass = (timeframePeriod: TimeFrameSetting): string => {
-  return timeframePeriod === get(value) ? 'timeframe-settings--active' : '';
-};
+const chipClass = (timeframePeriod: TimeFrameSetting): string =>
+  timeframePeriod === get(value) ? 'timeframe-settings--active' : '';
 
 const timeframeChange = (timeframe: TimeFrameSetting) => {
   emit('timeframe-change', timeframe);
@@ -98,9 +92,10 @@ const updateVisibleTimeframes = async (
   newTimeFrames: TimeFramePeriod[],
   replaceCurrentSessionTimeframe = false
 ) => {
-  newTimeFrames.sort((a: TimeFramePeriod, b: TimeFramePeriod) => {
-    return timeframes.indexOf(a) - timeframes.indexOf(b);
-  });
+  newTimeFrames.sort(
+    (a: TimeFramePeriod, b: TimeFramePeriod) =>
+      timeframes.indexOf(a) - timeframes.indexOf(b)
+  );
 
   if (replaceCurrentSessionTimeframe) {
     const { updateSetting } = useFrontendSettingsStore();
@@ -122,9 +117,7 @@ const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
     timeframeChange(TimeFramePersist.REMEMBER);
   }
   await updateVisibleTimeframes(
-    get(visibleTimeframes).filter(item => {
-      return item !== timeframe;
-    }),
+    get(visibleTimeframes).filter(item => item !== timeframe),
     timeframe === get(currentSessionTimeframe)
   );
 };

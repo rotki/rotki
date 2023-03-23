@@ -24,13 +24,11 @@ const input = (_value: TimeFrameSetting) => {
 
 const premium = usePremium();
 
-const worksWithoutPremium = (period: TimeFrameSetting): boolean => {
-  return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
-};
+const worksWithoutPremium = (period: TimeFrameSetting): boolean =>
+  isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
 
-const activeClass = (timeframePeriod: TimeFrameSetting): string => {
-  return timeframePeriod === get(value) ? 'timeframe-selector--active' : '';
-};
+const activeClass = (timeframePeriod: TimeFrameSetting): string =>
+  timeframePeriod === get(value) ? 'timeframe-selector--active' : '';
 
 const { t } = useI18n();
 </script>

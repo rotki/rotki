@@ -13,9 +13,7 @@ const props = defineProps({
 
 const { identifier } = toRefs(props);
 
-const preview = computed<string | null>(() => {
-  return get(identifier) ?? null;
-});
+const preview = computed<string | null>(() => get(identifier) ?? null);
 const icon = ref<File | null>(null);
 
 const refreshIconLoading = ref<boolean>(false);

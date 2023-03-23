@@ -27,12 +27,9 @@ export const useKrakenStakingFilter = () => {
   const { krakenStakingEventTypeData } = useKrakenStakingEventTypes();
   const { tc } = useI18n();
 
-  const getEventTypeIdentifier = (label: string) => {
-    return (
-      get(krakenStakingEventTypeData).find(data => data.label === label)
-        ?.identifier ?? label
-    );
-  };
+  const getEventTypeIdentifier = (label: string) =>
+    get(krakenStakingEventTypeData).find(data => data.label === label)
+      ?.identifier ?? label;
 
   const matchers: ComputedRef<Matcher[]> = computed(() => {
     const krakenStakingEventTypeValues = get(krakenStakingEventTypeData).map(
@@ -66,12 +63,9 @@ export const useKrakenStakingFilter = () => {
         }),
         string: true,
         suggestions: () => [],
-        validate: value => {
-          return (
-            value.length > 0 &&
-            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-          );
-        },
+        validate: value =>
+          value.length > 0 &&
+          !isNaN(convertToTimestamp(value, get(dateInputFormat))),
         transformer: (date: string) =>
           convertToTimestamp(date, get(dateInputFormat)).toString()
       },
@@ -84,12 +78,9 @@ export const useKrakenStakingFilter = () => {
         }).toString(),
         string: true,
         suggestions: () => [],
-        validate: value => {
-          return (
-            value.length > 0 &&
-            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-          );
-        },
+        validate: value =>
+          value.length > 0 &&
+          !isNaN(convertToTimestamp(value, get(dateInputFormat))),
         transformer: (date: string) =>
           convertToTimestamp(date, get(dateInputFormat)).toString()
       }

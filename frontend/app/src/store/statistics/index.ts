@@ -60,9 +60,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
     return get(calculateTotalValue(get(nftsInNetValue))).multipliedBy(rate);
   });
 
-  const totalNetWorthUsd = computed(() => {
-    return get(calculateTotalValue(true));
-  });
+  const totalNetWorthUsd = computed(() => get(calculateTotalValue(true)));
 
   const overall = computed(() => {
     const currency = get(currencySymbol);

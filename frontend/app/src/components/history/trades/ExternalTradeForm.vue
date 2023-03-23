@@ -129,21 +129,21 @@ const triggerFeeValidator = () => {
   get(feeCurrencyInput)?.autoCompleteInput?.validate(true);
 };
 
-const baseHint = computed<string>(() => {
-  return get(type) === 'buy'
+const baseHint = computed<string>(() =>
+  get(type) === 'buy'
     ? t('external_trade_form.buy_base').toString()
-    : t('external_trade_form.sell_base').toString();
-});
+    : t('external_trade_form.sell_base').toString()
+);
 
-const quoteHint = computed<string>(() => {
-  return get(type) === 'buy'
+const quoteHint = computed<string>(() =>
+  get(type) === 'buy'
     ? t('external_trade_form.buy_quote').toString()
-    : t('external_trade_form.sell_quote').toString();
-});
+    : t('external_trade_form.sell_quote').toString()
+);
 
-const shouldRenderSummary = computed<boolean>(() => {
-  return !!(get(type) && get(base) && get(quote) && get(amount) && get(rate));
-});
+const shouldRenderSummary = computed<boolean>(
+  () => !!(get(type) && get(base) && get(quote) && get(amount) && get(rate))
+);
 
 const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
 

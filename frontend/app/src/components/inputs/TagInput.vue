@@ -47,11 +47,10 @@ const randomScheme = () => {
 
 const colorScheme = ref(randomScheme());
 
-const tagExists = (tagName: string): boolean => {
-  return get(tags)
+const tagExists = (tagName: string): boolean =>
+  get(tags)
     .map(({ name }) => name)
     .includes(tagName);
-};
 
 const createTag = async (name: string) => {
   const { backgroundColor, foregroundColor } = get(colorScheme);
@@ -103,17 +102,17 @@ watch(search, (keyword: string | null, previous: string | null) => {
   }
 });
 
-const newTagBackground = computed<string>(() => {
-  return `#${get(colorScheme).backgroundColor}`;
-});
+const newTagBackground = computed<string>(
+  () => `#${get(colorScheme).backgroundColor}`
+);
 
-const newTagForeground = computed<string>(() => {
-  return `#${get(colorScheme).foregroundColor}`;
-});
+const newTagForeground = computed<string>(
+  () => `#${get(colorScheme).foregroundColor}`
+);
 
-const values = computed<Tag[]>(() => {
-  return get(tags).filter(({ name }) => get(value).includes(name));
-});
+const values = computed<Tag[]>(() =>
+  get(tags).filter(({ name }) => get(value).includes(name))
+);
 </script>
 
 <template>

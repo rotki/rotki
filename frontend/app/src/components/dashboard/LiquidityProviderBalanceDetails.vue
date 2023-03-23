@@ -64,16 +64,13 @@ const premium = usePremium();
 
 const { assetPrice } = useBalancePricesStore();
 
-const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] => {
-  return assets.map(item => {
-    return {
-      asset: item.asset,
-      usdPrice: item.usdPrice ?? get(assetPrice(item.asset)) ?? Zero,
-      amount: item.userBalance.amount,
-      usdValue: item.userBalance.usdValue
-    };
-  });
-};
+const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] =>
+  assets.map(item => ({
+    asset: item.asset,
+    usdPrice: item.usdPrice ?? get(assetPrice(item.asset)) ?? Zero,
+    amount: item.userBalance.amount,
+    usdValue: item.userBalance.usdValue
+  }));
 </script>
 <template>
   <table-expand-container visible :colspan="span" :padded="false">

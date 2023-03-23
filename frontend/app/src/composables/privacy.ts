@@ -4,9 +4,9 @@ export const usePrivacyMode = () => {
   const store = useSessionSettingsStore();
   const { privacyMode } = storeToRefs(store);
 
-  const privacyModeIcon = computed<string>(() => {
-    return ['mdi-eye', 'mdi-eye-minus', 'mdi-eye-off'][get(privacyMode)];
-  });
+  const privacyModeIcon = computed<string>(
+    () => ['mdi-eye', 'mdi-eye-minus', 'mdi-eye-off'][get(privacyMode)]
+  );
 
   const changePrivacyMode = (mode: PrivacyMode) => {
     store.update({ privacyMode: mode });

@@ -61,12 +61,10 @@ export const AssetInfo = z.object({
   imageUrl: z.string().nullish()
 });
 
-export const AssetInfoWithTransformer = AssetInfo.transform(data => {
-  return {
-    ...data,
-    isCustomAsset: data.isCustomAsset || data.assetType === 'custom asset'
-  };
-});
+export const AssetInfoWithTransformer = AssetInfo.transform(data => ({
+  ...data,
+  isCustomAsset: data.isCustomAsset || data.assetType === 'custom asset'
+}));
 
 export type AssetInfo = z.infer<typeof AssetInfo>;
 

@@ -57,13 +57,12 @@ export const useSnapshotApi = () => {
     return handleResponse(response);
   };
 
-  const downloadSnapshot = async (timestamp: number): Promise<any> => {
-    return api.instance.get<any>(`/snapshots/${timestamp}`, {
+  const downloadSnapshot = async (timestamp: number): Promise<any> =>
+    api.instance.get<any>(`/snapshots/${timestamp}`, {
       params: snakeCaseTransformer({ action: 'download' }),
       validateStatus: validWithoutSessionStatus,
       responseType: 'blob'
     });
-  };
 
   const deleteSnapshot = async (payload: {
     timestamp: number;

@@ -54,9 +54,7 @@ const expanded = ref<MappedGroupedItems[]>([]);
 
 const tableRef = ref<any>(null);
 
-const tableContainer = computed(() => {
-  return get(tableRef)?.$el;
-});
+const tableContainer = computed(() => get(tableRef)?.$el);
 
 const { t } = useI18n();
 
@@ -148,9 +146,7 @@ const addLedgerAction = (item: MissingAcquisition) => {
   set(openLedgerActionDialog, true);
 };
 
-const isIgnored = (asset: string) => {
-  return get(isAssetIgnored(asset));
-};
+const isIgnored = (asset: string) => get(isAssetIgnored(asset));
 </script>
 <template>
   <div>

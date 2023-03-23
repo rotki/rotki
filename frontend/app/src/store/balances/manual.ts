@@ -40,23 +40,20 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
 
-  const manualBalances: ComputedRef<ManualBalanceWithValue[]> = computed(() => {
-    return get(manualBalancesData).filter(
-      x => x.balanceType === BalanceType.ASSET
-    );
-  });
-
-  const manualLiabilities: ComputedRef<ManualBalanceWithValue[]> = computed(
-    () => {
-      return get(manualBalancesData).filter(
-        x => x.balanceType === BalanceType.LIABILITY
-      );
-    }
+  const manualBalances: ComputedRef<ManualBalanceWithValue[]> = computed(() =>
+    get(manualBalancesData).filter(x => x.balanceType === BalanceType.ASSET)
   );
 
-  const manualLabels = computed<string[]>(() => {
-    return get(manualBalancesData).map(x => x.label);
-  });
+  const manualLiabilities: ComputedRef<ManualBalanceWithValue[]> = computed(
+    () =>
+      get(manualBalancesData).filter(
+        x => x.balanceType === BalanceType.LIABILITY
+      )
+  );
+
+  const manualLabels = computed<string[]>(() =>
+    get(manualBalancesData).map(x => x.label)
+  );
 
   const manualBalanceByLocation: ComputedRef<LocationBalance[]> = computed(
     () => {

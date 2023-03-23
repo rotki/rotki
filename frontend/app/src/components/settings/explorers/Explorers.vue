@@ -32,9 +32,8 @@ onMounted(() => {
   onChange();
 });
 
-const isValid = (entry: string | null): boolean => {
-  return !entry ? false : entry.length > 0;
-};
+const isValid = (entry: string | null): boolean =>
+  !entry ? false : entry.length > 0;
 
 const saveAddress = async (newAddress?: string) => {
   set(address, newAddress ?? '');

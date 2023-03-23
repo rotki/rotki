@@ -26,9 +26,8 @@ const {
   deleteHistoricalPrice
 } = useAssetPricesApi();
 
-const createKey = (item: MissingPrice) => {
-  return item.fromAsset + item.toAsset + item.time;
-};
+const createKey = (item: MissingPrice) =>
+  item.fromAsset + item.toAsset + item.time;
 
 const getHistoricalPrices = async () => {
   set(prices, await fetchHistoricalPrices());
@@ -40,15 +39,14 @@ onMounted(async () => {
 
 const refreshedHistoricalPrices: Ref<Record<string, BigNumber>> = ref({});
 
-const formattedItems = computed<EditableMissingPrice[]>(() => {
-  return get(items).map(item => {
-    const savedHistoricalPrice = get(prices).find(price => {
-      return (
+const formattedItems = computed<EditableMissingPrice[]>(() =>
+  get(items).map(item => {
+    const savedHistoricalPrice = get(prices).find(
+      price =>
         price.fromAsset === item.fromAsset &&
         price.toAsset === item.toAsset &&
         price.timestamp === item.time
-      );
-    });
+    );
 
     const key = createKey(item);
     const savedPrice = savedHistoricalPrice?.price;
@@ -69,8 +67,8 @@ const formattedItems = computed<EditableMissingPrice[]>(() => {
       price,
       useRefreshedHistoricalPrice
     };
-  });
-});
+  })
+);
 
 const updatePrice = async (item: EditableMissingPrice) => {
   if (item.useRefreshedHistoricalPrice) {
@@ -116,9 +114,7 @@ const updatePrice = async (item: EditableMissingPrice) => {
 
 const tableRef = ref<any>(null);
 
-const tableContainer = computed(() => {
-  return get(tableRef)?.$el;
-});
+const tableContainer = computed(() => get(tableRef)?.$el);
 
 const headers = computed<DataTableHeader[]>(() => [
   {

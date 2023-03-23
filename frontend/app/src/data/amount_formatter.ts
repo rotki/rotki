@@ -20,9 +20,9 @@ export class AmountFormatter {
       roundingMode === undefined ? BigNumber.ROUND_DOWN : roundingMode;
 
     if (abbreviateNumber) {
-      const usedAbbreviation = abbreviationList.find(([digitNum, _]) => {
-        return amount.abs().gte((10 ** digitNum) as number);
-      });
+      const usedAbbreviation = abbreviationList.find(([digitNum, _]) =>
+        amount.abs().gte((10 ** digitNum) as number)
+      );
 
       if (usedAbbreviation) {
         return `${amount

@@ -24,35 +24,31 @@ const injectEnv = (envName = '.env') => {
 /**
  * @param {{name: string; configFile: string }} param0
  */
-const getBuilder = ({ name, configFile }) => {
-  return build({
+const getBuilder = ({ name, configFile }) =>
+  build({
     ...sharedConfig,
     mode,
     configFile,
     plugins: [{ name }]
   });
-};
 
-const setupMainBuilder = () => {
-  return getBuilder({
+const setupMainBuilder = () =>
+  getBuilder({
     name: 'build-main',
     configFile: 'vite.config.main.ts'
   });
-};
 
-const setupPreloadBuilder = () => {
-  return getBuilder({
+const setupPreloadBuilder = () =>
+  getBuilder({
     name: 'build-preload',
     configFile: 'vite.config.preload.ts'
   });
-};
 
-const setupRendererBuilder = () => {
-  return getBuilder({
+const setupRendererBuilder = () =>
+  getBuilder({
     name: 'build-renderer',
     configFile: 'vite.config.ts'
   });
-};
 
 (async () => {
   try {

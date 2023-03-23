@@ -95,12 +95,10 @@ watch([keyword, suggestion], async ([keyword, suggestion]) => {
   } else if ('asset' in suggestion) {
     if (searchString) {
       suggestedItems = (await suggestion.suggestions(searchString)).map(
-        asset => {
-          return {
-            key: suggestedFilter,
-            value: asset
-          };
-        }
+        asset => ({
+          key: suggestedFilter,
+          value: asset
+        })
       );
     }
   } else {

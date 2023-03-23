@@ -58,12 +58,12 @@ const onSelectedChange = (selected: UserDbBackup[]) => {
 };
 
 const itemsWithIndex: ComputedRef<(UserDbBackup & { index: number })[]> =
-  computed(() => {
-    return get(items).map((item, index) => ({
+  computed(() =>
+    get(items).map((item, index) => ({
       ...item,
       index
-    }));
-  });
+    }))
+  );
 
 const { show } = useConfirmStore();
 

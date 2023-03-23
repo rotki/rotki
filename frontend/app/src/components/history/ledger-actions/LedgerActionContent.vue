@@ -288,9 +288,8 @@ const showDeleteConfirmation = () => {
   );
 };
 
-const getItemClass = (item: LedgerActionEntry) => {
-  return item.ignoredInAccounting ? 'darken-row' : '';
-};
+const getItemClass = (item: LedgerActionEntry) =>
+  item.ignoredInAccounting ? 'darken-row' : '';
 
 const pageRoute = Routes.HISTORY_LEDGER_ACTIONS;
 

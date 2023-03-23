@@ -82,9 +82,7 @@ const add = () => emit('add');
 const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
-const formatType = (string?: string) => {
-  return toSentenceCase(string ?? 'EVM token');
-};
+const formatType = (string?: string) => toSentenceCase(string ?? 'EVM token');
 
 const getAsset = (item: SupportedAsset) => {
   const name =

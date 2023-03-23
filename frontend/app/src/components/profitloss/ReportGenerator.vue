@@ -9,13 +9,11 @@ const { t } = useI18n();
 const range = ref({ start: '', end: '' });
 const valid = ref<boolean>(false);
 
-const startTimestamp = computed<number>(() => {
-  return convertToTimestamp(get(range).start);
-});
+const startTimestamp = computed<number>(() =>
+  convertToTimestamp(get(range).start)
+);
 
-const endTimestamp = computed<number>(() => {
-  return convertToTimestamp(get(range).end);
-});
+const endTimestamp = computed<number>(() => convertToTimestamp(get(range).end));
 
 const generate = () => {
   emit('generate', {

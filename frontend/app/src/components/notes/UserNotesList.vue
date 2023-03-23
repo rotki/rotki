@@ -9,14 +9,12 @@ import {
 } from '@/utils/collection';
 import { logger } from '@/utils/logging';
 
-const getDefaultForm = () => {
-  return {
-    title: '',
-    content: '',
-    isPinned: false,
-    location: ''
-  };
-};
+const getDefaultForm = () => ({
+  title: '',
+  content: '',
+  isPinned: false,
+  location: ''
+});
 
 const props = defineProps({
   location: {

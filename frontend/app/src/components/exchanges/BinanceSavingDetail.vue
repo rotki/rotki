@@ -101,55 +101,51 @@ onMounted(async () => {
 const { tc } = useI18n();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const tableHeaders = computed<DataTableHeader[]>(() => {
-  return [
-    {
-      text: tc('common.datetime'),
-      value: 'timestamp'
-    },
-    {
-      text: tc('common.asset'),
-      value: 'asset',
-      sortable: false
-    },
-    {
-      text: tc('common.amount'),
-      value: 'amount',
-      align: 'end'
-    },
-    {
-      text: tc('common.value_in_symbol', 0, {
-        symbol: get(currencySymbol)
-      }),
-      value: 'usdValue',
-      align: 'end',
-      sortable: false
-    }
-  ];
-});
+const tableHeaders = computed<DataTableHeader[]>(() => [
+  {
+    text: tc('common.datetime'),
+    value: 'timestamp'
+  },
+  {
+    text: tc('common.asset'),
+    value: 'asset',
+    sortable: false
+  },
+  {
+    text: tc('common.amount'),
+    value: 'amount',
+    align: 'end'
+  },
+  {
+    text: tc('common.value_in_symbol', 0, {
+      symbol: get(currencySymbol)
+    }),
+    value: 'usdValue',
+    align: 'end',
+    sortable: false
+  }
+]);
 
-const receivedTableHeaders = computed<DataTableHeader[]>(() => {
-  return [
-    {
-      text: tc('common.asset'),
-      value: 'asset',
-      sortable: false
-    },
-    {
-      text: tc('common.amount'),
-      value: 'amount',
-      align: 'end'
-    },
-    {
-      text: tc('common.value_in_symbol', 0, {
-        symbol: get(currencySymbol)
-      }),
-      value: 'usdValue',
-      align: 'end',
-      sortable: false
-    }
-  ];
-});
+const receivedTableHeaders = computed<DataTableHeader[]>(() => [
+  {
+    text: tc('common.asset'),
+    value: 'asset',
+    sortable: false
+  },
+  {
+    text: tc('common.amount'),
+    value: 'amount',
+    align: 'end'
+  },
+  {
+    text: tc('common.value_in_symbol', 0, {
+      symbol: get(currencySymbol)
+    }),
+    value: 'usdValue',
+    align: 'end',
+    sortable: false
+  }
+]);
 </script>
 
 <template>

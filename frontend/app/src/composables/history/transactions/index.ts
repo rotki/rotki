@@ -119,12 +119,11 @@ export const useTransactions = () => {
     }
 
     const txAccounts: EvmChainAddress[] = get(accounts)
-      .filter(({ chain }) => {
-        return (
+      .filter(
+        ({ chain }) =>
           supportsTransactions(chain) &&
           (chains.length === 0 || chains.includes(chain))
-        );
-      })
+      )
       .map(({ address, chain }) => ({
         address,
         evmChain: getEvmChainName(chain)!
@@ -280,16 +279,13 @@ export const useTransactions = () => {
 
   const getTransactionsNotesWords = (
     transactions: EthTransactionEntry[]
-  ): string[] => {
-    return transactions
-      .flatMap(transaction => {
-        return transaction.decodedEvents!.map(event => {
-          return event.entry.notes;
-        });
-      })
+  ): string[] =>
+    transactions
+      .flatMap(transaction =>
+        transaction.decodedEvents!.map(event => event.entry.notes)
+      )
       .join(' ')
       .split(/\s|\\n/);
-  };
 
   const getNotesAddresses = (transactions: EthTransactionEntry[]): string[] =>
     filterAddressesFromWords(getTransactionsNotesWords(transactions));

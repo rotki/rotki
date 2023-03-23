@@ -50,11 +50,11 @@ const confirmSave = async () => {
 
 const { tc } = useI18n();
 
-const title: ComputedRef<string> = computed(() => {
-  return get(editableItem)
+const title: ComputedRef<string> = computed(() =>
+  get(editableItem)
     ? tc('transactions.events.dialog.edit.title')
-    : tc('transactions.events.dialog.add.title');
-});
+    : tc('transactions.events.dialog.add.title')
+);
 </script>
 <template>
   <big-dialog

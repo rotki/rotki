@@ -78,12 +78,10 @@ const end = computed(() => {
   return `${endDate}/${year.value} 23:59:59`;
 });
 
-const periodEventPayload = computed<PeriodChangedEvent>(() => {
-  return {
-    start: start.value,
-    end: end.value
-  };
-});
+const periodEventPayload = computed<PeriodChangedEvent>(() => ({
+  start: start.value,
+  end: end.value
+}));
 
 onMounted(() => {
   updatePeriod(year.value !== 'custom' ? periodEventPayload.value : null);
