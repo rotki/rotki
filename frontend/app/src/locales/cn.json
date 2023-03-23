@@ -2999,100 +2999,100 @@
     "dismiss_tooltip": "关闭通知"
   },
   "notification_indicator": {
-    "tooltip": "Notifications"
+    "tooltip": "通知"
   },
   "notification_messages": {
     "backend": {
-      "title": "Backend"
+      "title": "后端"
     },
     "premium": {
       "active": {
-        "message": "Your premium subscription is detected.",
-        "title": "Premium features activated"
+        "message": "检测到您的高级订阅。",
+        "title": "高级功能已激活"
       },
       "inactive": {
-        "expired_message": "Your premium subscription is expired. Go to rotki website to renew your subscription.",
-        "network_problem_message": "We couldn't verify your premium subscription due to network problems.",
-        "title": "Premium features deactivated"
+        "expired_message": "您的高级订阅已过期。前往 rotki 网站续订您的订阅。",
+        "network_problem_message": "由于网络问题，我们无法验证您的高级订阅。",
+        "title": "高级功能已停用"
       }
     },
     "new_detected_token": {
-      "action": "See more",
-      "title": "New Token Detected|New Tokens Detected",
-      "message": "New token with identifier {identifier} was detected from event processing and queries.|{count} new tokens were detected from event processing and queries."
+      "action": "查看更多",
+      "title": "检测到新令牌|检测到新令牌",
+      "message": "从事件处理和查询中检测到标识符为 {identifier} 的新令牌。|从事件处理和查询中检测到 {count} 个新令牌。"
     },
     "snapshot_failed": {
-      "message": "Could not save the balance snapshot at {location}. {error}",
-      "title": "Balance Snapshot failed"
+      "message": "无法在{location} 保存余额快照。{error}",
+      "title": "余额快照失败"
     },
     "address_migration": {
-      "title": "Address has been added to {chain}|Addresses have been added to {chain}",
-      "message": "The following address has been added to {chain}: {addresses}|The following addresses have been added to {chain}: {addresses}"
+      "title": "地址已添加到{chain}|地址已添加到{chain}",
+      "message": "以下地址已添加到{chain}:{addresses}|以下地址已添加到{chain}:{addresses}"
     }
   },
   "notification_popup": {
-    "dismiss_all": "Dismiss all the pending notifications",
-    "tooltip": "Number of Pending notifications"
+    "dismiss_all": "关闭所有待处理的通知",
+    "tooltip": "待处理通知数"
   },
   "notification_sidebar": {
-    "clear_tooltip": "Clear all notifications",
-    "close_tooltip": "Close the notification area",
+    "clear_tooltip": "清除所有通知",
+    "close_tooltip": "关闭通知区域",
     "confirmation": {
-      "message": "This action will clear all the active notifications. Do you want to proceed?",
-      "title": "Clear active notifications"
+      "message": "此操作将清除所有活动通知。你想继续吗？",
+      "title": "清除活动通知"
     },
-    "no_messages": "No messages!",
-    "title": "Notifications"
+    "no_messages": "没有消息！",
+    "title": "通知"
   },
   "oracle_cache_management": {
-    "clear_error": "Clearing the cache for {fromAsset} to {toAsset} failed: {error}",
-    "create_cache": "Cache Pair prices",
-    "create_tooltip": "Fetch and cache historical prices for the specified price pair",
+    "clear_error": "清除 {fromAsset} 到 {toAsset} 的缓存失败：{error}",
+    "create_cache": "缓存对价格",
+    "create_tooltip": "获取并缓存指定价格对的历史价格",
     "delete_confirmation": {
-      "message": "Are you sure you want to delete all cached prices for the {fromAsset} to {toAsset} pair on {selection}?",
-      "title": "Delete all the cached prices"
+      "message": "您确定要删除 {selection} 上 {fromAsset} 到 {toAsset} 对的所有缓存价格吗？",
+      "title": "删除所有缓存价格"
     },
-    "delete_tooltip": "Delete the prices cached for this pair and the selected price oracle",
-    "from_asset": "From Asset",
+    "delete_tooltip": "删除为这对缓存的价格和选定的价格 oracle",
+    "from_asset": "来自资产",
     "headers": {
-      "from": "From Asset",
-      "from_date": "From Date",
-      "to": "To Asset",
-      "to_date": "To Date"
+      "from": "来自资产",
+      "from_date": "起始日期",
+      "to": "到资产",
+      "to_date": "截止日期"
     },
     "notification": {
-      "error": "The cache creation for pair {fromAsset} to {toAsset} on failed: {error}",
-      "success": "The cache for pair {fromAsset} to {toAsset} on {source} was successfully created",
-      "title": "Price pair cache creation"
+      "error": "为 {fromAsset} 到 {toAsset} 对创建缓存失败：{error}",
+      "success": "{source} 上 {fromAsset} 到 {toAsset} 对的缓存已成功创建",
+      "title": "价格对缓存创建"
     },
-    "select_oracle": "Select price oracle",
-    "subtitle": "Create/delete and view cached prices",
-    "title": "Oracle cache",
-    "to_asset": "To Asset"
+    "select_oracle": "选择价格预言机",
+    "subtitle": "创建/删除和查看缓存价格",
+    "title": "甲骨文缓存",
+    "to_asset": "到资产"
   },
   "oracles": {
-    "manual_latest": "Manual latest",
+    "manual_latest": "最新手册",
     "uniswap_v2": "Uniswap V2",
     "uniswap_v3": "Uniswap V3"
   },
   "overall_balances": {
-    "loading": "LOADING",
-    "premium_hint": "Get the full experience by upgrading to rotki premium"
+    "loading": "加载中",
+    "premium_hint": "通过升级到 rotki premium 获得完整体验"
   },
   "overview": {
     "details_dialog": {
-      "subtitle": "Protocol asset details"
+      "subtitle": "协议资产详情"
     },
     "stat_card": {
       "content": {
         "labels": {
-          "total_collateral": "Total Collateral",
-          "total_debt": "Total Debt",
-          "total_deposited": "Total Deposited"
+          "total_collateral": "总抵押品",
+          "total_debt": "总债务",
+          "total_deposited": "总存款"
         }
       },
       "headers": {
-        "borrowing": "Liabilities"
+        "borrowing": "负债"
       }
     }
   },
@@ -3103,85 +3103,85 @@
     "symbol": "%"
   },
   "pinned": {
-    "tooltip": "Pinned Section"
+    "tooltip": "固定部分"
   },
   "poap_delivery_airdrops": {
-    "title": "Claimable POAP Delivery NFTs"
+    "title": "可领取的 POAP 交付 NFT"
   },
   "premium_components": {
     "aave_borrowing": {
-      "total_earned": "Total Earned",
-      "total_earned_hint": "By debt repayment from liquidation",
-      "total_lost": "Total Lost",
-      "total_lost_hint": "By debt interest and liquidation"
+      "total_earned": "总收入",
+      "total_earned_hint": "通过清算偿还债务",
+      "total_lost": "全部丢失",
+      "total_lost_hint": "通过债务利息和清算"
     },
     "aave_earned": {
-      "total": "Aave: Total earned",
-      "total_hint": "From deposit interest"
+      "total": "Aave: 总收入",
+      "total_hint": "来自存款利息"
     },
     "common": {
       "apr": "APR",
-      "asset": "Asset",
-      "collateral": "Collateral",
-      "debt": "Debt",
-      "no_entries_found": "No {title} entries found",
-      "pool": "Pool",
-      "profit_loss": "Profit/Loss",
+      "asset": "资产",
+      "collateral": "抵押品",
+      "debt": "债务",
+      "no_entries_found": "未找到 {title} 条目",
+      "pool": "池",
+      "profit_loss": "盈利/亏损",
       "select_address": "@:common.select_address"
     },
     "compound": {
-      "debt_loss": "Debt Loss",
-      "interest_profit": "Interest Profit",
-      "liquidation_profit": "Liquidation profit",
-      "rewards": "Rewards"
+      "debt_loss": "债务损失",
+      "interest_profit": "利息利润",
+      "liquidation_profit": "清算利润",
+      "rewards": "奖励"
     },
     "eth2_staking": {
-      "based_of_performance": "Based of performance of",
-      "corresponds_to_percentage_of_the_validator_pnl": "This corresponds to {percentage} % of the validator pnl.",
+      "based_of_performance": "基于性能",
+      "corresponds_to_percentage_of_the_validator_pnl": "这对应于验证者 pnl 的 {percentage} %。",
       "current": {
-        "description": "Based on the current price of ETH",
-        "title": "Current"
+        "description": "基于ETH当前价格",
+        "title": "当前"
       },
       "daily": {
-        "description": "Based on the daily prices of ETH",
-        "title": "Daily"
+        "description": "基于ETH的每日价格",
+        "title": "每日"
       },
-      "daily_stats": "Daily Stats",
-      "earned": "Earned",
+      "daily_stats": "每日统计",
+      "earned": "获得",
       "headers": {
-        "attestations": "Attestations",
-        "blocks": "Blocks",
-        "deposited_amount": "Deposited Amount",
-        "deposits_number": "Deposits Number",
-        "end": "End",
-        "included_attester_slashings": "Included Attester Slashings",
-        "income": "Income",
-        "missed_attestations": "Missed Attestations",
-        "missed_blocks": "Missed Blocks",
-        "orphaned_attestations": "Orphaned Attestations",
-        "orphaned_blocks": "Orphaned Blocks",
-        "proposed_blocks": "Proposed Blocks",
-        "proposer_attester_slashings": "Proposer Attester Slashings",
-        "public_key": "Public key",
-        "slashing": "Slashing",
-        "start": "Start",
-        "validator": "Validator",
-        "value": "Value"
+        "attestations": "证明",
+        "blocks": "块",
+        "deposited_amount": "存款金额",
+        "deposits_number": "存款数量",
+        "end": "结束",
+        "included_attester_slashings": "包括证明者罚没",
+        "income": "收入",
+        "missed_attestations": "遗漏证明",
+        "missed_blocks": "错过的区块",
+        "orphaned_attestations": "孤立的证明",
+        "orphaned_blocks": "孤立块",
+        "proposed_blocks": "提议的区块",
+        "proposer_attester_slashings": "提议者证明者削减",
+        "public_key": "公钥",
+        "slashing": "削减",
+        "start": "开始",
+        "validator": "验证器",
+        "value": "价值"
       },
-      "overview": "Overview",
+      "overview": "概述",
       "ranges": {
         "one_day": "1D",
         "one_month": "1M",
         "one_week": "1W",
         "one_year": "1Y"
       },
-      "staking_per_beacon_chain": "Staking per beacon chain validator",
-      "staking_per_eth1_address": "Staking per ETH1 address",
-      "total_based_on_eth_daily_prices": "The total is based on the daily prices of ETH",
-      "validator_index": "Validator index"
+      "staking_per_beacon_chain": "每个信标链验证器的 Staking",
+      "staking_per_eth1_address": "每个 ETH1 地址的 Staking",
+      "total_based_on_eth_daily_prices": "总量基于 ETH 的每日价格",
+      "validator_index": "验证器索引"
     },
     "lending": {
-      "yearn_inaccuracy": "Historic fiat price for yearn.finance vault events may be inaccurate."
+      "yearn_inaccuracy": "yearn.finance 金库事件的历史法定价格可能不准确。"
     },
     "liquidity": {
       "headers": {
@@ -3193,8 +3193,8 @@
       }
     },
     "staking": {
-      "balance_overview": "Balance Overview",
-      "detail_for_address": "Detail for {address}",
+      "balance_overview": "余额概览",
+      "detail_for_address": "{address} 的详细信息",
       "headers": {
         "issuance": "Issuance +",
         "operation": "Operation",
