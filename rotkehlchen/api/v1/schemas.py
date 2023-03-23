@@ -3,9 +3,10 @@ from enum import auto
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, get_args
 from uuid import uuid4
 
+import marshmallow
 import webargs
 from eth_utils import to_checksum_address
-from marshmallow import Schema, fields, post_load, validates_schema
+from marshmallow import Schema, fields, post_load, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
@@ -2997,3 +2998,32 @@ class BinanceSavingsSchema(BaseStakingQuerySchema):
 
 class EnsAvatarsSchema(Schema):
     ens_name = fields.String(required=True, validate=lambda x: x.endswith('.eth'))
+
+
+class ClearCacheSchema(Schema):
+    cache_type = fields.String(
+        required=True,
+        validate=[validate.OneOf({'icons', 'avatars', 'prices'})],
+    )
+
+    class Meta:
+        # this is to allow further validation depending on cache_type
+        unknown = marshmallow.EXCLUDE
+
+
+class ClearIconsCacheSchema(Schema):
+    icons = fields.List(
+        AssetField(
+            required=True,
+            expected_type=Asset,
+            form_with_incomplete_data=True,
+        ),
+        load_default=None,
+    )
+
+
+class ClearAvatarsCacheSchema(Schema):
+    avatars = fields.List(
+        fields.String(required=True, validate=lambda x: x.endswith('.eth')),
+        load_default=None,
+    )

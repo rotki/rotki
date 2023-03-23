@@ -12408,3 +12408,47 @@ Get avatar for an ens name
    :statuscode 400: Invalid ens name provided (it doesn't end with `.eth`).
    :statuscode 404: There is no avatar set for the given ens name.
    :statuscode 409: Avatar was requested for an ens name that is not currently in the database or we couldn't query the blockchain.
+
+
+Clear Icons/Avatars Cache
+=================================
+
+.. http:post:: /api/(version)/cache/<cache_type>/clear
+
+   Doing a POST on this endpoint will clear the cache of avatars/icons depending on the ``cache_type``. Valid options of ``cache_type`` are ``icons`` & ``avatars``.
+
+   **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/cache/icons/clear HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+         "icons": ["ETH", "BTC"]
+      }
+
+    .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/cache/avatars/clear HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+         "avatars": ["rotki.eth", "nebolax.eth"]
+      }
+
+   :reqjsonarr optional[string] icons: An array of the icons to be cleared from the cache. All icons are deleted in the cache if ``null``. Only works with ``cache_type=icons``.
+   :reqjsonarr optional[string] avatars: An array of the avatars to be cleared from the cache. All avatars are deleted in the cache if ``null``. Only works with ``cache_type=avatars``.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+   :statuscode 200: The cache items were cleared successfully.
+   :statuscode 400: Entries provided do not match the ``cache_type`` specified. Invalid ``cache_type`` provided.
+   :statuscode 500: Internal rotki error

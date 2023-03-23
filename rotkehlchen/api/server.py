@@ -49,6 +49,7 @@ from rotkehlchen.api.v1.resources import (
     BlockchainBalancesResource,
     BlockchainsAccountsResource,
     BTCXpubResource,
+    ClearCacheResource,
     CompoundBalancesResource,
     CompoundHistoryResource,
     ConfigurationsResource,
@@ -314,6 +315,7 @@ URLS_V1: URLS = [
         'per_timestamp_db_snapshots_resource',
     ),
     ('/notes', UserNotesResource),
+    ('/cache/<string:cache_type>/clear', ClearCacheResource),
 ]
 
 logger = logging.getLogger(__name__)
