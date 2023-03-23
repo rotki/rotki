@@ -4234,3 +4234,41 @@ class RestAPI():
                 )
 
         return maybe_create_image_response(image_path=avatar_path)
+
+    def clear_icons_cache(self, icons: Optional[list[Asset]]) -> Response:
+        """Clears cache entries for the specified icons.
+
+        If no icons are provided, the icons cache is cleared entirely.
+        """
+        icons_dir = self.rotkehlchen.icon_manager.icons_dir
+        if icons is None:
+            for entry in icons_dir.iterdir():
+                if entry.is_file() and entry.parent != icons_dir / 'avatars':
+                    entry.unlink()
+
+            return api_response(OK_RESULT)
+
+        for icon in icons:
+            self.rotkehlchen.icon_manager.delete_icon(icon)
+
+        return api_response(OK_RESULT)
+
+    def clear_avatars_cache(self, avatars: Optional[list[str]]) -> Response:
+        """Clears cache entries for the specified avatars of ENS names.
+
+        If no avatars are provided, the avatars cache is cleared entirely.
+        """
+        avatars_dir = self.rotkehlchen.icon_manager.icons_dir / 'avatars'
+        if avatars is None:
+            for entry in avatars_dir.iterdir():
+                if entry.is_file():
+                    entry.unlink()
+
+            return api_response(OK_RESULT)
+
+        avatars_to_delete = [avatars_dir / f'{avatar_name}.png' for avatar_name in avatars]
+        for avatar in avatars_to_delete:
+            if avatar.is_file():
+                avatar.unlink()
+
+        return api_response(OK_RESULT)

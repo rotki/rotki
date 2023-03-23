@@ -85,7 +85,7 @@ class IconManager():
 
     def __init__(self, data_dir: Path, coingecko: Coingecko) -> None:
         self.icons_dir = data_dir / 'icons'
-        self.custom_icons_dir = data_dir / 'icons' / 'custom'
+        self.custom_icons_dir = self.icons_dir / 'custom'
         self.coingecko = coingecko
         self.icons_dir.mkdir(parents=True, exist_ok=True)
         self.custom_icons_dir.mkdir(parents=True, exist_ok=True)

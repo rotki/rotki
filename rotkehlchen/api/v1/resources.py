@@ -50,6 +50,9 @@ from rotkehlchen.api.v1.schemas import (
     BlockchainAccountsPatchSchema,
     BlockchainAccountsPutSchema,
     BlockchainBalanceQuerySchema,
+    ClearAvatarsCacheSchema,
+    ClearCacheSchema,
+    ClearIconsCacheSchema,
     CryptoAssetSchema,
     CurrentAssetsPriceSchema,
     CustomAssetsQuerySchema,
@@ -2858,3 +2861,22 @@ class EnsAvatarsResource(BaseMethodView):
     @use_kwargs(get_schema, location='view_args')
     def get(self, ens_name: str) -> Response:
         return self.rest_api.get_ens_avatar(ens_name=ens_name, match_header=get_match_header())
+
+
+class ClearCacheResource(BaseMethodView):
+    post_schema = ClearCacheSchema()
+    icons_schema = ClearIconsCacheSchema()
+    avatars_schema = ClearAvatarsCacheSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='view_args')
+    def post(self, cache_type: Literal['icons', 'avatars']) -> Response:
+        req_body = flask_request.get_json(force=True, silent=True)
+        req_body = {} if req_body is None else req_body
+        if cache_type == 'icons':
+            data = self.icons_schema.load(req_body)
+            return self.rest_api.clear_icons_cache(data['icons'])
+
+        # can only be avatars
+        data = self.avatars_schema.load(req_body)
+        return self.rest_api.clear_avatars_cache(data['avatars'])

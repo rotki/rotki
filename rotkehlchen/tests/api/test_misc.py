@@ -409,3 +409,85 @@ def test_query_all_chain_ids(rotkehlchen_api_server):
     response = requests.get(api_url_for(rotkehlchen_api_server, 'allevmchainsresource'))
     result = assert_proper_response_with_result(response)
     assert result == [{'id': chain.value, 'name': chain.to_name()} for chain in ChainID]
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_cache_deletion(rotkehlchen_api_server):
+    """Checks that clearing the cache for avatars and icons work as expected."""
+    icons_dir = rotkehlchen_api_server.rest_api.rotkehlchen.icon_manager.icons_dir
+    avatars_dir = icons_dir / 'avatars'
+    avatars_dir.mkdir(exist_ok=True)
+
+    # populate icons dir
+    with open(f'{icons_dir}/ETH_small.png', 'wb') as f:
+        f.write(b'')
+
+    with open(f'{icons_dir}/BTC_small.png', 'wb') as f:
+        f.write(b'')
+
+    with open(f'{icons_dir}/AVAX_small.png', 'wb') as f:
+        f.write(b'')
+
+    # also add an avatar, to make sure it's not deleted when icons are
+    with open(f'{avatars_dir}/me.eth.png', 'wb') as f:
+        f.write(b'')
+
+    assert len([i for i in icons_dir.iterdir() if i.is_file()]) == 3
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'clearcacheresource',
+            cache_type='icons',
+        ), json={
+            'icons': ['ETH'],
+        },
+    )
+    assert_proper_response(response)
+    assert len([i for i in icons_dir.iterdir() if i.is_file()]) == 2
+    assert len([i for i in avatars_dir.iterdir() if i.is_file()]) == 1
+
+    # delete icons cache completely
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'clearcacheresource',
+            cache_type='icons',
+        ),
+    )
+    assert_proper_response(response)
+    assert len([i for i in icons_dir.iterdir() if i.is_file()]) == 0
+    assert len([i for i in avatars_dir.iterdir() if i.is_file()]) == 1
+
+    # populate avatars dir to test the cache deletion
+    with open(f'{avatars_dir}/ava.eth.png', 'wb') as f:
+        f.write(b'')
+
+    with open(f'{avatars_dir}/prettyirrelevant.eth.png', 'wb') as f:
+        f.write(b'')
+
+    with open(f'{avatars_dir}/nebolax.eth.png', 'wb') as f:
+        f.write(b'')
+
+    assert len([i for i in avatars_dir.iterdir() if i.is_file()]) == 4
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'clearcacheresource',
+            cache_type='avatars',
+        ), json={
+            'avatars': ['ava.eth'],
+        },
+    )
+    assert_proper_response(response)
+    assert len([i for i in avatars_dir.iterdir() if i.is_file()]) == 3
+
+    # delete avatars cache completely
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'clearcacheresource',
+            cache_type='avatars',
+        ),
+    )
+    assert_proper_response(response)
+    assert len([i for i in avatars_dir.iterdir() if i.is_file()]) == 0
