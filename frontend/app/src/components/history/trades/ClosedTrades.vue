@@ -132,7 +132,6 @@ const {
   setPage,
   setOptions,
   setFilter,
-  applyRouteFilter,
   fetchData
 } = useHistoryPaginationFilter<
   Trade,
@@ -254,10 +253,6 @@ const getItemClass = (item: TradeEntry) =>
   item.ignoredInAccounting ? 'darken-row' : '';
 
 const pageRoute = Routes.HISTORY_TRADES;
-
-onBeforeMount(() => {
-  applyRouteFilter();
-});
 
 onMounted(async () => {
   const query = get(route).query;

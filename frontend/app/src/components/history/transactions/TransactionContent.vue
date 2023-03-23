@@ -163,7 +163,6 @@ const {
   setPage,
   setOptions,
   setFilter,
-  applyRouteFilter,
   updateFilter,
   fetchData
 } = useHistoryPaginationFilter<
@@ -377,10 +376,6 @@ const showDeleteConfirmation = () => {
 
 const { txEvmChains, getEvmChainName, getChain } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
-
-onBeforeMount(() => {
-  applyRouteFilter();
-});
 
 onMounted(async () => {
   await fetchData();

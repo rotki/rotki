@@ -98,7 +98,6 @@ const {
   setPage,
   setOptions,
   setFilter,
-  applyRouteFilter,
   fetchData
 } = useHistoryPaginationFilter<
   LedgerAction,
@@ -200,10 +199,6 @@ const getItemClass = (item: LedgerActionEntry) => {
 };
 
 const pageRoute = Routes.HISTORY_LEDGER_ACTIONS;
-
-onBeforeMount(() => {
-  applyRouteFilter();
-});
 
 onMounted(async () => {
   const query = get(route).query;

@@ -92,7 +92,6 @@ const {
   setPage,
   setOptions,
   setFilter,
-  applyRouteFilter,
   fetchData
 } = useHistoryPaginationFilter<
   AssetMovement,
@@ -120,10 +119,6 @@ const getItemClass = (item: AssetMovementEntry) =>
   item.ignoredInAccounting ? 'darken-row' : '';
 
 const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS;
-
-onBeforeMount(() => {
-  applyRouteFilter();
-});
 
 onMounted(async () => {
   await fetchData();
