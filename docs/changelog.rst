@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`5696` Transactions interacting with Curve Zap Deposit contracts are now decoded properly.
 * :feature:`5761` Liquity transactions that were made via DSProxies will now be properly decoded.
 * :feature:`5798` Users will now be able to see the avatar of the ENS.
 * :feature:`5676` Curve gauge deposit, withdrawal and claim rewards actions will now be correctly decoded.
