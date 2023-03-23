@@ -920,3 +920,231 @@ def test_gauge_claim_rewards(ethereum_transaction_decoder, ethereum_accounts):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xA8d7Fb04877C3FBf175DE76FA3D2fa66c770537F']])
+def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accounts):
+    """Test that trading token to token in curve is decoded correctly"""
+    tx_hex = deserialize_evm_tx_hash('0xaa176ce742d62b663656572f8cc53d63d6c00cd2c3adde32293e4028a5e0693c ')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    expected_events = [
+        EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1679546783000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=Asset('ETH'),
+            balance=Balance(amount=FVal('0.002265287178848788')),
+            location_label=user_address,
+            notes='Burned 0.002265287178848788 ETH for gas',
+            counterparty='gas',
+            address=None,
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=172,
+            timestamp=TimestampMS(1679546783000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+            balance=Balance(amount=FVal('500000')),
+            location_label=user_address,
+            notes='Swap 500000 USDC in curve',
+            counterparty='curve',
+            address=string_to_evm_address('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=173,
+            timestamp=TimestampMS(1679546783000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
+            balance=Balance(amount=FVal('498538.169982')),
+            location_label=user_address,
+            notes='Receive 498538.169982 USDT as the result of a swap in curve',
+            counterparty='curve',
+            address=string_to_evm_address('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x8a1B73A88E1854Dd3EeBEe4354Bd4DbA23861E3A']])
+def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_accounts):
+    """Test that trading eth to token in curve is decoded correctly"""
+    tx_hex = deserialize_evm_tx_hash('0x34d6674d8d46b8a6c546b04b4c748b82d42a688f562fe80a8d02e9180a684d09 ')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    expected_events = [
+        EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1679225231000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=Asset('ETH'),
+            balance=Balance(amount=FVal('0.001727872677935233')),
+            location_label=user_address,
+            notes='Burned 0.001727872677935233 ETH for gas',
+            counterparty='gas',
+            address=None,
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=1,
+            timestamp=TimestampMS(1679225231000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('ETH'),
+            balance=Balance(amount=FVal('0.00008')),
+            location_label=user_address,
+            notes='Swap 0.00008 ETH in curve',
+            counterparty='curve',
+            address=string_to_evm_address('0xA96A65c051bF88B4095Ee1f2451C2A9d43F53Ae2'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=57,
+            timestamp=TimestampMS(1679225231000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:1/erc20:0xE95A203B1a91a908F9B9CE46459d101078c2c3cb'),
+            balance=Balance(amount=FVal('0.000073629326233652')),
+            location_label=user_address,
+            notes='Receive 0.000073629326233652 ankrETH as the result of a swap in curve',  # noqa: E501
+            counterparty='curve',
+            address=string_to_evm_address('0xA96A65c051bF88B4095Ee1f2451C2A9d43F53Ae2'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x38abab9766e0b27d2912718a884292b8E7eb2803']])
+def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_accounts):
+    """Test that if exchange_underlying is happening the trade is decoded correctly"""
+    tx_hex = deserialize_evm_tx_hash('0xed73e8717c9b2571a9cd7c0563e013c569e757920a050b1120ff1e6f5f3d3b8f ')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    expected_events = [
+        EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1679482763000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=Asset('ETH'),
+            balance=Balance(amount=FVal('0.003678824742134973')),
+            location_label=user_address,
+            notes='Burned 0.003678824742134973 ETH for gas',
+            counterparty='gas',
+            address=None,
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=106,
+            timestamp=TimestampMS(1679482763000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+            balance=Balance(amount=FVal('9411.299859703624772744')),
+            location_label=user_address,
+            notes='Swap 9411.299859703624772744 DAI in curve',
+            counterparty='curve',
+            address=string_to_evm_address('0x8038C01A0390a8c547446a0b2c18fc9aEFEcc10c'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=110,
+            timestamp=TimestampMS(1679482763000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:1/erc20:0x5BC25f649fc4e26069dDF4cF4010F9f706c23831'),
+            balance=Balance(amount=FVal('9495.240278199771455578')),
+            location_label=user_address,
+            notes='Receive 9495.240278199771455578 DUSD as the result of a swap in curve',  # noqa: E501
+            counterparty='curve',
+            address=string_to_evm_address('0x8038C01A0390a8c547446a0b2c18fc9aEFEcc10c'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x3Da232a0c0A5C59918D7B5fF77bf1c8Fc93aeE1B']])
+def test_curve_swap_router(ethereum_transaction_decoder, ethereum_accounts):
+    """Test that transactions made via curve swap router are decoded correctly"""
+    tx_hex = deserialize_evm_tx_hash('0xd561728d989c4d8a25ca6708051cdb265dbc455927bb8c355083b790101487e9 ')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    expected_events = [
+        EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1679550275000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=Asset('ETH'),
+            balance=Balance(amount=FVal('0.003261945529483024')),
+            location_label=user_address,
+            notes='Burned 0.003261945529483024 ETH for gas',
+            counterparty='gas',
+            address=None,
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=1,
+            timestamp=TimestampMS(1679550275000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('ETH'),
+            balance=Balance(amount=FVal('40')),
+            location_label=user_address,
+            notes='Swap 40 ETH in curve',
+            counterparty='curve',
+            address=string_to_evm_address('0x99a58482BD75cbab83b27EC03CA68fF489b5788f'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=37,
+            timestamp=TimestampMS(1679550275000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:1/erc20:0xD533a949740bb3306d119CC777fa900bA034cd52'),
+            balance=Balance(amount=FVal('73317.327157158562433931')),
+            location_label=user_address,
+            notes='Receive 73317.327157158562433931 CRV as the result of a swap in curve',  # noqa: E501
+            counterparty='curve',
+            address=string_to_evm_address('0x99a58482BD75cbab83b27EC03CA68fF489b5788f'),
+        ),
+    ]
+    assert events == expected_events
