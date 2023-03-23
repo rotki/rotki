@@ -3,7 +3,9 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -17,9 +19,10 @@ from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_CURVE
@@ -45,8 +48,31 @@ CURVE_Y_DEPOSIT = string_to_evm_address('0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a
 GAUGE_DEPOSIT = b'\xe1\xff\xfc\xc4\x92=\x04\xb5Y\xf4\xd2\x9a\x8b\xfcl\xda\x04\xeb[\r<F\x07Q\xc2@,\\\\\xc9\x10\x9c'  # noqa: E501
 GAUGE_WITHDRAW = b'\x88N\xda\xd9\xceo\xa2D\r\x8aT\xcc\x124\x90\xeb\x96\xd2v\x84y\xd4\x9f\xf9\xc76a%\xa9BCd'  # noqa: E501
 
+TOKEN_EXCHANGE = b'\x8b>\x96\xf2\xb8\x89\xfaw\x1cS\xc9\x81\xb4\r\xaf\x00_c\xf67\xf1\x86\x9fppR\xd1Z=\xd9q@'  # noqa: E501
+TOKEN_EXCHANGE_UNDERLYING = b'\xd0\x13\xca#\xe7ze\x00<,e\x9cTB\xc0\x0c\x80Sq\xb7\xfc\x1e\xbdL lA\xd1Sk\xd9\x0b'  # noqa: E501
+EXCHANGE_MULTIPLE = b'\x14\xb5a\x17\x8a\xe0\xf3h\xf4\x0f\xaf\xd0H\\Oq)\xeaq\xcd\xc0\x0bL\xe1\xe5\x94\x0f\x9b\xc6Y\xc8\xb2'  # noqa: E501
+CURVE_SWAP_ROUTER = string_to_evm_address('0x99a58482BD75cbab83b27EC03CA68fF489b5788f')
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def _read_curve_asset(
+        asset_address: Optional[ChecksumEvmAddress],
+        chain_id: ChainID,
+) -> Optional[Asset]:
+    """A thin wrapper that turns asset address into an asset object"""
+    if asset_address is None:
+        return None
+
+    if asset_address == ETH_SPECIAL_ADDRESS:
+        return A_ETH
+
+    return Asset(evm_address_to_identifier(
+        address=asset_address,
+        chain_id=chain_id,
+        token_type=EvmTokenKind.ERC20,
+    ))
 
 
 class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
@@ -231,6 +257,109 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             previous_event = event
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_curve_trades(self, context: DecoderContext) -> DecodingOutput:
+        """Decode curve trades made via single pools or curve swap router
+        First determine:
+        - `spender_address`
+        - `receiver_address`
+        - `sold_token_address`
+        - `bought_token_address`
+        - `raw_sold_amount`
+        - `raw_bought_amount`
+
+        Then create assets if `sold_token_address` and `bought_token_address` were found.
+        Then match and label events.
+        Then reshuffle events to make sure that spend and receive are consecutive.
+
+        Note that `sold_token_address` and `bought_token_address` are not always found (e.g.
+        when pool for some reason is not present in our cache). If tokens that were swapped are
+        detected then we use them when iterating over `decoded_events` list and matching transfers.
+        If they are not detected then conditions when matching transfer events are a bit broader.
+        """
+
+        # These are nullable because in case a curve pool is not stored in our cache or if it
+        # is a swap in a metapool (TOKEN_EXCHANGE_UNDERLYING) we will skip token check.
+        sold_token_address: Optional[ChecksumEvmAddress] = None
+        bought_token_address: Optional[ChecksumEvmAddress] = None
+
+        swapping_contract: ChecksumEvmAddress
+        if context.tx_log.topics[0] in (TOKEN_EXCHANGE, TOKEN_EXCHANGE_UNDERLYING):
+            pool_address = context.tx_log.address
+            swapping_contract = pool_address
+            # When a single pool is used, spender and receiver is always the same
+            spender_address = receiver_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+            sold_token_id = hex_or_bytes_to_int(context.tx_log.data[:32])
+            raw_sold_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
+            bought_token_id = hex_or_bytes_to_int(context.tx_log.data[64:96])
+            raw_bought_amount = hex_or_bytes_to_int(context.tx_log.data[96:128])
+            if (
+                context.tx_log.topics[0] == TOKEN_EXCHANGE and
+                pool_address in self.curve_pools and
+                len(self.curve_pools[pool_address]) > max(sold_token_id, bought_token_id)  # Make sure that tokens of the pool are cached  # noqa: E501
+            ):
+                sold_token_address = self.curve_pools[pool_address][sold_token_id]
+                bought_token_address = self.curve_pools[pool_address][bought_token_id]
+        else:  # EXCHANGE_MULTIPLE
+            swapping_contract = CURVE_SWAP_ROUTER
+            spender_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+            receiver_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+            raw_sold_amount = hex_or_bytes_to_int(context.tx_log.data[-64:-32])
+            raw_bought_amount = hex_or_bytes_to_int(context.tx_log.data[-32:])
+            # Curve swap router logs route (a list of addresses) that was used. Route consists of
+            # 9 elements. Consider X a number of pools that was used. Then the structure can be
+            # described in the following way:
+            # At 0 index: Address of token in
+            # From 1 to X indices: Addresses of pools that were used
+            # At 1+X index: Address of token out
+            # From 2+X to 8 indices: Unused elements (zero addresses)
+            # Here we read only addresses of token in and token out.
+            sold_token_address = hex_or_bytes_to_address(context.tx_log.data[:32])
+            for i in range(1, 9):  # Starting from 1 because at 0 is `sold_token_address`
+                address = hex_or_bytes_to_address(context.tx_log.data[32 * i:32 * (i + 1)])
+                if address == ZERO_ADDRESS:
+                    break
+                bought_token_address = address
+
+        sold_asset = _read_curve_asset(sold_token_address, self.evm_inquirer.chain_id)
+        bought_asset = _read_curve_asset(bought_token_address, self.evm_inquirer.chain_id)
+        spend_event: Optional['EvmEvent'] = None
+        receive_event: Optional['EvmEvent'] = None
+        for event in context.decoded_events:
+            if event.address != swapping_contract:
+                continue
+
+            crypto_asset = event.asset.resolve_to_crypto_asset()
+            if (
+                event.location_label == spender_address and
+                event.event_type == HistoryEventType.SPEND and
+                event.balance.amount == asset_normalized_value(amount=raw_sold_amount, asset=crypto_asset) and  # noqa: E501
+                (sold_asset is None or event.asset == sold_asset)
+            ):
+                event.event_type = HistoryEventType.TRADE
+                event.event_subtype = HistoryEventSubType.SPEND
+                event.notes = f'Swap {event.balance.amount} {crypto_asset.symbol} in curve'
+                event.counterparty = CPT_CURVE
+                spend_event = event
+            elif (
+                event.location_label == receiver_address and
+                event.event_type == HistoryEventType.RECEIVE and
+                event.balance.amount == asset_normalized_value(amount=raw_bought_amount, asset=crypto_asset) and  # noqa: E501
+                (bought_asset is None or event.asset == bought_asset)
+            ):
+                event.event_type = HistoryEventType.TRADE
+                event.event_subtype = HistoryEventSubType.RECEIVE
+                event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} as the result of a swap in curve'  # noqa: E501
+                event.counterparty = CPT_CURVE
+                receive_event = event
+
+        if spend_event is not None and receive_event is not None:
+            # Just to make sure that spend and receive events are consecutive
+            maybe_reshuffle_events(spend_event, receive_event, context.decoded_events)
+        else:
+            log.error(f'Did not find spend and receive events for a curve swap. {spend_event=} {receive_event=}')  # noqa: E501
+
+        return DEFAULT_DECODING_OUTPUT
+
     def _decode_curve_events(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] in (
             REMOVE_LIQUIDITY,
@@ -258,6 +387,13 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 decoded_events=context.decoded_events,
                 user_address=user_address,
             )
+
+        if context.tx_log.topics[0] in (
+            TOKEN_EXCHANGE,
+            TOKEN_EXCHANGE_UNDERLYING,
+            EXCHANGE_MULTIPLE,
+        ):
+            return self._decode_curve_trades(context=context)
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -330,6 +466,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             gauge_address: (self._decode_curve_gauge_events,)
             for gauge_address in self.curve_gauges
         })
+        mapping[CURVE_SWAP_ROUTER] = (self._decode_curve_events,)
         return mapping
 
     def enricher_rules(self) -> list[Callable]:
@@ -349,7 +486,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         """
         self.ethereum.assure_curve_protocol_cache_is_queried()
         new_curve_pools, new_curve_gauges = read_curve_pools_and_gauges()
-        curve_pools_diff = new_curve_pools - self.curve_pools
+        curve_pools_diff = set(new_curve_pools.keys()) - set(self.curve_pools.keys())
         curve_gauges_diff = new_curve_gauges - self.curve_gauges
         if len(curve_pools_diff) == 0 and len(curve_gauges_diff) == 0:
             return None

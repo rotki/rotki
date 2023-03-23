@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from freezegun import freeze_time
+from rotkehlchen.chain.ethereum.modules.curve.curve_cache import read_curve_data
 
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.errors.misc import InputError
@@ -32,13 +33,13 @@ CURVE_EXPECTED_POOL_COINS = {
     ],
     '0xDeBF20617708857ebe4F679508E7b7863a8A8EeE': [
         '0x028171bCA77440897B824Ca71D1c56caC55b68A3',
-        '0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',
         '0xBcca60bB61934080951369a648Fb03DF4F96263C',
+        '0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',
     ],
     # second 2 are metapool factory pools
     '0x1F71f05CF491595652378Fe94B7820344A551B8E': [
-        '0x57Ab1ec28D129707052df4dF418D58a2D46d5f51',
         '0x96E61422b6A9bA0e068B6c5ADd4fFaBC6a4aae27',
+        '0x57Ab1ec28D129707052df4dF418D58a2D46d5f51',
     ],
     '0xFD5dB7463a3aB53fD211b4af195c5BCCC1A03890': [
         '0xC581b735A1688071A1746c968e0798D642EDE491',
@@ -128,11 +129,7 @@ def test_curve_cache(rotkehlchen_instance):
             )[0]
             lp_tokens_to_pools_in_cache[lp_token_addr] = pool_addr
 
-            pool_coins = globaldb_get_general_cache_values(
-                cursor=cursor,
-                key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_addr],
-            )
-            pool_coins_in_cache[pool_addr] = pool_coins
+            pool_coins_in_cache[pool_addr] = read_curve_data(cursor=cursor, pool_address=pool_addr)  # noqa: E501
 
             gauge_data = globaldb_get_general_cache_values(
                 cursor=cursor,
