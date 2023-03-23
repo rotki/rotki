@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -36,15 +36,59 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-ADD_LIQUIDITY = b'B?d\x95\xa0\x8f\xc6RB\\\xf4\xed\r\x1f\x9e7\xe5q\xd9\xb9R\x9b\x1c\x1c#\xcc\xe7\x80\xb2\xe7\xdf\r'  # noqa: E501
-ADD_LIQUIDITY_2_ASSETS = b'&\xf5Z\x85\x08\x1d$\x97N\x85\xc6\xc0\x00E\xd0\xf0E9\x91\xe9Xs\xf5+\xff\r!\xaf@y\xa7h'  # noqa: E501
-ADD_LIQUIDITY_4_ASSETS = b'?\x19\x15w^\x0c\x9a8\xa5z{\xb7\xf1\xf9\x00_Ho\xb9\x04\xe1\xf8J\xa2\x156MVs\x19\xa5\x8d'  # noqa: E501
-REMOVE_LIQUIDITY = b"Z\xd0V\xf2\xe2\x8a\x8c\xec# \x15@k\x846h\xc1\xe3l\xdaY\x81'\xec;\x8cY\xb8\xc7's\xa0"  # noqa: E501
-REMOVE_ONE = b'\x9e\x96\xdd;\x99z*%~\xecM\xf9\xbbn\xafbn m\xf5\xf5C\xbd\x966\x82\xd1C0\x0b\xe3\x10'  # noqa: E501
-REMOVE_LIQUIDITY_3_ASSETS = b'\xa4\x9dL\xf0&V\xae\xbf\x8cw\x1fZ\x85\x85c\x8a*\x15\xeel\x97\xcfr\x05\xd4 \x8e\xd7\xc1\xdf%-'  # noqa: E501
-REMOVE_LIQUIDITY_4_ASSETS = b'\x98x\xca7^\x10o*C\xc3\xb5\x99\xfcbEh\x13\x1cL\x9aK\xa6j\x14V7\x15v;\xe9\xd5\x9d'  # noqa: E501
+ADD_LIQUIDITY_EVENTS = {
+    b'B?d\x95\xa0\x8f\xc6RB\\\xf4\xed\r\x1f\x9e7\xe5q\xd9\xb9R\x9b\x1c\x1c#\xcc\xe7\x80\xb2\xe7\xdf\r',  # ADD_LIQUIDITY  # noqa: E501
+    b'&\xf5Z\x85\x08\x1d$\x97N\x85\xc6\xc0\x00E\xd0\xf0E9\x91\xe9Xs\xf5+\xff\r!\xaf@y\xa7h',  # ADD_LIQUIDITY_2_ASSETS  # noqa: E501
+    b'?\x19\x15w^\x0c\x9a8\xa5z{\xb7\xf1\xf9\x00_Ho\xb9\x04\xe1\xf8J\xa2\x156MVs\x19\xa5\x8d',  # ADD_LIQUIDITY_4_ASSETS  # noqa: E501
+}
 REMOVE_LIQUIDITY_IMBALANCE = b'\xb9d\xb7/s\xf5\xef[\xf0\xfd\xc5Y\xb2\xfa\xb9\xa7\xb1*9\xe4x\x17\xa5G\xf1\xf0\xae\xe4\x7f\xeb\xd6\x02'  # noqa: E501
-CURVE_Y_DEPOSIT = string_to_evm_address('0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3')
+REMOVE_LIQUIDITY_EVENTS = {
+    REMOVE_LIQUIDITY_IMBALANCE,
+    b'|68T\xcc\xf7\x96#A\x1f\x89\x95\xb3b\xbc\xe5\xed\xdf\xf1\x8c\x92~\xdco]\xbb\xb5\xe0X\x19\xa8,',  # REMOVE_LIQUIDITY  # noqa: E501,
+    b'\x9e\x96\xdd;\x99z*%~\xecM\xf9\xbbn\xafbn m\xf5\xf5C\xbd\x966\x82\xd1C0\x0b\xe3\x10',  # REMOVE_ONE  # noqa: E501
+    b"Z\xd0V\xf2\xe2\x8a\x8c\xec# \x15@k\x846h\xc1\xe3l\xdaY\x81'\xec;\x8cY\xb8\xc7's\xa0",  # REMOVE_LIQUIDITY  # noqa: E501,
+    b'\xa4\x9dL\xf0&V\xae\xbf\x8cw\x1fZ\x85\x85c\x8a*\x15\xeel\x97\xcfr\x05\xd4 \x8e\xd7\xc1\xdf%-',  # REMOVE_LIQUIDITY_3_ASSETS  # noqa: E501
+    b'\x98x\xca7^\x10o*C\xc3\xb5\x99\xfcbEh\x13\x1cL\x9aK\xa6j\x14V7\x15v;\xe9\xd5\x9d',  # REMOVE_LIQUIDITY_4_ASSETS  # noqa: E501
+}
+# Deposit contracts are retrieved from the links below Deposit<pool>:
+# https://curve.readthedocs.io/ref-addresses.html#base-pools
+# https://curve.readthedocs.io/ref-addresses.html#metapools
+#
+# The duplicates were found via Etherscan:
+# https://etherscan.io/find-similar-contracts?a=0x35796DAc54f144DFBAD1441Ec7C32313A7c29F39
+CURVE_DEPOSIT_CONTRACTS = {
+    string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),  # curve usdn
+    string_to_evm_address('0x35796DAc54f144DFBAD1441Ec7C32313A7c29F39'),  # curve usdn duplicate
+    string_to_evm_address('0xB0a0716841F2Fc03fbA72A891B8Bb13584F52F2d'),  # curve ust
+    string_to_evm_address('0x3c8cAee4E09296800f8D29A68Fa3837e2dae4940'),  # curve usdp
+    string_to_evm_address('0xF1f85a74AD6c64315F85af52d3d46bF715236ADc'),  # curve usdk
+    string_to_evm_address('0x6600e98b71dabfD4A8Cac03b302B0189Adb86Afb'),  # curve usdk duplicate
+    string_to_evm_address('0xBE175115BF33E12348ff77CcfEE4726866A0Fbd5'),  # curve rsv
+    string_to_evm_address('0x803A2B40c5a9BB2B86DD630B274Fa2A9202874C2'),  # curve musd
+    string_to_evm_address('0x78CF256256C8089d68Cde634Cf7cDEFb39286470'),  # curve musd duplicate
+    string_to_evm_address('0x1de7f0866e2c4adAC7b457c58Cc25c8688CDa1f2'),  # curve linkusd
+    string_to_evm_address('0xF6bDc2619FFDA72c537Cd9605e0A274Dc48cB1C9'),  # curve linkusd duplicate  # noqa: E501
+    string_to_evm_address('0x09672362833d8f703D5395ef3252D4Bfa51c15ca'),  # curve husd
+    string_to_evm_address('0x0a53FaDa2d943057C47A301D25a4D9b3B8e01e8E'),  # curve husd duplicate
+    string_to_evm_address('0x64448B78561690B70E17CBE8029a3e5c1bB7136e'),  # curve gusd
+    string_to_evm_address('0x0aE274c98c0415C0651AF8cF52b010136E4a0082'),  # curve gusd duplicate
+    string_to_evm_address('0x61E10659fe3aa93d036d099405224E4Ac24996d0'),  # curve dusd
+    string_to_evm_address('0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3'),  # curve y
+    string_to_evm_address('0xb6c057591E073249F2D9D88Ba59a46CFC9B59EdB'),  # curve busd
+    string_to_evm_address('0xeB21209ae4C2c9FF2a86ACA31E123764A3B6Bc06'),  # curve compound
+    string_to_evm_address('0xA50cCc70b6a011CffDdf45057E39679379187287'),  # curve pax
+    string_to_evm_address('0xFCBa3E75865d2d561BE8D220616520c171F12851'),  # curve susd v2
+    string_to_evm_address('0x331aF2E331bd619DefAa5DAc6c038f53FCF9F785'),  # curve zap
+    string_to_evm_address('0xac795D2c97e60DF6a99ff1c814727302fD747a80'),  # curve usdt
+    string_to_evm_address('0xC45b2EEe6e09cA176Ca3bB5f7eEe7C47bF93c756'),  # curve bbtc
+    string_to_evm_address('0xd5BCf53e2C81e1991570f33Fa881c49EEa570C8D'),  # curve obtc
+    string_to_evm_address('0x11F419AdAbbFF8d595E7d5b223eee3863Bb3902C'),  # curve pbtc
+    string_to_evm_address('0xaa82ca713D94bBA7A89CEAB55314F9EfFEdDc78c'),  # curve tbtc
+    string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),  # curve 3pool
+    string_to_evm_address('0x08780fb7E580e492c1935bEe4fA5920b94AA95Da'),  # curve fraxusdc
+    string_to_evm_address('0x7abdbaf29929e7f8621b757d2a7c04d78d633834'),  # curve sbtc
+    string_to_evm_address('0xA2d40Edbf76C6C0701BA8899e2d059798eBa628e'),  # curve sbtc2
+}
 
 GAUGE_DEPOSIT = b'\xe1\xff\xfc\xc4\x92=\x04\xb5Y\xf4\xd2\x9a\x8b\xfcl\xda\x04\xeb[\r<F\x07Q\xc2@,\\\\\xc9\x10\x9c'  # noqa: E501
 GAUGE_WITHDRAW = b'\x88N\xda\xd9\xceo\xa2D\r\x8aT\xcc\x124\x90\xeb\x96\xd2v\x84y\xd4\x9f\xf9\xc76a%\xa9BCd'  # noqa: E501
@@ -102,7 +146,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             transaction: EvmTransaction,
             tx_log: EvmTxReceiptLog,
             decoded_events: list['EvmEvent'],
-            user_address: ChecksumEvmAddress,
+            user_or_contract_address: ChecksumEvmAddress,
     ) -> DecodingOutput:
         """Decode information related to withdrawing assets from curve pools"""
         withdrawal_events: list['EvmEvent'] = []
@@ -118,7 +162,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == A_ETH and
-                event.location_label == user_address
+                event.location_label == user_or_contract_address
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
@@ -130,7 +174,8 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == transaction.from_address and
                 (
-                    user_address == event.location_label or
+                    user_or_contract_address == event.location_label or
+                    user_or_contract_address in CURVE_DEPOSIT_CONTRACTS or
                     tx_log.topics[0] == REMOVE_LIQUIDITY_IMBALANCE
                 )
             ):
@@ -143,13 +188,13 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == transaction.from_address and
-                user_address == event.location_label and
+                user_or_contract_address == event.location_label and
                 tx_log.address in self.curve_pools
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_CURVE
-                event.notes = f'Remove {event.balance.amount} {crypto_asset.symbol} from the curve pool {tx_log.address}'  # noqa: E501
+                event.notes = f'Remove {event.balance.amount} {crypto_asset.symbol} from {tx_log.address} curve pool'  # noqa: E501
                 withdrawal_events.append(event)
 
         # Make sure that the order is the following:
@@ -158,18 +203,24 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         # 3. Withdrawal 2
         # etc.
         if return_event is None or len(withdrawal_events) == 0:
+            # for deposit zap contracts, this is handled during post decoding
+            if user_or_contract_address in CURVE_DEPOSIT_CONTRACTS and return_event is not None:
+                return DecodingOutput(matched_counterparty=CPT_CURVE)
+
             log.debug(
-                f'Expected to see a receive pool token event and deposit events for a curve pool, '
-                f'but have not found them. Tx_hash: {transaction.tx_hash.hex()} '
-                f'User address: {user_address}',
+                f'Expected to see a return pool token event and '
+                f'withdrawal events for a curve pool, but have not found them. '
+                f'Tx_hash: {transaction.tx_hash.hex()} '
+                f'User address: {user_or_contract_address}',
             )
             return DEFAULT_DECODING_OUTPUT
 
-        return_event.extra_data = {'withdrawal_events_num': len(withdrawal_events)}  # for accounting  # noqa: E501
-        previous_event = return_event
-        for event in withdrawal_events:
-            maybe_reshuffle_events(previous_event, event, decoded_events)
-            previous_event = event
+        self._sort_events(
+            action_type='removal',
+            return_or_receive_event=return_event,
+            withdrawal_or_deposit_events=withdrawal_events,
+            all_events=decoded_events,
+        )
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_curve_deposit_events(
@@ -177,7 +228,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             transaction: EvmTransaction,
             tx_log: EvmTxReceiptLog,
             decoded_events: list['EvmEvent'],
-            user_address: ChecksumEvmAddress,
+            user_or_contract_address: ChecksumEvmAddress,
     ) -> DecodingOutput:
         """Decode information related to depositing assets in curve pools"""
         deposit_events: list['EvmEvent'] = []
@@ -193,37 +244,17 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == A_ETH and
-                event.location_label == user_address
+                event.location_label == user_or_contract_address
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_CURVE
                 event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in curve pool'  # noqa: E501
-                deposit_events.append(event)
-            elif (  # deposit give asset
-                (
-                    event.event_type == HistoryEventType.SPEND and
-                    event.event_subtype == HistoryEventSubType.NONE and
-                    event.location_label == user_address and
-                    tx_log.address in self.curve_pools
-                ) or
-                (
-                    tx_log.topics[0] == ADD_LIQUIDITY_4_ASSETS and
-                    user_address == CURVE_Y_DEPOSIT and
-                    event.asset != A_ETH
-                )
-            ):
-                event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.counterparty = CPT_CURVE
-                event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in curve pool'  # noqa: E501
-                if tx_log.address in self.curve_pools:
-                    event.notes += f' {tx_log.address}'
                 deposit_events.append(event)
             elif (  # Deposit receive pool token
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.location_label == user_address and
+                event.location_label == user_or_contract_address and
                 tx_log.address in self.curve_pools
             ):
                 event.event_type = HistoryEventType.RECEIVE
@@ -234,7 +265,10 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             elif (  # deposit give asset
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.location_label == user_address and
+                (
+                    event.location_label == user_or_contract_address or
+                    user_or_contract_address in CURVE_DEPOSIT_CONTRACTS
+                ) and
                 tx_log.address in self.curve_pools
             ):
                 event.event_type = HistoryEventType.DEPOSIT
@@ -249,18 +283,24 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         # 3. Deposit 2
         # etc.
         if receive_event is None or len(deposit_events) == 0:
+            # for deposit zap contracts, this is handled during post decoding
+            if user_or_contract_address in CURVE_DEPOSIT_CONTRACTS and len(deposit_events) > 0:
+                return DecodingOutput(matched_counterparty=CPT_CURVE)
+
             log.debug(
-                f'Expected to see a receive pool token event and deposit events for a curve pool, '
-                f'but have not found them. Tx_hash: {transaction.tx_hash.hex()} '
-                f'User address: {user_address}',
+                f'Expected to see a receive pool token event and deposit '
+                f'events for a curve pool, but have not found them. '
+                f'Tx_hash: {transaction.tx_hash.hex()} '
+                f'User address: {user_or_contract_address}',
             )
             return DEFAULT_DECODING_OUTPUT
 
-        receive_event.extra_data = {'deposit_events_num': len(deposit_events)}  # for accounting
-        previous_event = receive_event
-        for event in deposit_events:
-            maybe_reshuffle_events(previous_event, event, decoded_events)
-            previous_event = event
+        self._sort_events(
+            action_type='addition',
+            return_or_receive_event=receive_event,
+            withdrawal_or_deposit_events=deposit_events,
+            all_events=decoded_events,
+        )
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_curve_trades(self, context: DecoderContext) -> DecodingOutput:
@@ -367,31 +407,23 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_curve_events(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] in (
-            REMOVE_LIQUIDITY,
-            REMOVE_ONE,
-            REMOVE_LIQUIDITY_IMBALANCE,
-            REMOVE_LIQUIDITY_3_ASSETS,
-            REMOVE_LIQUIDITY_4_ASSETS,
-        ):
-            user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        if context.tx_log.topics[0] in REMOVE_LIQUIDITY_EVENTS:
+            # it can either be the user or a deposit zap contract
+            user_or_contract_address = hex_or_bytes_to_address(context.tx_log.topics[1])
             return self._decode_curve_remove_events(
                 tx_log=context.tx_log,
                 transaction=context.transaction,
                 decoded_events=context.decoded_events,
-                user_address=user_address,
+                user_or_contract_address=user_or_contract_address,
             )
-        if context.tx_log.topics[0] in (
-            ADD_LIQUIDITY,
-            ADD_LIQUIDITY_2_ASSETS,
-            ADD_LIQUIDITY_4_ASSETS,
-        ):
-            user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        if context.tx_log.topics[0] in ADD_LIQUIDITY_EVENTS:
+            # it can either be the user or a deposit zap contract
+            user_or_contract_address = hex_or_bytes_to_address(context.tx_log.topics[1])
             return self._decode_curve_deposit_events(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
                 decoded_events=context.decoded_events,
-                user_address=user_address,
+                user_or_contract_address=user_or_contract_address,
             )
 
         if context.tx_log.topics[0] in (
@@ -430,6 +462,136 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _handle_post_decoding(
+            self,
+            transaction: EvmTransaction,
+            decoded_events: list['EvmEvent'],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+    ) -> list['EvmEvent']:
+        """This method handles post decoding for curve events made through the deposit contracts.
+
+        This is required because certain events are not available when `AddLiquidity` or `RemoveLiquidity` occurs.
+        An example of such is when liquidity is removed, the transfer event of the token removed comes after the
+        `RemoveLiquidity` event.
+        """  # noqa: E501
+        for tx_log in all_logs:
+            if (
+                tx_log.topics[0] in ADD_LIQUIDITY_EVENTS and
+                hex_or_bytes_to_address(tx_log.topics[1]) in CURVE_DEPOSIT_CONTRACTS
+            ):
+                self._handle_zap_contracts_liquidity_addition(
+                    transaction=transaction,
+                    decoded_events=decoded_events,
+                )
+            if (
+                tx_log.topics[0] in REMOVE_LIQUIDITY_EVENTS and
+                hex_or_bytes_to_address(tx_log.topics[1]) in CURVE_DEPOSIT_CONTRACTS
+            ):
+                self._handle_zap_contracts_liquidity_removal(
+                    pool_address=tx_log.address,
+                    transaction=transaction,
+                    decoded_events=decoded_events,
+                )
+
+        return decoded_events  # noop. just return the decoded events.
+
+    def _handle_zap_contracts_liquidity_addition(
+            self,
+            transaction: EvmTransaction,
+            decoded_events: list['EvmEvent'],
+    ) -> None:
+        """
+        This method completes the decoding of liquidity addition made through
+        Curve zap contracts such as e.g. Curve Deposit USDN, etc.
+        """
+        receive_event_idx, deposit_events = None, []
+        for idx, event in enumerate(decoded_events):
+            if (
+                event.event_type == HistoryEventType.DEPOSIT and
+                event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and
+                event.counterparty == CPT_CURVE
+            ):
+                deposit_events.append(event)
+
+            # search for the event of the wrapped token received after deposit
+            elif (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.location_label == transaction.from_address and
+                (
+                    event.address in CURVE_DEPOSIT_CONTRACTS or
+                    event.address == ZERO_ADDRESS
+                )
+            ):
+                receive_event_idx = idx
+                crypto_asset = event.asset.resolve_to_crypto_asset()
+                event.event_type = HistoryEventType.RECEIVE
+                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                event.counterparty = CPT_CURVE
+                event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} after depositing in a curve pool'  # noqa: E501
+
+        if receive_event_idx is not None and len(deposit_events) > 0:
+            self._sort_events(
+                action_type='addition',
+                return_or_receive_event=decoded_events[receive_event_idx],
+                withdrawal_or_deposit_events=deposit_events,
+                all_events=decoded_events,
+            )
+            return
+
+        log.debug(
+            f'Expected to see a receive pool token event and deposit events for a curve pool, '
+            f'but have not found them. Tx_hash: {transaction.tx_hash.hex()}',
+        )
+
+    def _handle_zap_contracts_liquidity_removal(
+            self,
+            pool_address: ChecksumEvmAddress,
+            transaction: EvmTransaction,
+            decoded_events: list['EvmEvent'],
+    ) -> None:
+        """
+        This method completes the decoding of liquidity removal made through
+        Curve zap contracts such as e.g. Curve Deposit USDN, etc.
+        """
+        return_event_idx, withdrawal_events = None, []
+        for idx, event in enumerate(decoded_events):
+            if (
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.RETURN_WRAPPED and
+                event.counterparty == CPT_CURVE and
+                event.extra_data is None
+            ):
+                return_event_idx = idx
+
+            elif (  # find receive events from the deposit contract.
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.location_label == transaction.from_address and
+                event.address in CURVE_DEPOSIT_CONTRACTS
+            ):
+                crypto_asset = event.asset.resolve_to_crypto_asset()
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.counterparty = CPT_CURVE
+                event.notes = f'Remove {event.balance.amount} {crypto_asset.symbol} from {pool_address} curve pool'  # noqa: E501
+                withdrawal_events.append(event)
+
+        if return_event_idx is not None and len(withdrawal_events) > 0:
+            self._sort_events(
+                action_type='removal',
+                return_or_receive_event=decoded_events[return_event_idx],
+                withdrawal_or_deposit_events=withdrawal_events,
+                all_events=decoded_events,
+            )
+            return
+
+        log.debug(
+            f'Expected to see a return pool token event and withdrawal events '
+            f'for a curve pool, but have not found them. '
+            f'Tx_hash: {transaction.tx_hash.hex()}',
+        )
+
     def _maybe_enrich_curve_transfers(self, context: EnricherContext) -> TransferEnrichmentOutput:
         """
         May raise:
@@ -437,19 +599,6 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         - WrongAssetType
         """
         source_address = hex_or_bytes_to_address(context.tx_log.topics[1])
-        to_address = hex_or_bytes_to_address(context.tx_log.topics[2])
-        if (  # deposit give asset
-            context.event.event_type == HistoryEventType.RECEIVE and
-            context.event.event_subtype == HistoryEventSubType.NONE and
-            source_address == CURVE_Y_DEPOSIT and
-            context.transaction.from_address == to_address
-        ):
-            crypto_asset = context.event.asset.resolve_to_crypto_asset()
-            context.event.event_type = HistoryEventType.WITHDRAWAL
-            context.event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-            context.event.counterparty = CPT_CURVE
-            context.event.notes = f'Receive {context.event.balance.amount} {crypto_asset.symbol} from the curve pool {CURVE_Y_DEPOSIT}'  # noqa: E501
-            return DEFAULT_ENRICHMENT_OUTPUT
         if (
             context.event.event_type == HistoryEventType.RECEIVE and
             context.event.event_subtype == HistoryEventSubType.NONE and
@@ -460,6 +609,32 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             context.event.notes = f'Receive {context.event.balance.amount} {crypto_asset.symbol} rewards from {source_address} curve gauge'  # noqa: E501
             context.event.counterparty = CPT_CURVE
         return DEFAULT_ENRICHMENT_OUTPUT
+
+    @staticmethod
+    def _sort_events(
+            action_type: Literal['addition', 'removal'],
+            return_or_receive_event: 'EvmEvent',
+            withdrawal_or_deposit_events: list['EvmEvent'],
+            all_events: list['EvmEvent'],
+    ) -> list['EvmEvent']:
+        """
+        This method sorts the events in the expected order and adds
+        extra info to the in/out event depending on the action_type.
+        """
+        if action_type == 'addition':
+            return_or_receive_event.extra_data = {
+                'deposit_events_num': len(withdrawal_or_deposit_events),
+            }
+        else:  # can only be removal
+            return_or_receive_event.extra_data = {
+                'withdrawal_events_num': len(withdrawal_or_deposit_events),
+            }
+        previous_event = return_or_receive_event
+        for event in withdrawal_or_deposit_events:
+            maybe_reshuffle_events(previous_event, event, all_events)
+            previous_event = event
+
+        return all_events
 
     # -- DecoderInterface methods
 
@@ -474,6 +649,9 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         })
         mapping[CURVE_SWAP_ROUTER] = (self._decode_curve_events,)
         return mapping
+
+    def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
+        return {CPT_CURVE: [(0, self._handle_post_decoding)]}
 
     def enricher_rules(self) -> list[Callable]:
         return [

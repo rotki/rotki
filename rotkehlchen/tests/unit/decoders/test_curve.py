@@ -443,7 +443,7 @@ def test_curve_remove_liquidity(database, ethereum_transaction_decoder):
             asset=A_LINK,
             balance=Balance(amount=FVal('3120.992481448818559504'), usd_value=ZERO),
             location_label=location_label,
-            notes='Remove 3120.992481448818559504 LINK from the curve pool 0xF178C0b5Bb7e7aBF4e12A4838C7b7c5bA2C623c0',  # noqa: E501
+            notes='Remove 3120.992481448818559504 LINK from 0xF178C0b5Bb7e7aBF4e12A4838C7b7c5bA2C623c0 curve pool',  # noqa: E501
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xF178C0b5Bb7e7aBF4e12A4838C7b7c5bA2C623c0'),
         )]
@@ -715,10 +715,11 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=EvmToken('eip155:1/erc20:0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
-            balance=Balance(amount=FVal('584.093916507047953183'), usd_value=ZERO),
+            balance=Balance(FVal('584.093916507047953183')),
             location_label=location_label,
             notes='Return 584.093916507047953183 yDAI+yUSDC+yUSDT+yTUSD',
             counterparty=CPT_CURVE,
+            extra_data={'withdrawal_events_num': 1},
             address=string_to_evm_address('0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3'),
         ), EvmEvent(
             event_identifier=evmhash,
@@ -730,7 +731,7 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
             asset=A_USDC,
             balance=Balance(amount=FVal('665.267705'), usd_value=ZERO),
             location_label=location_label,
-            notes='Receive 665.267705 USDC from the curve pool 0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3',  # noqa: E501
+            notes='Remove 665.267705 USDC from 0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51 curve pool',  # noqa: E501
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3'),
         )]
@@ -1147,6 +1148,316 @@ def test_curve_swap_router(ethereum_transaction_decoder, ethereum_accounts):
             notes='Receive 73317.327157158562433931 CRV as the result of a swap in curve',  # noqa: E501
             counterparty='curve',
             address=string_to_evm_address('0x99a58482BD75cbab83b27EC03CA68fF489b5788f'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xdE206bC0Fde2eF5C8BB6A1d552a64F82A2407Be4']])
+def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_accounts):
+    """Check that adding liquidity to a curve pool using the USDN contract is properly decoded."""
+    tx_hex = deserialize_evm_tx_hash('0x6c28df56ae4a7f784577273f72402a9b6640024327ee952fdde72c9cfdf08da5')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(Timestamp(1674470159000))
+    expected_events = [
+        EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(FVal('0.005672980418415474')),
+            location_label=user_address,
+            counterparty=CPT_GAS,
+            notes='Burned 0.005672980418415474 ETH for gas',
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=78,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:1/erc20:0x4f3E8F405CF5aFC05D68142F3783bDfE13811522'),
+            balance=Balance(FVal('2676.003172633078929284')),
+            location_label=user_address,
+            counterparty=CPT_CURVE,
+            notes='Receive 2676.003172633078929284 usdn3CRV after depositing in a curve pool',
+            address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
+            extra_data={'deposit_events_num': 1},
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=85,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_USDC,
+            balance=Balance(FVal('761.396655')),
+            location_label=user_address,
+            counterparty=CPT_CURVE,
+            address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
+            notes='Deposit 761.396655 USDC in curve pool 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7',  # noqa: E501
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x6d84264A7bD2Cffa4A117BA2350403b3A9866949']])
+def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts):
+    """Check that removing liquidity from a curve pool using the USDN contract is properly decoded."""  # noqa: E501
+    tx_hex = deserialize_evm_tx_hash('0x4d77fba437b9dee6679dbb0f238b123f01b7b1bdd41bf46e35b00ce016cf8ab2')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(Timestamp(1676708639000))
+    expected_events = [
+        EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(FVal('0.009847222')),
+            location_label=user_address,
+            notes='Burned 0.009847222 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=224,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:1/erc20:0x4f3E8F405CF5aFC05D68142F3783bDfE13811522'),
+            balance=Balance(FVal('22876.332126821513165437')),
+            location_label=user_address,
+            notes='Return 22876.332126821513165437 usdn3CRV',
+            counterparty=CPT_CURVE,
+            extra_data={'withdrawal_events_num': 4},
+            address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=234,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:1/erc20:0x674C6Ad92Fd080e4004b2312b45f796a192D27a0'),
+            balance=Balance(FVal('25186.906071469663867559')),
+            location_label=user_address,
+            notes='Remove 25186.906071469663867559 USDN from 0x0f9cb53Ebe405d49A0bbdBD291A65Ff571bC83e1 curve pool',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=235,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_DAI,
+            balance=Balance(FVal('93.260120972251887648')),
+            location_label=user_address,
+            notes='Remove 93.260120972251887648 DAI from 0x0f9cb53Ebe405d49A0bbdBD291A65Ff571bC83e1 curve pool',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=236,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_USDC,
+            balance=Balance(FVal('96.486847')),
+            location_label=user_address,
+            notes='Remove 96.486847 USDC from 0x0f9cb53Ebe405d49A0bbdBD291A65Ff571bC83e1 curve pool',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=237,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_USDT,
+            balance=Balance(FVal('70.225535')),
+            location_label=user_address,
+            notes='Remove 70.225535 USDT from 0x0f9cb53Ebe405d49A0bbdBD291A65Ff571bC83e1 curve pool',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xcbE942516AE7687d80a5fF94F8f9A203Be800713']])
+def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts):
+    """Check that adding liquidity to a curve pool using the 3Pool zap contract is properly decoded."""  # noqa: E501
+    tx_hex = deserialize_evm_tx_hash('0xf7c6764b832069785eeee22a078f4cb3c92149c25eb0bdc6bba36ebd1598c255')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1680503171000)
+    expected_events = [
+        EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(FVal('0.006158572854866488')),
+            location_label=user_address,
+            counterparty=CPT_GAS,
+            notes='Burned 0.006158572854866488 ETH for gas',
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=66,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:1/erc20:0xc270b3B858c335B6BA5D5b10e2Da8a09976005ad'),
+            balance=Balance(FVal('195463.032550265720355345')),
+            location_label=user_address,
+            counterparty=CPT_CURVE,
+            notes='Receive 195463.032550265720355345 pax-usdp3CRV-f after depositing in a curve pool',  # noqa: E501
+            address=string_to_evm_address('0x0000000000000000000000000000000000000000'),
+            extra_data={'deposit_events_num': 1},
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=71,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_USDT,
+            balance=Balance(FVal('200000')),
+            location_label=user_address,
+            counterparty=CPT_CURVE,
+            address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
+            notes='Deposit 200000 USDT in curve pool 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7',  # noqa: E501
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xC7BFb2ED20D14407C78cc1FC4a4Abe39f1964964']])
+def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts):
+    """Check that removing liquidity from a curve pool using the 3Pool zap contract is properly decoded."""  # noqa: E501
+    tx_hex = deserialize_evm_tx_hash('0xbf4a445d0452e2f1e046c3ab3d10018c801e2acae89051c98332e9264f36d7f7')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1680390095000)
+    expected_events = [
+        EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(FVal('0.007508781310937599')),
+            location_label=user_address,
+            notes='Burned 0.007508781310937599 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=39,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:1/erc20:0xe9123CBC5d1EA65301D417193c40A72Ac8D53501'),
+            balance=Balance(FVal('95093.489007941270920107')),
+            location_label=user_address,
+            notes='Return 95093.489007941270920107 3CRVlvUSD3CRV-f',
+            counterparty=CPT_CURVE,
+            extra_data={'withdrawal_events_num': 4},
+            address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=49,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:1/erc20:0x94A18d9FE00bab617fAD8B49b11e9F1f64Db6b36'),
+            balance=Balance(FVal('56718.010997734097866656')),
+            location_label=user_address,
+            notes='Remove 56718.010997734097866656 lvUSD from 0xe9123CBC5d1EA65301D417193c40A72Ac8D53501 curve pool',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=50,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_DAI,
+            balance=Balance(FVal('14119.166521016875857287')),
+            location_label=user_address,
+            notes='Remove 14119.166521016875857287 DAI from 0xe9123CBC5d1EA65301D417193c40A72Ac8D53501 curve pool',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=51,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_USDC,
+            balance=Balance(FVal('16072.772093')),
+            location_label=user_address,
+            notes='Remove 16072.772093 USDC from 0xe9123CBC5d1EA65301D417193c40A72Ac8D53501 curve pool',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=52,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_USDT,
+            balance=Balance(FVal('8326.299501')),
+            location_label=user_address,
+            notes='Remove 8326.299501 USDT from 0xe9123CBC5d1EA65301D417193c40A72Ac8D53501 curve pool',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ),
     ]
     assert events == expected_events
