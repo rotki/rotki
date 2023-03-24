@@ -78,7 +78,7 @@ importers:
       flush-promises: 1.0.2
       lodash: 4.17.21
       loglevel: 1.8.1
-      msw: ^1.2.0
+      msw: 1.2.1
       pinia: 2.0.32
       postcss: 8.4.21
       postcss-html: 1.5.0
@@ -183,7 +183,7 @@ importers:
       electron-store: 8.1.0
       eslint-plugin-cypress: 2.12.1_eslint@8.34.0
       flush-promises: 1.0.2
-      msw: 1.2.0_typescript@4.9.5
+      msw: 1.2.1_typescript@4.9.5
       postcss: 8.4.21
       postcss-html: 1.5.0
       postcss-scss: 4.0.6_postcss@8.4.21
@@ -2047,7 +2047,7 @@ packages:
       '@xmldom/xmldom': 0.8.6
       debug: 4.3.4
       headers-polyfill: 3.1.2
-      outvariant: 1.3.0
+      outvariant: 1.4.0
       strict-event-emitter: 0.2.8
       web-encoding: 1.1.5
     transitivePeerDependencies:
@@ -7135,8 +7135,8 @@ packages:
     resolution: {integrity: sha512-dqJvarLawXsFbNDeJW7zAz8ItJ9cd28YufuuFzh0G8pNHjJMnY08Dv7sYX2uF5UpQOwieAeOExEYAWWfu7ZZUA==}
     engines: {node: '>= 0.4'}
 
-  /is-node-process/1.0.1:
-    resolution: {integrity: sha512-5IcdXuf++TTNt3oGl9EBdkvndXA8gmc4bz/Y+mdEpWh3Mcn/+kOw6hI7LD5CocqJWMzeb0I0ClndRVNdEPuJXQ==}
+  /is-node-process/1.2.0:
+    resolution: {integrity: sha512-Vg4o6/fqPxIjtxgUH5QLJhwZ7gW5diGCVlXpuUfELC62CuxM1iHcRe51f2W1FDy04Ai4KJkagKjx3XaqyfRKXw==}
     dev: true
 
   /is-number-object/1.0.7:
@@ -8121,8 +8121,8 @@ packages:
   /ms/2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
-  /msw/1.2.0_typescript@4.9.5:
-    resolution: {integrity: sha512-2nbGxmG8Zk/eCiWCAFtgz5kwPE5YnTlOcRBggFkykqkBSPQE+kvlHJElOzrTG21Tb0ZGXWgn0PI5kyANnOpgug==}
+  /msw/1.2.1_typescript@4.9.5:
+    resolution: {integrity: sha512-bF7qWJQSmKn6bwGYVPXOxhexTCGD5oJSZg8yt8IBClxvo3Dx/1W0zqE1nX9BSWmzRsCKWfeGWcB/vpqV6aclpw==}
     engines: {node: '>=14'}
     hasBin: true
     requiresBuild: true
@@ -8143,10 +8143,10 @@ packages:
       graphql: 16.6.0
       headers-polyfill: 3.1.2
       inquirer: 8.2.5
-      is-node-process: 1.0.1
+      is-node-process: 1.2.0
       js-levenshtein: 1.1.6
       node-fetch: 2.6.9
-      outvariant: 1.3.0
+      outvariant: 1.4.0
       path-to-regexp: 6.2.1
       strict-event-emitter: 0.4.6
       type-fest: 2.19.0
@@ -8417,8 +8417,8 @@ packages:
   /ospath/1.2.2:
     resolution: {integrity: sha512-o6E5qJV5zkAbIDNhGSIlyOhScKXgQrSRMilfph0clDfM0nEnBOlKlH4sWDmG95BW/CvwNz0vmm7dJVtU2KlMiA==}
 
-  /outvariant/1.3.0:
-    resolution: {integrity: sha512-yeWM9k6UPfG/nzxdaPlJkB2p08hCg4xP6Lx99F+vP8YF7xyZVfTmJjrrNalkmzudD4WFvNLVudQikqUmF8zhVQ==}
+  /outvariant/1.4.0:
+    resolution: {integrity: sha512-AlWY719RF02ujitly7Kk/0QlV+pXGFDHrHf9O2OKqyqgBieaPOIeuSkL8sRK6j2WK+/ZAURq2kZsY0d8JapUiw==}
     dev: true
 
   /p-cancelable/2.1.1:
