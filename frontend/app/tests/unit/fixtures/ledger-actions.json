@@ -1,0 +1,55 @@
+{
+  "result": {
+    "entries": [
+      {
+        "entry": {
+          "identifier": 1,
+          "timestamp": 1679670151,
+          "action_type": "loss",
+          "location": "binance",
+          "amount": "10000",
+          "asset": "eip155:56/erc20:0x3019BF2a2eF8040C242C9a4c5c4BD4C81678b2A1",
+          "rate": "2",
+          "rate_asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "link": null,
+          "notes": null
+        },
+        "ignored_in_accounting": false
+      },
+      {
+        "entry": {
+          "identifier": 2,
+          "timestamp": 1679670151,
+          "action_type": "loss",
+          "location": "binance",
+          "amount": "10000",
+          "asset": "eip155:56/erc20:0x3019BF2a2eF8040C242C9a4c5c4BD4C81678b2A1",
+          "rate": "2",
+          "rate_asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "link": null,
+          "notes": null
+        },
+        "ignored_in_accounting": false
+      },
+      {
+        "entry": {
+          "identifier": 3,
+          "timestamp": 1679670151,
+          "action_type": "loss",
+          "location": "binance",
+          "amount": "10000",
+          "asset": "eip155:56/erc20:0x3019BF2a2eF8040C242C9a4c5c4BD4C81678b2A1",
+          "rate": "2",
+          "rate_asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "link": null,
+          "notes": null
+        },
+        "ignored_in_accounting": false
+      }
+    ],
+    "entries_found": 3,
+    "entries_total": 3,
+    "entries_limit": -1
+  },
+  "message": ""
+}

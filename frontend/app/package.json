@@ -96,6 +96,7 @@
     "eslint": "8.34.0",
     "eslint-plugin-cypress": "2.12.1",
     "flush-promises": "1.0.2",
+    "msw": "^1.2.0",
     "postcss": "8.4.21",
     "postcss-html": "1.5.0",
     "postcss-scss": "4.0.6",

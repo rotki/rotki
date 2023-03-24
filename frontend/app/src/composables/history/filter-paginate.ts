@@ -70,7 +70,7 @@ export const useHistoryPaginationFilter = <
       offset,
       orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
       ascending: sortBy?.length > 0 ? sortDesc.map(bool => !bool) : [false]
-    } as U;
+    } as U; // todo: figure out a way to not typecast
   });
 
   const { isLoading, state, execute } = useAsyncState<
