@@ -503,17 +503,16 @@ class Uniswapv3Decoder(DecoderInterface):
             context: EnricherContext,
     ) -> TransferEnrichmentOutput:
         """This method enriches Uniswap V3 LP creation transactions."""
-        event = context.event
         if (
-            event.asset == self.uniswap_v3_nft and
-            event.balance.amount == ONE and
-            event.address == ZERO_ADDRESS and
-            event.event_type == HistoryEventType.RECEIVE and
-            event.event_subtype == HistoryEventSubType.NONE
+            context.event.asset == self.uniswap_v3_nft and
+            context.event.balance.amount == ONE and
+            context.event.address == ZERO_ADDRESS and
+            context.event.event_type == HistoryEventType.RECEIVE and
+            context.event.event_subtype == HistoryEventSubType.NONE
         ):
-            event.event_subtype = HistoryEventSubType.NFT
-            event.notes = f'Create {CPT_UNISWAP_V3} LP with id {hex_or_bytes_to_int(context.tx_log.topics[3])}'  # noqa: E501
-            event.counterparty = CPT_UNISWAP_V3
+            context.event.event_subtype = HistoryEventSubType.NFT
+            context.event.notes = f'Create {CPT_UNISWAP_V3} LP with id {hex_or_bytes_to_int(context.tx_log.topics[3])}'  # noqa: E501
+            context.event.counterparty = CPT_UNISWAP_V3
             return DEFAULT_ENRICHMENT_OUTPUT
 
         return DEFAULT_ENRICHMENT_OUTPUT

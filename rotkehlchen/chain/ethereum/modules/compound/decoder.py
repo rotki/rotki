@@ -212,17 +212,15 @@ class CompoundDecoder(DecoderInterface):
             context: DecoderContext,
             compound_token: EvmToken,
     ) -> DecodingOutput:
-        transaction = context.transaction
-        decoded_events = context.decoded_events
         if context.tx_log.topics[0] == MINT_COMPOUND_TOKEN:
             log.debug(f'Hash: {context.transaction.tx_hash.hex()}')
-            return self._decode_mint(transaction=transaction, tx_log=context.tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
+            return self._decode_mint(transaction=context.transaction, tx_log=context.tx_log, decoded_events=context.decoded_events, compound_token=compound_token)  # noqa: E501
 
         if context.tx_log.topics[0] in (BORROW_COMPOUND, REPAY_COMPOUND):
-            return self._decode_borrow_and_repay(tx_log=context.tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
+            return self._decode_borrow_and_repay(tx_log=context.tx_log, decoded_events=context.decoded_events, compound_token=compound_token)  # noqa: E501
 
         if context.tx_log.topics[0] == REDEEM_COMPOUND_TOKEN:
-            return self._decode_redeem(tx_log=context.tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
+            return self._decode_redeem(tx_log=context.tx_log, decoded_events=context.decoded_events, compound_token=compound_token)  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 

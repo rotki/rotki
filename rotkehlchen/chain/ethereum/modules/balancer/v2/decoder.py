@@ -123,28 +123,27 @@ class Balancerv2Decoder(DecoderInterface):
         - UnknownAsset
         - WrongAssetType
         """
-        event, action_items = context.event, context.action_items
-        if action_items is None or len(action_items) == 0 or context.transaction.to_address != VAULT_ADDRESS:  # noqa: E501
+        if context.action_items is None or len(context.action_items) == 0 or context.transaction.to_address != VAULT_ADDRESS:  # noqa: E501
             return DEFAULT_ENRICHMENT_OUTPUT
 
-        if action_items[-1].extra_data is None:
+        if context.action_items[-1].extra_data is None:
             return DEFAULT_ENRICHMENT_OUTPUT
 
-        asset = event.asset.resolve_to_evm_token()
+        asset = context.event.asset.resolve_to_evm_token()
         if (
-            isinstance(action_items[-1].asset, EvmToken) is False or
-            action_items[-1].asset.evm_address != context.tx_log.address or  # type: ignore[attr-defined]  # noqa: E501 mypy fails to understand that due the previous statmenet in the or this check won't be evaluated if the asset isn't a token
-            action_items[-1].amount != event.balance.amount
+            isinstance(context.action_items[-1].asset, EvmToken) is False or
+            context.action_items[-1].asset.evm_address != context.tx_log.address or  # type: ignore[attr-defined]  # noqa: E501 mypy fails to understand that due the previous statmenet in the or this check won't be evaluated if the asset isn't a token
+            context.action_items[-1].amount != context.event.balance.amount
         ):
             return DEFAULT_ENRICHMENT_OUTPUT
 
-        event.counterparty = CPT_BALANCER_V2
-        event.event_type = HistoryEventType.TRADE
-        if asset == event.asset:
-            event.event_subtype = HistoryEventSubType.RECEIVE
-            event.notes = f'Receive {event.balance.amount} {asset.symbol} from Balancer v2'
+        context.event.counterparty = CPT_BALANCER_V2
+        context.event.event_type = HistoryEventType.TRADE
+        if asset == context.event.asset:
+            context.event.event_subtype = HistoryEventSubType.RECEIVE
+            context.event.notes = f'Receive {context.event.balance.amount} {asset.symbol} from Balancer v2'  # noqa: E501
         else:
-            event.event_subtype = HistoryEventSubType.SPEND
+            context.event.event_subtype = HistoryEventSubType.SPEND
 
         return DEFAULT_ENRICHMENT_OUTPUT
 

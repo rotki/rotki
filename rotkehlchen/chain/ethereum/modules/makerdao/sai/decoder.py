@@ -385,43 +385,42 @@ class MakerdaosaiDecoder(DecoderInterface):
             context: EnricherContext,
     ) -> TransferEnrichmentOutput:
         """This method enriches relevant asset transfers to and from the SaiTub contract."""
-        event = context.event
         if (
-            event.event_type == HistoryEventType.SPEND and
-            event.event_subtype == HistoryEventSubType.NONE and
-            event.address in (MAKERDAO_SAITUB_CONTRACT, MAKERDAO_SAI_PROXY_CONTRACT)
+            context.event.event_type == HistoryEventType.SPEND and
+            context.event.event_subtype == HistoryEventSubType.NONE and
+            context.event.address in (MAKERDAO_SAITUB_CONTRACT, MAKERDAO_SAI_PROXY_CONTRACT)
         ):
-            if event.asset == self.weth:
-                event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.notes = f'Supply {event.balance.amount} {self.weth.symbol} to Sai vault'
-                event.counterparty = CPT_SAI
+            if context.event.asset == self.weth:
+                context.event.event_type = HistoryEventType.DEPOSIT
+                context.event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                context.event.notes = f'Supply {context.event.balance.amount} {self.weth.symbol} to Sai vault'  # noqa: E501
+                context.event.counterparty = CPT_SAI
                 return DEFAULT_ENRICHMENT_OUTPUT
 
-            if event.asset == self.peth:
-                event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.notes = f'Increase CDP collateral by {event.balance.amount} {self.peth.symbol}'  # noqa: E501
-                event.counterparty = CPT_SAI
+            if context.event.asset == self.peth:
+                context.event.event_type = HistoryEventType.DEPOSIT
+                context.event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                context.event.notes = f'Increase CDP collateral by {context.event.balance.amount} {self.peth.symbol}'  # noqa: E501
+                context.event.counterparty = CPT_SAI
                 return DEFAULT_ENRICHMENT_OUTPUT
 
         if (
-            event.event_type == HistoryEventType.RECEIVE and
-            event.event_subtype == HistoryEventSubType.NONE and
-            event.address == MAKERDAO_SAITUB_CONTRACT
+            context.event.event_type == HistoryEventType.RECEIVE and
+            context.event.event_subtype == HistoryEventSubType.NONE and
+            context.event.address == MAKERDAO_SAITUB_CONTRACT
         ):
-            if event.asset == self.weth:
-                event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                event.notes = f'Withdraw {event.balance.amount} {self.weth.symbol} from Sai vault'
-                event.counterparty = CPT_SAI
+            if context.event.asset == self.weth:
+                context.event.event_type = HistoryEventType.WITHDRAWAL
+                context.event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                context.event.notes = f'Withdraw {context.event.balance.amount} {self.weth.symbol} from Sai vault'  # noqa: E501
+                context.event.counterparty = CPT_SAI
                 return DEFAULT_ENRICHMENT_OUTPUT
 
-            if event.asset == self.peth:
-                event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                event.notes = f'Decrease CDP collateral by {event.balance.amount} {self.peth.symbol}'  # noqa: E501
-                event.counterparty = CPT_SAI
+            if context.event.asset == self.peth:
+                context.event.event_type = HistoryEventType.WITHDRAWAL
+                context.event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                context.event.notes = f'Decrease CDP collateral by {context.event.balance.amount} {self.peth.symbol}'  # noqa: E501
+                context.event.counterparty = CPT_SAI
                 return DEFAULT_ENRICHMENT_OUTPUT
 
         return DEFAULT_ENRICHMENT_OUTPUT
