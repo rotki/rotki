@@ -301,28 +301,27 @@ def enrich_uniswap_v2_like_lp_tokens_transfers(
         lp_token_symbol: Literal['UNI-V2', 'SLP'],
 ) -> TransferEnrichmentOutput:
     """This function enriches LP tokens transfers of Uniswap V2 like AMMs."""
-    event = context.event
-    resolved_asset = event.asset.resolve_to_crypto_asset()
+    resolved_asset = context.event.asset.resolve_to_crypto_asset()
     if (
         resolved_asset.symbol == lp_token_symbol and
-        event.event_type == HistoryEventType.RECEIVE and
-        event.event_subtype == HistoryEventSubType.NONE and
-        event.address == ZERO_ADDRESS
+        context.event.event_type == HistoryEventType.RECEIVE and
+        context.event.event_subtype == HistoryEventSubType.NONE and
+        context.event.address == ZERO_ADDRESS
     ):
-        event.counterparty = counterparty
-        event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-        event.notes = f'Receive {event.balance.amount} {resolved_asset.symbol} from {counterparty} pool'  # noqa: E501
+        context.event.counterparty = counterparty
+        context.event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+        context.event.notes = f'Receive {context.event.balance.amount} {resolved_asset.symbol} from {counterparty} pool'  # noqa: E501
         return DEFAULT_ENRICHMENT_OUTPUT
 
     if (
         resolved_asset.symbol == lp_token_symbol and
-        event.event_type == HistoryEventType.SPEND and
-        event.event_subtype == HistoryEventSubType.NONE and
-        event.address == context.tx_log.address  # the recipient of the transfer is the pool
+        context.event.event_type == HistoryEventType.SPEND and
+        context.event.event_subtype == HistoryEventSubType.NONE and
+        context.event.address == context.tx_log.address  # the recipient of the transfer is the pool  # noqa: E501
     ):
-        event.counterparty = counterparty
-        event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-        event.notes = f'Send {event.balance.amount} {resolved_asset.symbol} to {counterparty} pool'
+        context.event.counterparty = counterparty
+        context.event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+        context.event.notes = f'Send {context.event.balance.amount} {resolved_asset.symbol} to {counterparty} pool'  # noqa: E501
         return DEFAULT_ENRICHMENT_OUTPUT
 
     return DEFAULT_ENRICHMENT_OUTPUT

@@ -216,9 +216,7 @@ class Aavev2Decoder(DecoderInterface):
 
     def _decode_lending_pool_events(self, context: DecoderContext) -> DecodingOutput:
         """Decodes AAVE V2 Lending Pool events"""
-        decoded_events = context.decoded_events
-        event_signature = context.tx_log.topics[0]
-        if event_signature not in (ENABLE_COLLATERAL, DISABLE_COLLATERAL, DEPOSIT, WITHDRAW, BORROW, REPAY):  # noqa: E501
+        if context.tx_log.topics[0] not in (ENABLE_COLLATERAL, DISABLE_COLLATERAL, DEPOSIT, WITHDRAW, BORROW, REPAY):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
         token = EvmToken(evm_address_to_identifier(
@@ -231,13 +229,13 @@ class Aavev2Decoder(DecoderInterface):
             event = self._decode_collateral_events(token, context.transaction, context.tx_log)
             return DecodingOutput(event=event)
         if context.tx_log.topics[0] == DEPOSIT:
-            self._decode_deposit(token, context.tx_log, decoded_events)
+            self._decode_deposit(token, context.tx_log, context.decoded_events)
         elif context.tx_log.topics[0] == WITHDRAW:
-            self._decode_withdrawal(token, context.tx_log, decoded_events)
+            self._decode_withdrawal(token, context.tx_log, context.decoded_events)
         elif context.tx_log.topics[0] == BORROW:
-            self._decode_borrow(token, context.tx_log, decoded_events)
+            self._decode_borrow(token, context.tx_log, context.decoded_events)
         else:  # Repay
-            self._decode_repay(token, context.tx_log, decoded_events)
+            self._decode_repay(token, context.tx_log, context.decoded_events)
 
         return DEFAULT_DECODING_OUTPUT
 
