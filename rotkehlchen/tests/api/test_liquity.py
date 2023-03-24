@@ -232,7 +232,6 @@ def test_stability_pool(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('use_custom_database', ['liquity_stats.db'])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
