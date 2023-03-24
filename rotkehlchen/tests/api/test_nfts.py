@@ -137,7 +137,7 @@ def test_nft_query_after_account_add(rotkehlchen_api_server):
 
 
 @requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
-@flaky(max_runs=3, min_passes=1)  # all opensea calls have become quite flaky
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC2, TEST_ACC3]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
