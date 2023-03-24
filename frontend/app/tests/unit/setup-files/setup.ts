@@ -5,8 +5,15 @@ import { setupServer } from 'msw/node';
 import { mockT, mockTc } from '../i18n';
 import tradeHandlers from './handlers/trades';
 import assetMovementHandlers from './handlers/asset-movements';
+import ledgerActionHandlers from './handlers/ledger-actions';
+import transactionHandlers from './handlers/evm-transactions';
 
-const server = setupServer(...tradeHandlers, ...assetMovementHandlers);
+const server = setupServer(
+  ...tradeHandlers,
+  ...assetMovementHandlers,
+  ...ledgerActionHandlers,
+  ...transactionHandlers
+);
 
 beforeAll(() => {
   Vue.use(Vuetify);

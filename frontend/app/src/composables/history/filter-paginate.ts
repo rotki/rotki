@@ -176,6 +176,7 @@ export const useHistoryPaginationFilter = <
 
   return {
     options: paginationOptions,
+    pageParams,
     selected,
     openDialog,
     editableItem,
