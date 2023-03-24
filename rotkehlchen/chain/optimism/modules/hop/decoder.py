@@ -4,7 +4,11 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    DecoderContext,
+    DecodingOutput,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_HETH_OPT, A_WETH_OPT
 from rotkehlchen.types import ChecksumEvmAddress
@@ -38,11 +42,11 @@ class HopDecoder(DecoderInterface):
 
     def _decode_receive_eth(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != TRANSFER_FROM_L1_COMPLETED:
-            return DecodingOutput(counterparty=CPT_HOP)
+            return DEFAULT_DECODING_OUTPUT
 
         recipient = hex_or_bytes_to_address(context.tx_log.topics[1])
         if not self.base.is_tracked(recipient):
-            return DecodingOutput(counterparty=CPT_HOP)
+            return DEFAULT_DECODING_OUTPUT
 
         amount_raw = hex_or_bytes_to_int(context.tx_log.data[:32])
         heth_amount = token_normalized_value_decimals(amount_raw, 18)
@@ -56,7 +60,7 @@ class HopDecoder(DecoderInterface):
                 event.extra_data = {'sent_amount': str(heth_amount)}
                 break
 
-        return DecodingOutput(counterparty=CPT_HOP)
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

@@ -5,7 +5,11 @@ from rotkehlchen.accounting.structures.evm_event import LIQUITY_STAKING_DETAILS
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    DecoderContext,
+    DecodingOutput,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.constants.misc import ZERO
@@ -34,7 +38,6 @@ STAKING_GAINS = b'\xf7D\xd3L\xa1\xcb%\xac\xfaA\x80\xdf_\t\xa6s\x06\x10q\x10\xa9\
 STAKING_ETH_SENT = b'a\t\xe2U\x9d\xfavj\xae\xc7\x11\x83Q\xd4\x8aR?\nAW\xf4\x9c\x8dht\x9c\x8a\xc4\x13\x18\xad\x12'  # noqa: E501
 STAKING_LQTY_EVENTS = {STAKING_LQTY_CHANGE, STAKING_ETH_SENT}
 STAKING_REWARDS_ASSETS = {A_ETH, A_LUSD}
-DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_LIQUITY)
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -90,19 +93,18 @@ class LiquityDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_stability_pool_event(self, context: DecoderContext) -> DecodingOutput:
-        tx_log = context.tx_log
-        if tx_log.topics[0] not in STABILITY_POOL_EVENTS:
+        if context.tx_log.topics[0] not in STABILITY_POOL_EVENTS:
             return DEFAULT_DECODING_OUTPUT
 
         collected_eth, collected_lqty = ZERO, ZERO
-        if tx_log.topics[0] == STABILITY_POOL_GAIN_WITHDRAW:
+        if context.tx_log.topics[0] == STABILITY_POOL_GAIN_WITHDRAW:
             collected_eth = asset_normalized_value(
-                amount=hex_or_bytes_to_int(tx_log.data[0:32]),
+                amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
                 asset=self.eth,
             )
-        elif tx_log.topics[0] == STABILITY_POOL_LQTY_PAID:
+        elif context.tx_log.topics[0] == STABILITY_POOL_LQTY_PAID:
             collected_lqty = asset_normalized_value(
-                amount=hex_or_bytes_to_int(tx_log.data[0:32]),
+                amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
                 asset=self.lqty,
             )
 
@@ -117,11 +119,11 @@ class LiquityDecoder(DecoderInterface):
                     (
                         event.asset == self.eth and
                         event.balance.amount == collected_eth and
-                        tx_log.topics[0] == STABILITY_POOL_GAIN_WITHDRAW
+                        context.tx_log.topics[0] == STABILITY_POOL_GAIN_WITHDRAW
                     ) or (
                         event.asset == self.lqty and
                         event.balance.amount == collected_lqty and
-                        tx_log.topics[0] == STABILITY_POOL_LQTY_PAID
+                        context.tx_log.topics[0] == STABILITY_POOL_LQTY_PAID
                     )
                 ):
                     event.event_type = HistoryEventType.STAKING
@@ -137,22 +139,21 @@ class LiquityDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_lqty_staking_deposits(self, context: DecoderContext) -> DecodingOutput:
-        tx_log = context.tx_log
-        if tx_log.topics[0] not in STAKING_LQTY_EVENTS:
+        if context.tx_log.topics[0] not in STAKING_LQTY_EVENTS:
             return DEFAULT_DECODING_OUTPUT
 
         user, lqty_amount = None, ZERO
-        if tx_log.topics[0] == STAKING_LQTY_CHANGE:
-            user = hex_or_bytes_to_address(tx_log.topics[1])
+        if context.tx_log.topics[0] == STAKING_LQTY_CHANGE:
+            user = hex_or_bytes_to_address(context.tx_log.topics[1])
             lqty_amount = asset_normalized_value(
-                amount=hex_or_bytes_to_int(tx_log.data[0:32]),
+                amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
                 asset=self.lqty,
             )
 
         informational_event = None
         for event in context.decoded_events:
             if (
-                tx_log.topics[0] == STAKING_LQTY_CHANGE and
+                context.tx_log.topics[0] == STAKING_LQTY_CHANGE and
                 event.asset == A_LQTY
             ):
                 extra_data = {
@@ -174,7 +175,7 @@ class LiquityDecoder(DecoderInterface):
                     event.notes = f'Unstake {event.balance.amount} {self.lqty.symbol} from the Liquity protocol'  # noqa: E501
                     event.extra_data = extra_data
             elif (
-                tx_log.topics[0] == STAKING_ETH_SENT and
+                context.tx_log.topics[0] == STAKING_ETH_SENT and
                 event.asset in STAKING_REWARDS_ASSETS and
                 event.event_type == HistoryEventType.RECEIVE
             ):

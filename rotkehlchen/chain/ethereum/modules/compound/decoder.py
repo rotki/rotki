@@ -7,7 +7,12 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_crypto_asset_by_symbol
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecoderContext, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    ActionItem,
+    DecoderContext,
+    DecodingOutput,
+)
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -35,7 +40,6 @@ BORROW_COMPOUND = b'\x13\xedhf\xd4\xe1\xeem\xa4o\x84\\F\xd7\xe5A \x88=u\xc5\xea\
 REPAY_COMPOUND = b'\x1a*"\xcb\x03M&\xd1\x85K\xdcff\xa5\xb9\x1f\xe2^\xfb\xbb]\xca\xd3\xb05Tx\xd6\xf5\xc3b\xa1'  # noqa: E501
 DISTRIBUTED_SUPPLIER_COMP = b',\xae\xcd\x17\xd0/V\xfa\x89w\x05\xdc\xc7@\xda-#|7?phoN\r\x9b\xd3\xbf\x04\x00\xeaz'  # noqa: E501
 DISTRIBUTED_BORROWER_COMP = b'\x1f\xc3\xec\xc0\x87\xd8\xd2\xd1^#\xd0\x03*\xf5\xa4pY\xc3\x89-\x00=\x8e\x13\x9f\xdc\xb6\xbb2|\x99\xa6'  # noqa: E501
-DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_COMPOUND)
 
 
 class CompoundDecoder(DecoderInterface):
@@ -208,18 +212,17 @@ class CompoundDecoder(DecoderInterface):
             context: DecoderContext,
             compound_token: EvmToken,
     ) -> DecodingOutput:
-        tx_log = context.tx_log
         transaction = context.transaction
         decoded_events = context.decoded_events
-        if tx_log.topics[0] == MINT_COMPOUND_TOKEN:
+        if context.tx_log.topics[0] == MINT_COMPOUND_TOKEN:
             log.debug(f'Hash: {context.transaction.tx_hash.hex()}')
-            return self._decode_mint(transaction=transaction, tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
+            return self._decode_mint(transaction=transaction, tx_log=context.tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
 
-        if tx_log.topics[0] in (BORROW_COMPOUND, REPAY_COMPOUND):
-            return self._decode_borrow_and_repay(tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
+        if context.tx_log.topics[0] in (BORROW_COMPOUND, REPAY_COMPOUND):
+            return self._decode_borrow_and_repay(tx_log=context.tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
 
-        if tx_log.topics[0] == REDEEM_COMPOUND_TOKEN:
-            return self._decode_redeem(tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
+        if context.tx_log.topics[0] == REDEEM_COMPOUND_TOKEN:
+            return self._decode_redeem(tx_log=context.tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 

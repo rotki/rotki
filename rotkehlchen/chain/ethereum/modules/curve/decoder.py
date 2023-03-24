@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
     DEFAULT_ENRICHMENT_OUTPUT,
     DecoderContext,
     DecodingOutput,
@@ -39,7 +40,7 @@ REMOVE_LIQUIDITY_3_ASSETS = b'\xa4\x9dL\xf0&V\xae\xbf\x8cw\x1fZ\x85\x85c\x8a*\x1
 REMOVE_LIQUIDITY_4_ASSETS = b'\x98x\xca7^\x10o*C\xc3\xb5\x99\xfcbEh\x13\x1cL\x9aK\xa6j\x14V7\x15v;\xe9\xd5\x9d'  # noqa: E501
 REMOVE_LIQUIDITY_IMBALANCE = b'\xb9d\xb7/s\xf5\xef[\xf0\xfd\xc5Y\xb2\xfa\xb9\xa7\xb1*9\xe4x\x17\xa5G\xf1\xf0\xae\xe4\x7f\xeb\xd6\x02'  # noqa: E501
 CURVE_Y_DEPOSIT = string_to_evm_address('0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3')
-DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_CURVE)
+
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -228,30 +229,29 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_curve_events(self, context: DecoderContext) -> DecodingOutput:
-        tx_log = context.tx_log
-        if tx_log.topics[0] in (
+        if context.tx_log.topics[0] in (
             REMOVE_LIQUIDITY,
             REMOVE_ONE,
             REMOVE_LIQUIDITY_IMBALANCE,
             REMOVE_LIQUIDITY_3_ASSETS,
             REMOVE_LIQUIDITY_4_ASSETS,
         ):
-            user_address = hex_or_bytes_to_address(tx_log.topics[1])
+            user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
             return self._decode_curve_remove_events(
-                tx_log=tx_log,
+                tx_log=context.tx_log,
                 transaction=context.transaction,
                 decoded_events=context.decoded_events,
                 user_address=user_address,
             )
-        if tx_log.topics[0] in (
+        if context.tx_log.topics[0] in (
             ADD_LIQUIDITY,
             ADD_LIQUIDITY_2_ASSETS,
             ADD_LIQUIDITY_4_ASSETS,
         ):
-            user_address = hex_or_bytes_to_address(tx_log.topics[1])
+            user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
             return self._decode_curve_deposit_events(
                 transaction=context.transaction,
-                tx_log=tx_log,
+                tx_log=context.tx_log,
                 decoded_events=context.decoded_events,
                 user_address=user_address,
             )
@@ -265,21 +265,20 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         - UnknownAsset
         - WrongAssetType
         """
-        event, tx_log = context.event, context.tx_log
-        source_address = hex_or_bytes_to_address(tx_log.topics[1])
-        to_address = hex_or_bytes_to_address(tx_log.topics[2])
+        source_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        to_address = hex_or_bytes_to_address(context.tx_log.topics[2])
         if (  # deposit give asset
-            event.event_type == HistoryEventType.RECEIVE and
-            event.event_subtype == HistoryEventSubType.NONE and
+            context.event.event_type == HistoryEventType.RECEIVE and
+            context.event.event_subtype == HistoryEventSubType.NONE and
             source_address == CURVE_Y_DEPOSIT and
             context.transaction.from_address == to_address
         ):
-            crypto_asset = event.asset.resolve_to_crypto_asset()
-            event.event_type = HistoryEventType.WITHDRAWAL
-            event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-            event.counterparty = CPT_CURVE
-            event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} from the curve pool {CURVE_Y_DEPOSIT}'  # noqa: E501
-            return TransferEnrichmentOutput(counterparty=CPT_CURVE)
+            crypto_asset = context.event.asset.resolve_to_crypto_asset()
+            context.event.event_type = HistoryEventType.WITHDRAWAL
+            context.event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+            context.event.counterparty = CPT_CURVE
+            context.event.notes = f'Receive {context.event.balance.amount} {crypto_asset.symbol} from the curve pool {CURVE_Y_DEPOSIT}'  # noqa: E501
+            return DEFAULT_ENRICHMENT_OUTPUT
         return DEFAULT_ENRICHMENT_OUTPUT
 
     # -- DecoderInterface methods

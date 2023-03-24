@@ -10,6 +10,7 @@ from rotkehlchen.chain.ethereum.modules.uniswap.v2.common import (
 )
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
     ActionItem,
     DecodingOutput,
     EnricherContext,
@@ -29,7 +30,6 @@ BURN_SIGNATURE = b'\xdc\xcdA/\x0b\x12R\x81\x9c\xb1\xfd3\x0b\x93"L\xa4&\x12\x89+\
 
 SUSHISWAP_V2_FACTORY = string_to_evm_address('0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac')
 SUSHISWAP_V2_INIT_CODE_HASH = '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303'  # noqa: E501
-DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_SUSHISWAP_V2)
 
 
 class SushiswapDecoder(DecoderInterface):

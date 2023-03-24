@@ -3,7 +3,11 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    DecoderContext,
+    DecodingOutput,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_OP
@@ -37,7 +41,7 @@ class AirdropsDecoder(DecoderInterface):
 
     def _decode_optimism_airdrop_claim(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != OP_CLAIMED:
-            return DecodingOutput(counterparty=CPT_OPTIMISM)
+            return DEFAULT_DECODING_OUTPUT
 
         user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
@@ -51,7 +55,7 @@ class AirdropsDecoder(DecoderInterface):
                 event.notes = f'Claimed {amount} OP from optimism airdrop'
                 break
 
-        return DecodingOutput(counterparty=CPT_OPTIMISM)
+        return DEFAULT_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

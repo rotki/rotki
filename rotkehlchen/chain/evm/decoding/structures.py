@@ -29,7 +29,7 @@ class ActionItem(NamedTuple):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class BasicContext:
+class DecoderBasicContext:
     """Common elements between different contexts in the decoding logic"""
     tx_log: 'EvmTxReceiptLog'
     transaction: 'EvmTransaction'
@@ -38,14 +38,14 @@ class BasicContext:
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DecoderContext(BasicContext):
-    """Context given to decoding rules"""
+class DecoderContext(DecoderBasicContext):
+    """Arguments context for decoding rules"""
     decoded_events: list['EvmEvent']
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class EnricherContext(BasicContext):
-    """Context for enrichment rules"""
+class EnricherContext(DecoderBasicContext):
+    """Arguments context for enrichment rules"""
     token: 'EvmToken'
     event: 'EvmEvent'
 
@@ -53,19 +53,21 @@ class EnricherContext(BasicContext):
 class DecodingOutput(NamedTuple):
     """
     Output of decoding functions
-    Counterparty is set to the counterparty that modified the transaction
+    matched_counterparty is optionally set if needed for decoder rules that matched
+    and is used in post-decoding rules like in the case of balancer
     """
     event: Optional['EvmEvent'] = None
     action_items: list[ActionItem] = []
-    counterparty: Optional[str] = None
+    matched_counterparty: Optional[str] = None
 
 
 class TransferEnrichmentOutput(NamedTuple):
     """
     Return structure for the enrichment functions.
-    Counterparty is set to the counterparty that modified the transaction
+    matched_counterparty is optionally set if needed for enrichment rules
+    and is used in post-decoding rules like in the case of balancer
     """
-    counterparty: Optional[str] = None
+    matched_counterparty: Optional[str] = None
 
 
 DEFAULT_DECODING_OUTPUT: Final = DecodingOutput()

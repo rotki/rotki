@@ -7,7 +7,12 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecoderContext, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    ActionItem,
+    DecoderContext,
+    DecodingOutput,
+)
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_ELFI, A_FOX, A_FPIS, A_UNI
@@ -79,7 +84,7 @@ class AirdropsDecoder(DecoderInterface):
 
     def _decode_uniswap_claim(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != UNISWAP_TOKEN_CLAIMED:
-            return DecodingOutput(counterparty=CPT_UNISWAP)
+            return DEFAULT_DECODING_OUTPUT
 
         user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
@@ -93,7 +98,7 @@ class AirdropsDecoder(DecoderInterface):
                 event.notes = f'Claim {amount} UNI from uniswap airdrop'
                 break
 
-        return DecodingOutput(counterparty=CPT_UNISWAP)
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_fox_claim(
             self,
@@ -104,7 +109,7 @@ class AirdropsDecoder(DecoderInterface):
             action_items: list[ActionItem],  # pylint: disable=unused-argument
     ) -> DecodingOutput:
         if tx_log.topics[0] != FOX_CLAIMED:
-            return DecodingOutput(counterparty=CPT_SHAPESHIFT)
+            return DEFAULT_DECODING_OUTPUT
 
         user_address = hex_or_bytes_to_address(tx_log.topics[1])
         raw_amount = hex_or_bytes_to_int(tx_log.data[64:96])
@@ -118,11 +123,11 @@ class AirdropsDecoder(DecoderInterface):
                 event.notes = f'Claim {amount} FOX from shapeshift airdrop'
                 break
 
-        return DecodingOutput(counterparty=CPT_SHAPESHIFT)
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_badger_claim(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != BADGER_HUNT_EVENT:
-            return DecodingOutput(counterparty=CPT_BADGER)
+            return DEFAULT_DECODING_OUTPUT
 
         user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
@@ -139,11 +144,11 @@ class AirdropsDecoder(DecoderInterface):
                 event.notes = f'Claim {amount} BADGER from badger airdrop'
                 break
 
-        return DecodingOutput(counterparty=CPT_BADGER)
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_oneinch_claim(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != ONEINCH_CLAIMED:
-            return DecodingOutput(counterparty=CPT_ONEINCH)
+            return DEFAULT_DECODING_OUTPUT
 
         user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
@@ -157,7 +162,7 @@ class AirdropsDecoder(DecoderInterface):
                 event.notes = f'Claim {amount} 1INCH from 1inch airdrop'
                 break
 
-        return DecodingOutput(counterparty=CPT_ONEINCH)
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_fpis_claim(
             self,
@@ -165,7 +170,7 @@ class AirdropsDecoder(DecoderInterface):
             airdrop: Literal['convex', 'fpis'],
     ) -> DecodingOutput:
         if context.tx_log.topics[0] != FPIS_CONVEX_CLAIM:
-            return DecodingOutput(counterparty=CPT_FRAX)
+            return DEFAULT_DECODING_OUTPUT
 
         user_address = hex_or_bytes_to_address(context.tx_log.data[0:32])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
@@ -197,14 +202,14 @@ class AirdropsDecoder(DecoderInterface):
                 event.notes = f'Claim {amount} {crypto_asset.symbol} {note_location}'
                 break
 
-        return DecodingOutput(counterparty=counterparty)
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_elfi_claim(self, context: DecoderContext) -> DecodingOutput:
         """Example:
         https://etherscan.io/tx/0x1e58aed1baf70b57e6e3e880e1890e7fe607fddc94d62986c38fe70e483e594b
         """
         if context.tx_log.topics[0] != ELFI_VOTE_CHANGE:
-            return DecodingOutput(counterparty=CPT_ELEMENT_FINANCE)
+            return DEFAULT_DECODING_OUTPUT
 
         user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         delegate_address = hex_or_bytes_to_address(context.tx_log.topics[2])
@@ -240,7 +245,7 @@ class AirdropsDecoder(DecoderInterface):
                 )
                 return DecodingOutput(event=event)
 
-        return DecodingOutput(counterparty=CPT_ELEMENT_FINANCE)
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

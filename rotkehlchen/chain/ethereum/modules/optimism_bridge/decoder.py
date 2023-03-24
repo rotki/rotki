@@ -4,14 +4,17 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    DecoderContext,
+    DecodingOutput,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
-
 
 BRIDGE_ADDRESS = string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1')
 
@@ -24,37 +27,36 @@ ETH_WITHDRAWAL_FINALIZED = b'*\xc6\x9e\xe8\x04\xd9\xa7\xa0\x98BI\xf5\x08\xdf\xab
 class OptimismBridgeDecoder(DecoderInterface):
     def _decode_bridge(self, context: DecoderContext) -> DecodingOutput:
         """Decodes a bridging event. Either a deposit or a withdrawal."""
-        tx_log = context.tx_log
-        if tx_log.topics[0] not in {
+        if context.tx_log.topics[0] not in {
             ETH_DEPOSIT_INITIATED,
             ETH_WITHDRAWAL_FINALIZED,
             ERC20_DEPOSIT_INITIATED,
             ERC20_WITHDRAWAL_FINALIZED,
         }:
             # Make sure that we are decoding a supported event.
-            return DecodingOutput(counterparty=CPT_OPTIMISM)
+            return DEFAULT_DECODING_OUTPUT
 
         # Read information from event's topics & data
-        if tx_log.topics[0] in {ETH_DEPOSIT_INITIATED, ETH_WITHDRAWAL_FINALIZED}:
+        if context.tx_log.topics[0] in {ETH_DEPOSIT_INITIATED, ETH_WITHDRAWAL_FINALIZED}:
             asset = A_ETH.resolve_to_crypto_asset()
-            raw_amount = hex_or_bytes_to_int(tx_log.data[:32])
+            raw_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
             amount = asset_normalized_value(raw_amount, asset)
-            from_address = hex_or_bytes_to_address(tx_log.topics[1])
-            to_address = hex_or_bytes_to_address(tx_log.topics[2])
+            from_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+            to_address = hex_or_bytes_to_address(context.tx_log.topics[2])
         else:  # ERC20_DEPOSIT_INITIATED and ERC20_WITHDRAWAL_FINALIZED
-            ethereum_token_address = hex_or_bytes_to_address(tx_log.topics[1])
+            ethereum_token_address = hex_or_bytes_to_address(context.tx_log.topics[1])
             asset = EvmToken(evm_address_to_identifier(
                 address=ethereum_token_address,
                 chain_id=ChainID.ETHEREUM,
                 token_type=EvmTokenKind.ERC20,
             ))
-            raw_amount = hex_or_bytes_to_int(tx_log.data[32:64])
+            raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
             amount = asset_normalized_value(raw_amount, asset)
-            from_address = hex_or_bytes_to_address(tx_log.topics[3])
-            to_address = hex_or_bytes_to_address(tx_log.data[:32])
+            from_address = hex_or_bytes_to_address(context.tx_log.topics[3])
+            to_address = hex_or_bytes_to_address(context.tx_log.data[:32])
 
         # Determine whether it is a deposit or a withdrawal
-        if tx_log.topics[0] in {ETH_DEPOSIT_INITIATED, ERC20_DEPOSIT_INITIATED}:
+        if context.tx_log.topics[0] in {ETH_DEPOSIT_INITIATED, ERC20_DEPOSIT_INITIATED}:
             expected_event_type = HistoryEventType.SPEND
             expected_location_label = from_address
             new_event_type = HistoryEventType.DEPOSIT
@@ -82,7 +84,7 @@ class OptimismBridgeDecoder(DecoderInterface):
                     f'{to_chain} address {to_address} via optimism bridge'
                 )
 
-        return DecodingOutput(counterparty=CPT_OPTIMISM)
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 
