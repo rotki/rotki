@@ -65,64 +65,63 @@ class YearnDecoder(DecoderInterface):
         First we make sure that the contract is a yearn v1 or v2 contract and that the method
         executed in the contract is one of the expected.
         """
-        event, transaction, token = context.event, context.transaction, context.token
         protocol = CPT_YEARN_V2
-        if transaction.to_address in self.vaults_v1:
+        if context.transaction.to_address in self.vaults_v1:
             protocol = CPT_YEARN_V1
-        elif transaction.to_address not in self.vaults_v2:
+        elif context.transaction.to_address not in self.vaults_v2:
             return DEFAULT_ENRICHMENT_OUTPUT
 
         is_deposit = False
-        if transaction.input_data.startswith(YEARN_DEPOSIT_4_BYTES):
+        if context.transaction.input_data.startswith(YEARN_DEPOSIT_4_BYTES):
             is_deposit = True
-        elif not transaction.input_data.startswith(YEARN_WITHDRAW_4_BYTES):
+        elif not context.transaction.input_data.startswith(YEARN_WITHDRAW_4_BYTES):
             # a yearn contract method that we don't need to handle
             return DEFAULT_ENRICHMENT_OUTPUT
 
         if (
             is_deposit is True and
-            event.event_type == HistoryEventType.SPEND and
-            event.address == transaction.to_address
+            context.event.event_type == HistoryEventType.SPEND and
+            context.event.address == context.transaction.to_address
         ):
-            event.event_type = HistoryEventType.DEPOSIT
-            event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-            event.counterparty = protocol
-            vault_token_name = _get_vault_token_name(transaction.to_address)
-            event.notes = f'Deposit {event.balance.amount} {token.symbol} in {protocol} vault {vault_token_name}'  # noqa: E501
+            context.event.event_type = HistoryEventType.DEPOSIT
+            context.event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+            context.event.counterparty = protocol
+            vault_token_name = _get_vault_token_name(context.transaction.to_address)
+            context.event.notes = f'Deposit {context.event.balance.amount} {context.token.symbol} in {protocol} vault {vault_token_name}'  # noqa: E501
         elif (
             is_deposit is True and
-            event.event_type == HistoryEventType.RECEIVE and
-            event.address == ZERO_ADDRESS
+            context.event.event_type == HistoryEventType.RECEIVE and
+            context.event.address == ZERO_ADDRESS
         ):
-            event.event_type = HistoryEventType.DEPOSIT
-            event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-            event.counterparty = protocol
-            vault_token_name = _get_vault_token_name(transaction.to_address)
-            event.notes = f'Receive {event.balance.amount} {vault_token_name} after deposit in a {protocol} vault'  # noqa: E501
+            context.event.event_type = HistoryEventType.DEPOSIT
+            context.event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+            context.event.counterparty = protocol
+            vault_token_name = _get_vault_token_name(context.transaction.to_address)
+            context.event.notes = f'Receive {context.event.balance.amount} {vault_token_name} after deposit in a {protocol} vault'  # noqa: E501
         elif (
             is_deposit is False and
-            event.event_type == HistoryEventType.RECEIVE and
-            event.address == transaction.to_address
+            context.event.event_type == HistoryEventType.RECEIVE and
+            context.event.address == context.transaction.to_address
         ):
-            event.event_type = HistoryEventType.WITHDRAWAL
-            event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-            event.counterparty = protocol
-            vault_token_name = _get_vault_token_name(transaction.to_address)
-            event.notes = f'Withdraw {event.balance.amount} {token.symbol} from {protocol} vault {vault_token_name}'  # noqa: E501
+            context.event.event_type = HistoryEventType.WITHDRAWAL
+            context.event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+            context.event.counterparty = protocol
+            vault_token_name = _get_vault_token_name(context.transaction.to_address)
+            context.event.notes = f'Withdraw {context.event.balance.amount} {context.token.symbol} from {protocol} vault {vault_token_name}'  # noqa: E501
         elif (
             is_deposit is False and
-            event.event_type == HistoryEventType.SPEND and
-            event.address == ZERO_ADDRESS
+            context.event.event_type == HistoryEventType.SPEND and
+            context.event.address == ZERO_ADDRESS
         ):
-            event.event_type = HistoryEventType.WITHDRAWAL
-            event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-            event.counterparty = protocol
-            event.notes = f'Return {event.balance.amount} {token.symbol} to a {protocol} vault'  # noqa: E501
+            context.event.event_type = HistoryEventType.WITHDRAWAL
+            context.event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+            context.event.counterparty = protocol
+            context.event.notes = f'Return {context.event.balance.amount} {context.token.symbol} to a {protocol} vault'  # noqa: E501
         else:
             # in this case we failed to find a valid transfer event. Inform about the failure
             return DEFAULT_ENRICHMENT_OUTPUT
 
-        return TransferEnrichmentOutput(counterparty=protocol)
+        return DEFAULT_ENRICHMENT_OUTPUT
 
     # -- DecoderInterface methods
 

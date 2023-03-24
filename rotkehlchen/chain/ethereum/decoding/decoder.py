@@ -161,8 +161,8 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                 # Don't try other rules since all of them will fail to resolve the asset
                 return None
 
-            if transfer_enrich.counterparty is not None:
-                return transfer_enrich.counterparty
+            if transfer_enrich.matched_counterparty is not None:
+                return transfer_enrich.matched_counterparty
 
         return None
 

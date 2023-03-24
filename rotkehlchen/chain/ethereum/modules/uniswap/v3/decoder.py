@@ -514,7 +514,7 @@ class Uniswapv3Decoder(DecoderInterface):
             event.event_subtype = HistoryEventSubType.NFT
             event.notes = f'Create {CPT_UNISWAP_V3} LP with id {hex_or_bytes_to_int(context.tx_log.topics[3])}'  # noqa: E501
             event.counterparty = CPT_UNISWAP_V3
-            return TransferEnrichmentOutput(counterparty=CPT_UNISWAP_V3)
+            return DEFAULT_ENRICHMENT_OUTPUT
 
         return DEFAULT_ENRICHMENT_OUTPUT
     # -- DecoderInterface methods

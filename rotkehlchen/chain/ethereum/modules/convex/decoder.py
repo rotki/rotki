@@ -20,6 +20,7 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
     DEFAULT_ENRICHMENT_OUTPUT,
     DecoderContext,
     DecodingOutput,
@@ -38,7 +39,6 @@ log = RotkehlchenLogsAdapter(logger)
 class ConvexDecoder(DecoderInterface):
 
     def _decode_convex_events(self, context: DecoderContext) -> DecodingOutput:
-        tx_log = context.tx_log
         amount_raw = hex_or_bytes_to_int(context.tx_log.data[0:32])
         interacted_address = hex_or_bytes_to_address(context.tx_log.topics[1])
 
@@ -62,36 +62,36 @@ class ConvexDecoder(DecoderInterface):
                 if event.address == ZERO_ADDRESS:
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     event.counterparty = CPT_CONVEX
-                    if tx_log.address in CONVEX_POOLS:
-                        event.notes = f'Return {event.balance.amount} {crypto_asset.symbol} to convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
+                    if context.tx_log.address in CONVEX_POOLS:
+                        event.notes = f'Return {event.balance.amount} {crypto_asset.symbol} to convex {CONVEX_POOLS[context.tx_log.address]} pool'  # noqa: E501
                     else:
                         event.notes = f'Return {event.balance.amount} {crypto_asset.symbol} to convex'  # noqa: E501
                 else:
                     event.event_type = HistoryEventType.DEPOSIT
                     event.counterparty = CPT_CONVEX
-                    if tx_log.address in CONVEX_POOLS:
-                        event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} into convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
+                    if context.tx_log.address in CONVEX_POOLS:
+                        event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} into convex {CONVEX_POOLS[context.tx_log.address]} pool'  # noqa: E501
                     else:
                         event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} into convex'  # noqa: E501
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE
             ):
-                if tx_log.topics[0] in WITHDRAWAL_TOPICS:
+                if context.tx_log.topics[0] in WITHDRAWAL_TOPICS:
                     event.event_type = HistoryEventType.WITHDRAWAL
-                    if tx_log.address in CONVEX_POOLS:
-                        event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} from convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
+                    if context.tx_log.address in CONVEX_POOLS:
+                        event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} from convex {CONVEX_POOLS[context.tx_log.address]} pool'  # noqa: E501
                     else:
                         event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} from convex'  # noqa: E501
                     event.counterparty = CPT_CONVEX
-                elif tx_log.topics[0] in REWARD_TOPICS:
+                elif context.tx_log.topics[0] in REWARD_TOPICS:
                     event.event_subtype = HistoryEventSubType.REWARD
                     event.counterparty = CPT_CONVEX
-                    if tx_log.address in CONVEX_POOLS:
-                        event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
+                    if context.tx_log.address in CONVEX_POOLS:
+                        event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex {CONVEX_POOLS[context.tx_log.address]} pool'  # noqa: E501
                     else:
                         event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex'  # noqa: E501
-        return DecodingOutput(counterparty=CPT_CONVEX)
+        return DEFAULT_DECODING_OUTPUT
 
     @staticmethod
     def _maybe_enrich_convex_transfers(context: EnricherContext) -> TransferEnrichmentOutput:
@@ -104,22 +104,21 @@ class ConvexDecoder(DecoderInterface):
         - UnknownAsset
         - WrongAssetType
         """
-        event, tx_log = context.event, context.tx_log
         if (
-            tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-            tx_log.topics[1] in CONVEX_ABRAS_HEX and
-            event.location_label == context.transaction.from_address and
-            event.event_type == HistoryEventType.RECEIVE and
-            event.event_subtype == HistoryEventSubType.NONE
+            context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+            context.tx_log.topics[1] in CONVEX_ABRAS_HEX and
+            context.event.location_label == context.transaction.from_address and
+            context.event.event_type == HistoryEventType.RECEIVE and
+            context.event.event_subtype == HistoryEventSubType.NONE
         ):
-            crypto_asset = event.asset.resolve_to_crypto_asset()
-            event.event_subtype = HistoryEventSubType.REWARD
-            if tx_log.address in CONVEX_POOLS:
-                event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex {CONVEX_POOLS[tx_log.address]} pool'  # noqa: E501
+            crypto_asset = context.event.asset.resolve_to_crypto_asset()
+            context.event.event_subtype = HistoryEventSubType.REWARD
+            if context.tx_log.address in CONVEX_POOLS:
+                context.event.notes = f'Claim {context.event.balance.amount} {crypto_asset.symbol} reward from convex {CONVEX_POOLS[context.tx_log.address]} pool'  # noqa: E501
             else:
-                event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex'  # noqa: E501
-            event.counterparty = CPT_CONVEX
-            return TransferEnrichmentOutput(counterparty=event.counterparty)
+                context.event.notes = f'Claim {context.event.balance.amount} {crypto_asset.symbol} reward from convex'  # noqa: E501
+            context.event.counterparty = CPT_CONVEX
+            return DEFAULT_ENRICHMENT_OUTPUT
         return DEFAULT_ENRICHMENT_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:

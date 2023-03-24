@@ -189,10 +189,9 @@ class MakerdaosaiDecoder(DecoderInterface):
         An example of such transaction is:
         https://etherscan.io/tx/0x4aed2d2fe5712a5b65cb6866c51ae672a53e39fa25f343e4c6ebaa8eae21de80
         """
-        tx_log = context.tx_log
-        cdp_id = hex_or_bytes_to_int(tx_log.topics[2])
-        withdrawer = hex_or_bytes_to_address(tx_log.topics[1])
-        amount_withdrawn_raw = hex_or_bytes_to_int(tx_log.topics[3])
+        cdp_id = hex_or_bytes_to_int(context.tx_log.topics[2])
+        withdrawer = hex_or_bytes_to_address(context.tx_log.topics[1])
+        amount_withdrawn_raw = hex_or_bytes_to_int(context.tx_log.topics[3])
         amount_withdrawn = asset_normalized_value(amount=amount_withdrawn_raw, asset=self.sai)
 
         for decoded_event in context.decoded_events:
@@ -210,7 +209,7 @@ class MakerdaosaiDecoder(DecoderInterface):
         if self.base.is_tracked(withdrawer) is True:
             event = self.base.make_event_from_transaction(
                 transaction=context.transaction,
-                tx_log=tx_log,
+                tx_log=context.tx_log,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.GENERATE_DEBT,
                 asset=self.sai,
@@ -220,13 +219,13 @@ class MakerdaosaiDecoder(DecoderInterface):
                 notes=f'Borrow {amount_withdrawn} {self.sai.symbol} from CDP {cdp_id}',
                 address=context.transaction.to_address,
             )
-            return DecodingOutput(event=event, counterparty=CPT_SAI)
+            return DecodingOutput(event=event)
 
         # sai was actually borrowed, but it was handled by a proxy so create an action item
         # to transform the "receive" event later
         action_item = ActionItem(
             action='transform',
-            sequence_index=tx_log.log_index,
+            sequence_index=context.tx_log.log_index,
             from_event_type=HistoryEventType.RECEIVE,
             from_event_subtype=HistoryEventSubType.NONE,
             asset=self.sai,
@@ -237,7 +236,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             to_counterparty=CPT_SAI,
             extra_data={'cdp_id': cdp_id},
         )
-        return DecodingOutput(action_items=[action_item], counterparty=CPT_SAI)
+        return DecodingOutput(action_items=[action_item])
 
     def _decode_repay_sai_event(self, context: DecoderContext) -> DecodingOutput:
         """
@@ -246,10 +245,9 @@ class MakerdaosaiDecoder(DecoderInterface):
         An example of such transaction is:
         https://etherscan.io/tx/0xe964cb12f4bbfa1ba4b6db8464eb3f2d4234ceafb0b5ec5f4a2188b0264bab27
         """
-        tx_log = context.tx_log
-        cdp_id = hex_or_bytes_to_int(tx_log.topics[2])
-        depositor = hex_or_bytes_to_address(tx_log.topics[1])
-        amount_paid_raw = hex_or_bytes_to_int(tx_log.topics[3])
+        cdp_id = hex_or_bytes_to_int(context.tx_log.topics[2])
+        depositor = hex_or_bytes_to_address(context.tx_log.topics[1])
+        amount_paid_raw = hex_or_bytes_to_int(context.tx_log.topics[3])
         amount_paid = asset_normalized_value(amount=amount_paid_raw, asset=self.sai)
 
         for event in context.decoded_events:
@@ -277,7 +275,7 @@ class MakerdaosaiDecoder(DecoderInterface):
         if self.base.is_tracked(depositor) is True:
             event = self.base.make_event_from_transaction(
                 transaction=context.transaction,
-                tx_log=tx_log,
+                tx_log=context.tx_log,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.PAYBACK_DEBT,
                 asset=self.sai,
@@ -398,14 +396,14 @@ class MakerdaosaiDecoder(DecoderInterface):
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.notes = f'Supply {event.balance.amount} {self.weth.symbol} to Sai vault'
                 event.counterparty = CPT_SAI
-                return TransferEnrichmentOutput(counterparty=CPT_SAI)
+                return DEFAULT_ENRICHMENT_OUTPUT
 
             if event.asset == self.peth:
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.notes = f'Increase CDP collateral by {event.balance.amount} {self.peth.symbol}'  # noqa: E501
                 event.counterparty = CPT_SAI
-                return TransferEnrichmentOutput(counterparty=CPT_SAI)
+                return DEFAULT_ENRICHMENT_OUTPUT
 
         if (
             event.event_type == HistoryEventType.RECEIVE and
@@ -417,14 +415,14 @@ class MakerdaosaiDecoder(DecoderInterface):
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.notes = f'Withdraw {event.balance.amount} {self.weth.symbol} from Sai vault'
                 event.counterparty = CPT_SAI
-                return TransferEnrichmentOutput(counterparty=CPT_SAI)
+                return DEFAULT_ENRICHMENT_OUTPUT
 
             if event.asset == self.peth:
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.notes = f'Decrease CDP collateral by {event.balance.amount} {self.peth.symbol}'  # noqa: E501
                 event.counterparty = CPT_SAI
-                return TransferEnrichmentOutput(counterparty=CPT_SAI)
+                return DEFAULT_ENRICHMENT_OUTPUT
 
         return DEFAULT_ENRICHMENT_OUTPUT
 

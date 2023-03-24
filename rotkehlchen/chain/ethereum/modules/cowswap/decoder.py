@@ -9,7 +9,11 @@ from rotkehlchen.chain.ethereum.modules.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    DecoderContext,
+    DecodingOutput,
+)
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -53,17 +57,14 @@ class CowswapDecoder(DecoderInterface):
         self.eth = A_ETH.resolve_to_crypto_asset()
 
     def _decode_eth_orders(self, context: DecoderContext) -> DecodingOutput:
-        counterparty = None
-        tx_log = context.tx_log
-        decoded_events = context.decoded_events
-        if tx_log.topics[0] == PLACE_ETH_ORDER_SIGNATURE:
-            target_token_address = hex_or_bytes_to_address(tx_log.data[32:64])
+        if context.tx_log.topics[0] == PLACE_ETH_ORDER_SIGNATURE:
+            target_token_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
             target_token = EvmToken(evm_address_to_identifier(
                 address=target_token_address,
                 chain_id=ChainID.ETHEREUM,
                 token_type=EvmTokenKind.ERC20,
             ))
-            for event in decoded_events:
+            for event in context.decoded_events:
                 if (
                     event.event_type == HistoryEventType.SPEND and
                     event.asset == A_ETH and
@@ -73,10 +74,9 @@ class CowswapDecoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.PLACE_ORDER
                     event.notes = f'Deposit {event.balance.amount} ETH to swap it for {target_token.symbol} in cowswap'  # noqa: E501
                     event.counterparty = CPT_COWSWAP
-                    counterparty = event.counterparty
 
-        elif tx_log.topics[0] in (INVALIDATE_ETH_ORDER_SIGNATURE, REFUND_ETH_ORDER_SIGNATURE):
-            for event in decoded_events:
+        elif context.tx_log.topics[0] in (INVALIDATE_ETH_ORDER_SIGNATURE, REFUND_ETH_ORDER_SIGNATURE):  # noqa: E501
+            for event in context.decoded_events:
                 if (
                     event.event_type == HistoryEventType.RECEIVE and
                     event.asset == A_ETH and
@@ -84,15 +84,14 @@ class CowswapDecoder(DecoderInterface):
                 ):
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.counterparty = CPT_COWSWAP
-                    counterparty = event.counterparty
-                    if tx_log.topics[0] == INVALIDATE_ETH_ORDER_SIGNATURE:
+                    if context.tx_log.topics[0] == INVALIDATE_ETH_ORDER_SIGNATURE:
                         event.event_subtype = HistoryEventSubType.CANCEL_ORDER
                         event.notes = f'Invalidate an order that intended to swap {event.balance.amount} ETH in cowswap'  # noqa: E501
                     else:  # Refund
                         event.event_subtype = HistoryEventSubType.REFUND
                         event.notes = f'Refund {event.balance.amount} unused ETH from cowswap'
 
-        return DecodingOutput(counterparty=counterparty)
+        return DEFAULT_DECODING_OUTPUT
 
     # --- Aggregator methods ---
 

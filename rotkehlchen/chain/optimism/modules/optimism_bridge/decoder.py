@@ -6,7 +6,11 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    DecoderContext,
+    DecodingOutput,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_OPTIMISM_ETH
@@ -16,12 +20,11 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-
 BRIDGE_ADDRESS = string_to_evm_address('0x4200000000000000000000000000000000000010')
 
 DEPOSIT_FINALIZED = b'\xb0DE#&\x87\x17\xa0&\x98\xbeG\xd0\x80:\xa7F\x8c\x00\xac\xbe\xd2\xf8\xbd\x93\xa0E\x9c\xdea\xdd\x89'  # noqa: E501
 WITHDRAWAL_INITIATED = b's\xd1p\x91\n\xba\x9emP\xb1\x02\xdbR+\x1d\xbc\xd7\x96!oQ(\xb4E\xaa!5\'(\x86I~'  # noqa: E501
-DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_OPTIMISM)
+
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -30,16 +33,15 @@ log = RotkehlchenLogsAdapter(logger)
 class OptimismBridgeDecoder(DecoderInterface):
     def _decode_receive_deposit(self, context: DecoderContext) -> DecodingOutput:
         """Decodes a bridging event. Either a deposit or a withdrawal"""
-        tx_log = context.tx_log
-        if tx_log.topics[0] not in {DEPOSIT_FINALIZED, WITHDRAWAL_INITIATED}:
+        if context.tx_log.topics[0] not in {DEPOSIT_FINALIZED, WITHDRAWAL_INITIATED}:
             return DEFAULT_DECODING_OUTPUT
 
         # Read information from event's topics & data
-        ethereum_token_address = hex_or_bytes_to_address(tx_log.topics[1])
-        optimism_token_address = hex_or_bytes_to_address(tx_log.topics[2])
-        from_address = hex_or_bytes_to_address(tx_log.topics[3])
-        to_address = hex_or_bytes_to_address(tx_log.data[:32])
-        raw_amount = hex_or_bytes_to_int(tx_log.data[32:64])
+        ethereum_token_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        optimism_token_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+        from_address = hex_or_bytes_to_address(context.tx_log.topics[3])
+        to_address = hex_or_bytes_to_address(context.tx_log.data[:32])
+        raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
 
         if ethereum_token_address == ZERO_ADDRESS:
             # This means that ETH was bridged
@@ -60,7 +62,7 @@ class OptimismBridgeDecoder(DecoderInterface):
         amount = asset_normalized_value(asset=asset, amount=raw_amount)
 
         # Determine whether it is a deposit or a withdrawal
-        if tx_log.topics[0] == DEPOSIT_FINALIZED:
+        if context.tx_log.topics[0] == DEPOSIT_FINALIZED:
             expected_event_type = HistoryEventType.RECEIVE
             expected_location_label = from_address
             new_event_type = HistoryEventType.DEPOSIT

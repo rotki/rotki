@@ -5,6 +5,7 @@ from eth_utils import encode_hex
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
+from rotkehlchen.chain.ethereum.modules.curve.decoder import DEFAULT_DECODING_OUTPUT
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.constants.assets import A_ETH
@@ -24,14 +25,13 @@ log = RotkehlchenLogsAdapter(logger)
 class Eth2Decoder(DecoderInterface):
 
     def _decode_eth2_deposit_event(self, context: DecoderContext) -> DecodingOutput:
-        tx_log = context.tx_log
-        if tx_log.topics[0] != DEPOSIT_EVENT:
-            return DecodingOutput(counterparty=CPT_ETH2)
+        if context.tx_log.topics[0] != DEPOSIT_EVENT:
+            return DEFAULT_DECODING_OUTPUT
 
-        pubkey = encode_hex(tx_log.data[192:240])
-        withdrawal_credentials = encode_hex(tx_log.data[288:320])
-        amount = from_gwei(hex_or_bytes_to_int(tx_log.data[352:360], byteorder='little'))
-        deposit_index = hex_or_bytes_to_int(tx_log.data[544:552 + 8], byteorder='little')  # is not same as validator index  # noqa: E501
+        pubkey = encode_hex(context.tx_log.data[192:240])
+        withdrawal_credentials = encode_hex(context.tx_log.data[288:320])
+        amount = from_gwei(hex_or_bytes_to_int(context.tx_log.data[352:360], byteorder='little'))
+        deposit_index = hex_or_bytes_to_int(context.tx_log.data[544:552 + 8], byteorder='little')  # is not same as validator index  # noqa: E501
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
@@ -45,7 +45,7 @@ class Eth2Decoder(DecoderInterface):
                 event.notes = f'Deposit {amount} ETH to validator with pubkey {pubkey}. Deposit index: {deposit_index}. Withdrawal credentials: {withdrawal_credentials}'  # noqa: E501
                 event.extra_data = {'withdrawal_credentials': withdrawal_credentials}
 
-        return DecodingOutput(counterparty=CPT_ETH2)
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

@@ -28,23 +28,22 @@ class GitcoinDecoder(DecoderInterface):
         - UnknownAsset
         - WrongAssetType
         """
-        event = context.event
         if context.transaction.to_address not in (
                 '0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',
                 '0x7d655c57f71464B6f83811C55D84009Cd9f5221C',
         ):
             return DEFAULT_ENRICHMENT_OUTPUT
-        crypto_asset = event.asset.resolve_to_crypto_asset()
-        if event.event_type == HistoryEventType.SPEND:
-            to_address = event.address
-            event.notes = f'Donate {event.balance.amount} {crypto_asset.symbol} to {to_address} via gitcoin'  # noqa: E501
+        crypto_asset = context.event.asset.resolve_to_crypto_asset()
+        if context.event.event_type == HistoryEventType.SPEND:
+            to_address = context.event.address
+            context.event.notes = f'Donate {context.event.balance.amount} {crypto_asset.symbol} to {to_address} via gitcoin'  # noqa: E501
         else:  # can only be RECEIVE
-            from_address = event.address
-            event.notes = f'Receive donation of {event.balance.amount} {crypto_asset.symbol} from {from_address} via gitcoin'  # noqa: E501
+            from_address = context.event.address
+            context.event.notes = f'Receive donation of {context.event.balance.amount} {crypto_asset.symbol} from {from_address} via gitcoin'  # noqa: E501
 
-        event.event_subtype = HistoryEventSubType.DONATE
-        event.counterparty = CPT_GITCOIN
-        return TransferEnrichmentOutput(counterparty=CPT_GITCOIN)
+        context.event.event_subtype = HistoryEventSubType.DONATE
+        context.event.counterparty = CPT_GITCOIN
+        return DEFAULT_ENRICHMENT_OUTPUT
 
     # -- DecoderInterface methods
 

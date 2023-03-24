@@ -145,9 +145,8 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             vault_asset: CryptoAsset,
             vault_type: str,
     ) -> DecodingOutput:
-        tx_log = context.tx_log
-        if tx_log.topics[0] == GENERIC_JOIN:
-            raw_amount = hex_or_bytes_to_int(tx_log.topics[3])
+        if context.tx_log.topics[0] == GENERIC_JOIN:
+            raw_amount = hex_or_bytes_to_int(context.tx_log.topics[3])
             amount = asset_normalized_value(
                 amount=raw_amount,
                 asset=vault_asset,
@@ -155,16 +154,16 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             # Go through decoded events to find and edit the transfer event
             for event in context.decoded_events:
                 if event.event_type == HistoryEventType.SPEND and event.asset == vault_asset and event.balance.amount == amount:  # noqa: E501
-                    event.sequence_index = tx_log.log_index  # to better position it in the list
+                    event.sequence_index = context.tx_log.log_index  # to better position it in the list  # noqa: E501
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.counterparty = CPT_VAULT
                     event.notes = f'Deposit {amount} {vault_asset.symbol} to {vault_type} MakerDAO vault'  # noqa: E501
                     event.extra_data = {'vault_type': vault_type}
-                    return DecodingOutput(counterparty=CPT_VAULT)
+                    return DEFAULT_DECODING_OUTPUT
 
-        elif tx_log.topics[0] == GENERIC_EXIT:
-            raw_amount = hex_or_bytes_to_int(tx_log.topics[3])
+        elif context.tx_log.topics[0] == GENERIC_EXIT:
+            raw_amount = hex_or_bytes_to_int(context.tx_log.topics[3])
             amount = asset_normalized_value(
                 amount=raw_amount,
                 asset=vault_asset,
@@ -178,9 +177,9 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                     event.counterparty = CPT_VAULT
                     event.notes = f'Withdraw {amount} {vault_asset.symbol} from {vault_type} MakerDAO vault'  # noqa: E501
                     event.extra_data = {'vault_type': vault_type}
-                    return DecodingOutput(counterparty=CPT_VAULT)
+                    return DEFAULT_DECODING_OUTPUT
 
-        return DecodingOutput(counterparty=CPT_VAULT)
+        return DEFAULT_DECODING_OUTPUT
 
     def decode_makerdao_debt_payback(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == GENERIC_JOIN:
@@ -213,7 +212,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             potjoin_user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
             user = self._get_address_or_proxy(potjoin_user_address)
             if user is None:
-                return DecodingOutput(counterparty=CPT_DSR)
+                return DEFAULT_DECODING_OUTPUT
 
             # Now gotta find the DAI join event to get actual DAI value
             daijoin_log = None
@@ -227,7 +226,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                     break
 
             if daijoin_log is None:
-                return DecodingOutput(counterparty=CPT_DSR)  # no matching daijoin for potjoin
+                return DEFAULT_DECODING_OUTPUT  # no matching daijoin for potjoin
 
             raw_amount = hex_or_bytes_to_int(daijoin_log.topics[3])
             amount = token_normalized_value(
@@ -244,13 +243,13 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.notes = f'Deposit {amount} DAI in the DSR'
-                    return DecodingOutput(counterparty=CPT_DSR)
+                    return DEFAULT_DECODING_OUTPUT
 
         elif context.tx_log.topics[0] == POT_EXIT:
             pot_exit_address = hex_or_bytes_to_address(context.tx_log.topics[1])
             user = self._get_address_or_proxy(pot_exit_address)
             if user is None:
-                return DecodingOutput(counterparty=CPT_DSR)
+                return DEFAULT_DECODING_OUTPUT
 
             # Now gotta find the DAI exit event to get actual DAI value
             daiexit_log = None
@@ -264,7 +263,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                     break
 
             if daiexit_log is None:
-                return DecodingOutput(counterparty=CPT_DSR)  # no matching daiexit for potexit
+                return DEFAULT_DECODING_OUTPUT  # no matching daiexit for potexit
 
             raw_amount = hex_or_bytes_to_int(daiexit_log.topics[3])
             amount = token_normalized_value(
@@ -284,7 +283,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                 to_notes=f'Withdraw {amount} DAI from the DSR',
                 to_counterparty=CPT_DSR,
             )
-            return DecodingOutput(action_items=[action_item], counterparty=CPT_DSR)
+            return DecodingOutput(action_items=[action_item])
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -314,14 +313,14 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
     def _decode_vault_creation(self, context: DecoderContext) -> DecodingOutput:
         owner_address = self._get_address_or_proxy(hex_or_bytes_to_address(context.tx_log.topics[2]))  # noqa: E501
         if owner_address is None:
-            return DecodingOutput(counterparty=CPT_VAULT)
+            return DEFAULT_DECODING_OUTPUT
 
         if not self.base.is_tracked(owner_address):
-            return DecodingOutput(counterparty=CPT_VAULT)
+            return DEFAULT_DECODING_OUTPUT
 
         cdp_id = hex_or_bytes_to_int(context.tx_log.topics[3])
         notes = f'Create MakerDAO vault with id {cdp_id} and owner {owner_address}'
-        event = self.base.make_event_from_transaction(
+        self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
             location_label=owner_address,
@@ -333,13 +332,12 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             counterparty=CPT_VAULT,
             address=context.transaction.to_address,
         )
-        return DecodingOutput(event=event, counterparty=CPT_VAULT)
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_vault_debt_generation(self, context: DecoderContext) -> DecodingOutput:
         """Decode vault debt generation by parsing a lognote for cdpmanager move"""
-        tx_log = context.tx_log
-        cdp_id = hex_or_bytes_to_int(tx_log.topics[2])
-        destination = hex_or_bytes_to_address(tx_log.topics[3])
+        cdp_id = hex_or_bytes_to_int(context.tx_log.topics[2])
+        destination = hex_or_bytes_to_address(context.tx_log.topics[3])
 
         owner = self._get_address_or_proxy(destination)
         if owner is None:
@@ -348,7 +346,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         # now we need to get the rad and since it's the 3rd argument its not in the indexed topics
         # but it's part of the data location after the first 132 bytes.
         # also need to shift by ray since it's in rad
-        raw_amount = shift_num_right_by(hex_or_bytes_to_int(tx_log.data[132:164]), RAY_DIGITS)
+        raw_amount = shift_num_right_by(hex_or_bytes_to_int(context.tx_log.data[132:164]), RAY_DIGITS)  # noqa: E501
         amount = token_normalized_value(
             token_amount=raw_amount,
             token=self.dai,
@@ -357,7 +355,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         # The transfer event appears after the debt generation event, so we need to transform it
         action_item = ActionItem(
             action='transform',
-            sequence_index=tx_log.log_index,
+            sequence_index=context.tx_log.log_index,
             from_event_type=HistoryEventType.RECEIVE,
             from_event_subtype=HistoryEventSubType.NONE,
             asset=self.dai,
@@ -431,31 +429,29 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         return DEFAULT_DECODING_OUTPUT
 
     def decode_cdp_manager_events(self, context: DecoderContext) -> DecodingOutput:
-        tx_log = context.tx_log
-        if tx_log.topics[0] == NEWCDP:
+        if context.tx_log.topics[0] == NEWCDP:
             return self._decode_vault_creation(context)
-        if tx_log.topics[0] == CDPMANAGER_MOVE:
+        if context.tx_log.topics[0] == CDPMANAGER_MOVE:
             return self._decode_vault_debt_generation(context)
-        if tx_log.topics[0] == CDPMANAGER_FROB:
+        if context.tx_log.topics[0] == CDPMANAGER_FROB:
             return self._decode_vault_change(context)
 
         return DEFAULT_DECODING_OUTPUT
 
     def decode_saidai_migration(self, context: DecoderContext) -> DecodingOutput:
-        tx_log = context.tx_log
-        if tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER:
-            to_address = hex_or_bytes_to_address(tx_log.topics[2])
+        if context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER:
+            to_address = hex_or_bytes_to_address(context.tx_log.topics[2])
             if to_address != '0xc73e0383F3Aff3215E6f04B0331D58CeCf0Ab849':
-                return DecodingOutput(counterparty=CPT_MIGRATION)
+                return DEFAULT_DECODING_OUTPUT
 
             # sending SAI to migration contract
             transfer = self.base.decode_erc20_721_transfer(
                 token=self.sai,
-                tx_log=tx_log,
+                tx_log=context.tx_log,
                 transaction=context.transaction,
             )
             if transfer is None:
-                return DecodingOutput(counterparty=CPT_MIGRATION)
+                return DEFAULT_DECODING_OUTPUT
 
             transfer.event_type = HistoryEventType.MIGRATE
             transfer.event_subtype = HistoryEventSubType.SPEND
@@ -465,7 +461,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             # also create action item for the receive transfer
             action_item = ActionItem(
                 action='transform',
-                sequence_index=tx_log.log_index,
+                sequence_index=context.tx_log.log_index,
                 from_event_type=HistoryEventType.RECEIVE,
                 from_event_subtype=HistoryEventSubType.NONE,
                 asset=self.dai,
@@ -478,10 +474,9 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             return DecodingOutput(
                 event=transfer,
                 action_items=[action_item],
-                counterparty=CPT_MIGRATION,
             )
 
-        return DecodingOutput(counterparty=CPT_MIGRATION)
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 

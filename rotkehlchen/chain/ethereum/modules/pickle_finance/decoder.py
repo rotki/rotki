@@ -52,88 +52,87 @@ class PickleFinanceDecoder(DecoderInterface):
         - UnknownAsset
         - WrongAssetType
         """
-        event, tx_log, transaction = context.event, context.tx_log, context.transaction
-        crypto_asset = event.asset.resolve_to_crypto_asset()
+        crypto_asset = context.event.asset.resolve_to_crypto_asset()
         if not (
-            hex_or_bytes_to_address(tx_log.topics[2]) in self.pickle_contracts or
-            hex_or_bytes_to_address(tx_log.topics[1]) in self.pickle_contracts or
-            tx_log.address in self.pickle_contracts
+            hex_or_bytes_to_address(context.tx_log.topics[2]) in self.pickle_contracts or
+            hex_or_bytes_to_address(context.tx_log.topics[1]) in self.pickle_contracts or
+            context.tx_log.address in self.pickle_contracts
         ):
             return DEFAULT_ENRICHMENT_OUTPUT
 
         if (  # Deposit give asset
-            event.event_type == HistoryEventType.SPEND and
-            event.event_subtype == HistoryEventSubType.NONE and
-            event.location_label == transaction.from_address and
-            hex_or_bytes_to_address(tx_log.topics[2]) in self.pickle_contracts
+            context.event.event_type == HistoryEventType.SPEND and
+            context.event.event_subtype == HistoryEventSubType.NONE and
+            context.event.location_label == context.transaction.from_address and
+            hex_or_bytes_to_address(context.tx_log.topics[2]) in self.pickle_contracts
         ):
-            if EvmToken(ethaddress_to_identifier(tx_log.address)) != event.asset:
-                return TransferEnrichmentOutput(counterparty=CPT_PICKLE)
-            amount_raw = hex_or_bytes_to_int(tx_log.data)
+            if EvmToken(ethaddress_to_identifier(context.tx_log.address)) != context.event.asset:
+                return DEFAULT_ENRICHMENT_OUTPUT
+            amount_raw = hex_or_bytes_to_int(context.tx_log.data)
             amount = asset_normalized_value(
                 amount=amount_raw,
-                asset=event.asset.resolve_to_crypto_asset(),
+                asset=context.event.asset.resolve_to_crypto_asset(),
             )
-            if event.balance.amount == amount:
-                event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.counterparty = CPT_PICKLE
-                event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in pickle contract'  # noqa: E501
+            if context.event.balance.amount == amount:
+                context.event.event_type = HistoryEventType.DEPOSIT
+                context.event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                context.event.counterparty = CPT_PICKLE
+                context.event.notes = f'Deposit {context.event.balance.amount} {crypto_asset.symbol} in pickle contract'  # noqa: E501
         elif (  # Deposit receive wrapped
-            event.event_type == HistoryEventType.RECEIVE and
-            event.event_subtype == HistoryEventSubType.NONE and
-            tx_log.address in self.pickle_contracts
+            context.event.event_type == HistoryEventType.RECEIVE and
+            context.event.event_subtype == HistoryEventSubType.NONE and
+            context.tx_log.address in self.pickle_contracts
         ):
-            amount_raw = hex_or_bytes_to_int(tx_log.data)
+            amount_raw = hex_or_bytes_to_int(context.tx_log.data)
             amount = asset_normalized_value(
                 amount=amount_raw,
-                asset=event.asset.resolve_to_crypto_asset(),
+                asset=context.event.asset.resolve_to_crypto_asset(),
             )
-            if event.balance.amount == amount:
-                event.event_type = HistoryEventType.RECEIVE
-                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-                event.counterparty = CPT_PICKLE
-                event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} after depositing in pickle contract'  # noqa: E501
+            if context.event.balance.amount == amount:
+                context.event.event_type = HistoryEventType.RECEIVE
+                context.event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                context.event.counterparty = CPT_PICKLE
+                context.event.notes = f'Receive {context.event.balance.amount} {crypto_asset.symbol} after depositing in pickle contract'  # noqa: E501
         elif (  # Withdraw send wrapped
-            event.event_type == HistoryEventType.SPEND and
-            event.event_subtype == HistoryEventSubType.NONE and
-            event.location_label == transaction.from_address and
-            hex_or_bytes_to_address(tx_log.topics[2]) == ZERO_ADDRESS and
-            hex_or_bytes_to_address(tx_log.topics[1]) in transaction.from_address
+            context.event.event_type == HistoryEventType.SPEND and
+            context.event.event_subtype == HistoryEventSubType.NONE and
+            context.event.location_label == context.transaction.from_address and
+            hex_or_bytes_to_address(context.tx_log.topics[2]) == ZERO_ADDRESS and
+            hex_or_bytes_to_address(context.tx_log.topics[1]) in context.transaction.from_address
         ):
-            if event.asset != EvmToken(ethaddress_to_identifier(tx_log.address)):
-                return TransferEnrichmentOutput(counterparty=CPT_PICKLE)
-            amount_raw = hex_or_bytes_to_int(tx_log.data)
+            if context.event.asset != EvmToken(ethaddress_to_identifier(context.tx_log.address)):
+                return DEFAULT_ENRICHMENT_OUTPUT
+            amount_raw = hex_or_bytes_to_int(context.tx_log.data)
             amount = asset_normalized_value(
                 amount=amount_raw,
-                asset=event.asset.resolve_to_crypto_asset(),
+                asset=context.event.asset.resolve_to_crypto_asset(),
             )
-            if event.balance.amount == amount:
-                event.event_type = HistoryEventType.SPEND
-                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                event.counterparty = CPT_PICKLE
-                event.notes = f'Return {event.balance.amount} {crypto_asset.symbol} to the pickle contract'  # noqa: E501
+            if context.event.balance.amount == amount:
+                context.event.event_type = HistoryEventType.SPEND
+                context.event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                context.event.counterparty = CPT_PICKLE
+                context.event.notes = f'Return {context.event.balance.amount} {crypto_asset.symbol} to the pickle contract'  # noqa: E501
         elif (  # Withdraw receive asset
-            event.event_type == HistoryEventType.RECEIVE and
-            event.event_subtype == HistoryEventSubType.NONE and
-            event.location_label == transaction.from_address and
-            hex_or_bytes_to_address(tx_log.topics[2]) == transaction.from_address and
-            hex_or_bytes_to_address(tx_log.topics[1]) in self.pickle_contracts
+            context.event.event_type == HistoryEventType.RECEIVE and
+            context.event.event_subtype == HistoryEventSubType.NONE and
+            context.event.location_label == context.transaction.from_address and
+            hex_or_bytes_to_address(context.tx_log.topics[2]) == context.transaction.from_address and  # noqa: E501
+            hex_or_bytes_to_address(context.tx_log.topics[1]) in self.pickle_contracts
         ):
-            if event.asset != EvmToken(ethaddress_to_identifier(tx_log.address)):
-                return TransferEnrichmentOutput(counterparty=CPT_PICKLE)
-            amount_raw = hex_or_bytes_to_int(tx_log.data)
+            if context.event.asset != EvmToken(ethaddress_to_identifier(context.tx_log.address)):
+                return DEFAULT_ENRICHMENT_OUTPUT
+            amount_raw = hex_or_bytes_to_int(context.tx_log.data)
             amount = asset_normalized_value(
                 amount=amount_raw,
-                asset=event.asset.resolve_to_crypto_asset(),
+                asset=context.event.asset.resolve_to_crypto_asset(),
             )
-            if event.balance.amount == amount:
-                event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                event.counterparty = CPT_PICKLE
-                event.notes = f'Unstake {event.balance.amount} {crypto_asset.symbol} from the pickle contract'  # noqa: E501
+            if context.event.balance.amount == amount:
+                context.event.event_type = HistoryEventType.WITHDRAWAL
+                context.event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                context.event.counterparty = CPT_PICKLE
+                context.event.notes = f'Unstake {context.event.balance.amount} {crypto_asset.symbol} from the pickle contract'  # noqa: E501
 
-        return TransferEnrichmentOutput(counterparty=CPT_PICKLE)
+        return DEFAULT_ENRICHMENT_OUTPUT
 
     # -- DecoderInterface methods
 

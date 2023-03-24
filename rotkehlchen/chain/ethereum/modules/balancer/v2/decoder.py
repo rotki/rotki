@@ -146,7 +146,7 @@ class Balancerv2Decoder(DecoderInterface):
         else:
             event.event_subtype = HistoryEventSubType.SPEND
 
-        return TransferEnrichmentOutput(counterparty=CPT_BALANCER_V2)
+        return DEFAULT_ENRICHMENT_OUTPUT
 
     # -- DecoderInterface methods
 

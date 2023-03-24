@@ -5,7 +5,11 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.modules.weth.constants import CPT_WETH
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    DecoderContext,
+    DecodingOutput,
+)
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
@@ -20,7 +24,6 @@ if TYPE_CHECKING:
 WETH_CONTRACT = string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2')
 WETH_DEPOSIT_TOPIC = b'\xe1\xff\xfc\xc4\x92=\x04\xb5Y\xf4\xd2\x9a\x8b\xfcl\xda\x04\xeb[\r<F\x07Q\xc2@,\\\\\xc9\x10\x9c'  # noqa: E501
 WETH_WITHDRAW_TOPIC = b'\x7f\xcfS,\x15\xf0\xa6\xdb\x0b\xd6\xd0\xe08\xbe\xa7\x1d0\xd8\x08\xc7\xd9\x8c\xb3\xbfrh\xa9[\xf5\x08\x1be'  # noqa: E501
-DEFAULT_DECODING_OUTPUT = DecodingOutput(counterparty=CPT_WETH)
 
 
 class WethDecoder(DecoderInterface):
@@ -45,10 +48,9 @@ class WethDecoder(DecoderInterface):
         if context.tx_log.topics[0] == WETH_WITHDRAW_TOPIC:
             return self._decode_withdrawal_event(context)
 
-        return DecodingOutput(counterparty=CPT_WETH)
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_deposit_event(self, context: DecoderContext) -> DecodingOutput:
-        transaction = context.transaction
         depositor = hex_or_bytes_to_address(context.tx_log.topics[1])
         deposited_amount_raw = hex_or_bytes_to_int(context.tx_log.data[:32])
         deposited_amount = asset_normalized_value(amount=deposited_amount_raw, asset=self.eth)
@@ -74,8 +76,8 @@ class WethDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         in_event = self.base.make_event_next_index(
-            tx_hash=transaction.tx_hash,
-            timestamp=transaction.timestamp,
+            tx_hash=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=self.weth,
@@ -83,9 +85,9 @@ class WethDecoder(DecoderInterface):
             location_label=depositor,
             counterparty=CPT_WETH,
             notes=f'Receive {deposited_amount} {self.weth.symbol}',
-            address=transaction.to_address,
+            address=context.transaction.to_address,
         )
-        return DecodingOutput(event=in_event, counterparty=CPT_WETH)
+        return DecodingOutput(event=in_event)
 
     def _decode_withdrawal_event(self, context: DecoderContext) -> DecodingOutput:
         withdrawer = hex_or_bytes_to_address(context.tx_log.topics[1])
@@ -127,7 +129,7 @@ class WethDecoder(DecoderInterface):
             in_event=in_event,
             events_list=context.decoded_events + [out_event],
         )
-        return DecodingOutput(event=out_event, counterparty=CPT_WETH)
+        return DecodingOutput(event=out_event)
 
     # -- DecoderInterface methods
 

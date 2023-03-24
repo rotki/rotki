@@ -106,7 +106,7 @@ class Balancerv1Decoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                     event.counterparty = CPT_BALANCER_V1
                     event.notes = f'Receive {event.balance.amount} {token.symbol} from a Balancer v1 pool'  # noqa: E501
-                    return TransferEnrichmentOutput(counterparty=CPT_BALANCER_V1)
+                    return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V1)
                 if (
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE
@@ -115,7 +115,7 @@ class Balancerv1Decoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.counterparty = CPT_BALANCER_V1
                     event.notes = f'Deposit {event.balance.amount} {token.symbol} to a Balancer v1 pool'  # noqa: E501
-                    return TransferEnrichmentOutput(counterparty=CPT_BALANCER_V1)
+                    return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V1)
             elif proxied_event['type'] == BalancerV1EventTypes.EXIT:
                 if (
                     event.event_type == HistoryEventType.RECEIVE and
@@ -125,7 +125,7 @@ class Balancerv1Decoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.counterparty = CPT_BALANCER_V1
                     event.notes = f'Receive {event.balance.amount} {token.symbol} after removing liquidity from a Balancer v1 pool'  # noqa: E501
-                    return TransferEnrichmentOutput(counterparty=CPT_BALANCER_V1)
+                    return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V1)
                 if (
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE
@@ -133,7 +133,7 @@ class Balancerv1Decoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     event.counterparty = CPT_BALANCER_V1
                     event.notes = f'Return {event.balance.amount} {token.symbol} to a Balancer v1 pool'  # noqa: E501
-                    return TransferEnrichmentOutput(counterparty=CPT_BALANCER_V1)
+                    return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V1)
 
         return DEFAULT_ENRICHMENT_OUTPUT
 

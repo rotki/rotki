@@ -77,7 +77,9 @@ class DecodingRules():
     address_mappings: dict[ChecksumEvmAddress, tuple[Any, ...]]
     event_rules: list[EventDecoderFunction]
     token_enricher_rules: list[Callable]  # enrichers to run for token transfers
-    post_decoding_rules: dict[str, list[tuple[int, Callable]]]  # noqa: E501 rules to run after the main decoding loop
+    # rules to run after the main decoding loop. post_decoding_rules is a mapping of
+    # counterparties to tuples of the rules that need to be executed.
+    post_decoding_rules: dict[str, list[tuple[int, Callable]]]
     all_counterparties: set[str]
     addresses_to_counterparties: dict[ChecksumEvmAddress, str]
 
@@ -231,13 +233,17 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             decoded_events: list['EvmEvent'],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
-    ) -> DecodingOutput:
+    ) -> Optional[DecodingOutput]:
+        """
+        Execute event rules for the current tx log. Returns None when no
+        new event or actions need to be propagated.
+        """
         for rule in self.rules.event_rules:
             decoding_output = rule(token=token, tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, action_items=action_items, all_logs=all_logs)  # noqa: E501
             if decoding_output.event is not None or len(decoding_output.action_items) > 0:
                 return decoding_output
 
-        return DecodingOutput()
+        return None
 
     def decode_by_address_rules(
             self,
@@ -288,12 +294,13 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             counterparties: set[str],
     ) -> list['EvmEvent']:
         """
-        Runs post-decoding rules using counterparties and the transaction.to_address as filter
-        criteria. The post-decoding rules list consists of tuples (priority, rule) and must be
+        The post-decoding rules list consists of tuples (priority, rule) and must be
         sorted by priority in ascending order. The higher the priority number the later
         the rule is run.
+        Matches post decoding rules to all matched counterparties propagated for decoding
+        from the decoding/enriching rules and also the counterparties associated with the
+        transaction to_address field.
         """
-        # check if the to_address of the transaction has a matching counterparty
         if transaction.to_address is not None:
             address_counterparty = self.rules.addresses_to_counterparties.get(transaction.to_address)  # noqa: E501
             if address_counterparty is not None:
@@ -328,19 +335,18 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         # decode transaction logs from the receipt
         for tx_log in tx_receipt.logs:
             decoding_output = self.decode_by_address_rules(tx_log, transaction, events, tx_receipt.logs, action_items)  # noqa: E501
-            event, new_action_items, counterparty = decoding_output
-            action_items.extend(new_action_items)
-            if counterparty is not None:
-                counterparties.add(counterparty)
-            if event:
-                events.append(event)
+            action_items.extend(decoding_output.action_items)
+            if decoding_output.matched_counterparty is not None:
+                counterparties.add(decoding_output.matched_counterparty)
+            if decoding_output.event:
+                events.append(decoding_output.event)
                 continue
 
             token = GlobalDBHandler.get_evm_token(
                 address=tx_log.address,
                 chain_id=self.evm_inquirer.chain_id,
             )
-            event, new_action_items, counterparty = self.try_all_rules(
+            rules_decoding_output = self.try_all_rules(
                 token=token,
                 tx_log=tx_log,
                 transaction=transaction,
@@ -348,11 +354,12 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 action_items=action_items,
                 all_logs=tx_receipt.logs,
             )
-            action_items.extend(new_action_items)
-            if counterparty is not None:
-                counterparties.add(counterparty)
-            if event is not None:
-                events.append(event)
+            if rules_decoding_output is not None:
+                action_items.extend(rules_decoding_output.action_items)
+                if rules_decoding_output.matched_counterparty is not None:
+                    counterparties.add(rules_decoding_output.matched_counterparty)
+                if rules_decoding_output.event is not None:
+                    events.append(rules_decoding_output.event)
 
         events = self.run_all_post_decoding_rules(
             transaction=transaction,
@@ -764,7 +771,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 event=transfer,
             ),
         )
-        return DecodingOutput(event=transfer, counterparty=maybe_counterparty)
+        return DecodingOutput(event=transfer, matched_counterparty=maybe_counterparty)
 
     # -- methods to be implemented by child classes --
 
