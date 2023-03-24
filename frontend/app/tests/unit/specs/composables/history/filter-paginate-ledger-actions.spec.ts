@@ -1,15 +1,14 @@
-import { afterEach } from 'vitest';
 import flushPromises from 'flush-promises';
+import { type Ref } from 'vue';
+import type { Filters, Matcher } from '@/composables/filters/ledger-actions';
 import type { Collection } from '@/types/collection';
 import type {
   LedgerAction,
   LedgerActionEntry,
   LedgerActionRequestPayload
 } from '@/types/history/ledger-action/ledger-actions';
-import type { Ref } from 'vue';
-import type Vue from 'vue';
 import type { MaybeRef } from '@vueuse/shared';
-import type { Filters, Matcher } from '@/composables/filters/ledger-actions';
+import type Vue from 'vue';
 
 vi.mock('vue-router/composables', () => ({
   useRoute: vi.fn().mockReturnValue(
@@ -86,7 +85,7 @@ describe('composables::history/filter-paginate', () => {
 
       set(userAction, true);
       applyRouteFilter();
-      fetchData();
+      fetchData().catch(() => {});
       expect(get(isLoading)).toBe(true);
       await flushPromises();
       expect(get(state).total).toEqual(3);

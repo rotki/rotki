@@ -1,15 +1,8 @@
-import { afterEach } from 'vitest';
-import flushPromises from 'flush-promises';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import flushPromises from 'flush-promises';
+import { type ComputedRef, type Ref } from 'vue';
 import { RouterAccountsSchema } from '@/types/route';
-import type { ComputedRef, Ref } from 'vue';
-import type {
-  HistoryEventSubType,
-  HistoryEventType,
-  TransactionEventProtocol
-} from '@rotki/common/lib/history/tx-events';
-import type { GeneralAccount } from '@rotki/common/src/account';
-import type { LocationQuery } from '@/types/route';
+import type { Filters, Matcher } from '@/composables/filters/transactions';
 import type { Collection } from '@/types/collection';
 import type {
   EthTransaction,
@@ -17,9 +10,15 @@ import type {
   EvmChainAddress,
   TransactionRequestPayload
 } from '@/types/history/tx';
-import type { Filters, Matcher } from '@/composables/filters/transactions';
-import type Vue from 'vue';
+import type { LocationQuery } from '@/types/route';
+import type {
+  HistoryEventSubType,
+  HistoryEventType,
+  TransactionEventProtocol
+} from '@rotki/common/lib/history/tx-events';
+import type { GeneralAccount } from '@rotki/common/src/account';
 import type { MaybeRef } from '@vueuse/shared';
+import type Vue from 'vue';
 
 vi.mock('vue-router/composables', () => ({
   useRoute: vi.fn().mockReturnValue(
@@ -148,7 +147,7 @@ describe('composables::history/filter-paginate', () => {
 
       set(userAction, true);
       applyRouteFilter();
-      fetchData();
+      fetchData().catch(() => {});
       expect(get(isLoading)).toBe(true);
       await flushPromises();
       expect(get(state).total).toEqual(0);

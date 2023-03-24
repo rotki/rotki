@@ -1,16 +1,15 @@
-import { afterEach } from 'vitest';
+import { type MaybeRef } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
-import { type LocationQuery } from '@/types/route';
+import { type Ref } from 'vue';
 import { type Collection } from '@/types/collection';
+import { type LocationQuery } from '@/types/route';
+import type { Filters, Matcher } from '@/composables/filters/trades';
 import type {
   Trade,
   TradeEntry,
   TradeRequestPayload
 } from '@/types/history/trade';
-import type { Ref } from 'vue';
 import type Vue from 'vue';
-import type { MaybeRef } from '@vueuse/shared';
-import type { Filters, Matcher } from '@/composables/filters/trades';
 
 vi.mock('vue-router/composables', () => ({
   useRoute: vi.fn().mockReturnValue(
@@ -98,7 +97,7 @@ describe('composables::history/filter-paginate', () => {
 
       set(userAction, true);
       applyRouteFilter();
-      fetchData();
+      fetchData().catch(() => {});
       expect(get(isLoading)).toBe(true);
       await flushPromises();
       expect(get(state).total).toEqual(210);

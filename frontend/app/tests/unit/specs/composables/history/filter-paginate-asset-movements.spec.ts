@@ -1,18 +1,14 @@
-import { afterEach } from 'vitest';
 import flushPromises from 'flush-promises';
+import { type Ref } from 'vue';
+import type { Filters, Matcher } from '@/composables/filters/asset-movement';
 import type { Collection } from '@/types/collection';
 import type {
   AssetMovement,
   AssetMovementEntry,
   AssetMovementRequestPayload
 } from '@/types/history/movements';
-import type {
-  Filters as AssetMovementFilters,
-  Matcher as AssetMovementMatcher
-} from '@/composables/filters/asset-movement';
-import type { Ref } from 'vue';
-import type Vue from 'vue';
 import type { MaybeRef } from '@vueuse/shared';
+import type Vue from 'vue';
 
 vi.mock('vue-router/composables', () => ({
   useRoute: vi.fn().mockReturnValue(
@@ -75,8 +71,8 @@ describe('composables::history/filter-paginate', () => {
         AssetMovement,
         AssetMovementRequestPayload,
         AssetMovementEntry,
-        AssetMovementFilters,
-        AssetMovementMatcher
+        Filters,
+        Matcher
       >(
         locationOverview,
         mainPage,
@@ -94,7 +90,7 @@ describe('composables::history/filter-paginate', () => {
 
       set(userAction, true);
       applyRouteFilter();
-      fetchData();
+      fetchData().catch(() => {});
       expect(get(isLoading)).toBe(true);
       await flushPromises();
       expect(get(state).total).toEqual(45);
@@ -106,8 +102,8 @@ describe('composables::history/filter-paginate', () => {
           AssetMovement,
           AssetMovementRequestPayload,
           AssetMovementEntry,
-          AssetMovementFilters,
-          AssetMovementMatcher
+          Filters,
+          Matcher
         >(
           locationOverview,
           mainPage,
@@ -120,8 +116,8 @@ describe('composables::history/filter-paginate', () => {
       expectTypeOf(get(state)).toEqualTypeOf<Collection<AssetMovementEntry>>();
       expectTypeOf(get(state).data).toEqualTypeOf<AssetMovementEntry[]>();
       expectTypeOf(get(state).found).toEqualTypeOf<number>();
-      expectTypeOf(get(filters)).toEqualTypeOf<AssetMovementFilters>();
-      expectTypeOf(get(matchers)).toEqualTypeOf<AssetMovementMatcher[]>();
+      expectTypeOf(get(filters)).toEqualTypeOf<Filters>();
+      expectTypeOf(get(matchers)).toEqualTypeOf<Matcher[]>();
     });
 
     test('modify filters and fetch data correctly', async () => {
@@ -132,8 +128,8 @@ describe('composables::history/filter-paginate', () => {
         AssetMovement,
         AssetMovementRequestPayload,
         AssetMovementEntry,
-        AssetMovementFilters,
-        AssetMovementMatcher
+        Filters,
+        Matcher
       >(
         locationOverview,
         mainPage,
