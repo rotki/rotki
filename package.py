@@ -340,7 +340,7 @@ class WindowsPackaging:
         extraction_dir.mkdir(exist_ok=True)
 
         url = f'https://github.com/mrx23dot/miniupnp/releases/download/miniupnpd_2_2_24/{miniupnc}'
-        urllib.request.urlretrieve(url, zip_path)
+        urllib.request.urlretrieve(url, zip_path)  # noqa: S310
 
         with ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(extraction_dir)
@@ -480,7 +480,7 @@ class MacPackaging:
         temporary_directory = self.__storage.temporary_directory
         temporary_directory.mkdir(exist_ok=True)
         wheel_file = temporary_directory / pip_wheel
-        urllib.request.urlretrieve(
+        urllib.request.urlretrieve(  # noqa: S310
             url=f'https://github.com/rotki/rotki-build/raw/main/{pip_wheel}',
             filename=wheel_file,
         )

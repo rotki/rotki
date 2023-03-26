@@ -163,6 +163,7 @@ ignore = [
     "S103",  # permissive mask on file/directory
     "S105",  # hard coded password checks got false positives
     "S106",  # hard coded password checks got false positives
+    "S311",  # We know pseud-random is not safe for cryptographic operations
     "S324",  # insecure hash function. We use it for image md5 for etag. TODO: Change and enable?
     "S608",  # possible sql-injection is overkill since we control the variables in question
     "G004",  # Our logs do use f-strings everywhere at least for now
