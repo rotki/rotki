@@ -176,6 +176,8 @@ export const FrontendSettings = z.object({
   graphZeroBased: z.boolean().default(false),
   showGraphRangeSelector: z.boolean().default(true),
   nftsInNetValue: z.boolean().default(true),
+  renderAllNftImages: z.boolean().default(false),
+  whitelistedDomainsForNftImages: z.array(z.string()).default([]),
   dashboardTablesVisibleColumns: DashboardTablesVisibleColumns.default({}),
   dateInputFormat: DateFormatEnum.default(Defaults.DEFAULT_DATE_INPUT_FORMAT),
   versionUpdateCheckFrequency: z.preprocess(

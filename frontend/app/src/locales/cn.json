@@ -1317,6 +1317,7 @@
     "details": "细节",
     "event": "事件",
     "events": "事件",
+    "here": "这儿",
     "ignored_in_accounting": "在会计中忽略",
     "location": "位置",
     "multi_chain": "多链",
@@ -1937,7 +1938,6 @@
     "opensea": {
       "delete_tooltip": "删除你的 OpenSea API key",
       "description": "用于查询OpenSea的NFT信息和余额。",
-      "here": "这儿",
       "hint": "输入您的 OpenSea API key",
       "label": "API Key",
       "link": "您可以申请 an API key {link}",
@@ -2050,8 +2050,6 @@
       "abbreviate_number": "对大数字使用缩写。",
       "animations": "减少动画效果。此设置将提高应用程序性能。注意：您会看到动画不流畅，旨在减少系统资源的使用。",
       "enable_alias_names": "显示区块链地址的别名。",
-      "include_nfts": "在图表和总净值中包含 NFT",
-      "include_nfts_hint": "默认情况下图表和仪表板包含所有 NFT 的值",
       "query_period": "以秒为单位的查询周期",
       "query_period_hint": "多长时间（以秒为单位）检查后端消息，",
       "refresh": "设置自动刷新周期",
@@ -2065,7 +2063,6 @@
       "abbreviate_number": "例如,启用此设置时,1.234.567 将显示为 1.23 M",
       "alias_names": "地址的别名",
       "graph_basis": "图形基础",
-      "include_nfts": "在图表和总量中包含 NFT",
       "query": "周期状态查询",
       "refresh": "余额自动刷新",
       "show_graph_range_selector": "显示图形范围选择器"
@@ -2146,6 +2143,16 @@
       "version_update_check_enabled": "启用"
     },
     "language_contribution_tooltip": "此功能是实验性的，对于某些语言可能无法按预期工作。这是因为应用程序中的所有静态句子都必须手动翻译，这是一个漫长而持续的过程。因此，我们需要您的贡献来加快速度 起来。单击此处了解更多信息。",
+    "nft_setting": {
+      "title": "NFT setting",
+      "label": {
+        "include_nfts": "在图表和总净值中包含 NFT",
+        "include_nfts_hint": "默认情况下图表和仪表板包含所有 NFT 的值"
+      },
+      "subtitle": {
+        "include_nfts": "在图表和总量中包含 NFT"
+      }
+    },
     "rpc_node_setting": {
       "title": "RPC节点设置"
     },
@@ -2407,7 +2414,6 @@
       "missing": "* 从 MetaMask 导入地址被禁用。无法检测到 MetaMask。",
       "missing_tooltip": {
         "copy_url": "复制本页网址",
-        "here": "这儿",
         "metamask_is_not_enabled": "MetaMask 尚未启用。您可以在菜单扩展/附加组件中启用它，具体取决于您的浏览器。",
         "metamask_is_not_installed": "此浏览器未安装 MetaMask。您可以下载 MetaMask {link}。",
         "metamask_is_not_supported_by_browser": "确保您使用列出的受支持浏览器{link}打开此页面。如果不是，请{copy}并在受支持的浏览器上手动打开它。",

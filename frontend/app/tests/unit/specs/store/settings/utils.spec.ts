@@ -60,6 +60,8 @@ describe('settings:utils', () => {
       graphZeroBased: false,
       showGraphRangeSelector: true,
       nftsInNetValue: true,
+      renderAllNftImages: false,
+      whitelistedDomainsForNftImages: [],
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour:
         BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,

@@ -14,11 +14,11 @@ vi.mock('@/store/tasks', () => ({
 
 describe('composables::nft', () => {
   setActivePinia(createPinia());
-  let store: ReturnType<typeof useNft>;
+  let store: ReturnType<typeof useNfts>;
   let api: ReturnType<typeof useAssetsApi>;
 
   beforeEach(() => {
-    store = useNft();
+    store = useNfts();
     api = useAssetsApi();
     vi.clearAllMocks();
   });

@@ -23,13 +23,7 @@ const isMetaMask = computed(() => get(inputMode) === InputMode.METAMASK_IMPORT);
 const metamaskDownloadLink = 'https://metamask.io/download/';
 
 const copyPageUrl = async () => {
-  const params = new URLSearchParams(window.location.search);
-  params.set('add', 'true');
-  params.set('test', 'false');
-
-  const { origin, pathname } = window.location;
-
-  const pageUrl = `${origin}${pathname}?${params}`;
+  const pageUrl = window.location.href;
   const { copy } = useClipboard({ source: pageUrl });
   await copy();
 };
@@ -98,17 +92,9 @@ const { isPackaged } = useInterop();
                 path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_installed"
               >
                 <template #link>
-                  <a
-                    :class="$style.link"
-                    target="_blank"
-                    :href="metamaskDownloadLink"
-                  >
-                    {{
-                      t(
-                        'input_mode_select.metamask_import.missing_tooltip.here'
-                      )
-                    }}
-                  </a>
+                  <external-link :url="metamaskDownloadLink">
+                    {{ t('common.here') }}
+                  </external-link>
                 </template>
               </i18n>
             </li>
@@ -124,21 +110,13 @@ const { isPackaged } = useInterop();
                 path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_supported_by_browser"
               >
                 <template #link>
-                  <a
-                    :class="$style.link"
-                    target="_blank"
-                    :href="metamaskDownloadLink"
-                  >
-                    {{
-                      t(
-                        'input_mode_select.metamask_import.missing_tooltip.here'
-                      )
-                    }}
-                  </a>
+                  <external-link :url="metamaskDownloadLink">
+                    {{ t('common.here') }}
+                  </external-link>
                 </template>
 
                 <template #copy>
-                  <a :class="$style.link" @click="copyPageUrl">
+                  <a href="#" @click="copyPageUrl">
                     {{
                       t(
                         'input_mode_select.metamask_import.missing_tooltip.copy_url'
@@ -154,9 +132,3 @@ const { isPackaged } = useInterop();
     </div>
   </div>
 </template>
-<style lang="css" module>
-.link {
-  font-weight: bold;
-  text-decoration: none;
-}
-</style>

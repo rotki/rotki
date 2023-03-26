@@ -68,6 +68,8 @@ describe('settings:frontend', () => {
             graphZeroBased: false,
             showGraphRangeSelector: true,
             nftsInNetValue: true,
+            renderAllNftImages: false,
+            whitelistedDomainsForNftImages: [],
             dashboardTablesVisibleColumns: {
               [DashboardTableType.ASSETS]:
                 Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
@@ -144,6 +146,8 @@ describe('settings:frontend', () => {
       graphZeroBased: true,
       showGraphRangeSelector: true,
       nftsInNetValue: true,
+      renderAllNftImages: false,
+      whitelistedDomainsForNftImages: [],
       dashboardTablesVisibleColumns: {
         [DashboardTableType.ASSETS]: [
           TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
@@ -210,6 +214,8 @@ describe('settings:frontend', () => {
     expect(store.graphZeroBased).toBe(true);
     expect(store.showGraphRangeSelector).toBe(true);
     expect(store.nftsInNetValue).toBe(true);
+    expect(store.renderAllNftImages).toBe(false);
+    expect(store.whitelistedDomainsForNftImages).toStrictEqual([]);
     expect(store.dashboardTablesVisibleColumns).toStrictEqual({
       [DashboardTableType.ASSETS]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
       [DashboardTableType.LIABILITIES]: [

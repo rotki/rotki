@@ -9,19 +9,19 @@ import { LedgerActionEnum } from '@/types/history/ledger-action/ledger-actions-t
 import { ModuleEnum } from '@/types/modules';
 import { PriceOracleEnum } from '@/types/price-oracle';
 import { type ToSnakeCase } from '@/types/common';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { camelCaseTransformer } from '@/services/axios-tranformers';
 
-const OtherSettings = z.object({
+export const OtherSettings = z.object({
   krakenAccountType: KrakenAccountType.optional(),
   frontendSettings: z.string().transform(arg => {
-    const data = arg ? snakeCaseTransformer(JSON.parse(arg)) : {};
+    const data = arg ? camelCaseTransformer(JSON.parse(arg)) : {};
     return FrontendSettings.parse(data);
   }),
   premiumShouldSync: z.boolean(),
   havePremium: z.boolean()
 });
 
-type OtherSettings = z.infer<typeof OtherSettings>;
+export type OtherSettings = z.infer<typeof OtherSettings>;
 
 const GeneralSettings = z.object({
   uiFloatingPrecision: z.number(),
