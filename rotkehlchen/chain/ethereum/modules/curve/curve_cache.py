@@ -45,8 +45,11 @@ CURVE_POOLS_MAPPING_TYPE = dict[
 IGNORED_CURVE_POOLS = {'0x066B6e1E93FA7dcd3F0Eb7f8baC7D5A747CE0BF9'}
 
 
-def read_curve_pools() -> set[ChecksumEvmAddress]:
-    """Reads globaldb cache and returns a set of all known curve pools' addresses.
+def read_curve_pools_and_gauges() -> tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]:
+    """Reads globaldb cache and returns:
+    - A set of all known curve pools addresses.
+    - A set of all known curve gauges addresses.
+
     Doesn't raise anything unless cache entries were inserted incorrectly."""
     with GlobalDBHandler().conn.read_ctx() as cursor:
         curve_pools_lp_tokens = globaldb_get_general_cache_values(
@@ -54,14 +57,21 @@ def read_curve_pools() -> set[ChecksumEvmAddress]:
             key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
         )
         curve_pools = set()
+        curve_gauges = set()
         for lp_token_addr in curve_pools_lp_tokens:
             pool_addr = globaldb_get_general_cache_values(
                 cursor=cursor,
                 key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token_addr],
             )[0]
             curve_pools.add(string_to_evm_address(pool_addr))
+            gauge_address_data = globaldb_get_general_cache_values(
+                cursor=cursor,
+                key_parts=[GeneralCacheType.CURVE_GAUGE_ADDRESS, pool_addr],
+            )
+            if len(gauge_address_data) > 0:
+                curve_gauges.add(string_to_evm_address(gauge_address_data[0]))
 
-    return curve_pools
+    return curve_pools, curve_gauges
 
 
 def ensure_curve_tokens_existence(
@@ -162,12 +172,12 @@ def ensure_curve_tokens_existence(
     return updated_pools_mapping
 
 
-def save_curve_pools_to_cache(
+def save_curve_data_to_cache(
         write_cursor: DBCursor,
         pools_mapping: CURVE_POOLS_MAPPING_TYPE,
+        gauges: dict[ChecksumEvmAddress, ChecksumEvmAddress],
 ) -> None:
-    """Receives data about curve pools and saves lp tokens, pool addresses and
-    pool coins in cache."""
+    """Stores data received about curve pools and gauges in the cache"""
     # First, clear all curve pools related cache entries in the global DB
     curve_lp_tokens = globaldb_get_general_cache_values(
         cursor=write_cursor,
@@ -185,6 +195,10 @@ def save_curve_pools_to_cache(
         globaldb_delete_general_cache(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token],
+        )
+        globaldb_delete_general_cache(
+            write_cursor=write_cursor,
+            key_parts=[GeneralCacheType.CURVE_GAUGE_ADDRESS, pool_addr],
         )
     globaldb_delete_general_cache(
         write_cursor=write_cursor,
@@ -208,27 +222,22 @@ def save_curve_pools_to_cache(
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_address],
             values=coins,
         )
+    for pool_address, gauge_address in gauges.items():
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=[GeneralCacheType.CURVE_GAUGE_ADDRESS, pool_address],
+            values=[gauge_address],
+        )
 
 
 def query_curve_registry_pools(
         ethereum: 'EthereumInquirer',
-        curve_address_provider: EvmContract,
+        registry_contract: EvmContract,
 ) -> CURVE_POOLS_MAPPING_TYPE:
     """Query pools from curve registry and return their mappings
     May raise:
     - RemoteError if failed to query etherscan or node
     """
-    curve_address_provider = ethereum.contracts.contract('CURVE_ADDRESS_PROVIDER')
-    get_registry_result = curve_address_provider.call(
-        node_inquirer=ethereum,
-        method_name='get_registry',
-    )
-    registry_address = to_checksum_address(get_registry_result)
-    registry_contract = EvmContract(
-        address=registry_address,
-        abi=ethereum.contracts.abi('CURVE_REGISTRY'),
-        deployed_block=0,  # deployment_block is not used and the contract is dynamic
-    )
     registry_pool_count = registry_contract.call(
         node_inquirer=ethereum,
         method_name='pool_count',
@@ -345,3 +354,22 @@ def query_curve_meta_pools(
         pools_mapping[pool_addr] = (pool_addr, pool_coins, None)
 
     return pools_mapping
+
+
+def query_curve_gauges(
+        ethereum: 'EthereumInquirer',
+        registry_contract: 'EvmContract',
+        known_pools: list[ChecksumEvmAddress],
+) -> dict[ChecksumEvmAddress, ChecksumEvmAddress]:
+    """Queries curve gauges and returns a mapping pool address -> gauge address"""
+    pools_to_gauges: dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
+    for pool_address in known_pools:
+        gauge_address = registry_contract.call(
+            node_inquirer=ethereum,
+            method_name='get_gauges',
+            arguments=[pool_address],
+        )[0][0]
+        if gauge_address != ZERO_ADDRESS:
+            pools_to_gauges[pool_address] = to_checksum_address(gauge_address)
+
+    return pools_to_gauges

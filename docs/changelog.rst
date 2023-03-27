@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`5798` Users will now be able to see the avatar of the ENS.
+* :feature:`5676` Curve gauge deposit, withdrawal and claim rewards actions will now be correctly decoded.
 * :feature:`1505` Users will now be able to see breakdown of Binance/Binance US exchange balances, which are in account balances, and which are in savings/lending. The interest history also will be taken into account in the PnL report.
 * :feature:`5639` Cowswap transactions are now decoded properly.
 * :feature:`5582` Users will now be able to add their own tx hash, if somehow rotki failed to detects it.

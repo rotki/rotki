@@ -4,10 +4,13 @@ from contextlib import ExitStack
 from pathlib import Path
 
 import pytest
+from freezegun import freeze_time
 
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.errors.misc import DBUpgradeError
+from rotkehlchen.globaldb.cache import globaldb_get_general_cache_last_queried_ts_by_key
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.upgrades.manager import maybe_upgrade_globaldb
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
@@ -23,7 +26,13 @@ from rotkehlchen.globaldb.upgrades.v3_v4 import (
 from rotkehlchen.globaldb.utils import GLOBAL_DB_FILENAME, GLOBAL_DB_VERSION
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
-from rotkehlchen.types import YEARN_VAULTS_V1_PROTOCOL, ChainID, EvmTokenKind
+from rotkehlchen.types import (
+    YEARN_VAULTS_V1_PROTOCOL,
+    ChainID,
+    EvmTokenKind,
+    GeneralCacheType,
+    Timestamp,
+)
 from rotkehlchen.utils.misc import ts_now
 
 # TODO: Perhaps have a saved version of that global DB for the tests and query it too?
@@ -294,6 +303,7 @@ def test_upgrade_v3_v4(globaldb):
 @pytest.mark.parametrize('custom_globaldb', ['v4_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [4])
 @pytest.mark.parametrize('reload_user_assets', [False])
+@freeze_time('2023-03-20')  # freezing time just to make sure comparisons of timestamps won't fail
 def test_upgrade_v4_v5(globaldb):
     """Test the global DB upgrade from v4 to v5"""
     # Check the state before upgrading
@@ -304,6 +314,11 @@ def test_upgrade_v4_v5(globaldb):
             ('default_rpc_nodes',),
         )
         assert cursor.fetchone()[0] == 0
+        last_queried_ts = globaldb_get_general_cache_last_queried_ts_by_key(
+            cursor=cursor,
+            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+        )
+        assert last_queried_ts == Timestamp(1676727187)  # 1676727187 is just some random value in the db  # noqa: E501
 
     # execute upgrade
     with ExitStack() as stack:
@@ -337,6 +352,12 @@ def test_upgrade_v4_v5(globaldb):
 
             nodes_tuples_from_db = cursor.execute('SELECT * FROM default_rpc_nodes').fetchall()
             assert nodes_tuples_from_db == nodes_tuples_from_file
+
+        last_queried_ts = globaldb_get_general_cache_last_queried_ts_by_key(
+            cursor=cursor,
+            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+        )
+        assert ts_now() - last_queried_ts == ETH_PROTOCOLS_CACHE_REFRESH + 1
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
