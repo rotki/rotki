@@ -65,15 +65,13 @@ const add = () => emit('add');
 const edit = (asset: CustomAsset) => emit('edit', asset);
 const deleteAsset = (asset: CustomAsset) => emit('delete-asset', asset);
 
-const getAsset = (item: CustomAsset) => {
-  return {
-    name: item.name,
-    symbol: item.customAssetType,
-    identifier: item.identifier,
-    isCustomAsset: true,
-    customAssetType: item.customAssetType
-  };
-};
+const getAsset = (item: CustomAsset) => ({
+  name: item.name,
+  symbol: item.customAssetType,
+  identifier: item.identifier,
+  isCustomAsset: true,
+  customAssetType: item.customAssetType
+});
 
 const updatePaginationHandler = (
   updateOptions: CustomAssetPaginationOptions

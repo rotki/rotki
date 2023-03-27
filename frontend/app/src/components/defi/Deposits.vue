@@ -69,9 +69,9 @@ const lendingBalances = computed(() => {
   return get(store.aggregatedLendingBalances(protocols, addresses));
 });
 
-const totalEarnedInAave = computed(() => {
-  return get(aaveStore.aaveTotalEarned(get(selectedAddresses)));
-});
+const totalEarnedInAave = computed(() =>
+  get(aaveStore.aaveTotalEarned(get(selectedAddresses)))
+);
 
 const effectiveInterestRate = computed<string>(() => {
   const protocols = get(selectedProtocols);

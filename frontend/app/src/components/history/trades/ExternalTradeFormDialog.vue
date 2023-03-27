@@ -44,15 +44,15 @@ const confirmSave = async () => {
 
 const { tc } = useI18n();
 
-const title: ComputedRef<string> = computed(() => {
-  return get(editableItem)
+const title: ComputedRef<string> = computed(() =>
+  get(editableItem)
     ? tc('closed_trades.dialog.edit.title')
-    : tc('closed_trades.dialog.add.title');
-});
+    : tc('closed_trades.dialog.add.title')
+);
 
-const subtitle: ComputedRef<string> = computed(() => {
-  return get(editableItem) ? tc('closed_trades.dialog.edit.subtitle') : '';
-});
+const subtitle: ComputedRef<string> = computed(() =>
+  get(editableItem) ? tc('closed_trades.dialog.edit.subtitle') : ''
+);
 </script>
 
 <template>

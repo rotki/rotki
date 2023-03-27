@@ -37,9 +37,8 @@ export const useKrakenApi = () => {
     return handleResponse(response);
   };
 
-  const refreshKrakenStaking = async (): Promise<PendingTask> => {
-    return await internalKrakenStaking(emptyPagination(), true);
-  };
+  const refreshKrakenStaking = async (): Promise<PendingTask> =>
+    await internalKrakenStaking(emptyPagination(), true);
 
   const fetchKrakenStakingEvents = async (
     pagination: KrakenStakingPagination

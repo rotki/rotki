@@ -33,11 +33,11 @@ const address = computed<string>(() => {
   return scrambleHex(address);
 });
 
-const breakpoint = computed<string>(() => {
-  return get(account).label.length > 0 && get(currentBreakpoint).mdAndDown
+const breakpoint = computed<string>(() =>
+  get(account).label.length > 0 && get(currentBreakpoint).mdAndDown
     ? 'sm'
-    : get(currentBreakpoint).name;
-});
+    : get(currentBreakpoint).name
+);
 
 const truncationLength = computed<number>(() => {
   const truncationPoint = truncationPoints[get(breakpoint)];
@@ -47,9 +47,9 @@ const truncationLength = computed<number>(() => {
   return truncationPoint ?? 4;
 });
 
-const truncatedAddress = computed(() => {
-  return truncateAddress(get(address), get(truncationLength));
-});
+const truncatedAddress = computed(() =>
+  truncateAddress(get(address), get(truncationLength))
+);
 
 const displayAddress = computed<string>(() => {
   if (get(aliasName)) {

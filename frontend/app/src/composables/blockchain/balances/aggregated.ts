@@ -87,9 +87,9 @@ export const useBlockchainAggregatedBalances = () => {
       );
     });
 
-  const blockchainTotal: ComputedRef<BigNumber> = computed(() => {
-    return bigNumberSum(get(getTotals()).map(asset => asset.usdValue));
-  });
+  const blockchainTotal: ComputedRef<BigNumber> = computed(() =>
+    bigNumberSum(get(getTotals()).map(asset => asset.usdValue))
+  );
 
   const blockchainAssets: ComputedRef<AssetBalanceWithPrice[]> = computed(
     () => {

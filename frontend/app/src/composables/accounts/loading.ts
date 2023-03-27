@@ -12,9 +12,9 @@ export const useAccountLoading = createSharedComposable(() => {
   );
   const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
 
-  const isBlockchainLoading: ComputedRef<boolean> = computed(() => {
-    return get(isQueryingBlockchain) || get(isLoopringLoading);
-  });
+  const isBlockchainLoading: ComputedRef<boolean> = computed(
+    () => get(isQueryingBlockchain) || get(isLoopringLoading)
+  );
 
   const isAccountOperationRunning = (
     blockchain?: Blockchain

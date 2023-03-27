@@ -80,12 +80,8 @@ export const assetDeserializer =
   };
 
 export const dateValidator =
-  (dateInputFormat: Ref<DateFormat>) => (value: string) => {
-    return (
-      value.length > 0 &&
-      !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-    );
-  };
+  (dateInputFormat: Ref<DateFormat>) => (value: string) =>
+    value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat)));
 
 export const dateSerializer =
   (dateInputFormat: Ref<DateFormat>) => (date: string) =>

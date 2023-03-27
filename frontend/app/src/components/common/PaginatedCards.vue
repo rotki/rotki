@@ -26,9 +26,7 @@ const itemsPerPage = computed(() => {
   return 6;
 });
 
-const pages = computed(() => {
-  return Math.ceil(get(items).length / get(itemsPerPage));
-});
+const pages = computed(() => Math.ceil(get(items).length / get(itemsPerPage)));
 
 const visible = computed(() => {
   const start = (get(page) - 1) * get(itemsPerPage);

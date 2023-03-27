@@ -63,41 +63,32 @@ export const useLiquidityPosition = () => {
     });
 
   const lpTotal = (includeNft = false) =>
-    computed<BigNumber>(() => {
-      return bigNumberSum(
+    computed<BigNumber>(() =>
+      bigNumberSum(
         get(lpAggregatedBalances(includeNft)).map(item => item.usdValue)
-      );
-    });
+      )
+    );
 
   const getPoolName = (type: LpType, assets: string[]) => {
-    const concatAssets = (assets: string[]) => {
-      return assets.map(asset => get(assetSymbol(asset))).join('/');
-    };
+    const concatAssets = (assets: string[]) =>
+      assets.map(asset => get(assetSymbol(asset))).join('/');
 
     const data = [
       {
         identifier: LpType.UNISWAP_V2,
-        name: (assets: string[]) => {
-          return `UNIv2 ${concatAssets(assets)}`;
-        }
+        name: (assets: string[]) => `UNIv2 ${concatAssets(assets)}`
       },
       {
         identifier: LpType.UNISWAP_V3,
-        name: (assets: string[]) => {
-          return `UNIv3 ${concatAssets(assets)}`;
-        }
+        name: (assets: string[]) => `UNIv3 ${concatAssets(assets)}`
       },
       {
         identifier: LpType.SUSHISWAP,
-        name: (assets: string[]) => {
-          return `SLP ${concatAssets(assets)}`;
-        }
+        name: (assets: string[]) => `SLP ${concatAssets(assets)}`
       },
       {
         identifier: LpType.BALANCER,
-        name: (assets: string[]) => {
-          return concatAssets(assets);
-        }
+        name: (assets: string[]) => concatAssets(assets)
       }
     ];
 

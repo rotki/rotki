@@ -82,9 +82,8 @@ const blockchainData: BlockchainData = {
 const { blockchainAssets } = useBlockchainAggregatedBalances();
 
 const getFirstContext = (data: BlockchainData) => {
-  const hasData = (data: Ref<BlockchainAccountWithBalance[]>) => {
-    return get(data).length > 0;
-  };
+  const hasData = (data: Ref<BlockchainAccountWithBalance[]>) =>
+    get(data).length > 0;
 
   if (hasData(data.btcAccounts)) {
     return Blockchain.BTC;

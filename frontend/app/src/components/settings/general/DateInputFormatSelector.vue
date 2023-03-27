@@ -18,9 +18,8 @@ const selections = [
   }
 ];
 
-const dateInputFormatExample = (format: DateFormat): string => {
-  return displayDateFormatter.format(new Date(), format);
-};
+const dateInputFormatExample = (format: DateFormat): string =>
+  displayDateFormatter.format(new Date(), format);
 
 const { t } = useI18n();
 </script>

@@ -84,9 +84,9 @@ const { addressBookEntries } = toRefs(addressesNamesStore);
 
 const { t, tc } = useI18n();
 
-const data = computed<AddressBookEntries>(() => {
-  return get(addressBookEntries)[get(location)];
-});
+const data = computed<AddressBookEntries>(
+  () => get(addressBookEntries)[get(location)]
+);
 
 const filteredData = computed<AddressBookEntries>(() => {
   const keyword = get(search).toLowerCase();

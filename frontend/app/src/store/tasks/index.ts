@@ -94,23 +94,25 @@ export const useTaskStore = defineStore('tasks', () => {
     type: TaskType,
     meta: Record<string, any> = {}
   ): ComputedRef<boolean> =>
-    computed(() => {
-      return !!find(get(tasks), item => {
-        const sameType = item.type === type;
-        const keys = Object.keys(meta);
-        if (keys.length === 0) {
-          return sameType;
-        }
+    computed(
+      () =>
+        !!find(get(tasks), item => {
+          const sameType = item.type === type;
+          const keys = Object.keys(meta);
+          if (keys.length === 0) {
+            return sameType;
+          }
 
-        return (
-          sameType &&
-          keys.every(key => {
-            // @ts-ignore
-            return key in item.meta && item.meta[key] === meta[key];
-          })
-        );
-      });
-    });
+          return (
+            sameType &&
+            keys.every(
+              key =>
+                // @ts-ignore
+                key in item.meta && item.meta[key] === meta[key]
+            )
+          );
+        })
+    );
 
   const metadata = <T extends TaskMeta>(type: TaskType): T | undefined => {
     const task = find(get(tasks), item => item.type === type);
@@ -120,9 +122,7 @@ export const useTaskStore = defineStore('tasks', () => {
     return undefined;
   };
 
-  const hasRunningTasks = computed(() => {
-    return Object.keys(get(tasks)).length > 0;
-  });
+  const hasRunningTasks = computed(() => Object.keys(get(tasks)).length > 0);
 
   const taskList = computed(() => toArray(get(tasks)));
 

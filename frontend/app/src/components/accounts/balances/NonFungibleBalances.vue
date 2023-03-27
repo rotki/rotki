@@ -127,9 +127,7 @@ const deletePrice = async (toDeletePrice: NonFungibleBalance) => {
 const { setMessage } = useMessageStore();
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
 
-const isIgnored = (identifier: string) => {
-  return isAssetIgnored(identifier);
-};
+const isIgnored = (identifier: string) => isAssetIgnored(identifier);
 
 const toggleIgnoreAsset = async (identifier: string) => {
   let success = false;

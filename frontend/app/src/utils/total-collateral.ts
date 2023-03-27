@@ -5,11 +5,10 @@ import { Zero } from '@/utils/bignumbers';
 
 export const totalCollateral = (
   loan: Ref<CollateralizedLoan<Collateral[]>>
-): ComputedRef<BigNumber> => {
-  return computed(() =>
+): ComputedRef<BigNumber> =>
+  computed(() =>
     get(loan).collateral.reduce(
       (previous, current) => previous.plus(current.usdValue),
       Zero
     )
   );
-};

@@ -95,10 +95,9 @@ export const compareSymbols = (
   return rankA - rankB;
 };
 
-export const getSortItems = (
-  getInfo: (identifier: string) => AssetInfo | null
-) => {
-  return (
+export const getSortItems =
+  (getInfo: (identifier: string) => AssetInfo | null) =>
+  (
     items: AssetBalance[],
     sortBy: (keyof AssetBalance)[],
     sortDesc: boolean[]
@@ -124,7 +123,6 @@ export const getSortItems = (
       ).toNumber();
     });
   };
-};
 
 export const isEvmIdentifier = (identifier?: string): boolean => {
   if (!identifier) {
@@ -143,10 +141,7 @@ export const getAddressFromEvmIdentifier = (identifier?: string): string => {
 export const createEvmIdentifierFromAddress = (
   address: string,
   chain = '1'
-): string => {
-  return `eip155:${chain}/erc20:${address}`;
-};
+): string => `eip155:${chain}/erc20:${address}`;
 
-export const getValidSelectorFromEvmAddress = (address: string): string => {
-  return address.replace(/[^\da-z]/gi, '');
-};
+export const getValidSelectorFromEvmAddress = (address: string): string =>
+  address.replace(/[^\da-z]/gi, '');

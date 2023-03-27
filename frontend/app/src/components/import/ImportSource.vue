@@ -141,9 +141,7 @@ const changeShouldCustomDateFormat = () => {
   }
 };
 
-const isRotkiCustomImport = computed(() => {
-  return get(source).startsWith('rotki_');
-});
+const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
 </script>
 
 <template>
@@ -152,7 +150,7 @@ const isRotkiCustomImport = computed(() => {
       <div class="mb-2">
         <slot name="upload-title" />
       </div>
-      <v-form ref="form" :value="!v$.$invalid">
+      <v-form :value="!v$.$invalid">
         <file-upload
           :loading="loading"
           :uploaded="uploaded"

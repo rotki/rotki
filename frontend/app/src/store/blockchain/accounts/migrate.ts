@@ -8,11 +8,8 @@ import { type MaybeRef, useSessionStorage } from '@vueuse/core';
 import { type MigratedAddresses } from '@/types/websocket-messages';
 import { startPromise } from '@/utils';
 
-const setupMigrationSessionCache = (
-  username: string
-): Ref<MigratedAddresses> => {
-  return useSessionStorage(`rotki.migrated_addresses.${username}`, []);
-};
+const setupMigrationSessionCache = (username: string): Ref<MigratedAddresses> =>
+  useSessionStorage(`rotki.migrated_addresses.${username}`, []);
 
 export const useAccountMigrationStore = defineStore(
   'blockchain/accounts/migration',

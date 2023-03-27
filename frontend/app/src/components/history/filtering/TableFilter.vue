@@ -52,13 +52,11 @@ const removeSelection = (suggestion: Suggestion) => {
   updateMatches(get(selection).filter(sel => sel !== suggestion));
 };
 
-const matcherForKey = (searchKey: string | undefined) => {
-  return get(matchers).find(({ key }) => key === searchKey);
-};
+const matcherForKey = (searchKey: string | undefined) =>
+  get(matchers).find(({ key }) => key === searchKey);
 
-const matcherForKeyValue = (searchKey: string | undefined) => {
-  return get(matchers).find(({ keyValue }) => keyValue === searchKey);
-};
+const matcherForKeyValue = (searchKey: string | undefined) =>
+  get(matchers).find(({ keyValue }) => keyValue === searchKey);
 
 const appendToSearch = (key: string) => {
   const filter = `${key}:`;
@@ -222,9 +220,8 @@ const getDisplayValue = (suggestion: Suggestion) => {
   return value.isCustomAsset ? value.name : value.symbol;
 };
 
-const getSuggestionText = (suggestion: Suggestion) => {
-  return `${suggestion.key}: ${getDisplayValue(suggestion)}`;
-};
+const getSuggestionText = (suggestion: Suggestion) =>
+  `${suggestion.key}: ${getDisplayValue(suggestion)}`;
 
 const selectItem = (suggestion: Suggestion) => {
   nextTick(() => {

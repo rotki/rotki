@@ -6,9 +6,7 @@ const props = defineProps({
   asset: {
     required: true,
     type: String,
-    validator: (value: string): boolean => {
-      return !!value && value.length > 0;
-    }
+    validator: (value: string): boolean => !!value && value.length > 0
   },
   assetStyled: { required: false, type: Object, default: () => null },
   opensDetails: { required: false, type: Boolean, default: false },
@@ -23,12 +21,10 @@ const { assetInfo } = useAssetInfoRetrieval();
 
 const assetDetails = assetInfo(asset, enableAssociation, isCollectionParent);
 
-const currentAsset: ComputedRef<AssetInfoWithId> = computed(() => {
-  return {
-    ...get(assetDetails),
-    identifier: get(asset)
-  };
-});
+const currentAsset: ComputedRef<AssetInfoWithId> = computed(() => ({
+  ...get(assetDetails),
+  identifier: get(asset)
+}));
 </script>
 
 <template>

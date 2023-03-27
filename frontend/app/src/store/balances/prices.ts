@@ -131,9 +131,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   };
 
   const exchangeRate = (currency: string): ComputedRef<BigNumber | undefined> =>
-    computed(() => {
-      return get(exchangeRates)[currency] as BigNumber;
-    });
+    computed(() => get(exchangeRates)[currency] as BigNumber);
 
   const getHistoricPrice = async ({
     fromAsset,
@@ -240,21 +238,15 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   const assetPrice = (
     asset: MaybeRef<string>
   ): ComputedRef<BigNumber | undefined> =>
-    computed(() => {
-      return get(prices)[get(asset)]?.value;
-    });
+    computed(() => get(prices)[get(asset)]?.value);
 
   const isManualAssetPrice = (asset: MaybeRef<string>): ComputedRef<boolean> =>
-    computed(() => {
-      return get(prices)[get(asset)]?.isManualPrice || false;
-    });
+    computed(() => get(prices)[get(asset)]?.isManualPrice || false);
 
   const isAssetPriceInCurrentCurrency = (
     asset: MaybeRef<string>
   ): ComputedRef<boolean> =>
-    computed(() => {
-      return get(prices)[get(asset)]?.isCurrentCurrency || false;
-    });
+    computed(() => get(prices)[get(asset)]?.isCurrentCurrency || false);
 
   watch([exchangeRates, currencySymbol], ([rates, symbol]) => {
     if (Object.keys(rates).length > 0) {

@@ -31,9 +31,9 @@ const props = defineProps({
 
 const { report } = toRefs(props);
 
-const total = computed<ProfitLossOverviewItem>(() => {
-  return calculateTotalProfitLoss(get(report));
-});
+const total = computed<ProfitLossOverviewItem>(() =>
+  calculateTotalProfitLoss(get(report))
+);
 
 const { tc } = useI18n();
 </script>

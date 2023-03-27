@@ -64,9 +64,7 @@ export const useEth2Api = () => {
 
   const eth2StatsTask = async (
     payload: Eth2DailyStatsPayload
-  ): Promise<PendingTask> => {
-    return internalEth2Stats(payload, true);
-  };
+  ): Promise<PendingTask> => internalEth2Stats(payload, true);
 
   const eth2Stats = async (
     payload: Eth2DailyStatsPayload

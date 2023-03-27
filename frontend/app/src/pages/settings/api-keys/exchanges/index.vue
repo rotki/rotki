@@ -38,15 +38,14 @@ const { update } = useSettingsStore();
 const { tc } = useI18n();
 const { usageGuideUrl } = useInterop();
 
-const findNonSyncExchangeIndex = (exchange: Exchange) => {
-  return get(nonSyncingExchanges).findIndex((item: Exchange) => {
-    return item.name === exchange.name && item.location === exchange.location;
-  });
-};
+const findNonSyncExchangeIndex = (exchange: Exchange) =>
+  get(nonSyncingExchanges).findIndex(
+    (item: Exchange) =>
+      item.name === exchange.name && item.location === exchange.location
+  );
 
-const isNonSyncExchange = (exchange: Exchange) => {
-  return findNonSyncExchangeIndex(exchange) > -1;
-};
+const isNonSyncExchange = (exchange: Exchange) =>
+  findNonSyncExchangeIndex(exchange) > -1;
 
 const resetNonSyncingExchanges = () => {
   set(nonSyncingExchanges, get(current));

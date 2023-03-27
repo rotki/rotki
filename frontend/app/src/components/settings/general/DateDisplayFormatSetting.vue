@@ -32,9 +32,9 @@ const { callIfValid } = useValidation(v$);
 
 const { dateDisplayFormat: format } = storeToRefs(useGeneralSettingsStore());
 
-const dateDisplayFormatExample = computed<string>(() => {
-  return displayDateFormatter.format(now, get(dateDisplayFormat));
-});
+const dateDisplayFormatExample = computed<string>(() =>
+  displayDateFormatter.format(now, get(dateDisplayFormat))
+);
 
 const resetDateDisplayFormat = () => {
   set(dateDisplayFormat, get(format));

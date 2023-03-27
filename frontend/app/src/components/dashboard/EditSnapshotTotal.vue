@@ -40,9 +40,9 @@ const total = ref<string>('');
 const { tc } = useI18n();
 
 const { exchangeRate } = useBalancePricesStore();
-const fiatExchangeRate = computed<BigNumber>(() => {
-  return get(exchangeRate(get(currencySymbol))) ?? One;
-});
+const fiatExchangeRate = computed<BigNumber>(
+  () => get(exchangeRate(get(currencySymbol))) ?? One
+);
 
 const assetTotal = computed<BigNumber>(() => {
   const numbers = get(balancesSnapshot).map((item: BalanceSnapshot) => {
@@ -92,9 +92,9 @@ const numericTotal = computed<BigNumber>(() => {
     : bigNumberify(value).dividedBy(get(fiatExchangeRate));
 });
 
-const nftsExcludedTotal = computed<BigNumber>(() => {
-  return get(numericTotal).minus(get(nftsTotal));
-});
+const nftsExcludedTotal = computed<BigNumber>(() =>
+  get(numericTotal).minus(get(nftsTotal))
+);
 
 const suggestions = computed(() => {
   const assetTotalValue = get(assetTotal);

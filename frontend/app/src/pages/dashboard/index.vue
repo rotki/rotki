@@ -22,9 +22,9 @@ const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
 const isTokenDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS);
 
-const isBlockchainLoading = computed<boolean>(() => {
-  return get(isQueryingBlockchain) || get(isLoopringLoading);
-});
+const isBlockchainLoading = computed<boolean>(
+  () => get(isQueryingBlockchain) || get(isLoopringLoading)
+);
 
 const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
 
@@ -32,13 +32,12 @@ const isAllBalancesLoading = isTaskRunning(TaskType.QUERY_BALANCES);
 
 const isManualBalancesLoading = isTaskRunning(TaskType.MANUAL_BALANCES);
 
-const isAnyLoading = computed<boolean>(() => {
-  return (
+const isAnyLoading = computed<boolean>(
+  () =>
     get(isBlockchainLoading) ||
     get(isExchangeLoading) ||
     get(isAllBalancesLoading)
-  );
-});
+);
 
 const { refreshBalance } = useRefresh();
 

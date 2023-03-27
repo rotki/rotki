@@ -12,9 +12,7 @@ const props = defineProps({
     required: false,
     type: String as PropType<'end' | 'start'>,
     default: 'end',
-    validator: (value: any) => {
-      return ['end', 'start'].includes(value);
-    }
+    validator: (value: any) => ['end', 'start'].includes(value)
   },
   assetPadding: {
     required: false,

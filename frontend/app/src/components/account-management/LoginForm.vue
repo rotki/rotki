@@ -118,9 +118,9 @@ watch(password, () => {
   touched();
 });
 
-const isLoggedInError = computed<boolean>(() => {
-  return get(errors).some(error => error.includes('is already logged in'));
-});
+const isLoggedInError = computed<boolean>(() =>
+  get(errors).some(error => error.includes('is already logged in'))
+);
 
 const logout = async () => {
   const { success } = await logoutRemoteSession();
@@ -129,13 +129,13 @@ const logout = async () => {
   }
 };
 
-const localLastModified = computed<number>(() => {
-  return get(syncConflict).payload?.localLastModified ?? 0;
-});
+const localLastModified = computed<number>(
+  () => get(syncConflict).payload?.localLastModified ?? 0
+);
 
-const remoteLastModified = computed<number>(() => {
-  return get(syncConflict).payload?.remoteLastModified ?? 0;
-});
+const remoteLastModified = computed<number>(
+  () => get(syncConflict).payload?.remoteLastModified ?? 0
+);
 
 const serverColor = computed<string | null>(() => {
   if (get(customBackendSessionOnly)) {

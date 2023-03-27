@@ -171,12 +171,10 @@ export const useReportsStore = defineStore('reports', () => {
       }
       set(loaded, false);
       const words = reportEntries.entries
-        .filter(event => {
-          return event.type === ProfitLossEventTypeEnum.TRANSACTION_EVENT;
-        })
-        .map(event => {
-          return event.notes;
-        })
+        .filter(
+          event => event.type === ProfitLossEventTypeEnum.TRANSACTION_EVENT
+        )
+        .map(event => event.notes)
         .join(' ')
         .split(' ');
 
@@ -308,9 +306,7 @@ export const useReportsStore = defineStore('reports', () => {
   const processingState = computed(() => get(reportProgress).processingState);
 
   const isLatestReport = (reportId: number): ComputedRef<boolean> =>
-    computed(() => {
-      return get(lastGeneratedReport) === reportId;
-    });
+    computed(() => get(lastGeneratedReport) === reportId);
 
   const clearError = (): void => {
     set(reportError, emptyError());

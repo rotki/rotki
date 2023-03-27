@@ -36,9 +36,10 @@ export const useEventTypeData = createSharedComposable(() => {
     const type = getEventType(event);
 
     if (type) {
-      return get(transactionEventTypeData).find((data: ActionDataEntry) => {
-        return data.identifier.toLowerCase() === type.toLowerCase();
-      })!;
+      return get(transactionEventTypeData).find(
+        (data: ActionDataEntry) =>
+          data.identifier.toLowerCase() === type.toLowerCase()
+      )!;
     }
 
     const unknownLabel = tc('transactions.events.type.unknown');
@@ -110,9 +111,7 @@ export const getEventCounterpartyData = (
 export function mapCollectionEntriesWithMeta<T>(
   collection: Collection<EntryWithMeta<T>>
 ): Collection<T & EntryMeta> {
-  const entries = collection.data.map(data => {
-    return transformEntryWithMeta<T>(data);
-  });
+  const entries = collection.data.map(data => transformEntryWithMeta<T>(data));
   return {
     ...collection,
     data: entries

@@ -58,15 +58,15 @@ const adjustedTotalNetWorthFontSize = computed(() => {
   return Math.min(1, 12 / digits);
 });
 
-const allTimeframes = computed(() => {
-  return timeframes((unit, amount) =>
+const allTimeframes = computed(() =>
+  timeframes((unit, amount) =>
     dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix()
-  );
-});
+  )
+);
 
-const balanceDelta = computed(() => {
-  return get(totalNetWorth).minus(get(startingValue));
-});
+const balanceDelta = computed(() =>
+  get(totalNetWorth).minus(get(startingValue))
+);
 
 const timeframeData = computed(() => {
   const all = get(allTimeframes);

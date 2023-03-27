@@ -15,9 +15,9 @@ const emit = defineEmits(['close', 'save']);
 const { value } = toRefs(props);
 const asset = ref<string | null>(null);
 const price = ref<string | null>(null);
-const valid = computed(() => {
-  return get(asset) && get(price) && !isNaN(Number.parseInt(get(price)!));
-});
+const valid = computed(
+  () => get(asset) && get(price) && !isNaN(Number.parseInt(get(price)!))
+);
 const close = () => emit('close');
 const save = () => {
   assert(get(asset));

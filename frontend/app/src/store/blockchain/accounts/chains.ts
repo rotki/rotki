@@ -31,9 +31,9 @@ export const useChainsAccountsStore = defineStore(
       }
     };
 
-    const optimismAddresses: ComputedRef<string[]> = computed(() => {
-      return get(optimism).map(({ address }) => address);
-    });
+    const optimismAddresses: ComputedRef<string[]> = computed(() =>
+      get(optimism).map(({ address }) => address)
+    );
 
     return {
       ksm,

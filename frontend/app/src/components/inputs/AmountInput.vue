@@ -31,9 +31,10 @@ const onValueChanged = ({
   emit('input', value);
 };
 
-const filteredListeners = (listeners: any) => {
-  return { ...listeners, input: () => {} };
-};
+const filteredListeners = (listeners: any) => ({
+  ...listeners,
+  input: () => {}
+});
 
 watch(value, value => {
   const clv = get(cleave);

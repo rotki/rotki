@@ -65,17 +65,12 @@ export const useIgnore = <T extends EntryMeta>(
     return { success: true };
   };
 
-  const ignoreActions = async (
-    payload: IgnorePayload
-  ): Promise<ActionStatus> => {
-    return await ignoreInAccounting(payload, true);
-  };
+  const ignoreActions = async (payload: IgnorePayload): Promise<ActionStatus> =>
+    await ignoreInAccounting(payload, true);
 
   const unignoreActions = async (
     payload: IgnorePayload
-  ): Promise<ActionStatus> => {
-    return await ignoreInAccounting(payload, false);
-  };
+  ): Promise<ActionStatus> => await ignoreInAccounting(payload, false);
 
   const ignore = async (ignored: boolean) => {
     let payload: IgnorePayload;

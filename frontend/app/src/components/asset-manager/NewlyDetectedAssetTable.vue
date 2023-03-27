@@ -13,8 +13,8 @@ const { cache } = storeToRefs(useAssetCacheStore());
 
 const { getChain } = useSupportedChains();
 
-const mappedTokens: ComputedRef<NewDetectedToken[]> = computed(() => {
-  return get(tokens).map(data => {
+const mappedTokens: ComputedRef<NewDetectedToken[]> = computed(() =>
+  get(tokens).map(data => {
     const evmChain = get(cache)[data.tokenIdentifier]?.evmChain;
 
     return {
@@ -22,8 +22,8 @@ const mappedTokens: ComputedRef<NewDetectedToken[]> = computed(() => {
       address: getAddressFromEvmIdentifier(data.tokenIdentifier),
       evmChain: evmChain ? getChain(evmChain) : Blockchain.ETH
     };
-  });
-});
+  })
+);
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -80,9 +80,7 @@ const ignoreTokens = async (identifiers?: string[]) => {
   const ids =
     identifiers ||
     get(selected)
-      .filter(item => {
-        return !get(isAssetIgnored(item.tokenIdentifier));
-      })
+      .filter(item => !get(isAssetIgnored(item.tokenIdentifier)))
       .map(({ tokenIdentifier }) => tokenIdentifier)
       .filter(uniqueStrings);
 

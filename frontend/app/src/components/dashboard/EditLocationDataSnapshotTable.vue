@@ -64,15 +64,15 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 ]);
 
 const { exchangeRate } = useBalancePricesStore();
-const fiatExchangeRate = computed<BigNumber>(() => {
-  return get(exchangeRate(get(currencySymbol))) ?? One;
-});
+const fiatExchangeRate = computed<BigNumber>(
+  () => get(exchangeRate(get(currencySymbol))) ?? One
+);
 
-const data = computed<IndexedLocationDataSnapshot[]>(() => {
-  return get(value)
+const data = computed<IndexedLocationDataSnapshot[]>(() =>
+  get(value)
     .map((item, index) => ({ ...item, index }))
-    .filter(item => item.location !== 'total');
-});
+    .filter(item => item.location !== 'total')
+);
 
 const input = (value: LocationDataSnapshot[]) => {
   emit('input', value);

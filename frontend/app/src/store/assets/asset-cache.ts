@@ -123,9 +123,8 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     return computed(() => get(cache)[key] ?? null);
   };
 
-  const isPending = (identifier: MaybeRef<string>): ComputedRef<boolean> => {
-    return computed(() => get(pending)[get(identifier)] ?? false);
-  };
+  const isPending = (identifier: MaybeRef<string>): ComputedRef<boolean> =>
+    computed(() => get(pending)[get(identifier)] ?? false);
 
   const reset = (): void => {
     set(pending, {});

@@ -6,13 +6,12 @@ import { READ_ONLY_TAGS, type Tag, type Tags } from '@/types/tags';
 export const useTagStore = defineStore('session/tags', () => {
   const allTags = ref<Tags>({});
 
-  const tags = computed(() => {
-    return Object.values(get(allTags));
-  });
+  const tags = computed(() => Object.values(get(allTags)));
 
-  const availableTags: ComputedRef<Record<string, Tag>> = computed(() => {
-    return { ...get(allTags), ...READ_ONLY_TAGS };
-  });
+  const availableTags: ComputedRef<Record<string, Tag>> = computed(() => ({
+    ...get(allTags),
+    ...READ_ONLY_TAGS
+  }));
 
   const { removeTag } = useBlockchainAccounts();
   const { setMessage } = useMessageStore();

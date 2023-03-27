@@ -66,13 +66,9 @@ const refresh = async () => {
   await Promise.all([fetchBalances(true), fetchEvents(true)]);
 };
 
-const getIdentifier = (item: XswapBalance) => {
-  return item.address;
-};
+const getIdentifier = (item: XswapBalance) => item.address;
 
-const getAssets = (assets: XswapAsset[]) => {
-  return assets.map(({ asset }) => asset);
-};
+const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
 
 onMounted(async () => {
   await Promise.all([fetchBalances(false), fetchEvents(false)]);

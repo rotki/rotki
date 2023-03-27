@@ -16,9 +16,7 @@ const isHistory = computed(() => task.value.type === TaskType.TRADE_HISTORY);
 
 const { progress } = storeToRefs(useReportsStore());
 
-const time = computed(() => {
-  return dayjs(task.value.time).format('LLL');
-});
+const time = computed(() => dayjs(task.value.time).format('LLL'));
 </script>
 
 <template>

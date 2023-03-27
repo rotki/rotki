@@ -93,7 +93,7 @@ const purge = async (source: PurgeParams) => {
       {{ tc('data_management.subtitle') }}
     </template>
 
-    <v-form ref="form">
+    <v-form>
       <v-row>
         <v-col>
           <purge-selector

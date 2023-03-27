@@ -337,9 +337,8 @@ const showDeleteConfirmation = () => {
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.TRADES);
 
-const getItemClass = (item: TradeEntry) => {
-  return item.ignoredInAccounting ? 'darken-row' : '';
-};
+const getItemClass = (item: TradeEntry) =>
+  item.ignoredInAccounting ? 'darken-row' : '';
 
 const pageRoute = Routes.HISTORY_TRADES;
 

@@ -14,9 +14,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { chain } = toRefs(props);
 
-const getImageUrl = (evmChain: string): string => {
-  return `./assets/images/chains/${evmChain}.svg`;
-};
+const getImageUrl = (evmChain: string): string =>
+  `./assets/images/chains/${evmChain}.svg`;
 
 const chainData = computed(() => {
   const chainProp = get(chain);

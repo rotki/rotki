@@ -19,11 +19,11 @@ export const toSentenceCase = (string: string): string => {
  * @example
  * toCapitalCase('this is a sentence'); // This Is A Sentence
  */
-export const toCapitalCase = (string: string): string => {
-  return string.replace(/\p{L}+('\p{L}+)?/gu, txt => {
-    return txt.charAt(0).toUpperCase() + txt.slice(1);
-  });
-};
+export const toCapitalCase = (string: string): string =>
+  string.replace(
+    /\p{L}+('\p{L}+)?/gu,
+    txt => txt.charAt(0).toUpperCase() + txt.slice(1)
+  );
 
 /**
  * Returns the plural of an English word.

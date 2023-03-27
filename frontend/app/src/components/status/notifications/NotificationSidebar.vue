@@ -43,9 +43,7 @@ const showConfirmation = () => {
   );
 };
 
-const notifications = computed(() => {
-  return orderBy(data.value, 'date', 'desc');
-});
+const notifications = computed(() => orderBy(data.value, 'date', 'desc'));
 
 const { isMobile } = useTheme();
 const { hasRunningTasks } = storeToRefs(useTaskStore());

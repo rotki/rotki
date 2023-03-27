@@ -37,9 +37,7 @@ export const useAssetMovementsApi = () => {
 
   const getAssetMovementsTask = async (
     payload: AssetMovementRequestPayload
-  ): Promise<PendingTask> => {
-    return internalAssetMovements<PendingTask>(payload, true);
-  };
+  ): Promise<PendingTask> => internalAssetMovements<PendingTask>(payload, true);
 
   const getAssetMovements = async (
     payload: AssetMovementRequestPayload

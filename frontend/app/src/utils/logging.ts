@@ -9,13 +9,11 @@ import { LogLevel } from '@/utils/log-level';
 
 const isDevelopment = checkIfDevelopment();
 
-export const getDefaultLogLevel = (): LogLevel => {
-  return isDevelopment ? LogLevel.DEBUG : LogLevel.CRITICAL;
-};
+export const getDefaultLogLevel = (): LogLevel =>
+  isDevelopment ? LogLevel.DEBUG : LogLevel.CRITICAL;
 
-export const getDefaultFrontendLogLevel = (): LogLevelNumbers => {
-  return isDevelopment ? logger.levels.DEBUG : logger.levels.SILENT;
-};
+export const getDefaultFrontendLogLevel = (): LogLevelNumbers =>
+  isDevelopment ? logger.levels.DEBUG : logger.levels.SILENT;
 
 const mapping = {
   [LogLevel.CRITICAL]: logger.levels.SILENT,

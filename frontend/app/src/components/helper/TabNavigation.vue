@@ -15,15 +15,14 @@ const route = useRoute();
 const { currentBreakpoint } = useTheme();
 const isDev = checkIfDevelopment();
 
-const visibleTabs = computed(() => {
-  return get(tabContents).filter(({ hidden }) => !hidden);
-});
+const visibleTabs = computed(() =>
+  get(tabContents).filter(({ hidden }) => !hidden)
+);
 
 const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
 
-const isRouterVisible = (route: string, tab: TabContent) => {
-  return route.includes(tab.route) && tab.route === get(selectedTab);
-};
+const isRouterVisible = (route: string, tab: TabContent) =>
+  route.includes(tab.route) && tab.route === get(selectedTab);
 </script>
 
 <template>

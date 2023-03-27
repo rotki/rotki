@@ -36,9 +36,7 @@ export const useLedgerActionsApi = () => {
 
   const getLedgerActionsTask = async (
     payload: LedgerActionRequestPayload
-  ): Promise<PendingTask> => {
-    return internalLedgerActions<PendingTask>(payload, true);
-  };
+  ): Promise<PendingTask> => internalLedgerActions<PendingTask>(payload, true);
 
   const getLedgerActions = async (
     payload: LedgerActionRequestPayload

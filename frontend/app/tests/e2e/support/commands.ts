@@ -108,8 +108,8 @@ const createAccount = (username: string, password = '1234') => {
     .its('body');
 };
 
-const addExternalTrade = (trade: ExternalTrade) => {
-  return cy
+const addExternalTrade = (trade: ExternalTrade) =>
+  cy
     .request({
       url: 'http://localhost:22221/api/1/trades',
       method: 'PUT',
@@ -128,10 +128,9 @@ const addExternalTrade = (trade: ExternalTrade) => {
       }
     })
     .its('body');
-};
 
-const addLedgerAction = (action: ExternalLedgerAction) => {
-  return cy
+const addLedgerAction = (action: ExternalLedgerAction) =>
+  cy
     .request({
       url: 'http://localhost:22221/api/1/ledgeractions',
       method: 'PUT',
@@ -148,10 +147,9 @@ const addLedgerAction = (action: ExternalLedgerAction) => {
       }
     })
     .its('body');
-};
 
-const addEtherscanKey = (key: string) => {
-  return cy
+const addEtherscanKey = (key: string) =>
+  cy
     .request({
       url: 'http://localhost:22221/api/1/external_services',
       method: 'PUT',
@@ -163,7 +161,6 @@ const addEtherscanKey = (key: string) => {
       }
     })
     .its('status');
-};
 
 Cypress.Commands.add('logout', logout);
 Cypress.Commands.add('updateAssets', updateAssets);

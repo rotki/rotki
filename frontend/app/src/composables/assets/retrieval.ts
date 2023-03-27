@@ -28,9 +28,7 @@ export const useAssetInfoRetrieval = () => {
   const getAssociatedAssetIdentifier = (
     identifier: string
   ): ComputedRef<string> =>
-    computed(() => {
-      return get(assetAssociationMap)[identifier] ?? identifier;
-    });
+    computed(() => get(assetAssociationMap)[identifier] ?? identifier);
 
   const getAssetNameFallback = (id: string) => {
     if (isEvmIdentifier(id)) {

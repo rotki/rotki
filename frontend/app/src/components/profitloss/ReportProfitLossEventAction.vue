@@ -36,9 +36,9 @@ const openEditHistoricPriceDialog = async () => {
   set(fetchingPrice, false);
 };
 
-const datetime: ComputedRef<string> = computed(() => {
-  return convertFromTimestamp(get(event).timestamp, true);
-});
+const datetime: ComputedRef<string> = computed(() =>
+  convertFromTimestamp(get(event).timestamp, true)
+);
 
 const { t, tc } = useI18n();
 

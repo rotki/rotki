@@ -4,9 +4,7 @@ import { CURRENCY_USD } from '@/types/currencies';
 const { t } = useI18n();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const notUsd = computed(() => {
-  return get(currencySymbol) !== CURRENCY_USD;
-});
+const notUsd = computed(() => get(currencySymbol) !== CURRENCY_USD);
 </script>
 
 <template>

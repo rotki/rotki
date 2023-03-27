@@ -54,9 +54,9 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-const matchedAcquisitions = computed(() => {
-  return get(costBasis).matchedAcquisitions ?? [];
-});
+const matchedAcquisitions = computed(
+  () => get(costBasis).matchedAcquisitions ?? []
+);
 </script>
 
 <template>

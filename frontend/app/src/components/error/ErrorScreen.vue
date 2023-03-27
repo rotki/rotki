@@ -52,11 +52,7 @@ const errorText = computed(() => {
           <v-divider v-if="error" class="mt-4 mb-2"/>
           {{ error }}
         </pre>
-        <textarea
-          ref="copy"
-          v-model="errorText"
-          class="error-screen__copy-area"
-        />
+        <textarea v-model="errorText" class="error-screen__copy-area" />
       </v-card-text>
     </v-card>
     <div v-else class="text-h5 mt-12">{{ alternative }}</div>

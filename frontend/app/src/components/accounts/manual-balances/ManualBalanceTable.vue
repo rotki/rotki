@@ -48,17 +48,16 @@ const visibleBalances = computed<ManualBalance[]>(() => {
 
 const { exchangeRate } = useBalancePricesStore();
 
-const total = computed(() => {
-  return aggregateTotal(
+const total = computed(() =>
+  aggregateTotal(
     get(visibleBalances),
     get(currencySymbol),
     get(exchangeRate(get(currencySymbol))) ?? One
-  );
-});
+  )
+);
 
-const getRowClass = (item: ManualBalance) => {
-  return `manual-balance__location__${item.location}`;
-};
+const getRowClass = (item: ManualBalance) =>
+  `manual-balance__location__${item.location}`;
 
 const headers = computed(() => [
   {

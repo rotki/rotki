@@ -35,13 +35,11 @@ export const useTransactionQueryStatus = () => {
     }
   }));
 
-  const isQueryStatusRange = (data: EvmTransactionQueryData) => {
-    return data.period?.[0] > 0;
-  };
+  const isQueryStatusRange = (data: EvmTransactionQueryData) =>
+    data.period?.[0] > 0;
 
-  const getStatusData = (data: EvmTransactionQueryData) => {
-    return get(statusesData)[data.status];
-  };
+  const getStatusData = (data: EvmTransactionQueryData) =>
+    get(statusesData)[data.status];
 
   const getLabel = (data: EvmTransactionQueryData) => {
     const statusData = getStatusData(data);

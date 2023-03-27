@@ -1,9 +1,7 @@
 <script setup lang="ts">
 const expanded = ref<boolean>(true);
 
-const panel = computed<number>(() => {
-  return get(expanded) ? 0 : -1;
-});
+const panel = computed<number>(() => (get(expanded) ? 0 : -1));
 </script>
 <template>
   <card :class="{ 'pb-4': expanded }">

@@ -371,15 +371,15 @@ export const useDefiSupportedProtocols = () => {
       if (showAll || protocols.includes(DefiProtocol.MAKERDAO_VAULTS)) {
         const makerVaults = get(makerDAOVaults);
         totalCollateralUsd = makerVaults
-          .reduce((sum: BigNumber, { collateral: { usdValue } }) => {
-            return sum.plus(usdValue);
-          }, Zero)
+          .reduce(
+            (sum: BigNumber, { collateral: { usdValue } }) =>
+              sum.plus(usdValue),
+            Zero
+          )
           .plus(totalCollateralUsd);
 
         totalDebt = makerVaults
-          .reduce((sum, { debt: { usdValue } }) => {
-            return sum.plus(usdValue);
-          }, Zero)
+          .reduce((sum, { debt: { usdValue } }) => sum.plus(usdValue), Zero)
           .plus(totalDebt);
       }
 
@@ -758,9 +758,7 @@ export const useDefiSupportedProtocols = () => {
         version: ProtocolVersion = ProtocolVersion.V1
       ): BigNumber =>
         get(yearnStore.yearnVaultsAssets(addresses, version)).reduce(
-          (sum, { underlyingValue: { usdValue } }) => {
-            return sum.plus(usdValue);
-          },
+          (sum, { underlyingValue: { usdValue } }) => sum.plus(usdValue),
           Zero
         );
 
@@ -807,15 +805,13 @@ export const useDefiSupportedProtocols = () => {
 
       for (const asset in balances) {
         const { weight, amount, usdValue } = balances[asset]
-          .map(({ effectiveInterestRate, balance: { usdValue, amount } }) => {
-            return {
-              weight: usdValue.multipliedBy(
-                Number.parseFloat(effectiveInterestRate)
-              ),
-              usdValue,
-              amount
-            };
-          })
+          .map(({ effectiveInterestRate, balance: { usdValue, amount } }) => ({
+            weight: usdValue.multipliedBy(
+              Number.parseFloat(effectiveInterestRate)
+            ),
+            usdValue,
+            amount
+          }))
           .reduce(
             (sum, current) => ({
               weight: sum.weight.plus(current.weight),

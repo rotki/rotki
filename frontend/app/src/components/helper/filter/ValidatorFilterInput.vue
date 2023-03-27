@@ -30,12 +30,9 @@ const input = (value: (Eth2ValidatorEntry | string)[]) => {
 const filter = (
   { publicKey, validatorIndex }: Eth2ValidatorEntry,
   queryText: string
-) => {
-  return (
-    publicKey.includes(queryText) ||
-    validatorIndex.toString().includes(queryText)
-  );
-};
+) =>
+  publicKey.includes(queryText) ||
+  validatorIndex.toString().includes(queryText);
 
 const removeValidator = (publicKey: string) => {
   const selection = [...get(value)];

@@ -72,15 +72,13 @@ const addressesSelected = (selected: string[]) => {
 
 const { currentBreakpoint } = useTheme();
 const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
-const mobileClass = computed<string | null>(() => {
-  return get(xsOnly) ? 'v-data-table__mobile-row' : null;
-});
+const mobileClass = computed<string | null>(() =>
+  get(xsOnly) ? 'v-data-table__mobile-row' : null
+);
 
-const section = computed<Section>(() => {
-  return get(loopring)
-    ? Section.L2_LOOPRING_BALANCES
-    : chainSection[get(blockchain)];
-});
+const section = computed<Section>(() =>
+  get(loopring) ? Section.L2_LOOPRING_BALANCES : chainSection[get(blockchain)]
+);
 
 const { isLoading } = useStatusStore();
 const loading = isLoading(get(section));
@@ -129,23 +127,22 @@ const withL2 = (
   });
 };
 
-const collapsedKeys = computed<string[]>(() => {
-  return get(collapsedXpubs).map(
+const collapsedKeys = computed<string[]>(() =>
+  get(collapsedXpubs).map(
     ({ derivationPath, xpub }) => `${xpub}::${derivationPath}`
-  );
-});
+  )
+);
 
-const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() => {
-  return get(balances)
-    .filter(balance => {
-      return (
+const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() =>
+  get(balances)
+    .filter(
+      balance =>
         !('xpub' in balance) ||
         ('xpub' in balance &&
           !get(collapsedKeys).includes(
             `${balance.xpub}::${balance.derivationPath}`
           ))
-      );
-    })
+    )
     .concat(
       get(collapsedXpubs).map(({ derivationPath, xpub }) => {
         const xpubEntry = get(balances).find(
@@ -167,8 +164,8 @@ const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() => {
           }
         );
       })
-    );
-});
+    )
+);
 
 const visibleBalances = computed<BlockchainAccountWithBalance[]>(() => {
   const balances = get(nonExpandedBalances).map(item => {
@@ -389,12 +386,11 @@ const getItems = (xpub: string, derivationPath?: string) => {
   return get(balances).filter(isXpub);
 };
 
-const accountOperation = computed<boolean>(() => {
-  return (
+const accountOperation = computed<boolean>(
+  () =>
     get(isTaskRunning(TaskType.ADD_ACCOUNT)) ||
     get(isTaskRunning(TaskType.REMOVE_ACCOUNT))
-  );
-});
+);
 
 const removeCollapsed = ({ derivationPath, xpub }: XpubPayload) => {
   const index = get(collapsedXpubs).findIndex(

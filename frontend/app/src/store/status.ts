@@ -21,9 +21,7 @@ export const useStatusStore = defineStore('status', () => {
   };
 
   const getStatus = (section: Section): ComputedRef<Status> =>
-    computed<Status>(() => {
-      return get(status)[section] ?? Status.NONE;
-    });
+    computed<Status>(() => get(status)[section] ?? Status.NONE);
 
   const isLoading = (section: Section): ComputedRef<boolean> =>
     computed(() => {

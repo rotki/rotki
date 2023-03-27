@@ -77,9 +77,9 @@ export const setupEntryLimit = (
     return Math.min(totalFound, entryLimit);
   });
 
-  const showUpgradeRow: ComputedRef<boolean> = computed(() => {
-    return get(limit) <= get(total) && get(limit) > 0;
-  });
+  const showUpgradeRow: ComputedRef<boolean> = computed(
+    () => get(limit) <= get(total) && get(limit) > 0
+  );
 
   return {
     itemLength,

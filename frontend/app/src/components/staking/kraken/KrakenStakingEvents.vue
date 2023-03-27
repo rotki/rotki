@@ -92,12 +92,9 @@ const updatePagination = ({
 
 const refresh = () => emit('refresh');
 
-const getEventTypeLabel = (eventType: KrakenStakingEventType) => {
-  return (
-    get(krakenStakingEventTypeData).find(data => data.identifier === eventType)
-      ?.label ?? eventType
-  );
-};
+const getEventTypeLabel = (eventType: KrakenStakingEventType) =>
+  get(krakenStakingEventTypeData).find(data => data.identifier === eventType)
+    ?.label ?? eventType;
 
 watch(filters, () => {
   set(options, { ...get(options), page: 1 });

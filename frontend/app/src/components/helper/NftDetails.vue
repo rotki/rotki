@@ -18,9 +18,9 @@ const { assetInfo } = useAssetInfoRetrieval();
 
 const balanceData = assetInfo(identifier);
 
-const imageUrl = computed<string | null>(() => {
-  return get(balanceData)?.imageUrl ?? './assets/images/placeholder.svg';
-});
+const imageUrl = computed<string | null>(
+  () => get(balanceData)?.imageUrl ?? './assets/images/placeholder.svg'
+);
 
 const collectionName: ComputedRef<string | null> = computed(() => {
   const data = get(balanceData);

@@ -86,9 +86,8 @@ const visibleAssets = computed<AssetInfoWithId[]>(() => {
   });
 });
 
-const assetText = (asset: AssetInfoWithId): string => {
-  return `${asset.symbol} ${asset.name}`;
-};
+const assetText = (asset: AssetInfoWithId): string =>
+  `${asset.symbol} ${asset.name}`;
 
 const blur = () => {
   useTimeoutFn(() => {

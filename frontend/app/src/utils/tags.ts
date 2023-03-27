@@ -64,6 +64,5 @@ export const removeBtcTags = (
 export const getTags = (
   accounts: GeneralAccountData[],
   address: string
-): string[] => {
-  return accounts.find(({ address: addr }) => addr === address)?.tags || [];
-};
+): string[] =>
+  accounts.find(({ address: addr }) => addr === address)?.tags || [];

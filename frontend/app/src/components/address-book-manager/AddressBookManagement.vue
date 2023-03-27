@@ -16,9 +16,7 @@ const tab = ref<number>(0);
 const locations: AddressBookLocation[] = ['global', 'private'];
 const { tc } = useI18n();
 
-const location = computed<AddressBookLocation>(() => {
-  return locations[get(tab)];
-});
+const location = computed<AddressBookLocation>(() => locations[get(tab)]);
 
 const emptyForm: () => AddressBookPayload = () => ({
   location: get(location),

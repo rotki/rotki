@@ -158,9 +158,8 @@ const updatePagination = async (options: PaginationOptions | null) => {
   });
 };
 
-const isTransactionEvent = (item: ProfitLossEvent) => {
-  return item.type === ProfitLossEventTypeEnum.TRANSACTION_EVENT;
-};
+const isTransactionEvent = (item: ProfitLossEvent) =>
+  item.type === ProfitLossEventTypeEnum.TRANSACTION_EVENT;
 
 watch(options, updatePagination);
 

@@ -27,12 +27,10 @@ export const useAddressesNamesStore = defineStore('addresses', () => {
   const addressBookGlobal = ref<AddressBookEntries>([]);
   const addressBookPrivate = ref<AddressBookEntries>([]);
 
-  const addressBookEntries = computed(() => {
-    return {
-      global: get(addressBookGlobal),
-      private: get(addressBookPrivate)
-    };
-  });
+  const addressBookEntries = computed(() => ({
+    global: get(addressBookGlobal),
+    private: get(addressBookPrivate)
+  }));
 
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
@@ -53,11 +51,11 @@ export const useAddressesNamesStore = defineStore('addresses', () => {
   const getFetchedAddressesList = (
     blockchain: MaybeRef<Blockchain | null>
   ): ComputedRef<string[]> =>
-    computed(() => {
-      return get(fetchedEntries)
+    computed(() =>
+      get(fetchedEntries)
         .filter(item => item.blockchain === blockchain)
-        .map(({ address }) => address);
-    });
+        .map(({ address }) => address)
+    );
 
   const fetchEnsNames = async (
     addresses: string[],

@@ -47,17 +47,17 @@ const confirmSave = async () => {
 
 const { tc } = useI18n();
 
-const title: ComputedRef<string> = computed(() => {
-  return get(edit)
+const title: ComputedRef<string> = computed(() =>
+  get(edit)
     ? tc('ledger_actions.dialog.edit.title')
-    : tc('ledger_actions.dialog.add.title');
-});
+    : tc('ledger_actions.dialog.add.title')
+);
 
-const subtitle: ComputedRef<string> = computed(() => {
-  return get(edit)
+const subtitle: ComputedRef<string> = computed(() =>
+  get(edit)
     ? tc('ledger_actions.dialog.edit.subtitle')
-    : tc('ledger_actions.dialog.add.subtitle');
-});
+    : tc('ledger_actions.dialog.add.subtitle')
+);
 </script>
 <template>
   <big-dialog

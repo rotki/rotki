@@ -35,11 +35,11 @@ const { tc } = useI18n();
 const { deleteCustomAsset, queryAllCustomAssets, getCustomAssetTypes } =
   useAssetManagementApi();
 
-const dialogTitle = computed<string>(() => {
-  return get(editMode)
+const dialogTitle = computed<string>(() =>
+  get(editMode)
     ? tc('asset_management.edit_title')
-    : tc('asset_management.add_title');
-});
+    : tc('asset_management.add_title')
+);
 
 const assetForm: Ref<InstanceType<typeof CustomAssetForm> | null> = ref(null);
 

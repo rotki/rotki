@@ -13,9 +13,7 @@ const forceUpdateMachineLanguage = useForceUpdateMachineLanguageShared(
   'true'
 );
 
-export const useLastLanguage = () => {
-  return {
-    lastLanguage,
-    forceUpdateMachineLanguage
-  };
-};
+export const useLastLanguage = () => ({
+  lastLanguage,
+  forceUpdateMachineLanguage
+});

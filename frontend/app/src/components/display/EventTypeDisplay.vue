@@ -7,9 +7,9 @@ const props = defineProps({
 });
 const { eventType } = toRefs(props);
 
-const event = computed<string>(() => {
-  return get(eventType) === 'comp' ? 'comp claimed' : get(eventType);
-});
+const event = computed<string>(() =>
+  get(eventType) === 'comp' ? 'comp claimed' : get(eventType)
+);
 </script>
 
 <template>

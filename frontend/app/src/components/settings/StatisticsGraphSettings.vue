@@ -27,9 +27,7 @@ const updateSetting = async () => {
   set(visible, false);
 };
 
-const multiplierSetting = computed(() => {
-  return get(ssf0graphMultiplier).toString();
-});
+const multiplierSetting = computed(() => get(ssf0graphMultiplier).toString());
 
 const period = computed(() => {
   const multi = get(numericMultiplier);

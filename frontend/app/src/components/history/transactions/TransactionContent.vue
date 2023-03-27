@@ -74,9 +74,9 @@ const {
   onlyChains
 } = toRefs(props);
 
-const usedTitle: ComputedRef<string> = computed(() => {
-  return get(sectionTitle) || tc('transactions.title');
-});
+const usedTitle: ComputedRef<string> = computed(
+  () => get(sectionTitle) || tc('transactions.title')
+);
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {

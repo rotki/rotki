@@ -8,9 +8,7 @@ export const AddressBookSimplePayload = z.object({
   address: z.string(),
   blockchain: z
     .string()
-    .transform(blockchain => {
-      return blockchain?.toUpperCase() as Blockchain;
-    })
+    .transform(blockchain => blockchain?.toUpperCase() as Blockchain)
     .nullable()
 });
 

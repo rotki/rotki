@@ -13,9 +13,7 @@ defineProps({
 
 const { prices } = storeToRefs(useBalancePricesStore());
 const current = ref(true);
-const pricesAreLoading = computed(() => {
-  return Object.keys(get(prices)).length === 0;
-});
+const pricesAreLoading = computed(() => Object.keys(get(prices)).length === 0);
 const getBalance = ({ amount, asset, usdValue }: ReceivedAmount): Balance => {
   const assetPrices = get(prices);
 

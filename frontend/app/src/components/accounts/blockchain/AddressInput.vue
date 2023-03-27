@@ -82,9 +82,8 @@ watch(addresses, addresses => setAddress(addresses));
 onMounted(() => setAddress(get(addresses)));
 
 const rules = [
-  (v: string) => {
-    return !!v || t('account_form.validation.address_non_empty').toString();
-  }
+  (v: string) =>
+    !!v || t('account_form.validation.address_non_empty').toString()
 ];
 </script>
 

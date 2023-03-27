@@ -20,9 +20,9 @@ if (checkIfDevelopment()) {
   findComponents().forEach(component => (window[component] = undefined));
 }
 
-const loadComponents = async (): Promise<string[]> => {
+const loadComponents = async (): Promise<string[]> =>
   // eslint-disable-next-line no-async-promise-executor
-  return new Promise(async (resolve, reject) => {
+  new Promise(async (resolve, reject) => {
     let components = findComponents();
     if (components.length > 0) {
       resolve(components);
@@ -45,8 +45,6 @@ const loadComponents = async (): Promise<string[]> => {
     script.addEventListener('error', reject);
     resolve(components);
   });
-};
-
 export const loadLibrary = async () => {
   const [component] = await loadComponents();
   // @ts-ignore
@@ -89,72 +87,46 @@ const createFactory = (
   timeout: 30000
 });
 
-export const PremiumStatistics = () => {
-  return createFactory(load('PremiumStatistics'));
-};
+export const PremiumStatistics = () => createFactory(load('PremiumStatistics'));
 
-export const VaultEventsList = () => {
-  return createFactory(load('VaultEventsList'));
-};
+export const VaultEventsList = () => createFactory(load('VaultEventsList'));
 
-export const LendingHistory = () => {
-  return createFactory(load('LendingHistory'));
-};
+export const LendingHistory = () => createFactory(load('LendingHistory'));
 
-export const CompoundLendingDetails = () => {
-  return createFactory(load('CompoundLendingDetails'));
-};
+export const CompoundLendingDetails = () =>
+  createFactory(load('CompoundLendingDetails'));
 
-export const CompoundBorrowingDetails = () => {
-  return createFactory(load('CompoundBorrowingDetails'));
-};
+export const CompoundBorrowingDetails = () =>
+  createFactory(load('CompoundBorrowingDetails'));
 
-export const YearnVaultsProfitDetails = () => {
-  return createFactory(load('YearnVaultsProfitDetails'));
-};
+export const YearnVaultsProfitDetails = () =>
+  createFactory(load('YearnVaultsProfitDetails'));
 
-export const AaveBorrowingDetails = () => {
-  return createFactory(load('AaveBorrowingDetails'));
-};
+export const AaveBorrowingDetails = () =>
+  createFactory(load('AaveBorrowingDetails'));
 
-export const AaveEarnedDetails = () => {
-  return createFactory(load('AaveEarnedDetails'));
-};
+export const AaveEarnedDetails = () => createFactory(load('AaveEarnedDetails'));
 
-export const Eth2Staking = () => {
-  return createFactory(load('Eth2Staking'));
-};
+export const Eth2Staking = () => createFactory(load('Eth2Staking'));
 
-export const UniswapDetails = () => {
-  return createFactory(load('UniswapDetails'));
-};
+export const UniswapDetails = () => createFactory(load('UniswapDetails'));
 
-export const AssetAmountAndValueOverTime = () => {
-  return createFactory(load('AssetAmountAndValueOverTime'));
-};
+export const AssetAmountAndValueOverTime = () =>
+  createFactory(load('AssetAmountAndValueOverTime'));
 
-export const BalancerBalances = () => {
-  return createFactory(load('BalancerBalances'));
-};
+export const BalancerBalances = () => createFactory(load('BalancerBalances'));
 
-export const ThemeChecker = () => {
-  return createFactory(load('ThemeChecker'));
-};
+export const ThemeChecker = () => createFactory(load('ThemeChecker'));
 
-export const ThemeSwitch = () => {
-  return createFactory(load('ThemeSwitch'), {
+export const ThemeSwitch = () =>
+  createFactory(load('ThemeSwitch'), {
     loading: ThemeSwitchLock,
     error: ThemeSwitchLock
   });
-};
 
-export const ThemeManager = () => {
-  return createFactory(load('ThemeManager'));
-};
+export const ThemeManager = () => createFactory(load('ThemeManager'));
 
-export const Sushi = () => {
-  return createFactory(load('Sushi'));
-};
+export const Sushi = () => createFactory(load('Sushi'));
 
 declare global {
   interface Window {

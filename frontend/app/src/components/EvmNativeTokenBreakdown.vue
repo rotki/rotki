@@ -44,28 +44,26 @@ const breakdowns = computed(() => {
 const { t } = useI18n();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const tableHeaders = computed<DataTableHeader[]>(() => {
-  return [
-    {
-      text: t('common.location').toString(),
-      value: 'location',
-      align: 'center',
-      width: '120px'
-    },
-    {
-      text: t('common.amount').toString(),
-      value: 'balance.amount',
-      align: 'end'
-    },
-    {
-      text: t('asset_locations.header.value', {
-        symbol: get(currencySymbol) ?? CURRENCY_USD
-      }).toString(),
-      value: 'balance.usdValue',
-      align: 'end'
-    }
-  ];
-});
+const tableHeaders = computed<DataTableHeader[]>(() => [
+  {
+    text: t('common.location').toString(),
+    value: 'location',
+    align: 'center',
+    width: '120px'
+  },
+  {
+    text: t('common.amount').toString(),
+    value: 'balance.amount',
+    align: 'end'
+  },
+  {
+    text: t('asset_locations.header.value', {
+      symbol: get(currencySymbol) ?? CURRENCY_USD
+    }).toString(),
+    value: 'balance.usdValue',
+    align: 'end'
+  }
+]);
 </script>
 <template>
   <v-sheet outlined>

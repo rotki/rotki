@@ -58,17 +58,14 @@ export const convertKeys = (
   return converted;
 };
 
-export const snakeCaseTransformer = (data: any): any => {
-  return convertKeys(data, false, false);
-};
+export const snakeCaseTransformer = (data: any): any =>
+  convertKeys(data, false, false);
 
-export const camelCaseTransformer = (data: any): any => {
-  return convertKeys(data, true, false);
-};
+export const camelCaseTransformer = (data: any): any =>
+  convertKeys(data, true, false);
 
-export const noRootCamelCaseTransformer = (data: any): any => {
-  return convertKeys(data, true, true);
-};
+export const noRootCamelCaseTransformer = (data: any): any =>
+  convertKeys(data, true, true);
 
 const jsonTransformer: AxiosResponseTransformer = (data, headers) => {
   let result = data;

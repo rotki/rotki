@@ -11,19 +11,15 @@ const props = defineProps({
 const { exchange } = toRefs(props);
 const { tradeLocations } = useTradeLocations();
 
-const location = computed<TradeLocationData | undefined>(() => {
-  return get(tradeLocations).find(
-    ({ identifier }) => identifier === get(exchange)
-  );
-});
+const location = computed<TradeLocationData | undefined>(() =>
+  get(tradeLocations).find(({ identifier }) => identifier === get(exchange))
+);
 
-const name = computed<string>(() => {
-  return get(location)?.name ?? toSentenceCase(get(exchange));
-});
+const name = computed<string>(
+  () => get(location)?.name ?? toSentenceCase(get(exchange))
+);
 
-const icon = computed<string>(() => {
-  return get(location)?.icon ?? '';
-});
+const icon = computed<string>(() => get(location)?.icon ?? '');
 </script>
 
 <template>

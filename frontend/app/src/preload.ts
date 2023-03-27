@@ -83,9 +83,7 @@ contextBridge.exposeInMainWorld('interop', {
     });
   },
   debugSettings: isDevelopment
-    ? (): DebugSettings | undefined => {
-        return debugSettings;
-      }
+    ? (): DebugSettings | undefined => debugSettings
     : undefined,
   serverUrl: (): string => ipcRenderer.sendSync(IPC_SERVER_URL),
   metamaskImport: () => ipcAction(IPC_METAMASK_IMPORT),

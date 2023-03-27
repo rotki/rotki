@@ -88,9 +88,9 @@ export const useCurrencies = createSharedComposable(() => {
     new Currency('Ether', CURRENCY_ETH, 'Ξ')
   ]);
 
-  const defaultCurrency: ComputedRef<Currency> = computed(() => {
-    return get(currencies)[0];
-  });
+  const defaultCurrency: ComputedRef<Currency> = computed(
+    () => get(currencies)[0]
+  );
 
   const findCurrency = (currencySymbol: string): Currency => {
     const currency: Currency | undefined = get(currencies).find(

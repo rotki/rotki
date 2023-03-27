@@ -10,15 +10,12 @@ const props = defineProps<{ accountingSettings: BaseAccountingSettings }>();
 const { accountingSettings } = toRefs(props);
 const { tc } = useI18n();
 const { costBasisMethodData } = useCostBasisMethod();
-const color = (enabled: boolean | null) => {
-  return enabled
+const color = (enabled: boolean | null) =>
+  enabled
     ? 'accounting-settings-display--yes'
     : 'accounting-settings-display--no';
-};
 
-const icon = (enabled: boolean | null) => {
-  return enabled ? 'mdi-check' : 'mdi-close';
-};
+const icon = (enabled: boolean | null) => (enabled ? 'mdi-check' : 'mdi-close');
 
 const taxFreePeriod = (period: number) => {
   const days = period / 86400;

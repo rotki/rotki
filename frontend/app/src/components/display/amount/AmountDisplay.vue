@@ -220,9 +220,9 @@ const decimalPlaces: ComputedRef<number> = computed(
 );
 
 // Set exponential notation when the `realValue` is too big
-const showExponential: ComputedRef<boolean> = computed(() => {
-  return get(displayValue).gt(1e15);
-});
+const showExponential: ComputedRef<boolean> = computed(() =>
+  get(displayValue).gt(1e15)
+);
 
 const rounding: ComputedRef<RoundingMode | undefined> = computed(() => {
   if (isDefined(sourceCurrency)) {
@@ -297,9 +297,9 @@ const shownCurrency: ComputedRef<ShownCurrency> = computed(() => {
   return show === 'none' && !!get(sourceCurrency) ? 'symbol' : show;
 });
 
-const shouldShowCurrency: ComputedRef<boolean> = computed(() => {
-  return !get(isNaN) && !!(get(shownCurrency) !== 'none' || get(asset));
-});
+const shouldShowCurrency: ComputedRef<boolean> = computed(
+  () => !get(isNaN) && !!(get(shownCurrency) !== 'none' || get(asset))
+);
 
 // Copy
 const copyValue: ComputedRef<string> = computed(() => {

@@ -31,13 +31,11 @@ export const useMessageHandling = () => {
   const { consumeMessages } = useSessionApi();
   let isRunning = false;
 
-  const handleSnapshotError = (data: BalanceSnapshotError): Notification => {
-    return {
-      title: tc('notification_messages.snapshot_failed.title'),
-      message: tc('notification_messages.snapshot_failed.message', 0, data),
-      display: true
-    };
-  };
+  const handleSnapshotError = (data: BalanceSnapshotError): Notification => ({
+    title: tc('notification_messages.snapshot_failed.title'),
+    message: tc('notification_messages.snapshot_failed.message', 0, data),
+    display: true
+  });
 
   const handleEthereumTransactionStatus = (
     data: EvmTransactionQueryData
@@ -48,14 +46,12 @@ export const useMessageHandling = () => {
   const handleLegacyMessage = (
     message: string,
     isWarning: boolean
-  ): Notification => {
-    return {
-      title: tc('notification_messages.backend.title'),
-      message,
-      display: !isWarning,
-      severity: isWarning ? Severity.WARNING : Severity.ERROR
-    };
-  };
+  ): Notification => ({
+    title: tc('notification_messages.backend.title'),
+    message,
+    display: !isWarning,
+    severity: isWarning ? Severity.WARNING : Severity.ERROR
+  });
 
   const handlePremiumStatusUpdate = (
     data: PremiumStatusUpdateData

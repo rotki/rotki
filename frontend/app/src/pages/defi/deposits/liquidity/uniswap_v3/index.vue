@@ -59,9 +59,7 @@ const refresh = async () => {
   await fetchBalances(true);
 };
 
-const getAssets = (assets: XswapAsset[]) => {
-  return assets.map(({ asset }) => asset);
-};
+const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
 
 onMounted(async () => {
   await fetchBalances(false);

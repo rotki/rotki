@@ -128,12 +128,10 @@ export const balancerApi = (): BalancerApi => {
       store.balancerBalances(addresses),
     balancerPools: pools,
     balancerAddresses: addresses,
-    fetchBalancerBalances: async (refresh: boolean) => {
-      return await store.fetchBalances(refresh);
-    },
-    fetchBalancerEvents: async (refresh: boolean) => {
-      return await store.fetchEvents(refresh);
-    }
+    fetchBalancerBalances: async (refresh: boolean) =>
+      await store.fetchBalances(refresh),
+    fetchBalancerEvents: async (refresh: boolean) =>
+      await store.fetchEvents(refresh)
   };
 };
 
@@ -168,9 +166,7 @@ export const sushiApi = (): SushiApi => {
   };
 };
 
-export const utilsApi = (): UtilsApi => {
-  return {
-    truncate: truncateAddress,
-    getPoolName: useLiquidityPosition().getPoolName
-  };
-};
+export const utilsApi = (): UtilsApi => ({
+  truncate: truncateAddress,
+  getPoolName: useLiquidityPosition().getPoolName
+});

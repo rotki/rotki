@@ -121,17 +121,17 @@ const refresh = async () => {
 
 const { assetPrice } = useBalancePricesStore();
 
-const latestAssets: ComputedRef<string[]> = computed(() => {
-  return get(latestPrices)
+const latestAssets: ComputedRef<string[]> = computed(() =>
+  get(latestPrices)
     .flatMap(({ fromAsset, toAsset }) => [fromAsset, toAsset])
-    .filter(asset => asset !== CURRENCY_USD);
-});
+    .filter(asset => asset !== CURRENCY_USD)
+);
 
 const filteredPrices = computed(() => {
   const filter = get(assetFilter);
-  const data = get(latestPrices).filter(({ fromAsset }) => {
-    return !filter || fromAsset === filter;
-  });
+  const data = get(latestPrices).filter(
+    ({ fromAsset }) => !filter || fromAsset === filter
+  );
   return data.map(item => ({
     ...item,
     usdPrice: !isNft(item.fromAsset)

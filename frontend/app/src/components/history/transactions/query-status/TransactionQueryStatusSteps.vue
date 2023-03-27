@@ -20,13 +20,11 @@ const steps = computed(() => [
 
 const { getStatusData } = useTransactionQueryStatus();
 
-const isStepCompleted = (item: EvmTransactionQueryData, stepIndex: number) => {
-  return getStatusData(item).index > stepIndex + 1;
-};
+const isStepCompleted = (item: EvmTransactionQueryData, stepIndex: number) =>
+  getStatusData(item).index > stepIndex + 1;
 
-const isStepInProgress = (item: EvmTransactionQueryData, stepIndex: number) => {
-  return getStatusData(item).index === stepIndex + 1;
-};
+const isStepInProgress = (item: EvmTransactionQueryData, stepIndex: number) =>
+  getStatusData(item).index === stepIndex + 1;
 
 const css = useCssModule();
 </script>

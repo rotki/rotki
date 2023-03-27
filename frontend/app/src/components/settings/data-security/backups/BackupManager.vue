@@ -9,22 +9,17 @@ import { logger } from '@/utils/logging';
 
 const { notify } = useNotificationsStore();
 
-const isSameEntry = (firstDb: UserDbBackup, secondDb: UserDbBackup) => {
-  return (
-    firstDb.version === secondDb.version &&
-    firstDb.time === secondDb.time &&
-    firstDb.size === secondDb.size
-  );
-};
+const isSameEntry = (firstDb: UserDbBackup, secondDb: UserDbBackup) =>
+  firstDb.version === secondDb.version &&
+  firstDb.time === secondDb.time &&
+  firstDb.size === secondDb.size;
 
 const setupBackupInfo = () => {
   const { t } = useI18n();
   const backupInfo = ref<DatabaseInfo | null>();
   const loading = ref(false);
 
-  const backups = computed(() => {
-    return get(backupInfo)?.userdb?.backups ?? [];
-  });
+  const backups = computed(() => get(backupInfo)?.userdb?.backups ?? []);
 
   const directory = computed(() => {
     const info = get(backupInfo);

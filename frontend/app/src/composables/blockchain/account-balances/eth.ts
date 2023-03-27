@@ -210,24 +210,22 @@ export const useEthAccountBalances = () => {
     }
   ]);
 
-  const ethTotals: ComputedRef<BlockchainTotal[]> = computed(() => {
-    return [
-      {
-        chain: Blockchain.ETH,
-        children: get(ethChildrenTotals).filter((item: SubBlockchainTotal) =>
-          item.usdValue.gt(0)
-        ),
-        usdValue: sum(get(ethAccounts)),
-        loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_ETH))
-      },
-      {
-        chain: Blockchain.ETH2,
-        children: [],
-        usdValue: sum(get(eth2Accounts)),
-        loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_ETH2))
-      }
-    ];
-  });
+  const ethTotals: ComputedRef<BlockchainTotal[]> = computed(() => [
+    {
+      chain: Blockchain.ETH,
+      children: get(ethChildrenTotals).filter((item: SubBlockchainTotal) =>
+        item.usdValue.gt(0)
+      ),
+      usdValue: sum(get(ethAccounts)),
+      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_ETH))
+    },
+    {
+      chain: Blockchain.ETH2,
+      children: [],
+      usdValue: sum(get(eth2Accounts)),
+      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_ETH2))
+    }
+  ]);
 
   const getBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> =>
     computed(() => {

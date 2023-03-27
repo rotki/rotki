@@ -35,9 +35,9 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { t, tc } = useI18n();
 
 const { exchangeRate } = useBalancePricesStore();
-const totalInUsd = computed(() => {
-  return aggregateTotal(get(balances), CURRENCY_USD, One);
-});
+const totalInUsd = computed(() =>
+  aggregateTotal(get(balances), CURRENCY_USD, One)
+);
 const total = computed(() => {
   const mainCurrency = get(currencySymbol);
   return get(totalInUsd).multipliedBy(get(exchangeRate(mainCurrency)) ?? One);
@@ -67,9 +67,8 @@ const percentageOfTotalNetValue = (value: BigNumber) => {
   return calculatePercentage(value, total);
 };
 
-const percentageOfCurrentGroup = (value: BigNumber) => {
-  return calculatePercentage(value, get(totalInUsd));
-};
+const percentageOfCurrentGroup = (value: BigNumber) =>
+  calculatePercentage(value, get(totalInUsd));
 
 const { dashboardTablesVisibleColumns } = storeToRefs(
   useFrontendSettingsStore()

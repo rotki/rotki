@@ -6,9 +6,7 @@ const props = defineProps({
   source: {
     required: true,
     type: String as PropType<ImportSourceType>,
-    validator: (value: ImportSourceType) => {
-      return SOURCES.includes(value);
-    }
+    validator: (value: ImportSourceType) => SOURCES.includes(value)
   },
   loading: { required: false, type: Boolean, default: false },
   fileFilter: { required: false, type: String, default: '.csv' },

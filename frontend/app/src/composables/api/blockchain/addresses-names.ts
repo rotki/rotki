@@ -35,9 +35,8 @@ export const useAddressesNamesApi = () => {
 
   const getEnsNamesTask = async (
     ethAddresses: string[]
-  ): Promise<PendingTask> => {
-    return await internalEnsNames<PendingTask>(ethAddresses, true);
-  };
+  ): Promise<PendingTask> =>
+    await internalEnsNames<PendingTask>(ethAddresses, true);
 
   const getEnsNames = async (ethAddresses: string[]): Promise<EthNames> => {
     const response = await internalEnsNames<EthNames>(ethAddresses);

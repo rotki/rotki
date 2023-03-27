@@ -7,9 +7,9 @@ const { animationsEnabled } = storeToRefs(useSessionSettingsStore());
 const route = useRoute();
 
 const isDevelopment = checkIfDevelopment();
-const isPlayground = computed(() => {
-  return isDevelopment && get(route).name === 'playground';
-});
+const isPlayground = computed(
+  () => isDevelopment && get(route).name === 'playground'
+);
 
 const { locale } = useI18n();
 

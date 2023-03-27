@@ -26,9 +26,8 @@ export const invertColor = (color: string, bw = true): string => {
   return `${rInv}${gInv}${bInv}`;
 };
 
-const randomInt = (min: number, max: number): number => {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-};
+const randomInt = (min: number, max: number): number =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
 
 function toHex(value: number): string {
   return Math.round(value * 255)
