@@ -3203,201 +3203,201 @@
         "stake": "Stake",
         "value": "Value"
       },
-      "no_accounts": "No accounts with {protocol} staking were detected.",
+      "no_accounts": "没有检测到有 {protocol} 质押的账户。",
       "pools": "Pools",
-      "refresh": "Refresh the staking details",
-      "staking_balances_per_address": "Staking balances per address",
-      "staking_history": "Staking History",
-      "unclaimed_rewards": "Unclaimed rewards"
+      "refresh": "刷新质押详情",
+      "staking_balances_per_address": "每个地址的抵押余额",
+      "staking_history": "质押历史",
+      "unclaimed_rewards": "未领取奖励"
     },
     "statistics": {
-      "asset_amount_and_value_over_time": "Asset amount and value over time",
-      "max_visible": "Maximum assets to show",
-      "max_visible_required": "You cannot show more than {availableAssets} assets",
-      "min_visible_required": "You have to show at least one asset.",
-      "netvalue_over_time": "Netvalue over time",
-      "no_balance_snapshot_data_available": "No balance snapshot data available.",
+      "asset_amount_and_value_over_time": "资产数量和价值随时间的变化",
+      "max_visible": "要显示的最大资产",
+      "max_visible_required": "您不能显示超过 {availableAssets} 个资产",
+      "min_visible_required": "你必须展示至少一项资产。",
+      "netvalue_over_time": "一段时间内的净值",
+      "no_balance_snapshot_data_available": "没有可用的余额快照数据。",
       "range_selector": {
-        "clear": "Clear",
-        "clear_date_range": "Clear date range",
-        "data_available": "Data available",
-        "ending_date_must_before_starting_date": "The ending date cannot be earlier than the starting date.",
-        "no_entries_available_before": "There are no entries available before"
+        "clear": "清除",
+        "clear_date_range": "清除日期范围",
+        "data_available": "数据可用",
+        "ending_date_must_before_starting_date": "结束日期不能早于开始日期。",
+        "no_entries_available_before": "之前没有条目可用"
       },
-      "refresh_the_net_value_data": "Refresh the net value data",
-      "select_asset": "Search for an asset",
-      "show_graph_for_selected_range": "Show the graph for the selected range",
-      "value_distribution_by_asset": "Value distribution by asset",
-      "value_distribution_by_location": "Value distribution by location",
-      "visible_percentage": "% of visible items only:"
+      "refresh_the_net_value_data": "刷新净值数据",
+      "select_asset": "搜索资产",
+      "show_graph_for_selected_range": "显示选定范围的图表",
+      "value_distribution_by_asset": "按资产分配价值",
+      "value_distribution_by_location": "按位置分配价值",
+      "visible_percentage": "仅显示项目的百分比："
     },
     "theme_manager": {
-      "dark_theme": "Dark Theme",
-      "light_theme": "Light Theme",
+      "dark_theme": "深色主题",
+      "light_theme": "浅色主题",
       "reset": {
-        "default": "Reset to the default application color",
-        "short": "Reset to default"
+        "default": "重置为默认的应用程序颜色",
+        "short": "重置为默认值"
       },
-      "select_color": "Select Color",
-      "subtitle": "Manage colors for the app theme",
-      "title": "Theme"
+      "select_color": "选择颜色",
+      "subtitle": "管理应用主题的颜色",
+      "title": "主题"
     },
     "theme_switch": {
-      "auto": "Auto (Detect Device Theme)",
-      "dark": "Dark",
-      "light": "Light",
-      "tooltip": "Switch to {mode} mode"
+      "auto": "自动（检测设备主题）",
+      "dark": "暗",
+      "light": "亮",
+      "tooltip": "切换到 {mode} 模式"
     },
     "unsupported_app_version": {
-      "minimum_supported": "The minimum supported version is v{v}",
-      "subtitle": "This version of rotki is no longer supported by the premium components.",
-      "title": "Unsupported app version",
-      "update_to_latest": "For better support please update to the latest release."
+      "minimum_supported": "最低支持版本为 v{v}",
+      "subtitle": "高级组件不再支持此版本的 rotki。",
+      "title": "不支持的应用版本",
+      "update_to_latest": "为了更好的支持，请更新到最新版本。"
     },
     "vault": {
-      "borrowing_history": "Borrowing History"
+      "borrowing_history": "借用历史记录"
     }
   },
   "premium_credentials": {
     "label_api_key": "rotki API Key",
     "label_api_secret": "rotki API Secret",
-    "restore_synced_database": "Restore synced database",
+    "restore_synced_database": "恢复同步数据库",
     "validation": {
-      "non_empty_key": "The API key cannot be empty",
-      "non_empty_secret": "The API secret cannot be empty"
+      "non_empty_key": "API key 不能为空",
+      "non_empty_secret": "API secret 不能为空"
     }
   },
   "premium_loading_failed": {
-    "description": "This might indicate a problem with the premium component service.",
-    "open_issue": "If the problem persists open an issue in our issue tracker.",
-    "title": "There was an error loading the component.",
-    "try_again": "Please try again later."
+    "description": "这可能表示高级组件服务存在问题。",
+    "open_issue": "如果问题仍然存在，请在我们的问题跟踪器中打开一个问题。",
+    "title": "加载组件时出错。",
+    "try_again": "请稍后再试。"
   },
   "premium_lock": {
-    "tooltip": "Feature is only supported with a premium subscription"
+    "tooltip": "只有高级订阅才支持该功能"
   },
   "premium_reminder": {
-    "description": "rotki is open source software and needs your support! Please consider upgrading to premium by purchasing a premium subscription. This way you can help us further develop the software and you can also enjoy additional premium-only features.",
-    "title": "Upgrade to Premium"
+    "description": "rotki 是开源软件，需要您的支持！请考虑通过购买高级订阅升级到高级版。这样您可以帮助我们进一步开发软件，您还可以享受额外的高级功能。",
+    "title": "升级至高级版"
   },
   "premium_settings": {
     "actions": {
-      "delete": "Delete Key",
-      "replace": "Replace Key",
-      "setup": "Setup",
-      "sync": "Allow data sync with rotki Server"
+      "delete": "删除 Key",
+      "replace": "替换 Key",
+      "setup": "设置",
+      "sync": "允许与 rotki 服务器同步数据"
     },
     "delete_confirmation": {
-      "message": "Are you sure you want to delete the rotki premium keys for your account? If you want to re-enable premium you will have to enter your keys again.",
-      "title": "Delete rotki premium keys?"
+      "message": "您确定要删除您帐户的 rotki 高级密钥吗？如果您想重新启用高级密钥，您将不得不再次输入您的密钥。",
+      "title": "删除 rotki 高级密钥？"
     },
     "error": {
-      "removing_failed": "Deleting the keys was not successful",
-      "setting_failed": "Setting the keys was not successful"
+      "removing_failed": "删除密钥不成功",
+      "setting_failed": "设置密钥不成功"
     },
     "fields": {
       "api_key": "API Key",
       "api_secret": "API Secret"
     },
-    "premium_active": "rotki Premium is active",
-    "rotki_premium": "rotki Premium",
-    "subtitle": "rotki Premium is an optional subscription service to gain access to analytics, graphs, and unlock many additional features. For more information on what is available visit the {0} website.",
+    "premium_active": "rotki Premium 已激活",
+    "rotki_premium": "rotki 高级版",
+    "subtitle": "rotki Premium 是一项可选的订阅服务，可以访问分析、图表并解锁许多其他功能。有关可用内容的更多信息，请访问 {0} 网站。",
     "title": "rotki Premium"
   },
   "price_accuracy_hint": {
-    "tooltip": "These prices are based on the current exchange rate of historical USD values"
+    "tooltip": "这些价格是基于美元历史价值的当前汇率"
   },
   "price_form": {
-    "date_non_empty": "The date of the price cannot be empty",
-    "from_asset": "From Asset",
-    "from_non_empty": "The from asset cannot be empty",
+    "date_non_empty": "价格日期不能为空",
+    "from_asset": "来自资产",
+    "from_non_empty": "from 资产不能为空",
     "historic": {
-      "hint": "1 {fromAsset} was worth {price} {toAsset}"
+      "hint": "1 {fromAsset} 价值 {price} {toAsset}"
     },
     "latest": {
-      "hint": "1 {fromAsset} is worth {price} {toAsset}"
+      "hint": "1 {fromAsset} 值 {price} {toAsset}"
     },
-    "price_non_empty": "The price cannot be empty",
+    "price_non_empty": "价格不能为空",
     "to_asset": "To Asset",
-    "to_non_empty": "The to asset cannot be empty"
+    "to_non_empty": "to 资产不能为空"
   },
   "price_management": {
     "add": {
       "error": {
-        "description": "Adding the price was not successful: {message}",
-        "title": "Price addition failed"
+        "description": "添加价格不成功：{message}",
+        "title": "加价失败"
       }
     },
     "dialog": {
-      "add_title": "Add a manual price",
-      "edit_title": "Edit a manual price"
+      "add_title": "添加手动价格",
+      "edit_title": "编辑手动价格"
     },
     "edit": {
       "error": {
-        "description": "Editing the price was not successful: {message}",
-        "title": "Price edit failed"
+        "description": "编辑价格不成功：{message}",
+        "title": "价格修改失败"
       }
     },
-    "filter_title": "Filter Prices",
-    "from_asset": "From Asset",
+    "filter_title": "过滤价格",
+    "from_asset": "来自资产",
     "historic": {
-      "add_title": "Add a manual historical price",
-      "title": "Manage Historic Prices"
+      "add_title": "添加手动历史价格",
+      "title": "管理历史价格"
     },
     "latest": {
-      "add_title": "Add a manual latest price",
-      "title": "Manage Latest Prices"
+      "add_title": "添加手动最新价格",
+      "title": "管理最新价格"
     },
     "to_asset": "To Asset"
   },
   "price_oracle_selection": {
-    "hint": "* Disabling all the oracles will make it impossible to query prices for assets."
+    "hint": "* 禁用所有预言机将无法查询资产价格。"
   },
   "price_oracle_settings": {
-    "data_name": "price oracle",
-    "historic_prices": "Historic Prices",
-    "latest_prices": "Latest Prices",
-    "subtitle": "Manage which price oracles are used, in which order.",
-    "title": "Price oracle settings"
+    "data_name": "价格预言机",
+    "historic_prices": "历史价格",
+    "latest_prices": "最新价格",
+    "subtitle": "管理以何种顺序使用哪些价格预言机。",
+    "title": "价格预言机设置"
   },
   "price_refresh": {
-    "button": "Refresh Prices"
+    "button": "刷新价格"
   },
   "price_table": {
     "actions": {
       "delete": {
-        "tooltip": "Delete the price entry"
+        "tooltip": "删除价格条目"
       },
       "edit": {
-        "tooltip": "Edit the price entry"
+        "tooltip": "编辑价格条目"
       }
     },
     "delete": {
       "dialog": {
-        "message": "Are you sure you want to delete this price entry?",
-        "title": "Delete the price"
+        "message": "您确定要删除此价格条目吗？",
+        "title": "删除价格"
       },
       "failure": {
-        "message": "There was an error while deleting the price entry: {message}",
-        "title": "Price delete failed"
+        "message": "删除价格条目时出错：{message}",
+        "title": "价格删除失败"
       }
     },
     "fetch": {
       "failure": {
-        "message": "Failed to fetch prices {message}",
-        "title": "Price fetch failure"
+        "message": "无法获取价格 {message}",
+        "title": "价格获取失败"
       }
     },
     "headers": {
-      "from_asset": "From Asset",
+      "from_asset": "来自资产",
       "to_asset": "To Asset"
     },
     "historic": {
-      "title": "Manual Historic Prices"
+      "title": "手动历史价格"
     },
-    "is_worth": "is worth",
+    "is_worth": "值得",
     "latest": {
-      "title": "Manual Latest Prices"
+      "title": "手动最新价格"
     },
     "on": "on",
     "refresh_tooltip": "Refresh prices",
