@@ -753,6 +753,7 @@ class GeneralCacheType(Enum):
     CURVE_POOL_TOKENS = auto()  # get pool tokens by pool addr
     YEARN_VAULTS = auto()  # get yearn vaults information
     MAKERDAO_VAULT_ILK = auto()  # ilk(collateral type) to info (underlying_asset, join address)
+    CURVE_GAUGE_ADDRESS = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces

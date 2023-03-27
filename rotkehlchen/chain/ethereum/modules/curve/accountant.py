@@ -35,4 +35,22 @@ class CurveAccountant(DepositableAccountantInterface):
                 method='spend',
                 accountant_cb=self._process_deposit_or_withdrawal,
             ),
+            get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_CURVE): TxEventSettings(  # noqa: E501
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='spend',
+            ),
+            get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_CURVE): TxEventSettings(  # noqa: E501
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='acquisition',
+            ),
+            get_tx_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.REWARD, CPT_CURVE): TxEventSettings(  # noqa: E501
+                taxable=True,
+                count_entire_amount_spend=True,
+                count_cost_basis_pnl=True,
+                method='acquisition',
+            ),
         }

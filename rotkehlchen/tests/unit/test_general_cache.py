@@ -46,9 +46,16 @@ CURVE_EXPECTED_POOL_COINS = {
     ],
 }
 
+CURVE_EXPECTED_GAUGES = {
+    '0x1F71f05CF491595652378Fe94B7820344A551B8E': None,
+    '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7': '0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A',
+    '0xFD5dB7463a3aB53fD211b4af195c5BCCC1A03890': '0xe8060Ad8971450E624d5289A10017dD30F5dA85F',
+    '0xDeBF20617708857ebe4F679508E7b7863a8A8EeE': '0xd662908ADA2Ea1916B3318327A97eB18aD588b5d',
+}
+
 
 @pytest.mark.parametrize('have_decoders', [True])
-def test_curve_pools_cache(rotkehlchen_instance):
+def test_curve_cache(rotkehlchen_instance):
     """Test curve pools fetching mechanism"""
     # Set initial cache data to check that it is gone after the cache update
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
@@ -66,6 +73,11 @@ def test_curve_pools_cache(rotkehlchen_instance):
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, 'pool-address-1'],
             values=['coin1', 'coin2', 'coin3'],
+        )
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=[GeneralCacheType.CURVE_GAUGE_ADDRESS, 'pool-address-1'],
+            values=['some-gauge-address'],
         )
 
     # delete one of the tokens to check that it is created during the update
@@ -103,6 +115,7 @@ def test_curve_pools_cache(rotkehlchen_instance):
 
     lp_tokens_to_pools_in_cache = {}
     pool_coins_in_cache = {}
+    gauges_in_cache = {}
     with GlobalDBHandler().conn.read_ctx() as cursor:
         lp_tokens_in_cache = globaldb_get_general_cache_values(
             cursor=cursor,
@@ -121,8 +134,19 @@ def test_curve_pools_cache(rotkehlchen_instance):
             )
             pool_coins_in_cache[pool_addr] = pool_coins
 
+            gauge_data = globaldb_get_general_cache_values(
+                cursor=cursor,
+                key_parts=[GeneralCacheType.CURVE_GAUGE_ADDRESS, pool_addr],
+            )
+            if len(gauge_data) == 0:
+                gauges_in_cache[pool_addr] = None
+            else:
+                assert len(gauge_data) == 1, 'Should always be at max 1 gauge per pool'
+                gauges_in_cache[pool_addr] = gauge_data[0]
+
     assert lp_tokens_to_pools_in_cache == CURVE_EXPECTED_LP_TOKENS_TO_POOLS
     assert pool_coins_in_cache == CURVE_EXPECTED_POOL_COINS
+    assert gauges_in_cache == CURVE_EXPECTED_GAUGES
 
     # Check that the token was created
     token = GlobalDBHandler().get_evm_token(
@@ -138,3 +162,4 @@ def test_curve_pools_cache(rotkehlchen_instance):
         assert 'key123' not in globaldb_get_general_cache_values(cursor, key_parts=[GeneralCacheType.CURVE_LP_TOKENS])  # noqa: E501
         assert len(globaldb_get_general_cache_values(cursor, key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, 'abc'])) == 0  # noqa: E501
         assert len(globaldb_get_general_cache_values(cursor, key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, 'pool-address-1'])) == 0  # noqa: E501
+        assert len(globaldb_get_general_cache_values(cursor, key_parts=[GeneralCacheType.CURVE_GAUGE_ADDRESS, 'pool-address-1'])) == 0  # noqa: E501

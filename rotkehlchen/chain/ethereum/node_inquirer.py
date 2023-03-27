@@ -9,6 +9,7 @@ from ens.exceptions import InvalidName
 from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
 from eth_typing import BlockNumber, HexStr
+from eth_utils import to_checksum_address
 from web3 import Web3
 from web3.exceptions import TransactionNotFound
 
@@ -21,13 +22,14 @@ from rotkehlchen.chain.ethereum.constants import (
     PRUNED_NODE_CHECK_TX_HASH,
 )
 from rotkehlchen.chain.ethereum.graph import Graph
-from rotkehlchen.chain.ethereum.modules.curve.pools_cache import (
+from rotkehlchen.chain.ethereum.modules.curve.curve_cache import (
     ensure_curve_tokens_existence,
+    query_curve_gauges,
     query_curve_meta_pools,
     query_curve_registry_pools,
-    save_curve_pools_to_cache,
+    save_curve_data_to_cache,
 )
-from rotkehlchen.chain.evm.contracts import EvmContracts
+from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import WEB3_LOGQUERY_BLOCK_RANGE, EvmNodeInquirer
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
@@ -263,11 +265,27 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
             return False
 
         curve_address_provider = self.contracts.contract('CURVE_ADDRESS_PROVIDER')
-        pools = query_curve_registry_pools(ethereum=self, curve_address_provider=curve_address_provider)  # noqa: E501
+        get_registry_result = curve_address_provider.call(
+            node_inquirer=self,
+            method_name='get_registry',
+        )
+        registry_address = to_checksum_address(get_registry_result)
+        registry_contract = EvmContract(
+            address=registry_address,
+            abi=self.contracts.abi('CURVE_REGISTRY'),
+            deployed_block=0,  # deployment_block is not used and the contract is dynamic
+        )
+        pools = query_curve_registry_pools(ethereum=self, registry_contract=registry_contract)  # noqa: E501
         pools.update(query_curve_meta_pools(ethereum=self, curve_address_provider=curve_address_provider))  # noqa: E501
         updated_pools = ensure_curve_tokens_existence(ethereum_inquirer=self, pools_mapping=pools)
+        pools_addresses = [pool_data[0] for pool_data in pools.values()]
+        gauges = query_curve_gauges(ethereum=self, registry_contract=registry_contract, known_pools=pools_addresses)  # noqa: E501
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            save_curve_pools_to_cache(write_cursor=write_cursor, pools_mapping=updated_pools)
+            save_curve_data_to_cache(
+                write_cursor=write_cursor,
+                pools_mapping=updated_pools,
+                gauges=gauges,
+            )
 
         return True
 
