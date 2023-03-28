@@ -3399,202 +3399,202 @@
     "latest": {
       "title": "手动最新价格"
     },
-    "on": "on",
-    "refresh_tooltip": "Refresh prices",
-    "was_worth": "was worth"
+    "on": "上",
+    "refresh_tooltip": "刷新价格",
+    "was_worth": "值得"
   },
   "prioritized_list": {
-    "add_tooltip": "Add the {name} to the list",
-    "all_added": "No disabled {namePluralized}",
-    "disabled_items": "{num} disabled {namePluralized}",
+    "add_tooltip": "将 {name} 添加到列表中",
+    "all_added": "没有禁用 {namePluralized}",
+    "disabled_items": "{num} 个禁用的 {namePluralized}",
     "item": {
-      "delete": "Disable the {name} entry",
-      "empty": "No price {namePluralized} found!"
+      "delete": "禁用 {name} 条目",
+      "empty": "找不到价格 {namePluralized}！"
     }
   },
   "privacy_notice": {
-    "message": "rotki accounts are encrypted using your password and saved in your local filesystem.",
-    "title": "rotki is a local application that respects your privacy."
+    "message": "rotki 帐户使用您的密码加密并保存在您的本地文件系统中。",
+    "title": "rotki 是一款尊重您隐私的本地应用程序。"
   },
   "profit_loss_event_type": {
-    "asset_movement": "Asset Movement",
+    "asset_movement": "资产移动",
     "fee": "Fee",
-    "history_base_entry": "History Base Entry",
-    "ledger_action": "Ledger Action",
-    "loan": "Loan",
-    "margin_position": "Margin Position",
-    "prefork_acquisition": "Prefork Acquisition",
-    "staking": "Staking",
-    "trade": "Trade",
-    "transaction_event": "Transaction Event"
+    "history_base_entry": "历史数据库条目",
+    "ledger_action": "账本操作",
+    "loan": "贷款",
+    "margin_position": "保证金位置",
+    "prefork_acquisition": "预叉收购",
+    "staking": "质押",
+    "trade": "贸易",
+    "transaction_event": "交易事件"
   },
   "profit_loss_events": {
     "cost_basis": {
-      "hide": "Hide Cost Basis",
-      "show": "Show Cost Basis"
+      "hide": "隐藏成本基础",
+      "show": "显示成本基础"
     },
     "headers": {
-      "notes": "Notes",
+      "notes": "备注",
       "pnl_free": "Tax Free PnL",
       "pnl_taxable": "Taxable PnL",
       "tax_free_amount": "Tax Free Amount",
       "taxable_amount": "Taxable Amount"
     },
-    "same_action": "This events happen on the same action"
+    "same_action": "这个事件发生在同一个动作上"
   },
   "profit_loss_overview": {
     "headers": {
       "tax_free_profit_loss": "Tax Free Profit/Loss",
       "taxable_profit_loss": "Taxable Profit/Loss"
     },
-    "title": "Overview"
+    "title": "概述"
   },
   "profit_loss_report": {
     "actionable": {
       "actions": {
-        "pin_section": "Pin Section",
-        "regenerate_report": "Re-Generate Report",
-        "unpin_section": "Unpin Section"
+        "pin_section": "引脚部分",
+        "regenerate_report": "重新生成报告",
+        "unpin_section": "取消固定部分"
       },
-      "issues_found": "{total} issues found with the generated report",
+      "issues_found": "在生成的报告中发现了 {total} 个问题",
       "missing_acquisitions": {
-        "add_ledger_action": "Add ledger action",
-        "asset_is_ignored": "This asset is ignored",
+        "add_ledger_action": "添加账本操作",
+        "asset_is_ignored": "该资产被忽略",
         "headers": {
-          "found_amount": "Found Amount",
-          "missing_acquisitions": "Missing Acquisitions",
-          "missing_amount": "Missing Amount",
-          "quick_action": "Quick Action"
+          "found_amount": "发现数量",
+          "missing_acquisitions": "缺少收购",
+          "missing_amount": "缺失金额",
+          "quick_action": "快速行动"
         },
-        "hint": "Some asset acquisitions are missing. You will need to figure out where you bought them and either import or manually create the relevant acquisition events",
-        "title": "Missing Acquisitions ({total})",
+        "hint": "一些资产获取丢失了。你需要弄清楚你在哪里购买的，然后导入或手动创建相关的获取事件",
+        "title": "缺失收购({total})",
         "to": "to"
       },
       "missing_prices": {
-        "all_prices_filled": "All prices are filled",
+        "all_prices_filled": "所有价格均已填写",
         "headers": {
           "from_asset": "From Asset",
           "to_asset": "To Asset"
         },
-        "hint": "Some events are skipped because we cannot find prices for the related assets. You can help rotki by manually inputting the prices. The entries that you don't fill will keep being skipped.",
-        "if_sure": "If you are sure, ",
-        "input_price": "Input price",
-        "no_filled_prices": "No prices are filled",
-        "price_is_saved": "Price is saved",
-        "price_not_found": "Price not found",
-        "refresh_price_hint": "Rate limiting detected when rokti tried to fetch the historical price. You can either fetch the historical price again manually, or input manual price.",
-        "regenerate_report_nudge": "click button below to re-generate the report.",
-        "skipped_all_events_confirmation": "Are you sure you want to skip all events whose asset price is missing?",
-        "title": "Missing Prices ({total})",
-        "total_skipped_prices": "{total} prices are skipped"
+        "hint": "一些事件被跳过，因为我们找不到相关资产的价格。您可以通过手动输入价格来帮助 rotki。您不填写的条目将继续被跳过。",
+        "if_sure": "如果你确定，",
+        "input_price": "输入价格",
+        "no_filled_prices": "没有填写价格",
+        "price_is_saved": "价格已保存",
+        "price_not_found": "未找到价格",
+        "refresh_price_hint": "当 rokti 尝试获取历史价格时检测到速率限制。您可以手动再次获取历史价格，或输入手动价格。",
+        "regenerate_report_nudge": "点击下方按钮重新生成报告。",
+        "skipped_all_events_confirmation": "你确定要跳过所有资产价格缺失的事件吗？",
+        "title": "缺失价格({total})",
+        "total_skipped_prices": "{total} 个价格被跳过"
       },
-      "show_issues": "Show Issues"
+      "show_issues": "显示问题"
     },
-    "csv_export_error": "There was an error with export",
-    "download_csv": "Download CSV",
-    "download_failed": "Download of report is not possible",
+    "csv_export_error": "导出错误",
+    "download_csv": "下载 CSV",
+    "download_failed": "无法下载报告",
     "error": {
-      "subtitle": "The report generation was not possible due to an error",
-      "title": "Profit and Loss Report Generation"
+      "subtitle": "由于错误无法生成报告",
+      "title": "损益表生成"
     },
-    "export_csv": "Export CSV",
-    "loading": "Please wait while your PnL report is loading",
-    "loading_hint": "Your report generation might take a while depending on the amount of trades and actions you performed during the selected period.",
-    "loading_message": "Please wait while your report is generated...",
-    "report_period": "Report starting from {start} to {end}",
-    "select_directory": "Select a directory",
-    "settings_tooltip": "Open the accounting settings",
-    "upgrade": "{processed} total events have been processed starting from {start}.",
-    "upgrade2": "The limit of the free version has been reached. To get the full report please upgrade to {link}"
+    "export_csv": "导出 CSV",
+    "loading": "正在加载您的 PnL 报告，请稍候",
+    "loading_hint": "您的报告生成可能需要一段时间，具体取决于您在选定时间段内执行的交易量和操作。",
+    "loading_message": "正在生成您的报告，请稍候...",
+    "report_period": "报告从{start}到{end}",
+    "select_directory": "选择目录",
+    "settings_tooltip": "打开会计设置",
+    "upgrade": "从 {start} 开始处理了 {processed} 个事件。",
+    "upgrade2": "已达到免费版本的限制。要获得完整报告，请升级到{link}"
   },
   "profit_loss_reports": {
     "columns": {
-      "actions": "Actions",
-      "created": "Creation Date",
-      "end": "Period End",
-      "size": "Size",
-      "start": "Period Start",
+      "actions": "动作",
+      "created": "创建日期",
+      "end": "期末",
+      "size": "尺寸",
+      "start": "周期开始",
       "taxable_profit_loss": "Taxable P/L",
       "taxfree_profit_loss": "Tax Free P/L"
     },
     "debug": {
-      "export_data": "Export data",
+      "export_data": "导出数据",
       "export_message": {
-        "failure": "Export PnL report debug data failed",
-        "success": "PnL report debug data exported successfully",
-        "title": "Export PnL report debug data"
+        "failure": "导出PnL报告调试数据失败",
+        "success": "PnL报告调试数据导出成功",
+        "title": "导出PnL报告调试数据"
       },
-      "import_data": "Import data",
+      "import_data": "导入数据",
       "import_data_dialog": {
-        "title": "Import PnL report debug data"
+        "title": "导入PnL报告调试数据"
       },
       "import_message": {
-        "failure": "Import PnL report debug data failed: {message}",
-        "success": "PnL report debug data imported successfully",
-        "title": "Import PnL report debug data"
+        "failure": "导入 PnL 报告调试数据失败：{message}",
+        "success": "PnL报告调试数据导入成功",
+        "title": "导入PnL报告调试数据"
       },
-      "select_directory": "Select a directory",
-      "title": "Debug"
+      "select_directory": "选择目录",
+      "title": "调试"
     },
-    "title": "Saved Historical Reports"
+    "title": "保存的历史报告"
   },
   "progress_screen": {
     "progress": "{progress} %"
   },
   "purge_selector": {
-    "all_decentralized_exchanges": "All Decentralized Exchanges",
-    "all_exchanges": "All Centralized Exchanges",
-    "all_modules": "All Modules",
-    "ethereum_transactions": "Evm Transactions",
-    "exchange": "Exchange: {name}",
-    "label": "Select a data source",
-    "module": "Module: {name}",
-    "tooltip": "Purge the cached data for the selected source"
+    "all_decentralized_exchanges": "所有去中心化交易所",
+    "all_exchanges": "所有中心化交易所",
+    "all_modules": "所有模块",
+    "ethereum_transactions": "以太坊交易",
+    "exchange": "交换：{name}",
+    "label": "选择数据源",
+    "module": "模块：{name}",
+    "tooltip": "清除所选源的缓存数据"
   },
   "queried_address_dialog": {
-    "add": "Add address",
-    "all_address_queried": "All your ethereum addresses are queried for {module}",
-    "remove_tooltip": "Remove the address from the queried addresses",
-    "subtitle": "Manage the addresses that will be queried for {module}",
-    "title": "Queried Addresses"
+    "add": "添加地址",
+    "all_address_queried": "你所有的以太坊地址都被查询了 {module}",
+    "remove_tooltip": "从查询地址中移除地址",
+    "subtitle": "管理为{module}查询的地址",
+    "title": "查询地址"
   },
   "reports_table": {
     "delete": {
-      "tooltip": "Delete the report"
+      "tooltip": "删除报告"
     },
     "load": {
-      "tooltip": "Load the report"
+      "tooltip": "加载报告"
     }
   },
   "rounding_settings": {
-    "amount_rounding": "Amount Rounding",
-    "amount_rounding_hint": "Specify how the amount (e.g. the amount of an owned asset) is rounded.",
+    "amount_rounding": "金额舍入",
+    "amount_rounding_hint": "指定金额（例如拥有资产的金额）如何四舍五入。",
     "round": {
-      "down": "Round down",
-      "down_description": "Rounds towards zero",
-      "half_even": "Half even",
-      "half_even_description": "Rounds towards nearest neighbour. If equidistant, rounds towards even neighbour",
-      "up": "Round up",
-      "up_description": "Rounds away from zero"
+      "down": "向下取整",
+      "down_description": "向零舍入",
+      "half_even": "对半",
+      "half_even_description": "向最近的邻居舍入。如果等距，则向偶数邻居舍入",
+      "up": "向上舍入",
+      "up_description": "从零开始四舍五入"
     },
-    "subtitle": "Set how the displayed amounts will be rounded in the frontend",
-    "title": "Amount rounding",
-    "value_rounding": "Value Rounding",
-    "value_rounding_hint": "Specify how the value (e.g the FIAT value of an owned asset) is rounded."
+    "subtitle": "设置显示的金额在前端如何四舍五入",
+    "title": "金额取整",
+    "value_rounding": "值四舍五入",
+    "value_rounding_hint": "指定价值（例如拥有资产的法币价值）如何四舍五入。"
   },
   "rpc_node_form": {
-    "active": "Active",
-    "active_hint": "Only active nodes will be queried",
-    "endpoint": "Endpoint",
-    "owned": "Owned",
-    "owned_hint": "Enable if this node is a private node owned by the user",
-    "weight": "Weight",
-    "weight_hint": "Node weight {weight}/100 (when adjusting a public node's weight other nodes will be adjusted accordingly)",
+    "active": "活跃",
+    "active_hint": "只有活动节点会被查询",
+    "endpoint": "端点",
+    "owned": "拥有",
+    "owned_hint": "如果此节点是用户拥有的私有节点则启用",
+    "weight": "重量",
+    "weight_hint": "节点权重{weight}/100(调整公共节点权重时其他节点也会相应调整)",
     "weight_per_hundred": "/100"
   },
   "settings": {
-    "not_saved": "Setting not saved",
-    "saved": "Setting saved"
+    "not_saved": "设置未保存",
+    "saved": "设置已保存"
   },
   "sorting_selector": {
     "desc": {
