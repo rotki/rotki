@@ -74,7 +74,7 @@ from rotkehlchen.externalapis.xratescom import (
     get_historical_xratescom_exchange_rates,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values, read_curve_pool_tokens
+from rotkehlchen.globaldb.cache import globaldb_get_cache_values, read_curve_pool_tokens
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
@@ -751,7 +751,7 @@ class Inquirer:
         ethereum.assure_curve_cache_is_queried_and_decoder_updated()
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            pool_addresses_in_cache = globaldb_get_general_cache_values(
+            pool_addresses_in_cache = globaldb_get_cache_values(
                 cursor=cursor,
                 key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token.evm_address],
             )

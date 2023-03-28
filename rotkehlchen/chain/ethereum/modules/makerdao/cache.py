@@ -34,7 +34,7 @@ def _collateral_type_to_info(
         collateral_type: str,
 ) -> Optional[tuple[int, ChecksumEvmAddress, ChecksumEvmAddress]]:
     cursor.execute(
-        'SELECT value from general_cache WHERE key=?',
+        'SELECT value from unique_cache WHERE key=?',
         (f'{GeneralCacheType.MAKERDAO_VAULT_ILK.serialize()}{collateral_type}',),
     )
     result = cursor.fetchone()
@@ -86,7 +86,7 @@ def ilk_cache_foreach(
     cache_prefix = GeneralCacheType.MAKERDAO_VAULT_ILK.serialize()
     len_prefix = len(cache_prefix)
     cursor.execute(
-        'SELECT key, value from general_cache WHERE key LIKE ?',
+        'SELECT key, value from unique_cache WHERE key LIKE ?',
         (f'{cache_prefix}%',),
     )
     for cache_key, entry in cursor:
@@ -183,7 +183,7 @@ def update_ilk_registry(
                 continue  # this can happen for at least one (TELEPORT-FW-A) which we will ignore
 
             cursor.execute(
-                'SELECT COUNT(*) from general_cache WHERE key=?',
+                'SELECT COUNT(*) from unique_cache WHERE key=?',
                 (f'{GeneralCacheType.MAKERDAO_VAULT_ILK.serialize()}{ilk}',),
             )
             result = cursor.fetchone()[0]
@@ -241,20 +241,13 @@ def update_ilk_registry(
         return
 
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        # since the general cache is unique only per key/pair it may not be the best
-        # DB table to use here. But for now let's just delete previous entries for keys we add
-        # TODO: We should introduce a key-value cache with key being primary key too
-        questionmarks = ','.join('?' * len(write_tuples))
-        write_cursor.execute(
-            f'DELETE from general_cache WHERE key IN ({questionmarks})',
-            [x[0] for x in write_tuples],
-        )
+        # since the uniuqe cache is unique for every key, the value will be overwritten.
         write_cursor.executemany(
-            'INSERT INTO general_cache(key, value, last_queried_ts) VALUES(?, ?, ?)',
+            'INSERT INTO unique_cache(key, value, last_queried_ts) VALUES(?, ?, ?)',
             write_tuples,
         )
         write_cursor.execute(
-            'UPDATE general_cache SET last_queried_ts=? WHERE key=?',
+            'UPDATE unique_cache SET last_queried_ts=? WHERE key=?',
             (now, GENERAL_ILK_CACHE_KEY),
         )
 

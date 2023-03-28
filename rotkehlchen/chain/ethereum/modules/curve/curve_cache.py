@@ -17,9 +17,9 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
+    globaldb_get_cache_values,
     globaldb_get_general_cache_like,
-    globaldb_get_general_cache_values,
-    globaldb_set_general_cache_values,
+    globaldb_set_cache_values,
     read_curve_pool_tokens,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -86,18 +86,18 @@ def read_curve_pools_and_gauges() -> READ_CURVE_DATA_TYPE:
     Doesn't raise anything unless cache entries were inserted incorrectly.
     """
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        curve_pools_lp_tokens = globaldb_get_general_cache_values(
+        curve_pools_lp_tokens = globaldb_get_cache_values(
             cursor=cursor,
             key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
         )
         curve_pools = {}
         curve_gauges = set()
         for lp_token_addr in curve_pools_lp_tokens:
-            pool_address = globaldb_get_general_cache_values(
+            pool_address = globaldb_get_cache_values(
                 cursor=cursor,
                 key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token_addr],
             )[0]
-            gauge_address_data = globaldb_get_general_cache_values(
+            gauge_address_data = globaldb_get_cache_values(
                 cursor=cursor,
                 key_parts=[GeneralCacheType.CURVE_GAUGE_ADDRESS, pool_address],
             )
@@ -250,31 +250,31 @@ def save_curve_data_to_cache(
                 f'Curve address book names for pool {pool.pool_address} were not added. '
                 f'Probably names were added by the user earlier. {e!s}')
 
-        globaldb_set_general_cache_values(
+        globaldb_set_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
             values=[pool.lp_token_address],  # keys of pools_mapping are lp tokens
         )
-        globaldb_set_general_cache_values(
+        globaldb_set_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, pool.lp_token_address],
             values=[pool.pool_address],
         )
         for idx, coin in enumerate(pool.coins):
-            globaldb_set_general_cache_values(
+            globaldb_set_cache_values(
                 write_cursor=write_cursor,
                 key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool.pool_address, str(idx)],
                 values=[coin],
             )
         if pool.underlying_coins is not None:
             for idx, underlying_coin in enumerate(pool.underlying_coins):
-                globaldb_set_general_cache_values(
+                globaldb_set_cache_values(
                     write_cursor=write_cursor,
                     key_parts=[GeneralCacheType.CURVE_POOL_UNDERLYING_TOKENS, pool.pool_address, str(idx)],  # noqa: E501
                     values=[underlying_coin],
                 )
         if pool.gauge_address is not None:
-            globaldb_set_general_cache_values(
+            globaldb_set_cache_values(
                 write_cursor=write_cursor,
                 key_parts=[GeneralCacheType.CURVE_GAUGE_ADDRESS, pool.pool_address],
                 values=[pool.gauge_address],

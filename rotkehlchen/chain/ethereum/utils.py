@@ -18,7 +18,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.cache import globaldb_get_general_cache_last_queried_ts_by_key
+from rotkehlchen.globaldb.cache import globaldb_get_cache_last_queried_ts_by_key
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, GeneralCacheType
@@ -158,7 +158,7 @@ def should_update_protocol_cache(cache_key: GeneralCacheType, *args: str) -> boo
     the process of querying it again.
     """
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        last_update_ts = globaldb_get_general_cache_last_queried_ts_by_key(
+        last_update_ts = globaldb_get_cache_last_queried_ts_by_key(
             cursor=cursor,
             key_parts=[cache_key, *args],
         )
