@@ -71,9 +71,9 @@ const confirmationTitle: Ref<string> = ref('');
 const confirmationPrimaryAction: Ref<string> = ref('');
 const accounts: Ref<GeneralAccount[]> = ref([]);
 
-const usedTitle: ComputedRef<string> = computed(() => {
-  return get(sectionTitle) || tc('transactions.title');
-});
+const usedTitle: ComputedRef<string> = computed(
+  () => get(sectionTitle) || tc('transactions.title')
+);
 
 const usedAccounts: ComputedRef<Account<BlockchainSelection>[]> = computed(
   () => {
@@ -183,21 +183,17 @@ const {
         set(accounts, parsedAccounts.accounts);
       }
     },
-    extraParams: computed(() => {
-      return {
-        accounts: get(usedAccounts).map(
-          account => `${account.address}#${account.chain}`
-        )
-      };
-    }),
-    customPageParams: computed<Partial<TransactionRequestPayload>>(() => {
-      return {
-        protocols: get(protocols),
-        eventTypes: get(eventTypes),
-        eventSubtypes: get(eventSubTypes),
-        accounts: get(filteredAccounts)
-      };
-    })
+    extraParams: computed(() => ({
+      accounts: get(usedAccounts).map(
+        account => `${account.address}#${account.chain}`
+      )
+    })),
+    customPageParams: computed<Partial<TransactionRequestPayload>>(() => ({
+      protocols: get(protocols),
+      eventTypes: get(eventTypes),
+      eventSubtypes: get(eventSubTypes),
+      accounts: get(filteredAccounts)
+    }))
   }
 );
 

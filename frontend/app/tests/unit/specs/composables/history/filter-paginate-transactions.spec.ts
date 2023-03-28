@@ -87,23 +87,19 @@ describe('composables::history/filter-paginate', () => {
       }
     };
 
-    const extraParams = computed(() => {
-      return {
-        accounts: get(accounts).map(
-          account => `${account.address}#${account.chain}`
-        )
-      };
-    });
+    const extraParams = computed(() => ({
+      accounts: get(accounts).map(
+        account => `${account.address}#${account.chain}`
+      )
+    }));
 
     const customPageParams = computed<Partial<TransactionRequestPayload>>(
-      () => {
-        return {
-          protocols: get(protocols),
-          eventTypes: get(eventTypes),
-          eventSubtypes: get(eventSubTypes),
-          accounts: get(filteredAccounts)
-        };
-      }
+      () => ({
+        protocols: get(protocols),
+        eventTypes: get(eventTypes),
+        eventSubtypes: get(eventSubTypes),
+        accounts: get(filteredAccounts)
+      })
     );
 
     beforeEach(() => {
