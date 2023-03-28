@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`5761` Liquity transactions that were made via DSProxies will now be properly decoded.
 * :feature:`5798` Users will now be able to see the avatar of the ENS.
 * :feature:`5676` Curve gauge deposit, withdrawal and claim rewards actions will now be correctly decoded.
 * :feature:`5677` Swaps made on Curve in ethereum mainnet will now be properly decoded as trades.

@@ -132,7 +132,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         self.dbevents = DBHistoryEvents(self.database)
         self.base = BaseDecoderTools(
             database=database,
-            chain_id=self.evm_inquirer.chain_id,
+            evm_inquirer=self.evm_inquirer,
             is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
             address_is_exchange_fn=self._address_is_exchange,
         )

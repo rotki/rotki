@@ -5,6 +5,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
+from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
@@ -18,13 +19,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
-    EvmTokenKind,
-    EvmTransaction,
-    EVMTxHash,
-    Location,
-)
+from rotkehlchen.types import EvmTokenKind, EvmTransaction, EVMTxHash, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
 logger = logging.getLogger(__name__)
@@ -37,12 +32,12 @@ class BaseDecoderTools():
     def __init__(
             self,
             database: 'DBHandler',
-            chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+            evm_inquirer: 'EvmNodeInquirer',
             is_non_conformant_erc721_fn: Callable[[ChecksumEvmAddress], bool],
             address_is_exchange_fn: Callable[[ChecksumEvmAddress], Optional[str]],
     ) -> None:
         self.database = database
-        self.chain_id = chain_id
+        self.evm_inquirer = evm_inquirer
         self.address_is_exchange = address_is_exchange_fn
         self.is_non_conformant_erc721 = is_non_conformant_erc721_fn
         with self.database.conn.read_ctx() as cursor:
@@ -70,7 +65,15 @@ class BaseDecoderTools():
         self.tracked_accounts = self.database.get_blockchain_accounts(cursor)
 
     def is_tracked(self, adddress: ChecksumEvmAddress) -> bool:
-        return adddress in self.tracked_accounts.get(self.chain_id.to_blockchain())
+        return adddress in self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())
+
+    def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:
+        """
+        Checks whether given address is a proxy owned by any of the tracked accounts.
+        If it is a proxy, it returns the owner of the proxy, otherwise `None`.
+        """
+        self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()  # calling to make sure that proxies are queried  # noqa: E501
+        return self.evm_inquirer.proxies_inquirer.proxy_to_address.get(address)
 
     def decode_direction(
             self,
@@ -84,8 +87,8 @@ class BaseDecoderTools():
         address is the address on the opposite side of the event. counterparty is the exchange name
         if it is a deposit / withdrawal to / from an exchange.
         """
-        tracked_from = from_address in self.tracked_accounts.get(self.chain_id.to_blockchain())
-        tracked_to = to_address in self.tracked_accounts.get(self.chain_id.to_blockchain())
+        tracked_from = from_address in self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())  # noqa: E501
+        tracked_to = to_address in self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())  # noqa: E501
         if not tracked_from and not tracked_to:
             return None
 
@@ -219,7 +222,7 @@ class BaseDecoderTools():
             event_identifier=tx_hash,
             sequence_index=sequence_index,
             timestamp=ts_sec_to_ms(timestamp),
-            location=Location.from_chain_id(self.chain_id),
+            location=Location.from_chain_id(self.evm_inquirer.chain_id),
             event_type=event_type,
             event_subtype=event_subtype,
             asset=asset,

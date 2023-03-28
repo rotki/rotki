@@ -1,7 +1,7 @@
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
-from rotkehlchen.accounting.structures.evm_event import LIQUITY_STAKING_DETAILS
+from rotkehlchen.accounting.structures.evm_event import LIQUITY_STAKING_DETAILS, EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -10,12 +10,13 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_LIQUITY
@@ -60,9 +61,20 @@ class LiquityDecoder(DecoderInterface):
         self.eth = A_ETH.resolve_to_crypto_asset()
         self.lqty = A_LQTY.resolve_to_evm_token()
 
-    def _decode_trove_operations(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_trove_operations(
+            self,
+            context: DecoderContext,
+            post_decoding: bool = False,
+    ) -> DecodingOutput:
         if context.tx_log.topics[0] != BALANCE_UPDATE:
             return DEFAULT_DECODING_OUTPUT
+
+        if self.base.maybe_get_proxy_owner(context.transaction.to_address) is not None and post_decoding is False:  # type: ignore[arg-type]  # transaction.to_address is not None here  # noqa: E501
+            # If this is a transaction made via a DS Proxy, it needs to be handled in a
+            # post-decoding rule. Returning matched_counterparty only here and not for other
+            # cases since the post decoding rule needs to run only for ds proxies.
+            # This comment applies to all decoding functions in this file.
+            return DecodingOutput(matched_counterparty=CPT_LIQUITY)
 
         for event in context.decoded_events:
             try:
@@ -90,11 +102,19 @@ class LiquityDecoder(DecoderInterface):
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_LIQUITY
                 event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} collateral from liquity'  # noqa: E501
+
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_stability_pool_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_stability_pool_event(
+            self,
+            context: DecoderContext,
+            post_decoding: bool = False,
+    ) -> DecodingOutput:
         if context.tx_log.topics[0] not in STABILITY_POOL_EVENTS:
             return DEFAULT_DECODING_OUTPUT
+
+        if self.base.maybe_get_proxy_owner(context.transaction.to_address) is not None and post_decoding is False:  # type: ignore[arg-type]  # transaction.to_address is not None here  # noqa: E501
+            return DecodingOutput(matched_counterparty=CPT_LIQUITY)
 
         collected_eth, collected_lqty = ZERO, ZERO
         if context.tx_log.topics[0] == STABILITY_POOL_GAIN_WITHDRAW:
@@ -136,21 +156,35 @@ class LiquityDecoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.counterparty = CPT_LIQUITY
                     event.notes = f"Withdraw {event.balance.amount} {self.lusd.symbol} from liquity's stability pool"  # noqa: E501
+
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_lqty_staking_deposits(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_lqty_staking_deposits(
+            self,
+            context: DecoderContext,
+            post_decoding: bool = False,
+    ) -> DecodingOutput:
         if context.tx_log.topics[0] not in STAKING_LQTY_EVENTS:
             return DEFAULT_DECODING_OUTPUT
+
+        if self.base.maybe_get_proxy_owner(context.transaction.to_address) is not None and post_decoding is False:  # type: ignore[arg-type]  # transaction.to_address is not None here  # noqa: E501
+            return DecodingOutput(matched_counterparty=CPT_LIQUITY)
 
         user, lqty_amount = None, ZERO
         if context.tx_log.topics[0] == STAKING_LQTY_CHANGE:
             user = hex_or_bytes_to_address(context.tx_log.topics[1])
+            proxy_owner = self.base.maybe_get_proxy_owner(user)
+            # When we will iterate over `decoded_events` the transfer that we will need will have
+            # `location_label` always set to the address of the real owner (so if a ds proxy is
+            # used, then `location_label` will be set to the address of the owner of the proxy).
+            # So if `user` is a proxy, we reassign it to the owner of the proxy.
+            if proxy_owner is not None:
+                user = proxy_owner
             lqty_amount = asset_normalized_value(
                 amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
                 asset=self.lqty,
             )
 
-        informational_event = None
         for event in context.decoded_events:
             if (
                 context.tx_log.topics[0] == STAKING_LQTY_CHANGE and
@@ -184,7 +218,7 @@ class LiquityDecoder(DecoderInterface):
                 event.counterparty = CPT_LIQUITY
                 event.notes = f"Receive reward of {event.balance.amount} {event.asset.resolve_to_crypto_asset().symbol} from Liquity's staking"  # noqa: E501
 
-        return DecodingOutput(event=informational_event)
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 
@@ -194,6 +228,49 @@ class LiquityDecoder(DecoderInterface):
             STABILITY_POOL: (self._decode_stability_pool_event,),
             LIQUITY_STAKING: (self._decode_lqty_staking_deposits,),
         }
+
+    def _handle_post_decoding(
+            self,
+            transaction: EvmTransaction,
+            decoded_events: list['EvmEvent'],
+            all_logs: list['EvmTxReceiptLog'],
+    ) -> list['EvmEvent']:
+        """
+        Handles post decoding for liquity. It re-applies liquity decoding methods on top of
+        the full list of decoded events.
+
+        In case of usage of a DS Proxy transfers `proxy` <-> `liquity contracts` and
+        transfers `proxy` <-> `user address` are in a bad order, so we have to have all erc20 / eth
+        transfers decoded before applying liquity-specific logic.
+
+        Can't use action items here because action items require to know all properties of an
+        event that we expect to appear in the future, and we unfortunately can't know them.
+        """
+        for tx_log in all_logs:
+            if tx_log.address == ACTIVE_POOL:
+                decoding_rule = self._decode_trove_operations
+            elif tx_log.address == STABILITY_POOL:
+                decoding_rule = self._decode_stability_pool_event
+            elif tx_log.address == LIQUITY_STAKING:
+                decoding_rule = self._decode_lqty_staking_deposits
+            else:
+                continue
+
+            decoding_rule(
+                context=DecoderContext(
+                    tx_log=tx_log,
+                    transaction=transaction,
+                    action_items=[],
+                    all_logs=all_logs,
+                    decoded_events=decoded_events,
+                ),
+                post_decoding=True,
+            )
+
+        return decoded_events
+
+    def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
+        return {CPT_LIQUITY: [(0, self._handle_post_decoding)]}
 
     def counterparties(self) -> list[str]:
         return [CPT_LIQUITY]

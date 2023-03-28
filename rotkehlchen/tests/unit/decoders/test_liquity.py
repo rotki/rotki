@@ -969,7 +969,7 @@ def test_stability_pool_withdrawal(database, ethereum_inquirer, ethereum_account
             asset=A_LQTY,
             balance=Balance(amount=FVal('1.3168840890645')),
             location_label=address,
-            notes='Collect 1.3168840890645 LQTY from liquity\'s stability pool',
+            notes="Collect 1.3168840890645 LQTY from liquity's stability pool",
             counterparty=CPT_LIQUITY,
             address=string_to_evm_address('0xD8c9D9071123a059C6E0A945cF0e0c82b508d816'),
         ), EvmEvent(
@@ -982,8 +982,214 @@ def test_stability_pool_withdrawal(database, ethereum_inquirer, ethereum_account
             asset=A_LUSD,
             balance=Balance(amount=FVal('500000')),
             location_label=address,
-            notes='Withdraw 500000 LUSD from liquity\'s stability pool',
+            notes="Withdraw 500000 LUSD from liquity's stability pool",
             counterparty=CPT_LIQUITY,
             address=string_to_evm_address('0x66017D22b0f8556afDd19FC67041899Eb65a21bb'),
         )]
     assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x0c3ce74FCB2B93F9244544919572818Dc2AC0641']])
+def test_ds_proxy_liquity_deposit(database, ethereum_inquirer, ethereum_accounts):
+    user_address = ethereum_accounts[0]
+    evmhash = deserialize_evm_tx_hash('0x83e9930bee6a993204ade072ac6753249f9773b0da243b7efdb6cbba1e0bff6c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1664055431000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.002962168608405875')),
+            location_label=user_address,
+            notes='Burned 0.002962168608405875 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=291,
+            timestamp=TimestampMS(1664055431000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_LUSD,
+            balance=Balance(amount=FVal('87.49718915849563905')),
+            location_label=user_address,
+            notes="Deposit 87.49718915849563905 LUSD in liquity's stability pool",
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0x7815beb98a927565eA43b5854644392F21dA0021'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=292,
+            timestamp=TimestampMS(1664055431000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_LUSD,
+            balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
+            location_label=user_address,
+            notes='Set LUSD spending approval of 0x0c3ce74FCB2B93F9244544919572818Dc2AC0641 by 0x7815beb98a927565eA43b5854644392F21dA0021 to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            address=string_to_evm_address('0x7815beb98a927565eA43b5854644392F21dA0021'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x0c3ce74FCB2B93F9244544919572818Dc2AC0641']])
+def test_ds_proxy_liquity_withdraw(database, ethereum_inquirer, ethereum_accounts):
+    user_address = ethereum_accounts[0]
+    evmhash = deserialize_evm_tx_hash('0xdac8d9273a17b00fb81e89839d0c974e393db406a641552051419646b902c4b3')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1665138455000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.002590429704686116')),
+            location_label=user_address,
+            notes='Burned 0.002590429704686116 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=1,
+            timestamp=TimestampMS(1665138455000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.000033225735796413')),
+            location_label=user_address,
+            notes="Collect 0.000033225735796413 ETH from liquity's stability pool",
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0x7815beb98a927565eA43b5854644392F21dA0021'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=245,
+            timestamp=TimestampMS(1665138455000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_LUSD,
+            balance=Balance(amount=FVal('87.456384085561687234')),
+            location_label=user_address,
+            notes="Withdraw 87.456384085561687234 LUSD from liquity's stability pool",
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0x7815beb98a927565eA43b5854644392F21dA0021'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=247,
+            timestamp=TimestampMS(1665138455000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_LQTY,
+            balance=Balance(amount=FVal('0.233230483618895237')),
+            location_label=user_address,
+            notes="Collect 0.233230483618895237 LQTY from liquity's stability pool",
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0x7815beb98a927565eA43b5854644392F21dA0021'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xEa00FC641a817e5F3eded4743aac7AB08dbf74b0']])
+def test_ds_proxy_liquity_staking(database, ethereum_inquirer, ethereum_accounts):
+    user_address = ethereum_accounts[0]
+    evmhash = deserialize_evm_tx_hash('0x48aa71f1af847d93601f03777ba960281bc9405bbdcc2fdb8c64f2a3350f354a')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1679936291000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.009100878613428384')),
+            location_label=user_address,
+            notes='Burned 0.009100878613428384 ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=1,
+            timestamp=TimestampMS(1679936291000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.000000820336735695')),
+            location_label=user_address,
+            notes="Receive reward of 0.000000820336735695 ETH from Liquity's staking",
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0x31E45D87D9549DCc5cc28925238b7e329719C8fB'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=196,
+            timestamp=TimestampMS(1679936291000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_LQTY,
+            balance=Balance(amount=FVal('4584.01')),
+            location_label=user_address,
+            notes='Stake 4584.01 LQTY in the Liquity protocol',
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0x31E45D87D9549DCc5cc28925238b7e329719C8fB'),
+            extra_data={
+                'liquity_staking': {
+                    'staked_amount': '11325.738578026449094146',
+                    'asset': 'eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D',
+                },
+            },
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=197,
+            timestamp=TimestampMS(1679936291000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_LQTY,
+            balance=Balance(amount=FVal('0')),
+            location_label=user_address,
+            notes='Revoke LQTY spending approval of 0xEa00FC641a817e5F3eded4743aac7AB08dbf74b0 by 0x31E45D87D9549DCc5cc28925238b7e329719C8fB',  # noqa: E501
+            address=string_to_evm_address('0x31E45D87D9549DCc5cc28925238b7e329719C8fB'),
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=206,
+            timestamp=TimestampMS(1679936291000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_LUSD,
+            balance=Balance(amount=FVal('6.17725146534640172')),
+            location_label=user_address,
+            notes="Receive reward of 6.17725146534640172 LUSD from Liquity's staking",
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0x31E45D87D9549DCc5cc28925238b7e329719C8fB'),
+        ),
+    ]
+    assert events == expected_events
