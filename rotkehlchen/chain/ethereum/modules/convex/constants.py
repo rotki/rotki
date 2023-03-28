@@ -1,6 +1,7 @@
+from typing import Final
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
-CPT_CONVEX = 'convex'
+CPT_CONVEX: Final = 'convex'
 
 BOOSTER = string_to_evm_address('0xF403C135812408BFbE8713b5A23a04b3D48AAE31')
 CVX_LOCKER = string_to_evm_address('0xD18140b4B819b895A3dba5442F959fA44994AF50')
@@ -162,6 +163,40 @@ CONVEX_POOLS = {  # mapping of pool rewards address: pool name
     string_to_evm_address('0xdEbc7B51043b4D0dd4f3310C68A12382b8843ceE'): 'cvxCrvFrax-f',
     string_to_evm_address('0xb235205E1096E0Ad221Fb7621a2E2cbaB875bE75'): 'pETH-ETH-f',
     string_to_evm_address('0x17962aB30c7F291b125A0A38d0ad220ab22F8a5B'): 'agEURFRAXB-f',
+    string_to_evm_address('0x1A3c8B2F89B1C2593fa46C30ADA0b4E3D0133fF8'): 'CNCETH-f',
+    string_to_evm_address('0x65C8aa24db76e870DEDfC35701eff84de405D1ba'): 'rETH-f',
+    string_to_evm_address('0x702F4f9d17d5A5D35Aa2a94AE9A7E6682bab04a7'): 'OGVETH-f',
+    string_to_evm_address('0x39D78f11b246ea4A1f68573c3A5B64E83Cff2cAe'): 'cvxcrv-crv-f',
+    string_to_evm_address('0x41EAB7eB43b7b055B2Bf508cAcE932b11003029f'): 'multibtc3CRV-f',
+    string_to_evm_address('0x2a7b6a16Cf7Be51968b69768c3feCaA7E27524A5'): 'crvWSBTC',
+    string_to_evm_address('0x034cFd508d978018c93C5b91FbF7e927d6F5a780'): 'DYDXETH-f',
+    string_to_evm_address('0xB468dB2E478885B87D7ce0C8DA1D4373A756C138'): 'eUSD3CRV-f',
+    string_to_evm_address('0x5d02EcD9B83f1187e92aD5be3d1bd2915CA03699'): 'cbETH/ETH-f',
+    string_to_evm_address('0x2A80d1B0aEC088cb447491c177bB0fD117e3C698'): 'TRYB3POOL-f',
+    string_to_evm_address('0x820Fad75512c8C3E57Ad021d016846CEEB5F7105'): 'UZDFRAXBP3CRV-f',
+    string_to_evm_address('0x706f34D0aB8f4f9838F15b0D155C8Ef42229294B'): 'clevCVX-f',
+    string_to_evm_address('0x820EFA9a92b2317D39D18cf5C964890dD8f9B6bE'): 'JPEGpETH-f',
+    string_to_evm_address('0x27A8c58e3DE84280826d615D80ddb33930383fE9'): 'OHMFRAXBP-f',
+    string_to_evm_address('0x502Cc0d946e79CeA4DaafCf21F374C6bce763067'): 'crvGEARETH-f',
+    string_to_evm_address('0x14DC104D74372527fEC45b86E87Fe263C7215369'): 'msETH-ETH-f',
+    string_to_evm_address('0xA61b57C452dadAF252D2f101f5Ba20aA86152992'): 'STETHETH_C-f',
+    string_to_evm_address('0x8CA990E954611E5E3d2cc51C013fCC372c8c1D38'): 'LDOETH-f',
+    string_to_evm_address('0xcD491E40849a0E3c2fF84093bbbaAa25C1eF8dE6'): 'TBTCSBTC23CRV-f',
+    string_to_evm_address('0x77C43369E50D68B7B3288EEFa7D7ab1F0F6D66b3'): 'ETH MATIC-f',
+    string_to_evm_address('0x4a866fE20A442Dff55FAA010684A5C1379151458'): 'XAIFRAXBP3CRV-f',
+    string_to_evm_address('0x929c7Ac52ef6D2bB03b9d6c2131BE94E2a1cf5e3'): 'cvxFpis-f',
+    string_to_evm_address('0xbD5445402B0a287cbC77cb67B2a52e2FC635dce4'): 'frxETHCRV',
+    string_to_evm_address('0x710e85B2793b3AE88Cb1Da3cb25b3d62D810d180'): 'clevUSD3CRV-f',
+    string_to_evm_address('0xF3bAc69b98301Eacae38CEAB97166a4d78F731BC'): 'sdYFIYFI-f',
+    string_to_evm_address('0xe5ba5E48114ecF21dF6d0Ba958372ce878592705'): 'bLUSDLUSD3-f',
+    string_to_evm_address('0xc3df9cC2B8FFdB801E8e6E8FF9C1245E2dEcdA98'): 'sdtfraxbp-f',
+    string_to_evm_address('0x40fAF3f0205c32a00398E2e7826946356F42a76B'): 'agEUREURe-f',
+    string_to_evm_address('0xbf2A9B7412332A78D03BD27101635e30a6b941e4'): 'BEAN3CRV-f',
+    string_to_evm_address('0x6be96D00B50375AF852D63DB7d55656B306f398e'): 'CLEVETH-f',
+    string_to_evm_address('0xE1d8E3625c5C54b9dcbb52c2c8E4264c3A01450c'): 'CTRETH-f',
+    string_to_evm_address('0x736431Ef2b5e7b9cB3Cdc5Bd7EaC395e04015559'): 'BTRFLYETH-f',
+    string_to_evm_address('0xF189A4a1E845Fd62944F93De497409798523B397'): 'msUSDFRAX3CRV-f',
+    string_to_evm_address('0xAa57A289Bb22a1A0C583db306F6566AE2c0CAf21'): 'STG/FRAXBP-f',
 }
 
 

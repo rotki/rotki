@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
+from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
@@ -797,7 +797,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
 @pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [['0xd289986c25Ae3f4644949e25bC369e9d8e0caeaD']])
 def test_gauge_deposit(ethereum_transaction_decoder, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0x5ae70d68241d85feac65c90e4546154e232dba9fecad9036bcec10082acc9d46 ')  # noqa: E501
+    tx_hex = deserialize_evm_tx_hash('0x5ae70d68241d85feac65c90e4546154e232dba9fecad9036bcec10082acc9d46')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
@@ -831,6 +831,7 @@ def test_gauge_deposit(ethereum_transaction_decoder, ethereum_accounts):
             notes='Deposit 7985.261401730774426743 crvPlain3andSUSD into 0xA90996896660DEcC6E997655E065b23788857849 curve gauge',  # noqa: E501
             counterparty='curve',
             address=string_to_evm_address('0xA90996896660DEcC6E997655E065b23788857849'),
+            product=EvmProduct.CURVE_GAUGE,
         ),
     ]
     assert events == expected_events
@@ -839,7 +840,7 @@ def test_gauge_deposit(ethereum_transaction_decoder, ethereum_accounts):
 @pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [['0xd80DF837766C8Edb6f11Bf7fD35703f87F2a31fB']])
 def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0x055fc6cafcdae6b367d934e9385816f89153314c5abc5d3659a65778c90342d2 ')  # noqa: E501
+    tx_hex = deserialize_evm_tx_hash('0x055fc6cafcdae6b367d934e9385816f89153314c5abc5d3659a65778c90342d2')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
@@ -874,6 +875,7 @@ def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts):
             notes='Withdraw 37939.72737243936267785 crvPlain3andSUSD from 0xA90996896660DEcC6E997655E065b23788857849 curve gauge',  # noqa: E501
             counterparty='curve',
             address=string_to_evm_address('0xA90996896660DEcC6E997655E065b23788857849'),
+            product=EvmProduct.CURVE_GAUGE,
         ),
     ]
     assert events == expected_events
@@ -882,7 +884,7 @@ def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts):
 @pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [['0x0E9Fed33f6a202146a615De0FA1985adFb461467']])
 def test_gauge_claim_rewards(ethereum_transaction_decoder, ethereum_accounts):
-    tx_hex = deserialize_evm_tx_hash('0xe01bc48ddb3df6eb721c122c5ddaea705b771bfb8db407e3a96ae9bab6584453 ')  # noqa: E501
+    tx_hex = deserialize_evm_tx_hash('0xe01bc48ddb3df6eb721c122c5ddaea705b771bfb8db407e3a96ae9bab6584453')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(

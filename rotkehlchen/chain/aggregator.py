@@ -19,6 +19,7 @@ from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.defi.chad import DefiChad
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
+from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
 from rotkehlchen.chain.ethereum.modules import (
     MODULE_NAME_TO_PATH,
     Aave,
@@ -35,6 +36,8 @@ from rotkehlchen.chain.ethereum.modules import (
     YearnVaults,
     YearnVaultsV2,
 )
+from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
+from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
@@ -914,6 +917,25 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.query_evm_chain_balances(chain=SupportedBlockchain.ETHEREUM)
         self.query_defi_balances()
         self._add_eth_protocol_balances(eth_balances=self.balances.eth)
+        self._add_staking_protocol_balances()
+
+    def _add_staking_protocol_balances(self) -> None:
+        """
+        Query protocols that have staked balances and special contracts need to be called.
+        This includes:
+        - Curve gauges
+        - Convex gauges
+        """
+        balance_inquirers = [CurveBalances, ConvexBalances]
+        for inquirer_cls in balance_inquirers:
+            inquirer: ProtocolWithBalance = inquirer_cls(
+                database=self.database,
+                evm_inquirer=self.ethereum.node_inquirer,
+            )
+            balances = inquirer.query_balances()
+            for address, asset_balances in balances.items():
+                for asset, balance in asset_balances.items():
+                    self.balances.eth[address].assets[asset] += balance
 
     def _add_eth_protocol_balances(self, eth_balances: defaultdict[ChecksumEvmAddress, BalanceSheet]) -> None:  # noqa: E501
         """Also count token balances that may come from various eth protocols"""

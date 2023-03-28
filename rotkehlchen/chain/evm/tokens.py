@@ -97,6 +97,23 @@ def generate_multicall_chunks(
     return multicall_chunks
 
 
+def get_chunk_size_call_order(evm_inquirer: 'EvmNodeInquirer') -> tuple[int, list[WeightedNode]]:
+    """
+    Return the max number of tokens that can be queried in a single call depending wheter we
+    have a web3 node connected or we are going to use etherscan.
+    We also return the nodes call order. In the case of having web3 nodes available we
+    skip etherscan because chunk size is too big for etherscan.
+    """
+    if evm_inquirer.connected_to_any_web3():
+        chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
+        call_order = evm_inquirer.default_call_order(skip_etherscan=True)
+    else:
+        chunk_size = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT
+        call_order = [evm_inquirer.etherscan_node]
+
+    return chunk_size, call_order
+
+
 class EvmTokens(metaclass=ABCMeta):
     def __init__(
             self,
@@ -106,18 +123,7 @@ class EvmTokens(metaclass=ABCMeta):
         self.db = database
         self.evm_inquirer = evm_inquirer
 
-    def _get_chunk_size_call_order(self) -> tuple[int, list[WeightedNode]]:
-        if self.evm_inquirer.connected_to_any_web3():
-            chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
-            # skipping etherscan because chunk size is too big for etherscan
-            call_order = self.evm_inquirer.default_call_order(skip_etherscan=True)
-        else:
-            chunk_size = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT
-            call_order = [self.evm_inquirer.etherscan_node]
-
-        return chunk_size, call_order
-
-    def _get_token_balances(
+    def get_token_balances(
             self,
             address: ChecksumEvmAddress,
             tokens: list[EvmToken],
@@ -210,7 +216,7 @@ class EvmTokens(metaclass=ABCMeta):
         total_token_balances: dict[EvmToken, FVal] = defaultdict(FVal)
         chunks = get_chunks(tokens, n=chunk_size)
         for chunk in chunks:
-            new_token_balances = self._get_token_balances(
+            new_token_balances = self.get_token_balances(
                 address=address,
                 tokens=chunk,
                 call_order=call_order,
@@ -300,7 +306,7 @@ class EvmTokens(metaclass=ABCMeta):
         - BadFunctionCallOutput if a local node is used and the contract for the
           token has no code. That means the chain is not synced
         """
-        chunk_size, call_order = self._get_chunk_size_call_order()
+        chunk_size, call_order = get_chunk_size_call_order(self.evm_inquirer)
         for address in addresses:
             token_balances = self._query_chunks(
                 address=address,
@@ -333,7 +339,7 @@ class EvmTokens(metaclass=ABCMeta):
         addresses_to_balances: dict[ChecksumEvmAddress, dict[EvmToken, FVal]] = defaultdict(dict)
         all_tokens = set()
         addresses_to_tokens: dict[ChecksumEvmAddress, list[EvmToken]] = {}
-        chunk_size, call_order = self._get_chunk_size_call_order()
+        chunk_size, call_order = get_chunk_size_call_order(self.evm_inquirer)
 
         with self.db.conn.read_ctx() as cursor:
             for address in addresses:

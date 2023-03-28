@@ -6,6 +6,7 @@ from typing import Any, Generic, Literal, NamedTuple, Optional, TypeVar, Union, 
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
+from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import Asset, EvmToken
@@ -1061,6 +1062,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             exclude_ignored_assets: bool = False,
             limit_to_entry_type: bool = False,
             counterparties: Optional[list[str]] = None,
+            product: Optional[EvmProduct] = None,
     ) -> 'EvmEventFilterQuery':
         filter_query = super().make(
             and_op=and_op,
@@ -1084,6 +1086,10 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
         if counterparties is not None:
             filter_query.filters.append(
                 DBCounterpartyFilter(and_op=True, counterparties=counterparties),
+            )
+        if product is not None:
+            filter_query.filters.append(
+                DBEqualsFilter(and_op=True, column='product', value=product.serialize()),
             )
 
         return filter_query
