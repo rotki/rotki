@@ -1,15 +1,15 @@
+import { type MaybeRef } from '@vueuse/core';
+import isEqual from 'lodash/isEqual';
 import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
 import { type ZodSchema } from 'zod';
-import isEqual from 'lodash/isEqual';
-import { type MaybeRef } from '@vueuse/core';
+import { type Collection } from '@/types/collection';
 import { type TablePagination } from '@/types/pagination';
-import { defaultCollectionState, defaultOptions } from '@/utils/collection';
 import {
   type LocationQuery,
   RouterPaginationOptionsSchema
 } from '@/types/route';
-import { type Collection } from '@/types/collection';
 import { assert } from '@/utils/assertions';
+import { defaultCollectionState, defaultOptions } from '@/utils/collection';
 
 interface FilterSchema<F, M> {
   filters: Ref<F>;

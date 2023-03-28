@@ -1,9 +1,376 @@
 {
   "result": {
     "entries": [
+      {
+        "entry": {
+          "tx_hash": "0x886e440c29a3112bc006ed9a8c84f2f79d907aaade9e2ea6060e4d36dbe6eb36",
+          "timestamp": 1680002558,
+          "block_number": 84300708,
+          "from_address": "0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+          "to_address": "0x2ad09850b0CA4c7c1B33f5AcD6cBAbCaB5d6e796",
+          "value": "0",
+          "gas": "285796",
+          "gas_price": "1000000",
+          "gas_used": "229859",
+          "input_data": "0xeea0d7b20000000000000000000000000000000000000000000000000000000000000001000000000000000000000000a13a1baf456e2b750a87b9e1987d1387cfdc05f600000000000000000000000000000000000000000000000000000000a6d7559000000000000000000000000000000000000000000000000000000000009bb3db00000000000000000000000000000000000000000000000000000000a567cccb00000000000000000000000000000000000000000000000000000000642c083f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "nonce": 2,
+          "evm_chain": "optimism"
+        },
+        "decoded_events": [
+          {
+            "entry": {
+              "identifier": 1,
+              "event_identifier": "0x886e440c29a3112bc006ed9a8c84f2f79d907aaade9e2ea6060e4d36dbe6eb36",
+              "sequence_index": 0,
+              "timestamp": 1680002558,
+              "location": "optimism",
+              "asset": "ETH",
+              "balance": {
+                "amount": "0.000000229859",
+                "usd_value": "0.00039850195112"
+              },
+              "event_type": "spend",
+              "event_subtype": "fee",
+              "location_label": "0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+              "notes": "Burned 0.000000229859 ETH for gas",
+              "counterparty": "gas",
+              "product": null,
+              "address": null
+            },
+            "has_details": false,
+            "customized": false
+          },
+          {
+            "entry": {
+              "identifier": 2,
+              "event_identifier": "0x886e440c29a3112bc006ed9a8c84f2f79d907aaade9e2ea6060e4d36dbe6eb36",
+              "sequence_index": 1,
+              "timestamp": 1680002558,
+              "location": "optimism",
+              "asset": "eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607",
+              "balance": {
+                "amount": "2799.13",
+                "usd_value": "2799.13"
+              },
+              "event_type": "spend",
+              "event_subtype": null,
+              "location_label": "0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+              "notes": "Send 2799.13 USDC from 0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25 to 0x2ad09850b0CA4c7c1B33f5AcD6cBAbCaB5d6e796",
+              "counterparty": null,
+              "product": null,
+              "address": "0x2ad09850b0CA4c7c1B33f5AcD6cBAbCaB5d6e796"
+            },
+            "has_details": false,
+            "customized": false
+          },
+          {
+            "entry": {
+              "identifier": 3,
+              "event_identifier": "0x886e440c29a3112bc006ed9a8c84f2f79d907aaade9e2ea6060e4d36dbe6eb36",
+              "sequence_index": 2,
+              "timestamp": 1680002558,
+              "location": "optimism",
+              "asset": "eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607",
+              "balance": {
+                "amount": "0",
+                "usd_value": "0"
+              },
+              "event_type": "informational",
+              "event_subtype": "approve",
+              "location_label": "0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+              "notes": "Revoke USDC spending approval of 0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25 by 0x2ad09850b0CA4c7c1B33f5AcD6cBAbCaB5d6e796",
+              "counterparty": null,
+              "product": null,
+              "address": "0x2ad09850b0CA4c7c1B33f5AcD6cBAbCaB5d6e796"
+            },
+            "has_details": false,
+            "customized": false
+          }
+        ],
+        "ignored_in_accounting": false
+      },
+      {
+        "entry": {
+          "tx_hash": "0x286f9c959706f4ddeac1504ece65e6f21bb6c5b15db2718ac7f39dce57bad1e8",
+          "timestamp": 1680001971,
+          "block_number": 84298041,
+          "from_address": "0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+          "to_address": "0x2ad09850b0CA4c7c1B33f5AcD6cBAbCaB5d6e796",
+          "value": "0",
+          "gas": "285784",
+          "gas_price": "1000000",
+          "gas_used": "239447",
+          "input_data": "0xeea0d7b20000000000000000000000000000000000000000000000000000000000000001000000000000000000000000a13a1baf456e2b750a87b9e1987d1387cfdc05f60000000000000000000000000000000000000000000000000000000005f5e100000000000000000000000000000000000000000000000000000000000074ea2b00000000000000000000000000000000000000000000000000000000057966c100000000000000000000000000000000000000000000000000000000642c060800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "nonce": 1,
+          "evm_chain": "optimism"
+        },
+        "decoded_events": [
+          {
+            "entry": {
+              "identifier": 4,
+              "event_identifier": "0x286f9c959706f4ddeac1504ece65e6f21bb6c5b15db2718ac7f39dce57bad1e8",
+              "sequence_index": 0,
+              "timestamp": 1680001971,
+              "location": "optimism",
+              "asset": "ETH",
+              "balance": {
+                "amount": "0.000000239447",
+                "usd_value": "0.00041512447496"
+              },
+              "event_type": "spend",
+              "event_subtype": "fee",
+              "location_label": "0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+              "notes": "Burned 0.000000239447 ETH for gas",
+              "counterparty": "gas",
+              "product": null,
+              "address": null
+            },
+            "has_details": false,
+            "customized": false
+          },
+          {
+            "entry": {
+              "identifier": 5,
+              "event_identifier": "0x286f9c959706f4ddeac1504ece65e6f21bb6c5b15db2718ac7f39dce57bad1e8",
+              "sequence_index": 1,
+              "timestamp": 1680001971,
+              "location": "optimism",
+              "asset": "eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607",
+              "balance": {
+                "amount": "100",
+                "usd_value": "100"
+              },
+              "event_type": "spend",
+              "event_subtype": null,
+              "location_label": "0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+              "notes": "Send 100 USDC from 0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25 to 0x2ad09850b0CA4c7c1B33f5AcD6cBAbCaB5d6e796",
+              "counterparty": null,
+              "product": null,
+              "address": "0x2ad09850b0CA4c7c1B33f5AcD6cBAbCaB5d6e796"
+            },
+            "has_details": false,
+            "customized": false
+          },
+          {
+            "entry": {
+              "identifier": 6,
+              "event_identifier": "0x286f9c959706f4ddeac1504ece65e6f21bb6c5b15db2718ac7f39dce57bad1e8",
+              "sequence_index": 2,
+              "timestamp": 1680001971,
+              "location": "optimism",
+              "asset": "eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607",
+              "balance": {
+                "amount": "2799.13",
+                "usd_value": "2799.13"
+              },
+              "event_type": "informational",
+              "event_subtype": "approve",
+              "location_label": "0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+              "notes": "Set USDC spending approval of 0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25 by 0x2ad09850b0CA4c7c1B33f5AcD6cBAbCaB5d6e796 to 2799.13",
+              "counterparty": null,
+              "product": null,
+              "address": "0x2ad09850b0CA4c7c1B33f5AcD6cBAbCaB5d6e796"
+            },
+            "has_details": false,
+            "customized": false
+          }
+        ],
+        "ignored_in_accounting": false
+      },
+      {
+        "entry": {
+          "tx_hash": "0x736f0608a15fb90c18f9f56bd3e584cf93f191fab07571c99c6b090b81c8a7b1",
+          "timestamp": 1680001896,
+          "block_number": 84297662,
+          "from_address": "0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+          "to_address": "0x7F5c764cBc14f9669B88837ca1490cCa17c31607",
+          "value": "0",
+          "gas": "53403",
+          "gas_price": "1000000",
+          "gas_used": "53067",
+          "input_data": "0x095ea7b30000000000000000000000002ad09850b0ca4c7c1b33f5acd6cbabcab5d6e79600000000000000000000000000000000000000000000000000000000accd3690",
+          "nonce": 0,
+          "evm_chain": "optimism"
+        },
+        "decoded_events": [
+          {
+            "entry": {
+              "identifier": 7,
+              "event_identifier": "0x736f0608a15fb90c18f9f56bd3e584cf93f191fab07571c99c6b090b81c8a7b1",
+              "sequence_index": 0,
+              "timestamp": 1680001896,
+              "location": "optimism",
+              "asset": "ETH",
+              "balance": {
+                "amount": "0.000000053067",
+                "usd_value": "0.00009200119656"
+              },
+              "event_type": "spend",
+              "event_subtype": "fee",
+              "location_label": "0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+              "notes": "Burned 0.000000053067 ETH for gas",
+              "counterparty": "gas",
+              "product": null,
+              "address": null
+            },
+            "has_details": false,
+            "customized": false
+          },
+          {
+            "entry": {
+              "identifier": 8,
+              "event_identifier": "0x736f0608a15fb90c18f9f56bd3e584cf93f191fab07571c99c6b090b81c8a7b1",
+              "sequence_index": 1,
+              "timestamp": 1680001896,
+              "location": "optimism",
+              "asset": "eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607",
+              "balance": {
+                "amount": "2899.13",
+                "usd_value": "2899.13"
+              },
+              "event_type": "informational",
+              "event_subtype": "approve",
+              "location_label": "0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+              "notes": "Set USDC spending approval of 0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25 by 0x2ad09850b0CA4c7c1B33f5AcD6cBAbCaB5d6e796 to 2899.13",
+              "counterparty": null,
+              "product": null,
+              "address": "0x2ad09850b0CA4c7c1B33f5AcD6cBAbCaB5d6e796"
+            },
+            "has_details": false,
+            "customized": false
+          }
+        ],
+        "ignored_in_accounting": false
+      },
+      {
+        "entry": {
+          "tx_hash": "0xcb61d6ce04c2689b01f6c4d647b446bb8c87e5f6afd741715edcaba54f7e5748",
+          "timestamp": 1679997672,
+          "block_number": 84281603,
+          "from_address": "0x19e4057A38a730be37c4DA690b103267AAE1d75d",
+          "to_address": "0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+          "value": "1000000000000000",
+          "gas": "21000",
+          "gas_price": "1000000",
+          "gas_used": "21000",
+          "input_data": "0x",
+          "nonce": 29,
+          "evm_chain": "optimism"
+        },
+        "decoded_events": [
+          {
+            "entry": {
+              "identifier": 9,
+              "event_identifier": "0xcb61d6ce04c2689b01f6c4d647b446bb8c87e5f6afd741715edcaba54f7e5748",
+              "sequence_index": 0,
+              "timestamp": 1679997672,
+              "location": "optimism",
+              "asset": "ETH",
+              "balance": {
+                "amount": "0.001",
+                "usd_value": "1.73368"
+              },
+              "event_type": "receive",
+              "event_subtype": null,
+              "location_label": "0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+              "notes": "Receive 0.001 ETH from 0x19e4057A38a730be37c4DA690b103267AAE1d75d",
+              "counterparty": null,
+              "product": null,
+              "address": "0x19e4057A38a730be37c4DA690b103267AAE1d75d"
+            },
+            "has_details": false,
+            "customized": false
+          }
+        ],
+        "ignored_in_accounting": false
+      },
+      {
+        "entry": {
+          "tx_hash": "0x8319825d1b59ad4c1afcdcb2a5606292285f3d013c69ed1f6c83147a322aa7fd",
+          "timestamp": 1679990011,
+          "block_number": 84250569,
+          "from_address": "0x9531C059098e3d194fF87FebB587aB07B30B1306",
+          "to_address": "0x7F5c764cBc14f9669B88837ca1490cCa17c31607",
+          "value": "0",
+          "gas": "58602",
+          "gas_price": "1000000",
+          "gas_used": "58602",
+          "input_data": "0xa9059cbb0000000000000000000000002f4c0f60f2116899fa6d4b9d8b979167ce963d2500000000000000000000000000000000000000000000000000000000accd3690",
+          "nonce": 61,
+          "evm_chain": "optimism"
+        },
+        "decoded_events": [
+          {
+            "entry": {
+              "identifier": 10,
+              "event_identifier": "0x8319825d1b59ad4c1afcdcb2a5606292285f3d013c69ed1f6c83147a322aa7fd",
+              "sequence_index": 0,
+              "timestamp": 1679990011,
+              "location": "optimism",
+              "asset": "eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607",
+              "balance": {
+                "amount": "2899.13",
+                "usd_value": "2899.13"
+              },
+              "event_type": "receive",
+              "event_subtype": null,
+              "location_label": "0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+              "notes": "Receive 2899.13 USDC from 0x9531C059098e3d194fF87FebB587aB07B30B1306 to 0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+              "counterparty": null,
+              "product": null,
+              "address": "0x9531C059098e3d194fF87FebB587aB07B30B1306"
+            },
+            "has_details": false,
+            "customized": false
+          }
+        ],
+        "ignored_in_accounting": false
+      },
+      {
+        "entry": {
+          "tx_hash": "0xfa3a49a518c992dd28e4f377b0fe1c5a909211b37200fb9a7aaaabd4285c6482",
+          "timestamp": 1679915489,
+          "block_number": 84031596,
+          "from_address": "0x19e4057A38a730be37c4DA690b103267AAE1d75d",
+          "to_address": "0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+          "value": "100000000000000",
+          "gas": "21000",
+          "gas_price": "1000000",
+          "gas_used": "21000",
+          "input_data": "0x",
+          "nonce": 24,
+          "evm_chain": "optimism"
+        },
+        "decoded_events": [
+          {
+            "entry": {
+              "identifier": 11,
+              "event_identifier": "0xfa3a49a518c992dd28e4f377b0fe1c5a909211b37200fb9a7aaaabd4285c6482",
+              "sequence_index": 0,
+              "timestamp": 1679915489,
+              "location": "optimism",
+              "asset": "ETH",
+              "balance": {
+                "amount": "0.0001",
+                "usd_value": "0.171616"
+              },
+              "event_type": "receive",
+              "event_subtype": null,
+              "location_label": "0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25",
+              "notes": "Receive 0.0001 ETH from 0x19e4057A38a730be37c4DA690b103267AAE1d75d",
+              "counterparty": null,
+              "product": null,
+              "address": "0x19e4057A38a730be37c4DA690b103267AAE1d75d"
+            },
+            "has_details": false,
+            "customized": false
+          }
+        ],
+        "ignored_in_accounting": false
+      }
     ],
-    "entries_total": 0,
-    "entries_found": 0,
+    "entries_found": 6,
+    "entries_total": 6,
     "entries_limit": -1
   },
   "message": ""

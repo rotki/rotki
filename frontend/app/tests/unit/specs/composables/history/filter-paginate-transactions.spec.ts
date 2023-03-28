@@ -1,4 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { TransactionEventProtocol } from '@rotki/common/lib/history/tx-events';
 import flushPromises from 'flush-promises';
 import { type ComputedRef, type Ref } from 'vue';
 import { RouterAccountsSchema } from '@/types/route';
@@ -13,8 +14,7 @@ import type {
 import type { LocationQuery } from '@/types/route';
 import type {
   HistoryEventSubType,
-  HistoryEventType,
-  TransactionEventProtocol
+  HistoryEventType
 } from '@rotki/common/lib/history/tx-events';
 import type { GeneralAccount } from '@rotki/common/src/account';
 import type { MaybeRef } from '@vueuse/shared';
@@ -54,7 +54,13 @@ describe('composables::history/filter-paginate', () => {
   const eventSubTypes: Ref<HistoryEventSubType[]> = ref([]);
   const accounts: Ref<GeneralAccount[]> = ref([
     {
-      address: '0xa13A1BaF456e2B750a87B9e1987d1387CfdC05f6',
+      address: '0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25',
+      chain: Blockchain.ETH,
+      label: '',
+      tags: []
+    },
+    {
+      address: '0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25',
       chain: Blockchain.OPTIMISM,
       label: '',
       tags: []
@@ -65,7 +71,11 @@ describe('composables::history/filter-paginate', () => {
 
   const filteredAccounts: ComputedRef<EvmChainAddress[]> = computed(() => [
     {
-      address: '0xa13A1BaF456e2B750a87B9e1987d1387CfdC05f6',
+      address: '0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25',
+      evmChain: 'ethereum'
+    },
+    {
+      address: '0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25',
       evmChain: 'optimism'
     }
   ]);
@@ -146,7 +156,7 @@ describe('composables::history/filter-paginate', () => {
       fetchData().catch(() => {});
       expect(get(isLoading)).toBe(true);
       await flushPromises();
-      expect(get(state).total).toEqual(0);
+      expect(get(state).total).toEqual(6);
     });
 
     test('check the return types', async () => {
@@ -214,12 +224,53 @@ describe('composables::history/filter-paginate', () => {
       assertType<Collection<EthTransactionEntry>>(get(state));
       assertType<EthTransactionEntry[]>(get(state).data);
       assertType<number>(get(state).found);
-      expect(get(pageParams).accounts).toHaveLength(1);
+      expect(get(pageParams).accounts).toHaveLength(2);
 
-      expect(get(state).data).toHaveLength(0);
-      expect(get(state).found).toEqual(0);
+      expect(get(state).data).toHaveLength(6);
+      expect(get(state).found).toEqual(6);
       expect(get(state).limit).toEqual(-1);
-      expect(get(state).total).toEqual(0);
+      expect(get(state).total).toEqual(6);
+    });
+
+    test('add protocols to filters and expect the value to be set', async () => {
+      set(protocols, [
+        TransactionEventProtocol.GAS,
+        TransactionEventProtocol.ENS
+      ]);
+
+      const query = {
+        sortBy: ['timestamp'],
+        sortDesc: ['false'],
+        protocols: get(protocols)
+      };
+
+      const { isLoading, filters } = useHistoryPaginationFilter<
+        EthTransaction,
+        TransactionRequestPayload,
+        EthTransactionEntry,
+        Filters,
+        Matcher
+      >(
+        locationOverview,
+        mainPage,
+        () => useTransactionFilter(get(protocols).length > 0),
+        fetchTransactions,
+        {
+          onUpdateFilters,
+          extraParams,
+          customPageParams
+        }
+      );
+
+      await router.push({
+        query
+      });
+
+      expect(get(isLoading)).toBe(true);
+      await flushPromises();
+      expect(get(isLoading)).toBe(false);
+
+      expect(get(filters).protocols).toStrictEqual(get(protocols));
     });
   });
 });
