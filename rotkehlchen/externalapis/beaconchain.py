@@ -1,11 +1,13 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
 
 import gevent
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     Eth2Deposit,
     ValidatorID,
@@ -15,21 +17,23 @@ from rotkehlchen.chain.ethereum.modules.eth2.utils import ValidatorBalance
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.timing import DEFAULT_CONNECT_TIMEOUT, QUERY_RETRY_TIMES
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_fval
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
     ExternalService,
+    Location,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import from_gwei, get_chunks, set_user_agent
+from rotkehlchen.utils.misc import from_gwei, from_wei, get_chunks, set_user_agent, ts_sec_to_ms
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -71,6 +75,7 @@ class BeaconChain(ExternalServiceWithApiKey):
 
     def __init__(self, database: 'DBHandler', msg_aggregator: MessagesAggregator) -> None:
         super().__init__(database=database, service_name=ExternalService.BEACONCHAIN)
+        self.db: 'DBHandler'  # specifying DB is not optional
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
         self.warning_given = False
@@ -79,8 +84,8 @@ class BeaconChain(ExternalServiceWithApiKey):
 
     def _query(
             self,
-            module: Literal['validator'],
-            endpoint: Optional[Literal['balancehistory', 'performance', 'eth1', 'deposits']],
+            module: Literal['validator', 'execution'],
+            endpoint: Optional[Literal['balancehistory', 'performance', 'eth1', 'deposits', 'produced']],  # noqa: E501
             encoded_args: str,
     ) -> Union[list[dict[str, Any]], dict[str, Any]]:
         """
@@ -182,6 +187,45 @@ class BeaconChain(ExternalServiceWithApiKey):
 
         return json_ret['data']
 
+    @overload
+    def _query_chunked_endpoint(
+            self,
+            indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
+            module: Literal['validator'],
+            endpoint: Literal['deposits', 'balancehistory', 'performance'],
+    ) -> dict:
+        ...
+
+    @overload
+    def _query_chunked_endpoint(
+            self,
+            indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
+            module: Literal['execution'],
+            endpoint: Literal['produced'],
+    ) -> list:
+        ...
+
+    def _query_chunked_endpoint(
+            self,
+            indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
+            module: Literal['execution', 'validator'],
+            endpoint: Literal['deposits', 'balancehistory', 'performance', 'produced'],
+    ) -> Union[dict, list]:
+        chunks = _calculate_query_chunks(indices_or_pubkeys)
+        data = []
+        for chunk in chunks:
+            result = self._query(
+                module=module,
+                endpoint=endpoint,
+                encoded_args=','.join(str(x) for x in chunk),
+            )
+            if isinstance(result, list):
+                data.extend(result)
+            else:
+                data.append(result)
+
+        return data
+
     def get_balance_history(self, validator_indices: list[int]) -> dict[int, ValidatorBalance]:
         """Get the balance history of all the validators given from the indices list
 
@@ -198,19 +242,11 @@ class BeaconChain(ExternalServiceWithApiKey):
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
-        chunks = _calculate_query_chunks(validator_indices)
-        data = []
-        for chunk in chunks:
-            result = self._query(
-                module='validator',
-                endpoint='balancehistory',
-                encoded_args=','.join(str(x) for x in chunk),
-            )
-            if isinstance(result, list):
-                data.extend(result)
-            else:
-                data.append(result)
-
+        data = self._query_chunked_endpoint(
+            indices_or_pubkeys=validator_indices,
+            module='validator',
+            endpoint='balancehistory',
+        )
         # We are only interested in last epoch, so get its value
         balances: dict[int, ValidatorBalance] = {}
         try:
@@ -243,19 +279,11 @@ class BeaconChain(ExternalServiceWithApiKey):
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
-        chunks = _calculate_query_chunks(indices_or_pubkeys)
-        data = []
-        for chunk in chunks:
-            result = self._query(
-                module='validator',
-                endpoint='performance',
-                encoded_args=','.join(str(x) for x in chunk),
-            )
-            if isinstance(result, list):
-                data.extend(result)
-            else:
-                data.append(result)
-
+        data = self._query_chunked_endpoint(
+            indices_or_pubkeys=indices_or_pubkeys,
+            module='validator',
+            endpoint='performance',
+        )
         try:
             performance = {}
             for entry in data:
@@ -273,6 +301,88 @@ class BeaconChain(ExternalServiceWithApiKey):
             ) from e
 
         return performance
+
+    def get_and_store_produced_blocks(
+            self,
+            indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
+    ) -> None:
+        """Get blocks produced  by a set of validator indices/pubkeys and store the
+        data in the DB.
+
+        https://beaconcha.in/api/v1/docs/index.html#/Execution/get_api_v1_execution__addressIndexOrPubkey__produced
+
+        Queries in chunks of 100 due to api limitations
+        Saves them in the DB if they are not already saved.
+
+        - The fee_recipient is the address that receives the block reward.
+        - The block reward is the actual block reward that goes to the fee recipient.
+        - The producer_fee_recipient can be missing. This only exists if the block is
+        produced via a relay and is the "reported" recipient of the mev reward by
+        the relay. Reported is important here and relays can lie and also make mistakes.
+        - The mev_reward can me ZERO and it's what goes to the producer_fee_recipient as reported
+        by the relay. It can also be wrong due to misreporting by the relay.
+
+        May raise:
+        - RemoteError due to problems querying beaconcha.in API
+        """
+        # This will query everything. It's not filterable by time
+        data = self._query_chunked_endpoint(
+            indices_or_pubkeys=indices_or_pubkeys,
+            module='execution',
+            endpoint='produced',
+        )
+        events = []
+        block_data = []
+
+        try:
+            for entry in data:
+                blocknumber = int(entry['blockNumber'])
+                timestamp = ts_sec_to_ms(entry['timestamp'])
+                block_reward = from_wei(deserialize_fval(entry['blockReward'], 'block_reward', 'beaconcha.in produced blocks'))  # noqa: E501
+                mev_reward = from_wei(deserialize_fval(entry['blockMevReward'], 'mev_reward', 'beaconcha.in produced blocks'))  # noqa: E501
+
+                fee_recipient = deserialize_evm_address(entry['fee_recipient'])
+                proposer_index = entry['posConsensus']['proposerIndex']
+
+                # evm_1 stands for ethereum. Chain type + chain id
+                event_identifier = f'evm_1_block_{blocknumber}'.encode()
+                events.append(HistoryEvent(
+                    event_identifier=event_identifier,
+                    sequence_index=0,
+                    timestamp=timestamp,
+                    location=Location.ETHEREUM,
+                    location_label=fee_recipient,
+                    event_type=HistoryEventType.STAKING,
+                    event_subtype=HistoryEventSubType.BLOCK_PRODUCTION,
+                    asset=A_ETH,
+                    balance=Balance(amount=block_reward),
+                    notes=f'Validator {proposer_index} produced block {blocknumber} with {block_reward} ETH going to {fee_recipient}',  # noqa: E501
+                ))
+
+                producer_fee_recipient = None
+                if 'relay' in entry:
+                    producer_fee_recipient = deserialize_evm_address(entry['relay']['producerFeeRecipient'])  # noqa: E501
+
+                block_data.append((
+                    blocknumber, proposer_index, fee_recipient,
+                    str(block_reward), producer_fee_recipient, str(mev_reward),
+                ))
+
+        except KeyError as e:  # raising and not continuing since if 1 key missing something is off  # noqa: E501
+            raise RemoteError(
+                f'Beaconcha.in produced blocks response error. Missing key entry {str(e)}',
+            ) from e
+
+        dbevents = DBHistoryEvents(self.db)
+        with self.db.user_write() as write_cursor:
+            dbevents.add_history_events(write_cursor, events)
+            write_cursor.executemany(
+                'INSERT OR IGNORE INTO blocks_produced('
+                'block_number, validator_index, fee_recipient, '
+                'block_reward, producer_fee_recipient, mev_reward'
+                ') VALUES (?, ?, ?, ?, ?, ?)',
+                block_data,
+            )
 
     def get_eth1_address_validators(self, address: ChecksumEvmAddress) -> list[ValidatorID]:
         """Get a list of Validators that are associated with the given eth1 address.
@@ -317,18 +427,11 @@ class BeaconChain(ExternalServiceWithApiKey):
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
-        chunks = _calculate_query_chunks(indices_or_pubkeys)
-        data = []
-        for chunk in chunks:
-            result = self._query(
-                module='validator',
-                endpoint='deposits',
-                encoded_args=','.join(str(x) for x in chunk),
-            )
-            if isinstance(result, list):
-                data.extend(result)
-            else:
-                data.append(result)
+        data = self._query_chunked_endpoint(
+            indices_or_pubkeys=indices_or_pubkeys,
+            module='validator',
+            endpoint='deposits',
+        )
 
         deposits = []
         for entry in data:
