@@ -11,8 +11,10 @@ from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.globaldb.cache import (
-    globaldb_get_general_cache_keys_and_values_like,
-    globaldb_get_general_cache_last_queried_ts_by_key,
+    globaldb_get_cache_keys_and_values_like,
+    globaldb_get_cache_last_queried_ts_by_key,
+    globaldb_get_cache_values,
+    globaldb_set_cache_values,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.upgrades.manager import maybe_upgrade_globaldb
@@ -312,17 +314,25 @@ def test_upgrade_v4_v5(globaldb):
     # Check the state before upgrading
     with globaldb.conn.read_ctx() as cursor:
         assert globaldb.get_setting_value('version', None) == 4
+        # check existence of default_rpc_nodes table
         cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name=?',
             ('default_rpc_nodes',),
         )
         assert cursor.fetchone()[0] == 0
-        last_queried_ts = globaldb_get_general_cache_last_queried_ts_by_key(
+        # check existence of unique_cache table
+        cursor.execute(
+            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name=?',
+            ('unique_cache',),
+        )
+        assert cursor.fetchone()[0] == 0
+
+        last_queried_ts = globaldb_get_cache_last_queried_ts_by_key(
             cursor=cursor,
             key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
         )
         assert last_queried_ts == Timestamp(1676727187)  # 1676727187 is just some random value in the db  # noqa: E501
-        pool_tokens_in_global_db = globaldb_get_general_cache_keys_and_values_like(
+        pool_tokens_in_global_db = globaldb_get_cache_keys_and_values_like(
             cursor=cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS],
         )
@@ -336,19 +346,24 @@ def test_upgrade_v4_v5(globaldb):
             global_dir=globaldb._data_directory / 'global_data',
             db_filename=GLOBAL_DB_FILENAME,
         )
-
     assert globaldb.get_setting_value('version', None) == 5
-
+    # insert some values in unique_cache table.
+    with globaldb.conn.write_ctx() as write_cursor:
+        # check that values are replaced and not appended
+        globaldb_set_cache_values(
+            write_cursor=write_cursor,
+            key_parts=['TEST_KEY', '123'],
+            values=['klm'],
+        )
     with globaldb.conn.read_ctx() as cursor:
+        # check again existence of default_rpc_nodes table
         cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name=?',
             ('default_rpc_nodes',),
         )
         assert cursor.fetchone()[0] == 1
-
         cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes')
         assert cursor.fetchone()[0] == 10
-
         # check that we have five nodes for each chain
         nodes_file_path = Path(__file__).resolve().parent.parent.parent.parent / 'data' / 'nodes.json'  # noqa: E501
         with open(nodes_file_path) as f:
@@ -361,12 +376,23 @@ def test_upgrade_v4_v5(globaldb):
             nodes_tuples_from_db = cursor.execute('SELECT * FROM default_rpc_nodes').fetchall()
             assert nodes_tuples_from_db == nodes_tuples_from_file
 
-        last_queried_ts = globaldb_get_general_cache_last_queried_ts_by_key(
+        # check again existence of unique_cache table
+        cursor.execute(
+            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name=?',
+            ('unique_cache',),
+        )
+        assert cursor.fetchone()[0] == 1
+        value = globaldb_get_cache_values(
+            cursor=cursor,
+            key_parts=['TEST_KEY', '123'],
+        )
+        assert value == ['klm']
+        last_queried_ts = globaldb_get_cache_last_queried_ts_by_key(
             cursor=cursor,
             key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
         )
         assert ts_now() - last_queried_ts == ETH_PROTOCOLS_CACHE_REFRESH + 1
-        pool_tokens_in_global_db = globaldb_get_general_cache_keys_and_values_like(
+        pool_tokens_in_global_db = globaldb_get_cache_keys_and_values_like(
             cursor=cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS],
         )

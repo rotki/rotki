@@ -1,8 +1,8 @@
 import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Callable, Optional
-from rotkehlchen.accounting.structures.evm_event import EvmProduct
 
+from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value

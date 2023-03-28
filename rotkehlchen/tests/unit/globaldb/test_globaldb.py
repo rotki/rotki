@@ -20,10 +20,10 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.globaldb.cache import (
-    globaldb_delete_general_cache,
+    globaldb_delete_cache,
+    globaldb_get_cache_values,
     globaldb_get_general_cache_last_queried_ts,
-    globaldb_get_general_cache_values,
-    globaldb_set_general_cache_values,
+    globaldb_set_cache_values,
 )
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
@@ -988,52 +988,52 @@ def test_general_cache(globaldb):
     ts_test_start = ts_now()
     with globaldb.conn.write_ctx() as write_cursor:
         # write some values
-        globaldb_set_general_cache_values(
+        globaldb_set_cache_values(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS],
             values=['abc'],
         )
-        globaldb_set_general_cache_values(
+        globaldb_set_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
             values=['xyz', 'klm'],
         )
-        globaldb_set_general_cache_values(
+        globaldb_set_cache_values(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '123'],
+            key_parts=[GeneralCacheType.CURVE_LP_TOKENS, '123'],
             values=['abc', 'klm'],
         )
-        globaldb_set_general_cache_values(
+        globaldb_set_cache_values(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '456'],
+            key_parts=[GeneralCacheType.CURVE_LP_TOKENS, '456'],
             values=['def', 'klm'],
         )
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         # check that we can read saved values
-        values_0 = globaldb_get_general_cache_values(
+        values_0 = globaldb_get_cache_values(
             cursor=cursor,
-            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS],
         )
         assert values_0 == ['abc']
-        values_1 = globaldb_get_general_cache_values(
+        values_1 = globaldb_get_cache_values(
             cursor=cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
         )
         assert values_1 == ['klm', 'xyz']
-        values_2 = globaldb_get_general_cache_values(
+        values_2 = globaldb_get_cache_values(
             cursor=cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '123'],
+            key_parts=[GeneralCacheType.CURVE_LP_TOKENS, '123'],
         )
         assert values_2 == ['abc', 'klm']
-        values_3 = globaldb_get_general_cache_values(
+        values_3 = globaldb_get_cache_values(
             cursor=cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '456'],
+            key_parts=[GeneralCacheType.CURVE_LP_TOKENS, '456'],
         )
         assert values_3 == ['def', 'klm']
-        values_4 = globaldb_get_general_cache_values(
+        values_4 = globaldb_get_cache_values(
             cursor=cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, 'NO VALUE'],
+            key_parts=[GeneralCacheType.CURVE_LP_TOKENS, 'NO VALUE'],
         )
         assert len(values_4) == 0
 
@@ -1054,30 +1054,30 @@ def test_general_cache(globaldb):
 
     # check that deletion works properly
     with globaldb.conn.write_ctx() as write_cursor:
-        globaldb_delete_general_cache(
+        globaldb_delete_cache(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '123'],
+            key_parts=[GeneralCacheType.CURVE_LP_TOKENS, '123'],
         )
-        values_5 = globaldb_get_general_cache_values(
+        values_5 = globaldb_get_cache_values(
             cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '123'],
+            key_parts=[GeneralCacheType.CURVE_LP_TOKENS, '123'],
         )
         assert len(values_5) == 0
-        values_6 = globaldb_get_general_cache_values(
+        values_6 = globaldb_get_cache_values(
             cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '456'],
+            key_parts=[GeneralCacheType.CURVE_LP_TOKENS, '456'],
         )
         assert len(values_6) == 2   # should have not been touched by the deletion above
-        globaldb_delete_general_cache(
+        globaldb_delete_cache(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '456'],
+            key_parts=[GeneralCacheType.CURVE_LP_TOKENS, '456'],
         )
-        values_7 = globaldb_get_general_cache_values(
+        values_7 = globaldb_get_cache_values(
             cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '456'],
+            key_parts=[GeneralCacheType.CURVE_LP_TOKENS, '456'],
         )
         assert len(values_7) == 0
-        values_8 = globaldb_get_general_cache_values(
+        values_8 = globaldb_get_cache_values(
             cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
         )

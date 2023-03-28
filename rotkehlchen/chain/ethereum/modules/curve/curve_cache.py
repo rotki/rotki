@@ -12,10 +12,11 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.misc import NotERC20Conformant
 from rotkehlchen.globaldb.cache import (
-    globaldb_delete_general_cache,
-    globaldb_delete_general_cache_like,
-    globaldb_get_general_cache_values,
-    globaldb_set_general_cache_values,
+    compute_cache_key,
+    globaldb_delete_cache,
+    globaldb_delete_cache_like,
+    globaldb_get_cache_values,
+    globaldb_set_cache_values,
     read_curve_data,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -52,6 +53,9 @@ READ_CURVE_DATA_TYPE = tuple[
 # list of pools that we know contain bad tokens
 IGNORED_CURVE_POOLS = {'0x066B6e1E93FA7dcd3F0Eb7f8baC7D5A747CE0BF9'}
 
+# Using any random address here, since length of all addresses is the same
+BASE_POOL_TOKENS_KEY_LENGTH = len(compute_cache_key([GeneralCacheType.CURVE_POOL_TOKENS, ZERO_ADDRESS]))  # noqa: E501
+
 
 def read_curve_pools_and_gauges() -> READ_CURVE_DATA_TYPE:
     """Reads globaldb cache and returns:
@@ -61,18 +65,18 @@ def read_curve_pools_and_gauges() -> READ_CURVE_DATA_TYPE:
     Doesn't raise anything unless cache entries were inserted incorrectly.
     """
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        curve_pools_lp_tokens = globaldb_get_general_cache_values(
+        curve_pools_lp_tokens = globaldb_get_cache_values(
             cursor=cursor,
             key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
         )
         curve_pools = {}
         curve_gauges = set()
         for lp_token_addr in curve_pools_lp_tokens:
-            pool_address = globaldb_get_general_cache_values(
+            pool_address = globaldb_get_cache_values(
                 cursor=cursor,
                 key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token_addr],
             )[0]
-            gauge_address_data = globaldb_get_general_cache_values(
+            gauge_address_data = globaldb_get_cache_values(
                 cursor=cursor,
                 key_parts=[GeneralCacheType.CURVE_GAUGE_ADDRESS, pool_address],
             )
@@ -189,52 +193,52 @@ def save_curve_data_to_cache(
 ) -> None:
     """Stores data received about curve pools and gauges in the cache"""
     # First, clear all curve pools related cache entries in the global DB
-    curve_lp_tokens = globaldb_get_general_cache_values(
+    curve_lp_tokens = globaldb_get_cache_values(
         cursor=write_cursor,
         key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
     )
     for lp_token in curve_lp_tokens:
-        pool_addr = globaldb_get_general_cache_values(
+        pool_addr = globaldb_get_cache_values(
             cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token],
         )[0]
-        globaldb_delete_general_cache_like(
+        globaldb_delete_cache_like(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_addr],
         )
-        globaldb_delete_general_cache(
+        globaldb_delete_cache(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token],
         )
-        globaldb_delete_general_cache(
+        globaldb_delete_cache(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_GAUGE_ADDRESS, pool_addr],
         )
-    globaldb_delete_general_cache(
+    globaldb_delete_cache(
         write_cursor=write_cursor,
         key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
     )
     # Then, read the new pool mappings and save them in the global DB cache
-    globaldb_set_general_cache_values(
+    globaldb_set_cache_values(
         write_cursor=write_cursor,
         key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
         values=pools_mapping.keys(),  # keys of pools_mapping are lp tokens
     )
     for lp_token_address, pool_info in pools_mapping.items():
         pool_address, coins, _underlying_coins = pool_info
-        globaldb_set_general_cache_values(
+        globaldb_set_cache_values(
             write_cursor=write_cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token_address],
             values=[pool_address],
         )
         if pool_address in gauges:
-            globaldb_set_general_cache_values(
+            globaldb_set_cache_values(
                 write_cursor=write_cursor,
                 key_parts=[GeneralCacheType.CURVE_GAUGE_ADDRESS, pool_address],
                 values=[gauges[pool_address]],
             )
         for index, coin in enumerate(coins):
-            globaldb_set_general_cache_values(
+            globaldb_set_cache_values(
                 write_cursor=write_cursor,
                 key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_address, str(index)],
                 values=[coin],

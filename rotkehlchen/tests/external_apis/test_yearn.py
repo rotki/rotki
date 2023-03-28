@@ -7,8 +7,8 @@ from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.globaldb.cache import (
+    globaldb_get_cache_values,
     globaldb_get_general_cache_last_queried_ts,
-    globaldb_get_general_cache_values,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, ChainID, GeneralCacheType
@@ -23,7 +23,7 @@ def test_yearn_api(database):
     Since they are already in the globalDB we check with an older globalDB
     """
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        state_before = globaldb_get_general_cache_values(
+        state_before = globaldb_get_cache_values(
             cursor=cursor,
             key_parts=[GeneralCacheType.YEARN_VAULTS],
         )
@@ -31,7 +31,7 @@ def test_yearn_api(database):
     query_yearn_vaults(database)
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        state_after = globaldb_get_general_cache_values(
+        state_after = globaldb_get_cache_values(
             cursor=cursor,
             key_parts=[GeneralCacheType.YEARN_VAULTS],
         )

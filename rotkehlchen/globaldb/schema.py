@@ -273,6 +273,15 @@ CREATE TABLE IF NOT EXISTS general_cache (
 );
 """
 
+DB_CREATE_UNIQUE_CACHE = """
+CREATE TABLE IF NOT EXISTS unique_cache (
+    key TEXT NOT NULL PRIMARY KEY,
+    value TEXT NOT NULL,
+    last_queried_ts INTEGER NOT NULL
+);
+"""
+
+
 DB_CREATE_CONTRACT_ABI = """
 CREATE TABLE IF NOT EXISTS contract_abi (
     id INTEGER NOT NULL PRIMARY KEY,

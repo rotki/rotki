@@ -2,13 +2,13 @@ import json
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
-from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
 
+from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
-    globaldb_delete_general_cache_like,
-    globaldb_get_general_cache_values,
-    globaldb_set_general_cache_values_at_ts,
+    globaldb_delete_cache_like,
+    globaldb_get_cache_values,
+    globaldb_set_cache_values_at_ts,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import GeneralCacheType, Timestamp
@@ -37,7 +37,15 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
         );
         """,
     )
-
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS unique_cache (
+            key TEXT NOT NULL PRIMARY KEY,
+            value TEXT NOT NULL,
+            last_queried_ts INTEGER NOT NULL
+        );
+        """,
+    )
     log.debug('Exit _create_new_tables')
 
 
@@ -67,7 +75,7 @@ def _reset_curve_cache(write_cursor: 'DBCursor') -> None:
     2. Clears curve pool tokens to requery them and save in the new format.
     """
     refreshing_timestamp = Timestamp(ts_now() - ETH_PROTOCOLS_CACHE_REFRESH - 1)
-    lp_tokens = globaldb_get_general_cache_values(
+    lp_tokens = globaldb_get_cache_values(
         cursor=write_cursor,
         key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
     )
@@ -75,13 +83,13 @@ def _reset_curve_cache(write_cursor: 'DBCursor') -> None:
         log.error('Expected curve pools cache to be populated, but it was not')
         return
 
-    globaldb_set_general_cache_values_at_ts(
+    globaldb_set_cache_values_at_ts(
         write_cursor=write_cursor,
         key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
         values=lp_tokens,
         timestamp=refreshing_timestamp,
     )
-    globaldb_delete_general_cache_like(
+    globaldb_delete_cache_like(
         write_cursor=write_cursor,
         key_parts=[GeneralCacheType.CURVE_POOL_TOKENS],
     )
