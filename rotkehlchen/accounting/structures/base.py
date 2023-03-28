@@ -325,7 +325,7 @@ class HistoryEvent(HistoryBaseEntry):
         )
 
     def __repr__(self) -> str:
-        return f'HistoryEvent({",".join(self._history_base_entry_repr_fields())})'
+        return f'HistoryEvent({", ".join(self._history_base_entry_repr_fields())})'
 
     def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE]:
         return (self._serialize_base_tuple_for_db(HistoryBaseEntryType.BASE_ENTRY),)
