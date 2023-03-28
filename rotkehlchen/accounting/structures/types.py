@@ -104,6 +104,8 @@ class HistoryEventSubType(SerializableEnumMixin):
     INTEREST_PAYMENT = auto()
     CANCEL_ORDER = auto()  # for cancelling orders like ETH orders in cowswap
     REFUND = auto()  # for refunding, e.g. refunding ETH in cowswap
+    BLOCK_PRODUCTION = auto()
+    MEV_REWARD = auto()
 
     def serialize_or_none(self) -> Optional[str]:
         """Serializes the subtype but for the subtype None it returns None"""

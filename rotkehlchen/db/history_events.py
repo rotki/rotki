@@ -106,8 +106,7 @@ class DBHistoryEvents():
     ) -> None:
         """Insert a list of history events in the database.
 
-        May raise:
-        - InputError if the events couldn't be stored in the database
+        Check add_history_event() to see possible Exceptions
         """
         for event in history:
             self.add_history_event(

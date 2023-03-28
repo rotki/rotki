@@ -746,6 +746,22 @@ CREATE TABLE IF NOT EXISTS user_notes(
 );
 """
 
+# producer_fee_recipient can be missing and it's as reported by relays if a relay is used
+# mev_reward can be ZERO if no relay is used (so producer_fee_recipient is NULL too)
+# In any case those are numbers reported by the relays and are not always accurate
+# Have seen blocks with wrong numbers and also blocks where mev reward is reported
+# but not paid out
+DB_CREATE_BLOCKS_PRODUCED = """
+CREATE TABLE IF NOT EXISTS blocks_produced(
+    block_number INTEGER NOT NULL PRIMARY KEY
+    validator_index NOT NULL,
+    fee_recipient TEXT NOT NULL,
+    block_reward  TEXT NOT NULL,
+    producer_fee_recipient TEXT,
+    mev_reward TEXT
+);
+"""
+
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
