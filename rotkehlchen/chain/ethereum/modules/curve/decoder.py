@@ -1,6 +1,7 @@
 import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Callable, Optional
+from rotkehlchen.accounting.structures.evm_event import EvmProduct
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
@@ -417,6 +418,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.balance.amount == asset_normalized_value(amount=raw_amount, asset=crypto_asset)  # noqa: E501
             ):
                 event.counterparty = CPT_CURVE
+                event.product = EvmProduct.CURVE_GAUGE
                 if context.tx_log.topics[0] == GAUGE_DEPOSIT:
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
@@ -425,7 +427,6 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} from {gauge_address} curve gauge'  # noqa: E501
-                    event.counterparty = CPT_CURVE
 
         return DEFAULT_DECODING_OUTPUT
 

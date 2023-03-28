@@ -1,1 +1,3 @@
-CPT_CURVE = 'curve'
+from typing import Final
+
+CPT_CURVE: Final = 'curve'

@@ -2,6 +2,8 @@ import logging
 from typing import Any, Callable
 
 from rotkehlchen.accounting.structures.base import HistoryEventSubType, HistoryEventType
+from rotkehlchen.accounting.structures.evm_event import EvmProduct
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.convex.constants import (
     BOOSTER,
     CONVEX_ABRAS_HEX,
@@ -29,11 +31,13 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import CURVE_POOL_PROTOCOL, ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+DEPOSIT_EVENT = b'\x9eq\xbc\x8e\xea\x02\xa69i\xf5\t\x81\x8f-\xaf\xb9%E2\x90C\x19\xf9\xdb\xday\xb6{\xd3J_='  # noqa: E501
 
 
 class ConvexDecoder(DecoderInterface):
@@ -71,19 +75,42 @@ class ConvexDecoder(DecoderInterface):
                     event.counterparty = CPT_CONVEX
                     if context.tx_log.address in CONVEX_POOLS:
                         event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} into convex {CONVEX_POOLS[context.tx_log.address]} pool'  # noqa: E501
+                        event.product = EvmProduct.CONVEX_GAUGE
                     else:
                         event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} into convex'  # noqa: E501
+                        if (
+                            isinstance(crypto_asset, EvmToken) and
+                            crypto_asset.protocol == CURVE_POOL_PROTOCOL
+                        ):
+                            event.product = EvmProduct.CONVEX_GAUGE
+
+                    # in this case store information about the gauge in the extra details to use
+                    # it during balances queries
+                    for log_event in context.all_logs:
+                        if log_event.topics[0] == DEPOSIT_EVENT:
+                            deposit_amount_raw = hex_or_bytes_to_int(context.tx_log.data[0:32])
+                            staking_address = hex_or_bytes_to_address(log_event.topics[1])
+                            if deposit_amount_raw == amount_raw and staking_address == event.location_label:  # noqa: E501
+                                event.extra_data = {'gauge_address': log_event.address}
+                                break
+
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE
             ):
                 if context.tx_log.topics[0] in WITHDRAWAL_TOPICS:
                     event.event_type = HistoryEventType.WITHDRAWAL
+                    event.counterparty = CPT_CONVEX
                     if context.tx_log.address in CONVEX_POOLS:
                         event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} from convex {CONVEX_POOLS[context.tx_log.address]} pool'  # noqa: E501
+                        event.product = EvmProduct.CONVEX_GAUGE
                     else:
                         event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} from convex'  # noqa: E501
-                    event.counterparty = CPT_CONVEX
+                        if (
+                            isinstance(crypto_asset, EvmToken) and
+                            crypto_asset.protocol == CURVE_POOL_PROTOCOL
+                        ):
+                            event.product = EvmProduct.CONVEX_GAUGE
                 elif context.tx_log.topics[0] in REWARD_TOPICS:
                     event.event_subtype = HistoryEventSubType.REWARD
                     event.counterparty = CPT_CONVEX
