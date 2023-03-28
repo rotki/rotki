@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { type Account, type GeneralAccount } from '@rotki/common/lib/account';
-import { type ComputedRef, type Ref } from 'vue';
-import { type DataTableHeader } from 'vuetify';
 import {
   type Blockchain,
   type BlockchainSelection
 } from '@rotki/common/lib/blockchain';
-import isEqual from 'lodash/isEqual';
 import {
   type HistoryEventSubType,
   type HistoryEventType,
   type TransactionEventProtocol
 } from '@rotki/common/lib/history/tx-events';
+import isEqual from 'lodash/isEqual';
+import { type ComputedRef, type Ref } from 'vue';
+import { type DataTableHeader } from 'vuetify';
+import { SavedFilterLocation } from '@/types/filtering';
+import { IgnoreActionType } from '@/types/history/ignored';
 import {
   type EthTransaction,
   type EthTransactionEntry,
@@ -19,12 +21,10 @@ import {
   type EvmChainAddress,
   type TransactionRequestPayload
 } from '@/types/history/tx';
+import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { getCollectionData } from '@/utils/collection';
-import { IgnoreActionType } from '@/types/history/ignored';
-import { RouterAccountsSchema } from '@/types/route';
-import { SavedFilterLocation } from '@/types/filtering';
 import type { Filters, Matcher } from '@/composables/filters/transactions';
 
 const props = withDefaults(
@@ -53,7 +53,6 @@ const props = withDefaults(
 const { tc } = useI18n();
 
 const {
-  protocols,
   useExternalAccountFilter,
   externalAccountFilter,
   sectionTitle,
@@ -70,6 +69,7 @@ const transactionToIgnore: Ref<EthTransactionEntry | null> = ref(null);
 const confirmationTitle: Ref<string> = ref('');
 const confirmationPrimaryAction: Ref<string> = ref('');
 const accounts: Ref<GeneralAccount[]> = ref([]);
+const protocols: Ref<TransactionEventProtocol[]> = ref(props.protocols);
 
 const usedTitle: ComputedRef<string> = computed(
   () => get(sectionTitle) || tc('transactions.title')
@@ -305,11 +305,14 @@ watch(
       return;
     }
 
-    // Because the evmChain filter and the account filter can't be active
-    // at the same time we clear the account filter when the evmChain filter
-    // is set.
-    if (filterChanged && filters.evmChain) {
-      set(accounts, []);
+    if (filterChanged) {
+      set(protocols, filters.protocols ?? []);
+      // Because the evmChain filter and the account filter can't be active
+      // at the same time we clear the account filter when the evmChain filter
+      // is set.
+      if (filters.evmChain) {
+        set(accounts, []);
+      }
     }
 
     if (accountsChanged && usedAccounts.length > 0) {
