@@ -15,9 +15,15 @@ const { load, updatePagination } = store;
 
 onMounted(async () => {
   if (get(enabled)) {
+    await load(false);
     await refresh();
   }
 });
+
+onUnmounted(() => {
+  store.$reset();
+});
+
 const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 
 const loading = shouldShowLoadingScreen(Section.STAKING_ETH2);

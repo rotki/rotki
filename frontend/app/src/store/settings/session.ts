@@ -1,6 +1,8 @@
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
+import { type Ref } from 'vue';
 import { PrivacyMode, type SessionSettings } from '@/types/session';
 import { type ActionStatus } from '@/types/action';
+import { type Exchange } from '@/types/exchanges';
 
 const useSharedLocalStorage = createSharedComposable(useLocalStorage);
 const isAnimationEnabledSetting = useSharedLocalStorage(
@@ -27,6 +29,11 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
   const scrambleMultiplier = computed(() => settings.scrambleMultiplier);
   const timeframe = computed(() => settings.timeframe);
   const animationsEnabled = computed(() => settings.animationsEnabled);
+  const connectedExchanges: Ref<Exchange[]> = ref([]);
+
+  const setConnectedExchanges = (exchanges: Exchange[]): void => {
+    set(connectedExchanges, exchanges);
+  };
 
   const shouldShowAmount = computed(
     () => settings.privacyMode < PrivacyMode.SEMI_PRIVATE
@@ -56,7 +63,9 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
     shouldShowAmount,
     shouldShowPercentage,
     scrambleMultiplier,
+    connectedExchanges,
     setAnimationsEnabled,
+    setConnectedExchanges,
     update
   };
 });

@@ -16,9 +16,9 @@ describe('store::balances/aggregated', () => {
   });
 
   test('aggregatedBalances', () => {
-    const { connectedExchanges, exchangeBalances } = storeToRefs(
-      useExchangeBalancesStore()
-    );
+    const { exchangeBalances } = storeToRefs(useExchangeBalancesStore());
+    const { connectedExchanges } = storeToRefs(useExchangesStore());
+
     set(connectedExchanges, [
       {
         location: SupportedExchange.KRAKEN,
@@ -256,9 +256,8 @@ describe('store::balances/aggregated', () => {
   });
 
   test('aggregatedBalances, make sure `isCurrentCurrency` do not break the calculation', () => {
-    const { connectedExchanges, exchangeBalances } = storeToRefs(
-      useExchangeBalancesStore()
-    );
+    const { exchangeBalances } = storeToRefs(useExchangeBalancesStore());
+    const { connectedExchanges } = storeToRefs(useExchangesStore());
     set(connectedExchanges, [
       {
         location: SupportedExchange.KRAKEN,

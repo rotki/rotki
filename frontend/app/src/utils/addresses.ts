@@ -1,4 +1,6 @@
+import { type AddressIndexed } from '@rotki/common';
 import { type AddressEntries } from '@/types/addresses';
+import { uniqueStrings } from '@/utils/data';
 
 export function filterAddresses<T>(
   entries: AddressEntries<T>,
@@ -12,3 +14,12 @@ export function filterAddresses<T>(
     item(entries[address]);
   }
 }
+
+export const getProtocolAddresses = (
+  balances: AddressIndexed<any>,
+  history: AddressIndexed<any> | string[]
+): string[] =>
+  [
+    ...Object.keys(balances),
+    ...(Array.isArray(history) ? history : Object.keys(history))
+  ].filter(uniqueStrings);

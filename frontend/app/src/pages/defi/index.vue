@@ -16,6 +16,15 @@ const tabs: ComputedRef<TabContent[]> = computed(() => {
 });
 
 const { defiSetupDone } = storeToRefs(useFrontendSettingsStore());
+
+onUnmounted(() => {
+  useDefiStore().$reset();
+  useYearnStore().$reset();
+  useAaveStore().$reset();
+  useCompoundStore().$reset();
+  useMakerDaoStore().$reset();
+  useAirdropStore().$reset();
+});
 </script>
 
 <template>

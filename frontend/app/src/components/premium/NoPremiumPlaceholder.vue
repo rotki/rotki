@@ -8,7 +8,8 @@ defineProps({
 
 const { t } = useI18n();
 const { premiumURL } = useInterop();
-const { currentBreakpoint } = useTheme();
+const { isMobile } = useTheme();
+const css = useCssModule();
 const remoteEmptyScreenLogo =
   'https://raw.githubusercontent.com/rotki/data/main/assets/icons/empty_screen_logo.png';
 </script>
@@ -19,10 +20,9 @@ const remoteEmptyScreenLogo =
       <v-col cols="12">
         <v-row align="center" justify="center">
           <v-col cols="auto">
-            <div :class="$style.logo">
+            <div :class="css.logo" class="d-flex justify-center align-center">
               <rotki-logo
-                :width="currentBreakpoint.xsOnly ? 110 : 160"
-                :height="currentBreakpoint.xsOnly ? 110 : 160"
+                :width="isMobile ? '100px' : '200px'"
                 :url="remoteEmptyScreenLogo"
               />
             </div>
@@ -56,17 +56,8 @@ const remoteEmptyScreenLogo =
 
 <style module lang="scss">
 .logo {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  width: 300px !important;
-  height: 300px !important;
+  padding: 80px;
   border-radius: 50%;
   background-color: var(--v-rotki-light-grey-darken1);
-
-  @media only screen and (max-width: 400px) {
-    width: 200px !important;
-    height: 200px !important;
-  }
 }
 </style>

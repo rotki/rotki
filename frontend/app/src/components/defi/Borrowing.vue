@@ -10,7 +10,7 @@ defineProps({
 
 const selection = ref<string>();
 const protocol = ref<DefiProtocol | null>(null);
-const store = useDefiSupportedProtocols();
+const defiLending = useDefiLending();
 const route = useRoute();
 const { tc } = useI18n();
 
@@ -23,16 +23,16 @@ const selectedProtocols = computed(() => {
   return selected ? [selected] : [];
 });
 
-const loan = computed(() => get(store.loan(get(selection))));
+const loan = computed(() => get(defiLending.loan(get(selection))));
 
 const loans = computed(() => {
   const protocols = get(selectedProtocols);
-  return get(store.loans(protocols));
+  return get(defiLending.loans(protocols));
 });
 
 const summary = computed(() => {
   const protocols = get(selectedProtocols);
-  return get(store.loanSummary(protocols));
+  return get(defiLending.loanSummary(protocols));
 });
 
 const refreshing = logicOr(
@@ -41,7 +41,7 @@ const refreshing = logicOr(
 );
 
 const refresh = async () => {
-  await store.fetchBorrowing(true);
+  await defiLending.fetchBorrowing(true);
 };
 
 onMounted(async () => {
@@ -52,7 +52,7 @@ onMounted(async () => {
   if (protocolIndex >= 0) {
     set(protocol, protocols[protocolIndex]);
   }
-  await store.fetchBorrowing(false);
+  await defiLending.fetchBorrowing(false);
 });
 </script>
 

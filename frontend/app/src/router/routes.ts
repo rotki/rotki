@@ -87,7 +87,7 @@ export const Routes: AppRouteMap<string> = {
   STATISTICS: '/statistics',
   STAKING: '/staking/:location*',
   PROFIT_LOSS_REPORTS: '/reports/',
-  PROFIT_LOSS_REPORT: `/report/:id`,
+  PROFIT_LOSS_REPORT: `/reports/:id`,
   ASSET_MANAGER: '/asset-manager',
   ASSET_MANAGER_MANAGED: '/asset-manager/managed',
   ASSET_MANAGER_CUSTOM: '/asset-manager/custom',

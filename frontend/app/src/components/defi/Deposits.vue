@@ -39,7 +39,7 @@ const route = useRoute();
 const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 
 const defiStore = useDefiStore();
-const store = useDefiSupportedProtocols();
+const defiLending = useDefiLending();
 const yearnStore = useYearnStore();
 const aaveStore = useAaveStore();
 
@@ -66,7 +66,7 @@ const defiAddresses = computed(() => {
 const lendingBalances = computed(() => {
   const protocols = get(selectedProtocols);
   const addresses = get(selectedAddresses);
-  return get(store.aggregatedLendingBalances(protocols, addresses));
+  return get(defiLending.aggregatedLendingBalances(protocols, addresses));
 });
 
 const totalEarnedInAave = computed(() =>
@@ -76,19 +76,19 @@ const totalEarnedInAave = computed(() =>
 const effectiveInterestRate = computed<string>(() => {
   const protocols = get(selectedProtocols);
   const addresses = get(selectedAddresses);
-  return get(store.effectiveInterestRate(protocols, addresses));
+  return get(defiLending.effectiveInterestRate(protocols, addresses));
 });
 
 const totalLendingDeposit = computed<BigNumber>(() => {
   const protocols = get(selectedProtocols);
   const addresses = get(selectedAddresses);
-  return get(store.totalLendingDeposit(protocols, addresses));
+  return get(defiLending.totalLendingDeposit(protocols, addresses));
 });
 
 const totalUsdEarned = computed<BigNumber>(() => {
   const protocols = get(selectedProtocols);
   const addresses = get(selectedAddresses);
-  return get(store.totalUsdEarned(protocols, addresses));
+  return get(defiLending.totalUsdEarned(protocols, addresses));
 });
 
 const isCompound = isProtocol(DefiProtocol.COMPOUND);
@@ -128,7 +128,7 @@ const historyRefreshing = isLoading(historySection);
 const refreshing = logicOr(isLoading(section), historyRefreshing);
 
 const refresh = async () => {
-  await store.fetchLending(true);
+  await defiLending.fetchLending(true);
 };
 
 const reset = async (protocols: DefiProtocol[]) => {
@@ -143,7 +143,7 @@ onMounted(async () => {
   if (protocolIndex >= 0) {
     set(protocol, protocols[protocolIndex]);
   }
-  await store.fetchLending();
+  await defiLending.fetchLending();
 });
 
 const transactionEventProtocols: ComputedRef<TransactionEventProtocol[]> =

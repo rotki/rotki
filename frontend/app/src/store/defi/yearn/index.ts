@@ -16,6 +16,7 @@ import { zeroBalance } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
 import { ProtocolVersion } from '@/types/defi';
 import { useStatusUpdater } from '@/composables/status';
+import { getProtocolAddresses } from '@/utils/addresses';
 
 export const useYearnStore = defineStore('defi/yearn', () => {
   const vaultsBalances: Ref<YearnVaultsBalances> = ref({});
@@ -300,11 +301,21 @@ export const useYearnStore = defineStore('defi/yearn', () => {
     }
   };
 
+  const addressesV1: ComputedRef<string[]> = computed(() =>
+    getProtocolAddresses(get(vaultsBalances), get(vaultsHistory))
+  );
+
+  const addressesV2: ComputedRef<string[]> = computed(() =>
+    getProtocolAddresses(get(vaultsV2Balances), get(vaultsV2History))
+  );
+
   return {
     vaultsBalances,
     vaultsHistory,
     vaultsV2Balances,
     vaultsV2History,
+    addressesV1,
+    addressesV2,
     yearnVaultsProfit,
     yearnVaultsAssets,
     fetchBalances,

@@ -9,8 +9,8 @@ export const useSessionSettings = () => {
   const { update: updateFrontendSettings } = useFrontendSettingsStore();
   const { update: updateAccountingSettings } = useAccountingSettingsStore();
   const { update: updateGeneralSettings } = useGeneralSettingsStore();
-  const { update: updateSessionSettings } = useSessionSettingsStore();
-  const { setExchanges } = useExchangeBalancesStore();
+  const { update: updateSessionSettings, setConnectedExchanges } =
+    useSessionSettingsStore();
 
   const initialize = (
     {
@@ -29,7 +29,7 @@ export const useSessionSettings = () => {
           : lastKnownTimeframe;
 
       updateFrontendSettings(frontendSettings);
-      setExchanges(exchanges);
+      setConnectedExchanges(exchanges);
       updateSessionSettings({ timeframe });
       BigNumber.config({
         FORMAT: getBnFormat(thousandSeparator, decimalSeparator)

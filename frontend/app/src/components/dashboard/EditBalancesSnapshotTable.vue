@@ -11,7 +11,6 @@ import {
 import { One, Zero, bigNumberify, sortDesc } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
 import { toSentenceCase } from '@/utils/text';
-import ConfirmSnapshotConfictReplacementDialog from '@/components/snapshots/ConfirmSnapshotConfictReplacementDialog.vue';
 import { assert } from '@/utils/assertions';
 import { BalanceType } from '@/types/balances';
 import { bigNumberSum } from '@/utils/calculation';
@@ -496,7 +495,7 @@ const tableContainer = computed(() => get(tableRef)?.$el);
         @update:asset="checkAssetExist"
       />
 
-      <confirm-snapshot-confict-replacement-dialog
+      <confirm-snapshot-conflict-replacement-dialog
         :snapshot="conflictedBalanceSnapshot"
         @cancel="cancelConvertToEdit"
         @confirm="convertToEdit"

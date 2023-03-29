@@ -9,6 +9,7 @@ import {
   SupportedExchange
 } from '@/types/exchanges';
 import { trimOnPaste } from '@/utils/event';
+import { useExchangesStore } from '@/store/exchanges';
 
 const props = defineProps({
   value: { required: true, type: Boolean },
@@ -22,7 +23,7 @@ const { edit, exchange } = toRefs(props);
 const editKeys = ref(false);
 const form = ref();
 
-const { getExchangeNonce } = useExchangeBalancesStore();
+const { getExchangeNonce } = useExchangesStore();
 const { tc } = useI18n();
 
 const requiresPassphrase = computed(() => {

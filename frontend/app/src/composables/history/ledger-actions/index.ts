@@ -16,11 +16,11 @@ import { logger } from '@/utils/logging';
 import { mapCollectionEntriesWithMeta } from '@/utils/history';
 import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { useExchangesStore } from '@/store/exchanges';
 
 export const useLedgerActions = () => {
-  const locationsStore = useHistoryStore();
-  const { connectedExchanges } = storeToRefs(locationsStore);
-  const { fetchAssociatedLocations } = locationsStore;
+  const { connectedExchanges } = storeToRefs(useExchangesStore());
+  const { fetchAssociatedLocations } = useHistoryStore();
   const { exchangeName } = useTradeLocations();
   const { awaitTask } = useTaskStore();
   const { tc } = useI18n();
