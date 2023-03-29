@@ -93,7 +93,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.avalanche.manager import AvalancheManager
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.modules.eth2.structures import (
-        Eth2Deposit,
         ValidatorDailyStats,
         ValidatorDetails,
     )
@@ -1099,19 +1098,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def get_eth2_staking_deposits(self) -> list['Eth2Deposit']:
-        eth2 = self.get_module('eth2')
-        if eth2 is None:
-            raise ModuleInactive(
-                'Could not query eth2 staking deposits since eth2 module is not active',
-            )
-        deposits = eth2.get_staking_deposits(
-            addresses=self.queried_addresses_for_module('eth2'),
-        )
-        return deposits
-
-    @protect_with_lock()
-    @cache_response_timewise()
     def get_eth2_staking_details(self) -> list['ValidatorDetails']:
         """May raise:
         - ModuleInactive if eth2 module is not activated
@@ -1459,7 +1445,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         return added_accounts
 
     def flush_eth2_cache(self) -> None:
-        self.flush_cache('get_eth2_staking_deposits')
         self.flush_cache('get_eth2_staking_details')
         self.flush_cache('get_eth2_history_events')
         self.flush_cache('get_eth2_daily_stats')

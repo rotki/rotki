@@ -2143,17 +2143,6 @@ class RestAPI():
         )
 
     @async_api_call()
-    def get_eth2_stake_deposits(self) -> dict[str, Any]:
-        try:
-            result = self.rotkehlchen.chains_aggregator.get_eth2_staking_deposits()
-        except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
-        except ModuleInactive as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
-
-        return {'result': process_result_list([x.serialize() for x in result]), 'message': ''}
-
-    @async_api_call()
     def get_eth2_stake_details(self) -> dict[str, Any]:
         try:
             result = self.rotkehlchen.chains_aggregator.get_eth2_staking_details()

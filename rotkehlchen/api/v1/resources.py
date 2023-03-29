@@ -1795,16 +1795,6 @@ class Eth2ValidatorsResource(BaseMethodView):
         )
 
 
-class Eth2StakeDepositsResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_premium_user(active_check=False)
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_eth2_stake_deposits(async_query=async_query)
-
-
 class Eth2StakeDetailsResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()

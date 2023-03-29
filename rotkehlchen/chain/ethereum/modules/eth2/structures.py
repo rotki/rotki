@@ -6,19 +6,11 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
-from rotkehlchen.types import (
-    ChecksumEvmAddress,
-    Eth2PubKey,
-    EVMTxHash,
-    Location,
-    Timestamp,
-    make_evm_tx_hash,
-)
+from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Location, Timestamp
 from rotkehlchen.utils.misc import from_gwei
 
 if TYPE_CHECKING:
@@ -327,24 +319,10 @@ DEPOSITING_VALIDATOR_PERFORMANCE = ValidatorPerformance(
 )
 
 
-Eth2DepositDBTuple = (
-    tuple[
-        bytes,  # tx_hash
-        int,    # tx_index
-        str,    # from_address
-        int,    # timestamp
-        str,    # pubkey
-        str,    # withdrawal_credentials
-        str,    # amount
-        str,    # usd_value
-    ]
-)
-
-
 class ValidatorDetails(NamedTuple):
     validator_index: Optional[int]
     public_key: str
-    eth1_depositor: ChecksumEvmAddress
+    eth1_depositor: Optional[ChecksumEvmAddress]
     performance: ValidatorPerformance
 
     def serialize(self, eth_usd_price: FVal) -> dict[str, Any]:
@@ -354,63 +332,6 @@ class ValidatorDetails(NamedTuple):
             'eth1_depositor': self.eth1_depositor,
             **self.performance.serialize(eth_usd_price),
         }
-
-
-class Eth2Deposit(NamedTuple):
-    from_address: ChecksumEvmAddress
-    pubkey: str  # hexstring
-    withdrawal_credentials: str  # hexstring
-    value: Balance
-    tx_hash: EVMTxHash
-    tx_index: int
-    timestamp: Timestamp
-
-    def serialize(self) -> dict[str, Any]:
-        result = self._asdict()  # pylint: disable=no-member
-        result['tx_hash'] = self.tx_hash.hex()
-        result['value'] = self.value.serialize()
-        return result
-
-    @classmethod
-    def deserialize_from_db(
-            cls,
-            deposit_tuple: Eth2DepositDBTuple,
-    ) -> 'Eth2Deposit':
-        """Turns a tuple read from DB into an appropriate LiquidityPoolEvent.
-
-        Deposit_tuple index - Schema columns
-        ------------------------------------
-        0 - tx_hash
-        1 - tx_index
-        2 - from_address
-        3 - timestamp
-        4 - pubkey
-        5 - withdrawal_credentials
-        6 - amount
-        7 - usd_value
-        """
-        return cls(
-            tx_hash=make_evm_tx_hash(deposit_tuple[0]),
-            tx_index=int(deposit_tuple[1]),
-            from_address=string_to_evm_address(deposit_tuple[2]),
-            timestamp=Timestamp(int(deposit_tuple[3])),
-            pubkey=deposit_tuple[4],
-            withdrawal_credentials=deposit_tuple[5],
-            value=Balance(amount=FVal(deposit_tuple[6]), usd_value=FVal(deposit_tuple[7])),
-        )
-
-    def to_db_tuple(self) -> Eth2DepositDBTuple:
-        """Turns the instance data into a tuple to be inserted in the DB"""
-        return (
-            self.tx_hash,
-            self.tx_index,
-            str(self.from_address),
-            int(self.timestamp),
-            self.pubkey,
-            self.withdrawal_credentials,
-            str(self.value.amount),
-            str(self.value.usd_value),
-        )
 
 
 def _serialize_gwei_with_price(value: int, eth_usd_price: FVal) -> dict[str, str]:
