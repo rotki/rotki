@@ -1,13 +1,17 @@
 import logging
+import re
 from collections import defaultdict
 from typing import TYPE_CHECKING, Optional, Union
 
 import gevent
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
-from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2
+from rotkehlchen.db.eth2 import DBEth2
+from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.api import PremiumPermissionError
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.fval import FVal
@@ -20,15 +24,14 @@ from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import from_gwei, ts_now
 
 from .constants import (
+    CPT_ETH2,
     FREE_VALIDATORS_LIMIT,
-    REQUEST_DELTA_TS,
     VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS,
     VALIDATOR_STATS_QUERY_BACKOFF_TIME,
     VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE,
 )
 from .structures import (
     DEPOSITING_VALIDATOR_PERFORMANCE,
-    Eth2Deposit,
     Eth2Validator,
     ValidatorDailyStats,
     ValidatorDetails,
@@ -65,72 +68,7 @@ class Eth2(EthereumModule):
         self.beaconchain = beaconchain
         self.last_stats_query_ts = 0
         self.validator_stats_queried = 0
-
-    def _query_and_save_deposits(
-            self,
-            dbeth2: DBEth2,
-            indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
-    ) -> list[Eth2Deposit]:
-        new_deposits = self.beaconchain.get_validator_deposits(indices_or_pubkeys)
-        with self.database.user_write() as write_cursor:
-            dbeth2.add_eth2_deposits(write_cursor, new_deposits)
-        return new_deposits
-
-    def get_staking_deposits(
-            self,
-            addresses: list[ChecksumEvmAddress],
-    ) -> list[Eth2Deposit]:
-        """Get the eth2 deposits for all tracked validators and all validators associated
-        with any given eth1 address.
-
-        Also write them all in the DB.
-        """
-        relevant_pubkeys = set()
-        relevant_validators = set()
-        now = ts_now()
-        for address in addresses:
-            range_key = f'{ETH2_DEPOSITS_PREFIX}_{address}'
-            with self.database.conn.read_ctx() as cursor:
-                query_range = self.database.get_used_query_range(cursor, range_key)
-            if query_range is not None and now - query_range[1] <= REQUEST_DELTA_TS:
-                continue  # recently queried, skip
-
-            result = self.beaconchain.get_eth1_address_validators(address)
-            relevant_validators.update(result)
-            relevant_pubkeys.update([x.public_key for x in result])
-            with self.database.user_write() as write_cursor:
-                self.database.update_used_query_range(write_cursor, range_key, Timestamp(0), now)
-
-        dbeth2 = DBEth2(self.database)
-        with self.database.conn.read_ctx() as cursor:
-            saved_deposits = dbeth2.get_eth2_deposits(cursor)
-        saved_deposits_pubkeys = {x.pubkey for x in saved_deposits}
-
-        new_validators = []
-        pubkeys_query_deposits = set()
-        for validator in relevant_validators:
-            if validator.public_key not in saved_deposits_pubkeys and validator.index is not None:  # noqa: E501
-                new_validators.append(Eth2Validator(
-                    index=validator.index,
-                    public_key=validator.public_key,
-                    ownership_proportion=ONE,
-                ))
-                pubkeys_query_deposits.add(validator.public_key)
-
-        with self.database.user_write() as write_cursor:
-            dbeth2.add_validators(write_cursor, new_validators)
-        with self.database.conn.read_ctx() as cursor:
-            saved_validators = dbeth2.get_validators(cursor)
-
-        for saved_validator in saved_validators:
-            if saved_validator.public_key not in saved_deposits_pubkeys:
-                pubkeys_query_deposits.add(saved_validator.public_key)
-
-        new_deposits = self._query_and_save_deposits(dbeth2, list(pubkeys_query_deposits))  # noqa: E501
-
-        result_deposits = saved_deposits + new_deposits
-        result_deposits.sort(key=lambda deposit: (deposit.timestamp, deposit.tx_index))
-        return result_deposits
+        self.deposits_pubkey_re = re.compile(r'.*validator with pubkey (.*)\. Deposit.*')
 
     def fetch_and_update_eth1_validator_data(
             self,
@@ -269,68 +207,83 @@ class Eth2(EthereumModule):
         with self.database.conn.read_ctx() as cursor:
             # Also get all manually input validators
             all_validators = dbeth2.get_validators(cursor)
-            saved_deposits = dbeth2.get_eth2_deposits(cursor)
 
-        pubkey_to_deposit = {x.pubkey: x for x in saved_deposits}
-        validators_to_query_for_deposits = []
-        for v in all_validators:
+        for v in all_validators:  # populate mappings for validators we know of
             index_to_pubkey[v.index] = v.public_key
             pubkey_to_index[v.public_key] = v.index
             indices.append(v.index)
-            depositor = index_to_address.get(v.index)
-            if depositor is None and v.public_key not in pubkey_to_deposit:
-                validators_to_query_for_deposits.append(v.public_key)
 
-        # Get new deposits if needed, and populate index_to_address
-        new_deposits = self._query_and_save_deposits(dbeth2, validators_to_query_for_deposits)  # noqa: E501
-        for deposit in saved_deposits + new_deposits:
-            index = pubkey_to_index.get(Eth2PubKey(deposit.pubkey))
-            if index is None:  # should never happen, unless returned data is off
-                log.error(
-                    f'At eth2 staking details could not find index for pubkey '
-                    f'{deposit.pubkey} at deposit {deposit}.',
-                )
+        # Check all our currently decoded deposits for known public keys and map to depositors
+        pubkey_to_depositor = self._get_saved_pubkey_to_deposit_address()
+        for public_key, depositor in pubkey_to_depositor.items():
+            index = pubkey_to_index.get(public_key)
+            if index is None:
                 continue
 
-            index_to_address[index] = deposit.from_address
+            index_to_address[index] = depositor
 
         # Get current balance of all validator indices
         performance_result = self.beaconchain.get_performance(indices)
         for validator_index, entry in performance_result.items():
-            depositor = index_to_address.get(validator_index)
-            if depositor is None:  # should never happen, unless returned data is off
-                log.error(
-                    f'At eth2 staking details could not find depositor for index '
-                    f'{validator_index} at index_to_address',
-                )
-                continue
-
-            result.append(ValidatorDetails(
+            result.append(ValidatorDetails(  # depositor can be None for manually input validator
                 validator_index=validator_index,
                 public_key=index_to_pubkey[validator_index],
-                eth1_depositor=depositor,
+                eth1_depositor=index_to_address.get(validator_index),
                 performance=entry,
             ))
 
         # Performance call does not return validators that are not active and are still depositing
         depositing_indices = set(index_to_address.keys()) - set(performance_result.keys())
         for index in depositing_indices:
-            depositor = index_to_address.get(index)
-            if depositor is None:  # should never happen, unless returned data is off
-                log.error(
-                    f'At eth2 staking details could not find depositor for index '
-                    f'{index} at index_to_address for depositing indices',
-                )
-                continue
-
-            result.append(ValidatorDetails(
+            result.append(ValidatorDetails(  # depositor can be None for manually input validator
                 validator_index=index,
                 public_key=index_to_pubkey[index],
-                eth1_depositor=depositor,
+                eth1_depositor=index_to_address.get(index),
                 performance=DEPOSITING_VALIDATOR_PERFORMANCE,
             ))
 
         return result
+
+    def _get_saved_pubkey_to_deposit_address(self) -> dict[Eth2PubKey, ChecksumEvmAddress]:
+        """Read the decoded DB history events to find out public keys -> deposit addresses
+
+        This will just return the data for the currently decoded history events.
+        And also has a really ugly hack since it takes the public key from the notes.
+        """
+        dbevents = DBHistoryEvents(self.database)
+        with self.database.conn.read_ctx() as cursor:
+            deposit_events = dbevents.get_history_events(
+                cursor=cursor,
+                filter_query=EvmEventFilterQuery.make(
+                    event_types=[HistoryEventType.STAKING],
+                    event_subtypes=[HistoryEventSubType.DEPOSIT_ASSET],
+                    counterparties=[CPT_ETH2],
+                ),
+                has_premium=True,  # need all events here
+            )
+
+        result = {}
+        for event in deposit_events:
+            if event.notes is None:
+                log.error(  # should not really happen
+                    f'Could not match the pubkey extraction regex for {event} '
+                    f'due to absence of notes',
+                )
+                continue
+
+            match = self.deposits_pubkey_re.match(event.notes)
+            if match is None:
+                log.error(f'Could not match the pubkey extraction regex for "{event.notes}"')
+                continue  # should not really happen though
+
+            groups = match.groups()
+            if len(groups) != 1:
+                log.error(f'Could not match group for pubkey extraction regex for "{event.notes}"')
+                continue  # should not really happen though
+
+            result[Eth2PubKey(groups[0])] = event.location_label
+
+        return result  # type: ignore  # location_label is set for this event
 
     def _query_services_for_validator_daily_stats(
             self,
@@ -481,5 +434,4 @@ class Eth2(EthereumModule):
 
     def deactivate(self) -> None:
         with self.database.user_write() as write_cursor:
-            self.database.delete_eth2_deposits(write_cursor)
             self.database.delete_eth2_daily_stats(write_cursor)

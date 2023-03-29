@@ -1,28 +1,20 @@
 import logging
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.chain.ethereum.modules.eth2.structures import (
-    Eth2Deposit,
-    Eth2Validator,
-    ValidatorDailyStats,
-)
+from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator, ValidatorDailyStats
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
-from rotkehlchen.db.utils import form_query_to_filter_timestamps
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Timestamp
+from rotkehlchen.types import Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
-
-ETH2_DEPOSITS_PREFIX = 'eth2_deposits'
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -58,67 +50,6 @@ class DBEth2():
             (up_to_ts, DAY_IN_SECONDS * 2 + 1),
         )
         return result.fetchall()
-
-    def add_eth2_deposits(self, write_cursor: 'DBCursor', deposits: Sequence[Eth2Deposit]) -> None:
-        """Inserts a list of Eth2Deposit"""
-        query = (
-            """
-            INSERT OR IGNORE INTO eth2_deposits (
-                tx_hash,
-                tx_index,
-                from_address,
-                timestamp,
-                pubkey,
-                withdrawal_credentials,
-                amount,
-                usd_value
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """
-        )
-        for deposit in deposits:
-            deposit_tuple = deposit.to_db_tuple()
-            try:
-                write_cursor.execute(query, deposit_tuple)
-            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                self.db.msg_aggregator.add_warning(
-                    f'Failed to add an ETH2 deposit to the DB. Either a duplicate or  '
-                    f'foreign key error.Deposit data: {deposit_tuple}. Error: {str(e)}',
-                )
-                continue
-
-    def get_eth2_deposits(
-            self,
-            cursor: 'DBCursor',
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            address: Optional[ChecksumEvmAddress] = None,
-    ) -> list[Eth2Deposit]:
-        """Returns a list of Eth2Deposit filtered by time and address"""
-        query = (
-            'SELECT '
-            'tx_hash, '
-            'tx_index, '
-            'from_address, '
-            'timestamp, '
-            'pubkey, '
-            'withdrawal_credentials, '
-            'amount, '
-            'usd_value '
-            'FROM eth2_deposits '
-        )
-        # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
-        filters = []
-        if address is not None:
-            filters.append(f'from_address="{address}" ')
-
-        if filters:
-            query += 'WHERE '
-            query += 'AND '.join(filters)
-
-        query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
-        cursor.execute(query, bindings)
-        return [Eth2Deposit.deserialize_from_db(deposit_tuple) for deposit_tuple in cursor]
 
     def add_validator_daily_stats(self, stats: list[ValidatorDailyStats]) -> None:
         """Adds given daily stats for validator in the DB. If an entry exists it's skipped"""

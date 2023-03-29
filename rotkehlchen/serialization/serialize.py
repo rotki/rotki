@@ -30,7 +30,6 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
     BalancerPoolTokenBalance,
 )
 from rotkehlchen.chain.ethereum.modules.compound.compound import CompoundBalance, CompoundEvent
-from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Deposit
 from rotkehlchen.chain.ethereum.modules.liquity.trove import Trove
 from rotkehlchen.chain.ethereum.modules.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
@@ -118,7 +117,6 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             DefiProtocol,
             MakerdaoVault,
             XpubData,
-            Eth2Deposit,
             StakingEvent,
             NodeName,
             NodeName,

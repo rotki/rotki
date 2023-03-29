@@ -1337,6 +1337,21 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     assert all(x in old_history_events for x in custom_events)
     old_ens_mappings = cursor.execute('SELECT * FROM ens_mappings').fetchall()
     assert len(old_ens_mappings) == 10
+    # Check that old tables exist
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', ('eth2_deposits',),
+    ).fetchone()[0] == 1
+    # Check used query ranges
+    assert cursor.execute('SELECT * FROM used_query_ranges').fetchall() == [
+        ('ETHtxs_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 0, 1679312760),
+        ('OPTIMISMtxs_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 0, 1679312760),
+        ('ETHinternaltxs_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 0, 1679312760),
+        ('OPTIMISMinternaltxs_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 0, 1679312760),
+        ('OPTIMISMtokentxs_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 0, 1679312760),
+        ('ETHtokentxs_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 0, 1679312760),
+        ('eth2_deposits_0x9531C059098e3d194fF87FebB587aB07B30B1306', 0, 10),
+        ('eth2_deposits_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 100, 200),
+    ]
 
     db_v36.logout()
     # Execute upgrade
@@ -1373,6 +1388,18 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     new_ens_mappings = cursor.execute('SELECT * FROM ens_mappings').fetchall()
     expected_ens_mappings = [(*mapping, None) for mapping in old_ens_mappings]
     assert new_ens_mappings == expected_ens_mappings
+    # Check that old tables got deleted and used query ranges updated
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', ('eth2_deposits',),
+    ).fetchone()[0] == 0
+    assert cursor.execute('SELECT * FROM used_query_ranges').fetchall() == [
+        ('ETHtxs_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 0, 1679312760),
+        ('OPTIMISMtxs_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 0, 1679312760),
+        ('ETHinternaltxs_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 0, 1679312760),
+        ('OPTIMISMinternaltxs_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 0, 1679312760),
+        ('OPTIMISMtokentxs_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 0, 1679312760),
+        ('ETHtokentxs_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 0, 1679312760),
+    ]
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

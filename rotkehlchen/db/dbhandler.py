@@ -56,7 +56,6 @@ from rotkehlchen.db.constants import (
     USER_CREDENTIAL_MAPPING_KEYS,
 )
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
-from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -810,14 +809,6 @@ class DBHandler:
             (f'{BALANCER_EVENTS_PREFIX}%',),
         )
 
-    def delete_eth2_deposits(self, write_cursor: 'DBCursor') -> None:
-        """Delete all historical ETH2 eth2_deposits data"""
-        write_cursor.execute('DELETE FROM eth2_deposits;')
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ?',
-            (f'{ETH2_DEPOSITS_PREFIX}%',),
-        )
-
     def delete_eth2_daily_stats(self, write_cursor: 'DBCursor') -> None:
         """Delete all historical ETH2 eth2_daily_staking_details data"""
         write_cursor.execute('DELETE FROM eth2_daily_staking_details;')
@@ -904,7 +895,6 @@ class DBHandler:
                 self.delete_yearn_vaults_data(write_cursor=cursor, version=1)
                 self.delete_yearn_vaults_data(write_cursor=cursor, version=2)
                 self.delete_loopring_data(cursor)
-                self.delete_eth2_deposits(cursor)
                 self.delete_eth2_daily_stats(cursor)
                 log.debug('Purged all module data from the DB')
                 return
@@ -924,7 +914,6 @@ class DBHandler:
             elif module_name == 'loopring':
                 self.delete_loopring_data(cursor)
             elif module_name == 'eth2':
-                self.delete_eth2_deposits(cursor)
                 self.delete_eth2_daily_stats(cursor)
             else:
                 log.debug(f'Requested to purge {module_name} data from the DB but nothing to do')
@@ -2008,10 +1997,6 @@ class DBHandler:
             'DELETE FROM used_query_ranges WHERE name = ?',
             (f'{UNISWAP_EVENTS_PREFIX}_{address}',),
         )
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name = ?',
-            (f'{ETH2_DEPOSITS_PREFIX}_{address}',),
-        )
         write_cursor.execute('DELETE FROM evm_accounts_details WHERE account = ?', (address,))
         write_cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
         write_cursor.execute('DELETE FROM balancer_events WHERE address=?;', (address,))
@@ -2025,7 +2010,6 @@ class DBHandler:
 
         dbtx = DBEvmTx(self)
         dbtx.delete_transactions(write_cursor=write_cursor, address=address, chain=blockchain)  # noqa: E501
-        write_cursor.execute('DELETE FROM eth2_deposits WHERE from_address=?;', (address,))
 
     def add_trades(self, write_cursor: 'DBCursor', trades: list[Trade]) -> None:
         trade_tuples: list[tuple[Any, ...]] = []

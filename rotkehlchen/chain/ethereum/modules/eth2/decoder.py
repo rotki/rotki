@@ -15,7 +15,6 @@ from rotkehlchen.utils.misc import from_gwei, hex_or_bytes_to_int
 
 from .constants import CPT_ETH2
 
-
 DEPOSIT_EVENT = b'd\x9b\xbcb\xd0\xe3\x13B\xaf\xeaN\\\xd8-@I\xe7\xe1\xee\x91/\xc0\x88\x9a\xa7\x90\x80;\xe3\x908\xc5'  # noqa: E501
 
 logger = logging.getLogger(__name__)
@@ -42,6 +41,7 @@ class Eth2Decoder(DecoderInterface):
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_ETH2
+                # Hacky: If this ever changes update the RE in modules/eth2/eth2.py
                 event.notes = f'Deposit {amount} ETH to validator with pubkey {pubkey}. Deposit index: {deposit_index}. Withdrawal credentials: {withdrawal_credentials}'  # noqa: E501
                 event.extra_data = {'withdrawal_credentials': withdrawal_credentials}
 

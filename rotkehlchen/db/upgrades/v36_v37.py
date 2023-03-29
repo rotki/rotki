@@ -128,6 +128,19 @@ def _create_new_tables(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _create_new_tables')
 
 
+def _delete_old_tables(write_cursor: 'DBCursor') -> None:
+    """Deletes old tables that are now unused along with related data
+    """
+    log.debug('Enter _delete_old_tables')
+    write_cursor.execute('DROP TABLE IF EXISTS eth2_deposits')
+    write_cursor.execute(
+        'DELETE FROM used_query_ranges WHERE name LIKE ?',
+        ('eth2_deposits%',),
+    )
+
+    log.debug('Exit _delete_old_tables')
+
+
 def _update_ens_mappings_schema(write_cursor: 'DBCursor') -> None:
     log.debug('Enter _update_ens_mappings_schema')
     write_cursor.execute("""CREATE TABLE ens_mappings_copy (
@@ -151,13 +164,15 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Replace null history event subtype
     """
     log.debug('Entered userdb v36->v37 upgrade')
-    progress_handler.set_total_steps(3)
+    progress_handler.set_total_steps(4)
     with db.user_write() as write_cursor:
         _create_new_tables(write_cursor)
         progress_handler.new_step()
         _update_history_events_schema(write_cursor, db.conn)
         progress_handler.new_step()
         _update_ens_mappings_schema(write_cursor)
+        progress_handler.new_step()
+        _delete_old_tables(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finished userdb v36->v36 upgrade')

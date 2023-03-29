@@ -580,21 +580,6 @@ CREATE TABLE IF NOT EXISTS eth2_validators (
 );
 """
 
-DB_CREATE_ETH2_DEPOSITS = """
-CREATE TABLE IF NOT EXISTS eth2_deposits (
-    tx_hash BLOB NOT NULL,
-    tx_index INTEGER NOT NULL,
-    from_address VARCHAR[42] NOT NULL,
-    timestamp INTEGER NOT NULL,
-    pubkey TEXT NOT NULL,
-    withdrawal_credentials TEXT NOT NULL,
-    amount TEXT NOT NULL,
-    usd_value TEXT NOT NULL,
-    FOREIGN KEY(pubkey) REFERENCES eth2_validators(public_key) ON UPDATE CASCADE ON DELETE CASCADE,
-    PRIMARY KEY(tx_hash, pubkey, amount) /* multiple deposits can exist for same pubkey */
-);
-"""
-
 DB_CREATE_ETH2_DAILY_STAKING_DETAILS = """
 CREATE TABLE IF NOT EXISTS eth2_daily_staking_details (
     validator_index INTEGER NOT NULL,
@@ -799,7 +784,6 @@ BEGIN TRANSACTION;
 {DB_CREATE_XPUB_MAPPINGS}
 {DB_CREATE_AMM_EVENTS}
 {DB_CREATE_ETH2_VALIDATORS}
-{DB_CREATE_ETH2_DEPOSITS}
 {DB_CREATE_ETH2_DAILY_STAKING_DETAILS}
 {DB_CREATE_HISTORY_EVENTS}
 {DB_CREATE_EVM_EVENTS_INFO}
