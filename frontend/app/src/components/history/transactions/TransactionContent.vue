@@ -1,18 +1,19 @@
 <script setup lang="ts">
 import { type Account, type GeneralAccount } from '@rotki/common/lib/account';
-import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
-import { type DataTableHeader } from 'vuetify';
 import {
   type Blockchain,
   type BlockchainSelection
 } from '@rotki/common/lib/blockchain';
-import isEqual from 'lodash/isEqual';
 import {
   type HistoryEventSubType,
   type HistoryEventType,
   type TransactionEventProtocol
 } from '@rotki/common/lib/history/tx-events';
-import { type MaybeRef } from '@vueuse/core';
+import isEqual from 'lodash/isEqual';
+import { type ComputedRef, type Ref } from 'vue';
+import { type DataTableHeader } from 'vuetify';
+import { SavedFilterLocation } from '@/types/filtering';
+import { IgnoreActionType } from '@/types/history/ignored';
 import {
   type EthTransaction,
   type EthTransactionEntry,
@@ -20,23 +21,11 @@ import {
   type EvmChainAddress,
   type TransactionRequestPayload
 } from '@/types/history/tx';
+import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import {
-  defaultCollectionState,
-  defaultOptions,
-  getCollectionData
-} from '@/utils/collection';
-import { IgnoreActionType } from '@/types/history/ignored';
-import { type TablePagination } from '@/types/pagination';
-import {
-  type LocationQuery,
-  RouterAccountsSchema,
-  RouterPaginationOptionsSchema
-} from '@/types/route';
-import { type Collection } from '@/types/collection';
-import { assert } from '@/utils/assertions';
-import { SavedFilterLocation } from '@/types/filtering';
+import { getCollectionData } from '@/utils/collection';
+import type { Filters, Matcher } from '@/composables/filters/transactions';
 
 const props = withDefaults(
   defineProps<{
@@ -74,9 +63,55 @@ const {
   onlyChains
 } = toRefs(props);
 
+const editableItem: Ref<EthTransactionEventEntry | null> = ref(null);
+const selectedTransaction: Ref<EthTransactionEntry | null> = ref(null);
+const eventToDelete: Ref<EthTransactionEventEntry | null> = ref(null);
+const transactionToIgnore: Ref<EthTransactionEntry | null> = ref(null);
+const confirmationTitle: Ref<string> = ref('');
+const confirmationPrimaryAction: Ref<string> = ref('');
+const accounts: Ref<GeneralAccount[]> = ref([]);
+
 const usedTitle: ComputedRef<string> = computed(
   () => get(sectionTitle) || tc('transactions.title')
 );
+
+const usedAccounts: ComputedRef<Account<BlockchainSelection>[]> = computed(
+  () => {
+    if (get(useExternalAccountFilter)) {
+      return get(externalAccountFilter);
+    }
+    return get(accounts);
+  }
+);
+
+const filteredAccounts: ComputedRef<EvmChainAddress[]> = computed(() => {
+  const accounts = get(usedAccounts);
+
+  if (accounts.length === 0) {
+    return [];
+  }
+
+  const filterAccounts: EvmChainAddress[] = [];
+
+  accounts.forEach(account => {
+    if (account.chain === 'ALL') {
+      const chains = get(txEvmChains);
+      chains.forEach(chain => {
+        filterAccounts.push({
+          address: account.address,
+          evmChain: chain.evmChainName
+        });
+      });
+    } else {
+      filterAccounts.push({
+        address: account.address,
+        evmChain: getEvmChainName(account.chain)!
+      });
+    }
+  });
+
+  return filterAccounts;
+});
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -115,29 +150,52 @@ const {
   deleteTransactionEvent
 } = useTransactions();
 
-const openDialog: Ref<boolean> = ref(false);
-const editableItem: Ref<EthTransactionEventEntry | null> = ref(null);
-const selectedTransaction: Ref<EthTransactionEntry | null> = ref(null);
-const eventToDelete: Ref<EthTransactionEventEntry | null> = ref(null);
-const transactionToIgnore: Ref<EthTransactionEntry | null> = ref(null);
-const confirmationTitle: Ref<string> = ref('');
-const confirmationMessage: Ref<string> = ref('');
-const confirmationPrimaryAction: Ref<string> = ref('');
-
-const selected: Ref<EthTransactionEntry[]> = ref([]);
-
 const {
-  state: transactions,
+  options,
+  selected,
+  openDialog,
+  confirmationMessage,
   isLoading,
-  execute
-} = useAsyncState<
-  Collection<EthTransactionEntry>,
-  MaybeRef<TransactionRequestPayload>[]
->(args => fetchTransactions(args), defaultCollectionState(), {
-  immediate: false,
-  delay: 0,
-  resetOnExecute: false
-});
+  userAction,
+  state: transactions,
+  filters,
+  matchers,
+  setPage,
+  setOptions,
+  setFilter,
+  updateFilter,
+  fetchData
+} = useHistoryPaginationFilter<
+  EthTransaction,
+  TransactionRequestPayload,
+  EthTransactionEntry,
+  Filters,
+  Matcher
+>(
+  null,
+  mainPage,
+  () => useTransactionFilter(get(protocols).length > 0),
+  fetchTransactions,
+  {
+    onUpdateFilters(query) {
+      const parsedAccounts = RouterAccountsSchema.parse(query);
+      if (parsedAccounts.accounts) {
+        set(accounts, parsedAccounts.accounts);
+      }
+    },
+    extraParams: computed(() => ({
+      accounts: get(usedAccounts).map(
+        account => `${account.address}#${account.chain}`
+      )
+    })),
+    customPageParams: computed<Partial<TransactionRequestPayload>>(() => ({
+      protocols: get(protocols),
+      eventTypes: get(eventTypes),
+      eventSubtypes: get(eventSubTypes),
+      accounts: get(filteredAccounts)
+    }))
+  }
+);
 
 const { data } = getCollectionData<EthTransactionEntry>(transactions);
 
@@ -148,10 +206,6 @@ const redecodeEvents = async (all = false) => {
 
 const forceRedecodeEvents = async (transaction: EthTransactionEntry) => {
   await fetchTransactionEvents([transaction], true);
-};
-
-const fetchData = async () => {
-  await execute(0, pageParams);
 };
 
 const { ignore } = useIgnore(
@@ -238,103 +292,6 @@ const deleteEventHandler = async () => {
   set(confirmationPrimaryAction, '');
 };
 
-const options: Ref<TablePagination<EthTransaction>> = ref(defaultOptions());
-const accounts: Ref<GeneralAccount[]> = ref([]);
-
-const usedAccounts: ComputedRef<Account<BlockchainSelection>[]> = computed(
-  () => {
-    if (get(useExternalAccountFilter)) {
-      return get(externalAccountFilter);
-    }
-    return get(accounts);
-  }
-);
-
-const route = useRoute();
-
-const { filters, matchers, updateFilter, RouteFilterSchema } =
-  useTransactionFilter(get(protocols).length > 0);
-
-const applyRouteFilter = () => {
-  if (!get(mainPage)) {
-    return;
-  }
-
-  const query = get(route).query;
-  const parsedOptions = RouterPaginationOptionsSchema.parse(query);
-  const parsedFilters = RouteFilterSchema.parse(query);
-  const parsedAccounts = RouterAccountsSchema.parse(query);
-
-  updateFilter(parsedFilters);
-
-  if (parsedAccounts.accounts) {
-    set(accounts, parsedAccounts.accounts);
-  }
-
-  set(options, {
-    ...get(options),
-    ...parsedOptions
-  });
-};
-
-watch(route, () => {
-  set(userAction, false);
-  applyRouteFilter();
-});
-
-onBeforeMount(() => {
-  applyRouteFilter();
-});
-
-const userAction = ref(false);
-const router = useRouter();
-
-const filteredAccounts: ComputedRef<EvmChainAddress[]> = computed(() => {
-  const accounts = get(usedAccounts);
-
-  if (accounts.length === 0) {
-    return [];
-  }
-
-  const filterAccounts: EvmChainAddress[] = [];
-
-  accounts.forEach(account => {
-    if (account.chain === 'ALL') {
-      const chains = get(txEvmChains);
-      chains.forEach(chain => {
-        filterAccounts.push({
-          address: account.address,
-          evmChain: chain.evmChainName
-        });
-      });
-    } else {
-      filterAccounts.push({
-        address: account.address,
-        evmChain: getEvmChainName(account.chain)!
-      });
-    }
-  });
-
-  return filterAccounts;
-});
-
-const pageParams: ComputedRef<TransactionRequestPayload> = computed(() => {
-  const { itemsPerPage, page, sortBy, sortDesc } = get(options);
-  const offset = (page - 1) * itemsPerPage;
-
-  return {
-    protocols: get(protocols),
-    eventTypes: get(eventTypes),
-    eventSubtypes: get(eventSubTypes),
-    ...(get(filters) as Partial<TransactionRequestPayload>),
-    limit: itemsPerPage,
-    offset,
-    orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
-    ascending: sortDesc.map(bool => !bool),
-    accounts: get(filteredAccounts)
-  };
-});
-
 const getItemClass = (item: EthTransactionEntry) =>
   item.ignoredInAccounting ? 'darken-row' : '';
 
@@ -367,21 +324,6 @@ watch(
   }
 );
 
-const setPage = (page: number) => {
-  set(userAction, true);
-  set(options, { ...get(options), page });
-};
-
-const setOptions = (newOptions: TablePagination<EthTransaction>) => {
-  set(userAction, true);
-  set(options, newOptions);
-};
-
-const setFilter = (newFilter: UnwrapRef<typeof filters>) => {
-  set(userAction, true);
-  updateFilter(newFilter);
-};
-
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.TX);
 
@@ -409,43 +351,6 @@ watch(
   }
 );
 
-const getQuery = (): LocationQuery => {
-  const opts = get(options);
-  assert(opts);
-  const { itemsPerPage, page, sortBy, sortDesc } = opts;
-
-  return {
-    itemsPerPage: itemsPerPage.toString(),
-    page: page.toString(),
-    sortBy,
-    sortDesc: sortDesc.map(x => x.toString()),
-    ...get(filters),
-    accounts: get(usedAccounts).map(
-      account => `${account.address}#${account.chain}`
-    )
-  };
-};
-
-watch(pageParams, async (params, op) => {
-  if (isEqual(params, op)) {
-    return;
-  }
-  if (get(userAction) && get(mainPage)) {
-    // Route should only be updated on user action otherwise it messes with
-    // forward navigation.
-    await router.push({
-      query: getQuery()
-    });
-    set(userAction, false);
-  }
-
-  await fetchData();
-});
-
-onUnmounted(() => {
-  pause();
-});
-
 const { show } = useConfirmStore();
 
 const resetPendingDeletion = () => {
@@ -471,6 +376,10 @@ const txChains = useArrayMap(txEvmChains, x => x.id);
 onMounted(async () => {
   await fetchData();
   await refreshTransactions(get(onlyChains));
+});
+
+onUnmounted(() => {
+  pause();
 });
 
 watch(loading, async (isLoading, wasLoading) => {

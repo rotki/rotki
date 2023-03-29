@@ -287,6 +287,7 @@ declare global {
   const useHistoryAutoRefresh: typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']
   const useHistoryEventTypeData: typeof import('./composables/history/transactions/event-data')['useHistoryEventTypeData']
   const useHistoryIgnoringApi: typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']
+  const useHistoryPaginationFilter: typeof import('./composables/history/filter-paginate')['useHistoryPaginationFilter']
   const useHistoryStore: typeof import('./store/history/index')['useHistoryStore']
   const useI18n: typeof import('vue-i18n-composable')['useI18n']
   const useIdle: typeof import('@vueuse/core')['useIdle']
@@ -797,6 +798,7 @@ declare module 'vue' {
     readonly useHistoryAutoRefresh: UnwrapRef<typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']>
     readonly useHistoryEventTypeData: UnwrapRef<typeof import('./composables/history/transactions/event-data')['useHistoryEventTypeData']>
     readonly useHistoryIgnoringApi: UnwrapRef<typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']>
+    readonly useHistoryPaginationFilter: UnwrapRef<typeof import('./composables/history/filter-paginate')['useHistoryPaginationFilter']>
     readonly useHistoryStore: UnwrapRef<typeof import('./store/history/index')['useHistoryStore']>
     readonly useI18n: UnwrapRef<typeof import('vue-i18n-composable')['useI18n']>
     readonly useIdle: UnwrapRef<typeof import('@vueuse/core')['useIdle']>

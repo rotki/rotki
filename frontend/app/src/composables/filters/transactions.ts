@@ -29,8 +29,11 @@ enum TransactionFilterValueKeys {
   EVM_CHAIN = 'evmChain'
 }
 
-type Filters = MatchedKeyword<TransactionFilterValueKeys>;
-type Matcher = SearchMatcher<TransactionFilterKeys, TransactionFilterValueKeys>;
+export type Matcher = SearchMatcher<
+  TransactionFilterKeys,
+  TransactionFilterValueKeys
+>;
+export type Filters = MatchedKeyword<TransactionFilterValueKeys>;
 
 export const useTransactionFilter = (disableProtocols: boolean) => {
   const filters: Ref<Filters> = ref({});

@@ -28,11 +28,11 @@ enum LedgerActionFilterValueKeys {
   LOCATION = 'location'
 }
 
-type Matcher = SearchMatcher<
+export type Matcher = SearchMatcher<
   LedgerActionFilterKeys,
   LedgerActionFilterValueKeys
 >;
-type Filters = MatchedKeyword<LedgerActionFilterValueKeys>;
+export type Filters = MatchedKeyword<LedgerActionFilterValueKeys>;
 
 export const useLedgerActionsFilter = () => {
   const filters: Ref<Filters> = ref({});

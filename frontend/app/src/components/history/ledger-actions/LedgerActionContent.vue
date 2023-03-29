@@ -1,27 +1,17 @@
 <script setup lang="ts">
-import dropRight from 'lodash/dropRight';
-import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import isEqual from 'lodash/isEqual';
-import { type MaybeRef } from '@vueuse/core';
 import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
+import { type TradeLocation } from '@/types/history/trade/location';
 import {
   type LedgerAction,
   type LedgerActionEntry,
   type LedgerActionRequestPayload
 } from '@/types/history/ledger-action/ledger-actions';
-import { type TradeLocation } from '@/types/history/trade/location';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
-import { type TablePagination } from '@/types/pagination';
-import {
-  type LocationQuery,
-  RouterPaginationOptionsSchema
-} from '@/types/route';
-import { type Collection } from '@/types/collection';
-import { defaultCollectionState, defaultOptions } from '@/utils/collection';
 import { SavedFilterLocation } from '@/types/filtering';
+import type { Filters, Matcher } from '@/composables/filters/ledger-actions';
 
 const props = withDefaults(
   defineProps<{
@@ -36,39 +26,9 @@ const props = withDefaults(
 
 const { locationOverview, mainPage } = toRefs(props);
 
-const selected: Ref<LedgerActionEntry[]> = ref([]);
-const options: Ref<TablePagination<LedgerAction>> = ref(defaultOptions());
-const openDialog: Ref<boolean> = ref(false);
-const editableItem: Ref<LedgerActionEntry | null> = ref(null);
-const ledgerActionsToDelete: Ref<LedgerActionEntry[]> = ref([]);
-const confirmationMessage: Ref<string> = ref('');
-const expanded: Ref<LedgerActionEntry[]> = ref([]);
-const userAction: Ref<boolean> = ref(false);
-
-const { deleteLedgerAction, fetchLedgerActions, refreshLedgerActions } =
-  useLedgerActions();
-
 const { tc } = useI18n();
-
-const pageParams: ComputedRef<LedgerActionRequestPayload> = computed(() => {
-  const { itemsPerPage, page, sortBy, sortDesc } = get(options);
-  const offset = (page - 1) * itemsPerPage;
-
-  const selectedFilters = get(filters);
-  const overview = get(locationOverview);
-  if (overview) {
-    selectedFilters.location = overview;
-  }
-
-  return {
-    limit: itemsPerPage,
-    offset,
-    orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
-    ascending:
-      sortDesc.length > 1 ? dropRight(sortDesc).map(bool => !bool) : [false],
-    ...(selectedFilters as Partial<LedgerActionRequestPayload>)
-  };
-});
+const router = useRouter();
+const route = useRoute();
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const headers: DataTableHeader[] = [
@@ -120,22 +80,32 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
   return headers;
 });
 
+const { deleteLedgerAction, fetchLedgerActions, refreshLedgerActions } =
+  useLedgerActions();
+
 const {
+  options,
+  selected,
+  openDialog,
+  editableItem,
+  itemsToDelete: ledgerActionsToDelete,
+  confirmationMessage,
+  expanded,
   isLoading,
   state: ledgerActions,
-  execute
-} = useAsyncState<
-  Collection<LedgerActionEntry>,
-  MaybeRef<LedgerActionRequestPayload>[]
->(args => fetchLedgerActions(args), defaultCollectionState(), {
-  immediate: false,
-  resetOnExecute: false,
-  delay: 0
-});
-
-const fetchData = async (): Promise<void> => {
-  await execute(0, pageParams);
-};
+  filters,
+  matchers,
+  setPage,
+  setOptions,
+  setFilter,
+  fetchData
+} = useHistoryPaginationFilter<
+  LedgerAction,
+  LedgerActionRequestPayload,
+  LedgerActionEntry,
+  Filters,
+  Matcher
+>(locationOverview, mainPage, useLedgerActionsFilter, fetchLedgerActions);
 
 const newLedgerAction = () => {
   set(editableItem, null);
@@ -196,60 +166,8 @@ const deleteLedgerActionHandler = async () => {
     selected,
     selectedVal.filter(ledgerActions => !ids.includes(ledgerActions.identifier))
   );
+
   await fetchData();
-};
-
-const router = useRouter();
-const route = useRoute();
-
-const { filters, matchers, updateFilter, RouteFilterSchema } =
-  useLedgerActionsFilter();
-
-const applyRouteFilter = () => {
-  if (!get(mainPage)) {
-    return;
-  }
-
-  const query = get(route).query;
-  const parsedOptions = RouterPaginationOptionsSchema.parse(query);
-  const parsedFilters = RouteFilterSchema.parse(query);
-  updateFilter(parsedFilters);
-  set(options, {
-    ...get(options),
-    ...parsedOptions
-  });
-};
-
-watch(route, () => {
-  set(userAction, false);
-  applyRouteFilter();
-});
-
-onBeforeMount(() => {
-  applyRouteFilter();
-});
-
-watch(filters, async (filters, oldFilters) => {
-  if (isEqual(filters, oldFilters)) {
-    return;
-  }
-
-  set(options, { ...get(options), page: 1 });
-});
-
-const setPage = (page: number) => {
-  set(userAction, true);
-  set(options, { ...get(options), page });
-};
-
-const setOptions = (newOptions: TablePagination<LedgerAction>) => {
-  set(userAction, true);
-  set(options, newOptions);
-};
-
-const setFilter = (newFilter: UnwrapRef<typeof filters>) => {
-  set(userAction, true);
-  updateFilter(newFilter);
 };
 
 const { ignore } = useIgnore(
@@ -260,21 +178,6 @@ const { ignore } = useIgnore(
   selected,
   () => fetchData()
 );
-
-onMounted(async () => {
-  const query = get(route).query;
-
-  if (query.add) {
-    newLedgerAction();
-    await router.replace({ query: {} });
-  } else {
-    await fetchData();
-    await refreshLedgerActions();
-  }
-});
-
-const { isLoading: isSectionLoading } = useStatusStore();
-const loading = isSectionLoading(Section.LEDGER_ACTIONS);
 
 const { show } = useConfirmStore();
 
@@ -288,45 +191,24 @@ const showDeleteConfirmation = () => {
   );
 };
 
+const { isLoading: isSectionLoading } = useStatusStore();
+const loading = isSectionLoading(Section.LEDGER_ACTIONS);
+
 const getItemClass = (item: LedgerActionEntry) =>
   item.ignoredInAccounting ? 'darken-row' : '';
 
 const pageRoute = Routes.HISTORY_LEDGER_ACTIONS;
 
-const getQuery = (): LocationQuery => {
-  const opts = get(options);
-  const { itemsPerPage, page, sortBy, sortDesc } = opts;
+onMounted(async () => {
+  const query = get(route).query;
 
-  const selectedFilters = get(filters);
-
-  const overview = get(locationOverview);
-  if (overview) {
-    selectedFilters.location = overview;
+  if (query.add) {
+    newLedgerAction();
+    await router.replace({ query: {} });
+  } else {
+    await fetchData();
+    await refreshLedgerActions();
   }
-
-  return {
-    itemsPerPage: itemsPerPage.toString(),
-    page: page.toString(),
-    sortBy,
-    sortDesc: sortDesc.map(x => x.toString()),
-    ...selectedFilters
-  };
-};
-
-watch(pageParams, async (params, op) => {
-  if (isEqual(params, op)) {
-    return;
-  }
-  if (get(userAction) && get(mainPage)) {
-    // Route should only be updated on user action otherwise it messes with
-    // forward navigation.
-    await router.push({
-      query: getQuery()
-    });
-    set(userAction, false);
-  }
-
-  await fetchData();
 });
 
 watch(loading, async (isLoading, wasLoading) => {
