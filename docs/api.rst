@@ -8531,6 +8531,7 @@ Getting Eth2 Staking details
               "performance_1w": {"amount": "0.7", "usd_value": "700"},
               "performance_1m": {"amount": "3", "usd_value": "3000"},
               "performance_1y": {"amount": "36.5", "usd_value": "36500"},
+              "performance_total": {"amount": "42.5", "usd_value": "43500"}
           }, {
               "eth1_depositor": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
               "index": 10,
@@ -8540,8 +8541,9 @@ Getting Eth2 Staking details
               "performance_1w": {"amount": "0.7", "usd_value": "700"},
               "performance_1m": {"amount": "3", "usd_value": "3000"},
               "performance_1y": {"amount": "36.5", "usd_value": "36500"},
+              "performance_total": {"amount": "42.5", "usd_value": "43500"}
           }, {
-              "eth1_depositor": "0xaee017635291ea8E3C70FeAC5B86e1d3B0e23341",
+              "eth1_depositor": null,
               "index": 155,
               "public_key": "0xa8ff5fc88412d080a297683c25a791ef77eb52d75b265fabab1f2c2591bb927c35818ac6289bc6680ab252787d0ebab3",
               "balance": {"amount": "32", "usd_value": "19000"},
@@ -8549,13 +8551,14 @@ Getting Eth2 Staking details
               "performance_1w": {"amount": "0", "usd_value": "0"},
               "performance_1m": {"amount": "0", "usd_value": "0"},
               "performance_1y": {"amount": "0", "usd_value": "0"},
+              "performance_total": {"amount": "42.5", "usd_value": "43500"}
           }],
         "message": "",
       }
 
    :resjson result list: The result of the Eth2 staking details for all of the user's accounts. It's a list of details per validator. Important thing to note here is that if all performance entries are 0 then this means that the validator is not active yet and is still waiting in the deposit queue.
 
-   :resjson eth_depositor string: The eth1 address that made the deposit for the validator.
+   :resjson eth_depositor [optional]string: The eth1 address that made the deposit for the validator. Can be missing if we can't find it yet.
    :resjson index int: The Eth2 validator index.
    :resjson public_key str: The Eth2 validator pulic key.
    :resjson balance object: The balance in ETH of the validator and its usd value
@@ -8563,6 +8566,7 @@ Getting Eth2 Staking details
    :resjson performance_1w object: How much has the validator earned in ETH (and USD equivalent value) in the past week.
    :resjson performance_1m object: How much has the validator earned in ETH (and USD equivalent value) in the past month.
    :resjson performance_1y object: How much has the validator earned in ETH (and USD equivalent value) in the past year.
+   :resjson performance_total object: How much has the validator earned in ETH (and USD equivalent value) since it was activated.
 
    :statuscode 200: Eth2 staking details successfully queried
    :statuscode 409: User is not logged in. Or eth2 module is not activated.
