@@ -119,7 +119,6 @@ TABLES_AT_INIT = [
     'xpubs',
     'xpub_mappings',
     'amm_events',
-    'eth2_deposits',
     'eth2_daily_staking_details',
     'eth2_validators',
     'ledger_actions',

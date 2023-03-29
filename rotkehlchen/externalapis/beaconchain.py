@@ -282,6 +282,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                     performance_1w=entry['performance7d'],
                     performance_1m=entry['performance31d'],
                     performance_1y=entry['performance365d'],
+                    performance_total=entry['performancetotal'],
                 )
         except KeyError as e:
             raise RemoteError(

@@ -17,6 +17,7 @@ def _assert_valid_performance_entry(entry):
     assert isinstance(entry.performance_1w, int)
     assert isinstance(entry.performance_1m, int)
     assert isinstance(entry.performance_1y, int)
+    assert isinstance(entry.performance_total, int)
 
 
 def test_get_performance_single(session_beaconchain):
