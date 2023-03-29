@@ -12,7 +12,6 @@ import {
 } from '@rotki/common/lib/defi/aave';
 import sortBy from 'lodash/sortBy';
 import { type ComputedRef } from 'vue';
-import { truncateAddress } from '@/filters';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useAaveStore } from '@/store/defi/aave';
@@ -43,6 +42,7 @@ import { Section, Status } from '@/types/status';
 import { assert } from '@/utils/assertions';
 import { Zero, zeroBalance } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
+import { truncateAddress } from '@/filters';
 
 const isLendingEvent = (
   value: AaveHistoryEvents
@@ -79,6 +79,8 @@ export const useDefiSupportedProtocolsStore = defineStore(
     const { dsrHistory, dsrBalances, makerDAOVaults, makerDAOVaultDetails } =
       storeToRefs(makerDaoStore);
     const { balances: liquityBalances } = storeToRefs(liquityStore);
+
+    const { scrambleHex, scrambleIdentifier } = useScramble();
 
     const lendingHistory = (
       protocols: DefiProtocol[],
@@ -247,6 +249,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
               value =>
                 ({
                   identifier: `${value.identifier}`,
+                  label: `${scrambleIdentifier(value.identifier)}`,
                   protocol: DefiProtocol.MAKERDAO_VAULTS
                 } satisfies DefiLoan)
             )
@@ -265,8 +268,11 @@ export const useDefiSupportedProtocolsStore = defineStore(
 
             for (const asset of assets) {
               const symbol = get(assetInfo(asset))?.symbol ?? asset;
+              const formattedAddress = truncateAddress(scrambleHex(address), 6);
+
               loans.push({
-                identifier: `${symbol} - ${truncateAddress(address, 6)}`,
+                identifier: `${symbol} - ${address}`,
+                label: `${symbol} - ${formattedAddress}`,
                 protocol: DefiProtocol.AAVE,
                 owner: address,
                 asset
@@ -293,8 +299,11 @@ export const useDefiSupportedProtocolsStore = defineStore(
 
             for (const asset of historyAssets) {
               const symbol = get(assetInfo(asset))?.symbol ?? asset;
+              const formattedAddress = truncateAddress(scrambleHex(address), 6);
+
               loans.push({
-                identifier: `${symbol} - ${truncateAddress(address, 6)}`,
+                identifier: `${symbol} - ${address}`,
+                label: `${symbol} - ${formattedAddress}`,
                 protocol: DefiProtocol.AAVE,
                 owner: address,
                 asset
@@ -333,8 +342,11 @@ export const useDefiSupportedProtocolsStore = defineStore(
             )
             .forEach(({ address, asset }) => {
               const symbol = get(assetInfo(asset))?.symbol ?? asset;
+              const formattedAddress = truncateAddress(scrambleHex(address), 6);
+
               loans.push({
-                identifier: `${symbol} - ${truncateAddress(address, 6)}`,
+                identifier: `${symbol} - ${address}`,
+                label: `${symbol} - ${formattedAddress}`,
                 protocol: DefiProtocol.COMPOUND,
                 owner: address,
                 asset
@@ -348,12 +360,13 @@ export const useDefiSupportedProtocolsStore = defineStore(
 
           loans.push(
             ...balanceAddress.filter(uniqueStrings).map(address => {
-              let troveId = 0;
-              if (balances[address]) {
-                troveId = balances[address].troveId;
-              }
+              const troveId = balances[address] ? balances[address].troveId : 0;
+              const formattedTroveId = scrambleIdentifier(troveId);
+              const formattedAddress = truncateAddress(scrambleHex(address), 6);
+
               return {
-                identifier: `Trove ${troveId} - ${truncateAddress(address, 6)}`,
+                identifier: `Trove ${troveId} - ${address}`,
+                label: `Trove ${formattedTroveId} - ${formattedAddress}`,
                 protocol: DefiProtocol.LIQUITY,
                 owner: address,
                 asset: ''
@@ -369,6 +382,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
       computed(() => {
         const id = identifier?.toLocaleLowerCase();
         const allLoans = get(loans());
+
         const loan = allLoans.find(
           loan => loan.identifier.toLocaleLowerCase() === id
         );
@@ -1027,15 +1041,15 @@ export const useDefiSupportedProtocolsStore = defineStore(
 
         for (const asset in balances) {
           const { weight, amount, usdValue } = balances[asset]
-            .map(({ effectiveInterestRate, balance: { usdValue, amount } }) => {
-              return {
+            .map(
+              ({ effectiveInterestRate, balance: { usdValue, amount } }) => ({
                 weight: usdValue.multipliedBy(
                   Number.parseFloat(effectiveInterestRate)
                 ),
                 usdValue,
                 amount
-              };
-            })
+              })
+            )
             .reduce(
               (sum, current) => ({
                 weight: sum.weight.plus(current.weight),

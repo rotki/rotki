@@ -12,6 +12,7 @@ export interface CollateralizedLoan<C extends Collateral | Collateral[]>
 
 export interface DefiLoan {
   readonly identifier: string;
+  readonly label?: string;
   readonly protocol: DefiProtocol;
   readonly asset?: string;
   readonly owner?: string;

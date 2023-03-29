@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { groupBy } from 'lodash';
 import { type DataTableHeader } from 'vuetify';
+import { type BigNumber } from '@rotki/common/lib';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
 import { zeroBalance } from '@/utils/bignumbers';
-import { balanceSum } from '@/utils/calculation';
+import { balanceSum, calculatePercentage } from '@/utils/calculation';
 import { CURRENCY_USD } from '@/types/currencies';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
@@ -12,13 +13,17 @@ const props = withDefaults(
   defineProps<{
     identifier: string;
     blockchainOnly?: boolean;
+    showPercentage?: boolean;
+    total?: BigNumber | null;
   }>(),
   {
-    blockchainOnly: false
+    blockchainOnly: false,
+    showPercentage: false,
+    total: null
   }
 );
 
-const { identifier, blockchainOnly } = toRefs(props);
+const { identifier, blockchainOnly, showPercentage, total } = toRefs(props);
 
 const { getBreakdown: getBlockchainBreakdown } = useAccountBalancesStore();
 const { assetBreakdown } = useBalancesBreakdownStore();
@@ -44,31 +49,52 @@ const breakdowns = computed(() => {
   });
 });
 
-const { t } = useI18n();
+const { tc } = useI18n();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
-  return [
+  const headers: DataTableHeader[] = [
     {
-      text: t('common.location').toString(),
+      text: tc('common.location'),
       value: 'location',
       align: 'center',
-      width: '120px'
+      class: 'text-no-wrap'
     },
     {
-      text: t('common.amount').toString(),
+      text: tc('common.amount'),
       value: 'balance.amount',
-      align: 'end'
+      align: 'end',
+      width: '60%'
     },
     {
-      text: t('asset_locations.header.value', {
+      text: tc('asset_locations.header.value', 0, {
         symbol: get(currencySymbol) ?? CURRENCY_USD
-      }).toString(),
+      }),
       value: 'balance.usdValue',
       align: 'end'
     }
   ];
+
+  if (get(showPercentage)) {
+    headers.push({
+      text: tc('asset_locations.header.percentage'),
+      value: 'percentage',
+      align: 'end',
+      class: 'text-no-wrap',
+      sortable: false
+    });
+  }
+
+  return headers;
 });
+
+const percentage = (value: BigNumber) => {
+  const totalVal = get(total);
+  if (!totalVal) {
+    return '';
+  }
+  return calculatePercentage(value, totalVal);
+};
 </script>
 <template>
   <v-sheet outlined>
@@ -94,6 +120,9 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
           fiat-currency="USD"
           :value="item.balance.usdValue"
         />
+      </template>
+      <template #item.percentage="{ item }">
+        <percentage-display :value="percentage(item.balance.usdValue)" />
       </template>
     </data-table>
   </v-sheet>

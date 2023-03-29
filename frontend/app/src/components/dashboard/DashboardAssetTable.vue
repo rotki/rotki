@@ -287,6 +287,8 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
         <table-expand-container visible :colspan="tableHeaders.length">
           <evm-native-token-breakdown
             v-if="isEvmNativeToken(item.asset)"
+            show-percentage
+            :total="item.usdValue"
             :identifier="item.asset"
           />
           <asset-balances
