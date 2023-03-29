@@ -8,32 +8,20 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.modules.eth2.structures import (
-    Eth2Deposit,
-    ValidatorID,
-    ValidatorPerformance,
-)
+from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID, ValidatorPerformance
 from rotkehlchen.chain.ethereum.modules.eth2.utils import ValidatorBalance
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.timing import DEFAULT_CONNECT_TIMEOUT, QUERY_RETRY_TIMES
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_VALIDATOR
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
-from rotkehlchen.fval import FVal
-from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_fval
-from rotkehlchen.types import (
-    ChecksumEvmAddress,
-    Eth2PubKey,
-    ExternalService,
-    Location,
-    deserialize_evm_tx_hash,
-)
+from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, ExternalService, Location
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import from_gwei, from_wei, get_chunks, set_user_agent, ts_sec_to_ms
+from rotkehlchen.utils.misc import from_wei, get_chunks, set_user_agent, ts_sec_to_ms
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -331,12 +319,20 @@ class BeaconChain(ExternalServiceWithApiKey):
             module='execution',
             endpoint='produced',
         )
-        events = []
+        dbevents = DBHistoryEvents(self.db)
         block_data = []
 
         try:
             for entry in data:
                 blocknumber = int(entry['blockNumber'])
+                with self.db.conn.read_ctx() as cursor:
+                    cursor.execute(
+                        'SELECT COUNT(*) from blocks_produced WHERE block_number IS ?',
+                        (blocknumber,),
+                    )
+                    if cursor.fetchone()[0] != 0:
+                        continue
+
                 timestamp = ts_sec_to_ms(entry['timestamp'])
                 block_reward = from_wei(deserialize_fval(entry['blockReward'], 'block_reward', 'beaconcha.in produced blocks'))  # noqa: E501
                 mev_reward = from_wei(deserialize_fval(entry['blockMevReward'], 'mev_reward', 'beaconcha.in produced blocks'))  # noqa: E501
@@ -346,7 +342,7 @@ class BeaconChain(ExternalServiceWithApiKey):
 
                 # evm_1 stands for ethereum. Chain type + chain id
                 event_identifier = f'evm_1_block_{blocknumber}'.encode()
-                events.append(HistoryEvent(
+                event = HistoryEvent(
                     event_identifier=event_identifier,
                     sequence_index=0,
                     timestamp=timestamp,
@@ -357,7 +353,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                     asset=A_ETH,
                     balance=Balance(amount=block_reward),
                     notes=f'Validator {proposer_index} produced block {blocknumber} with {block_reward} ETH going to {fee_recipient}',  # noqa: E501
-                ))
+                )
 
                 producer_fee_recipient = None
                 if 'relay' in entry:
@@ -368,21 +364,27 @@ class BeaconChain(ExternalServiceWithApiKey):
                     str(block_reward), producer_fee_recipient, str(mev_reward),
                 ))
 
+            with self.db.user_write() as write_cursor:
+                dbevents.add_history_event(
+                    write_cursor,
+                    event,
+                    mapping_values={HISTORY_MAPPING_KEY_VALIDATOR: proposer_index},
+                )
+                write_cursor.execute(
+                    'INSERT OR IGNORE INTO blocks_produced('
+                    'block_number, validator_index, fee_recipient, '
+                    'block_reward, producer_fee_recipient, mev_reward'
+                    ') VALUES (?, ?, ?, ?, ?, ?)',
+                    (
+                        blocknumber, proposer_index, fee_recipient,
+                        str(block_reward), producer_fee_recipient, str(mev_reward),
+                    ),
+                )
+
         except KeyError as e:  # raising and not continuing since if 1 key missing something is off  # noqa: E501
             raise RemoteError(
                 f'Beaconcha.in produced blocks response error. Missing key entry {str(e)}',
             ) from e
-
-        dbevents = DBHistoryEvents(self.db)
-        with self.db.user_write() as write_cursor:
-            dbevents.add_history_events(write_cursor, events)
-            write_cursor.executemany(
-                'INSERT OR IGNORE INTO blocks_produced('
-                'block_number, validator_index, fee_recipient, '
-                'block_reward, producer_fee_recipient, mev_reward'
-                ') VALUES (?, ?, ?, ?, ?, ?)',
-                block_data,
-            )
 
     def get_eth1_address_validators(self, address: ChecksumEvmAddress) -> list[ValidatorID]:
         """Get a list of Validators that are associated with the given eth1 address.

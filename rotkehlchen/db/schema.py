@@ -637,7 +637,9 @@ CREATE TABLE IF NOT EXISTS evm_events_info(
 """  # noqa: E501
 
 
-# This table is used to store for each history event it's chain id and whether it is customized.
+# This table is used to store for specific history events:
+# - whether it is customized
+# - validator mapping
 DB_CREATE_HISTORY_EVENTS_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS history_events_mappings (
     parent_identifier INTEGER NOT NULL,
