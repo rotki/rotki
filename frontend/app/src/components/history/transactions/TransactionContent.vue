@@ -53,6 +53,7 @@ const props = withDefaults(
 const { tc } = useI18n();
 
 const {
+  protocols,
   useExternalAccountFilter,
   externalAccountFilter,
   sectionTitle,
@@ -69,7 +70,6 @@ const transactionToIgnore: Ref<EthTransactionEntry | null> = ref(null);
 const confirmationTitle: Ref<string> = ref('');
 const confirmationPrimaryAction: Ref<string> = ref('');
 const accounts: Ref<GeneralAccount[]> = ref([]);
-const protocols: Ref<TransactionEventProtocol[]> = ref(props.protocols);
 
 const usedTitle: ComputedRef<string> = computed(
   () => get(sectionTitle) || tc('transactions.title')
@@ -305,14 +305,11 @@ watch(
       return;
     }
 
-    if (filterChanged) {
-      set(protocols, filters.protocols ?? []);
-      // Because the evmChain filter and the account filter can't be active
-      // at the same time we clear the account filter when the evmChain filter
-      // is set.
-      if (filters.evmChain) {
-        set(accounts, []);
-      }
+    // Because the evmChain filter and the account filter can't be active
+    // at the same time we clear the account filter when the evmChain filter
+    // is set.
+    if (filterChanged && filters.evmChain) {
+      set(accounts, []);
     }
 
     if (accountsChanged && usedAccounts.length > 0) {

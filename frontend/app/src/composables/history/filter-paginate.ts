@@ -10,6 +10,7 @@ import {
 } from '@/types/route';
 import { assert } from '@/utils/assertions';
 import { defaultCollectionState, defaultOptions } from '@/utils/collection';
+import { nonEmptyProperties } from '@/utils/data';
 
 interface FilterSchema<F, M> {
   filters: Ref<F>;
@@ -65,7 +66,7 @@ export const useHistoryPaginationFilter = <
     return {
       ...selectedFilters,
       ...get(extraParams),
-      ...get(customPageParams),
+      ...nonEmptyProperties(get(customPageParams) ?? {}),
       limit: itemsPerPage,
       offset,
       orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
