@@ -61,7 +61,12 @@ def _read_curve_asset(
         asset_address: Optional[ChecksumEvmAddress],
         chain_id: ChainID,
 ) -> Optional[Asset]:
-    """A thin wrapper that turns asset address into an asset object"""
+    """
+    A thin wrapper that turns asset address into an asset object.
+
+    Object returned here is a pure Asset (not a resolved CryptoAsset) since it is meant only for
+    comparison with other assets. And to compare with other assets there is no need to resolve.
+    """
     if asset_address is None:
         return None
 
@@ -308,10 +313,10 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             # Curve swap router logs route (a list of addresses) that was used. Route consists of
             # 9 elements. Consider X a number of pools that was used. Then the structure can be
             # described in the following way:
-            # At 0 index: Address of token in
+            # At 0 index: Address of the sold token (token that goes in the router)
             # From 1 to X indices: Addresses of pools that were used
-            # At 1+X index: Address of token out
-            # From 2+X to 8 indices: Unused elements (zero addresses)
+            # At X + 1 index: Address of the bought token (token that comes from the router)
+            # From X + 2 to 8 indices: Unused elements (zero addresses)
             # Here we read only addresses of token in and token out.
             sold_token_address = hex_or_bytes_to_address(context.tx_log.data[:32])
             for i in range(1, 9):  # Starting from 1 because at 0 is `sold_token_address`
