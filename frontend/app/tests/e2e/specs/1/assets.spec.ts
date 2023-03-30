@@ -21,6 +21,7 @@ describe('assets', () => {
       page.ignoredAssets().then(ignored => {
         ignoredAssets = Number.parseInt(ignored);
       });
+      page.selectShowAll();
     });
 
     it('add an ignored asset and validate UI message it has been added', () => {
@@ -30,7 +31,6 @@ describe('assets', () => {
     it('add another 2 ignored assets and confirm count increased by 3', () => {
       page.addIgnoredAsset('ZIX');
       page.addIgnoredAsset('1CR');
-      // @ts-ignore
       page.ignoredAssetCount(ignoredAssets + 3);
     });
 

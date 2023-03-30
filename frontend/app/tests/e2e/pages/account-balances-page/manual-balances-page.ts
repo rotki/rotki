@@ -14,10 +14,9 @@ export interface FixtureManualBalance {
 
 export class ManualBalancesPage extends AccountBalancesPage {
   visit() {
-    cy.get('.accounts-balances__manual-balances')
-      .scrollIntoView()
-      .should('be.visible')
-      .click();
+    cy.get('.accounts-balances__manual-balances').scrollIntoView();
+    cy.get('.accounts-balances__manual-balances').should('be.visible');
+    cy.get('.accounts-balances__manual-balances').click();
   }
 
   addBalance(balance: FixtureManualBalance) {
@@ -32,7 +31,8 @@ export class ManualBalancesPage extends AccountBalancesPage {
     cy.get('.manual-balances-form__label').type(balance.label);
     cy.get('.manual-balances-form__amount').type(balance.amount);
     for (const tag of balance.tags) {
-      cy.get('.manual-balances-form__tags').type(tag).type('{enter}');
+      cy.get('.manual-balances-form__tags').type(tag);
+      cy.get('.manual-balances-form__tags').type('{enter}');
     }
 
     cy.get('.manual-balances-form__location').click();
@@ -163,9 +163,8 @@ export class ManualBalancesPage extends AccountBalancesPage {
   }
 
   showsCurrency(currency: string) {
-    cy.get('[data-cy="manual-balances"]')
-      .scrollIntoView()
-      .contains(`${currency} Value`)
-      .should('be.visible');
+    cy.get('[data-cy="manual-balances"]').scrollIntoView();
+    cy.get('[data-cy="manual-balances"]').contains(`${currency} Value`);
+    cy.get('[data-cy="manual-balances"]').should('be.visible');
   }
 }

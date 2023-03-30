@@ -12,7 +12,7 @@ export class DefiPage {
   }
 
   selectModules() {
-    const ignoredModules = [Module.YEARN, Module.ADEX, Module.MAKERDAO_DSR];
+    const ignoredModules = [Module.YEARN, Module.MAKERDAO_DSR];
     const values = Object.values(Module).filter(
       module => !ignoredModules.includes(module)
     );
