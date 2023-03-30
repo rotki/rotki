@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
-      content: write
+      contents: write
     steps:
       - uses: rotki/action-cassette-deck@v1
         with:
