@@ -3598,8 +3598,8 @@
   },
   "sorting_selector": {
     "desc": {
-      "sort_asc_tooltip": "Change sort to ascending",
-      "sort_desc_tooltip": "Change sort to descending"
+      "sort_asc_tooltip": "将排序改为升序",
+      "sort_desc_tooltip": "将排序改为降序"
     }
   },
   "staking": {
@@ -3608,192 +3608,192 @@
     "liquity": "Liquity"
   },
   "staking_page": {
-    "dropdown_hint": "Select a location to see more details",
-    "dropdown_label": "Select location",
+    "dropdown_hint": "选择一个位置以查看更多详细信息",
+    "dropdown_label": "选择位置",
     "page": {
-      "description": "Select one of the supported locations to see more information about your staked assets.",
-      "title": "Staking Locations"
+      "description": "选择一个受支持的位置以查看有关您的质押资产的更多信息。",
+      "title": "质押地点"
     }
   },
   "statistics": {
-    "no_premium_label": "Statistics are"
+    "no_premium_label": "统计是"
   },
   "statistics_graph_settings": {
-    "label": "Multiplier",
-    "off": "No missed snapshots will be considered as being zero.",
-    "on": "If there is a period of {period} hours or more between two existing balance snapshots then the graph will consider zero balances for that period.",
-    "subtitle": "Set after how many hours between two existing balance snapshots the graph will consider zero balances for that period.",
-    "title": "Missing snapshot multiplier",
-    "tooltip": "Change graph zero snapshot multiplier"
+    "label": "乘数",
+    "off": "没有错过的快照将被视为零。",
+    "on": "如果两个现有余额快照之间有 {period} 小时或更长时间的时间段，则图表将考虑该时间段的零余额。",
+    "subtitle": "设置在两个现有余额快照之间的多少小时后图表将考虑该期间的零余额。",
+    "title": "缺少快照乘数",
+    "tooltip": "更改图形零快照乘数"
   },
   "summary_card": {
-    "refresh_tooltip": "Refresh {name} balances",
-    "title": "{name} balances"
+    "refresh_tooltip": "刷新 {name} 余额",
+    "title": "{name} 余额"
   },
   "sushiswap": {
-    "loading": "Please wait while your liquidity pools are getting loaded...",
-    "premium": "Sushiswap feature"
+    "loading": "请稍候，您的流动资金池正在加载...",
+    "premium": "Sushiswap 功能"
   },
   "sync_buttons": {
-    "download_tooltip": "Pull the saved data from the server and replace your local database",
-    "upload_tooltip": "Push your local database to the server and replace all data there"
+    "download_tooltip": "从服务器拉取保存的数据并替换你的本地数据库",
+    "upload_tooltip": "将您的本地数据库推送到服务器并替换那里的所有数据"
   },
   "sync_indicator": {
-    "force_save": "Force save",
-    "ignore_errors": "Save the balance snapshot ignoring any errors on external APIs. This can cause the snapshot to be incomplete.",
+    "force_save": "强制保存",
+    "ignore_errors": "保存余额快照，忽略外部 API 上的任何错误。这可能导致快照不完整。",
     "import_snapshot": {
-      "balance_snapshot_file": "Balance snapshot file",
-      "balance_snapshot_file_suggested": "Suggested filename: balances_snapshot_import.csv",
-      "location_data_snapshot_file": "Location data snapshot file",
-      "location_data_snapshot_suggested": "Suggested filename: location_data_snapshot_import.csv",
+      "balance_snapshot_file": "余额快照文件",
+      "balance_snapshot_file_suggested": "建议的文件名:balances_snapshot_import.csv",
+      "location_data_snapshot_file": "位置数据快照文件",
+      "location_data_snapshot_suggested": "建议文件名:location_data_snapshot_import.csv",
       "messages": {
-        "failed_description": "Importing snapshot failed: {message}",
-        "success_description": "Snapshot successfully imported. You will be logged out now.",
-        "title": "Snapshot import"
+        "failed_description": "导入快照失败： {message}",
+        "success_description": "快照导入成功。您现在将退出。",
+        "title": "快照导入"
       },
-      "title": "Import snapshot manually"
+      "title": "手动导入快照"
     },
-    "last_data_upload": "Last premium database sync",
-    "menu_tooltip": "View the date of the last balances snapshot | View the date of the last balances snapshot, and the time of the last premium database sync",
-    "never_saved": "Never",
-    "snapshot_title": "Last balances snapshot",
-    "snapshot_tooltip": "This will force taking a snapshot of all your balances, ignoring any cache. Use this sparingly as it may lead to you being rate-limited.",
+    "last_data_upload": "上次高级数据库同步",
+    "menu_tooltip": "查看上次余额快照的日期 | 查看上次余额快照的日期，以及上次高级数据库同步的时间",
+    "never_saved": "从不",
+    "snapshot_title": "最后余额快照",
+    "snapshot_tooltip": "这将强制拍摄所有余额的快照，忽略任何缓存。请谨慎使用，因为它可能会导致您受到速率限制。",
     "upload_confirmation": {
-      "action": "Push | Pull",
-      "confirm_check": "I understand",
-      "message_download": "By force pulling, your local database will be replaced with data pulled from the rotki server. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action.",
-      "message_download_relogin": "After performing the pull, a manual re-login will be required.",
-      "message_upload": "By force pushing, any previous synced data residing in the rotki server will be overwritten. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action.",
-      "title": "Force Push | Force Pull"
+      "action": "推|拉",
+      "confirm_check": "我明白了",
+      "message_download": "通过强制拉取，您的本地数据库将被替换为从 rotki 服务器拉取的数据。没有办法恢复任何被覆盖的数据，或恢复此操作。执行此操作时请小心，因为它可能会导致意外 数据丢失。通过继续，您承认您了解使用此操作的危险。",
+      "message_download_relogin": "执行拉取后，需要手动重新登录。",
+      "message_upload": "通过强制推送，任何先前驻留在 rotki 服务器中的同步数据都将被覆盖。没有办法恢复任何被覆盖的数据，或恢复此操作。执行此操作时请小心，因为它可能会导致意外数据 损失。通过继续，您承认您了解使用此操作的危险。",
+      "title": "强制推 | 强制拉"
     }
   },
   "table_filter": {
     "hint": {
-      "description": "* type the filter and then press enter e.g.",
-      "example": "start: 26/05/2022"
+      "description": "* 输入过滤器，然后按回车键，例如。",
+      "example": "开始： 26/05/2022"
     },
-    "hint_filter": "The combined filters will be applied at the same time",
-    "no_suggestions": "No suggestions found for {search}",
-    "title": "Available filters",
-    "unsupported_filter": "Unsupported filter:"
+    "hint_filter": "组合过滤器将同时应用",
+    "no_suggestions": "没有找到{search}的建议",
+    "title": "可用过滤器",
+    "unsupported_filter": "不支持的过滤器："
   },
   "tag_creator": {
     "labels": {
-      "background": "Background",
-      "foreground": "Foreground"
+      "background": "背景",
+      "foreground": "前景"
     },
-    "refresh_tooltip": "Creates a random color combination",
+    "refresh_tooltip": "创建随机颜色组合",
     "validation": {
-      "empty_name": "Please provide a tag name"
+      "empty_name": "请提供标签名称"
     }
   },
   "tag_filter": {
-    "label": "Filter by tag(s)"
+    "label": "按标签过滤"
   },
   "tag_manager": {
     "confirmation": {
-      "message": "Are you sure you want to delete {tagToDelete}? This will also remove all mappings of this tag.",
-      "title": "Confirm tag deletion"
+      "message": "您确定要删除 {tagToDelete} 吗？这也会删除该标签的所有映射。",
+      "title": "确认标签删除"
     },
     "headers": {
-      "actions": "Actions"
+      "actions": "动作"
     },
-    "my_tags": "My Tags",
-    "subtitle": "Create new tags or modify existing",
-    "title": "Tag Manager"
+    "my_tags": "我的标签",
+    "subtitle": "创建新标签或修改现有标签",
+    "title": "标签管理器"
   },
   "task_manager": {
-    "error": "An error occurred while processing task [{taskId}] '{title}': {error}"
+    "error": "处理任务 [{taskId}] '{title}' 时出错：{error}"
   },
   "theme_manager_lock": {
-    "description": "Theme customization is only available with a premium subscription",
-    "subtitle": "Manage colors for the app theme",
-    "title": "Theme"
+    "description": "主题定制仅适用于高级订阅",
+    "subtitle": "管理应用主题的颜色",
+    "title": "主题"
   },
   "theme_switch_lock": {
-    "tooltip": "Switching to dark mode is only available under a premium subscription"
+    "tooltip": "切换到黑暗模式仅在高级订阅下可用"
   },
   "timeframe_settings": {
-    "default_timeframe": "Dashboard graph default timeframe",
-    "default_timeframe_description": "Set the default time frame for the dashboard graph. This timeframe will be pre-selected upon login. By default it will remember the previous session's selection.",
-    "inactive_timeframes": "Inactive Timeframes",
-    "visible_timeframes": "Visible Timeframes"
+    "default_timeframe": "仪表板图形默认时间范围",
+    "default_timeframe_description": "设置仪表板图表的默认时间范围。此时间范围将在登录时预先选择。默认情况下，它将记住上一个会话的选择。",
+    "inactive_timeframes": "非活动时间帧",
+    "visible_timeframes": "可见时间框架"
   },
   "trade_history": {
-    "loading": "Please wait while your trades are getting loaded..."
+    "loading": "正在加载您的交易，请稍候..."
   },
   "trade_location": {
-    "banks": "Banks",
-    "commodities": "Commodities",
-    "equities": "Equities",
-    "external": "External",
-    "real_estate": "Real Estate"
+    "banks": "银行",
+    "commodities": "商品",
+    "equities": "股票",
+    "external": "外部",
+    "real_estate": "房地产"
   },
   "transactions": {
     "actions": {
-      "add_event": "Add a new event",
-      "redecode_events": "Redecode events"
+      "add_event": "添加新事件",
+      "redecode_events": "重新解码事件"
     },
     "details": {
       "gas_fee": "Gas Fee",
       "gas_limit": "Gas Limit",
       "gas_price": "Gas Price",
       "gas_used": "Gas Used",
-      "input_data": "Input Data",
-      "internal_transaction": "Internal",
+      "input_data": "输入数据",
+      "internal_transaction": "内部",
       "nonce": "Nonce",
-      "title": "Transaction details"
+      "title": "交易详情"
     },
     "events": {
       "actions": {
-        "delete": "Delete event",
-        "edit": "Edit event"
+        "delete": "删除事件",
+        "edit": "编辑事件"
       },
       "confirmation": {
         "delete": {
-          "message": "Are you sure you want to delete the event?",
-          "title": "Delete Event"
+          "message": "您确定要删除该事件吗？",
+          "title": "删除事件"
         },
         "ignore": {
-          "action": "Yes, Ignore the Transaction",
-          "message": "A transaction requires at least 1 event. Do you want to ignore the transaction in accounting instead?",
-          "title": "Cannot Delete Event"
+          "action": "是的，忽略交易",
+          "message": "一个交易至少需要一个事件。你想在会计中忽略这个交易吗？",
+          "title": "无法删除事件"
         }
       },
-      "customized_event": "Customized event",
+      "customized_event": "自定义事件",
       "dialog": {
         "add": {
-          "title": "Add Event"
+          "title": "添加事件"
         },
         "edit": {
-          "title": "Edit Event"
+          "title": "编辑活动"
         }
       },
       "extra": {
-        "total_staked_by_this_tx": "Total staked by this tx"
+        "total_staked_by_this_tx": "此 tx 的总质押"
       },
       "form": {
         "amount": {
           "validation": {
-            "non_empty": "The amount field cannot be empty."
+            "non_empty": "金额字段不能为空。"
           }
         },
         "asset": {
           "validation": {
-            "non_empty": "The asset field cannot be empty"
+            "non_empty": "资产字段不能为空"
           }
         },
         "counterparty": {
-          "label": "Counterparty"
+          "label": "交易对手"
         },
         "datetime": {
-          "hint": "The date & time of when the event happened",
-          "label": "Date & time"
+          "hint": "事件发生的日期和时间",
+          "label": "日期和时间"
         },
         "event_subtype": {
-          "label": "Event Subtype",
+          "label": "事件子类型",
           "validation": {
-            "non_empty": "The event subtype field cannot be empty."
+            "non_empty": "事件子类型字段不能为空。"
           }
         },
         "event_type": {
