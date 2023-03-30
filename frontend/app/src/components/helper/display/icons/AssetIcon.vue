@@ -49,7 +49,7 @@ const currency = computed<string | undefined>(() => {
 });
 
 const { assetInfo } = useAssetInfoRetrieval();
-const { assetImageUrl } = useAssetIconApi();
+const { getAssetImageUrl } = useAssetIcon();
 
 const asset = assetInfo(mappedIdentifier, enableAssociation);
 const isCustomAsset = computed(() => get(asset)?.isCustomAsset);
@@ -87,7 +87,7 @@ const url = computed<string>(() => {
   }
 
   const currentTimestamp = get(timestamp) || Date.now();
-  return assetImageUrl(id, get(changeable) ? currentTimestamp : undefined);
+  return getAssetImageUrl(id, get(changeable) ? currentTimestamp : undefined);
 });
 
 const chainIconSize = computed(

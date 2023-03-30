@@ -46,7 +46,7 @@ export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [
   {
     identifier: TransactionEventProtocol.CURVE,
     label: 'Curve.fi',
-    image: './assets/images/defi/curve.svg'
+    image: './assets/images/defi/curve.png'
   },
   {
     identifier: TransactionEventProtocol.DXDAO,

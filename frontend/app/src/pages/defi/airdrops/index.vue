@@ -68,7 +68,7 @@ const sources: AirdropSources = {
     name: 'Furucombo'
   },
   [AIRDROP_CURVE]: {
-    icon: './assets/images/defi/curve.svg',
+    icon: './assets/images/defi/curve.png',
     name: 'Curve Finance'
   },
   [AIRDROP_POAP]: {

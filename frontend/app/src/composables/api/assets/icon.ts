@@ -1,6 +1,6 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import { api } from '@/services/rotkehlchen-api';
-import { handleResponse } from '@/services/utils';
+import { handleResponse, validStatus } from '@/services/utils';
 
 export const useAssetIconApi = () => {
   const assetImageUrl = (
@@ -58,10 +58,23 @@ export const useAssetIconApi = () => {
     return handleResponse(response);
   };
 
+  const clearIconCache = async (assets: string[] | null): Promise<boolean> => {
+    const response = await api.instance.post<ActionResult<boolean>>(
+      '/cache/icons/clear',
+      { entries: assets },
+      {
+        validateStatus: validStatus
+      }
+    );
+
+    return handleResponse(response);
+  };
+
   return {
     assetImageUrl,
     uploadIcon,
     setIcon,
-    refreshIcon
+    refreshIcon,
+    clearIconCache
   };
 };

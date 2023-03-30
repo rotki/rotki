@@ -1607,13 +1607,35 @@
     "select_visible_columns": "Select visible columns"
   },
   "data_management": {
-    "confirm": {
-      "message": "Are you sure you want to purge the cached data for {source}?",
-      "title": "Confirm cached data purge"
+    "purge_data": {
+      "confirm": {
+        "message": "Are you sure you want to purge the cached data for {source}?",
+        "title": "Confirm cached data purge"
+      },
+      "error": "Purging the cached data for {source} failed: {message}",
+      "subtitle": "Allows you to purge data cached by rotki",
+      "success": "Data was successfully deleted",
+      "title": "Purge Data"
     },
-    "error": "Purging the cached data for {source} failed: {message}",
-    "subtitle": "Allows you to purge data cached by rotki",
-    "success": "Data was successfully deleted",
+    "purge_images_cache": {
+      "confirm": {
+        "message": "Are you sure you want to clear the images cached for {source}?",
+        "title": "Confirm clear images cached"
+      },
+      "label": {
+        "asset_icons": "Asset icons",
+        "asset_to_clear": "Search asset icon to clear",
+        "ens_avatars": "ENS avatars",
+        "ens_to_clear": "ENS avatars to clear"
+      },
+      "hint": "Empty this field to remove cache for all",
+      "error": "Clear the cached images for {source} failed: {message}",
+      "success": "Cache was successfully cleared",
+      "select_image_source": "Select image cache source to clear",
+      "subtitle": "Allows you to purge image cached by rotki",
+      "title": "Purge Images Cache",
+      "tooltip": "Purge the cached images for the selected source"
+    },
     "title": "Manage Data"
   },
   "data_table": {

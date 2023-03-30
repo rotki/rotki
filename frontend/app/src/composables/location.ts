@@ -7,7 +7,7 @@ import { type TradeLocationData } from '@/types/history/trade/location';
 
 export const useLocationInfo = () => {
   const { tradeLocations } = useTradeLocations();
-  const { assetImageUrl } = useAssetIconApi();
+  const { getAssetImageUrl } = useAssetIcon();
   const { getChainInfoById } = useSupportedChains();
 
   const getLocation = (identifier: MaybeRef<string>): TradeLocationData => {
@@ -20,7 +20,7 @@ export const useLocationInfo = () => {
         identifier: assetId,
         exchange: false,
         imageIcon: true,
-        icon: assetImageUrl(assetId),
+        icon: getAssetImageUrl(assetId),
         detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}#blockchain-balances-${id}`
       };
     }

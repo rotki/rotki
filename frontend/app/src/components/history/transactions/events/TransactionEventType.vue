@@ -29,21 +29,27 @@ const { t } = useI18n();
 </script>
 <template>
   <div class="d-flex align-center text-left">
-    <v-badge v-if="counterparty" avatar overlap color="white">
+    <v-badge v-if="counterparty || event.address" avatar overlap color="white">
       <template #badge>
         <v-tooltip top>
           <template #activator="{ on }">
             <div v-on="on">
-              <v-avatar>
+              <v-avatar v-if="counterparty">
                 <v-icon v-if="counterparty.icon" :color="counterparty.color">
                   {{ counterparty.icon }}
                 </v-icon>
 
+                <v-img
+                  v-else-if="counterparty.image"
+                  :src="counterparty.image"
+                />
+
                 <ens-avatar v-else :address="counterparty.label" />
               </v-avatar>
+              <v-avatar v-else-if="event.address" :address="event.address" />
             </div>
           </template>
-          <div>{{ counterparty.label }}</div>
+          <div>{{ counterparty?.label || event.address }}</div>
         </v-tooltip>
       </template>
       <v-avatar
