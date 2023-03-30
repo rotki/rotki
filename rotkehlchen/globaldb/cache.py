@@ -70,7 +70,8 @@ def globaldb_get_general_cache_keys_and_values_like(
     """
     Function to read globaldb cache.
     Returns all pairs key-value where key starts with the provided `key_parts`.
-    `key_parts` should not contain neither `%` nor `.` symbols.
+
+    key_parts should contain neither the "%" nor the "." symbol.
     """
     cache_key = compute_cache_key(key_parts)
     return cursor.execute(
@@ -136,7 +137,8 @@ def globaldb_delete_general_cache_like(
 ) -> None:
     """
     Function to delete globaldb cache. Deletes all the values that start with key.
-    `key_parts` should not contain neither `%` nor `.` symbols.
+
+    key_parts should contain neither the "%" nor the "." symbol.
     """
     cache_key = compute_cache_key(key_parts)
     write_cursor.execute('DELETE FROM general_cache WHERE key LIKE ?', (f'{cache_key}%',))
