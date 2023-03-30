@@ -8,6 +8,9 @@ on:
 jobs:
   merge:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      content: write
     steps:
       - uses: rotki/action-cassette-deck@v1
         with:
