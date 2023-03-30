@@ -228,7 +228,7 @@ const css = useCssModule();
                 <v-icon class="ml-2">mdi-chevron-down</v-icon>
               </v-btn>
             </template>
-            <v-list>
+            <v-list data-cy="asset-filter-menu">
               <v-list-item link @click="onlyShowOwned = !onlyShowOwned">
                 <v-checkbox
                   data-cy="asset-filter-only-show-owned"

@@ -13,10 +13,9 @@ export interface FixtureBlockchainBalance {
 
 export class BlockchainBalancesPage extends AccountBalancesPage {
   visit() {
-    cy.get('.accounts-balances__blockchain-balances')
-      .scrollIntoView()
-      .should('be.visible')
-      .click();
+    cy.get('.accounts-balances__blockchain-balances').scrollIntoView();
+    cy.get('.accounts-balances__blockchain-balances').should('be.visible');
+    cy.get('.accounts-balances__blockchain-balances').click();
   }
 
   isGroupped(balance: FixtureBlockchainBalance) {
@@ -33,7 +32,8 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
     cy.get('[data-cy="account-label-field"]').type(balance.label);
 
     for (const tag of balance.tags) {
-      cy.get('[data-cy="account-tag-field"]').type(tag).type('{enter}');
+      cy.get('[data-cy="account-tag-field"]').type(tag);
+      cy.get('[data-cy="account-tag-field"]').type('{enter}');
     }
 
     cy.get('.big-dialog__buttons__confirm').click();
@@ -71,8 +71,9 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
 
     cy.get('@row')
       .find('[data-cy="labeled-address-display"]')
-      .scrollIntoView()
-      .trigger('mouseenter');
+      .as('address-label');
+    cy.get('@address-label').scrollIntoView();
+    cy.get('@address-label').trigger('mouseenter');
 
     cy.get('.v-tooltip__content.menuable__content__active').as(
       'address-tooltip'
@@ -92,8 +93,9 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
 
     cy.get('@row')
       .find('[data-cy="labeled-address-display"]')
-      .scrollIntoView()
-      .trigger('mouseleave');
+      .as('address-label');
+    cy.get('@address-label').scrollIntoView();
+    cy.get('@address-label').trigger('mouseleave');
   }
 
   getBlockchainBalances() {
@@ -146,9 +148,10 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
     cy.get('[data-cy="blockchain-balance-form"]').as('edit-form');
     cy.get('@edit-form')
       .find('[data-cy="account-label-field"]')
-      .click()
-      .clear()
-      .type(label);
+      .as('account-label');
+    cy.get('@account-label').click();
+    cy.get('@account-label').clear();
+    cy.get('@account-label').type(label);
     cy.get('.big-dialog__buttons__confirm').click();
     cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
       'not.be.visible'

@@ -3,7 +3,9 @@ import { selectAsset } from '../../support/utils';
 
 export class TradeHistoryPage {
   visit() {
-    cy.get('.history__trades').scrollIntoView().should('be.visible').click();
+    cy.get('.history__trades').scrollIntoView();
+    cy.get('.history__trades').should('be.visible');
+    cy.get('.history__trades').click();
   }
 
   createWaitForTrades() {
@@ -149,10 +151,9 @@ export class TradeHistoryPage {
   }
 
   filterTrades(filter: string) {
-    cy.get('[data-cy="table-filter"]')
-      .scrollIntoView()
-      .should('be.visible')
-      .type(`${filter}{enter}`);
+    cy.get('[data-cy="table-filter"]').scrollIntoView();
+    cy.get('[data-cy="table-filter"]').should('be.visible');
+    cy.get('[data-cy="table-filter"]').type(`${filter}{enter}`);
   }
 
   nextPage() {

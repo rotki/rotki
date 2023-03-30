@@ -24,7 +24,8 @@ export class RotkiApp {
     cy.get('[data-cy=account-management]').then($body => {
       const button = $body.find('[data-cy=new-account]');
       if (button.length > 0) {
-        cy.get('[data-cy=new-account]').scrollIntoView().click();
+        cy.get('[data-cy=new-account]').scrollIntoView();
+        cy.get('[data-cy=new-account]').click();
       }
     });
 
@@ -89,7 +90,8 @@ export class RotkiApp {
       '[data-cy="privacy-mode-dropdown__input"] ~ .v-slider__thumb-container'
     ).as('input');
 
-    cy.get('@input').focus().type('{downarrow}'.repeat(2));
+    cy.get('@input').focus();
+    cy.get('@input').type('{downarrow}'.repeat(2));
 
     if (mode > 0) {
       cy.get('@input').type('{uparrow}'.repeat(mode));

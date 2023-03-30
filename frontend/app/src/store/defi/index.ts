@@ -183,7 +183,8 @@ export const useDefiStore = defineStore('defi', () => {
           : get(totalLendingDeposit(filter, []))
       };
     };
-    const summary: Record<string, Writeable<DefiProtocolSummary>> = {};
+
+    const summary: Record<string, DefiProtocolSummary> = {};
 
     const defiProtocols = get(allProtocols);
     for (const address of Object.keys(defiProtocols)) {
@@ -357,9 +358,10 @@ export const useDefiStore = defineStore('defi', () => {
       }
     }
 
-    return sortBy(Object.values(summary), 'protocol.name').filter(
-      value => value.balanceUsd || value.deposits || value.liabilities
-    );
+    return sortBy(
+      Object.values(summary),
+      summary => summary.protocol.name
+    ).filter(value => value.balanceUsd || value.deposits || value.liabilities);
   });
 
   const fetchDefiBalances = async (refresh: boolean) => {

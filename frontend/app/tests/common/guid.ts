@@ -1,5 +1,5 @@
 export class Guid {
-  private readonly value: string = this.empty;
+  private readonly value: string = this.empty();
 
   public static newGuid(): Guid {
     return new Guid(
@@ -11,12 +11,12 @@ export class Guid {
     );
   }
 
-  public static get empty(): string {
+  public static empty(): string {
     return '00000000-0000-0000-0000-000000000000';
   }
 
-  public get empty(): string {
-    return Guid.empty;
+  public empty(): string {
+    return Guid.empty();
   }
 
   public static isValid(str: string): boolean {

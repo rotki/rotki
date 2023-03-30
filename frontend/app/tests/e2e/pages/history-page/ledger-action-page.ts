@@ -3,10 +3,9 @@ import { selectAsset, selectLocation } from '../../support/utils';
 
 export class LedgerActionPage {
   visit() {
-    cy.get('.history__ledger-actions')
-      .scrollIntoView()
-      .should('be.visible')
-      .click();
+    cy.get('.history__ledger-actions').scrollIntoView();
+    cy.get('.history__ledger-actions').should('be.visible');
+    cy.get('.history__ledger-actions').click();
   }
 
   createWaitForLedgerActions() {
@@ -132,10 +131,9 @@ export class LedgerActionPage {
   }
 
   filterLedgerActions(filter: string) {
-    cy.get('[data-cy="table-filter"]')
-      .scrollIntoView()
-      .should('be.visible')
-      .type(`${filter}{enter}`);
+    cy.get('[data-cy="table-filter"]').scrollIntoView();
+    cy.get('[data-cy="table-filter"]').should('be.visible');
+    cy.get('[data-cy="table-filter"]').type(`${filter}{enter}`);
   }
 
   nextPage() {
