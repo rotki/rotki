@@ -20,11 +20,10 @@ export class AccountingSettingsPage {
   changeSwitch(target: string) {
     cy.get(`${target} input`).then($switch => {
       const initialValue = $switch.attr('aria-checked');
-      cy.get(target)
-        .click()
-        .then(() => {
-          expect($switch.attr('aria-checked')).not.to.eq(initialValue);
-        });
+      cy.get(target).click();
+      cy.get(target).then(() => {
+        expect($switch.attr('aria-checked')).not.to.eq(initialValue);
+      });
     });
     this.confirmInlineSuccess(target);
   }
