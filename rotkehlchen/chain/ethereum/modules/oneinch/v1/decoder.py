@@ -127,6 +127,13 @@ class Oneinchv1Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_ONEINCH_V1: {
+            (HistoryEventType.SPEND, HistoryEventSubType.FEE),
+            (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
+            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
+        }}
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             string_to_evm_address('0x11111254369792b2Ca5d084aB5eEA397cA8fa48B'): (self.decode_action,),  # noqa: E501

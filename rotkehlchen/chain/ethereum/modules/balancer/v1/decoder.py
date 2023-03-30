@@ -263,6 +263,15 @@ class Balancerv1Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_BALANCER_V1: {
+            (HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED),
+            (HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED),
+            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+            (HistoryEventType.RECEIVE, HistoryEventSubType.REMOVE_ASSET),
+            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
+        }}
+
     def enricher_rules(self) -> list[Callable]:
         return [
             self._maybe_enrich_balancer_v1_events,

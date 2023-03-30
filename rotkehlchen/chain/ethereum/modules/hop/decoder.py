@@ -60,6 +60,9 @@ class HopDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_HOP: {(HistoryEventType.DEPOSIT, HistoryEventSubType.BRIDGE)}}
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             ETH_BRIDGE: (self._decode_send_eth,),

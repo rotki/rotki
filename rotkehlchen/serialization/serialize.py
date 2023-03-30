@@ -6,6 +6,7 @@ from web3.datastructures import AttributeDict
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, StakingEvent
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
@@ -50,6 +51,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
     YearnVaultEvent,
     YearnVaultHistory,
 )
+from rotkehlchen.chain.evm.frontend_structures.types import EventDetails, TransactionEventType
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
@@ -84,8 +86,10 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
     if isinstance(entry, (dict, AttributeDict)):
         new_dict = {}
         for k, v in entry.items():
-            if isinstance(k, Asset):
+            if isinstance(k, Asset) is True:
                 k = k.identifier  # noqa: PLW2901
+            elif isinstance(k, (HistoryEventType, HistoryEventSubType, TransactionEventType)) is True:  # noqa: E501
+                k = _process_entry(k)  # noqa: PLW2901
             new_dict[k] = _process_entry(v)
         return new_dict
     if isinstance(entry, HexBytes):
@@ -123,6 +127,8 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             ChainID,
             SingleBlockchainAccountData,
             SupportedBlockchain,
+            HistoryEventType,
+            HistoryEventSubType,
     )):
         return entry.serialize()
     if isinstance(entry, (
@@ -153,6 +159,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             WeightedNode,
     )):
         return process_result(entry.serialize())
+    from rotkehlchen.chain.evm.frontend_structures.protocols import ProtocolDetails  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
     if isinstance(entry, (
             DBSettings,
             CompoundEvent,
@@ -167,6 +174,8 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             DefiProtocolBalances,
             YearnVaultHistory,
             BlockchainAccountData,
+            EventDetails,
+            ProtocolDetails,
     )):
         return process_result(entry._asdict())
     if isinstance(entry, tuple):
@@ -187,6 +196,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             CostBasisMethod,
             EvmTokenKind,
             HistoryBaseEntryType,
+            TransactionEventType,
     )):
         return str(entry)
 
@@ -200,7 +210,6 @@ def process_result(result: Any) -> dict[Any, Any]:
 
         - all Decimals to strings so that the serialization to float/big number
           is handled by the client application and we lose nothing in the transfer
-
         - if a dictionary has an Asset for a key use its identifier as the key value
         - all NamedTuples and Dataclasses must be serialized into dicts
         - all enums and more

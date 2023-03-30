@@ -222,6 +222,17 @@ class LiquityDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_LIQUITY: {
+            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.GENERATE_DEBT),
+            (HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT),
+            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
+            (HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET),
+            (HistoryEventType.STAKING, HistoryEventSubType.REWARD),
+            (HistoryEventType.STAKING, HistoryEventSubType.REMOVE_ASSET),
+        }}
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             ACTIVE_POOL: (self._decode_trove_operations,),

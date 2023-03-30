@@ -125,6 +125,22 @@ class YearnDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {
+            CPT_YEARN_V1: {
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.RECEIVE_WRAPPED),
+                (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
+                (HistoryEventType.WITHDRAWAL, HistoryEventSubType.RETURN_WRAPPED),
+            },
+            CPT_YEARN_V2: {
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.RECEIVE_WRAPPED),
+                (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
+                (HistoryEventType.WITHDRAWAL, HistoryEventSubType.RETURN_WRAPPED),
+            },
+        }
+
     def enricher_rules(self) -> list[Callable]:
         return [
             self._maybe_enrich_yearn_transfers,

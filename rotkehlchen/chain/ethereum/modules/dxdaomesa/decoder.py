@@ -175,6 +175,13 @@ class DxdaomesaDecoder(DecoderInterface):
         return DecodingOutput(event=event)
 
     # -- DecoderInterface methods
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_DXDAO_MESA: {
+            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+            (HistoryEventType.INFORMATIONAL, HistoryEventSubType.REMOVE_ASSET),
+            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
+            (HistoryEventType.INFORMATIONAL, HistoryEventSubType.PLACE_ORDER),
+        }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

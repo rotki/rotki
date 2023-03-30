@@ -12363,3 +12363,111 @@ Clear Icons/Avatars Cache
    :statuscode 200: The cache items were cleared successfully.
    :statuscode 400: Entries provided do not match the ``cache_type`` specified. Invalid ``cache_type`` provided.
    :statuscode 500: Internal rotki error
+
+
+Event Mappings
+================
+
+.. http:get:: /api/(version)/history/events/type_mappings
+
+  Doing a GET on this endpoint will return a mapping of history events types and subtypes to the frontend's ``TransactionEventType`` representation. We also return properties such ``icon``, ``label`` and ``color`` for event types.
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+    GET /history/events/type_mappings HTTP/1.1
+    Host: localhost:5042
+
+
+  **Example Response**
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result":{
+            "mappings":{
+                "spend":{
+                    "fee": "gas",
+                    "payback debt": "repay",
+                    "return wrapped": "send",
+                    "donate": "donate",
+                    "liquidate": "liquidate",
+                    "none": "send"
+                }
+            },
+            "event_type_details":{
+              "gas":{
+                  "label": "gas_fee",
+                  "icon": "mdi-fire",
+                  "color": null
+              },
+              "send":{
+                  "label": "send",
+                  "icon": "mdi-arrow-up",
+                  "color": null
+              },
+              "receive":{
+                  "label": "receive",
+                  "icon": "mdi-arrow-down",
+                  "color": "green"
+              }
+            }
+        }
+      }
+
+  :resjson object mappings: keys of this object are the history event types names and values are mappings of subtypes' names to the ``TransactionEventType`` name.
+  :resjson object event_type_details: Properties for ``TransactionEventType``.
+  :resjson string label: Label to show in the frontend for the event type.
+  :resjson string icon: Icon to be used by the frontend for this event type.
+  :resjson string color[optional]: Optional color to apply to the icon
+
+  :statuscode 200: Information was correctly generated
+  :statuscode 500: Internal rotki error
+
+Counterparties
+================
+
+.. http:post:: /api/(version)/history/events/counterparties
+
+   Doing a GET on this endpoint will return information for all the counterparties used for decoding events in the backend.
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+    GET /history/events/counterparties HTTP/1.1
+    Host: localhost:5042
+
+
+  **Example Response**
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result":[
+            {
+              "identifier":"1inch-v1",
+              "label":"1inch",
+              "image":"/assets/images/defi/1inch.svg"
+            },
+            {
+              "identifier":"1inch-v2",
+              "label":"1inch",
+              "image":"/assets/images/defi/1inch.svg"
+            }
+        ]
+      }
+
+  :resjson string identifier: value used by the backend to represent such counterparty.
+  :resjson string label: Name displayed in the frontend.
+  :resjson string image: Relative path to the counterparty image.
+
+  :statuscode 200: Information was correctly generated
+  :statuscode 500: Internal rotki error

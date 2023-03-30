@@ -55,6 +55,11 @@ class VotiumDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {
+            CPT_VOTIUM: {(HistoryEventType.RECEIVE, HistoryEventSubType.REWARD)},
+        }
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             VOTIUM_CONTRACT: (self._decode_claim,),

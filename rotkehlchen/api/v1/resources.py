@@ -2876,3 +2876,15 @@ class ClearCacheResource(BaseMethodView):
         # can only be avatars
         data = self.avatars_schema.load(req_body)
         return self.rest_api.clear_avatars_cache(data['entries'])
+
+
+class TypesMappingsResource(BaseMethodView):
+
+    def get(self) -> Response:
+        return self.rest_api.get_types_mappings()
+
+
+class EvmCounterpartiesResource(BaseMethodView):
+
+    def get(self) -> Response:
+        return self.rest_api.get_evm_counterparties_details()

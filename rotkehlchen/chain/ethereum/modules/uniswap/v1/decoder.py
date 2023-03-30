@@ -82,6 +82,12 @@ class Uniswapv1Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_UNISWAP_V1: {
+            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
+            (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
+        }}
+
     def decoding_rules(self) -> list[Callable]:
         return [
             self._maybe_decode_swap,

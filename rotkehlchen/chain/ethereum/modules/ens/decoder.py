@@ -219,6 +219,14 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_ENS: {
+            (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
+            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
+            (HistoryEventType.RENEW, HistoryEventSubType.NFT),
+            (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE),
+        }}
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             ENS_REGISTRAR_CONTROLLER: (self._decode_ens_registrar_event,),

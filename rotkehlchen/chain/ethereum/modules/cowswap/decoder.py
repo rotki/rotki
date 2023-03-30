@@ -242,6 +242,15 @@ class CowswapDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_COWSWAP: {
+            (HistoryEventType.DEPOSIT, HistoryEventSubType.PLACE_ORDER),
+            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.CANCEL_ORDER),
+            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REFUND),
+            (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
+            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
+        }}
+
     def counterparties(self) -> list[str]:
         return [CPT_COWSWAP]
 

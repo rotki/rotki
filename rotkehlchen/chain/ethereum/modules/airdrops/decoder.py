@@ -249,6 +249,9 @@ class AirdropsDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {counterparty: {(HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP)} for counterparty in ETHEREUM_AIRDROPS_LIST}  # noqa: E501
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             UNISWAP_DISTRIBUTOR: (self._decode_uniswap_claim,),

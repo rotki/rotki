@@ -47,6 +47,12 @@ class GitcoinDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_GITCOIN: {
+            (HistoryEventType.SPEND, HistoryEventSubType.DONATE),
+            (HistoryEventType.RECEIVE, HistoryEventSubType.DONATE),
+        }}
+
     def enricher_rules(self) -> list[Callable]:
         return [
             self._maybe_enrich_gitcoin_transfers,

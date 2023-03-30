@@ -150,6 +150,8 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         self.rules.event_rules.extend(event_rules)
         self.value_asset = value_asset
         self.decoders: dict[str, 'DecoderInterface'] = {}
+        # store the mapping of possible counterparties to the allowed types and subtypes in events
+        self.events_types_tuples: dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]] = {}  # noqa: E501
         # Recursively check all submodules to get all decoder address mappings and rules
         rules = self._recursively_initialize_decoders(self.chain_modules_root)
         self.rules += rules
@@ -207,6 +209,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     results.post_decoding_rules.update(self.decoders[class_name].post_decoding_rules())  # noqa: E501
                     results.all_counterparties.update(self.decoders[class_name].counterparties())
                     results.addresses_to_counterparties.update(self.decoders[class_name].addresses_to_counterparties())  # noqa: E501
+                    self.events_types_tuples.update(self.decoders[class_name].possible_events())
 
                 recursive_results = self._recursively_initialize_decoders(full_name)
                 results += recursive_results
@@ -318,6 +321,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         for _, rule in rules:
             decoded_events = rule(transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
 
+        assert self._check_correct_types(decoded_events)
         return decoded_events
 
     def decode_transaction(
@@ -794,3 +798,22 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
     def _address_is_exchange(address: ChecksumEvmAddress) -> Optional[str]:
         """Takes an address and returns if it's an exchange in the given chain
         and the counterparty to use if it is."""
+
+    def _check_correct_types(self, decoded_events: list['EvmEvent']) -> bool:
+        if __debug__:
+            return True
+
+        unexpected_types = set()
+        for event in decoded_events:
+            if event.counterparty is None:
+                continue
+
+            expected_events = self.events_types_tuples.get(event.counterparty)
+            if expected_events is None:
+                continue
+
+            if (event.event_type, event.event_subtype) not in expected_events:
+                unexpected_types.add((event.event_type, event.event_subtype, event.counterparty))
+
+        assert len(unexpected_types) == 0, f'Found the following unexpected types {unexpected_types}'  # noqa: E501
+        return True

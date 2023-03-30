@@ -142,7 +142,6 @@ class CompoundDecoder(DecoderInterface):
                 event.notes = f'Withdraw {redeem_amount} {underlying_token.symbol} from compound'
                 in_event = event
             if event.event_type == HistoryEventType.SPEND and event.asset == compound_token and event.balance.amount == redeem_tokens:  # noqa: E501
-                event.event_type = HistoryEventType.SPEND
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = CPT_COMPOUND
                 event.notes = f'Return {redeem_tokens} {compound_token.symbol} to compound'
@@ -260,6 +259,17 @@ class CompoundDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
+
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_COMPOUND: {
+            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+            (HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED),
+            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
+            (HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED),
+            (HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT),
+            (HistoryEventType.RECEIVE, HistoryEventSubType.REWARD),
+            (HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT),
+        }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         compound_tokens = GlobalDBHandler().get_evm_tokens(
