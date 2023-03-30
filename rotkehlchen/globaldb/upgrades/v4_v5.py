@@ -6,6 +6,7 @@ from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
 
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
+    globaldb_delete_general_cache_like,
     globaldb_get_general_cache_values,
     globaldb_set_general_cache_values_at_ts,
 )
@@ -60,8 +61,11 @@ def _populate_rpc_nodes(cursor: 'DBCursor', root_dir: Path) -> None:
     log.debug('Exit _populate_rpc_nodes')
 
 
-def _reset_curve_cache_last_queried_ts(write_cursor: 'DBCursor') -> None:
-    """Resets curve cache last queried timestamp to query and save gauges"""
+def _reset_curve_cache(write_cursor: 'DBCursor') -> None:
+    """Resets some parts of the curve cache.
+    1. Resets last queried timestamp to query and save gauges.
+    2. Clears curve pool tokens to requery them and save in the new format.
+    """
     refreshing_timestamp = Timestamp(ts_now() - ETH_PROTOCOLS_CACHE_REFRESH - 1)
     lp_tokens = globaldb_get_general_cache_values(
         cursor=write_cursor,
@@ -77,6 +81,10 @@ def _reset_curve_cache_last_queried_ts(write_cursor: 'DBCursor') -> None:
         values=lp_tokens,
         timestamp=refreshing_timestamp,
     )
+    globaldb_delete_general_cache_like(
+        write_cursor=write_cursor,
+        key_parts=[GeneralCacheType.CURVE_POOL_TOKENS],
+    )
 
 
 def migrate_to_v5(connection: 'DBConnection') -> None:
@@ -89,4 +97,4 @@ def migrate_to_v5(connection: 'DBConnection') -> None:
     with connection.write_ctx() as cursor:
         _create_new_tables(cursor)
         _populate_rpc_nodes(cursor, root_dir)
-        _reset_curve_cache_last_queried_ts(cursor)
+        _reset_curve_cache(cursor)

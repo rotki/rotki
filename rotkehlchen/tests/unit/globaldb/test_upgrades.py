@@ -10,7 +10,10 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.errors.misc import DBUpgradeError
-from rotkehlchen.globaldb.cache import globaldb_get_general_cache_last_queried_ts_by_key
+from rotkehlchen.globaldb.cache import (
+    globaldb_get_general_cache_keys_and_values_like,
+    globaldb_get_general_cache_last_queried_ts_by_key,
+)
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.upgrades.manager import maybe_upgrade_globaldb
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
@@ -319,6 +322,11 @@ def test_upgrade_v4_v5(globaldb):
             key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
         )
         assert last_queried_ts == Timestamp(1676727187)  # 1676727187 is just some random value in the db  # noqa: E501
+        pool_tokens_in_global_db = globaldb_get_general_cache_keys_and_values_like(
+            cursor=cursor,
+            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS],
+        )
+        assert len(pool_tokens_in_global_db) > 0, 'There should be some pool tokens set'
 
     # execute upgrade
     with ExitStack() as stack:
@@ -358,6 +366,11 @@ def test_upgrade_v4_v5(globaldb):
             key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
         )
         assert ts_now() - last_queried_ts == ETH_PROTOCOLS_CACHE_REFRESH + 1
+        pool_tokens_in_global_db = globaldb_get_general_cache_keys_and_values_like(
+            cursor=cursor,
+            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS],
+        )
+        assert len(pool_tokens_in_global_db) == 0, 'All curve pool tokens should have been deleted'
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
