@@ -169,6 +169,7 @@
     "useArrayUnique": true,
     "useAssetCacheStore": true,
     "useAssetFilter": true,
+    "useAssetIcon": true,
     "useAssetIconApi": true,
     "useAssetIgnoreApi": true,
     "useAssetInfoApi": true,

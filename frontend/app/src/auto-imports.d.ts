@@ -166,6 +166,7 @@ declare global {
   const useArrayUnique: typeof import('@vueuse/core')['useArrayUnique']
   const useAssetCacheStore: typeof import('./store/assets/asset-cache')['useAssetCacheStore']
   const useAssetFilter: typeof import('./composables/filters/assets')['useAssetFilter']
+  const useAssetIcon: typeof import('./composables/assets/icon')['useAssetIcon']
   const useAssetIconApi: typeof import('./composables/api/assets/icon')['useAssetIconApi']
   const useAssetIgnoreApi: typeof import('./composables/api/assets/ignore')['useAssetIgnoreApi']
   const useAssetInfoApi: typeof import('./composables/api/assets/info')['useAssetInfoApi']
@@ -677,6 +678,7 @@ declare module 'vue' {
     readonly useArrayUnique: UnwrapRef<typeof import('@vueuse/core')['useArrayUnique']>
     readonly useAssetCacheStore: UnwrapRef<typeof import('./store/assets/asset-cache')['useAssetCacheStore']>
     readonly useAssetFilter: UnwrapRef<typeof import('./composables/filters/assets')['useAssetFilter']>
+    readonly useAssetIcon: UnwrapRef<typeof import('./composables/assets/icon')['useAssetIcon']>
     readonly useAssetIconApi: UnwrapRef<typeof import('./composables/api/assets/icon')['useAssetIconApi']>
     readonly useAssetIgnoreApi: UnwrapRef<typeof import('./composables/api/assets/ignore')['useAssetIgnoreApi']>
     readonly useAssetInfoApi: UnwrapRef<typeof import('./composables/api/assets/info')['useAssetInfoApi']>

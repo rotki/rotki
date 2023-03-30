@@ -3,6 +3,7 @@ import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
+  validStatus,
   validWithSessionAndExternalService
 } from '@/services/utils';
 import {
@@ -118,6 +119,30 @@ export const useAddressesNamesApi = () => {
     return handleResponse(response);
   };
 
+  const ensAvatarUrl = (ens: string, timestamp?: number): string => {
+    let url = `${api.instance.defaults.baseURL}avatars/ens/${ens}`;
+
+    if (timestamp) {
+      url += `?timtesamp=${timestamp}`;
+    }
+
+    return url;
+  };
+
+  const clearEnsAvatarCache = async (
+    listEns: string[] | null
+  ): Promise<boolean> => {
+    const response = await api.instance.post<ActionResult<boolean>>(
+      '/cache/avatars/clear',
+      { entries: listEns },
+      {
+        validateStatus: validStatus
+      }
+    );
+
+    return handleResponse(response);
+  };
+
   return {
     getEnsNamesTask,
     getEnsNames,
@@ -125,6 +150,8 @@ export const useAddressesNamesApi = () => {
     addAddressBook,
     updateAddressBook,
     deleteAddressBook,
-    getAddressesNames
+    getAddressesNames,
+    ensAvatarUrl,
+    clearEnsAvatarCache
   };
 };

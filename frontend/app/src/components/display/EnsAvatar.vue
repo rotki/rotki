@@ -14,14 +14,14 @@ const props = withDefaults(
 
 const { address, blockchain } = toRefs(props);
 
-const { ensAvatarUrl } = useAddressesNamesStore();
+const { getEnsAvatarUrl } = useAddressesNamesStore();
 
 const avatarUrl: ComputedRef<string | null> = computed(() => {
   if (get(blockchain) !== Blockchain.ETH) {
     return null;
   }
 
-  return get(ensAvatarUrl(address));
+  return get(getEnsAvatarUrl(address));
 });
 
 const { getBlockie } = useBlockie();

@@ -20,6 +20,7 @@ export type EthTransactionEventDetail = z.infer<
 >;
 
 export const EthTransactionEvent = z.object({
+  address: z.string().nullish(),
   eventIdentifier: z.string(),
   sequenceIndex: z.number().or(z.string()),
   timestamp: z.number(),

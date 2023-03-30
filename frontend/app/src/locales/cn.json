@@ -1564,13 +1564,16 @@
     "select_visible_columns": "选择可见列"
   },
   "data_management": {
-    "confirm": {
-      "message": "您确定要清除 {source} 的缓存数据吗？",
-      "title": "确认缓存数据清除"
+    "purge_data": {
+      "confirm": {
+        "message": "您确定要清除 {source} 的缓存数据吗？",
+        "title": "确认缓存数据清除"
+      },
+      "error": "清除 {source} 的缓存数据失败：{message}",
+      "subtitle": "允许您清除 rotki 缓存的数据",
+      "success": "数据删除成功",
+      "title": "清除數据"
     },
-    "error": "清除 {source} 的缓存数据失败：{message}",
-    "subtitle": "允许您清除 rotki 缓存的数据",
-    "success": "数据删除成功",
     "title": "管理数据"
   },
   "data_table": {
