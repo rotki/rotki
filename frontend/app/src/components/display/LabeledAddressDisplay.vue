@@ -28,9 +28,6 @@ const smAndDown = computed(() => get(currentBreakpoint).smAndDown);
 
 const address = computed<string>(() => {
   const address = get(account).address;
-  if (!get(scrambleData)) {
-    return address;
-  }
   return scrambleHex(address);
 });
 

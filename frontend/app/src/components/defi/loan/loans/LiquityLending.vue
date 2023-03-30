@@ -7,7 +7,6 @@ import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import LiquityCollateral from '@/components/defi/loan/loans/liquity/LiquityCollateral.vue';
 import LiquityLiquidation from '@/components/defi/loan/loans/liquity/LiquityLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
-
 import { type LiquityLoan } from '@/store/defi/liquity/types';
 import {
   HistoryEventType,
@@ -34,13 +33,19 @@ const liquidationPrice: ComputedRef<BigNumber | null> = computed(
 );
 const premium = usePremium();
 const { tc } = useI18n();
+
+const { scrambleIdentifier } = useScramble();
 </script>
 
 <template>
   <v-row>
     <v-col cols="12">
       <loan-header class="mt-8 mb-6" :owner="loan.owner">
-        {{ tc('liquity_lending.header', 0, { troveId: loan.balance.troveId }) }}
+        {{
+          tc('liquity_lending.header', 0, {
+            troveId: scrambleIdentifier(loan.balance.troveId)
+          })
+        }}
       </loan-header>
       <v-row no-gutters>
         <v-col cols="12" md="6" class="pe-md-4">

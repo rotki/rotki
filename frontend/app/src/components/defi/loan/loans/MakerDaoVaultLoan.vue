@@ -7,10 +7,8 @@ import MakerDaoVaultCollateral from '@/components/defi/loan/loans/makerdao/Maker
 import MakerDaoVaultDebtDetails from '@/components/defi/loan/loans/makerdao/MakerDaoVaultDebtDetails.vue';
 import MakerDaoVaultLiquidation from '@/components/defi/loan/loans/makerdao/MakerDaoVaultLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
-
 import { VaultEventsList } from '@/premium/premium';
 import { usePremiumStore } from '@/store/session/premium';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import {
   type MakerDAOVaultEvent,
   type MakerDAOVaultModel
@@ -25,7 +23,6 @@ const props = defineProps({
 });
 
 const { vault } = toRefs(props);
-const { scrambleData } = storeToRefs(useSessionSettingsStore());
 const { premium } = storeToRefs(usePremiumStore());
 const { openUrl } = useInterop();
 const { tc } = useI18n();
@@ -58,10 +55,12 @@ const creation = computed(() => {
   return undefined;
 });
 
+const { scrambleIdentifier } = useScramble();
+
 const header = computed(() => {
   const makerVault = get(vault);
   return {
-    identifier: get(scrambleData) ? '-' : makerVault.identifier,
+    identifier: scrambleIdentifier(makerVault.identifier),
     collateralType: makerVault.collateralType
   };
 });
