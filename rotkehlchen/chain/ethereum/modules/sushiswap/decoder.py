@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Callable, Optional
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
@@ -101,6 +102,17 @@ class SushiswapDecoder(DecoderInterface):
         )
 
     # -- DecoderInterface methods
+
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_SUSHISWAP_V2: {
+            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
+            (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
+            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
+            (HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED),
+            (HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED),
+            (HistoryEventType.TRANSFER, HistoryEventSubType.NONE),
+        }}
 
     def decoding_rules(self) -> list[Callable]:
         return [

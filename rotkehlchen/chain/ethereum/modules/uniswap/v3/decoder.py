@@ -516,7 +516,17 @@ class Uniswapv3Decoder(DecoderInterface):
             return DEFAULT_ENRICHMENT_OUTPUT
 
         return DEFAULT_ENRICHMENT_OUTPUT
+
     # -- DecoderInterface methods
+
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_UNISWAP_V3: {
+            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
+            (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
+            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
+            (HistoryEventType.RECEIVE, HistoryEventSubType.NFT),
+        }}
 
     def decoding_rules(self) -> list[Callable]:
         return [

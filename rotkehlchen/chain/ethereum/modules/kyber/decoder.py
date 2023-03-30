@@ -139,6 +139,12 @@ class KyberDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_KYBER: {
+            (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
+            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
+        }}
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             KYBER_LEGACY_CONTRACT: (self._decode_legacy_trade,),

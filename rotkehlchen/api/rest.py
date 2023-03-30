@@ -60,6 +60,11 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LI
 from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as get_liquity_stats
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
+from rotkehlchen.chain.evm.frontend_structures.events_mappings import (
+    EVENT_DETAILS,
+    FRONTEND_MAPPING,
+)
+from rotkehlchen.chain.evm.frontend_structures.protocols import PROTOCOLS
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import WeightedNode
@@ -4291,3 +4296,19 @@ class RestAPI():
             )
 
         return api_response(OK_RESULT)
+
+    def get_types_mappings(self) -> Response:
+        result = {
+            'mappings': FRONTEND_MAPPING,
+            'event_type_details': EVENT_DETAILS,
+        }
+        return api_response(
+            result=_wrap_in_ok_result(process_result(result)),
+            status_code=HTTPStatus.OK,
+        )
+
+    def get_evm_counterparties_details(self) -> Response:
+        return api_response(
+            result=process_result(_wrap_in_ok_result(PROTOCOLS)),
+            status_code=HTTPStatus.OK,
+        )

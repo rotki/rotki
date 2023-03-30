@@ -49,6 +49,9 @@ class Eth2Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_ETH2: {(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)}}
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             ETH2_DEPOSIT_ADDRESS: (self._decode_eth2_deposit_event,),

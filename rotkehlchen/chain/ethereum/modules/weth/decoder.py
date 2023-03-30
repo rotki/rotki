@@ -133,6 +133,14 @@ class WethDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_WETH: {
+            (HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED),
+            (HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED),
+            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+            (HistoryEventType.RECEIVE, HistoryEventSubType.NONE),
+        }}
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             WETH_CONTRACT: (self._decode_weth,),

@@ -6,6 +6,7 @@ from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
+    from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -79,6 +80,10 @@ class DecoderInterface(metaclass=ABCMeta):
             f'Make sure that it has all the required properties (name, symbol and decimals) and '
             f'try to decode the event again {event.event_identifier.hex()}.',
         )
+
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        """Return the possible types and subtypes used in decoders"""
+        return {}
 
 
 class ReloadableDecoderMixin(metaclass=ABCMeta):

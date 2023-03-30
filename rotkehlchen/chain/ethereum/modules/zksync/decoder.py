@@ -61,6 +61,9 @@ class ZksyncDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_ZKSYNC: {(HistoryEventType.DEPOSIT, HistoryEventSubType.BRIDGE)}}
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             ZKSYNC_BRIDGE: (self._decode_event,),

@@ -518,3 +518,25 @@ def test_cache_deletion(rotkehlchen_api_server):
     )
     assert response.status_code == 200
     assert response.headers['Content-Type'] == 'image/png'
+
+
+def test_query_frontend_mappings(rotkehlchen_api_server):
+    """
+    Test that the information for event types mappings and counterparties is correctly
+    generated for the frontend.
+    """
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'typesmappingsresource',
+        ),
+    )
+    assert_proper_response(response)
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'evmcounterpartiesresource',
+        ),
+    )
+    assert_proper_response(response)

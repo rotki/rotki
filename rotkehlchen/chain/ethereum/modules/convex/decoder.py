@@ -148,6 +148,14 @@ class ConvexDecoder(DecoderInterface):
             return DEFAULT_ENRICHMENT_OUTPUT
         return DEFAULT_ENRICHMENT_OUTPUT
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_CONVEX: {
+            (HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED),
+            (HistoryEventType.DEPOSIT, HistoryEventSubType.NONE),
+            (HistoryEventType.RECEIVE, HistoryEventSubType.REWARD),
+            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.NONE),
+        }}
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         decoder_mappings: dict[ChecksumEvmAddress, tuple[Callable, ...]] = {
             BOOSTER: (self._decode_convex_events,),

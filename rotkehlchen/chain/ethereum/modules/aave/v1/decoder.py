@@ -102,6 +102,15 @@ class Aavev1Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_AAVE_V1: {
+            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
+            (HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED),
+            (HistoryEventType.RECEIVE, HistoryEventSubType.REWARD),
+            (HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED),
+            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+        }}
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             self.evm_inquirer.contracts.contract('AAVE_V1_LENDING_POOL').address: (self._decode_pool_event,),  # noqa: E501

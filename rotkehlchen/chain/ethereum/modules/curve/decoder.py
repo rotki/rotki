@@ -638,6 +638,18 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+        return {CPT_CURVE: {
+            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
+            (HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED),
+            (HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED),
+            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
+            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
+            (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
+            (HistoryEventType.RECEIVE, HistoryEventSubType.REWARD),
+        }}
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = {
             address: (self._decode_curve_events,)
