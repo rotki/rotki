@@ -3797,260 +3797,260 @@
           }
         },
         "event_type": {
-          "label": "Event Type",
+          "label": "事件类型",
           "validation": {
-            "non_empty": "The event type field cannot be empty."
+            "non_empty": "事件类型字段不能为空。"
           }
         },
         "fiat_value": {
           "validation": {
-            "non_empty": "The {currency} value field cannot be empty."
+            "non_empty": "{currency} 值字段不能为空。"
           }
         },
         "location": {
           "validation": {
-            "non_empty": "The location field cannot be empty."
+            "non_empty": "位置字段不能为空。"
           }
         },
         "location_label": {
-          "label": "Location Label"
+          "label": "位置标签"
         },
         "notes": {
-          "hint": "[Optional] Additional notes to store for the action",
-          "label": "Notes"
+          "hint": "[Optional] 为操作存储的附加注释",
+          "label": "备注"
         },
         "sequence_index": {
-          "label": "Sequence Index",
+          "label": "序列索引",
           "validation": {
-            "non_empty": "The sequence index field cannot be empty."
+            "non_empty": "序列索引字段不能为空。"
           }
         },
         "transaction_event_type": {
-          "label": "Transaction Event Type"
+          "label": "交易事件类型"
         }
       },
       "history_event_subtype": {
-        "airdrop": "Airdrop",
-        "approve": "Approve",
-        "bridge": "Bridge",
-        "deploy": "Deploy",
-        "deposit_asset": "Deposit Asset",
-        "fee": "Fee",
-        "generate_debt": "Generate Debt",
-        "governance": "Governance",
+        "airdrop": "空投",
+        "approve": "批准",
+        "bridge": "桥",
+        "deploy": "部署",
+        "deposit_asset": "存入资产",
+        "fee": "费用",
+        "generate_debt": "生成债务",
+        "governance": "治理",
         "nft": "NFT",
-        "none": "None",
-        "payback_debt": "Payback Debt",
-        "receive": "Receive",
-        "receive_wrapped": "Receive Wrapped",
-        "remove_asset": "Remove Asset",
-        "return_wrapped": "Return Wrapped",
-        "reward": "Reward",
-        "spend": "Spend"
+        "none": "无",
+        "payback_debt": "偿还债务",
+        "receive": "接收",
+        "receive_wrapped": "接收包装",
+        "remove_asset": "移除资产",
+        "return_wrapped": "返回包裹",
+        "reward": "奖励",
+        "spend": "花费"
       },
       "history_event_type": {
-        "adjustment": "Adjustment",
-        "deposit": "Deposit",
-        "informational": "Informational",
-        "migrate": "Migrate",
-        "receive": "Receive",
-        "renew": "Renew",
-        "spend": "Spend",
-        "staking": "Staking",
-        "trade": "Trade",
-        "transfer": "Transfer",
-        "unknown": "Unknown",
-        "withdrawal": "Withdrawal"
+        "adjustment": "调整",
+        "deposit": "存款",
+        "informational": "信息",
+        "migrate": "迁移",
+        "receive": "接收",
+        "renew": "更新",
+        "spend": "花费",
+        "staking": "质押",
+        "trade": "贸易",
+        "transfer": "转移",
+        "unknown": "未知",
+        "withdrawal": "取款"
       },
-      "loading": "Loading events...",
-      "no_data": "Events are hidden because they contain ignored assets",
+      "loading": "正在加载事件...",
+      "no_data": "事件被隐藏是因为它们包含被忽略的资产",
       "type": {
-        "airdrop": "Airdrop",
-        "approval": "Approval",
-        "borrow": "Borrow",
-        "bridge": "Bridge",
-        "cancel_order": "Cancel Order",
-        "claim_reward": "Claim Reward",
-        "deploy": "Deploy",
-        "deposit": "Deposit",
-        "donate": "Donate",
+        "airdrop": "空投",
+        "approval": "批准",
+        "borrow": "借",
+        "bridge": "桥",
+        "cancel_order": "取消订单",
+        "claim_reward": "领取奖励",
+        "deploy": "部署",
+        "deposit": "存款",
+        "donate": "捐赠",
         "gas_fee": "Gas Fee",
-        "governance": "Governance",
-        "informational": "Informational",
-        "liquidate": "Liquidate",
-        "place_order": "Place Order",
-        "receive": "Receive",
-        "receive_donation": "Receive Donation",
-        "refund": "Refund",
-        "renew": "Renew",
-        "repay": "Repay",
-        "send": "Send",
-        "swap_in": "Receive",
-        "swap_out": "Swap",
-        "transfer": "Transfer",
-        "unknown": "Unknown",
-        "withdraw": "Withdraw"
+        "governance": "治理",
+        "informational": "信息",
+        "liquidate": "清算",
+        "place_order": "下订单",
+        "receive": "接收",
+        "receive_donation": "接收捐赠",
+        "refund": "退款",
+        "renew": "更新",
+        "repay": "还款",
+        "send": "发送",
+        "swap_in": "接收",
+        "swap_out": "交换",
+        "transfer": "转移",
+        "unknown": "未知",
+        "withdraw": "撤回"
       },
       "view": {
-        "hide": "Hide events",
-        "show": "Show events ({length})"
+        "hide": "隐藏事件",
+        "show": "显示事件 ({length})"
       }
     },
     "filter": {
-      "account": "Filter by account",
-      "asset": "filter by the asset of the events",
-      "chain": "filter by evm chain",
-      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
-      "end_date": "filter by the end date of the transaction period",
-      "protocol": "filter by the protocol / counterparty of the events",
-      "start_date": "filter by the start date of the transaction period"
+      "account": "按账户筛选",
+      "asset": "按事件的资产过滤",
+      "chain": "按 evm 链过滤",
+      "date_hint": "format {format} HH:mm:ss(时间/秒可选)",
+      "end_date": "按交易周期结束日期筛选",
+      "protocol": "按事件的协议/交易对手过滤",
+      "start_date": "按交易周期开始日期筛选"
     },
-    "ignore": "Ignore Tx in Accounting",
-    "label": "transactions",
+    "ignore": "在会计中忽略 Tx",
+    "label": "交易",
     "query_status": {
-      "date_range": "Querying {status} for {address} between {start} and {end}",
-      "done_date_range": "Done querying all transactions for {address} between {start} and {end}",
-      "done_end_date": "Done querying all transactions for {address} until {end}",
-      "done_group": "Done querying all transactions information for {length} address(es)",
-      "end_date": "Querying {status} for {address} until {end}",
-      "group": "Querying evm transactions information for {length} address(es)",
-      "latest_period_date_range": "Latest successfully queried period is between {start} and {end}",
-      "latest_period_end_date": "Latest successfully queried period is until {end}",
+      "date_range": "在 {start} 和 {end} 之间查询 {address} 的 {status}",
+      "done_date_range": "完成查询 {address} 在 {start} 和 {end} 之间的所有交易",
+      "done_end_date": "完成查询 {address} 的所有交易直到 {end}",
+      "done_group": "已完成对 {length} 个地址的所有交易信息的查询",
+      "end_date": "查询 {address} 的 {status} 直到 {end}",
+      "group": "查询 {length} 个地址的 evm 交易信息",
+      "latest_period_date_range": "最近成功查询的时间段在 {start} 和 {end} 之间",
+      "latest_period_end_date": "最近成功查询的时间段到 {end}",
       "statuses": {
-        "querying_evm_tokens_transactions": "evm tokens transactions",
-        "querying_internal_transactions": "evm internal transactions",
-        "querying_transactions": "evm transactions"
+        "querying_evm_tokens_transactions": "evm 代币交易",
+        "querying_internal_transactions": "evm 内部交易",
+        "querying_transactions": "evm 交易"
       },
-      "title": "Evm Transaction Query Status"
+      "title": "evm交易查询状态"
     },
     "redecode_events": {
-      "all": "All events",
-      "this_page": "Only this page",
-      "title": "Redecode Events"
+      "all": "所有事件",
+      "this_page": "只有这个页面",
+      "title": "重新解码事件"
     },
-    "refresh_tooltip": "Refresh evm transactions",
-    "title": "Evm Transactions",
-    "unignore": "Unignore Tx in Accounting"
+    "refresh_tooltip": "刷新 evm 交易",
+    "title": "EVM 交易",
+    "unignore": "在会计中忽略交易"
   },
   "underlying_token_manager": {
-    "delete_tooltip": "Delete the underlying token",
-    "edit_tooltip": "Edit an underlying token",
-    "hint": "The percentage of an underlying asset in the token. e.g. A uniswap lp token is consisted of two underlying tokens with a 50% weight each.",
+    "delete_tooltip": "删除底层代币",
+    "edit_tooltip": "编辑底层代币",
+    "hint": "代币中标的资产的百分比。例如，一个 uniswap lp 代币由两个标的代币组成，每个代币具有 50% 的权重。",
     "labels": {
-      "tokens": "Underlying tokens",
-      "weight": "Weight"
+      "tokens": "底层代币",
+      "weight": "重量"
     },
     "tokens": {
-      "token_kind": "Token Kind",
-      "weight": "Weight",
+      "token_kind": "代币种类",
+      "weight": "重量",
       "weight_percentage": "{weight} %"
     },
     "validation": {
-      "address_non_empty": "Address cannot be empty",
-      "non_empty": "Please set a weight value",
-      "not_valid": "The specified weight does not seem like a valid value",
-      "out_of_range": "Weight can be from 1-100%"
+      "address_non_empty": "地址不能为空",
+      "non_empty": "请设置权重值",
+      "not_valid": "指定的重量似乎不是有效值",
+      "out_of_range": "权重可以从 1-100%"
     }
   },
   "uniswap": {
-    "assets_non_premium": "Upgrade to {0} to see assets information",
-    "loading": "Please wait while your liquidity pools are getting loaded...",
-    "loading_non_premium": "Loading the liquidity pool balances might take a while... Consider upgrading to {0} for faster load times.",
-    "premium": "premium",
-    "price_range": "Price Range",
-    "title": "Uniswap v{v} Pools"
+    "assets_non_premium": "升级到 {0} 以查看资产信息",
+    "loading": "请稍候，您的流动资金池正在加载...",
+    "loading_non_premium": "加载流动资金池余额可能需要一段时间......考虑升级到 {0} 以加快加载时间。",
+    "premium": "溢价",
+    "price_range": "价格区间",
+    "title": "Uniswap v{v} 矿池"
   },
   "update_indicator": {
-    "version": "An Updated Version ({appVersion}) of rotki is available"
+    "version": "rotki 的更新版本 ({appVersion}) 可用"
   },
   "update_notifier": {
-    "update_available": "An updated version of the frontend is available."
+    "update_available": "前端的更新版本可用。"
   },
   "update_popup": {
     "download_failed": {
-      "message": "An error occurred while downloading the application update. For more information check the application log file (rotki_electron.log)."
+      "message": "下载应用程序更新时出错。有关更多信息，请查看应用程序日志文件 (rotki_electron.log)。"
     },
-    "download_nudge": "Would you like to download it?",
-    "download_progress": "Please wait while the application update is downloading",
-    "downloaded": "The updated version will be installed on the next restart. Would you like to restart the application now to apply the update?",
+    "download_nudge": "你要下载吗？",
+    "download_progress": "正在下载应用程序更新，请稍候",
+    "downloaded": "更新版本将在下次重启时安装。您要立即重启应用程序以应用更新吗？",
     "install_failed": {
-      "message": "An error occurred while installing the application update: {message}"
+      "message": "安装应用程序更新时出错：{message}"
     },
-    "messages": "A new version of rotki is available. See {releaseNotes}.",
+    "messages": "新版本的 rotki 可用。请参阅 {releaseNotes}。",
     "progress": "{percentage} %",
-    "release_notes": "release notes",
-    "restart": "rotki will restart in a moment to apply the update."
+    "release_notes": "发行说明",
+    "restart": "rotki 将立即重启以应用更新。"
   },
   "upgrade_row": {
-    "events": "Processed {limit} out of {total} {label} from {from} until {to}. To view more please upgrade to {link}",
-    "rotki_premium": "rotki Premium",
-    "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}"
+    "events": "从 {from} 到 {to} 处理了 {limit} out of {total} {label}。要查看更多请升级到 {link}",
+    "rotki_premium": "rotki 高级版",
+    "upgrade": "显示 {limit} out of {total} {label}。要查看更多，请升级到 {link}"
   },
   "user_dropdown": {
     "change_privacy_mode": {
-      "label": "Change Privacy Mode",
+      "label": "更改隐私模式",
       "normal_mode": {
-        "description": "Show both amount and percentage",
-        "label": "Normal"
+        "description": "同时显示金额和百分比",
+        "label": "正常"
       },
       "private_mode": {
-        "description": "Hide amount and percentage",
-        "label": "Private"
+        "description": "隐藏金额和百分比",
+        "label": "私人"
       },
       "semi_private_mode": {
-        "description": "Hide amount and show percentage",
-        "label": "Semi Private"
+        "description": "隐藏金额显示百分比",
+        "label": "半私人"
       }
     },
     "confirmation": {
-      "message": "Are you sure you want to log out of your current rotki session?",
-      "title": "Confirmation Required"
+      "message": "您确定要退出当前的 rotki 会话吗？",
+      "title": "需要确认"
     },
-    "logout": "Logout",
-    "settings": "Settings",
-    "switch_theme": "Switch Theme"
+    "logout": "注销",
+    "settings": "设置",
+    "switch_theme": "切换主题"
   },
   "validator_display": {
-    "validator_index": "Validator Index:"
+    "validator_index": "验证器索引："
   },
   "validator_filter_input": {
-    "label": "Select validator"
+    "label": "选择验证器"
   },
   "watcher_dialog": {
-    "add_error": "Error adding the watcher: {message}",
-    "add_success": "Successfully added watcher.",
-    "add_watcher": "Add watcher",
-    "delete_error": "Error deleting the watcher: {message}",
-    "delete_success": "Successfully deleted watcher.",
-    "edit": "Edit watchers",
-    "edit_error": "Error editing the watcher: {message}",
-    "edit_success": "Successfully edited watcher.",
+    "add_error": "添加观察者时出错：{message}",
+    "add_success": "成功添加观察者。",
+    "add_watcher": "添加观察者",
+    "delete_error": "删除观察者时出错：{message}",
+    "delete_success": "成功删除观察者。",
+    "edit": "编辑观察者",
+    "edit_error": "编辑观察者时出错：{message}",
+    "edit_success": "成功编辑观察者。",
     "labels": {
-      "operation": "Operation",
-      "type": "Watcher Type"
+      "operation": "操作",
+      "type": "观察者类型"
     },
     "ratio": {
-      "ge": ">= (greater than or equal to)",
-      "gt": ">  (greater than)",
-      "le": "<= (less than or equal to)",
-      "lt": "<  (less than)"
+      "ge": ">= (大于等于)",
+      "gt": ">  (大于)",
+      "le": "<= (小于等于)",
+      "lt": "<  (小于)"
     },
     "types": {
-      "make_collateralization_ratio": "Collateralization Ratio Watcher (Maker)"
+      "make_collateralization_ratio": "抵押率观察者(Maker)"
     }
   },
   "win_unsupported": {
-    "header": "Unsupported Windows Version",
-    "message": "rotki's minimum supported Windows version is Windows 8(6.2)"
+    "header": "不支持的 Windows 版本",
+    "message": "rotki 支持的最低 Windows 版本是 Windows 8(6.2)"
   },
   "yearn_asset_table": {
     "headers": {
-      "roi": "ROI",
-      "underlying_asset": "Underlying Asset",
-      "vault": "Vault",
-      "vault_asset": "Vault Asset",
-      "version": "Version"
+      "roi": "投资回报率",
+      "underlying_asset": "标的资产",
+      "vault": "保险库",
+      "vault_asset": "保险库资产",
+      "version": "版本"
     },
-    "title": "Yearn Vaults"
+    "title": "Yearn 金库"
   }
 }
