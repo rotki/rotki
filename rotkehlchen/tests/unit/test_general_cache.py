@@ -4,13 +4,13 @@ from unittest.mock import patch
 
 import pytest
 from freezegun import freeze_time
-from rotkehlchen.chain.ethereum.modules.curve.curve_cache import read_curve_data
 
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_values,
     globaldb_set_general_cache_values,
+    read_curve_data,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChainID, GeneralCacheType

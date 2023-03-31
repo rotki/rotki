@@ -360,11 +360,13 @@ def test_find_curve_lp_token_price(inquirer_defi, ethereum_manager):
         )
         globaldb_set_general_cache_values(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_address],
-            values=[
-                '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                '0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb',
-            ],
+            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_address, '0'],
+            values=['0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'],
+        )
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_address, '1'],
+            values=['0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb'],
         )
     price = inquirer_defi.find_curve_pool_price(EvmToken(identifier))
     assert price is not None
