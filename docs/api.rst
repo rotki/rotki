@@ -12362,7 +12362,7 @@ Clear Icons/Avatars Cache
       Content-Type: application/json;charset=UTF-8
 
       {
-         "icons": ["ETH", "BTC"]
+         "entries": ["ETH", "BTC"]
       }
 
     .. http:example:: curl wget httpie python-requests
@@ -12372,11 +12372,10 @@ Clear Icons/Avatars Cache
       Content-Type: application/json;charset=UTF-8
 
       {
-         "avatars": ["rotki.eth", "nebolax.eth"]
+         "entries": ["rotki.eth", "nebolax.eth"]
       }
 
-   :reqjsonarr optional[string] icons: An array of the icons to be cleared from the cache. All icons are deleted in the cache if ``null``. Only works with ``cache_type=icons``.
-   :reqjsonarr optional[string] avatars: An array of the avatars to be cleared from the cache. All avatars are deleted in the cache if ``null``. Only works with ``cache_type=avatars``.
+   :reqjsonarr optional[string] entries: An array of the icons/avatars to be cleared from the cache. All icons/avatars are deleted in the cache if ``null``.
 
    **Example Response**:
 

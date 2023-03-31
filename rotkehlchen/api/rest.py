@@ -4204,7 +4204,7 @@ class RestAPI():
                 ),
             )
 
-        if last_update is None or ts_now() - last_update > ENS_AVATARS_REFRESH:
+        if ts_now() - last_update > ENS_AVATARS_REFRESH:
             # If avatar for this ens name has never been checked or the avatar has expired
             # then we try to download.
             try:
@@ -4253,11 +4253,20 @@ class RestAPI():
                 if entry.is_file():
                     entry.unlink()
 
+            with self.rotkehlchen.data.db.user_write() as delete_cursor:
+                delete_cursor.execute('UPDATE ens_mappings SET last_avatar_update=?', (Timestamp(0),))  # noqa: E501
+
             return api_response(OK_RESULT)
 
         avatars_to_delete = [avatars_dir / f'{avatar_name}.png' for avatar_name in avatars]
         for avatar in avatars_to_delete:
             if avatar.is_file():
                 avatar.unlink()
+
+        with self.rotkehlchen.data.db.user_write() as delete_cursor:
+            delete_cursor.executemany(
+                'UPDATE ens_mappings SET last_avatar_update=? WHERE ens_name=?',
+                [(Timestamp(0), avatar_name) for avatar_name in avatars],
+            )
 
         return api_response(OK_RESULT)
