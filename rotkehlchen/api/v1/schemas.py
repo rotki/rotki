@@ -3003,7 +3003,7 @@ class EnsAvatarsSchema(Schema):
 class ClearCacheSchema(Schema):
     cache_type = fields.String(
         required=True,
-        validate=[validate.OneOf({'icons', 'avatars', 'prices'})],
+        validate=[validate.OneOf({'icons', 'avatars'})],
     )
 
     class Meta:
@@ -3012,7 +3012,7 @@ class ClearCacheSchema(Schema):
 
 
 class ClearIconsCacheSchema(Schema):
-    icons = fields.List(
+    entries = fields.List(
         AssetField(
             required=True,
             expected_type=Asset,
@@ -3023,7 +3023,7 @@ class ClearIconsCacheSchema(Schema):
 
 
 class ClearAvatarsCacheSchema(Schema):
-    avatars = fields.List(
+    entries = fields.List(
         fields.String(required=True, validate=lambda x: x.endswith('.eth')),
         load_default=None,
     )
