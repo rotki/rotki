@@ -1,5 +1,7 @@
 import { type MaybeRef } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
+import keys from 'lodash/keys';
+import pick from 'lodash/pick';
 import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
 import { type ZodSchema } from 'zod';
 import { type Collection } from '@/types/collection';
@@ -14,33 +16,41 @@ import { nonEmptyProperties } from '@/utils/data';
 
 interface FilterSchema<F, M> {
   filters: Ref<F>;
-  matchers: ComputedRef<M[]>;
+  matchers: F extends void ? undefined : ComputedRef<M[]>;
 
-  updateFilter(filter: F): void;
+  updateFilter: F extends void ? undefined : (filter: F) => void;
 
-  RouteFilterSchema: ZodSchema;
+  RouteFilterSchema: F extends void ? undefined : ZodSchema;
 }
 
 export const useHistoryPaginationFilter = <
   T extends Object,
   U,
   V,
-  W extends Object,
+  W extends Object | void,
   X
 >(
   locationOverview: MaybeRef<string | null>,
-  mainPage: Ref<boolean>,
+  mainPage: MaybeRef<boolean>,
   filterSchema: () => FilterSchema<W, X>,
   fetchAssetData: (payload: MaybeRef<U>) => Promise<Collection<V>>,
   options: {
     onUpdateFilters?: (query: LocationQuery) => void;
     extraParams?: ComputedRef<LocationQuery>;
     customPageParams?: ComputedRef<Partial<U>>;
+    paginationOrderBy?: keyof T;
+    defaultSortBy?: {
+      pagination?: keyof T;
+      pageParams?: (keyof T)[];
+      pageParamsAsc?: boolean[];
+    };
   } = {}
 ) => {
   const router = useRouter();
   const route = useRoute();
-  const paginationOptions: Ref<TablePagination<T>> = ref(defaultOptions<T>());
+  const paginationOptions: Ref<TablePagination<T>> = ref(
+    defaultOptions<T>(options.defaultSortBy?.pagination)
+  );
   const selected: Ref<V[]> = ref([]);
   const openDialog: Ref<boolean> = ref(false);
   const editableItem: Ref<V | null> = ref(null);
@@ -49,7 +59,8 @@ export const useHistoryPaginationFilter = <
   const expanded: Ref<V[]> = ref([]);
   const userAction: Ref<boolean> = ref(false);
 
-  const { onUpdateFilters, extraParams, customPageParams } = options;
+  const { onUpdateFilters, extraParams, customPageParams, defaultSortBy } =
+    options;
 
   const { filters, matchers, updateFilter, RouteFilterSchema } = filterSchema();
 
@@ -59,7 +70,11 @@ export const useHistoryPaginationFilter = <
 
     const selectedFilters = get(filters);
     const overview = get(locationOverview);
-    if (overview && 'location' in selectedFilters) {
+    if (
+      overview &&
+      typeof selectedFilters === 'object' &&
+      'location' in selectedFilters
+    ) {
       selectedFilters.location = overview;
     }
 
@@ -69,8 +84,14 @@ export const useHistoryPaginationFilter = <
       ...nonEmptyProperties(get(customPageParams) ?? {}),
       limit: itemsPerPage,
       offset,
-      orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
-      ascending: sortBy?.length > 0 ? sortDesc.map(bool => !bool) : [false]
+      orderByAttributes:
+        sortBy?.length > 0
+          ? sortBy
+          : defaultSortBy?.pageParams ?? ['timestamp'],
+      ascending:
+        sortBy?.length > 0
+          ? sortDesc.map(bool => !bool)
+          : defaultSortBy?.pageParamsAsc ?? [false]
     } as U; // todo: figure out a way to not typecast
   });
 
@@ -90,11 +111,11 @@ export const useHistoryPaginationFilter = <
 
     const query = get(route).query;
     const parsedOptions = RouterPaginationOptionsSchema.parse(query);
-    const parsedFilters = RouteFilterSchema.parse(query);
+    const parsedFilters = RouteFilterSchema?.parse(query);
 
     onUpdateFilters?.call(null, query);
 
-    updateFilter(parsedFilters);
+    updateFilter?.call(null, parsedFilters);
     set(paginationOptions, {
       ...get(paginationOptions),
       ...parsedOptions
@@ -109,7 +130,11 @@ export const useHistoryPaginationFilter = <
     const selectedFilters = get(filters);
 
     const overview = get(locationOverview);
-    if (overview && 'location' in selectedFilters) {
+    if (
+      overview &&
+      typeof selectedFilters === 'object' &&
+      'location' in selectedFilters
+    ) {
       selectedFilters.location = overview;
     }
 
@@ -118,7 +143,7 @@ export const useHistoryPaginationFilter = <
       page: page.toString(),
       sortBy: sortBy.map(s => s.toString()),
       sortDesc: sortDesc.map(x => x.toString()),
-      ...selectedFilters,
+      ...pick(selectedFilters, keys(selectedFilters)),
       ...get(extraParams)
     };
   };
@@ -139,7 +164,7 @@ export const useHistoryPaginationFilter = <
 
   const setFilter = (newFilter: UnwrapRef<Ref<W>>) => {
     set(userAction, true);
-    updateFilter(newFilter);
+    updateFilter?.call(null, newFilter ?? {});
   };
 
   onBeforeMount(() => {
@@ -166,9 +191,12 @@ export const useHistoryPaginationFilter = <
     if (get(userAction) && get(mainPage)) {
       // Route should only be updated on user action otherwise it messes with
       // forward navigation.
-      await router.push({
-        query: getQuery()
-      });
+      const query = getQuery();
+      if (isEqual(route.query, query)) {
+        // prevent pushing same route
+        return;
+      }
+      await router.push({ query });
       set(userAction, false);
     }
 
