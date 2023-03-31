@@ -147,7 +147,7 @@ def _update_ens_mappings_schema(write_cursor: 'DBCursor') -> None:
         address TEXT NOT NULL PRIMARY KEY,
         ens_name TEXT UNIQUE,
         last_update INTEGER NOT NULL,
-        last_avatar_update INTEGER
+        last_avatar_update INTEGER NOT NULL DEFAULT 0
     )""")
     write_cursor.execute(
         'INSERT INTO ens_mappings_copy(address, ens_name, last_update) '

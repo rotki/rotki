@@ -1386,7 +1386,7 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
         assert (entry[0], entry[12], None, None, entry[13]) in new_evm_info
 
     new_ens_mappings = cursor.execute('SELECT * FROM ens_mappings').fetchall()
-    expected_ens_mappings = [(*mapping, None) for mapping in old_ens_mappings]
+    expected_ens_mappings = [(*mapping, 0) for mapping in old_ens_mappings]
     assert new_ens_mappings == expected_ens_mappings
     # Check that old tables got deleted and used query ranges updated
     assert cursor.execute(

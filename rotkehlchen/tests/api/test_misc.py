@@ -10,6 +10,7 @@ import requests
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_SQL_VM_INSTRUCTIONS_CB
+from rotkehlchen.db.ens import DBEns
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -17,8 +18,9 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     assert_proper_response_with_result,
 )
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import ChainID, SupportedBlockchain
-from rotkehlchen.utils.misc import get_system_spec
+from rotkehlchen.utils.misc import get_system_spec, ts_now
 
 
 def generate_expected_info(
@@ -418,6 +420,20 @@ def test_cache_deletion(rotkehlchen_api_server):
     avatars_dir = icons_dir / 'avatars'
     avatars_dir.mkdir(exist_ok=True)
 
+    dbens = DBEns(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
+    with dbens.db.user_write() as write_cursor:
+        dbens.add_ens_mapping(
+            write_cursor=write_cursor,
+            address=make_evm_address(),
+            name='nebolax.eth',
+            now=ts_now(),
+        )
+
+        write_cursor.execute(
+            'UPDATE ens_mappings SET last_avatar_update=? WHERE ens_name=?',
+            (ts_now(), 'nebolax.eth'),
+        )
+
     # populate icons dir
     with open(f'{icons_dir}/ETH_small.png', 'wb') as f:
         f.write(b'')
@@ -439,7 +455,7 @@ def test_cache_deletion(rotkehlchen_api_server):
             'clearcacheresource',
             cache_type='icons',
         ), json={
-            'icons': ['ETH'],
+            'entries': ['ETH'],
         },
     )
     assert_proper_response(response)
@@ -475,7 +491,7 @@ def test_cache_deletion(rotkehlchen_api_server):
             'clearcacheresource',
             cache_type='avatars',
         ), json={
-            'avatars': ['ava.eth'],
+            'entries': ['ava.eth'],
         },
     )
     assert_proper_response(response)
@@ -491,3 +507,14 @@ def test_cache_deletion(rotkehlchen_api_server):
     )
     assert_proper_response(response)
     assert len([i for i in avatars_dir.iterdir() if i.is_file()]) == 0
+
+    # now try fetching the avatar and see it works
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ensavatarsresource',
+            ens_name='nebolax.eth',
+        ),
+    )
+    assert response.status_code == 200
+    assert response.headers['Content-Type'] == 'image/png'

@@ -2865,8 +2865,8 @@ class ClearCacheResource(BaseMethodView):
         req_body = {} if req_body is None else req_body
         if cache_type == 'icons':
             data = self.icons_schema.load(req_body)
-            return self.rest_api.clear_icons_cache(data['icons'])
+            return self.rest_api.clear_icons_cache(data['entries'])
 
         # can only be avatars
         data = self.avatars_schema.load(req_body)
-        return self.rest_api.clear_avatars_cache(data['avatars'])
+        return self.rest_api.clear_avatars_cache(data['entries'])
