@@ -7,12 +7,14 @@ import tradeHandlers from './handlers/trades';
 import assetMovementHandlers from './handlers/asset-movements';
 import ledgerActionHandlers from './handlers/ledger-actions';
 import transactionHandlers from './handlers/evm-transactions';
+import nfts from './handlers/nfts';
 
 const server = setupServer(
   ...tradeHandlers,
   ...assetMovementHandlers,
   ...ledgerActionHandlers,
-  ...transactionHandlers
+  ...transactionHandlers,
+  ...nfts
 );
 
 beforeAll(() => {
