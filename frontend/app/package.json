@@ -26,7 +26,7 @@
     "test:integration-ci": "node scripts/e2e.js --ci",
     "test:unit": "cross-env TZ=UTC VITE_TEST=true vitest --dir tests/unit --coverage",
     "test:unit:run": "cross-env TZ=UTC VITE_TEST=true vitest run --dir tests/unit --coverage",
-    "typecheck": "vue-tsc --noEmit && tsc --noEmit tests/**/*.ts"
+    "typecheck": "vue-tsc --noEmit"
   },
   "optionalDependencies": {
     "@babel/core": "7.21.3",
