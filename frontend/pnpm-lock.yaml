@@ -64,11 +64,11 @@ importers:
         specifier: 9.1.1
         version: 9.1.1(patch_hash=mia2k5wehigboo5ep5nlxwffwa)
       chart.js:
-        specifier: 3.9.1
-        version: 3.9.1
+        specifier: 4.2.1
+        version: 4.2.1
       chartjs-plugin-zoom:
-        specifier: 1.2.1
-        version: 1.2.1(chart.js@3.9.1)
+        specifier: 2.0.1
+        version: 2.0.1(chart.js@4.2.1)
       cleave.js:
         specifier: 1.6.0
         version: 1.6.0
@@ -2093,6 +2093,10 @@ packages:
       '@jridgewell/sourcemap-codec': 1.4.14
     dev: true
 
+  /@kurkle/color@0.3.2:
+    resolution: {integrity: sha512-fuscdXJ9G1qb7W8VdHi+IwRqij3lBkosAm4ydQtEmbY58OzHXqQhvlxqEkoz0yssNVn38bcpRWgA9PP+OGoisw==}
+    dev: false
+
   /@malept/cross-spawn-promise@1.1.1:
     resolution: {integrity: sha512-RTBGWL5FWQcg9orDOCcp4LvItNzUPcyEU9bwaeJX0rJ1IQxzucC48Y0/sQLp/g6t99IQgAlGIaesJS+gTn7tVQ==}
     engines: {node: '>= 10'}
@@ -4050,16 +4054,19 @@ packages:
     dev: false
     optional: true
 
-  /chart.js@3.9.1:
-    resolution: {integrity: sha512-Ro2JbLmvg83gXF5F4sniaQ+lTbSv18E+TIf2cOeiH1Iqd2PGFOtem+DUufMZsCJwFE7ywPOpfXFBwRTGq7dh6w==}
+  /chart.js@4.2.1:
+    resolution: {integrity: sha512-6YbpQ0nt3NovAgOzbkSSeeAQu/3za1319dPUQTXn9WcOpywM8rGKxJHrhS8V8xEkAlk8YhEfjbuAPfUyp6jIsw==}
+    engines: {pnpm: ^7.0.0}
+    dependencies:
+      '@kurkle/color': 0.3.2
     dev: false
 
-  /chartjs-plugin-zoom@1.2.1(chart.js@3.9.1):
-    resolution: {integrity: sha512-2zbWvw2pljrtMLMXkKw1uxYzAne5PtjJiOZftcut4Lo3Ee8qUt95RpMKDWrZ+pBZxZKQKOD/etdU4pN2jxZUmg==}
+  /chartjs-plugin-zoom@2.0.1(chart.js@4.2.1):
+    resolution: {integrity: sha512-ogOmLu6e+Q7E1XWOCOz9YwybMslz9qNfGV2a+qjfmqJYpsw5ZMoRHZBUyW+NGhkpQ5PwwPA/+rikHpBZb7PZuA==}
     peerDependencies:
-      chart.js: ^3.2.0
+      chart.js: '>=3.2.0'
     dependencies:
-      chart.js: 3.9.1
+      chart.js: 4.2.1
       hammerjs: 2.0.8
     dev: false
 
