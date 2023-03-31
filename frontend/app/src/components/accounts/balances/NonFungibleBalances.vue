@@ -1,27 +1,17 @@
 <script setup lang="ts">
-import dropRight from 'lodash/dropRight';
-import { type ComputedRef, type PropType, type Ref } from 'vue';
+import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import { type MaybeRef } from '@vueuse/core';
-import isEqual from 'lodash/isEqual';
+import { type ActionStatus } from '@/types/action';
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { type Module } from '@/types/modules';
 import {
   type NonFungibleBalance,
   type NonFungibleBalancesRequestPayload
 } from '@/types/nfbalances';
+import { type ManualPriceFormPayload } from '@/types/prices';
 import { Section } from '@/types/status';
 import { assert } from '@/utils/assertions';
 import { uniqueStrings } from '@/utils/data';
-import { type TablePagination } from '@/types/pagination';
-import { type ActionStatus } from '@/types/action';
-import { type ManualPriceFormPayload } from '@/types/prices';
-import { defaultCollectionState, defaultOptions } from '@/utils/collection';
-import { type Collection } from '@/types/collection';
-import {
-  type LocationQuery,
-  RouterPaginationOptionsSchema
-} from '@/types/route';
 
 defineProps({
   modules: {
@@ -42,6 +32,10 @@ const edit: Ref<NonFungibleBalance | null> = ref(null);
 
 const selected: Ref<NonFungibleBalance[]> = ref([]);
 const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>('exclude');
+
+const extraParams = computed(() => ({
+  ignoredAssetsHandling: get(ignoredAssetsHandling)
+}));
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -130,7 +124,7 @@ const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
 const isIgnored = (identifier: string) => isAssetIgnored(identifier);
 
 const toggleIgnoreAsset = async (identifier: string) => {
-  let success = false;
+  let success;
   if (get(isIgnored(identifier))) {
     const response = await unignoreAsset(identifier);
     success = response.success;
@@ -179,123 +173,49 @@ const massIgnore = async (ignored: boolean) => {
   }
 };
 
+watch(ignoredAssetsHandling, async () => {
+  setPage(1);
+});
+
 const {
-  isLoading,
   state: balances,
-  execute
-} = useAsyncState<
-  Collection<NonFungibleBalance>,
-  MaybeRef<NonFungibleBalancesRequestPayload>[]
->(args => fetchNonFungibleBalances(args), defaultCollectionState(), {
-  immediate: false,
-  resetOnExecute: false,
-  delay: 0
-});
-
-const fetchData = async (): Promise<void> => {
-  await execute(0, pageParams);
-};
-
-const options: Ref<TablePagination<NonFungibleBalance>> = ref(
-  defaultOptions('name')
-);
-
-const pageParams: ComputedRef<NonFungibleBalancesRequestPayload> = computed(
-  () => {
-    const { itemsPerPage, page, sortBy, sortDesc } = get(options);
-    const offset = (page - 1) * itemsPerPage;
-
-    return {
-      ignoredAssetsHandling: get(ignoredAssetsHandling),
-      limit: itemsPerPage,
-      offset,
-      orderByAttributes: sortBy?.length > 0 ? sortBy : ['name'],
-      ascending:
-        sortDesc && sortDesc.length > 1
-          ? dropRight(sortDesc).map(bool => !bool)
-          : [true]
-    };
+  isLoading,
+  fetchData,
+  options,
+  setPage,
+  setOptions
+} = useHistoryPaginationFilter<
+  NonFungibleBalance,
+  NonFungibleBalancesRequestPayload,
+  NonFungibleBalance,
+  undefined,
+  undefined
+>(
+  null,
+  true,
+  () => ({
+    filters: ref(),
+    matchers: undefined,
+    RouteFilterSchema: undefined,
+    updateFilter: undefined
+  }),
+  fetchNonFungibleBalances,
+  {
+    onUpdateFilters(query) {
+      set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
+    },
+    extraParams,
+    defaultSortBy: {
+      pagination: 'name',
+      pageParams: ['name'],
+      pageParamsAsc: [true]
+    }
   }
 );
-
-const router = useRouter();
-const route = useRoute();
-
-const applyRouteFilter = () => {
-  const query = get(route).query;
-  const parsedOptions = RouterPaginationOptionsSchema.parse(query);
-
-  const newIgnoredAssetsHandling = query.ignoredAssetsHandling || 'exclude';
-
-  set(options, {
-    ...get(options),
-    ...parsedOptions
-  });
-  set(ignoredAssetsHandling, newIgnoredAssetsHandling);
-};
-
-watch(route, () => {
-  set(userAction, false);
-  applyRouteFilter();
-});
-
-onBeforeMount(() => {
-  applyRouteFilter();
-});
-
-watch(ignoredAssetsHandling, async (filters, oldValue) => {
-  if (isEqual(filters, oldValue)) {
-    return;
-  }
-
-  set(options, { ...get(options), page: 1 });
-});
-
-const userAction: Ref<boolean> = ref(false);
-
-const setPage = (page: number) => {
-  set(userAction, true);
-  set(options, { ...get(options), page });
-};
-
-const setOptions = (newOptions: TablePagination<NonFungibleBalance>) => {
-  set(userAction, true);
-  set(options, newOptions);
-};
 
 onMounted(async () => {
   await fetchData();
   await refreshNonFungibleBalances();
-});
-
-const getQuery = (): LocationQuery => {
-  const opts = get(options);
-  assert(opts);
-  const { itemsPerPage, page, sortBy, sortDesc } = opts;
-
-  return {
-    itemsPerPage: itemsPerPage.toString(),
-    page: page.toString(),
-    sortBy,
-    sortDesc: sortDesc.map(x => x.toString()),
-    ignoredAssetsHandling: get(ignoredAssetsHandling)
-  };
-};
-
-watch(pageParams, async (params, op) => {
-  if (isEqual(params, op)) {
-    return;
-  }
-  if (get(userAction)) {
-    // Route should only be updated on user action otherwise it messes with
-    // forward navigation.
-    await router.push({
-      query: getQuery()
-    });
-    set(userAction, false);
-  }
-
-  await fetchData();
 });
 
 watch(loading, async (isLoading, wasLoading) => {
