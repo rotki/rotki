@@ -1,9 +1,11 @@
 """Functions dealing with the general_cache table of the Global DB"""
 from collections.abc import Iterable
 from typing import Optional, Union
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.types import string_to_evm_address
 
 from rotkehlchen.db.drivers.gevent import DBCursor
-from rotkehlchen.types import GeneralCacheType, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, GeneralCacheType, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -18,6 +20,10 @@ def compute_cache_key(key_parts: Iterable[Union[str, GeneralCacheType]]) -> str:
         else:
             cache_key += part
     return cache_key
+
+
+# Using any random address here, since length of all addresses is the same
+BASE_POOL_TOKENS_KEY_LENGTH = len(compute_cache_key([GeneralCacheType.CURVE_POOL_TOKENS, ZERO_ADDRESS]))  # noqa: E501
 
 
 def globaldb_set_general_cache_values_at_ts(
@@ -142,3 +148,25 @@ def globaldb_delete_general_cache_like(
     """
     cache_key = compute_cache_key(key_parts)
     write_cursor.execute('DELETE FROM general_cache WHERE key LIKE ?', (f'{cache_key}%',))
+
+
+def read_curve_data(
+        cursor: 'DBCursor',
+        pool_address: ChecksumEvmAddress,
+) -> list[ChecksumEvmAddress]:
+    """
+    Reads tokens for a particular curve pool. Tokens are stored with their indices to make sure
+    that the order of coins in pool contract and in our cache is the same. This functions reads
+    and returns tokens in sorted order.
+    """
+    tokens_data = globaldb_get_general_cache_keys_and_values_like(
+        cursor=cursor,
+        key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_address],
+    )
+    found_tokens: list[tuple[int, ChecksumEvmAddress]] = []
+    for key, address in tokens_data:
+        index = int(key[BASE_POOL_TOKENS_KEY_LENGTH:])  # len(key) > BASE_POOL_TOKENS_KEY_LENGTH
+        found_tokens.append((index, string_to_evm_address(address)))
+
+    found_tokens.sort(key=lambda x: x[0])
+    return [address for _, address in found_tokens]
