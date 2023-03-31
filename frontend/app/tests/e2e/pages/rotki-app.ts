@@ -1,4 +1,4 @@
-import { TK } from '../../common/tk';
+import { TK } from '../common/tk';
 
 export class RotkiApp {
   private loadEnv(): void {

@@ -1,4 +1,4 @@
-import { Guid } from '../../../../common/guid';
+import { Guid } from '../../../common/guid';
 import { HistoryPage } from '../../../pages/history-page';
 import { TradeHistoryPage } from '../../../pages/history-page/trade-history-page';
 import { RotkiApp } from '../../../pages/rotki-app';
