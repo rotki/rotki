@@ -1,4 +1,4 @@
-import { Guid } from '../../../common/guid';
+import { Guid } from '../../common/guid';
 import { AccountingSettingsPage } from '../../pages/accounting-settings-page';
 import { GeneralSettingsPage } from '../../pages/general-settings-page';
 import { RotkiApp } from '../../pages/rotki-app';
