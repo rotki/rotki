@@ -15,6 +15,7 @@ Changelog
 * :bug:`-` PnL report will now correctly show progress bar percentage if user has connected but non-syncing exchanges.
 * :bug:`5749` Phishing zero token transfer transactions will now be hidden and ignored.
 * :bug:`5717` Swaps will now be processed in accounting correctly even if set manually.
+* :bug:`5847` Dev users: Querying the all balances api endpoint multiple times within 15 mins under certain conditions will no longer double some asset balances.
 
 * :release:`1.27.1 <2023-02-24>`
 * :feature:`-` Transactions involving Sai CDP migration to Dai CDP are now properly decoded.
