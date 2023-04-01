@@ -381,10 +381,13 @@ def test_query_all_balances_with_manually_tracked_balances(
         btc_accounts,
         manually_tracked_balances,
 ):
-    """Test that using the query all balances endpoint also includes manually tracked balances"""
-    # Disable caching of query results
+    """Test that using the query all balances endpoint also includes manually tracked balances
+
+    This test allows caching of results as is default in production and makes sure
+    that result is the same after queryign balances twice and cache is hit. Serves
+    as a regression test for https://github.com/rotki/rotki/issues/5847
+    """
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    rotki.chains_aggregator.cache_ttl_secs = 0
     manually_tracked_balances = [ManuallyTrackedBalance(
         id=-1,
         asset=A_BTC,
@@ -432,8 +435,23 @@ def test_query_all_balances_with_manually_tracked_balances(
         btc_accounts=btc_accounts,
         manually_tracked_balances=manually_tracked_balances,
     )
-    # now do the same but save the data in the DB and test it works
-    # `save_data` is False by default but data will save since this is a fresh account
+    # query all balances first time and see manual balances are also there
+    with ExitStack() as stack:
+        setup.enter_all_patches(stack)
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                'allbalancesresource',
+            ),
+        )
+    result = assert_proper_response_with_result(response)
+    assert_all_balances(
+        result=result,
+        db=rotki.data.db,
+        expected_data_in_db=True,
+        setup=setup,
+    )
+    # query again, hit cache and check result. Test for https://github.com/rotki/rotki/issues/5847
     with ExitStack() as stack:
         setup.enter_all_patches(stack)
         response = requests.get(
