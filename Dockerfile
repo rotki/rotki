@@ -17,9 +17,11 @@ ARG PYINSTALLER_VERSION=v5.7.0
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-RUN if [ "$TARGETARCH" != "amd64" ]; then curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; fi
+WORKDIR /app
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
-RUN if [ "$TARGETARCH" != "amd64" ]; then rustup default nightly-2021-03-24; fi
+COPY colibri/ ./colibri
+RUN cargo build --target-dir /tmp/dist/colibri --manifest-path ./colibri/Cargo.toml --release
 
 RUN python3 -m pip install --upgrade pip setuptools wheel
 COPY ./requirements.txt /app/requirements.txt
@@ -61,7 +63,8 @@ COPY --from=frontend-build-stage /app/app/dist /opt/rotki/frontend
 
 RUN APP=$(find "/opt/rotki" -name "rotki-core-*-linux"  | head -n 1) && \
     echo "${APP}" && \
-    ln -s "${APP}" /usr/sbin/rotki
+    ln -s "${APP}" /usr/sbin/rotki && \
+    ln -s /opt/rotki/colibri/release/colibri /usr/sbin/colibri
 
 VOLUME ["/data", "/logs", "/config"]
 

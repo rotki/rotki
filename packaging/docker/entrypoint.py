@@ -140,6 +140,12 @@ def load_config() -> List[str]:
 
 cleanup_tmp()
 
+# start colibri first and then start rotki
+colibri = subprocess.Popen(['/usr/sbin/colibri'])
+if colibri.returncode == 1:
+    logger.error('Failed to start colibri')
+    exit(1)
+
 base_args = [
     '/usr/sbin/rotki',
     '--rest-api-port',

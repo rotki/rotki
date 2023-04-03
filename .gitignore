@@ -29,3 +29,4 @@ libcrypto-1_1-x64.dll
 frontend/logs
 .venv
 .pnpm-debug.log
+colibri/target

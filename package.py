@@ -9,6 +9,7 @@ import stat
 import subprocess
 import sys
 import urllib.request
+from collections.abc import Generator
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Literal, Optional
@@ -45,6 +46,8 @@ WIN_CERTIFICATE = 'CERTIFICATE_WIN_APPLICATION'
 CERTIFICATE_KEY = 'CSC_KEY_PASSWORD'
 APPLE_ID = 'APPLEID'
 APPLE_ID_PASS = 'APPLEIDPASS'
+X64_APPL_RUST_TARGET = 'x86_64-apple-darwin'
+ARM_APPL_RUST_TARGET = 'aarch64-apple-darwin'
 
 
 def log_group(name: str) -> Callable:
@@ -274,6 +277,7 @@ class Storage:
         self.wheel_directory = self.build_directory / 'wheels'
         self.temporary_directory = self.build_directory / 'temp'
         self.backend_directory = self.build_directory / 'backend'
+        self.colibri_directory = self.build_directory / 'colibri'
         self.build_directory.mkdir(parents=True, exist_ok=True)
 
     def prepare_backend(self) -> None:
@@ -295,10 +299,19 @@ class Storage:
             logger.error(f'{backend} was missing or empty')
             sys.exit(1)
 
-    def copy_to_dist(self, file: Path) -> None:
+    def copy_to_dist(self, src: Path, sub_dir: Optional[str] = None) -> None:
         self.dist_directory.mkdir(exist_ok=True)
-        logger.info(f'copying {file.name} to {self.dist_directory}')
-        shutil.copy(src=file, dst=self.dist_directory)
+
+        dst = self.dist_directory
+        if sub_dir is not None:
+            dst = dst / sub_dir
+
+        logger.info(f'copying {src.name} to {dst}')
+
+        if src.is_dir():
+            shutil.copytree(src, dst)
+        else:
+            shutil.copy(src=src, dst=dst)
 
     def clean(self) -> None:
         shutil.rmtree(self.build_directory)
@@ -765,8 +778,8 @@ class MacPackaging:
             temp_certificate.unlink(missing_ok=True)
         os.environ.pop('CSC_LINK', None)
 
-    @log_group('backend sign')
-    def sign(self) -> None:
+    @log_group('signing')
+    def sign(self, paths: Generator[Path, None, None]) -> None:
         """
         Signs all the contents of the directory created by PyInstaller
         with the provided signing key/identity.
@@ -775,9 +788,7 @@ class MacPackaging:
             return
 
         identify = os.environ.get('IDENTITY')
-        backend_directory = self.__storage.backend_directory / BACKEND_PREFIX
-        backend_paths = backend_directory.glob('**/*')
-        for path in backend_paths:
+        for path in paths:
             if not path.is_file():
                 continue
 
@@ -944,10 +955,15 @@ class BackendBuilder:
         self.__storage.copy_to_dist(file)
         self.__storage.move_to_dist(checksum_file)
 
+    def _move_colibri_to_dist(self) -> None:
+        """Move the colibri binary to dist"""
+        colibri_dir = self.__storage.colibri_directory
+        self.__storage.copy_to_dist(colibri_dir / 'bin', sub_dir='colibri')
+
     @log_group('backend_build')
     def build(self) -> None:
         """
-        Packages the backend using PyInstaller
+        Packages the backend using PyInstaller and creates the rust binary
         """
         # When packaging on macOS one of the dependencies will try to access
         # GITHUB_REF during pip install and will throw an error. For this reason
@@ -977,16 +993,90 @@ class BackendBuilder:
         if github_ref is not None:
             os.environ.setdefault('GITHUB_REF', github_ref)
 
+        self.__create_rust_binary()
         self.__install_pyinstaller()
         self.__sanity_check()
         self.__package()
 
         # When building for macOS zip() is responsible for moving the packaged backend to dist/
         if mac is not None:
-            mac.sign()
+            backend_directory = self.__storage.backend_directory / BACKEND_PREFIX
+            mac.sign(paths=backend_directory.glob('**/*'))
             mac.zip()
         else:
             self.__move_to_dist()
+
+        self._move_colibri_to_dist()
+
+    @staticmethod
+    def __rust_add_target(target: str) -> None:
+        rustup_ret_code = subprocess.call(
+            f'rustup target add {target}',
+            shell=True,
+        )
+
+        if rustup_ret_code != 0:
+            logger.error(f'could not install target: {target}')
+            sys.exit(1)
+
+    @log_group('cargo build')
+    def __create_rust_binary(self) -> None:
+        if not self.__env.is_universal2():
+            self.__cargo_build()
+        else:
+            for target in (X64_APPL_RUST_TARGET, ARM_APPL_RUST_TARGET):
+                self.__rust_add_target(target=target)
+                self.__cargo_build(target=target)
+
+    def __cargo_build(self, target: Optional[str] = None) -> None:
+        colibri_directory = self.__storage.colibri_directory
+        target_arg = ''
+
+        if target is not None:
+            logger.info(f'building rust binary for {target}')
+            target_arg = f'--target {target}'
+
+        build_ret_code = subprocess.call(
+            f'cargo build --target-dir {colibri_directory} '
+            f'--manifest-path ./colibri/Cargo.toml --release {target_arg}',
+            shell=True,
+        )
+        if build_ret_code != 0:
+            logger.error('packaging failed')
+            sys.exit(1)
+
+        binary_name = 'colibri'
+        if self.__win is not None:
+            binary_name = f'{binary_name}.exe'
+
+        if target is None:
+            backend_binary = colibri_directory / 'release' / binary_name
+        else:
+            backend_binary = colibri_directory / target / 'release' / binary_name
+
+        if target is None:
+            ret_code = subprocess.call(f'{backend_binary}', shell=True)
+
+            if ret_code != 0:
+                logger.error('colibri binary check failed')
+                sys.exit(1)
+        else:
+            logger.info(f'skipping {backend_binary} verification because it was cross compiled')
+
+        binary_directory = colibri_directory / 'bin'
+        if self.__mac is not None:
+            is_x64 = self.__env.is_x86_64()
+            no_target = target is None
+            if (no_target and not is_x64) or target == ARM_APPL_RUST_TARGET:
+                binary_directory = binary_directory / 'arm64'
+            elif (no_target and is_x64) or target == X64_APPL_RUST_TARGET:
+                binary_directory = binary_directory / 'x64'
+
+        binary_directory.mkdir(exist_ok=True, parents=True)
+        shutil.copy(backend_binary, binary_directory / binary_name)
+
+        if self.__mac is not None:
+            self.__mac.sign(binary_directory.glob('**/*'))
 
     @log_group('package')
     def __package(self) -> None:
@@ -1065,9 +1155,9 @@ class FrontendBuilder:
             encoding='utf-8',
             shell=True,
         ))
-        required_version = version.parse('7.18.0')
+        required_version = version.parse('8.0.0')
         if pnpm_version < required_version:
-            logger.error(f'The system pnpm version is < 7.18.0 ({pnpm_version})')
+            logger.error(f'The system pnpm version is < 8.0.0 ({pnpm_version})')
             sys.exit(1)
 
     @log_group('electron app build')

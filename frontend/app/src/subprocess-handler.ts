@@ -16,7 +16,8 @@ import type stream from 'node:stream';
 
 const streamToString = (
   ioStream: stream.Readable,
-  log: (msg: string) => void
+  log: (msg: string) => void,
+  label = 'rotki-core'
 ): (() => void) => {
   const bufferChunks: Buffer[] = [];
   const stringChunks: string[] = [];
@@ -38,7 +39,7 @@ const streamToString = (
       }
     }
 
-    log(`[rotki-core] ${stringChunks.join('\n')}`);
+    log(`[${label}] ${stringChunks.join('\n')}`);
   };
 
   const onError = (err: Error) => {
@@ -86,11 +87,13 @@ function getBackendArguments(options: Partial<BackendOptions>): string[] {
 }
 
 const BACKEND_DIRECTORY = 'backend';
+const COLIBRI_DIRECTORY = 'colibri';
 
-export default class PyHandler {
+export default class SubprocessHandler {
   readonly defaultLogDirectory: string;
   private rpcFailureNotifier?: any;
   private childProcess?: ChildProcess;
+  private colibriProcess?: ChildProcess;
   private executable?: string;
   private _corsURL?: string;
   private backendOutput = '';
@@ -148,6 +151,11 @@ export default class PyHandler {
       return path.join(resources, BACKEND_DIRECTORY, 'rotki-core');
     }
     return path.join(resources, BACKEND_DIRECTORY);
+  }
+
+  private static packagedColibriPath() {
+    const resources = process.resourcesPath ? process.resourcesPath : __dirname;
+    return path.join(resources, COLIBRI_DIRECTORY);
   }
 
   logToFile(msg: string | Error) {
@@ -381,7 +389,7 @@ export default class PyHandler {
     });
 
   private guessPackaged() {
-    const path = PyHandler.packagedBackendPath();
+    const path = SubprocessHandler.packagedBackendPath();
     this.logToFile(
       `Determining if we are packaged by seeing if ${path} exists`
     );
@@ -428,14 +436,20 @@ export default class PyHandler {
     );
 
     this.childProcess = spawn('python', allArgs);
+    this.colibriProcess = spawn('colibri');
+    if (this.colibriProcess.stdout) {
+      streamToString(this.colibriProcess.stdout, msg =>
+        this.logToFile(`Colibri says: ${msg}`)
+      );
+    }
   }
 
   private startProcessPackaged(
     port: number,
     args: string[],
     window: Electron.CrossProcessExports.BrowserWindow
-  ) {
-    const distDir = PyHandler.packagedBackendPath();
+  ): void {
+    const distDir = SubprocessHandler.packagedBackendPath();
     const files = fs.readdirSync(distDir);
     if (files.length === 0) {
       this.logAndQuit('ERROR: No files found in the dist directory');
@@ -471,6 +485,24 @@ export default class PyHandler {
       `Starting packaged python subprocess: ${executable} ${args.join(' ')}`
     );
     this.childProcess = spawn(executable, args);
+
+    const colibriDir = SubprocessHandler.packagedColibriPath();
+    const colibriExe = fs
+      .readdirSync(colibriDir)
+      .find(file => file.startsWith('colibri'));
+
+    if (!colibriExe) {
+      this.logAndQuit(`ERROR: colibri executable was not found`);
+      return;
+    }
+    this.colibriProcess = spawn(path.join(colibriDir, colibriExe));
+    if (this.colibriProcess.stdout) {
+      streamToString(
+        this.colibriProcess.stdout,
+        msg => this.logToFile(`output: ${msg}`),
+        'colibri'
+      );
+    }
   }
 
   private async terminateWindowsProcesses(restart: boolean) {
