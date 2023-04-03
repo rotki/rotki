@@ -68,9 +68,8 @@ jobs:
         run: pnpm install
       - name: Run e2e tests
         env:
-          ARGS: "--browser chrome"
           CYPRESS_ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
-        run: pnpm run --filter rotki test:integration-ci
+        run: pnpm run --filter rotki test:integration-ci --browser chrome
         working-directory: ./frontend
       - name: Upload coverage
         uses: codecov/codecov-action@v3

@@ -12,7 +12,10 @@ parser.add_argument('--ci', {
   action: 'store_true'
 });
 parser.add_argument('--spec', { help: 'specific spec to run ' });
-const { ci, spec } = parser.parse_args();
+parser.add_argument('--browser', {
+  help: 'specify browser to use when running '
+});
+const { ci, spec, browser } = parser.parse_args();
 
 require('dotenv').config({
   path: path.join(process.cwd(), '.env.e2e')
@@ -39,6 +42,10 @@ const testCmd = ci ? 'pnpm run cypress:run' : 'pnpm run cypress:open';
 let test = testCmd;
 if (spec) {
   test += ` --spec **/${spec}`;
+}
+
+if (browser) {
+  test += ` --browser ${browser}`;
 }
 
 startAndTest({
