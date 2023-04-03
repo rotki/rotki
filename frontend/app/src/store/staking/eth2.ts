@@ -1,7 +1,6 @@
 import {
   Eth2DailyStats,
   type Eth2DailyStatsPayload,
-  Eth2Deposits,
   Eth2Details
 } from '@rotki/common/lib/staking/eth2';
 import omitBy from 'lodash/omitBy';
@@ -33,7 +32,6 @@ const defaultPagination = (): Eth2DailyStatsPayload => {
 };
 
 export const useEth2StakingStore = defineStore('staking/eth2', () => {
-  const deposits = ref<Eth2Deposits>([]);
   const details = ref<Eth2Details>([]);
   const stats = ref<Eth2DailyStats>(defaultStats());
   const pagination = ref<Eth2DailyStatsPayload>(defaultPagination());
@@ -57,66 +55,32 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
       return;
     }
 
-    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(refresh ? Status.REFRESHING : Status.LOADING);
 
-    async function fetchDetails(): Promise<void> {
-      setStatus(newStatus);
-      try {
-        const taskType = TaskType.STAKING_ETH2;
-        const { taskId } = await api.eth2StakingDetails();
-        const { result } = await awaitTask<Eth2Details, TaskMeta>(
-          taskId,
-          taskType,
-          {
-            title: tc('actions.staking.eth2.task.title')
-          }
-        );
+    try {
+      const taskType = TaskType.STAKING_ETH2;
+      const { taskId } = await api.eth2StakingDetails();
+      const { result } = await awaitTask<Eth2Details, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: tc('actions.staking.eth2.task.title')
+        }
+      );
 
-        set(details, Eth2Details.parse(result));
-      } catch (e: any) {
-        logger.error(e);
-        notify({
-          title: tc('actions.staking.eth2.error.title'),
-          message: tc('actions.staking.eth2.error.description', undefined, {
-            error: e.message
-          }),
-          display: true
-        });
-        resetStatus();
-      }
-      setStatus(Status.LOADED);
+      set(details, Eth2Details.parse(result));
+    } catch (e: any) {
+      logger.error(e);
+      notify({
+        title: tc('actions.staking.eth2.error.title'),
+        message: tc('actions.staking.eth2.error.description', undefined, {
+          error: e.message
+        }),
+        display: true
+      });
+      resetStatus();
     }
-
-    async function fetchDeposits(): Promise<void> {
-      const secondarySection = Section.STAKING_ETH2_DEPOSITS;
-      setStatus(newStatus, secondarySection);
-
-      try {
-        const taskType = TaskType.STAKING_ETH2_DEPOSITS;
-        const { taskId } = await api.eth2StakingDeposits();
-        const { result } = await awaitTask<Eth2Deposits, TaskMeta>(
-          taskId,
-          taskType,
-          {
-            title: `${t('actions.staking.eth2_deposits.task.title')}`
-          }
-        );
-
-        set(deposits, Eth2Deposits.parse(result));
-      } catch (e: any) {
-        logger.error(e);
-        notify({
-          title: `${t('actions.staking.eth2_deposits.error.title')}`,
-          message: `${t('actions.staking.eth2_deposits.error.description', {
-            error: e.message
-          })}`,
-          display: true
-        });
-      }
-      setStatus(Status.LOADED, secondarySection);
-    }
-
-    await Promise.allSettled([fetchDetails(), fetchDeposits()]);
+    setStatus(Status.LOADED);
   };
 
   const fetchDailyStats = async (refresh = false): Promise<void> => {
@@ -223,7 +187,6 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
   };
 
   const reset = (): void => {
-    set(deposits, []);
     set(details, []);
     set(stats, defaultStats());
     set(pagination, defaultPagination());
@@ -235,7 +198,6 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
   };
 
   return {
-    deposits,
     details,
     stats,
     updatePagination,

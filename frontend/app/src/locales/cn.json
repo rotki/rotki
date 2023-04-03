@@ -749,15 +749,6 @@
         "task": {
           "title": "查询 Eth2 质押详情"
         }
-      },
-      "eth2_deposits": {
-        "error": {
-          "description": "查询 Eth2 抵押存款失败：{error}",
-          "title": "查询 Eth2 质押存款"
-        },
-        "task": {
-          "title": "查询 Eth2 质押存款"
-        }
       }
     },
     "statistics": {

@@ -751,15 +751,6 @@
         "task": {
           "title": "Querying ETH staking details"
         }
-      },
-      "eth2_deposits": {
-        "error": {
-          "description": "Failed to query the ETH staking deposits: {error}",
-          "title": "Querying the Eth2 staking deposits"
-        },
-        "task": {
-          "title": "Querying Eth2 staking deposits"
-        }
       }
     },
     "statistics": {
