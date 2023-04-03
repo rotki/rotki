@@ -5,12 +5,13 @@ on:
   pull_request:
     types: [ closed ]
 
+permissions:
+  pull-requests: write
+  contents: write
+
 jobs:
   merge:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: write
     steps:
       - uses: rotki/action-cassette-deck@v1
         with:
