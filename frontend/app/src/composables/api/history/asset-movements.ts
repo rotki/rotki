@@ -12,7 +12,7 @@ import {
   type AssetMovement,
   AssetMovementCollectionResponse,
   type AssetMovementRequestPayload
-} from '@/types/history/movements';
+} from '@/types/history/asset-movements';
 import { type PendingTask } from '@/types/task';
 
 export const useAssetMovementsApi = () => {

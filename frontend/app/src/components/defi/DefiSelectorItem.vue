@@ -38,7 +38,7 @@ const identifier = computed<string>(() => {
       position="left"
       width="26px"
       max-height="24px"
-      :src="`./assets/images/defi/${getIcon(item)}.svg`"
+      :src="`./assets/images/protocols/${getIcon(item)}.svg`"
     />
     <span class="ml-2">{{ identifier }}</span>
   </div>

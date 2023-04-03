@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
-import {
-  TransactionEventProtocol,
-  TransactionEventType
-} from '@rotki/common/lib/history/tx-events';
-import { type HistoryEventEntry } from '@/types/history/tx';
+import { type HistoryEventEntry } from '@/types/history/events';
 import { CURRENCY_USD } from '@/types/currencies';
 
 const props = withDefaults(
@@ -22,15 +18,11 @@ const { tc } = useI18n();
 const { event } = toRefs(props);
 const { assetSymbol } = useAssetInfoRetrieval();
 
+const { getEventType } = useHistoryEventMappings();
+
 const showBalance = computed<boolean>(() => {
-  const type = getEventType(get(event));
-  return (
-    !type ||
-    ![
-      TransactionEventType.APPROVAL,
-      TransactionEventType.INFORMATIONAL
-    ].includes(type)
-  );
+  const type = get(getEventType(event));
+  return !type || !['approval', 'informational'].includes(type);
 });
 
 const eventAsset = computed(() => get(event).asset);
@@ -67,9 +59,7 @@ const extraDataPanel: Ref<number[]> = ref([]);
     </div>
     <v-expansion-panels
       v-if="
-        showEventDetail &&
-        event.hasDetails &&
-        event.counterparty === TransactionEventProtocol.LIQUITY
+        showEventDetail && event.hasDetails && event.counterparty === 'liquity'
       "
       v-model="extraDataPanel"
       multiple
@@ -87,7 +77,7 @@ const extraDataPanel: Ref<number[]> = ref([]);
           </template>
         </v-expansion-panel-header>
         <v-expansion-panel-content class="pt-4">
-          <transaction-event-liquity-extra-data :event="event" />
+          <history-event-liquity-extra-data :event="event" />
         </v-expansion-panel-content>
       </v-expansion-panel>
     </v-expansion-panels>

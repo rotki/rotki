@@ -7,9 +7,9 @@ import { type EntryWithMeta } from '@/types/history/meta';
 import {
   type AddTransactionHashPayload,
   type AddressesAndEvmChainPayload,
-  type EthTransaction,
   type EvmChainAddress,
   type EvmChainAndTxHash,
+  type EvmTransaction,
   type HistoryEvent,
   type HistoryEventEntry,
   type HistoryEventEntryWithMeta,
@@ -18,7 +18,7 @@ import {
   type NewHistoryEvent,
   type TransactionHashAndEvmChainPayload,
   type TransactionRequestPayload
-} from '@/types/history/tx';
+} from '@/types/history/events';
 import { Section, Status } from '@/types/status';
 import {
   BackendCancelledTaskError,
@@ -34,7 +34,7 @@ export const useHistoryEvents = () => {
   const { notify } = useNotificationsStore();
 
   const {
-    fetchEthTransactionsTask,
+    fetchEvmTransactionsTask,
     deleteTransactionEvent: deleteTransactionEventCaller,
     decodeHistoryEvents,
     reDecodeMissingTransactionEvents,
@@ -66,7 +66,7 @@ export const useHistoryEvents = () => {
       accounts: [account]
     };
 
-    const { taskId } = await fetchEthTransactionsTask(defaults);
+    const { taskId } = await fetchEvmTransactionsTask(defaults);
     const taskMeta = {
       title: t('actions.transactions.task.title').toString(),
       description: t('actions.transactions.task.description', {
@@ -75,17 +75,11 @@ export const useHistoryEvents = () => {
       }).toString()
     };
 
-    const { pause, resume } = useIntervalFn(() => {
-      startPromise(reDecodeMissingTransactionEventsTask(account));
-    }, 10000);
-
     try {
-      resume();
       await awaitTask<
-        CollectionResponse<EntryWithMeta<EthTransaction>>,
+        CollectionResponse<EntryWithMeta<EvmTransaction>>,
         TaskMeta
       >(taskId, taskType, taskMeta, true);
-      pause();
       startPromise(reDecodeMissingTransactionEventsTask(account));
       return true;
     } catch (e: any) {
@@ -107,7 +101,6 @@ export const useHistoryEvents = () => {
       setStatus(
         get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
       );
-      pause();
     }
     return false;
   };
@@ -213,7 +206,9 @@ export const useHistoryEvents = () => {
       };
     });
 
-    startPromise(fetchEnsNames(getEthAddressesFromText(notesList)));
+    if (!get(payload).groupByEventIds) {
+      startPromise(fetchEnsNames(getEthAddressesFromText(notesList)));
+    }
 
     return {
       ...other,

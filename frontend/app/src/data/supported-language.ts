@@ -8,22 +8,22 @@ export const supportedLanguages = [
   },
   {
     identifier: SupportedLanguage.ES,
-    label: 'Spanish',
+    label: 'Spanish (Español)',
     countries: ['es']
   },
   {
     identifier: SupportedLanguage.GR,
-    label: 'Greek',
+    label: 'Greek (Ελληνικά)',
     countries: ['gr']
   },
   {
     identifier: SupportedLanguage.DE,
-    label: 'German',
+    label: 'German (Deutsch)',
     countries: ['de']
   },
   {
     identifier: SupportedLanguage.CN,
-    label: 'China',
+    label: 'Chinese (中文)',
     countries: ['cn']
   }
 ];

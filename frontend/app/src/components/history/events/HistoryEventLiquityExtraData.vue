@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { type ComputedRef, type Ref } from 'vue';
 import { type AssetBalance } from '@rotki/common';
 import {
   type HistoryEventDetail,
   type HistoryEventEntry
-} from '@/types/history/tx';
+} from '@/types/history/events';
 
 const props = defineProps<{
   event: HistoryEventEntry;

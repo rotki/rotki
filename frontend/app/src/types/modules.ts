@@ -30,71 +30,71 @@ export const SUPPORTED_MODULES: SupportedModule[] = [
   {
     identifier: Module.AAVE,
     name: 'Aave',
-    icon: './assets/images/defi/aave.svg'
+    icon: './assets/images/protocols/aave.svg'
   },
   {
     identifier: Module.MAKERDAO_VAULTS,
     name: 'MakerDAO Vaults',
-    icon: './assets/images/defi/makerdao.svg'
+    icon: './assets/images/protocols/makerdao.svg'
   },
   {
     identifier: Module.MAKERDAO_DSR,
     name: 'MakerDAO DSR',
-    icon: './assets/images/defi/makerdao.svg'
+    icon: './assets/images/protocols/makerdao.svg'
   },
   {
     identifier: Module.COMPOUND,
     name: 'Compound',
-    icon: './assets/images/defi/compound.svg'
+    icon: './assets/images/protocols/compound.svg'
   },
   {
     identifier: Module.YEARN,
     name: 'yearn.finance',
-    icon: './assets/images/defi/yearn_vaults.svg'
+    icon: './assets/images/protocols/yearn_vaults.svg'
   },
   {
     identifier: Module.YEARN_V2,
     name: 'yearn.finance v2',
-    icon: './assets/images/defi/yearn_vaults.svg'
+    icon: './assets/images/protocols/yearn_vaults.svg'
   },
   {
     identifier: Module.UNISWAP,
     name: 'Uniswap',
-    icon: './assets/images/defi/uniswap.svg'
+    icon: './assets/images/protocols/uniswap.svg'
   },
   {
     identifier: Module.LOOPRING,
     name: 'Loopring',
-    icon: './assets/images/modules/loopring.svg'
+    icon: './assets/images/protocols/loopring.svg'
   },
   {
     identifier: Module.BALANCER,
     name: 'Balancer',
-    icon: './assets/images/defi/balancer.svg'
+    icon: './assets/images/protocols/balancer.svg'
   },
   {
     identifier: Module.ETH2,
     name: 'ETH Staking',
-    icon: './assets/images/modules/eth.svg'
+    icon: './assets/images/protocols/ethereum.svg'
   },
   {
     identifier: Module.SUSHISWAP,
     name: 'SushiSwap',
-    icon: './assets/images/modules/sushiswap.svg'
+    icon: './assets/images/protocols/sushiswap.svg'
   },
   {
     identifier: Module.NFTS,
     name: 'NFTs',
-    icon: './assets/images/nfts.png'
+    icon: './assets/images/protocols/nfts.png'
   },
   {
     identifier: Module.PICKLE,
     name: 'Pickle Finance',
-    icon: './assets/images/modules/pickle.svg'
+    icon: './assets/images/protocols/pickle.svg'
   },
   {
     identifier: Module.LIQUITY,
     name: 'Liquity',
-    icon: './assets/images/defi/liquity.svg'
+    icon: './assets/images/protocols/liquity.svg'
   }
 ];

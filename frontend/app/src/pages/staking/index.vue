@@ -38,17 +38,17 @@ const { tc } = useI18n();
 const staking = computed<StakingInfo[]>(() => [
   {
     id: 'eth2',
-    icon: './assets/images/modules/eth.svg',
+    icon: './assets/images/protocols/ethereum.svg',
     name: tc('staking.eth2')
   },
   {
     id: 'liquity',
-    icon: './assets/images/defi/liquity.png',
+    icon: './assets/images/protocols/liquity.png',
     name: tc('staking.liquity')
   },
   {
     id: 'kraken',
-    icon: './assets/images/exchanges/kraken.svg',
+    icon: './assets/images/protocols/kraken.svg',
     name: tc('staking.kraken')
   }
 ]);
@@ -140,7 +140,7 @@ onBeforeMount(async () => {
                     :width="iconSize"
                     :height="iconSize"
                     contain
-                    src="/assets/images/modules/eth.svg"
+                    src="/assets/images/protocols/ethereum.svg"
                   />
                 </router-link>
               </v-col>
@@ -149,7 +149,7 @@ onBeforeMount(async () => {
                   <v-img
                     :width="iconSize"
                     contain
-                    src="/assets/images/defi/liquity.png"
+                    src="/assets/images/protocols/liquity.png"
                   />
                 </router-link>
               </v-col>
@@ -158,7 +158,7 @@ onBeforeMount(async () => {
                   <v-img
                     :width="iconSize"
                     contain
-                    src="/assets/images/exchanges/kraken.svg"
+                    src="/assets/images/protocols/kraken.svg"
                   />
                 </router-link>
               </v-col>

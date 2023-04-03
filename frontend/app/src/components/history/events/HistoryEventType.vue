@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type Blockchain } from '@rotki/common/lib/blockchain';
-import { type HistoryEventEntry } from '@/types/history/tx';
-import { type ActionDataEntry } from '@/types/action';
+import { type HistoryEventEntry } from '@/types/history/events';
+import { isValidTxHash } from '@/utils/text';
 
 const props = defineProps<{
   event: HistoryEventEntry;
@@ -11,20 +11,18 @@ const props = defineProps<{
 const { event } = toRefs(props);
 
 const { dark } = useTheme();
-const { getEventTypeData } = useEventTypeData();
+const { getEventTypeData, getEventCounterpartyData } =
+  useHistoryEventMappings();
 
-const attrs = computed<ActionDataEntry>(() => getEventTypeData(get(event)));
+const attrs = getEventTypeData(event);
+const counterparty = getEventCounterpartyData(event);
 
-const { scrambleData, scrambleHex } = useScramble();
-
-const counterparty = computed<ActionDataEntry | null>(() =>
-  getEventCounterpartyData(
-    get(event),
-    get(scrambleData) ? scrambleHex : undefined
-  )
+const isTx: ComputedRef<boolean> = computed(() =>
+  isValidTxHash(get(event).eventIdentifier)
 );
 
 const { t } = useI18n();
+const imagePath = '/assets/images/protocols/';
 </script>
 <template>
   <div class="d-flex align-center text-left">
@@ -40,7 +38,7 @@ const { t } = useI18n();
 
                 <v-img
                   v-else-if="counterparty.image"
-                  :src="counterparty.image"
+                  :src="`${imagePath}${counterparty.image}`"
                 />
 
                 <ens-avatar v-else :address="counterparty.label" />
@@ -76,7 +74,12 @@ const { t } = useI18n();
     <div class="ml-4">
       <div class="font-weight-bold text-uppercase">{{ attrs.label }}</div>
       <div v-if="event.locationLabel" class="grey--text">
-        <hash-link :text="event.locationLabel" :chain="chain" />
+        <hash-link
+          :show-icon="isTx"
+          :no-link="!isTx"
+          :text="event.locationLabel"
+          :chain="chain"
+        />
       </div>
       <div v-if="event.customized" class="pt-1">
         <v-chip small label color="primary accent-1">

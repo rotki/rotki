@@ -1,4 +1,3 @@
-import { type ComputedRef, type Ref } from 'vue';
 import { z } from 'zod';
 import {
   type MatchedKeyword,
@@ -10,45 +9,45 @@ import {
   dateValidator
 } from '@/types/filtering';
 
-enum TransactionFilterKeys {
+enum HistoryEventFilterKeys {
   START = 'start',
   END = 'end',
   ASSET = 'asset',
   PROTOCOL = 'protocol',
   EVENT_TYPE = 'event_type',
-  EVM_CHAIN = 'chain'
+  LOCATION = 'location'
 }
 
-enum TransactionFilterValueKeys {
+enum HistoryEventFilterValueKeys {
   START = 'fromTimestamp',
   END = 'toTimestamp',
   ASSET = 'asset',
   PROTOCOL = 'counterparties',
   EVENT_TYPE = 'eventTypes',
-  EVM_CHAIN = 'evmChain'
+  LOCATION = 'location'
 }
 
 export type Matcher = SearchMatcher<
-  TransactionFilterKeys,
-  TransactionFilterValueKeys
+  HistoryEventFilterKeys,
+  HistoryEventFilterValueKeys
 >;
-export type Filters = MatchedKeyword<TransactionFilterValueKeys>;
+export type Filters = MatchedKeyword<HistoryEventFilterValueKeys>;
 
-export const useTransactionFilter = (disableProtocols: boolean) => {
+export const useHistoryEventFilter = (disableProtocols: boolean) => {
   const filters: Ref<Filters> = ref({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-  const { counterparties } = storeToRefs(useHistoryStore());
-  const { txEvmChains } = useSupportedChains();
+  const { counterparties } = useHistoryEventMappings();
   const { assetSearch } = useAssetInfoApi();
   const { assetInfo } = useAssetInfoRetrieval();
+  const { associatedLocations } = storeToRefs(useHistoryStore());
   const { tc } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(() => {
     const data: Matcher[] = [
       {
-        key: TransactionFilterKeys.START,
-        keyValue: TransactionFilterValueKeys.START,
+        key: HistoryEventFilterKeys.START,
+        keyValue: HistoryEventFilterValueKeys.START,
         description: tc('transactions.filter.start_date'),
         string: true,
         hint: tc('transactions.filter.date_hint', 0, {
@@ -60,8 +59,8 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
         deserializer: dateDeserializer(dateInputFormat)
       },
       {
-        key: TransactionFilterKeys.END,
-        keyValue: TransactionFilterValueKeys.END,
+        key: HistoryEventFilterKeys.END,
+        keyValue: HistoryEventFilterValueKeys.END,
         description: tc('transactions.filter.end_date'),
         string: true,
         hint: tc('transactions.filter.date_hint', 0, {
@@ -73,8 +72,8 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
         deserializer: dateDeserializer(dateInputFormat)
       },
       {
-        key: TransactionFilterKeys.ASSET,
-        keyValue: TransactionFilterValueKeys.ASSET,
+        key: HistoryEventFilterKeys.ASSET,
+        keyValue: HistoryEventFilterValueKeys.ASSET,
         description: tc('transactions.filter.asset'),
         asset: true,
         suggestions: assetSuggestions(assetSearch),
@@ -85,8 +84,8 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
     if (!disableProtocols) {
       data.push(
         {
-          key: TransactionFilterKeys.PROTOCOL,
-          keyValue: TransactionFilterValueKeys.PROTOCOL,
+          key: HistoryEventFilterKeys.PROTOCOL,
+          keyValue: HistoryEventFilterValueKeys.PROTOCOL,
           description: tc('transactions.filter.protocol'),
           multiple: true,
           string: true,
@@ -94,12 +93,12 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
           validate: (protocol: string) => !!protocol
         },
         {
-          key: TransactionFilterKeys.EVM_CHAIN,
-          keyValue: TransactionFilterValueKeys.EVM_CHAIN,
-          description: tc('transactions.filter.chain'),
+          key: HistoryEventFilterKeys.LOCATION,
+          keyValue: HistoryEventFilterValueKeys.LOCATION,
+          description: tc('transactions.filter.location'),
           string: true,
-          suggestions: () => get(txEvmChains).map(x => x.evmChainName),
-          validate: (chain: string) => !!chain
+          suggestions: () => get(associatedLocations),
+          validate: location => !!location
         }
       );
     }
@@ -115,15 +114,15 @@ export const useTransactionFilter = (disableProtocols: boolean) => {
 
   const OptionalString = z.string().optional();
   const RouteFilterSchema = z.object({
-    [TransactionFilterValueKeys.START]: OptionalString,
-    [TransactionFilterValueKeys.END]: OptionalString,
-    [TransactionFilterValueKeys.ASSET]: OptionalString,
-    [TransactionFilterValueKeys.PROTOCOL]: z
+    [HistoryEventFilterValueKeys.START]: OptionalString,
+    [HistoryEventFilterValueKeys.END]: OptionalString,
+    [HistoryEventFilterValueKeys.ASSET]: OptionalString,
+    [HistoryEventFilterValueKeys.PROTOCOL]: z
       .array(z.string())
       .or(z.string())
       .transform(val => (Array.isArray(val) ? val : [val]))
       .optional(),
-    [TransactionFilterValueKeys.EVM_CHAIN]: OptionalString
+    [HistoryEventFilterValueKeys.LOCATION]: OptionalString
   });
 
   return {

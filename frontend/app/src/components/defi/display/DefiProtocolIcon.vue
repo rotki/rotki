@@ -55,7 +55,7 @@ const name = computed(({ protocol }) => {
             'mr-2': mode !== 'icon',
             [$style.icon]: true
           }"
-          :src="`./assets/images/defi/${icon}.svg`"
+          :src="`./assets/images/protocols/${icon}.svg`"
           v-on="on"
         />
         <span

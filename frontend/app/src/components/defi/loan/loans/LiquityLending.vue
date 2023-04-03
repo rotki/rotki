@@ -2,11 +2,6 @@
 import { type AssetBalance, type BigNumber } from '@rotki/common';
 import { type ComputedRef, type PropType } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  HistoryEventSubType,
-  HistoryEventType,
-  TransactionEventProtocol
-} from '@rotki/common/lib/history/tx-events';
 import { type LiquityLoan } from '@/types/defi/liquity';
 
 const props = defineProps({
@@ -69,21 +64,10 @@ const chain = Blockchain.ETH;
         <premium-card :title="tc('liquity_lending.trove_events')" />
       </div>
       <div v-else>
-        <transaction-content
+        <history-events-view
           use-external-account-filter
           :section-title="tc('liquity_lending.trove_events')"
-          :protocols="[TransactionEventProtocol.LIQUITY]"
-          :event-types="[
-            HistoryEventType.WITHDRAWAL,
-            HistoryEventType.SPEND,
-            HistoryEventType.DEPOSIT
-          ]"
-          :event-sub-types="[
-            HistoryEventSubType.DEPOSIT_ASSET,
-            HistoryEventSubType.REMOVE_ASSET,
-            HistoryEventSubType.GENERATE_DEBT,
-            HistoryEventSubType.PAYBACK_DEBT
-          ]"
+          :protocols="['liquity']"
           :external-account-filter="[{ chain, address: loan.owner }]"
           :only-chains="[chain]"
         />

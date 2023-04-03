@@ -1,24 +1,18 @@
 <script setup lang="ts">
 import { type DataTableHeader } from 'vuetify';
-import {
-  HistoryEventSubType,
-  TransactionEventProtocol
-} from '@rotki/common/lib/history/tx-events';
-import { type ComputedRef, type Ref } from 'vue';
-import { type HistoryEventEntry } from '@/types/history/tx';
+import { type HistoryEventEntry } from '@/types/history/events';
 
 const props = withDefaults(
   defineProps<{
     eventGroupHeader: HistoryEventEntry;
+    allEvents: HistoryEventEntry[];
     colspan: number;
     showEventDetail?: boolean;
     loading?: boolean;
-    lastUpdated?: string;
   }>(),
   {
     showEventDetail: false,
-    loading: false,
-    lastUpdated: ''
+    loading: false
   }
 );
 
@@ -33,7 +27,7 @@ const emit = defineEmits<{
   ): void;
 }>();
 
-const { eventGroupHeader, lastUpdated } = toRefs(props);
+const { eventGroupHeader, allEvents } = toRefs(props);
 
 const css = useCssModule();
 const { tc } = useI18n();
@@ -67,40 +61,25 @@ const headers: DataTableHeader[] = [
   }
 ];
 
-const { fetchHistoryEvents } = useHistoryEvents();
-
 const evaluating: Ref<boolean> = ref(false);
 
-const num: ComputedRef<number> = computed(
-  () => get(eventGroupHeader).groupedEventsNum || 1
-);
+const events: Ref<HistoryEventEntry[]> = asyncComputed(() => {
+  const all = get(allEvents);
+  const eventHeader = get(eventGroupHeader);
+  if (all.length === 0) {
+    return [eventHeader];
+  }
+  const eventIdentifierHeader = eventHeader.eventIdentifier;
+  const filtered = all.filter(
+    ({ eventIdentifier }) => eventIdentifier === eventIdentifierHeader
+  );
 
-const events: Ref<HistoryEventEntry[]> = ref([get(eventGroupHeader)]);
+  if (filtered.length > 0) {
+    return filtered;
+  }
 
-const fetchEvents = async () => {
-  set(evaluating, true);
-  const { data } = await fetchHistoryEvents({
-    limit: -1,
-    offset: 0,
-    eventIdentifiers: get(eventGroupHeader).eventIdentifier,
-    groupByEventIds: false
-  });
-  set(evaluating, false);
-  set(events, data);
-};
-
-watch(
-  [num, lastUpdated],
-  ([currentNum, currentLastUpdated], [oldNum]) => {
-    if (
-      (currentNum !== oldNum && currentNum !== 1) ||
-      currentLastUpdated === get(eventGroupHeader).eventIdentifier
-    ) {
-      fetchEvents();
-    }
-  },
-  { immediate: true }
-);
+  return [eventHeader];
+}, []);
 
 const editEvent = (item: HistoryEventEntry) => emit('edit:event', item);
 const deleteEvent = (item: HistoryEventEntry) =>
@@ -121,8 +100,7 @@ watch(ignoredInAccounting, (current, old) => {
 });
 
 const isNoTxHash = (item: HistoryEventEntry) =>
-  item.counterparty === TransactionEventProtocol.ETH2 &&
-  item.eventSubtype === HistoryEventSubType.DEPOSIT_ASSET;
+  item.counterparty === 'eth2' && item.eventSubtype === 'deposit asset';
 </script>
 
 <template>
@@ -174,19 +152,19 @@ const isNoTxHash = (item: HistoryEventEntry) =>
               >
                 <template #progress><span /></template>
                 <template #item.type="{ item }">
-                  <transaction-event-type
+                  <history-event-type
                     :event="item"
                     :chain="getChain(item.location)"
                   />
                 </template>
                 <template #item.asset="{ item }">
-                  <transaction-event-asset
+                  <history-event-asset
                     :event="item"
                     :show-event-detail="showEventDetail"
                   />
                 </template>
                 <template #item.description="{ item }">
-                  <transaction-event-note
+                  <history-event-note
                     :notes="item.notes"
                     :amount="item.balance.amount"
                     :asset="item.asset"

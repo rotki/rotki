@@ -1,11 +1,10 @@
 <script lang="ts" setup>
-import { type ComputedRef, type Ref } from 'vue';
 import {
   type EvmChainAndTxHash,
   type HistoryEvent,
   type HistoryEventEntry
-} from '@/types/history/tx';
-import TransactionEventForm from '@/components/history/transactions/events/TransactionEventForm.vue';
+} from '@/types/history/events';
+import type TransactionEventForm from '@/components/history/events/HistoryEventForm.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -67,7 +66,7 @@ const title: ComputedRef<string> = computed(() =>
     @confirm="confirmSave()"
     @cancel="clearDialog()"
   >
-    <transaction-event-form
+    <history-event-form
       ref="form"
       v-model="valid"
       :transaction="transaction"

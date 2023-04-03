@@ -6,7 +6,7 @@ import {
   type AssetMovement,
   type AssetMovementEntry,
   type AssetMovementRequestPayload
-} from '@/types/history/movements';
+} from '@/types/history/asset-movements';
 import { type TradeLocation } from '@/types/history/trade/location';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';

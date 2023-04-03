@@ -101,9 +101,7 @@ declare global {
   const getDomain: typeof import('./utils/url')['getDomain']
   const getEthAddressesFromText: typeof import('./utils/history')['getEthAddressesFromText']
   const getEtherScanRegisterUrl: typeof import('./utils/url')['getEtherScanRegisterUrl']
-  const getEventCounterpartyData: typeof import('./utils/history')['getEventCounterpartyData']
   const getEventDetails: typeof import('./utils/defi/xswap')['getEventDetails']
-  const getEventType: typeof import('./utils/history')['getEventType']
   const getFilepath: typeof import('./utils/backups')['getFilepath']
   const getKeyType: typeof import('./utils/xpub')['getKeyType']
   const getMetamaskAddresses: typeof import('./utils/metamask')['getMetamaskAddresses']
@@ -241,7 +239,6 @@ declare global {
   const toUnit: typeof import('./utils/calculation')['toUnit']
   const toValue: typeof import('@vueuse/core')['toValue']
   const totalCollateral: typeof import('./utils/total-collateral')['totalCollateral']
-  const transactionEventProtocolData: typeof import('./composables/history/events/protocol-data')['transactionEventProtocolData']
   const transformEntryWithMeta: typeof import('./utils/history')['transformEntryWithMeta']
   const triggerRef: typeof import('vue')['triggerRef']
   const trimOnPaste: typeof import('./utils/event')['trimOnPaste']
@@ -392,7 +389,6 @@ declare global {
   const useEventBus: typeof import('@vueuse/core')['useEventBus']
   const useEventListener: typeof import('@vueuse/core')['useEventListener']
   const useEventSource: typeof import('@vueuse/core')['useEventSource']
-  const useEventTypeData: typeof import('./utils/history')['useEventTypeData']
   const useEvmNodesApi: typeof import('./composables/api/settings/evm-nodes-api')['useEvmNodesApi']
   const useExchangeApi: typeof import('./composables/api/balances/exchanges')['useExchangeApi']
   const useExchangeBalancesStore: typeof import('./store/balances/exchanges')['useExchangeBalancesStore']
@@ -416,9 +412,10 @@ declare global {
   const useGraph: typeof import('./composables/graphs')['useGraph']
   const useHistoryApi: typeof import('./composables/api/history/index')['useHistoryApi']
   const useHistoryAutoRefresh: typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']
-  const useHistoryEventTypeData: typeof import('./composables/history/events/event-data')['useHistoryEventTypeData']
+  const useHistoryEventFilter: typeof import('./composables/filters/events')['useHistoryEventFilter']
+  const useHistoryEventMappings: typeof import('./composables/history/events/mapping')['useHistoryEventMappings']
   const useHistoryEvents: typeof import('./composables/history/events/index')['useHistoryEvents']
-  const useHistoryEventsApi: typeof import('./composables/api/history/transactions')['useHistoryEventsApi']
+  const useHistoryEventsApi: typeof import('./composables/api/history/events')['useHistoryEventsApi']
   const useHistoryIgnoringApi: typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']
   const useHistoryStore: typeof import('./store/history/index')['useHistoryStore']
   const useI18n: typeof import('vue-i18n-composable')['useI18n']
@@ -593,8 +590,6 @@ declare global {
   const useTradeLocations: typeof import('./composables/history/trade-locations')['useTradeLocations']
   const useTrades: typeof import('./composables/history/trades/index')['useTrades']
   const useTradesApi: typeof import('./composables/api/history/trades')['useTradesApi']
-  const useTransactionEventTypeData: typeof import('./composables/history/events/tx-event-type')['useTransactionEventTypeData']
-  const useTransactionFilter: typeof import('./composables/filters/transactions')['useTransactionFilter']
   const useTransactionQueryStatus: typeof import('./composables/history/events/query-status')['useTransactionQueryStatus']
   const useTransition: typeof import('@vueuse/core')['useTransition']
   const useTrunc: typeof import('@vueuse/math')['useTrunc']
@@ -749,9 +744,7 @@ declare module 'vue' {
     readonly getDomain: UnwrapRef<typeof import('./utils/url')['getDomain']>
     readonly getEthAddressesFromText: UnwrapRef<typeof import('./utils/history')['getEthAddressesFromText']>
     readonly getEtherScanRegisterUrl: UnwrapRef<typeof import('./utils/url')['getEtherScanRegisterUrl']>
-    readonly getEventCounterpartyData: UnwrapRef<typeof import('./utils/history')['getEventCounterpartyData']>
     readonly getEventDetails: UnwrapRef<typeof import('./utils/defi/xswap')['getEventDetails']>
-    readonly getEventType: UnwrapRef<typeof import('./utils/history')['getEventType']>
     readonly getFilepath: UnwrapRef<typeof import('./utils/backups')['getFilepath']>
     readonly getKeyType: UnwrapRef<typeof import('./utils/xpub')['getKeyType']>
     readonly getMetamaskAddresses: UnwrapRef<typeof import('./utils/metamask')['getMetamaskAddresses']>
@@ -889,7 +882,6 @@ declare module 'vue' {
     readonly toUnit: UnwrapRef<typeof import('./utils/calculation')['toUnit']>
     readonly toValue: UnwrapRef<typeof import('@vueuse/core')['toValue']>
     readonly totalCollateral: UnwrapRef<typeof import('./utils/total-collateral')['totalCollateral']>
-    readonly transactionEventProtocolData: UnwrapRef<typeof import('./composables/history/events/protocol-data')['transactionEventProtocolData']>
     readonly transformEntryWithMeta: UnwrapRef<typeof import('./utils/history')['transformEntryWithMeta']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly trimOnPaste: UnwrapRef<typeof import('./utils/event')['trimOnPaste']>
@@ -1040,7 +1032,6 @@ declare module 'vue' {
     readonly useEventBus: UnwrapRef<typeof import('@vueuse/core')['useEventBus']>
     readonly useEventListener: UnwrapRef<typeof import('@vueuse/core')['useEventListener']>
     readonly useEventSource: UnwrapRef<typeof import('@vueuse/core')['useEventSource']>
-    readonly useEventTypeData: UnwrapRef<typeof import('./utils/history')['useEventTypeData']>
     readonly useEvmNodesApi: UnwrapRef<typeof import('./composables/api/settings/evm-nodes-api')['useEvmNodesApi']>
     readonly useExchangeApi: UnwrapRef<typeof import('./composables/api/balances/exchanges')['useExchangeApi']>
     readonly useExchangeBalancesStore: UnwrapRef<typeof import('./store/balances/exchanges')['useExchangeBalancesStore']>
@@ -1064,9 +1055,10 @@ declare module 'vue' {
     readonly useGraph: UnwrapRef<typeof import('./composables/graphs')['useGraph']>
     readonly useHistoryApi: UnwrapRef<typeof import('./composables/api/history/index')['useHistoryApi']>
     readonly useHistoryAutoRefresh: UnwrapRef<typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']>
-    readonly useHistoryEventTypeData: UnwrapRef<typeof import('./composables/history/events/event-data')['useHistoryEventTypeData']>
+    readonly useHistoryEventFilter: UnwrapRef<typeof import('./composables/filters/events')['useHistoryEventFilter']>
+    readonly useHistoryEventMappings: UnwrapRef<typeof import('./composables/history/events/mapping')['useHistoryEventMappings']>
     readonly useHistoryEvents: UnwrapRef<typeof import('./composables/history/events/index')['useHistoryEvents']>
-    readonly useHistoryEventsApi: UnwrapRef<typeof import('./composables/api/history/transactions')['useHistoryEventsApi']>
+    readonly useHistoryEventsApi: UnwrapRef<typeof import('./composables/api/history/events')['useHistoryEventsApi']>
     readonly useHistoryIgnoringApi: UnwrapRef<typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']>
     readonly useHistoryStore: UnwrapRef<typeof import('./store/history/index')['useHistoryStore']>
     readonly useI18n: UnwrapRef<typeof import('vue-i18n-composable')['useI18n']>
@@ -1241,8 +1233,6 @@ declare module 'vue' {
     readonly useTradeLocations: UnwrapRef<typeof import('./composables/history/trade-locations')['useTradeLocations']>
     readonly useTrades: UnwrapRef<typeof import('./composables/history/trades/index')['useTrades']>
     readonly useTradesApi: UnwrapRef<typeof import('./composables/api/history/trades')['useTradesApi']>
-    readonly useTransactionEventTypeData: UnwrapRef<typeof import('./composables/history/events/tx-event-type')['useTransactionEventTypeData']>
-    readonly useTransactionFilter: UnwrapRef<typeof import('./composables/filters/transactions')['useTransactionFilter']>
     readonly useTransactionQueryStatus: UnwrapRef<typeof import('./composables/history/events/query-status')['useTransactionQueryStatus']>
     readonly useTransition: UnwrapRef<typeof import('@vueuse/core')['useTransition']>
     readonly useTrunc: UnwrapRef<typeof import('@vueuse/math')['useTrunc']>

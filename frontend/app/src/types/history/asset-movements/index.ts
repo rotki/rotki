@@ -8,6 +8,7 @@ import { CollectionCommonFields } from '@/types/collection';
 
 export const MovementCategory = z.enum(['deposit', 'withdrawal']);
 export type MovementCategory = z.infer<typeof MovementCategory>;
+
 export const AssetMovement = z.object({
   identifier: z.string(),
   location: TradeLocation,

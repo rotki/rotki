@@ -6,7 +6,7 @@ import {
   type AssetMovement,
   type AssetMovementEntry,
   type AssetMovementRequestPayload
-} from '@/types/history/movements';
+} from '@/types/history/asset-movements';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';

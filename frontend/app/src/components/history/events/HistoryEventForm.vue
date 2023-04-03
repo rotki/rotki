@@ -2,11 +2,6 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import dayjs from 'dayjs';
-import { type ComputedRef } from 'vue';
-import {
-  HistoryEventSubType,
-  type HistoryEventType
-} from '@rotki/common/lib/history/tx-events';
 import { type BigNumber } from '@rotki/common';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { type Writeable } from '@/types';
@@ -15,11 +10,10 @@ import {
   type HistoryEvent,
   type HistoryEventEntry,
   type NewHistoryEvent
-} from '@/types/history/tx';
+} from '@/types/history/events';
 import { TaskType } from '@/types/task-type';
 import { toMessages } from '@/utils/validation-errors';
 import { type ActionDataEntry } from '@/types/action';
-import { transactionEventTypeMapping } from '@/data/transaction-event-mapping';
 
 const props = withDefaults(
   defineProps<{
@@ -41,9 +35,13 @@ const { isTaskRunning } = useTaskStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { getHistoricPrice } = useBalancePricesStore();
 const { addHistoricalPrice } = useAssetPricesApi();
-const { getEventTypeData } = useEventTypeData();
-const { historyEventTypeData, historyEventSubTypeData } =
-  useHistoryEventTypeData();
+const {
+  counterparties,
+  getEventTypeData,
+  historyEventTypesData,
+  historyEventSubTypesData,
+  historyEventTypeGlobalMapping
+} = useHistoryEventMappings();
 
 const isCurrentCurrencyUsd: ComputedRef<boolean> = computed(
   () => get(currencySymbol) === CURRENCY_USD
@@ -126,7 +124,9 @@ const rules = {
     isValid: helpers.withMessage(
       t('transactions.events.form.counterparty.validation.valid').toString(),
       (value: string) =>
-        get(counterparties).includes(value) || isValidEthAddress(value)
+        !value ||
+        get(counterparties).includes(value) ||
+        isValidEthAddress(value)
     )
   }
 };
@@ -159,6 +159,7 @@ const reset = () => {
     convertFromTimestamp(get(transaction).timestamp || dayjs().unix(), true)
   );
   set(location, get(transaction).location || get(lastLocation));
+  set(locationLabel, get(transaction).locationLabel || '');
   set(eventType, '');
   set(eventSubtype, '');
   set(asset, '');
@@ -184,7 +185,7 @@ const setEditMode = async () => {
   set(datetime, convertFromTimestamp(event.timestamp, true));
   set(location, event.location);
   set(eventType, event.eventType);
-  set(eventSubtype, event.eventSubtype || HistoryEventSubType.NONE);
+  set(eventSubtype, event.eventSubtype || 'none');
   set(asset, event.asset);
   set(amount, event.balance.amount.toFixed());
   set(usdValue, event.balance.usdValue.toFixed());
@@ -206,8 +207,8 @@ const save = async (): Promise<boolean> => {
     sequenceIndex: get(sequenceIndex) || '0',
     timestamp,
     location: get(location),
-    eventType: get(eventType) as HistoryEventType,
-    eventSubtype: get(eventSubtype) as HistoryEventSubType,
+    eventType: get(eventType),
+    eventSubtype: get(eventSubtype),
     asset: assetVal,
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
@@ -411,10 +412,18 @@ watch(location, (location: string) => {
   }
 });
 
-watch([eventType, eventSubtype], ([eventType, eventSubtype]) => {
-  const typeData = getEventTypeData({ eventType, eventSubtype }, false);
-  set(transactionEventType, typeData.label);
-});
+watch(
+  [eventType, eventSubtype, counterparty, location],
+  ([eventType, eventSubtype, counterparty, location]) => {
+    const typeData = get(
+      getEventTypeData(
+        { eventType, eventSubtype, counterparty, location },
+        false
+      )
+    );
+    set(transactionEventType, typeData.label);
+  }
+);
 
 watch(v$, ({ $invalid }) => {
   emit('input', !$invalid);
@@ -436,8 +445,8 @@ defineExpose({
 const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
   computed(() => {
     const eventTypeVal = get(eventType);
-    const allData = get(historyEventSubTypeData);
-    const mapping = transactionEventTypeMapping;
+    const allData = get(historyEventSubTypesData);
+    const mapping = get(historyEventTypeGlobalMapping);
 
     if (!eventTypeVal) {
       return allData;
@@ -449,8 +458,6 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
       subTypeMapping.includes(data.identifier)
     );
   });
-
-const { counterparties } = storeToRefs(useHistoryStore());
 </script>
 <template>
   <v-form
@@ -568,7 +575,7 @@ const { counterparties } = storeToRefs(useHistoryStore());
           outlined
           required
           :label="t('transactions.events.form.event_type.label')"
-          :items="historyEventTypeData"
+          :items="historyEventTypesData"
           item-value="identifier"
           item-text="label"
           data-cy="eventType"

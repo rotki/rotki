@@ -60,19 +60,19 @@ export const DEFILAMA_PRIO_LIST_ITEM: PrioritizedListItemData<PrioritizedListId>
 export const UNISWAP2_PRIO_LIST_ITEM: PrioritizedListItemData<PrioritizedListId> =
   {
     identifier: PriceOracle.UNISWAP2,
-    icon: './assets/images/defi/uniswap.svg'
+    icon: './assets/images/protocols/uniswap.svg'
   };
 
 export const UNISWAP3_PRIO_LIST_ITEM: PrioritizedListItemData<PrioritizedListId> =
   {
     identifier: PriceOracle.UNISWAP3,
-    icon: './assets/images/defi/uniswap.svg'
+    icon: './assets/images/protocols/uniswap.svg'
   };
 
 export const SADDLE_PRIO_LIST_ITEM: PrioritizedListItemData<PrioritizedListId> =
   {
     identifier: PriceOracle.SADDLE,
-    icon: './assets/images/airdrops/saddle-finance.svg'
+    icon: './assets/images/protocols/saddle-finance.svg'
   };
 
 export const MANUALCURRENT_PRIO_LIST_ITEM: PrioritizedListItemData<PrioritizedListId> =

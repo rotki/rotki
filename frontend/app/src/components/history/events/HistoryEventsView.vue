@@ -4,13 +4,7 @@ import {
   type Blockchain,
   type BlockchainSelection
 } from '@rotki/common/lib/blockchain';
-import {
-  type HistoryEventSubType,
-  type HistoryEventType,
-  type TransactionEventProtocol
-} from '@rotki/common/lib/history/tx-events';
 import isEqual from 'lodash/isEqual';
-import { type ComputedRef, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import { not } from '@vueuse/math';
 import { type Collection } from '@/types/collection';
@@ -21,20 +15,20 @@ import {
   type HistoryEvent,
   type HistoryEventEntry,
   type HistoryEventRequestPayload
-} from '@/types/history/tx';
+} from '@/types/history/events';
 import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { type Writeable } from '@/types';
 import { isValidTxHash } from '@/utils/text';
 import { toEvmChainAndTxHash } from '@/utils/history';
-import type { Filters, Matcher } from '@/composables/filters/transactions';
+import type { Filters, Matcher } from '@/composables/filters/events';
 
 const props = withDefaults(
   defineProps<{
-    protocols?: TransactionEventProtocol[];
-    eventTypes?: HistoryEventType[];
-    eventSubTypes?: HistoryEventSubType[];
+    protocols?: string[];
+    eventTypes?: string[];
+    eventSubTypes?: string[];
     externalAccountFilter?: Account[];
     useExternalAccountFilter?: boolean;
     sectionTitle?: string;
@@ -73,7 +67,6 @@ const transactionToIgnore: Ref<HistoryEventEntry | null> = ref(null);
 const confirmationTitle: Ref<string> = ref('');
 const confirmationPrimaryAction: Ref<string> = ref('');
 const accounts: Ref<GeneralAccount[]> = ref([]);
-const lastUpdatedEventIdentifier: Ref<string> = ref('');
 
 const usedTitle: ComputedRef<string> = computed(
   () => get(sectionTitle) || tc('transactions.title')
@@ -131,9 +124,9 @@ const {
   selected,
   openDialog,
   confirmationMessage,
-  isLoading: isEventsLoading,
+  isLoading: isEventsGroupHeaderLoading,
   userAction,
-  state: events,
+  state: eventsHeader,
   filters,
   matchers,
   setPage,
@@ -151,7 +144,7 @@ const {
 >(
   null,
   mainPage,
-  () => useTransactionFilter(get(protocols).length > 0),
+  () => useHistoryEventFilter(get(protocols).length > 0),
   fetchHistoryEvents,
   {
     onUpdateFilters(query) {
@@ -182,7 +175,7 @@ const {
         const firstAccount = accounts[0];
 
         if (firstAccount.chain !== 'ALL') {
-          params.evmChain = getEvmChainName(firstAccount.chain)!;
+          params.location = getEvmChainName(firstAccount.chain)!;
         }
 
         params.locationLabels = accounts.map(({ address }) => address);
@@ -193,7 +186,33 @@ const {
   }
 );
 
-const { data } = getCollectionData<HistoryEventEntry>(events);
+const { data } = getCollectionData<HistoryEventEntry>(eventsHeader);
+
+const isEventsLoading: Ref<boolean> = ref(false);
+
+const allEvents: Ref<HistoryEventEntry[]> = asyncComputed(
+  async () => {
+    const eventsHeaderData = get(data);
+
+    if (eventsHeaderData.length === 0) {
+      return [];
+    }
+
+    const response = await fetchHistoryEvents({
+      limit: -1,
+      offset: 0,
+      eventIdentifiers: eventsHeaderData.map(item => item.eventIdentifier),
+      groupByEventIds: false
+    });
+
+    return response.data;
+  },
+  [],
+  {
+    lazy: true,
+    evaluating: isEventsLoading
+  }
+);
 
 const onFilterAccountsChanged = (acc: Account<BlockchainSelection>[]) => {
   set(userAction, true);
@@ -308,13 +327,13 @@ watch(
     // Because the evmChain filter and the account filter can't be active
     // at the same time we clear the account filter when the evmChain filter
     // is set.
-    if (filterChanged && filters.evmChain) {
+    if (filterChanged && filters.location) {
       set(accounts, []);
     }
 
     if (accountsChanged && usedAccounts.length > 0) {
       const updatedFilter = { ...get(filters) };
-      delete updatedFilter.evmChain;
+      delete updatedFilter.location;
       updateFilter(updatedFilter);
     }
 
@@ -338,7 +357,11 @@ const shouldFetchEventsRegularly = logicOr(
   eventTaskLoading
 );
 
-const anyLoading = logicOr(shouldFetchEventsRegularly, isEventsLoading);
+const anyLoading = logicOr(
+  shouldFetchEventsRegularly,
+  isEventsGroupHeaderLoading,
+  isEventsLoading
+);
 
 const { pause, resume, isActive } = useIntervalFn(() => {
   fetchData();
@@ -400,7 +423,6 @@ const fetchDataAndRefreshEvents = async (
   reDecodeEvents = false
 ) => {
   await fetchData();
-  set(lastUpdatedEventIdentifier, data.txHash);
   if (reDecodeEvents) {
     await forceRedecodeTxEvents(data);
   }
@@ -486,7 +508,7 @@ const fetchDataAndRefreshEvents = async (
         </v-row>
       </template>
 
-      <collection-handler :collection="events" @set-page="setPage($event)">
+      <collection-handler :collection="eventsHeader" @set-page="setPage">
         <template
           #default="{
             data: eventsData,
@@ -536,6 +558,7 @@ const fetchDataAndRefreshEvents = async (
                   </adaptive-wrapper>
                 </div>
                 <hash-link
+                  :no-link="!isValidTxHash(item.eventIdentifier)"
                   :text="item.eventIdentifier"
                   :truncate-length="8"
                   :full-address="$vuetify.breakpoint.lgAndUp"
@@ -588,6 +611,7 @@ const fetchDataAndRefreshEvents = async (
                       </v-list-item-content>
                     </v-list-item>
                     <v-list-item
+                      v-if="isValidTxHash(item.eventIdentifier)"
                       link
                       :disabled="eventTaskLoading"
                       @click="forceRedecodeTxEvents(toEvmChainAndTxHash(item))"
@@ -604,9 +628,8 @@ const fetchDataAndRefreshEvents = async (
               </div>
             </template>
             <template #expanded-item="{ headers, item }">
-              <transaction-events
-                :key="item.eventIdentifier"
-                :last-updated="lastUpdatedEventIdentifier"
+              <history-events-list
+                :all-events="allEvents"
                 :event-group-header="item"
                 :colspan="headers.length"
                 :show-event-detail="protocols.length > 0"
@@ -633,7 +656,7 @@ const fetchDataAndRefreshEvents = async (
       </collection-handler>
     </card>
 
-    <transaction-event-form-dialog
+    <history-event-form-dialog
       v-model="openDialog"
       :loading="sectionLoading"
       :editable-item="editableItem"
@@ -643,7 +666,7 @@ const fetchDataAndRefreshEvents = async (
       @saved="fetchDataAndRefreshEvents($event)"
     />
 
-    <transaction-form-dialog
+    <history-form-dialog
       v-model="openAddTxDialog"
       :loading="sectionLoading"
       @saved="fetchDataAndRefreshEvents($event, true)"

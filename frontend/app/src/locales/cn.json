@@ -1076,6 +1076,71 @@
   "back_button": {
     "tooltip": "导航回上一页。"
   },
+  "backend_mappings": {
+    "events": {
+      "history_event_subtype": {
+        "airdrop": "空投",
+        "approve": "批准",
+        "bridge": "桥",
+        "deploy": "部署",
+        "deposit_asset": "存入资产",
+        "fee": "费用",
+        "generate_debt": "生成债务",
+        "governance": "治理",
+        "nft": "NFT",
+        "none": "无",
+        "payback_debt": "偿还债务",
+        "receive": "接收",
+        "receive_wrapped": "接收包装",
+        "remove_asset": "移除资产",
+        "return_wrapped": "返回包裹",
+        "reward": "奖励",
+        "spend": "花费"
+      },
+      "history_event_type": {
+        "adjustment": "调整",
+        "deposit": "存款",
+        "informational": "信息",
+        "migrate": "迁移",
+        "receive": "接收",
+        "renew": "更新",
+        "spend": "花费",
+        "staking": "质押",
+        "trade": "贸易",
+        "transfer": "转移",
+        "unknown": "未知",
+        "withdrawal": "取款"
+      },
+      "type": {
+        "airdrop": "空投",
+        "approval": "批准",
+        "borrow": "借",
+        "bridge": "桥",
+        "cancel_order": "取消订单",
+        "claim_reward": "领取奖励",
+        "deploy": "部署",
+        "deposit": "存款",
+        "donate": "捐赠",
+        "fee": "费用",
+        "gas_fee": "Gas Fee",
+        "governance": "治理",
+        "informational": "信息",
+        "liquidate": "清算",
+        "place_order": "下订单",
+        "receive": "接收",
+        "receive_donation": "接收捐赠",
+        "refund": "退款",
+        "renew": "更新",
+        "repay": "还款",
+        "send": "发送",
+        "swap_in": "接收",
+        "swap_out": "交换",
+        "transfer": "转移",
+        "unknown": "未知",
+        "withdraw": "撤回"
+      }
+    }
+  },
   "backend_settings": {
     "actions": {
       "reset": "重置为默认值"
@@ -3825,68 +3890,8 @@
           "label": "交易事件类型"
         }
       },
-      "history_event_subtype": {
-        "airdrop": "空投",
-        "approve": "批准",
-        "bridge": "桥",
-        "deploy": "部署",
-        "deposit_asset": "存入资产",
-        "fee": "费用",
-        "generate_debt": "生成债务",
-        "governance": "治理",
-        "nft": "NFT",
-        "none": "无",
-        "payback_debt": "偿还债务",
-        "receive": "接收",
-        "receive_wrapped": "接收包装",
-        "remove_asset": "移除资产",
-        "return_wrapped": "返回包裹",
-        "reward": "奖励",
-        "spend": "花费"
-      },
-      "history_event_type": {
-        "adjustment": "调整",
-        "deposit": "存款",
-        "informational": "信息",
-        "migrate": "迁移",
-        "receive": "接收",
-        "renew": "更新",
-        "spend": "花费",
-        "staking": "质押",
-        "trade": "贸易",
-        "transfer": "转移",
-        "unknown": "未知",
-        "withdrawal": "取款"
-      },
       "loading": "正在加载事件...",
       "no_data": "事件被隐藏是因为它们包含被忽略的资产",
-      "type": {
-        "airdrop": "空投",
-        "approval": "批准",
-        "borrow": "借",
-        "bridge": "桥",
-        "cancel_order": "取消订单",
-        "claim_reward": "领取奖励",
-        "deploy": "部署",
-        "deposit": "存款",
-        "donate": "捐赠",
-        "gas_fee": "Gas Fee",
-        "governance": "治理",
-        "informational": "信息",
-        "liquidate": "清算",
-        "place_order": "下订单",
-        "receive": "接收",
-        "receive_donation": "接收捐赠",
-        "refund": "退款",
-        "renew": "更新",
-        "repay": "还款",
-        "send": "发送",
-        "swap_in": "接收",
-        "swap_out": "交换",
-        "transfer": "转移",
-        "unknown": "未知",
-        "withdraw": "撤回"
-      },
       "view": {
         "hide": "隐藏事件",
         "show": "显示事件 ({length})"
@@ -3895,9 +3900,9 @@
     "filter": {
       "account": "按账户筛选",
       "asset": "按事件的资产过滤",
-      "chain": "按 evm 链过滤",
       "date_hint": "format {format} HH:mm:ss(时间/秒可选)",
       "end_date": "按交易周期结束日期筛选",
+      "location": "按活动地点过滤",
       "protocol": "按事件的协议/交易对手过滤",
       "start_date": "按交易周期开始日期筛选"
     },

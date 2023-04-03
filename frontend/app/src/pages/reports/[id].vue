@@ -118,17 +118,18 @@ const regenerateReport = async () => {
       class="mt-4 mb-8"
     />
     <div class="d-flex">
-      <v-btn class="mr-2" color="primary" text @click="regenerateReport">
-        <v-icon class="mr-2">mdi-refresh</v-icon>
-        {{ tc('profit_loss_report.actionable.actions.regenerate_report') }}
-      </v-btn>
       <template v-if="latest">
-        <export-report-csv class="mr-4" />
+        <export-report-csv class="mr-2" />
         <report-actionable
           :report="selectedReport"
           :initial-open="initialOpenReportActionable"
+          @regenerate="regenerateReport"
         />
       </template>
+      <v-btn class="ml-2" color="primary" text @click="regenerateReport">
+        <v-icon class="mr-2">mdi-refresh</v-icon>
+        {{ tc('profit_loss_report.actionable.actions.regenerate_report') }}
+      </v-btn>
     </div>
     <profit-loss-overview
       class="mt-8"

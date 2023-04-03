@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type SelectedReport } from '@/types/reports';
-import { Routes } from '@/router/routes';
 
 const props = defineProps({
   report: {
@@ -10,6 +9,14 @@ const props = defineProps({
   },
   initialOpen: { required: false, type: Boolean, default: false }
 });
+
+const emit = defineEmits<{
+  (e: 'regenerate'): void;
+}>();
+
+const regenerateReport = () => {
+  emit('regenerate');
+};
 
 const { initialOpen, report } = toRefs(props);
 const mainDialogOpen = ref<boolean>(get(initialOpen));
@@ -30,18 +37,6 @@ const actionableItemsLength = computed(() => {
 });
 
 const { tc } = useI18n();
-
-const router = useRouter();
-const regenerateReport = async () => {
-  await router.push({
-    path: Routes.PROFIT_LOSS_REPORTS,
-    query: {
-      regenerate: 'true',
-      start: get(report).start.toString(),
-      end: get(report).end.toString()
-    }
-  });
-};
 </script>
 <template>
   <div v-if="actionableItemsLength" class="d-flex">
@@ -63,12 +58,5 @@ const regenerateReport = async () => {
         @regenerate="regenerateReport"
       />
     </v-dialog>
-
-    <div>
-      <v-btn text class="ml-2" @click="regenerateReport">
-        <v-icon class="mr-2">mdi-refresh</v-icon>
-        {{ tc('profit_loss_report.actionable.actions.regenerate_report') }}
-      </v-btn>
-    </div>
   </div>
 </template>

@@ -2,11 +2,6 @@
 import { type BigNumber } from '@rotki/common';
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
-import {
-  HistoryEventSubType,
-  HistoryEventType,
-  TransactionEventProtocol
-} from '@rotki/common/lib/history/tx-events';
 import { type ComputedRef } from 'vue';
 import {
   AaveEarnedDetails,
@@ -145,30 +140,26 @@ onMounted(async () => {
   await defiLending.fetchLending();
 });
 
-const transactionEventProtocols: ComputedRef<TransactionEventProtocol[]> =
-  computed(() => {
-    const selectedProtocol = get(protocol);
+const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
+  const selectedProtocol = get(protocol);
 
-    const mapping: { [key in DefiProtocol]?: TransactionEventProtocol[] } = {
-      [DefiProtocol.AAVE]: [
-        TransactionEventProtocol.AAVE_V1,
-        TransactionEventProtocol.AAVE_V2
-      ],
-      [DefiProtocol.COMPOUND]: [TransactionEventProtocol.COMPOUND],
-      [DefiProtocol.MAKERDAO_DSR]: [TransactionEventProtocol.MAKERDAO_DSR],
-      [DefiProtocol.YEARN_VAULTS]: [TransactionEventProtocol.YEARN_V1],
-      [DefiProtocol.YEARN_VAULTS_V2]: [TransactionEventProtocol.YEARN_V2]
-    };
+  const mapping: { [key in DefiProtocol]?: string[] } = {
+    [DefiProtocol.AAVE]: ['aave-v1', 'aave-v2'],
+    [DefiProtocol.COMPOUND]: ['compound'],
+    [DefiProtocol.MAKERDAO_DSR]: ['makerdao dsr'],
+    [DefiProtocol.YEARN_VAULTS]: ['yearn-v1'],
+    [DefiProtocol.YEARN_VAULTS_V2]: ['yearn-v2']
+  };
 
-    if (selectedProtocol === null) {
-      return Object.values(mapping).flat();
-    }
+  if (selectedProtocol === null) {
+    return Object.values(mapping).flat();
+  }
 
-    const mappedProtocol = mapping[selectedProtocol];
-    assert(mappedProtocol);
+  const mappedProtocol = mapping[selectedProtocol];
+  assert(mappedProtocol);
 
-    return mappedProtocol;
-  });
+  return mappedProtocol;
+});
 </script>
 
 <template>
@@ -255,21 +246,10 @@ const transactionEventProtocols: ComputedRef<TransactionEventProtocol[]> =
       <premium-card :title="tc('lending.history')" />
     </div>
     <div v-else>
-      <transaction-content
+      <history-events-view
         use-external-account-filter
         :section-title="tc('common.events')"
         :protocols="transactionEventProtocols"
-        :event-types="[
-          HistoryEventType.DEPOSIT,
-          HistoryEventType.WITHDRAWAL,
-          HistoryEventType.INFORMATIONAL
-        ]"
-        :event-sub-types="[
-          HistoryEventSubType.DEPOSIT_ASSET,
-          HistoryEventSubType.REMOVE_ASSET,
-          HistoryEventSubType.GENERATE_DEBT,
-          HistoryEventSubType.DEPLOY
-        ]"
         :external-account-filter="selectedAccounts"
         :only-chains="chains"
       />
