@@ -28,19 +28,6 @@ export const useEth2Api = () => {
     return handleResponse(response);
   };
 
-  const eth2StakingDeposits = async (): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>(
-      '/blockchains/ETH2/stake/deposits',
-      {
-        params: snakeCaseTransformer({
-          asyncQuery: true
-        }),
-        validateStatus: validWithSessionAndExternalService
-      }
-    );
-    return handleResponse(response);
-  };
-
   const internalEth2Stats = async <T>(
     payload: any,
     asyncQuery: boolean
@@ -75,7 +62,6 @@ export const useEth2Api = () => {
 
   return {
     eth2StakingDetails,
-    eth2StakingDeposits,
     eth2StatsTask,
     eth2Stats
   };

@@ -10,7 +10,7 @@ const { isModuleEnabled } = useModules();
 const enabled = isModuleEnabled(Module.ETH2);
 
 const store = useEth2StakingStore();
-const { details, deposits, stats } = storeToRefs(store);
+const { details, stats } = storeToRefs(store);
 const { load, updatePagination } = store;
 
 onMounted(async () => {
@@ -73,7 +73,6 @@ const { t, tc } = useI18n();
       :filter-type="filterType"
       :filter="selection"
       :eth2-details="details"
-      :eth2-deposits="deposits"
       :eth2-stats="stats"
       :eth2-stats-loading="eth2StatsLoading"
       :ownership="ownership"

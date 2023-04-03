@@ -133,6 +133,7 @@ declare global {
     Vue: any;
     Chart: typeof Chart;
     VueUse: any;
+    VueUseShared: any;
     'chartjs-plugin-zoom': any;
     zod: any;
     bn: any;

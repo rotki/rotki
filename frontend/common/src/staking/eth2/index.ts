@@ -1,22 +1,6 @@
 import { z } from 'zod';
 import { Balance, NumericString, Percentage } from '../../index';
 
-export const Eth2Deposit = z.object({
-  fromAddress: z.string(),
-  pubkey: z.string(),
-  withdrawalCredentials: z.string(),
-  value: Balance,
-  txHash: z.string(),
-  timestamp: z.number(),
-  txIndex: z.number().nonnegative()
-});
-
-export type Eth2Deposit = z.infer<typeof Eth2Deposit>;
-
-export const Eth2Deposits = z.array(Eth2Deposit);
-
-export type Eth2Deposits = z.infer<typeof Eth2Deposits>;
-
 const Eth2DailyStat = z.object({
   validatorIndex: z.number().nonnegative(),
   timestamp: z.number().nonnegative(),
@@ -47,14 +31,15 @@ export const Eth2DailyStats = z.object({
 export type Eth2DailyStats = z.infer<typeof Eth2DailyStats>;
 
 const Eth2Detail = z.object({
-  eth1Depositor: z.string(),
+  eth1Depositor: z.string().nullable(),
   publicKey: z.string(),
   index: z.number(),
   balance: Balance,
   performance1d: Balance,
   performance1w: Balance,
   performance1m: Balance,
-  performance1y: Balance
+  performance1y: Balance,
+  performanceTotal: Balance
 });
 
 export type Eth2Detail = z.infer<typeof Eth2Detail>;
