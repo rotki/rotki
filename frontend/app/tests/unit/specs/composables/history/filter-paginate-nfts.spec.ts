@@ -1,6 +1,7 @@
 import { type MaybeRef } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { type Ref } from 'vue';
+import { useEmptyFilter } from '@/composables/filters';
 import { type Collection } from '@/types/collection';
 import {
   type NonFungibleBalance,
@@ -62,13 +63,6 @@ describe('composables::history/filter-paginate', () => {
       set(ignoredAssetsHandling, query.includeIgnoredTrades);
     };
 
-    const blankFilters = () => ({
-      filters: ref(),
-      matchers: undefined,
-      RouteFilterSchema: undefined,
-      updateFilter: undefined
-    });
-
     beforeEach(() => {
       set(mainPage, true);
     });
@@ -85,10 +79,8 @@ describe('composables::history/filter-paginate', () => {
       } = useHistoryPaginationFilter<
         NonFungibleBalance,
         NonFungibleBalancesRequestPayload,
-        NonFungibleBalance,
-        undefined,
-        undefined
-      >(locationOverview, mainPage, blankFilters, fetchNonFungibleBalances, {
+        NonFungibleBalance
+      >(locationOverview, mainPage, useEmptyFilter, fetchNonFungibleBalances, {
         onUpdateFilters,
         extraParams,
         defaultSortBy: {
@@ -121,18 +113,22 @@ describe('composables::history/filter-paginate', () => {
         useHistoryPaginationFilter<
           NonFungibleBalance,
           NonFungibleBalancesRequestPayload,
-          NonFungibleBalance,
-          undefined,
-          undefined
-        >(locationOverview, mainPage, blankFilters, fetchNonFungibleBalances, {
-          onUpdateFilters,
-          extraParams,
-          defaultSortBy: {
-            pagination: 'name',
-            pageParams: ['name'],
-            pageParamsAsc: [true]
+          NonFungibleBalance
+        >(
+          locationOverview,
+          mainPage,
+          useEmptyFilter,
+          fetchNonFungibleBalances,
+          {
+            onUpdateFilters,
+            extraParams,
+            defaultSortBy: {
+              pagination: 'name',
+              pageParams: ['name'],
+              pageParamsAsc: [true]
+            }
           }
-        });
+        );
 
       expect(get(isLoading)).toBe(false);
 
@@ -140,7 +136,7 @@ describe('composables::history/filter-paginate', () => {
       expectTypeOf(get(state).data).toEqualTypeOf<NonFungibleBalance[]>();
       expectTypeOf(get(state).found).toEqualTypeOf<number>();
       expectTypeOf(get(filters)).toEqualTypeOf<undefined>();
-      expectTypeOf(get(matchers)).toEqualTypeOf<undefined>();
+      expectTypeOf(get(matchers)).toEqualTypeOf<undefined[]>();
     });
 
     test('modify filters and fetch data correctly', async () => {
@@ -150,10 +146,8 @@ describe('composables::history/filter-paginate', () => {
       const { isLoading, state } = useHistoryPaginationFilter<
         NonFungibleBalance,
         NonFungibleBalancesRequestPayload,
-        NonFungibleBalance,
-        undefined,
-        undefined
-      >(locationOverview, mainPage, blankFilters, fetchNonFungibleBalances, {
+        NonFungibleBalance
+      >(locationOverview, mainPage, useEmptyFilter, fetchNonFungibleBalances, {
         onUpdateFilters,
         extraParams,
         defaultSortBy: {

@@ -16,19 +16,19 @@ import { nonEmptyProperties } from '@/utils/data';
 
 interface FilterSchema<F, M> {
   filters: Ref<F>;
-  matchers: F extends void ? undefined : ComputedRef<M[]>;
+  matchers: ComputedRef<M[]>;
 
-  updateFilter: F extends void ? undefined : (filter: F) => void;
+  updateFilter: (filter: F) => void;
 
-  RouteFilterSchema: F extends void ? undefined : ZodSchema;
+  RouteFilterSchema: ZodSchema;
 }
 
 export const useHistoryPaginationFilter = <
   T extends Object,
   U,
   V,
-  W extends Object | void,
-  X
+  W extends Object | void = undefined,
+  X = undefined
 >(
   locationOverview: MaybeRef<string | null>,
   mainPage: MaybeRef<boolean>,
@@ -38,7 +38,6 @@ export const useHistoryPaginationFilter = <
     onUpdateFilters?: (query: LocationQuery) => void;
     extraParams?: ComputedRef<LocationQuery>;
     customPageParams?: ComputedRef<Partial<U>>;
-    paginationOrderBy?: keyof T;
     defaultSortBy?: {
       pagination?: keyof T;
       pageParams?: (keyof T)[];
@@ -164,7 +163,7 @@ export const useHistoryPaginationFilter = <
 
   const setFilter = (newFilter: UnwrapRef<Ref<W>>) => {
     set(userAction, true);
-    updateFilter?.call(null, newFilter ?? {});
+    updateFilter(newFilter);
   };
 
   onBeforeMount(() => {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
+import { useEmptyFilter } from '@/composables/filters';
 import { type ActionStatus } from '@/types/action';
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { type Module } from '@/types/modules';
@@ -187,31 +188,18 @@ const {
 } = useHistoryPaginationFilter<
   NonFungibleBalance,
   NonFungibleBalancesRequestPayload,
-  NonFungibleBalance,
-  undefined,
-  undefined
->(
-  null,
-  true,
-  () => ({
-    filters: ref(),
-    matchers: undefined,
-    RouteFilterSchema: undefined,
-    updateFilter: undefined
-  }),
-  fetchNonFungibleBalances,
-  {
-    onUpdateFilters(query) {
-      set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
-    },
-    extraParams,
-    defaultSortBy: {
-      pagination: 'name',
-      pageParams: ['name'],
-      pageParamsAsc: [true]
-    }
+  NonFungibleBalance
+>(null, true, useEmptyFilter, fetchNonFungibleBalances, {
+  onUpdateFilters(query) {
+    set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
+  },
+  extraParams,
+  defaultSortBy: {
+    pagination: 'name',
+    pageParams: ['name'],
+    pageParamsAsc: [true]
   }
-);
+});
 
 onMounted(async () => {
   await fetchData();
