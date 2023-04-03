@@ -114,7 +114,7 @@ export const useHistoryPaginationFilter = <
 
     onUpdateFilters?.call(null, query);
 
-    updateFilter?.call(null, parsedFilters);
+    updateFilter(parsedFilters);
     set(paginationOptions, {
       ...get(paginationOptions),
       ...parsedOptions
