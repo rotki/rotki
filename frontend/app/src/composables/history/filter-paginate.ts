@@ -23,6 +23,17 @@ interface FilterSchema<F, M> {
   RouteFilterSchema: ZodSchema;
 }
 
+/**
+ * Creates a universal pagination and filter structure
+ * given the required fields, can manage pagination and filtering and data
+ * fetching when params change
+ * @template T,U,V,W,X
+ * @param {MaybeRef<string | null>} locationOverview
+ * @param {MaybeRef<boolean>} mainPage
+ * @param {() => FilterSchema<W, X>} filterSchema
+ * @param {(payload: MaybeRef<U>) => Promise<Collection<V>>} fetchAssetData
+ * @param {{onUpdateFilters?: (query: LocationQuery) => void, extraParams?: ComputedRef<LocationQuery>, customPageParams?: ComputedRef<Partial<U>>, defaultSortBy?: {pagination?: keyof T, pageParams?: (keyof T)[], pageParamsAsc?: boolean[]}}} options
+ */
 export const useHistoryPaginationFilter = <
   T extends Object,
   U,
@@ -103,6 +114,10 @@ export const useHistoryPaginationFilter = <
     delay: 0
   });
 
+  /**
+   * Triggered on route change and on component mount
+   * sets the pagination and filters values from route query
+   */
   const applyRouteFilter = () => {
     if (!get(mainPage)) {
       return;
@@ -110,7 +125,7 @@ export const useHistoryPaginationFilter = <
 
     const query = get(route).query;
     const parsedOptions = RouterPaginationOptionsSchema.parse(query);
-    const parsedFilters = RouteFilterSchema?.parse(query);
+    const parsedFilters = RouteFilterSchema.parse(query);
 
     onUpdateFilters?.call(null, query);
 
@@ -121,6 +136,10 @@ export const useHistoryPaginationFilter = <
     });
   };
 
+  /**
+   * Returns the parsed pagination and filter query params
+   * @returns {LocationQuery}
+   */
   const getQuery = (): LocationQuery => {
     const opts = get(paginationOptions);
     assert(opts);
@@ -147,20 +166,38 @@ export const useHistoryPaginationFilter = <
     };
   };
 
+  /**
+   * Hits the api to fetch data based on pagination/filter changes
+   * @returns {Promise<void>}
+   */
   const fetchData = async (): Promise<void> => {
     await execute(0, pageParams);
   };
 
+  /**
+   * Updates pagination data for just the current page
+   * @param {number} page
+   */
   const setPage = (page: number) => {
     set(userAction, true);
     set(paginationOptions, { ...get(paginationOptions), page });
   };
 
+  /**
+   * Updates pagination options
+   * @template T
+   * @param {TablePagination<T>} newOptions
+   */
   const setOptions = (newOptions: TablePagination<T>) => {
     set(userAction, true);
     set(paginationOptions, newOptions);
   };
 
+  /**
+   * Updates the filters
+   * @template W
+   * @param {UnwrapRef<Ref<W>>} newFilter
+   */
   const setFilter = (newFilter: UnwrapRef<Ref<W>>) => {
     set(userAction, true);
     updateFilter(newFilter);
