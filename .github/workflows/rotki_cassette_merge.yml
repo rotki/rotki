@@ -2,7 +2,7 @@ name: Cassette Merge
 
 # only trigger on pull request closed events
 on:
-  pull_request:
+  pull_request_target:
     types: [ closed ]
 
 permissions:
