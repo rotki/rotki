@@ -19,9 +19,9 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_fval
-from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, ExternalService, Location
+from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, ExternalService, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import from_wei, get_chunks, set_user_agent, ts_sec_to_ms
+from rotkehlchen.utils.misc import from_wei, get_chunks, set_user_agent, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -29,6 +29,7 @@ if TYPE_CHECKING:
 
 
 MAX_WAIT_SECS = 60
+LAST_PRODUCED_BLOCKS_QUERY_TS = 'last_produced_blocks_query_ts'
 BEACONCHAIN_READ_TIMEOUT = 75
 BEACONCHAIN_TIMEOUT_TUPLE = (DEFAULT_CONNECT_TIMEOUT, BEACONCHAIN_READ_TIMEOUT)
 
@@ -380,6 +381,12 @@ class BeaconChain(ExternalServiceWithApiKey):
                         blocknumber, proposer_index, fee_recipient,
                         str(block_reward), producer_fee_recipient, str(mev_reward),
                     ),
+                )
+                self.db.update_used_query_range(
+                    write_cursor=write_cursor,
+                    name=LAST_PRODUCED_BLOCKS_QUERY_TS,
+                    start_ts=Timestamp(0),
+                    end_ts=ts_now(),
                 )
 
         except KeyError as e:  # raising and not continuing since if 1 key missing something is off  # noqa: E501

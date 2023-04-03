@@ -16,7 +16,11 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH, EVM_ACCOUNTS_DETECTION_REFRESH
+from rotkehlchen.constants.timing import (
+    DATA_UPDATES_REFRESH,
+    DAY_IN_SECONDS,
+    EVM_ACCOUNTS_DETECTION_REFRESH,
+)
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     DBEqualsFilter,
@@ -31,6 +35,7 @@ from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
+from rotkehlchen.externalapis.beaconchain import LAST_PRODUCED_BLOCKS_QUERY_TS
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.price import PriceHistorian
@@ -152,6 +157,7 @@ class TaskManager():
             self._maybe_update_yearn_vaults,
             self._maybe_detect_evm_accounts,
             self._maybe_update_ilk_cache,
+            self._maybe_query_produced_blocks,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -576,6 +582,27 @@ class TaskManager():
                     ignore_cache=True,
                 )]
         return None
+
+    def _maybe_query_produced_blocks(self) -> Optional[list[gevent.Greenlet]]:
+        """Schedules the blocks production query if enough time has passed"""
+        with self.database.conn.read_ctx() as cursor:
+            result = self.database.get_used_query_range(cursor, LAST_PRODUCED_BLOCKS_QUERY_TS)
+            if result is not None and ts_now() - result[1] <= DAY_IN_SECONDS:
+                return None
+
+            indices = cursor.execute('SELECT validator_index FROM eth2_validators').fetchall()
+            if len(indices) == 0:
+                return None
+
+        task_name = 'Periodically query produced blocks'
+        log.debug(f'Scheduling task to {task_name}')
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name=task_name,
+            exception_is_error=True,
+            method=self.chains_aggregator.beaconchain.get_and_store_produced_blocks,
+            indices_or_pubkeys=indices,
+        )]
 
     def _maybe_update_curve_pools(self) -> Optional[list[gevent.Greenlet]]:
         """Function that schedules curve pools update task if either there is no curve pools cache
