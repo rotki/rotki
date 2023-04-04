@@ -179,9 +179,7 @@ const {
   {
     onUpdateFilters(query) {
       const parsedAccounts = RouterAccountsSchema.parse(query);
-      if (parsedAccounts.accounts) {
-        set(accounts, parsedAccounts.accounts);
-      }
+      set(accounts, parsedAccounts.accounts ?? []);
     },
     extraParams: computed(() => ({
       accounts: get(usedAccounts).map(

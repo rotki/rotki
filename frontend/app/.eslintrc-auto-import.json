@@ -258,6 +258,7 @@
     "useElementHover": true,
     "useElementSize": true,
     "useElementVisibility": true,
+    "useEmptyFilter": true,
     "useEth2Api": true,
     "useEth2StakingStore": true,
     "useEthAccountBalances": true,

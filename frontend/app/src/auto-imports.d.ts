@@ -255,6 +255,7 @@ declare global {
   const useElementHover: typeof import('@vueuse/core')['useElementHover']
   const useElementSize: typeof import('@vueuse/core')['useElementSize']
   const useElementVisibility: typeof import('@vueuse/core')['useElementVisibility']
+  const useEmptyFilter: typeof import('./composables/filters/index')['useEmptyFilter']
   const useEth2Api: typeof import('./composables/api/staking/eth2')['useEth2Api']
   const useEth2StakingStore: typeof import('./store/staking/eth2')['useEth2StakingStore']
   const useEthAccountBalances: typeof import('./composables/blockchain/account-balances/eth')['useEthAccountBalances']
@@ -767,6 +768,7 @@ declare module 'vue' {
     readonly useElementHover: UnwrapRef<typeof import('@vueuse/core')['useElementHover']>
     readonly useElementSize: UnwrapRef<typeof import('@vueuse/core')['useElementSize']>
     readonly useElementVisibility: UnwrapRef<typeof import('@vueuse/core')['useElementVisibility']>
+    readonly useEmptyFilter: UnwrapRef<typeof import('./composables/filters/index')['useEmptyFilter']>
     readonly useEth2Api: UnwrapRef<typeof import('./composables/api/staking/eth2')['useEth2Api']>
     readonly useEth2StakingStore: UnwrapRef<typeof import('./store/staking/eth2')['useEth2StakingStore']>
     readonly useEthAccountBalances: UnwrapRef<typeof import('./composables/blockchain/account-balances/eth')['useEthAccountBalances']>
