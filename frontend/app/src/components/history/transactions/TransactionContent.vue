@@ -12,6 +12,7 @@ import {
 import isEqual from 'lodash/isEqual';
 import { type ComputedRef, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
+import { type Collection } from '@/types/collection';
 import { SavedFilterLocation } from '@/types/filtering';
 import { IgnoreActionType } from '@/types/history/ignored';
 import {
@@ -24,7 +25,7 @@ import {
 import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import { getCollectionData } from '@/utils/collection';
+import { defaultCollectionState, getCollectionData } from '@/utils/collection';
 import type { Filters, Matcher } from '@/composables/filters/transactions';
 
 const props = withDefaults(
@@ -169,6 +170,7 @@ const {
   EthTransaction,
   TransactionRequestPayload,
   EthTransactionEntry,
+  Collection<EthTransactionEntry>,
   Filters,
   Matcher
 >(
@@ -176,6 +178,7 @@ const {
   mainPage,
   () => useTransactionFilter(get(protocols).length > 0),
   fetchTransactions,
+  defaultCollectionState,
   {
     onUpdateFilters(query) {
       const parsedAccounts = RouterAccountsSchema.parse(query);

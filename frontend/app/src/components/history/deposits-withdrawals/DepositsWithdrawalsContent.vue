@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { type DataTableHeader } from 'vuetify';
+import { type Collection } from '@/types/collection';
+import { defaultCollectionState } from '@/utils/collection';
 import { Routes } from '@/router/routes';
 import {
   type AssetMovement,
@@ -97,9 +99,16 @@ const {
   AssetMovement,
   AssetMovementRequestPayload,
   AssetMovementEntry,
+  Collection<AssetMovementEntry>,
   Filters,
   Matcher
->(locationOverview, mainPage, useAssetMovementFilters, fetchAssetMovements);
+>(
+  locationOverview,
+  mainPage,
+  useAssetMovementFilters,
+  fetchAssetMovements,
+  defaultCollectionState
+);
 
 useHistoryAutoRefresh(fetchData);
 

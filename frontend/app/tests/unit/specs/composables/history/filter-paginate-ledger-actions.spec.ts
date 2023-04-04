@@ -1,5 +1,6 @@
 import flushPromises from 'flush-promises';
 import { type Ref } from 'vue';
+import { defaultCollectionState } from '@/utils/collection';
 import type { Filters, Matcher } from '@/composables/filters/ledger-actions';
 import type { Collection } from '@/types/collection';
 import type {
@@ -71,9 +72,16 @@ describe('composables::history/filter-paginate', () => {
         LedgerAction,
         LedgerActionRequestPayload,
         LedgerActionEntry,
+        Collection<LedgerActionEntry>,
         Filters,
         Matcher
-      >(locationOverview, mainPage, useLedgerActionsFilter, fetchLedgerActions);
+      >(
+        locationOverview,
+        mainPage,
+        useLedgerActionsFilter,
+        fetchLedgerActions,
+        defaultCollectionState
+      );
 
       expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
@@ -97,13 +105,15 @@ describe('composables::history/filter-paginate', () => {
           LedgerAction,
           LedgerActionRequestPayload,
           LedgerActionEntry,
+          Collection<LedgerActionEntry>,
           Filters,
           Matcher
         >(
           locationOverview,
           mainPage,
           useLedgerActionsFilter,
-          fetchLedgerActions
+          fetchLedgerActions,
+          defaultCollectionState
         );
 
       expect(get(isLoading)).toBe(false);
@@ -123,9 +133,16 @@ describe('composables::history/filter-paginate', () => {
         LedgerAction,
         LedgerActionRequestPayload,
         LedgerActionEntry,
+        Collection<LedgerActionEntry>,
         Filters,
         Matcher
-      >(locationOverview, mainPage, useLedgerActionsFilter, fetchLedgerActions);
+      >(
+        locationOverview,
+        mainPage,
+        useLedgerActionsFilter,
+        fetchLedgerActions,
+        defaultCollectionState
+      );
 
       await router.push({
         query

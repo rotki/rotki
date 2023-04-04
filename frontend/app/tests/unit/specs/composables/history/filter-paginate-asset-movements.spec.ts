@@ -1,5 +1,6 @@
 import flushPromises from 'flush-promises';
 import { type Ref } from 'vue';
+import { defaultCollectionState } from '@/utils/collection';
 import type { Filters, Matcher } from '@/composables/filters/asset-movement';
 import type { Collection } from '@/types/collection';
 import type {
@@ -71,13 +72,15 @@ describe('composables::history/filter-paginate', () => {
         AssetMovement,
         AssetMovementRequestPayload,
         AssetMovementEntry,
+        Collection<AssetMovementEntry>,
         Filters,
         Matcher
       >(
         locationOverview,
         mainPage,
         useAssetMovementFilters,
-        fetchAssetMovements
+        fetchAssetMovements,
+        defaultCollectionState
       );
 
       expect(get(userAction)).toBe(false);
@@ -102,13 +105,15 @@ describe('composables::history/filter-paginate', () => {
           AssetMovement,
           AssetMovementRequestPayload,
           AssetMovementEntry,
+          Collection<AssetMovementEntry>,
           Filters,
           Matcher
         >(
           locationOverview,
           mainPage,
           useAssetMovementFilters,
-          fetchAssetMovements
+          fetchAssetMovements,
+          defaultCollectionState
         );
 
       expect(get(isLoading)).toBe(false);
@@ -128,13 +133,15 @@ describe('composables::history/filter-paginate', () => {
         AssetMovement,
         AssetMovementRequestPayload,
         AssetMovementEntry,
+        Collection<AssetMovementEntry>,
         Filters,
         Matcher
       >(
         locationOverview,
         mainPage,
         useAssetMovementFilters,
-        fetchAssetMovements
+        fetchAssetMovements,
+        defaultCollectionState
       );
 
       await router.push({

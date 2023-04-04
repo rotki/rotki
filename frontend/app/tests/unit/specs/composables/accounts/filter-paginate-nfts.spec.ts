@@ -1,6 +1,7 @@
 import { type MaybeRef } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { type Ref } from 'vue';
+import { defaultCollectionState } from '@/utils/collection';
 import { useEmptyFilter } from '@/composables/filters';
 import { type Collection } from '@/types/collection';
 import {
@@ -80,15 +81,22 @@ describe('composables::history/filter-paginate', () => {
         NonFungibleBalance,
         NonFungibleBalancesRequestPayload,
         NonFungibleBalance
-      >(locationOverview, mainPage, useEmptyFilter, fetchNonFungibleBalances, {
-        onUpdateFilters,
-        extraParams,
-        defaultSortBy: {
-          pagination: 'name',
-          pageParams: ['name'],
-          pageParamsAsc: [true]
+      >(
+        locationOverview,
+        mainPage,
+        useEmptyFilter,
+        fetchNonFungibleBalances,
+        defaultCollectionState,
+        {
+          onUpdateFilters,
+          extraParams,
+          defaultSortBy: {
+            pagination: 'name',
+            pageParams: ['name'],
+            pageParamsAsc: [true]
+          }
         }
-      });
+      );
 
       expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
@@ -119,6 +127,7 @@ describe('composables::history/filter-paginate', () => {
           mainPage,
           useEmptyFilter,
           fetchNonFungibleBalances,
+          defaultCollectionState,
           {
             onUpdateFilters,
             extraParams,
@@ -147,15 +156,22 @@ describe('composables::history/filter-paginate', () => {
         NonFungibleBalance,
         NonFungibleBalancesRequestPayload,
         NonFungibleBalance
-      >(locationOverview, mainPage, useEmptyFilter, fetchNonFungibleBalances, {
-        onUpdateFilters,
-        extraParams,
-        defaultSortBy: {
-          pagination: 'name',
-          pageParams: ['name'],
-          pageParamsAsc: [true]
+      >(
+        locationOverview,
+        mainPage,
+        useEmptyFilter,
+        fetchNonFungibleBalances,
+        defaultCollectionState,
+        {
+          onUpdateFilters,
+          extraParams,
+          defaultSortBy: {
+            pagination: 'name',
+            pageParams: ['name'],
+            pageParamsAsc: [true]
+          }
         }
-      });
+      );
 
       await router.push({
         query
