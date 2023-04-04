@@ -8,13 +8,15 @@ import assetMovementHandlers from './handlers/asset-movements';
 import ledgerActionHandlers from './handlers/ledger-actions';
 import transactionHandlers from './handlers/evm-transactions';
 import nfts from './handlers/nfts';
+import binanceSavings from './handlers/binance-savings';
 
 const server = setupServer(
   ...tradeHandlers,
   ...assetMovementHandlers,
   ...ledgerActionHandlers,
   ...transactionHandlers,
-  ...nfts
+  ...nfts,
+  ...binanceSavings
 );
 
 beforeAll(() => {
