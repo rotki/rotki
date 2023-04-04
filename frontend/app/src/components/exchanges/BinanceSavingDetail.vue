@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { type MaybeRef } from '@vueuse/core';
-import { type ComputedRef, type Ref } from 'vue';
-import dropRight from 'lodash/dropRight';
 import { type DataTableHeader } from 'vuetify';
-import isEqual from 'lodash/isEqual';
+import { useEmptyFilter } from '@/composables/filters';
+import { CURRENCY_USD } from '@/types/currencies';
 import {
   type ExchangeSavingsCollection,
   type ExchangeSavingsEvent,
@@ -12,9 +10,6 @@ import {
 } from '@/types/exchanges';
 import { Section } from '@/types/status';
 import { Zero } from '@/utils/bignumbers';
-import { type TablePagination } from '@/types/pagination';
-import { defaultOptions } from '@/utils/collection';
-import { CURRENCY_USD } from '@/types/currencies';
 
 const props = defineProps<{
   exchange: SupportedExchange.BINANCE | SupportedExchange.BINANCEUS;
@@ -26,6 +21,10 @@ const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.EXCHANGE_SAVINGS);
 
 const { fetchExchangeSavings } = useExchangeBalancesStore();
+
+const extraParams = computed(() => ({
+  location: get(exchange).toString()
+}));
 
 const defaultCollectionState = (): ExchangeSavingsCollection => ({
   found: 0,
@@ -40,53 +39,27 @@ const defaultCollectionState = (): ExchangeSavingsCollection => ({
 const {
   isLoading,
   state: collection,
-  execute
-} = useAsyncState<
-  ExchangeSavingsCollection,
-  MaybeRef<ExchangeSavingsRequestPayload>[]
->(args => fetchExchangeSavings(args), defaultCollectionState(), {
-  immediate: false,
-  resetOnExecute: false,
-  delay: 0
-});
-
-const options: Ref<TablePagination<ExchangeSavingsEvent>> = ref(
-  defaultOptions()
-);
-
-const pageParams: ComputedRef<ExchangeSavingsRequestPayload> = computed(() => {
-  const { itemsPerPage, page, sortBy, sortDesc } = get(options);
-  const offset = (page - 1) * itemsPerPage;
-
-  return {
-    limit: itemsPerPage,
-    offset,
-    orderByAttributes: sortBy?.length > 0 ? sortBy : ['timestamp'],
-    location: get(exchange),
-    ascending:
-      sortDesc && sortDesc.length > 1
-        ? dropRight(sortDesc).map(bool => !bool)
-        : [true]
-  };
-});
-
-watch(pageParams, async (params, op) => {
-  if (isEqual(params, op)) {
-    return;
+  options,
+  fetchData,
+  setOptions
+} = useHistoryPaginationFilter<
+  ExchangeSavingsEvent,
+  ExchangeSavingsRequestPayload,
+  ExchangeSavingsEvent,
+  ExchangeSavingsCollection
+>(
+  exchange,
+  true,
+  useEmptyFilter,
+  fetchExchangeSavings,
+  defaultCollectionState,
+  {
+    defaultSortBy: {
+      pageParamsAsc: [true]
+    },
+    extraParams
   }
-  await fetchData();
-});
-
-const fetchData = async (): Promise<void> => {
-  await execute(0, pageParams);
-};
-
-const userAction: Ref<boolean> = ref(false);
-
-const setOptions = (newOptions: TablePagination<ExchangeSavingsEvent>) => {
-  set(userAction, true);
-  set(options, newOptions);
-};
+);
 
 watch(loading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading) {
