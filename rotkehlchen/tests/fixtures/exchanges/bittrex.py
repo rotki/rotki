@@ -10,3 +10,15 @@ def bittrex(
         messages_aggregator,
 ):
     return create_test_bittrex(database=session_database, msg_aggregator=messages_aggregator)
+
+
+@pytest.fixture()
+def function_scope_bittrex(
+        database,
+        inquirer,  # pylint: disable=unused-argument
+        function_scope_messages_aggregator,
+):
+    return create_test_bittrex(
+        database=database,
+        msg_aggregator=function_scope_messages_aggregator,
+    )

@@ -160,9 +160,10 @@ def test_bittrex_query_trade_history(bittrex):
     assert expected_trades == trades
 
 
-def test_bittrex_query_trade_history_unexpected_data(bittrex):
+def test_bittrex_query_trade_history_unexpected_data(function_scope_bittrex):
     """Test that turning a bittrex trade that contains unexpected data is handled gracefully"""
     # turn caching off
+    bittrex = function_scope_bittrex
     bittrex.cache_ttl_secs = 0
 
     def mock_order_history(url, method, json):  # pylint: disable=unused-argument
@@ -309,8 +310,9 @@ BITTREX_WITHDRAWAL_HISTORY_RESPONSE = """
 """
 
 
-def test_bittrex_query_deposits_withdrawals(bittrex):
+def test_bittrex_query_deposits_withdrawals(function_scope_bittrex):
     """Test the happy case of bittrex deposit withdrawal query"""
+    bittrex = function_scope_bittrex
 
     def mock_get_deposit_withdrawal(
             url,
@@ -368,7 +370,7 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
     assert movements[3].fee == FVal('0.0015')
 
 
-def test_bittrex_query_asset_movement_int_transaction_id(bittrex):
+def test_bittrex_query_asset_movement_int_transaction_id(function_scope_bittrex):
     """Test that if an integer is returned for bittrex transaction id we handle it properly
 
     Bittrex deposit withdrawals SHOULD NOT return an integer for transaction id
@@ -377,6 +379,7 @@ def test_bittrex_query_asset_movement_int_transaction_id(bittrex):
 
     Regression test for https://github.com/rotki/rotki/issues/2175
     """
+    bittrex = function_scope_bittrex
 
     problematic_deposit = """
 [
@@ -441,8 +444,9 @@ def test_bittrex_query_asset_movement_int_transaction_id(bittrex):
     assert db_movements[0] == movements[0]
 
 
-def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
+def test_bittrex_query_deposits_withdrawals_unexpected_data(function_scope_bittrex):
     """Test that we handle unexpected bittrex deposit withdrawal data gracefully"""
+    bittrex = function_scope_bittrex
 
     def mock_bittrex_and_query(deposits, withdrawals, expected_warnings_num, expected_errors_num):
 
