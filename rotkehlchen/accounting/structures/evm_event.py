@@ -142,6 +142,11 @@ class EvmEvent(HistoryBaseEntry):
         result.pop('extra_data')
         return result
 
+    def serialize_for_api(self, customized_event_ids: list[int]) -> dict[str, Any]:
+        result = super().serialize_for_api(customized_event_ids)
+        result['has_details'] = self.has_details()
+        return result
+
     @classmethod
     def deserialize_from_db(cls: type['EvmEvent'], entry: tuple) -> 'EvmEvent':
         entry = cast(EVM_EVENT_DB_TUPLE_READ, entry)

@@ -1171,7 +1171,7 @@ def test_query_transactions_check_decoded_events(
     event['notes'] = 'Edited event'
     tx2_events[1]['customized'] = True
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, 'evmeventresource'),
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json={key: value for key, value in event.items() if key != 'extra_data'},
     )
     assert_simple_ok_response(response)

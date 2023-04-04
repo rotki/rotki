@@ -556,7 +556,7 @@ class Location(DBEnumMixIn):
     BISQ = 35
     FTXUS = 36
     OKX = 37
-    ETHEREUM = 38  # on-chain etherem events
+    ETHEREUM = 38  # on-chain ethereum events
     OPTIMISM = 39  # on-chain optimism events
 
     @staticmethod

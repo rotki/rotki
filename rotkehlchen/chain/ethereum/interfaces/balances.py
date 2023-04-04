@@ -59,7 +59,7 @@ class ProtocolWithBalance(metaclass=abc.ABCMeta):
         """
         db_filter = EvmEventFilterQuery.make(
             counterparties=[self.counterparty],
-            product=product,
+            products=[product],
             location=Location.ETHEREUM,
         )
         with self.event_db.db.conn.read_ctx() as cursor:

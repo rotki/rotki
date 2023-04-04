@@ -96,6 +96,7 @@ from rotkehlchen.db.filtering import (
     Eth2DailyStatsFilterQuery,
     EvmEventFilterQuery,
     EvmTransactionsFilterQuery,
+    HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
     LedgerActionsFilterQuery,
     LevenshteinFilterQuery,
@@ -2811,7 +2812,7 @@ class RestAPI():
                         filter_query=EvmEventFilterQuery.make(
                             event_identifiers=[entry.tx_hash],
                             assets=asset,
-                            counterparties=event_params['protocols'],
+                            counterparties=event_params['counterparties'],
                             event_types=event_params['event_types'],
                             event_subtypes=event_params['event_subtypes'],
                             exclude_ignored_assets=event_params['exclude_ignored_assets'],
@@ -3559,6 +3560,46 @@ class RestAPI():
             result=_wrap_in_ok_result([str(location) for location in locations]),
             status_code=HTTPStatus.OK,
         )
+
+    def get_history_events(
+            self,
+            filter_query: HistoryBaseEntryFilterQuery,
+    ) -> Response:
+        dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
+        has_premium = False
+        entries_limit = FREE_HISTORY_EVENTS_LIMIT
+        if self.rotkehlchen.premium is not None:
+            has_premium = True
+            entries_limit = - 1
+
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            events, entries_found = dbevents.get_all_history_events_and_limit_info(
+                cursor=cursor,
+                filter_query=filter_query,
+                has_premium=has_premium,
+            )
+            entries_total = self.rotkehlchen.data.db.get_entries_count(
+                cursor=cursor,
+                entries_table='history_events',
+            )
+            location = filter_query.location
+            chain_id = None
+            if location == Location.ETHEREUM:  # todo: this should prolly become a function
+                chain_id = ChainID.ETHEREUM
+            elif location == Location.OPTIMISM:
+                chain_id = ChainID.OPTIMISM
+            customized_event_ids = dbevents.get_customized_event_identifiers(
+                cursor=cursor,
+                chain_id=chain_id,  # type: ignore
+            )
+
+        result = {
+            'entries': [x.serialize_for_api(customized_event_ids) for x in events],
+            'entries_found': entries_found,
+            'entries_limit': entries_limit,
+            'entries_total': entries_total,
+        }
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     @async_api_call()
     def query_kraken_staking_events(

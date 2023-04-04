@@ -85,6 +85,7 @@ from rotkehlchen.api.v1.schemas import (
     ExternalServicesResourceDeleteSchema,
     FileListSchema,
     HistoricalAssetsPriceSchema,
+    HistoryEventSchema,
     HistoryExportingSchema,
     HistoryProcessingDebugImportSchema,
     HistoryProcessingExportSchema,
@@ -171,6 +172,7 @@ from rotkehlchen.db.filtering import (
     CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
     EvmTransactionsFilterQuery,
+    HistoryBaseEntryFilterQuery,
     LedgerActionsFilterQuery,
     LevenshteinFilterQuery,
     NFTFilterQuery,
@@ -1151,11 +1153,17 @@ class LedgerActionsResource(BaseMethodView):
         return self.rest_api.delete_ledger_actions(identifiers=identifiers)
 
 
-class EvmEventResource(BaseMethodView):
+class HistoryEventResource(BaseMethodView):
 
     put_schema = EvmEventSchema()
+    post_schema = HistoryEventSchema()
     patch_schema = EditEvmEventSchema()
     delete_schema = IdentifiersListSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(self, filter_query: 'HistoryBaseEntryFilterQuery') -> Response:
+        return self.rest_api.get_history_events(filter_query=filter_query)
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')

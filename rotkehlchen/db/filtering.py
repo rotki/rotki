@@ -432,7 +432,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             to_ts: Optional[Timestamp] = None,
             tx_hash: Optional[EVMTxHash] = None,
             chain_id: Optional[SUPPORTED_CHAIN_IDS] = None,
-            protocols: Optional[list[str]] = None,
+            counterparties: Optional[list[str]] = None,
             asset: Optional[EvmToken] = None,
             exclude_ignored_assets: bool = False,
             event_types: Optional[list[HistoryEventType]] = None,
@@ -463,7 +463,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         else:
             should_join_events = (
                 asset is not None or
-                protocols is not None or
+                counterparties is not None or
                 exclude_ignored_assets is True or
                 event_types is not None or
                 event_subtypes is not None
@@ -478,8 +478,14 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
             if asset is not None:
                 filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
-            if protocols is not None:
-                filters.append(DBCounterpartyFilter(and_op=True, counterparties=protocols))
+            if counterparties is not None:
+                filters.append(DBMultiStringFilter(
+                    and_op=True,
+                    column='counterparty',
+                    values=counterparties,
+                    operator='IN',
+                ))
+
             if exclude_ignored_assets is True:
                 filters.append(DBIgnoredAssetsFilter(and_op=True, asset_key='asset'))
             if event_types is not None:
@@ -1062,7 +1068,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             exclude_ignored_assets: bool = False,
             limit_to_entry_type: bool = False,
             counterparties: Optional[list[str]] = None,
-            product: Optional[EvmProduct] = None,
+            products: Optional[list[EvmProduct]] = None,
     ) -> 'EvmEventFilterQuery':
         filter_query = super().make(
             and_op=and_op,
@@ -1084,13 +1090,20 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             limit_to_entry_type=limit_to_entry_type,
         )
         if counterparties is not None:
-            filter_query.filters.append(
-                DBCounterpartyFilter(and_op=True, counterparties=counterparties),
-            )
-        if product is not None:
-            filter_query.filters.append(
-                DBEqualsFilter(and_op=True, column='product', value=product.serialize()),
-            )
+            filter_query.filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='counterparty',
+                values=counterparties,
+                operator='IN',
+            ))
+
+        if products is not None:
+            filter_query.filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='product',
+                values=[x.serialize() for x in products],
+                operator='IN',
+            ))
 
         return filter_query
 
@@ -1105,18 +1118,6 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
     @staticmethod
     def get_entry_type() -> HistoryBaseEntryType:
         return HistoryBaseEntryType.EVM_EVENT
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBCounterpartyFilter(DBFilter):
-    """Counterparties should be not empty. Otherwise, it can break the query's logic"""
-    counterparties: list[str]
-
-    def prepare(self) -> tuple[list[str], list[Any]]:
-        questionmarks = ','.join('?' * len(self.counterparties))
-        filters = [f'counterparty IN ({questionmarks})']
-        bindings = self.counterparties
-        return filters, bindings
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)

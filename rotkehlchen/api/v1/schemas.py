@@ -1,6 +1,6 @@
 import logging
 from enum import auto
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, get_args
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, get_args
 from uuid import uuid4
 
 import marshmallow
@@ -11,7 +11,7 @@ from marshmallow.exceptions import ValidationError
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
+from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import (
     ActionType,
     HistoryEventSubType,
@@ -50,6 +50,7 @@ from rotkehlchen.db.filtering import (
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
+    EvmEventFilterQuery,
     EvmTransactionsFilterQuery,
     HistoryEventFilterQuery,
     LedgerActionsFilterQuery,
@@ -255,7 +256,7 @@ class EvmTransactionQuerySchema(
     )
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
-    protocols = DelimitedOrNormalList(fields.String(), load_default=None)
+    counterparties = DelimitedOrNormalList(fields.String(), load_default=None)
     asset = AssetField(expected_type=CryptoAsset, load_default=None)
     exclude_ignored_assets = fields.Boolean(load_default=True)
     evm_chain = EvmChainNameField(required=False, load_default=None)
@@ -287,11 +288,11 @@ class EvmTransactionQuerySchema(
                 message=error_msg,
                 field_name='order_by_attributes',
             )
-        protocols = data['protocols']
-        if protocols is not None and len(protocols) == 0:
+        counterparties = data['counterparties']
+        if counterparties is not None and len(counterparties) == 0:
             raise ValidationError(
-                message='protocols have to be either not passed or contain at least one item',
-                field_name='protocols',
+                message='counterparties have to be either not passed or contain at least one item',
+                field_name='counterparties',
             )
 
         if (
@@ -309,7 +310,7 @@ class EvmTransactionQuerySchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        protocols, asset = data['protocols'], data['asset']
+        counterparties, asset = data['counterparties'], data['asset']
         exclude_ignored_assets = data['exclude_ignored_assets']
         event_types = data['event_types']
         event_subtypes = data['event_subtypes']
@@ -321,7 +322,7 @@ class EvmTransactionQuerySchema(
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
             chain_id=data['evm_chain'],
-            protocols=protocols,
+            counterparties=counterparties,
             asset=asset,
             exclude_ignored_assets=exclude_ignored_assets,
             event_types=event_types,
@@ -329,7 +330,7 @@ class EvmTransactionQuerySchema(
         )
         event_params = {
             'asset': asset,
-            'protocols': protocols,
+            'counterparties': counterparties,
             'event_types': event_types,
             'event_subtypes': event_subtypes,
             'exclude_ignored_assets': exclude_ignored_assets,
@@ -606,7 +607,77 @@ class StakingQuerySchema(BaseStakingQuerySchema):
         )
 
 
+class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
+    """Schema for quering history events"""
+
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
+    event_types = DelimitedOrNormalList(
+        SerializableEnumField(enum_class=HistoryEventType),
+        load_default=None,
+    )
+    event_subtypes = DelimitedOrNormalList(
+        SerializableEnumField(enum_class=HistoryEventSubType),
+        load_default=None,
+    )
+    asset = AssetField(expected_type=CryptoAsset, load_default=None)
+    counterparties = DelimitedOrNormalList(fields.String(), load_default=None)
+
+    # EvmEvent only
+    evm_chain = EvmChainNameField(required=False, load_default=None)
+    products = DelimitedOrNormalList(SerializableEnumField(enum_class=EvmProduct), load_default=None)  # noqa: E501
+
+    @validates_schema
+    def validate_history_event_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        valid_ordering_attr = {None, 'timestamp'}
+        if (
+            data['order_by_attributes'] is not None and
+            not set(data['order_by_attributes']).issubset(valid_ordering_attr)
+        ):
+            error_msg = (
+                f'order_by_attributes for history event data can not be '
+                f'{",".join(set(data["order_by_attributes"]) - valid_ordering_attr)}'
+            )
+            raise ValidationError(
+                message=error_msg,
+                field_name='order_by_attributes',
+            )
+
+    @post_load
+    def make_history_event_filter(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        should_query_evm_event = any(data[x] is not None for x in ('evm_chain', 'products'))
+        common_arguments = {
+            'order_by_rules': create_order_by_rules_list(data),
+            'limit': data['limit'],
+            'offset': data['offset'],
+            'from_ts': data['from_timestamp'],
+            'to_ts': data['to_timestamp'],
+        }
+        filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery]
+        if should_query_evm_event:
+            filter_query = EvmEventFilterQuery.make(
+                **common_arguments,
+                location=Location.from_chain_id(data['evm_chain']),
+                products=data['products'],
+            )
+        else:
+            filter_query = HistoryEventFilterQuery.make(**common_arguments)
+
+        return {
+            'filter_query': filter_query,
+        }
+
+
 class EvmEventSchema(Schema):
+    """Schema used when adding a new event in the EVM transactions view"""
     event_identifier = fields.String(required=True)
     sequence_index = fields.Integer(required=True)
     # Timestamp coming in from the API is in seconds, in contrast to what we save in the struct
@@ -640,6 +711,7 @@ class EvmEventSchema(Schema):
 
 
 class EditEvmEventSchema(EvmEventSchema):
+    """Schema used when editing an existing event in the EVM transactions view"""
     identifier = fields.Integer(required=True)
 
 
