@@ -2,10 +2,11 @@
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 
+type Filter = { accounts: GeneralAccount[]; keys: string[] };
+
 withDefaults(
   defineProps<{
-    value: string[];
-    usableAddresses?: string[];
+    value: Filter;
     filterType?: 'address' | 'key';
   }>(),
   {
@@ -14,20 +15,22 @@ withDefaults(
   }
 );
 
-const emit = defineEmits<{ (e: 'input', value: string[]): void }>();
+const emit = defineEmits<{
+  (e: 'input', value: Filter): void;
+}>();
 
-const chains = [Blockchain.ETH];
-const accounts = ref<GeneralAccount[]>([]);
+const chain = Blockchain.ETH;
+const accounts: Ref<GeneralAccount[]> = ref([]);
 
 const { eth2Validators } = storeToRefs(useEthAccountsStore());
 const { tc } = useI18n();
 
-const input = (selection: string[]) => {
+const input = (selection: Filter) => {
   emit('input', selection);
 };
 
-watch(accounts, account => {
-  input(account.length === 0 ? [] : [account[0].address]);
+watch(accounts, accounts => {
+  input({ keys: [], accounts });
 });
 </script>
 
@@ -39,15 +42,14 @@ watch(accounts, account => {
     flat
     dense
     outlined
-    :chains="chains"
-    :usable-addresses="usableAddresses"
+    :chains="[chain]"
     :label="tc('eth2_validator_filter.label')"
     multiple
   />
   <validator-filter-input
     v-else
-    :value="value"
+    :value="value.keys"
     :items="eth2Validators.entries"
-    @input="input"
+    @input="input({ keys: $event, accounts: [] })"
   />
 </template>

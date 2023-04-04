@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Eth2Staking } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 
-const selection = ref<string[]>([]);
+const selection = ref<{ keys: string[]; accounts: GeneralAccount[] }>({
+  keys: [],
+  accounts: []
+});
 const filterType = ref<'address' | 'key'>('key');
 const { isModuleEnabled } = useModules();
 
@@ -33,7 +37,7 @@ const secondaryRefreshing = isLoading(Section.STAKING_ETH2_DEPOSITS);
 const eth2StatsLoading = isLoading(Section.STAKING_ETH2_STATS);
 
 const { eth2Validators } = storeToRefs(useEthAccountsStore());
-watch(filterType, () => set(selection, []));
+watch(filterType, () => set(selection, { keys: [], accounts: [] }));
 
 const refresh = async () => await load(true);
 
@@ -70,7 +74,6 @@ const { t, tc } = useI18n();
       :refreshing="primaryRefreshing"
       :secondary-refreshing="secondaryRefreshing"
       :validators="eth2Validators.entries"
-      :filter-type="filterType"
       :filter="selection"
       :eth2-details="details"
       :eth2-stats="stats"
@@ -79,7 +82,7 @@ const { t, tc } = useI18n();
       @refresh="refresh"
       @update:stats-pagination="updatePagination"
     >
-      <template #selection="{ usableAddresses }">
+      <template #selection>
         <v-row>
           <v-col>
             <v-tooltip open-delay="400" top>
@@ -100,7 +103,6 @@ const { t, tc } = useI18n();
             <eth2-validator-filter
               v-model="selection"
               :filter-type="filterType"
-              :usable-addresses="usableAddresses"
             />
           </v-col>
         </v-row>
