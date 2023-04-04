@@ -11,7 +11,7 @@ import {
   RouterPaginationOptionsSchema
 } from '@/types/route';
 import { assert } from '@/utils/assertions';
-import { defaultCollectionState, defaultOptions } from '@/utils/collection';
+import { defaultOptions } from '@/utils/collection';
 import { nonEmptyProperties } from '@/utils/data';
 
 interface FilterSchema<F, M> {
@@ -27,24 +27,27 @@ interface FilterSchema<F, M> {
  * Creates a universal pagination and filter structure
  * given the required fields, can manage pagination and filtering and data
  * fetching when params change
- * @template T,U,V,W,X
+ * @template T,U,V,S,W,X
  * @param {MaybeRef<string | null>} locationOverview
  * @param {MaybeRef<boolean>} mainPage
  * @param {() => FilterSchema<W, X>} filterSchema
  * @param {(payload: MaybeRef<U>) => Promise<Collection<V>>} fetchAssetData
+ * @param {() => S} defaultCollection
  * @param {{onUpdateFilters?: (query: LocationQuery) => void, extraParams?: ComputedRef<LocationQuery>, customPageParams?: ComputedRef<Partial<U>>, defaultSortBy?: {pagination?: keyof T, pageParams?: (keyof T)[], pageParamsAsc?: boolean[]}}} options
  */
 export const useHistoryPaginationFilter = <
   T extends Object,
   U,
   V,
+  S extends Collection<V> = Collection<V>,
   W extends Object | void = undefined,
   X = undefined
 >(
   locationOverview: MaybeRef<string | null>,
   mainPage: MaybeRef<boolean>,
   filterSchema: () => FilterSchema<W, X>,
-  fetchAssetData: (payload: MaybeRef<U>) => Promise<Collection<V>>,
+  fetchAssetData: (payload: MaybeRef<U>) => Promise<S>,
+  defaultCollection: () => S,
   options: {
     onUpdateFilters?: (query: LocationQuery) => void;
     extraParams?: ComputedRef<LocationQuery>;
@@ -105,14 +108,15 @@ export const useHistoryPaginationFilter = <
     } as U; // todo: figure out a way to not typecast
   });
 
-  const { isLoading, state, execute } = useAsyncState<
-    Collection<V>,
-    MaybeRef<U>[]
-  >(fetchAssetData, defaultCollectionState(), {
-    immediate: false,
-    resetOnExecute: false,
-    delay: 0
-  });
+  const { isLoading, state, execute } = useAsyncState<S, MaybeRef<U>[]>(
+    fetchAssetData,
+    defaultCollection(),
+    {
+      immediate: false,
+      resetOnExecute: false,
+      delay: 0
+    }
+  );
 
   /**
    * Triggered on route change and on component mount
