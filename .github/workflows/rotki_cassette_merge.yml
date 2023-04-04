@@ -5,15 +5,12 @@ on:
   pull_request_target:
     types: [ closed ]
 
-permissions:
-  pull-requests: write
-  contents: write
-
 jobs:
   merge:
     runs-on: ubuntu-latest
+    environment: cassette-merge
     steps:
       - uses: rotki/action-cassette-deck@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.MERGE_TOKEN }}
           cassette_repo: test-caching
