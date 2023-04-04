@@ -49,7 +49,7 @@ def entry_to_input_dict(
     return serialized
 
 
-def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list['EvmEvent']:
+def _add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: bool = False) -> list['EvmEvent']:  # noqa: E501
     entries = [EvmEvent(
         event_identifier=EvmEvent.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
         sequence_index=162,
@@ -115,7 +115,7 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list['EvmEv
 
     entries_added_using_api = 0
     for entry in entries:
-        if entry.extra_data is not None:
+        if add_directly is True or entry.extra_data is not None:
             # If any entry has extra data add it directly to the database instead of
             # making use of the API. The reason is that the API doesn't allow to edit
             # the extra data field
@@ -128,7 +128,7 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list['EvmEv
         else:
             json_data = entry_to_input_dict(entry, include_identifier=False)
             response = requests.put(
-                api_url_for(server, 'evmeventresource'),
+                api_url_for(server, 'historyeventresource'),
                 json=json_data,
             )
             result = assert_proper_response_with_result(response)
@@ -136,8 +136,8 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents) -> list['EvmEv
             entry.identifier = result['identifier']
             entries_added_using_api += 1
 
-    # make sure that the API was used to add events
-    assert entries_added_using_api == 4
+    if add_directly is False:
+        assert entries_added_using_api == 4, 'api was used directly and event is missing'
 
     return entries
 
@@ -158,7 +158,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     json_data = entry_to_input_dict(entry, include_identifier=True)
     json_data['identifier'] = unknown_id
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, 'evmeventresource'),
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json=json_data,
     )
     assert_error_response(
@@ -171,7 +171,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     entry.timestamp = TimestampMS(1649924575000)
     json_data = entry_to_input_dict(entry, include_identifier=True)
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, 'evmeventresource'),
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json=json_data,
     )
     assert_error_response(
@@ -184,7 +184,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     entry.timestamp = TimestampMS(1649924575000)
     json_data = entry_to_input_dict(entry, include_identifier=False)
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, 'evmeventresource'),
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json=json_data,
     )
     assert_error_response(
@@ -207,7 +207,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     assert entry.extra_data == {'testing_data': 42}
 
     response = requests.patch(
-        api_url_for(rotkehlchen_api_server, 'evmeventresource'),
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json=json_data,
     )
     assert_simple_ok_response(response)
@@ -231,7 +231,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
 
         # test deleting unknown fails
         response = requests.delete(
-            api_url_for(rotkehlchen_api_server, 'evmeventresource'),
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json={'identifiers': [19, 1, 3]},
         )
         assert_error_response(
@@ -246,7 +246,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
 
         # test deleting works
         response = requests.delete(
-            api_url_for(rotkehlchen_api_server, 'evmeventresource'),
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json={'identifiers': [2, 4]},
         )
         result = assert_proper_response_with_result(response)
@@ -257,7 +257,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
 
         # test that deleting last event of a transaction hash fails
         response = requests.delete(
-            api_url_for(rotkehlchen_api_server, 'evmeventresource'),
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json={'identifiers': [1]},
         )
         assert_error_response(
@@ -379,3 +379,25 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
     )
     result = assert_proper_response_with_result(response)
     assert result == {SUB_SWAPS_DETAILS: event2.extra_data[SUB_SWAPS_DETAILS]}  # type: ignore[index]  # extra_data is not None here  # noqa: E501
+
+
+def test_get_events(rotkehlchen_api_server: 'APIServer'):
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBHistoryEvents(rotki.data.db)
+    entries = _add_entries(server=rotkehlchen_api_server, events_db=db, add_directly=True)
+    expected_entries = [x.serialize() for x in entries]
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_found'] == 5
+    assert result['entries_limit'] == 100
+    assert result['entries_total'] == 5
+    for event in result['entries']:
+        assert event['entry'] in expected_entries
+        assert event['customized'] is False
+        assert event['has_details'] is False

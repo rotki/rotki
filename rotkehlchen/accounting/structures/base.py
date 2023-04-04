@@ -205,7 +205,7 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
         """
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize for api"""
+        """Serialize the event alone for api"""
         return {
             'identifier': self.identifier,
             'event_identifier': self.serialized_event_identifier,
@@ -218,6 +218,14 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             'event_subtype': self.event_subtype.serialize_or_none(),
             'location_label': self.location_label,
             'notes': self.notes,
+        }
+
+    def serialize_for_api(self, customized_event_ids: list[int]) -> dict[str, Any]:
+        """Serialize event and extra flags for api"""
+        return {
+            'entry': self.serialize(),
+            'has_details': False,
+            'customized': self.identifier in customized_event_ids,
         }
 
     @classmethod

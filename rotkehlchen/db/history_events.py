@@ -368,6 +368,24 @@ class DBHistoryEvents():
 
         return output  # type: ignore[return-value]  # expected only the two types
 
+    def get_all_history_events_and_limit_info(
+            self,
+            cursor: 'DBCursor',
+            filter_query: 'HistoryBaseEntryFilterQuery',
+            has_premium: bool,
+    ) -> tuple[Union[list[HistoryEvent], list[EvmEvent]], int]:
+        """Gets all history events for all types, based on the filter query.
+
+        Also returns how many are the total found for the filter
+        """
+        events = self.get_all_history_events(
+            cursor=cursor,
+            filter_query=filter_query,
+            has_premium=has_premium,
+        )
+        count = self.get_history_events_count(cursor=cursor, query_filter=filter_query)
+        return events, count  # type: ignore  # is a subset
+
     def rows_missing_prices_in_base_entries(
             self,
             filter_query: HistoryBaseEntryFilterQuery,
@@ -428,7 +446,7 @@ class DBHistoryEvents():
         return assets
 
     def get_history_events_count(self, cursor: 'DBCursor', query_filter: HistoryBaseEntryFilterQuery) -> int:  # noqa: E501
-        """Returns how many of certain base entry events are in the database"""
+        """Returns how many events matching the filter but ignoring pagination are in the DB"""
         prepared_query, bindings = query_filter.prepare(with_pagination=False)
         query = query_filter.get_count_query() + prepared_query
         cursor.execute(query, bindings)

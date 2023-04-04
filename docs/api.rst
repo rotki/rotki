@@ -2295,7 +2295,7 @@ Querying evm transactions
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a POST on the evm transactions endpoint will query all evm transactions for all the tracked user addresses. Caller can also specify a chain and/or an address to further filter the query. Also they can limit the queried transactions by timestamps and can filter transactions by related event's properties (asset, protocols and whether to exclude transactions with ignored assets). If the user is not premium and has more than the transaction limit then the returned transaction will be limited to that number. Any filtering will also be limited. Transactions are returned most recent first.
+   Doing a POST on the evm transactions endpoint will query all evm transactions for all the tracked user addresses. Caller can also specify a chain and/or an address to further filter the query. Also they can limit the queried transactions by timestamps and can filter transactions by related event's properties (asset, counterparties and whether to exclude transactions with ignored assets). If the user is not premium and has more than the transaction limit then the returned transaction will be limited to that number. Any filtering will also be limited. Transactions are returned most recent first.
 
    **Example Request**:
 
@@ -2307,14 +2307,14 @@ Querying evm transactions
 
       {
           "accounts": [{
-	      "address": "0x3CAdbeB58CB5162439908edA08df0A305b016dA8",
-	      "evm_chain": "optimism"
-	  }, {
-	      "address": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238"
-	  }],
+              "address": "0x3CAdbeB58CB5162439908edA08df0A305b016dA8",
+              "evm_chain": "optimism"
+          }, {
+              "address": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238"
+          }],
           "from_timestamp": 1514764800,
-	  "to_timestamp": 1572080165,
-	  "only_cache": false
+          "to_timestamp": 1572080165,
+          "only_cache": false
       }
 
    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
@@ -2327,10 +2327,10 @@ Querying evm transactions
    :reqjson bool only_cache: If true then only the ethereum transactions in the DB are queried.
    :reqjson string evm_chain: Optional. The name of the evm chain by which to filter all transactions. ``"ethereum"``, ``"optimism"`` etc.
    :reqjson string asset: Optional. Serialized asset to filter by.
-   :reqjson list protocols: Optional. Protocols (counterparties) to filter by. List of strings.
+   :reqjson list counterparties: Optional. Counterparties (mostly protocols) to filter by. List of strings.
    :reqjson bool exclude_ignored_assets: Optional. Whether to exclude transactions with ignored assets. Default true.
-   :reqjson list[string] event_types: This is the list of event types by which to filter the decoded events.
-   :reqjson list[string] event_subtypes: This is the list of event types by which to filter the decoded events.
+   :reqjson list[string] event_types: Optional.This is the list of event types by which to filter the decoded events.
+   :reqjson list[string] event_subtypes: Optional.This is the list of event subtypes by which to filter the decoded events.
 
 
    **Example Response**:
@@ -3185,7 +3185,7 @@ Get asset identifiers mappings
             "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
             "DCR",
             "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38",
-	    "_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041"
+            "_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041"
         ]
       }
 
@@ -3607,7 +3607,7 @@ Editing custom ethereum tokens
       {
           "token": {
               "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
-	      "evm_chain": "ethereum",
+              "evm_chain": "ethereum",
               "decimals": 5,
               "name": "foo",
               "symbol": "FTK",
@@ -5005,8 +5005,96 @@ Dealing with ledger actions
    :statuscode 409: No user is logged in.
    :statuscode 500: Internal rotki error
 
-Dealing with BaseHistoryEntry events
+Dealing with History Events
 ============================================
+
+.. http:post:: /api/(version)/history/events
+
+   Doing a POST on this endpoint with the given filter parameters will return all history events matching the filter. All arguments are optional. If nothing is given all events will be returned.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/history/events HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "from_timestamp": 1500,
+          "to_timestamp": 999999
+      }
+
+   .. _history_base_entry_schema_section:
+
+   :reqjson int from_timestamp: The timestamp from which to start querying. Default is 0.
+   :reqjson int to_timestamp: The timestamp until which to query. Default is now.
+   :reqjson list[string] event_types: A list of event types by which to filter the decoded events.
+   :reqjson list[string] event_subtypes: A list of event subtypes by which to filter the decoded events.
+   :reqjson string asset: The asset to filter by.
+   :reqjson list counterparties: An optional list of counterparties to filter by. List of strings.
+   :reqjson list evm_chain: An optional evm_chain name to filter events only for that chain. This makes it an EVMEVent query.
+   :reqjson list products: An optional list of product type to filter by. List of strings. This makes it an EVMEVent query.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "events": [{
+                  "entry": {
+                      "identifier": 1,
+                      "asset": "ETH",
+                      "balance": {"amount": "0.00863351371344", "usd_value": "0"},
+                      "counterparty": "gas",
+                      "event_identifier": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+                      "event_subtype": "fee",
+                      "event_type": "spend",
+                      "location": "blockchain",
+                      "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
+                      "notes": "Burned 0.00863351371344 ETH for gas",
+                      "sequence_index": 0,
+                      "timestamp": 1642802807
+                  },
+                  "customized": false,
+                  "has_details": false
+                }, {
+                  "entry": {
+                      "identifier": 2,
+                      "asset": "ETH",
+                      "balance": {"amount": "0.00163351371344", "usd_value": "0"},
+                      "counterparty": "gas",
+                      "event_identifier": "0x1c822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+                      "event_subtype": "fee",
+                      "event_type": "spend",
+                      "location": "blockchain",
+                      "location_label": "0xce15887E2CEC81434C16D587709f64603b39b545",
+                      "notes": "Burned 0.00863351371344 ETH for gas",
+                      "sequence_index": 0,
+                      "timestamp": 1642802807
+                  },
+                  "customized": false,
+                  "has_details": false
+              }],
+             "entries_found": 95,
+             "entries_limit": 500,
+             "entries_total": 1000
+          },
+          "message": ""
+      }
+
+   :resjson list decoded_events: A list of history events. Each event is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not. Each entry also has a `has_details` flag. If `has_details` is true, then it is possible to call /history/events/details endpoint to retrieve some extra information about the event.
+   :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+   :resjson int entries_limit: The limit of entries if free version. -1 for premium.
+   :resjson int entries_total: The number of total entries ignoring all filters.
+   :statuscode 200: Events succesfully queries
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in or failure at event addition.
+   :statuscode 500: Internal rotki error
 
 .. http:put:: /api/(version)/history/events
 
@@ -5016,7 +5104,7 @@ Dealing with BaseHistoryEntry events
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/ledgeractions HTTP/1.1
+      PUT /api/1/history/events HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -5792,41 +5880,41 @@ Get saved events of a PnL Report
       {
         "result": {
             "entries": [{
-		"asset": "BTC",
-		"cost_basis": {
-		    "is_complete": true,
-		    "matched_acquisitions": [
-			{
-			    "amount": "0.001",
-			    "event": {
-				"full_amount": "1",
-				"index": 11,
-				"rate": "100.1",
-				"timestamp": 1458994442
-			    },
-			    "taxable": false}
-		     ]},
-		"free_amount": "1E-11",
-		"location": "bitmex",
-		"notes": "bitmex withdrawal",
-		"pnl_free": "-1.0010E-9",
-		"pnl_taxable": "0.00",
-		"price": "9367.55",
-		"taxable_amount": "0",
-		"timestamp": 1566572401,
-		"type": "asset movement"
+                "asset": "BTC",
+                "cost_basis": {
+                    "is_complete": true,
+                    "matched_acquisitions": [
+                        {
+                            "amount": "0.001",
+                            "event": {
+                                "full_amount": "1",
+                                "index": 11,
+                                "rate": "100.1",
+                                "timestamp": 1458994442
+                            },
+                            "taxable": false}
+                     ]},
+                "free_amount": "1E-11",
+                "location": "bitmex",
+                "notes": "bitmex withdrawal",
+                "pnl_free": "-1.0010E-9",
+                "pnl_taxable": "0.00",
+                "price": "9367.55",
+                "taxable_amount": "0",
+                "timestamp": 1566572401,
+                "type": "asset movement"
             }, {
-		"asset": "XMR",
-		"cost_basis": null,
-		"free_amount": "0",
-		"location": "poloniex",
-		"notes": "Buy XMR(Monero) with ETH(Ethereum).Amount in",
-		"pnl_free": "0",
-		"pnl_taxable": "0",
-		"price": "12.47924607060",
-		"taxable_amount": "1.40308443",
-		"timestamp": 1539713238,
-		"type": "trade"
+                "asset": "XMR",
+                "cost_basis": null,
+                "free_amount": "0",
+                "location": "poloniex",
+                "notes": "Buy XMR(Monero) with ETH(Ethereum).Amount in",
+                "pnl_free": "0",
+                "pnl_taxable": "0",
+                "price": "12.47924607060",
+                "taxable_amount": "1.40308443",
+                "timestamp": 1539713238,
+                "type": "trade"
         }],
         "entries_found": 2,
         "entries_limit": 1000
@@ -10406,22 +10494,22 @@ Querying general information
       Content-Type: application/json
 
       {
-      	"result": {
-      		"version": {
-      			"our_version": "1.0.3",
-      			"latest_version": "1.0.4",
-      			"download_url": "https://github.com/rotki/rotki/releases/tag/v1.0.4"
-      		},
-      		"data_directory": "/home/username/.local/share/rotki/data",
-      		"log_level": "DEBUG",
-      		"accept_docker_risk": false,
-      		"backend_default_arguments": {
-      			"max_logfiles_num": 3,
-      			"max_size_in_mb_all_logs": 300,
-      			"sqlite_instructions": 5000
-      		}
-      	},
-      	"message": ""
+        "result": {
+                "version": {
+                        "our_version": "1.0.3",
+                        "latest_version": "1.0.4",
+                        "download_url": "https://github.com/rotki/rotki/releases/tag/v1.0.4"
+                },
+                "data_directory": "/home/username/.local/share/rotki/data",
+                "log_level": "DEBUG",
+                "accept_docker_risk": false,
+                "backend_default_arguments": {
+                        "max_logfiles_num": 3,
+                        "max_size_in_mb_all_logs": 300,
+                        "sqlite_instructions": 5000
+                }
+        },
+        "message": ""
       }
 
    :resjson str our_version: The version of rotki present in the system

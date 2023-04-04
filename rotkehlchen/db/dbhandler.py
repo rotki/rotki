@@ -1968,6 +1968,7 @@ class DBHandler:
                 'entries_notes',
                 'user_notes',
                 'assets',
+                'history_events',
             ],
             op: Literal['OR', 'AND'] = 'OR',
             **kwargs: Any,
