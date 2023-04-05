@@ -25,7 +25,7 @@ import {
 import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import { defaultCollectionState, getCollectionData } from '@/utils/collection';
+import { getCollectionData } from '@/utils/collection';
 import type { Filters, Matcher } from '@/composables/filters/transactions';
 
 const props = withDefaults(
@@ -178,7 +178,6 @@ const {
   mainPage,
   () => useTransactionFilter(get(protocols).length > 0),
   fetchTransactions,
-  defaultCollectionState,
   {
     onUpdateFilters(query) {
       const parsedAccounts = RouterAccountsSchema.parse(query);

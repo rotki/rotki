@@ -2,7 +2,6 @@
 import { type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import { type Collection } from '@/types/collection';
-import { defaultCollectionState } from '@/utils/collection';
 import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
 import { type TradeLocation } from '@/types/history/trade/location';
@@ -142,19 +141,12 @@ const {
   Collection<TradeEntry>,
   Filters,
   Matcher
->(
-  locationOverview,
-  mainPage,
-  useTradeFilters,
-  fetchTrades,
-  defaultCollectionState,
-  {
-    onUpdateFilters(query) {
-      set(hideIgnoredTrades, query.includeIgnoredTrades === 'false');
-    },
-    extraParams
-  }
-);
+>(locationOverview, mainPage, useTradeFilters, fetchTrades, {
+  onUpdateFilters(query) {
+    set(hideIgnoredTrades, query.includeIgnoredTrades === 'false');
+  },
+  extraParams
+});
 
 useHistoryAutoRefresh(fetchData);
 

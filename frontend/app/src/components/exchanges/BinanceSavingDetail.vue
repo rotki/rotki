@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type DataTableHeader } from 'vuetify';
-import { useEmptyFilter } from '@/composables/filters';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
   type ExchangeSavingsCollection,
@@ -47,19 +46,13 @@ const {
   ExchangeSavingsRequestPayload,
   ExchangeSavingsEvent,
   ExchangeSavingsCollection
->(
-  exchange,
-  true,
-  useEmptyFilter,
-  fetchExchangeSavings,
-  defaultCollectionState,
-  {
-    defaultSortBy: {
-      pageParamsAsc: [true]
-    },
-    extraParams
-  }
-);
+>(exchange, true, useEmptyFilter, fetchExchangeSavings, {
+  defaultCollection: defaultCollectionState,
+  defaultSortBy: {
+    pageParamsAsc: [true]
+  },
+  extraParams
+});
 
 watch(loading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading) {

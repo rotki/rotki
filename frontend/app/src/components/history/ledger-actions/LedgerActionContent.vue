@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type DataTableHeader } from 'vuetify';
 import { type Collection } from '@/types/collection';
-import { defaultCollectionState } from '@/utils/collection';
 import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
 import { type TradeLocation } from '@/types/history/trade/location';
@@ -108,13 +107,7 @@ const {
   Collection<LedgerActionEntry>,
   Filters,
   Matcher
->(
-  locationOverview,
-  mainPage,
-  useLedgerActionsFilter,
-  fetchLedgerActions,
-  defaultCollectionState
-);
+>(locationOverview, mainPage, useLedgerActionsFilter, fetchLedgerActions);
 
 const newLedgerAction = () => {
   set(editableItem, null);
