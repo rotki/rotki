@@ -4,6 +4,7 @@ import keys from 'lodash/keys';
 import pick from 'lodash/pick';
 import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
 import { type ZodSchema } from 'zod';
+import { type PaginationRequestPayload } from '@/types/common';
 import { type Collection } from '@/types/collection';
 import { type TablePagination } from '@/types/pagination';
 import {
@@ -11,7 +12,7 @@ import {
   RouterPaginationOptionsSchema
 } from '@/types/route';
 import { assert } from '@/utils/assertions';
-import { defaultOptions } from '@/utils/collection';
+import { defaultCollectionState, defaultOptions } from '@/utils/collection';
 import { nonEmptyProperties } from '@/utils/data';
 
 interface FilterSchema<F, M> {
@@ -32,13 +33,12 @@ interface FilterSchema<F, M> {
  * @param {MaybeRef<boolean>} mainPage
  * @param {() => FilterSchema<W, X>} filterSchema
  * @param {(payload: MaybeRef<U>) => Promise<Collection<V>>} fetchAssetData
- * @param {() => S} defaultCollection
  * @param {{onUpdateFilters?: (query: LocationQuery) => void, extraParams?: ComputedRef<LocationQuery>, customPageParams?: ComputedRef<Partial<U>>, defaultSortBy?: {pagination?: keyof T, pageParams?: (keyof T)[], pageParamsAsc?: boolean[]}}} options
  */
 export const useHistoryPaginationFilter = <
   T extends Object,
-  U,
-  V,
+  U = PaginationRequestPayload<T>,
+  V = T,
   S extends Collection<V> = Collection<V>,
   W extends Object | void = undefined,
   X = undefined
@@ -47,11 +47,11 @@ export const useHistoryPaginationFilter = <
   mainPage: MaybeRef<boolean>,
   filterSchema: () => FilterSchema<W, X>,
   fetchAssetData: (payload: MaybeRef<U>) => Promise<S>,
-  defaultCollection: () => S,
   options: {
     onUpdateFilters?: (query: LocationQuery) => void;
     extraParams?: ComputedRef<LocationQuery>;
     customPageParams?: ComputedRef<Partial<U>>;
+    defaultCollection?: () => S;
     defaultSortBy?: {
       pagination?: keyof T;
       pageParams?: (keyof T)[];
@@ -72,8 +72,13 @@ export const useHistoryPaginationFilter = <
   const expanded: Ref<V[]> = ref([]);
   const userAction: Ref<boolean> = ref(false);
 
-  const { onUpdateFilters, extraParams, customPageParams, defaultSortBy } =
-    options;
+  const {
+    onUpdateFilters,
+    defaultCollection,
+    extraParams,
+    customPageParams,
+    defaultSortBy
+  } = options;
 
   const { filters, matchers, updateFilter, RouteFilterSchema } = filterSchema();
 
@@ -108,9 +113,17 @@ export const useHistoryPaginationFilter = <
     } as U; // todo: figure out a way to not typecast
   });
 
+  const getCollectionDefault = (): S => {
+    if (defaultCollection) {
+      return defaultCollection();
+    }
+
+    return defaultCollectionState<V>() as S;
+  };
+
   const { isLoading, state, execute } = useAsyncState<S, MaybeRef<U>[]>(
     fetchAssetData,
-    defaultCollection(),
+    getCollectionDefault(),
     {
       immediate: false,
       resetOnExecute: false,
