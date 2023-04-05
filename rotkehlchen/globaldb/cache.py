@@ -69,6 +69,23 @@ def globaldb_get_general_cache_values(
     return [entry[0] for entry in cursor]
 
 
+def globaldb_get_general_cache_like(
+        cursor: DBCursor,
+        key_parts: Iterable[Union[str, GeneralCacheType]],
+) -> list[str]:
+    """
+    Function to read globaldb cache.
+    Returns all values where key starts with the provided `key_parts`.
+
+    key_parts should contain neither the "%" nor the "." symbol.
+    """
+    cache_key = compute_cache_key(key_parts)
+    return cursor.execute(
+        'SELECT value FROM general_cache WHERE key LIKE ?',
+        (f'{cache_key}%',),
+    ).fetchall()
+
+
 def globaldb_get_general_cache_keys_and_values_like(
         cursor: DBCursor,
         key_parts: Iterable[Union[str, GeneralCacheType]],
@@ -150,7 +167,7 @@ def globaldb_delete_general_cache_like(
     write_cursor.execute('DELETE FROM general_cache WHERE key LIKE ?', (f'{cache_key}%',))
 
 
-def read_curve_data(
+def read_curve_pool_tokens(
         cursor: 'DBCursor',
         pool_address: ChecksumEvmAddress,
 ) -> list[ChecksumEvmAddress]:

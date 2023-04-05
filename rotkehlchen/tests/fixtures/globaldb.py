@@ -60,6 +60,12 @@ def fixture_run_globaldb_migrations() -> bool:
     return True
 
 
+@pytest.fixture(name='empty_global_addressbook')
+def fixture_empty_global_addressbook() -> bool:
+    """Whether to clear addressbook in the globaldb or not"""
+    return False
+
+
 def create_globaldb(
         data_directory,
         sql_vm_instructions_cb,
@@ -84,6 +90,7 @@ def _initialize_fixture_globaldb(
         globaldb_upgrades,
         globaldb_migrations,
         run_globaldb_migrations,
+        empty_global_addressbook,
 ) -> GlobalDBHandler:
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
@@ -118,6 +125,10 @@ def _initialize_fixture_globaldb(
 
         globaldb = create_globaldb(new_data_dir, sql_vm_instructions_cb)
 
+    if empty_global_addressbook is True:
+        with globaldb.conn.write_ctx() as cursor:
+            cursor.execute('DELETE FROM address_book')
+
     return globaldb
 
 
@@ -135,6 +146,7 @@ def fixture_session_globaldb(
         globaldb_upgrades=[],
         globaldb_migrations=[],
         run_globaldb_migrations=True,
+        empty_global_addressbook=False,
     )
 
 
@@ -148,6 +160,7 @@ def fixture_globaldb(
         globaldb_upgrades,
         globaldb_migrations,
         run_globaldb_migrations,
+        empty_global_addressbook,
 ):
     return _initialize_fixture_globaldb(
         custom_globaldb=custom_globaldb,
@@ -158,6 +171,7 @@ def fixture_globaldb(
         globaldb_upgrades=globaldb_upgrades,
         globaldb_migrations=globaldb_migrations,
         run_globaldb_migrations=run_globaldb_migrations,
+        empty_global_addressbook=empty_global_addressbook,
     )
 
 

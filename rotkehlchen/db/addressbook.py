@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Optional, Union
 
 from pysqlcipher3 import dbapi2
 
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import (
@@ -17,12 +16,13 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 
 class DBAddressbook:
 
-    def __init__(self, db_handler: DBHandler) -> None:
+    def __init__(self, db_handler: 'DBHandler') -> None:
         self.db = db_handler
 
     @contextmanager
@@ -90,36 +90,35 @@ class DBAddressbook:
 
     def add_addressbook_entries(
             self,
-            book_type: AddressbookType,
+            write_cursor: 'DBCursor',
             entries: list[AddressbookEntry],
     ) -> None:
         """
         Add every entry of entries to the address book table.
         If blockchain is None then make sure that the same address doesn't appear in combination
         with other blockchain values.
-        """
-        with self.write_ctx(book_type) as write_cursor:
-            # We iterate here with for loop instead of executemany in order to catch
-            # which identifier is duplicated
-            for entry in entries:
-                try:
-                    # in the case of given blockchain being None delete any other entry for that
-                    # address since they are rendered redundant
-                    if entry.blockchain is None:
-                        write_cursor.execute(
-                            'DELETE FROM address_book where address=? AND blockchain IS NOT NULL',
-                            (entry.address,),
-                        )
-
+    """
+        # We iterate here with for loop instead of executemany in order to catch
+        # which identifier is duplicated
+        for entry in entries:
+            try:
+                # in the case of given blockchain being None delete any other entry for that
+                # address since they are rendered redundant
+                if entry.blockchain is None:
                     write_cursor.execute(
-                        'INSERT INTO address_book (address, name, blockchain) VALUES (?, ?, ?)',
-                        entry.serialize_for_db(),
+                        'DELETE FROM address_book where address=? AND blockchain IS NOT NULL',
+                        (entry.address,),
                     )
-                # Handling both private db (pysqlcipher) and global db (raw sqlite3)
-                except (dbapi2.IntegrityError, sqlite3.IntegrityError) as e:  # pylint: disable=no-member  # noqa: E501
-                    raise InputError(
-                        f'{entry} already exists in the address book. Identifier must be unique.',
-                    ) from e
+
+                write_cursor.execute(
+                    'INSERT INTO address_book (address, name, blockchain) VALUES (?, ?, ?)',
+                    entry.serialize_for_db(),
+                )
+            # Handling both private db (pysqlcipher) and global db (raw sqlite3)
+            except (dbapi2.IntegrityError, sqlite3.IntegrityError) as e:  # pylint: disable=no-member  # noqa: E501
+                raise InputError(
+                    f'{entry} already exists in the address book. Identifier must be unique.',
+                ) from e
 
     def update_addressbook_entries(
             self,
