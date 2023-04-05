@@ -3858,7 +3858,8 @@ class RestAPI():
     ) -> Response:
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
         try:
-            db_addressbook.add_addressbook_entries(book_type=book_type, entries=entries)
+            with db_addressbook.write_ctx(book_type) as write_cursor:
+                db_addressbook.add_addressbook_entries(write_cursor=write_cursor, entries=entries)
         except InputError as e:
             return api_response(
                 result=wrap_in_fail_result(str(e)),

@@ -2,17 +2,9 @@ import json
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
-from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
 
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.cache import (
-    globaldb_delete_general_cache_like,
-    globaldb_get_general_cache_values,
-    globaldb_set_general_cache_values_at_ts,
-)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import GeneralCacheType, Timestamp
-from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
@@ -62,34 +54,14 @@ def _populate_rpc_nodes(cursor: 'DBCursor', root_dir: Path) -> None:
 
 
 def _reset_curve_cache(write_cursor: 'DBCursor') -> None:
-    """Resets some parts of the curve cache.
-    1. Resets last queried timestamp to query and save gauges.
-    2. Clears curve pool tokens to requery them and save in the new format.
-    """
-    refreshing_timestamp = Timestamp(ts_now() - ETH_PROTOCOLS_CACHE_REFRESH - 1)
-    lp_tokens = globaldb_get_general_cache_values(
-        cursor=write_cursor,
-        key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
-    )
-    if len(lp_tokens) == 0:
-        log.error('Expected curve pools cache to be populated, but it was not')
-        return
-
-    globaldb_set_general_cache_values_at_ts(
-        write_cursor=write_cursor,
-        key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
-        values=lp_tokens,
-        timestamp=refreshing_timestamp,
-    )
-    globaldb_delete_general_cache_like(
-        write_cursor=write_cursor,
-        key_parts=[GeneralCacheType.CURVE_POOL_TOKENS],
-    )
+    """Resets curve cache to query gauges and update format of the lp tokens"""
+    write_cursor.execute('DELETE FROM general_cache WHERE key LIKE "%CURVE%"')
 
 
 def migrate_to_v5(connection: 'DBConnection') -> None:
-    """This globalDB upgrade does the following:
+    """This globalDB upgrade is introduced at 1.28.0 and does the following:
     - Adds the `default_rpc_nodes` table.
+    - Resets curve cache.
     """
     log.debug('Entered globaldb v4->v5 upgrade')
     root_dir = Path(__file__).resolve().parent.parent.parent
@@ -98,3 +70,5 @@ def migrate_to_v5(connection: 'DBConnection') -> None:
         _create_new_tables(cursor)
         _populate_rpc_nodes(cursor, root_dir)
         _reset_curve_cache(cursor)
+
+    log.debug('Finished globaldb v4->v5 upgrade')

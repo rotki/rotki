@@ -317,10 +317,9 @@ def test_case_does_not_matter_for_asset_constructor():
     assert a1.identifier == 'BTC'
     assert a2.identifier == 'BTC'
 
-    # We use a token that is only in ethereum (redacted)
-    a3 = symbol_to_ethereum_token('BTRFLY')
-    a4 = symbol_to_ethereum_token('BtRfLy')
-    assert a3.identifier == a4.identifier == strethaddress_to_identifier('0xC0d4Ceb216B3BA9C3701B291766fDCbA977ceC3A')  # noqa: E501
+    a3 = symbol_to_ethereum_token('DAI')
+    a4 = symbol_to_ethereum_token('dAi')
+    assert a3.identifier == a4.identifier == strethaddress_to_identifier('0x6B175474E89094C44Da98b954EedeAC495271d0F')  # noqa: E501
 
 
 @pytest.mark.skipif(

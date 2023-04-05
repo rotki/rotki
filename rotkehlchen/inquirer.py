@@ -75,7 +75,7 @@ from rotkehlchen.externalapis.xratescom import (
     get_historical_xratescom_exchange_rates,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values, read_curve_data
+from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values, read_curve_pool_tokens
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
@@ -789,7 +789,7 @@ class Inquirer():
                 return None
             # pool address is guaranteed to be checksumed due to how we save it
             pool_address = string_to_evm_address(pool_addresses_in_cache[0])
-            pool_tokens_addresses = read_curve_data(cursor=cursor, pool_address=pool_address)
+            pool_tokens_addresses = read_curve_pool_tokens(cursor=cursor, pool_address=pool_address)  # noqa: E501
 
         tokens: list[EvmToken] = []
         # Translate addresses to tokens

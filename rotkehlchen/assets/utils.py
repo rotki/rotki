@@ -279,7 +279,7 @@ def symbol_to_asset_or_token(
     return asset
 
 
-def symbol_to_ethereum_token(symbol: str, chain_id: Optional[ChainID] = None) -> EvmToken:
+def symbol_to_ethereum_token(symbol: str) -> EvmToken:
     """Tries to turn the given symbol to an ethereum token
 
     May raise:
@@ -289,7 +289,7 @@ def symbol_to_ethereum_token(symbol: str, chain_id: Optional[ChainID] = None) ->
     maybe_asset = get_crypto_asset_by_symbol(
         symbol=symbol,
         asset_type=AssetType.EVM_TOKEN,
-        chain_id=chain_id,
+        chain_id=ChainID.ETHEREUM,
     )
     if maybe_asset is None:
         raise UnknownAsset(symbol)

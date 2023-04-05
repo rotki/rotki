@@ -1,27 +1,34 @@
 import datetime
+import json
 from contextlib import suppress
 from unittest.mock import patch
 
 import pytest
+import requests
 from freezegun import freeze_time
 
+from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.chain.ethereum.modules.curve.curve_cache import CURVE_API_URLS
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
+from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.globaldb.cache import (
-    globaldb_get_general_cache_values,
-    globaldb_set_general_cache_values,
-    read_curve_data,
-)
+from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values, read_curve_pool_tokens
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.types import ChainID, GeneralCacheType
+from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.types import (
+    AddressbookEntry,
+    ChainID,
+    EvmTokenKind,
+    GeneralCacheType,
+    SupportedBlockchain,
+)
 
 CURVE_EXPECTED_LP_TOKENS_TO_POOLS = {
     # first 2 are registry pools
     '0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490': '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7',
     '0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900': '0xDeBF20617708857ebe4F679508E7b7863a8A8EeE',
-    # second 2 are metapool factory pools
-    '0x1F71f05CF491595652378Fe94B7820344A551B8E': '0x1F71f05CF491595652378Fe94B7820344A551B8E',
-    '0xFD5dB7463a3aB53fD211b4af195c5BCCC1A03890': '0xFD5dB7463a3aB53fD211b4af195c5BCCC1A03890',
 }
 
 CURVE_EXPECTED_POOL_COINS = {
@@ -36,66 +43,96 @@ CURVE_EXPECTED_POOL_COINS = {
         '0xBcca60bB61934080951369a648Fb03DF4F96263C',
         '0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',
     ],
-    # second 2 are metapool factory pools
-    '0x1F71f05CF491595652378Fe94B7820344A551B8E': [
-        '0x96E61422b6A9bA0e068B6c5ADd4fFaBC6a4aae27',
-        '0x57Ab1ec28D129707052df4dF418D58a2D46d5f51',
-    ],
-    '0xFD5dB7463a3aB53fD211b4af195c5BCCC1A03890': [
-        '0xC581b735A1688071A1746c968e0798D642EDE491',
-        '0xD71eCFF9342A5Ced620049e616c5035F1dB98620',
-    ],
 }
 
 CURVE_EXPECTED_GAUGES = {
-    '0x1F71f05CF491595652378Fe94B7820344A551B8E': None,
     '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7': '0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A',
-    '0xFD5dB7463a3aB53fD211b4af195c5BCCC1A03890': '0xe8060Ad8971450E624d5289A10017dD30F5dA85F',
     '0xDeBF20617708857ebe4F679508E7b7863a8A8EeE': '0xd662908ADA2Ea1916B3318327A97eB18aD588b5d',
 }
 
+EXPECTED_ADDRESBOOK_ENTRIES_FROM_API = [
+    AddressbookEntry(
+        address=string_to_evm_address('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7'),
+        name='Curve.fi DAI/USDC/USDT',
+        blockchain=SupportedBlockchain.ETHEREUM,
+    ), AddressbookEntry(
+        address=string_to_evm_address('0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A'),
+        name='Curve gauge for Curve.fi DAI/USDC/USDT',
+        blockchain=SupportedBlockchain.ETHEREUM,
+    ), AddressbookEntry(
+        address=string_to_evm_address('0xDeBF20617708857ebe4F679508E7b7863a8A8EeE'),
+        name='Curve.fi aDAI/aUSDC/aUSDT',
+        blockchain=SupportedBlockchain.ETHEREUM,
+    ), AddressbookEntry(
+        address=string_to_evm_address('0xd662908ADA2Ea1916B3318327A97eB18aD588b5d'),
+        name='Curve gauge for Curve.fi aDAI/aUSDC/aUSDT',
+        blockchain=SupportedBlockchain.ETHEREUM,
+    ),
+]
 
+EXPECTED_ADDRESBOOK_ENTRIES_FROM_CHAIN = [
+    AddressbookEntry(
+        address=string_to_evm_address('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7'),
+        name='3pool',
+        blockchain=SupportedBlockchain.ETHEREUM,
+    ), AddressbookEntry(
+        address=string_to_evm_address('0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A'),
+        name='Curve gauge for 3pool',
+        blockchain=SupportedBlockchain.ETHEREUM,
+    ), AddressbookEntry(
+        address=string_to_evm_address('0xDeBF20617708857ebe4F679508E7b7863a8A8EeE'),
+        name='aave',
+        blockchain=SupportedBlockchain.ETHEREUM,
+    ), AddressbookEntry(
+        address=string_to_evm_address('0xd662908ADA2Ea1916B3318327A97eB18aD588b5d'),
+        name='Curve gauge for aave',
+        blockchain=SupportedBlockchain.ETHEREUM,
+    ),
+]
+
+
+@pytest.mark.vcr()
 @pytest.mark.parametrize('have_decoders', [True])
-def test_curve_cache(rotkehlchen_instance):
+@pytest.mark.parametrize('use_curve_api', [True, False])
+def test_curve_cache(rotkehlchen_instance, use_curve_api):
     """Test curve pools fetching mechanism"""
     # Set initial cache data to check that it is gone after the cache update
+    ethereum_inquirer = rotkehlchen_instance.chains_aggregator.ethereum.node_inquirer
+    db_addressbook = DBAddressbook(ethereum_inquirer.database)
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        globaldb_set_general_cache_values(
-            write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
-            values=['key123'],
-        )
-        globaldb_set_general_cache_values(
-            write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, 'key123'],
-            values=['pool-address-1'],
-        )
-        globaldb_set_general_cache_values(
-            write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, 'pool-address-1'],
-            values=['coin1', 'coin2', 'coin3'],
-        )
-        globaldb_set_general_cache_values(
-            write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_GAUGE_ADDRESS, 'pool-address-1'],
-            values=['some-gauge-address'],
-        )
+        # make sure that curve cache is clear at the beginning
+        write_cursor.execute('DELETE FROM general_cache WHERE key LIKE "%CURVE%"')
 
     # delete one of the tokens to check that it is created during the update
     with suppress(InputError):
         GlobalDBHandler().delete_evm_token(  # token may not exist but we don't care
-            address='0xD71eCFF9342A5Ced620049e616c5035F1dB98620',
+            address='0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',  # aUSDT
             chain_id=ChainID.ETHEREUM,
         )
+    AssetResolver().clean_memory_cache(identifier=evm_address_to_identifier(
+        address='0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',
+        chain_id=ChainID.ETHEREUM,
+        token_type=EvmTokenKind.ERC20,
+    ))
 
     # check that it was deleted successfully
     token = GlobalDBHandler().get_evm_token(
-        address='0xD71eCFF9342A5Ced620049e616c5035F1dB98620',
+        address='0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',
         chain_id=ChainID.ETHEREUM,
     )
     assert token is None
 
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        write_cursor.execute('DELETE FROM address_book')
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        known_addresses = db_addressbook.get_addressbook_entries(cursor=cursor)
+    assert len(known_addresses) == 0
+
+    curve_address_provider = ethereum_inquirer.contracts.contract('CURVE_ADDRESS_PROVIDER')  # noqa: E501
+
     def mock_call_contract(contract, node_inquirer, method_name, **kwargs):
+        if use_curve_api is True:
+            assert contract != curve_address_provider, 'There should be no calls to curve on-chain contracts if api is used'  # noqa: E501
         if method_name == 'pool_count':
             return 2  # if we don't limit pools count, the test will run for too long
         return node_inquirer.call_contract(
@@ -110,8 +147,37 @@ def test_curve_cache(rotkehlchen_instance):
         new=mock_call_contract,
     )
 
+    requests_get = requests.get
+
+    def mock_requests_get(url, timeout):  # pylint: disable=unused-argument
+        """Mock requests.get.
+        requests.get in this test should be used only for curve api queries.
+        If use_curve_api is False, return success: False so that curve cache query fallbacks to
+        chain query.
+        If use_curve_api is True, then to minimize number of pools check in this test, return
+        empty pools list for 3 out of the 4 curve api endpoints and for the remaining one perform
+        a real request and take from the response only 2 first pools.
+        """
+        if url not in CURVE_API_URLS:
+            raise AssertionError(f'Unexpected url {url} was called')
+
+        if use_curve_api is False:
+            return MockResponse(status_code=200, text=json.dumps({'success': False, 'data': {'poolData': []}}))  # noqa: E501
+
+        if url != CURVE_API_URLS[0]:
+            return MockResponse(status_code=200, text=json.dumps({'success': True, 'data': {'poolData': []}}))  # noqa: E501
+
+        response_json = requests_get(url).json()
+        response_json['data']['poolData'] = response_json['data']['poolData'][:2]
+        return MockResponse(status_code=200, text=json.dumps(response_json))
+
+    requests_patch = patch(
+        'requests.get',
+        side_effect=mock_requests_get,
+    )
+
     future_timestamp = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=WEEK_IN_SECONDS)  # noqa: E501
-    with freeze_time(future_timestamp), call_contract_patch:
+    with freeze_time(future_timestamp), call_contract_patch, requests_patch:
         rotkehlchen_instance.chains_aggregator.ethereum.assure_curve_cache_is_queried_and_decoder_updated()  # noqa: E501
 
     lp_tokens_to_pools_in_cache = {}
@@ -129,7 +195,7 @@ def test_curve_cache(rotkehlchen_instance):
             )[0]
             lp_tokens_to_pools_in_cache[lp_token_addr] = pool_addr
 
-            pool_coins_in_cache[pool_addr] = read_curve_data(cursor=cursor, pool_address=pool_addr)  # noqa: E501
+            pool_coins_in_cache[pool_addr] = read_curve_pool_tokens(cursor=cursor, pool_address=pool_addr)  # noqa: E501
 
             gauge_data = globaldb_get_general_cache_values(
                 cursor=cursor,
@@ -147,12 +213,12 @@ def test_curve_cache(rotkehlchen_instance):
 
     # Check that the token was created
     token = GlobalDBHandler().get_evm_token(
-        address='0xD71eCFF9342A5Ced620049e616c5035F1dB98620',
+        address='0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',
         chain_id=ChainID.ETHEREUM,
     )
-    assert token.name == 'Synth sEUR'
-    assert token.symbol == 'sEUR'
-    assert token.decimals == 18
+    assert token.name == 'Aave interest bearing USDT'
+    assert token.symbol == 'aUSDT'
+    assert token.decimals == 6
 
     # Check that initially set values are gone
     with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -160,3 +226,10 @@ def test_curve_cache(rotkehlchen_instance):
         assert len(globaldb_get_general_cache_values(cursor, key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, 'abc'])) == 0  # noqa: E501
         assert len(globaldb_get_general_cache_values(cursor, key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, 'pool-address-1'])) == 0  # noqa: E501
         assert len(globaldb_get_general_cache_values(cursor, key_parts=[GeneralCacheType.CURVE_GAUGE_ADDRESS, 'pool-address-1'])) == 0  # noqa: E501
+
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        known_addresses = db_addressbook.get_addressbook_entries(cursor=cursor)
+    if use_curve_api:
+        assert known_addresses == EXPECTED_ADDRESBOOK_ENTRIES_FROM_API
+    else:
+        assert known_addresses == EXPECTED_ADDRESBOOK_ENTRIES_FROM_CHAIN

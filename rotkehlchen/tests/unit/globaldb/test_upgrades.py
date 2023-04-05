@@ -7,7 +7,6 @@ import pytest
 from freezegun import freeze_time
 
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.globaldb.cache import (
@@ -365,7 +364,7 @@ def test_upgrade_v4_v5(globaldb):
             cursor=cursor,
             key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
         )
-        assert ts_now() - last_queried_ts == ETH_PROTOCOLS_CACHE_REFRESH + 1
+        assert last_queried_ts == Timestamp(0)
         pool_tokens_in_global_db = globaldb_get_general_cache_keys_and_values_like(
             cursor=cursor,
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS],

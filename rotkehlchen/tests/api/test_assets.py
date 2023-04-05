@@ -306,7 +306,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert 'entries_total' in result
     assert 'entries_limit' in result
     for entry in result['entries']:
-        assert 'Uniswap' in entry['name']
+        assert 'uniswap' in entry['name'].lower()
         if entry['type'] == AssetType.EVM_TOKEN.serialize():
             assert entry['evm_chain'] in [x.to_name() for x in ChainID]
     assert_asset_result_order(data=result['entries'], is_ascending=False, order_field='symbol')
@@ -417,7 +417,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert 50 >= len(result['entries']) > 2
     for entry in result['entries']:
-        assert 'Uniswap' in entry['name']
+        assert 'uniswap' in entry['name'].casefold()
         assert 'UNI' in entry['symbol']
         if entry['type'] == AssetType.EVM_TOKEN.serialize():
             assert entry['evm_chain'] in [x.to_name() for x in ChainID]
