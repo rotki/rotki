@@ -302,6 +302,7 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
             TransactionNotFound,
             BlockchainQueryError,
             KeyError,
+            ValueError,
         ):
             tx = None
 

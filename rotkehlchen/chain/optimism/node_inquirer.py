@@ -76,6 +76,7 @@ class OptimismInquirer(EvmNodeInquirer):
             TransactionNotFound,
             BlockchainQueryError,
             KeyError,
+            ValueError,
         ):
             tx = None
 
