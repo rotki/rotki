@@ -8,7 +8,6 @@ import {
   type ExchangeSavingsRequestPayload,
   SupportedExchange
 } from '@/types/exchanges';
-import { useEmptyFilter } from '@/composables/filters';
 import type Vue from 'vue';
 
 vi.mock('vue-router/composables', () => ({
@@ -85,19 +84,13 @@ describe('composables::history/filter-paginate', () => {
         ExchangeSavingsRequestPayload,
         ExchangeSavingsEvent,
         ExchangeSavingsCollection
-      >(
-        exchange,
-        mainPage,
-        useEmptyFilter,
-        fetchExchangeSavings,
-        defaultCollectionState,
-        {
-          extraParams,
-          defaultSortBy: {
-            pageParamsAsc: [true]
-          }
+      >(exchange, mainPage, useEmptyFilter, fetchExchangeSavings, {
+        defaultCollection: defaultCollectionState,
+        extraParams,
+        defaultSortBy: {
+          pageParamsAsc: [true]
         }
-      );
+      });
 
       expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
@@ -127,19 +120,13 @@ describe('composables::history/filter-paginate', () => {
           ExchangeSavingsRequestPayload,
           ExchangeSavingsEvent,
           ExchangeSavingsCollection
-        >(
-          exchange,
-          mainPage,
-          useEmptyFilter,
-          fetchExchangeSavings,
-          defaultCollectionState,
-          {
-            extraParams,
-            defaultSortBy: {
-              pageParamsAsc: [true]
-            }
+        >(exchange, mainPage, useEmptyFilter, fetchExchangeSavings, {
+          defaultCollection: defaultCollectionState,
+          extraParams,
+          defaultSortBy: {
+            pageParamsAsc: [true]
           }
-        );
+        });
 
       expect(get(isLoading)).toBe(false);
 
@@ -159,19 +146,13 @@ describe('composables::history/filter-paginate', () => {
         ExchangeSavingsRequestPayload,
         ExchangeSavingsEvent,
         ExchangeSavingsCollection
-      >(
-        exchange,
-        mainPage,
-        useEmptyFilter,
-        fetchExchangeSavings,
-        defaultCollectionState,
-        {
-          extraParams,
-          defaultSortBy: {
-            pageParamsAsc: [true]
-          }
+      >(exchange, mainPage, useEmptyFilter, fetchExchangeSavings, {
+        defaultCollection: defaultCollectionState,
+        extraParams,
+        defaultSortBy: {
+          pageParamsAsc: [true]
         }
-      );
+      });
 
       await router.push({
         query

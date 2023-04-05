@@ -1,7 +1,6 @@
 import { type MaybeRef } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { type Ref } from 'vue';
-import { defaultCollectionState } from '@/utils/collection';
 import { type Collection } from '@/types/collection';
 import { type LocationQuery } from '@/types/route';
 import type { Filters, Matcher } from '@/composables/filters/trades';
@@ -84,17 +83,10 @@ describe('composables::history/filter-paginate', () => {
         Collection<TradeEntry>,
         Filters,
         Matcher
-      >(
-        locationOverview,
-        mainPage,
-        useTradeFilters,
-        fetchTrades,
-        defaultCollectionState,
-        {
-          onUpdateFilters,
-          extraParams
-        }
-      );
+      >(locationOverview, mainPage, useTradeFilters, fetchTrades, {
+        onUpdateFilters,
+        extraParams
+      });
 
       expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
@@ -121,17 +113,10 @@ describe('composables::history/filter-paginate', () => {
           Collection<TradeEntry>,
           Filters,
           Matcher
-        >(
-          locationOverview,
-          mainPage,
-          useTradeFilters,
-          fetchTrades,
-          defaultCollectionState,
-          {
-            onUpdateFilters,
-            extraParams
-          }
-        );
+        >(locationOverview, mainPage, useTradeFilters, fetchTrades, {
+          onUpdateFilters,
+          extraParams
+        });
 
       expect(get(isLoading)).toBe(false);
 
@@ -153,17 +138,10 @@ describe('composables::history/filter-paginate', () => {
         Collection<TradeEntry>,
         Filters,
         Matcher
-      >(
-        locationOverview,
-        mainPage,
-        useTradeFilters,
-        fetchTrades,
-        defaultCollectionState,
-        {
-          onUpdateFilters,
-          extraParams
-        }
-      );
+      >(locationOverview, mainPage, useTradeFilters, fetchTrades, {
+        onUpdateFilters,
+        extraParams
+      });
 
       await router.push({
         query
