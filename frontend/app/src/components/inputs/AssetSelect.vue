@@ -106,7 +106,7 @@ const searchAssets = async (
   }
 };
 
-const pending: Record<string, AbortController> = {};
+let pending: AbortController | null = null;
 
 watch(search, search => {
   if (search) {
@@ -118,18 +118,18 @@ watch(search, search => {
 
 watchThrottled(
   search,
-  async (search, old) => {
+  async search => {
     if (!search) {
       return;
     }
-    if (pending[old]) {
-      pending[old].abort();
-      delete pending[old];
+    if (pending) {
+      pending.abort();
+      pending = null;
     }
     set(error, '');
     set(loading, true);
     const controller = new AbortController();
-    pending[search] = controller;
+    pending = controller;
     await searchAssets(search, controller.signal);
     set(loading, false);
   },
