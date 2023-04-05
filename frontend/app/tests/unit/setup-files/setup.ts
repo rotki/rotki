@@ -22,7 +22,9 @@ const server = setupServer(
 beforeAll(() => {
   Vue.use(Vuetify);
   Vue.use(PiniaVuePlugin);
-  server.listen();
+  server.listen({
+    onUnhandledRequest: 'bypass'
+  });
 
   vi.mock('@/composables/api/assets/info', () => ({
     useAssetInfoApi: vi.fn().mockReturnValue({
