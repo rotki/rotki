@@ -4,36 +4,30 @@ import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import {
   type CustomAsset,
-  type CustomAssetPagination,
-  type CustomAssetPaginationOptions,
-  defaultCustomAssetPagination
+  type CustomAssetRequestPayload
 } from '@/types/asset';
-import { convertPagination } from '@/types/pagination';
+import {
+  type Filters,
+  type Matcher
+} from '@/composables/filters/custom-assets';
 
-const props = defineProps({
+defineProps({
   assets: { required: true, type: Array as PropType<CustomAsset[]> },
   loading: { required: false, type: Boolean, default: false },
   serverItemLength: { required: true, type: Number },
-  types: { required: true, type: Array as PropType<string[]> }
+  matchers: { required: true, type: Array as PropType<Matcher[]> },
+  filters: { required: true, type: Object as PropType<Filters> }
 });
-
-const { types } = toRefs(props);
 
 const emit = defineEmits<{
   (e: 'add'): void;
   (e: 'edit', asset: CustomAsset): void;
   (e: 'delete-asset', asset: CustomAsset): void;
-  (e: 'update:pagination', pagination: CustomAssetPagination): void;
+  (e: 'update:pagination', pagination: CustomAssetRequestPayload): void;
+  (e: 'update:filters', filters: Filters): void;
 }>();
 
-const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
-const { filters, matchers, updateFilter } = useCustomAssetFilter(types);
-
 const expanded: Ref<SupportedAsset[]> = ref([]);
-
-const options: Ref<CustomAssetPaginationOptions> = ref(
-  defaultCustomAssetPagination(get(itemsPerPage))
-);
 
 const { tc } = useI18n();
 
@@ -64,6 +58,9 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 const add = () => emit('add');
 const edit = (asset: CustomAsset) => emit('edit', asset);
 const deleteAsset = (asset: CustomAsset) => emit('delete-asset', asset);
+const updatePagination = (pagination: CustomAssetRequestPayload) =>
+  emit('update:pagination', pagination);
+const updateFilter = (filters: Filters) => emit('update:filters', filters);
 
 const getAsset = (item: CustomAsset) => ({
   name: item.name,
@@ -71,25 +68,6 @@ const getAsset = (item: CustomAsset) => ({
   identifier: item.identifier,
   isCustomAsset: true,
   customAssetType: item.customAssetType
-});
-
-const updatePaginationHandler = (
-  updateOptions: CustomAssetPaginationOptions
-) => {
-  set(options, updateOptions);
-};
-
-watch([options, filters] as const, ([options, filters]) => {
-  const apiPagination = convertPagination<CustomAsset>(
-    options,
-    'name'
-  ) as CustomAssetPagination;
-
-  emit('update:pagination', {
-    ...apiPagination,
-    name: filters.name as string | undefined,
-    customAssetType: filters.custom_asset_type as string | undefined
-  });
 });
 </script>
 
@@ -137,7 +115,7 @@ watch([options, filters] as const, ([options, filters]) => {
       class="custom-assets-table"
       :sort-desc="false"
       :server-items-length="serverItemLength"
-      @update:options="updatePaginationHandler($event)"
+      @update:options="updatePagination"
     >
       <template #item.name="{ item }">
         <asset-details-base
