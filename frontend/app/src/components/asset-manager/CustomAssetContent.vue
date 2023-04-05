@@ -121,7 +121,7 @@ const {
 >(null, mainPage, () => useCustomAssetFilter(types), queryAllCustomAssets, {
   defaultSortBy: {
     pageParams: ['name'],
-    pageParamsAsc: [true]
+    pageParamsAsc: [false]
   }
 });
 
