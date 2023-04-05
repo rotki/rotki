@@ -49,7 +49,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="mt-12">
+  <div class="mt-8">
     <div class="text-h6">
       {{ tc('frontend_settings.subtitle.refresh') }}
     </div>

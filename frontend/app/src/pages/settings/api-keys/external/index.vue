@@ -278,7 +278,7 @@ onMounted(async () => {
             <external-link
               url="https://docs.opensea.io/reference/request-an-api-key"
             >
-              {{ tc('external_services.opensea.here') }}
+              {{ tc('common.here') }}
             </external-link>
           </template>
         </i18n>

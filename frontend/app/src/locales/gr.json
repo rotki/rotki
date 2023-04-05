@@ -1286,6 +1286,7 @@
     "details": "Details",
     "event": "Event",
     "events": "Events",
+    "here": "here",
     "ignored_in_accounting": "Ignored in Accounting",
     "location": "Location",
     "name": "Name",
@@ -1893,7 +1894,6 @@
     "opensea": {
       "delete_tooltip": "Delete your OpenSea API key",
       "description": "Used to query NFT information and balances from OpenSea.",
-      "here": "here",
       "hint": "Enter your OpenSea API key",
       "label": "API Key",
       "link": "You can apply for an API key {link}",
@@ -2006,8 +2006,6 @@
       "abbreviate_number": "Use abbreviations for large numbers.",
       "animations": "Reduce animations effect. This setting will improve app performance. NOTE: You will see animations that are not smooth, which aims to reduce the use of system resources.",
       "enable_alias_names": "Show alias name for blockchain addresses.",
-      "include_nfts": "Include NFTs in the graphs and total networth",
-      "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs",
       "query_period": "Query period in seconds",
       "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
       "refresh": "Set the automatic refresh period",
@@ -2022,7 +2020,6 @@
       "abbreviate_number": "For example, 1.234.567 will appear as 1.23 M when this setting is enabled",
       "alias_names": "Alias name for addresses",
       "graph_basis": "Graph basis",
-      "include_nfts": "Include NFTs in graphs and total amounts",
       "scramble_multiplier": "Multiplier number used when scrambling balances. This will affects amount and fiat value.",
       "query": "Periodic status query",
       "refresh": "Automatic balance refresh",
@@ -2104,6 +2101,16 @@
       "version_update_check_enabled": "Enabled"
     },
     "language_contribution_tooltip": "This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up. Click here for more information.",
+    "nft_setting": {
+      "title": "NFT setting",
+      "label": {
+        "include_nfts": "Include NFTs in the graphs and total networth",
+        "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs"
+      },
+      "subtitle": {
+        "include_nfts": "Include NFTs in graphs and total amounts"
+      }
+    },
     "rpc_node_setting": {
       "title": "RPC node setting"
     },
@@ -2365,7 +2372,6 @@
       "missing": "* Importing addresses from MetaMask is disabled. MetaMask could not be detected.",
       "missing_tooltip": {
         "copy_url": "copy this page URL",
-        "here": "here",
         "metamask_is_not_enabled": "The MetaMask is not enabled yet. You can enable it in menu Extension / Add Ons, depends on your browser.",
         "metamask_is_not_installed": "This browser doesn't have MetaMask installed. You can download MetaMask {link}.",
         "metamask_is_not_supported_by_browser": "Make sure you open this page with supported browser listed {link}. If not, please {copy} and open it manually on supported browser.",

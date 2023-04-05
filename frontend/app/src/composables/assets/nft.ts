@@ -1,13 +1,19 @@
 import { type ActionResult } from '@rotki/common/lib/data';
+import { getDomain } from '@/utils/url';
 import { NftResponse } from '@/types/nfts';
 import { TaskType } from '@/types/task-type';
 import { type TaskMeta } from '@/types/task';
 
-export const useNft = () => {
+export const useNfts = () => {
   const { awaitTask } = useTaskStore();
   const { t } = useI18n();
 
   const assetsApi = useAssetsApi();
+
+  const {
+    renderAllNftImages: renderAll,
+    whitelistedDomainsForNftImages: whitelist
+  } = storeToRefs(useFrontendSettingsStore());
 
   const fetchNfts = async (
     ignoreCache: boolean
@@ -34,7 +40,17 @@ export const useNft = () => {
     }
   };
 
+  const shouldRenderImage = (url: string) => {
+    if (get(renderAll)) {
+      return true;
+    }
+
+    const domain = getDomain(url);
+    return get(whitelist).includes(domain);
+  };
+
   return {
-    fetchNfts
+    fetchNfts,
+    shouldRenderImage
   };
 };

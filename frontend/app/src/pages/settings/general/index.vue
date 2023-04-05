@@ -43,8 +43,10 @@ const { t } = useI18n();
 
       <rounding-settings />
     </setting-category>
+
     <rpc-settings />
     <price-oracle-settings />
+    <nft-settings />
     <frontend-settings />
   </div>
 </template>

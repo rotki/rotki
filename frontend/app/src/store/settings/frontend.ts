@@ -93,6 +93,12 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const nftsInNetValue: ComputedRef<boolean> = computed(
     () => settings.nftsInNetValue
   );
+  const renderAllNftImages: ComputedRef<boolean> = computed(
+    () => settings.renderAllNftImages
+  );
+  const whitelistedDomainsForNftImages: ComputedRef<string[]> = computed(
+    () => settings.whitelistedDomainsForNftImages
+  );
   const dashboardTablesVisibleColumns: ComputedRef<DashboardTablesVisibleColumns> =
     computed(() => settings.dashboardTablesVisibleColumns);
   const dateInputFormat: ComputedRef<DateFormat> = computed(
@@ -189,6 +195,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     graphZeroBased,
     showGraphRangeSelector,
     nftsInNetValue,
+    renderAllNftImages,
+    whitelistedDomainsForNftImages,
     dashboardTablesVisibleColumns,
     dateInputFormat,
     versionUpdateCheckFrequency,

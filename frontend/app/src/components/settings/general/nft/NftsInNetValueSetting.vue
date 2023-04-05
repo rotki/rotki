@@ -20,8 +20,8 @@ const { t } = useI18n();
     <v-switch
       v-model="includeNfts"
       class="general-settings__fields__zero-base mb-4 mt-2"
-      :label="t('frontend_settings.label.include_nfts')"
-      :hint="t('frontend_settings.label.include_nfts_hint')"
+      :label="t('general_settings.nft_setting.label.include_nfts')"
+      :hint="t('general_settings.nft_setting.label.include_nfts_hint')"
       persistent-hint
       :success-messages="success"
       :error-messages="error"

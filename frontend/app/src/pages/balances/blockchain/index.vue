@@ -149,6 +149,13 @@ const busy: Busy = {
 const threshold = [0];
 
 const { createAccount, editAccount } = useAccountDialog();
+
+const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
+  () =>
+    get(ethAccounts).length > 0 ||
+    get(optimismAccounts).length > 0 ||
+    get(avaxAccounts).length > 0
+);
 </script>
 
 <template>
@@ -189,7 +196,7 @@ const { createAccount, editAccount } = useAccountDialog();
     </card>
 
     <div class="mt-8">
-      <detect-evm-accounts />
+      <detect-evm-accounts v-if="showDetectEvmAccountsButton" />
     </div>
 
     <account-balances

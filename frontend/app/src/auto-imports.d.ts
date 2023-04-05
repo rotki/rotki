@@ -348,8 +348,8 @@ declare global {
   const useNavigatorLanguage: typeof import('@vueuse/core')['useNavigatorLanguage']
   const useNetwork: typeof import('@vueuse/core')['useNetwork']
   const useNewlyDetectedTokens: typeof import('./composables/assets/newly-detected-tokens')['useNewlyDetectedTokens']
-  const useNft: typeof import('./composables/nft')['useNft']
   const useNftBalancesApi: typeof import('./composables/api/balances/nft')['useNftBalancesApi']
+  const useNfts: typeof import('./composables/assets/nft')['useNfts']
   const useNonFungibleBalancesStore: typeof import('./store/balances/non-fungible')['useNonFungibleBalancesStore']
   const useNotificationsStore: typeof import('./store/notifications/index')['useNotificationsStore']
   const useNow: typeof import('@vueuse/core')['useNow']
@@ -861,8 +861,8 @@ declare module 'vue' {
     readonly useNavigatorLanguage: UnwrapRef<typeof import('@vueuse/core')['useNavigatorLanguage']>
     readonly useNetwork: UnwrapRef<typeof import('@vueuse/core')['useNetwork']>
     readonly useNewlyDetectedTokens: UnwrapRef<typeof import('./composables/assets/newly-detected-tokens')['useNewlyDetectedTokens']>
-    readonly useNft: UnwrapRef<typeof import('./composables/nft')['useNft']>
     readonly useNftBalancesApi: UnwrapRef<typeof import('./composables/api/balances/nft')['useNftBalancesApi']>
+    readonly useNfts: UnwrapRef<typeof import('./composables/assets/nft')['useNfts']>
     readonly useNonFungibleBalancesStore: UnwrapRef<typeof import('./store/balances/non-fungible')['useNonFungibleBalancesStore']>
     readonly useNotificationsStore: UnwrapRef<typeof import('./store/notifications/index')['useNotificationsStore']>
     readonly useNow: UnwrapRef<typeof import('@vueuse/core')['useNow']>

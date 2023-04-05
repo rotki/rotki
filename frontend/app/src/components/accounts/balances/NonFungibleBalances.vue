@@ -245,12 +245,15 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
       />
     </template>
     <template #details>
-      <active-modules :modules="modules" class="mr-2" />
-      <refresh-button
-        :loading="loading"
-        :tooltip="tc('non_fungible_balances.refresh')"
-        @refresh="refreshNonFungibleBalances(true)"
-      />
+      <div class="d-flex">
+        <nft-image-rendering-setting-menu />
+        <active-modules :modules="modules" class="mx-2" />
+        <refresh-button
+          :loading="loading"
+          :tooltip="tc('non_fungible_balances.refresh')"
+          @refresh="refreshNonFungibleBalances(true)"
+        />
+      </div>
     </template>
 
     <collection-handler :collection="balances" @set-page="setPage">

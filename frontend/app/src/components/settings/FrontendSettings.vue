@@ -41,13 +41,6 @@ const { t } = useI18n();
       <show-graph-range-selector-setting />
     </div>
 
-    <div class="mt-4">
-      <div class="text-h6">
-        {{ t('frontend_settings.subtitle.include_nfts') }}
-      </div>
-      <nfts-in-net-value-setting />
-    </div>
-
     <refresh-setting />
     <query-period-setting />
     <explorers />
