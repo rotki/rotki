@@ -1,5 +1,6 @@
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef, type Ref } from 'vue';
+import { z } from 'zod';
 import { type MatchedKeyword, type SearchMatcher } from '@/types/filtering';
 
 enum CustomAssetFilterKeys {
@@ -12,8 +13,11 @@ enum CustomAssetFilterValueKeys {
   CUSTOM_ASSET_TYPE = 'custom_asset_type'
 }
 
-type Matcher = SearchMatcher<CustomAssetFilterKeys, CustomAssetFilterValueKeys>;
-type Filters = MatchedKeyword<CustomAssetFilterValueKeys>;
+export type Matcher = SearchMatcher<
+  CustomAssetFilterKeys,
+  CustomAssetFilterValueKeys
+>;
+export type Filters = MatchedKeyword<CustomAssetFilterValueKeys>;
 
 export const useCustomAssetFilter = (suggestions: MaybeRef<string[]>) => {
   const filters: Ref<Filters> = ref({});
@@ -45,9 +49,16 @@ export const useCustomAssetFilter = (suggestions: MaybeRef<string[]>) => {
     set(filters, newFilters);
   };
 
+  const OptionalString = z.string().optional();
+  const RouteFilterSchema = z.object({
+    [CustomAssetFilterValueKeys.NAME]: OptionalString,
+    [CustomAssetFilterValueKeys.CUSTOM_ASSET_TYPE]: OptionalString
+  });
+
   return {
     filters,
     matchers,
-    updateFilter
+    updateFilter,
+    RouteFilterSchema
   };
 };

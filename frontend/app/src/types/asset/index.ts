@@ -4,6 +4,7 @@ import {
   SupportedAsset
 } from '@rotki/common/lib/data';
 import { z } from 'zod';
+import { type PaginationRequestPayload } from '@/types/common';
 import { type ApiPagination, type TablePagination } from '@/types/pagination';
 import { CollectionCommonFields } from '@/types/collection';
 
@@ -102,7 +103,8 @@ export const CustomAssets = CollectionCommonFields.extend({
 });
 export type CustomAssets = z.infer<typeof CustomAssets>;
 
-export interface CustomAssetPagination extends ApiPagination<CustomAsset> {
+export interface CustomAssetRequestPayload
+  extends PaginationRequestPayload<CustomAsset> {
   name?: string;
   identifier?: string;
   customAssetType?: string;

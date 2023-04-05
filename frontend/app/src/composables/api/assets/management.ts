@@ -1,5 +1,8 @@
 import { type ActionResult, type SupportedAsset } from '@rotki/common/lib/data';
 import { OwnedAssets } from '@rotki/common/lib/statistics';
+import { type MaybeRef } from '@vueuse/core';
+import { type Collection } from '@/types/collection';
+import { mapCollectionResponse } from '@/utils/collection';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -12,7 +15,7 @@ import {
   type AssetIdResponse,
   type AssetPagination,
   type CustomAsset,
-  type CustomAssetPagination,
+  type CustomAssetRequestPayload,
   CustomAssets,
   SupportedAssets
 } from '@/types/asset';
@@ -33,17 +36,17 @@ export const useAssetManagementApi = () => {
   };
 
   const queryAllCustomAssets = async (
-    pagination: CustomAssetPagination
-  ): Promise<CustomAssets> => {
+    pagination: MaybeRef<CustomAssetRequestPayload>
+  ): Promise<Collection<CustomAsset>> => {
     const response = await api.instance.post<ActionResult<CustomAssets>>(
       '/assets/custom',
-      snakeCaseTransformer(pagination),
+      snakeCaseTransformer(get(pagination)),
       {
         validateStatus: validWithSessionAndExternalService
       }
     );
 
-    return CustomAssets.parse(handleResponse(response));
+    return mapCollectionResponse(CustomAssets.parse(handleResponse(response)));
   };
 
   const queryOwnedAssets = async (): Promise<string[]> => {
