@@ -2,7 +2,6 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { TransactionEventProtocol } from '@rotki/common/lib/history/tx-events';
 import flushPromises from 'flush-promises';
 import { type ComputedRef, type Ref } from 'vue';
-import { defaultCollectionState } from '@/utils/collection';
 import { RouterAccountsSchema } from '@/types/route';
 import type { Filters, Matcher } from '@/composables/filters/transactions';
 import type { Collection } from '@/types/collection';
@@ -138,7 +137,6 @@ describe('composables::history/filter-paginate', () => {
         mainPage,
         () => useTransactionFilter(get(protocols).length > 0),
         fetchTransactions,
-        defaultCollectionState,
         {
           onUpdateFilters,
           extraParams,
@@ -176,7 +174,6 @@ describe('composables::history/filter-paginate', () => {
           mainPage,
           () => useTransactionFilter(get(protocols).length > 0),
           fetchTransactions,
-          defaultCollectionState,
           {
             onUpdateFilters,
             extraParams,
@@ -209,7 +206,6 @@ describe('composables::history/filter-paginate', () => {
         mainPage,
         () => useTransactionFilter(get(protocols).length > 0),
         fetchTransactions,
-        defaultCollectionState,
         {
           onUpdateFilters,
           extraParams,
@@ -263,7 +259,6 @@ describe('composables::history/filter-paginate', () => {
         mainPage,
         () => useTransactionFilter(get(protocols).length > 0),
         fetchTransactions,
-        defaultCollectionState,
         {
           onUpdateFilters,
           extraParams,
