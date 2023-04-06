@@ -13,7 +13,7 @@ import {
 } from '@/services/utils';
 import {
   type AssetIdResponse,
-  type AssetPagination,
+  type AssetRequestPayload,
   type CustomAsset,
   type CustomAssetRequestPayload,
   CustomAssets,
@@ -22,17 +22,19 @@ import {
 
 export const useAssetManagementApi = () => {
   const queryAllAssets = async (
-    pagination: Partial<AssetPagination>
-  ): Promise<SupportedAssets> => {
+    pagination: MaybeRef<AssetRequestPayload>
+  ): Promise<Collection<SupportedAsset>> => {
     const response = await api.instance.post<ActionResult<SupportedAssets>>(
       '/assets/all',
-      snakeCaseTransformer(pagination),
+      snakeCaseTransformer(get(pagination)),
       {
         validateStatus: validWithSessionAndExternalService
       }
     );
 
-    return SupportedAssets.parse(handleResponse(response));
+    return mapCollectionResponse(
+      SupportedAssets.parse(handleResponse(response))
+    );
   };
 
   const queryAllCustomAssets = async (
