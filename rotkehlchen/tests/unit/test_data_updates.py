@@ -16,59 +16,85 @@ ETHEREUM_SPAM_ASSET_ADDRESS = make_evm_address()
 OPTIMISM_SPAM_ASSET_ADDRESS = make_evm_address()
 
 
-def mock_github_data_response(url, timeout):  # pylint: disable=unused-argument
-    if 'info' in url:
-        return MockResponse(200, '{"spam_assets":{"latest":1},"rpc_nodes":{"latest":1}}')
-    if 'spam_assets/v' in url:
-        data = {
-            'spam_assets': [
-                {
-                    'address': ETHEREUM_SPAM_ASSET_ADDRESS,
-                    'name': '$ ClaimUniLP.com',
-                    'symbol': '$ ClaimUniLP.com - Visit to claim',
-                    'decimals': 18,
+ABI_DATA = [
+    {'id': 1, 'name': 'ABI1', 'value': '[{"inputs":[{"internalType":"address","name":"_factory","type":"address"}]'},  # noqa: E501
+    {'id': 2, 'name': 'ABI2', 'value': '[{"name":"BasePoolAdded","inputs":[{"name":"base_pool","type":"address","indexed":false}],"anonymous":false,"type":"event"}]'},  # noqa: E501
+]
+CONTRACT_DATA = [
+    {'address': '0x4bBa290826C253BD854121346c370a9886d1bC26', 'chain_id': 1, 'name': 'CONTRACT1_ETH', 'abi': 1, 'deployed_block': 1000},  # noqa: E501
+    {'address': '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'chain_id': 10, 'name': 'CONTRACT1_OP', 'abi': 1, 'deployed_block': 20},  # noqa: E501
+    {'address': '0x19e4057A38a730be37c4DA690b103267AAE1d75d', 'chain_id': 1, 'name': None, 'abi': 2, 'deployed_block': None},  # noqa: E501
+]
+
+
+def make_mock_github_data_response(target: UpdateType):
+    """Creates a mocking function for github requests."""
+    def mock_github_data_response(url, timeout):  # pylint: disable=unused-argument
+        if 'info' in url:
+            data = {
+                'spam_assets': {'latest': 1 if target == UpdateType.SPAM_ASSETS else 0},
+                'rpc_nodes': {'latest': 1 if target == UpdateType.RPC_NODES else 0},
+                'contracts': {'latest': 1 if target == UpdateType.CONTRACTS else 0},
+            }
+        elif 'spam_assets/v' in url:
+            data = {
+                'spam_assets': [
+                    {
+                        'address': ETHEREUM_SPAM_ASSET_ADDRESS,
+                        'name': '$ ClaimUniLP.com',
+                        'symbol': '$ ClaimUniLP.com - Visit to claim',
+                        'decimals': 18,
+                    },
+                    {
+                        'address': OPTIMISM_SPAM_ASSET_ADDRESS,
+                        'name': 'spooky-v3.xyz',
+                        'symbol': 'Visit https://spooky-v3.xyz and claim rewards',
+                        'decimals': 18,
+                        'chain': 'optimism',
+                    },
+                ],
+            }
+        elif 'rpc_nodes/v' in url:
+            data = {
+                'rpc_nodes': [
+                    {
+                        'name': 'pocket network',
+                        'endpoint': 'https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79',  # noqa: E501
+                        'weight': 0.50,
+                        'owned': False,
+                        'active': True,
+                        'blockchain': 'ETH',
+                    },
+                    {
+                        'name': 'alchemy free',
+                        'endpoint': 'https://mainnet.optimism.io',
+                        'weight': 0.50,
+                        'owned': False,
+                        'active': True,
+                        'blockchain': 'OPTIMISM',
+                    },
+                ],
+            }
+        elif 'contracts/v' in url:
+            data = {
+                'contracts': {
+                    'abis_data': ABI_DATA,
+                    'contracts_data': CONTRACT_DATA,
                 },
-                {
-                    'address': OPTIMISM_SPAM_ASSET_ADDRESS,
-                    'name': 'spooky-v3.xyz',
-                    'symbol': 'Visit https://spooky-v3.xyz and claim rewards',
-                    'decimals': 18,
-                    'chain': 'optimism',
-                },
-            ],
-        }
-        return MockResponse(200, json.dumps(data))
-    if 'rpc_nodes/v' in url:
-        data = {
-            'rpc_nodes': [
-                {
-                    'name': 'pocket network',
-                    'endpoint': 'https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79',  # noqa: E501
-                    'weight': 0.50,
-                    'owned': False,
-                    'active': True,
-                    'blockchain': 'ETH',
-                },
-                {
-                    'name': 'alchemy free',
-                    'endpoint': 'https://mainnet.optimism.io',
-                    'weight': 0.50,
-                    'owned': False,
-                    'active': True,
-                    'blockchain': 'OPTIMISM',
-                },
-            ],
-        }
+            }
+        else:
+            raise AssertionError(f'Unexpected url {url} called')
+
         return MockResponse(200, json.dumps(data))
 
-    raise AssertionError(f'Unexpected url {url} called')
+    return mock_github_data_response
 
 
 def mock_github_data_response_old_update(url, timeout):  # pylint: disable=unused-argument
     if 'info' not in url:
         raise AssertionError(f'Unexpected url {url} called')
 
-    return MockResponse(200, '{"spam_assets":{"latest":1}, "rpc_nodes": {"latest":1}}')
+    return MockResponse(200, '{"spam_assets":{"latest":1}, "rpc_nodes": {"latest":1}, "contracts": {"latest":1}}')  # noqa: E501
 
 
 @pytest.fixture(name='data_updater')
@@ -95,7 +121,7 @@ def test_update_spam_assets(data_updater: RotkiDataUpdater) -> None:
         EvmToken(op_spam_token_id)
 
     # set a high version of the globaldb to avoid conflicts with future changes
-    with patch('requests.get', wraps=mock_github_data_response):
+    with patch('requests.get', wraps=make_mock_github_data_response(UpdateType.SPAM_ASSETS)):
         data_updater.check_for_updates()
 
     ethereum_token = EvmToken(eth_spam_token_id)
@@ -120,6 +146,7 @@ def test_no_update_performed(data_updater: RotkiDataUpdater) -> None:
             [
                 (UpdateType.SPAM_ASSETS.serialize(), 999),
                 (UpdateType.RPC_NODES.serialize(), 999),
+                (UpdateType.CONTRACTS.serialize(), 999),
             ],
         )
 
@@ -127,10 +154,12 @@ def test_no_update_performed(data_updater: RotkiDataUpdater) -> None:
         patch('requests.get', wraps=mock_github_data_response_old_update),
         patch.object(data_updater, 'update_spam_assets') as spam_assets,
         patch.object(data_updater, 'update_rpc_nodes') as rpc_nodes,
+        patch.object(data_updater, 'update_contracts') as contracts,
     ):
         data_updater.check_for_updates()
         assert spam_assets.call_count == 0
         assert rpc_nodes.call_count == 0
+        assert contracts.call_count == 0
 
 
 def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
@@ -154,7 +183,7 @@ def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
         write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes')
         assert write_cursor.fetchone()[0] == 11
 
-    with patch('requests.get', wraps=mock_github_data_response):
+    with patch('requests.get', wraps=make_mock_github_data_response(UpdateType.RPC_NODES)):
         data_updater.check_for_updates()
 
     # check the db state after updating
@@ -172,3 +201,44 @@ def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
         (11, *custom_node_tuple),
         (12, 'pocket network', 'https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79', 0, 1, '0.5', 'ETH'),  # noqa: E501
     ]
+
+
+def test_update_contracts(data_updater: RotkiDataUpdater) -> None:
+    """Tests functionality for remotely updating contracts"""
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        # Check state before the update
+        cursor.execute('SELECT MAX(id) FROM contract_abi')
+        initial_abis = cursor.execute('SELECT * FROM contract_abi').fetchall()
+        assert len(initial_abis) > 0, 'There should be some abis in the db'
+        initial_contracts = cursor.execute('SELECT * FROM contract_data').fetchall()
+        assert len(initial_contracts) > 0, 'There should be some contracts in the db'
+
+    with patch('requests.get', wraps=make_mock_github_data_response(UpdateType.CONTRACTS)):  # noqa: E501
+        data_updater.check_for_updates()  # apply the update
+
+    remote_id_to_local_id = {}
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        for entry in ABI_DATA:
+            reduced_abi = json.dumps(entry['value'], separators=(',', ':'))
+            cursor.execute(
+                'SELECT id FROM contract_abi WHERE name=? AND value=?',
+                (entry['name'], reduced_abi),
+            )
+            local_id = cursor.fetchone()
+            assert local_id is not None
+            remote_id_to_local_id[entry['id']] = local_id[0]
+
+    expected_new_contracts = []
+    for contract_data in CONTRACT_DATA:
+        expected_new_contracts.append((
+            contract_data['address'],
+            contract_data['chain_id'],
+            contract_data['name'],
+            remote_id_to_local_id[contract_data['abi']],
+            contract_data['deployed_block'],
+        ))
+
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        # Check that the new abis and contracts were added and the old ones were not modified
+        contracts_after_update = cursor.execute('SELECT * FROM contract_data')
+        assert set(contracts_after_update) == set(initial_contracts) | set(expected_new_contracts)
