@@ -345,10 +345,15 @@ def _populate_multiasset_mappings(cursor: 'DBCursor', root_dir: Path) -> None:
 
 
 def _upgrade_address_book_table(cursor: 'DBCursor') -> None:
-    """Upgrades the address book table by making the blockchain column optional"""
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS address_book_new (
+    """Upgrades the address book table if it exists by making the blockchain column optional"""
+    cursor.execute('SELECT COUNT(*) from sqlite_master WHERE type="table" AND name="address_book"')
+    table_exists = cursor.fetchone()[0] == 1
+    table_creation = 'address_book'
+    if table_exists:
+        table_creation = 'address_book_new'
+    cursor.execute(  # create temp table if exists and final if not
+        f"""
+        CREATE TABLE IF NOT EXISTS {table_creation} (
             address TEXT NOT NULL,
             blockchain TEXT,
             name TEXT NOT NULL,
@@ -356,9 +361,11 @@ def _upgrade_address_book_table(cursor: 'DBCursor') -> None:
         );
         """,
     )
-    cursor.execute('INSERT INTO address_book_new SELECT address, blockchain, name FROM address_book')  # noqa: E501
-    cursor.execute('DROP TABLE address_book')
-    cursor.execute('ALTER TABLE address_book_new RENAME TO address_book;')
+
+    if table_exists:
+        cursor.execute('INSERT INTO address_book_new SELECT address, blockchain, name FROM address_book')  # noqa: E501
+        cursor.execute('DROP TABLE address_book')
+        cursor.execute('ALTER TABLE address_book_new RENAME TO address_book;')
 
 
 def _update_yearn_v1_protocol(cursor: 'DBCursor') -> None:
