@@ -1,15 +1,11 @@
 <script setup lang="ts">
-const props = defineProps({
-  identifier: {
-    required: true,
-    type: String
-  },
-  refreshable: {
-    required: false,
-    type: Boolean,
-    default: false
-  }
-});
+const props = withDefaults(
+  defineProps<{
+    identifier: string;
+    refreshable?: boolean;
+  }>(),
+  { refreshable: false }
+);
 
 const { identifier } = toRefs(props);
 

@@ -2,12 +2,9 @@
 import { EvmTokenKind, type UnderlyingToken } from '@rotki/common/lib/data';
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, numeric, required } from '@vuelidate/validators';
-import { type PropType } from 'vue';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
 
-const props = defineProps({
-  value: { required: true, type: Array as PropType<UnderlyingToken[]> }
-});
+const props = defineProps<{ value: UnderlyingToken[] }>();
 
 const emit = defineEmits<{ (e: 'input', value: UnderlyingToken[]): void }>();
 const { tc } = useI18n();

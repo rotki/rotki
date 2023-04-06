@@ -1,17 +1,10 @@
 <script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
-import { type PropType } from 'vue';
 
-defineProps({
-  cols: {
-    required: true,
-    type: Number
-  },
-  asset: {
-    required: true,
-    type: Object as PropType<SupportedAsset>
-  }
-});
+defineProps<{
+  cols: number;
+  asset: SupportedAsset;
+}>();
 
 const { tc } = useI18n();
 </script>

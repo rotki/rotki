@@ -6,7 +6,7 @@ import {
   type UnderlyingToken
 } from '@rotki/common/lib/data';
 import omit from 'lodash/omit';
-import { type ComputedRef, type PropType, type Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import {
@@ -23,15 +23,16 @@ function time(t: string): number | undefined {
   return t ? convertToTimestamp(t) : undefined;
 }
 
-const props = defineProps({
-  value: { required: true, type: Boolean },
-  edit: {
-    required: false,
-    type: Object as PropType<SupportedAsset | null>,
-    default: null
-  },
-  saving: { required: false, type: Boolean, default: false }
-});
+const props = withDefaults(
+  defineProps<{
+    value: boolean;
+    edit?: SupportedAsset | null;
+    saving?: boolean;
+  }>(),
+  {
+    edit: null
+  }
+);
 
 const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
 

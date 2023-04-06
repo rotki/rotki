@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { type SupportedAsset } from '@rotki/common/lib/data';
-import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import {
   type CustomAsset,
@@ -11,13 +9,17 @@ import {
   type Matcher
 } from '@/composables/filters/custom-assets';
 
-defineProps({
-  assets: { required: true, type: Array as PropType<CustomAsset[]> },
-  loading: { required: false, type: Boolean, default: false },
-  serverItemLength: { required: true, type: Number },
-  matchers: { required: true, type: Array as PropType<Matcher[]> },
-  filters: { required: true, type: Object as PropType<Filters> }
-});
+withDefaults(
+  defineProps<{
+    assets: CustomAsset[];
+    expanded: CustomAsset[];
+    serverItemLength: number;
+    matchers: Matcher[];
+    filters: Filters;
+    loading?: boolean;
+  }>(),
+  { loading: false }
+);
 
 const emit = defineEmits<{
   (e: 'add'): void;

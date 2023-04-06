@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
 
-defineProps({
-  dropdown: {
-    required: false,
-    type: Boolean,
-    default: false
-  }
-});
+withDefaults(
+  defineProps<{
+    dropdown?: boolean;
+  }>(),
+  { dropdown: false }
+);
 
 type ResetType = 'soft' | 'hard';
 
