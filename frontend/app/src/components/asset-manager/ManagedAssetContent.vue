@@ -144,7 +144,7 @@ const {
   setOptions,
   setFilter,
   setPage
-} = useHistoryPaginationFilter<
+} = usePaginationFilters<
   SupportedAsset,
   AssetRequestPayload,
   SupportedAsset,

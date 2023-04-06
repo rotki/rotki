@@ -35,7 +35,7 @@ interface FilterSchema<F, M> {
  * @param {(payload: MaybeRef<U>) => Promise<Collection<V>>} fetchAssetData
  * @param {{onUpdateFilters?: (query: LocationQuery) => void, extraParams?: ComputedRef<LocationQuery>, customPageParams?: ComputedRef<Partial<U>>, defaultSortBy?: {pagination?: keyof T, pageParams?: (keyof T)[], pageParamsAsc?: boolean[]}}} options
  */
-export const useHistoryPaginationFilter = <
+export const usePaginationFilters = <
   T extends Object,
   U = PaginationRequestPayload<T>,
   V = T,

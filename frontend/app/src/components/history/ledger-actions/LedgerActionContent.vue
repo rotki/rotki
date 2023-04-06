@@ -100,7 +100,7 @@ const {
   setOptions,
   setFilter,
   fetchData
-} = useHistoryPaginationFilter<
+} = usePaginationFilters<
   LedgerAction,
   LedgerActionRequestPayload,
   LedgerActionEntry,

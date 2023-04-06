@@ -67,7 +67,7 @@ describe('composables::history/filter-paginate', () => {
         fetchData,
         applyRouteFilter,
         isLoading
-      } = useHistoryPaginationFilter<
+      } = usePaginationFilters<
         LedgerAction,
         LedgerActionRequestPayload,
         LedgerActionEntry,
@@ -93,20 +93,14 @@ describe('composables::history/filter-paginate', () => {
     });
 
     test('check the return types', async () => {
-      const { isLoading, state, filters, matchers } =
-        useHistoryPaginationFilter<
-          LedgerAction,
-          LedgerActionRequestPayload,
-          LedgerActionEntry,
-          Collection<LedgerActionEntry>,
-          Filters,
-          Matcher
-        >(
-          locationOverview,
-          mainPage,
-          useLedgerActionsFilter,
-          fetchLedgerActions
-        );
+      const { isLoading, state, filters, matchers } = usePaginationFilters<
+        LedgerAction,
+        LedgerActionRequestPayload,
+        LedgerActionEntry,
+        Collection<LedgerActionEntry>,
+        Filters,
+        Matcher
+      >(locationOverview, mainPage, useLedgerActionsFilter, fetchLedgerActions);
 
       expect(get(isLoading)).toBe(false);
 
@@ -121,7 +115,7 @@ describe('composables::history/filter-paginate', () => {
       const pushSpy = vi.spyOn(router, 'push');
       const query = { sortBy: ['location'], sortDesc: ['true'] };
 
-      const { isLoading, state } = useHistoryPaginationFilter<
+      const { isLoading, state } = usePaginationFilters<
         LedgerAction,
         LedgerActionRequestPayload,
         LedgerActionEntry,

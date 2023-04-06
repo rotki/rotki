@@ -181,7 +181,7 @@ const {
   options,
   setPage,
   setOptions
-} = useHistoryPaginationFilter<NonFungibleBalance>(
+} = usePaginationFilters<NonFungibleBalance>(
   null,
   true,
   useEmptyFilter,

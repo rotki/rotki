@@ -41,7 +41,7 @@ const {
   options,
   fetchData,
   setOptions
-} = useHistoryPaginationFilter<
+} = usePaginationFilters<
   ExchangeSavingsEvent,
   ExchangeSavingsRequestPayload,
   ExchangeSavingsEvent,

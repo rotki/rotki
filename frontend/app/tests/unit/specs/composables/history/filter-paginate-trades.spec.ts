@@ -76,7 +76,7 @@ describe('composables::history/filter-paginate', () => {
         fetchData,
         applyRouteFilter,
         isLoading
-      } = useHistoryPaginationFilter<
+      } = usePaginationFilters<
         Trade,
         TradeRequestPayload,
         TradeEntry,
@@ -105,18 +105,17 @@ describe('composables::history/filter-paginate', () => {
     });
 
     test('check the return types', async () => {
-      const { isLoading, state, filters, matchers } =
-        useHistoryPaginationFilter<
-          Trade,
-          TradeRequestPayload,
-          TradeEntry,
-          Collection<TradeEntry>,
-          Filters,
-          Matcher
-        >(locationOverview, mainPage, useTradeFilters, fetchTrades, {
-          onUpdateFilters,
-          extraParams
-        });
+      const { isLoading, state, filters, matchers } = usePaginationFilters<
+        Trade,
+        TradeRequestPayload,
+        TradeEntry,
+        Collection<TradeEntry>,
+        Filters,
+        Matcher
+      >(locationOverview, mainPage, useTradeFilters, fetchTrades, {
+        onUpdateFilters,
+        extraParams
+      });
 
       expect(get(isLoading)).toBe(false);
 
@@ -131,7 +130,7 @@ describe('composables::history/filter-paginate', () => {
       const pushSpy = vi.spyOn(router, 'push');
       const query = { sortBy: ['type'], sortDesc: ['true'] };
 
-      const { isLoading, state } = useHistoryPaginationFilter<
+      const { isLoading, state } = usePaginationFilters<
         Trade,
         TradeRequestPayload,
         TradeEntry,

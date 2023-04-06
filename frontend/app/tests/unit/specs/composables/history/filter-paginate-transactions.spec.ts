@@ -125,7 +125,7 @@ describe('composables::history/filter-paginate', () => {
         fetchData,
         applyRouteFilter,
         isLoading
-      } = useHistoryPaginationFilter<
+      } = usePaginationFilters<
         EthTransaction,
         TransactionRequestPayload,
         EthTransactionEntry,
@@ -161,25 +161,24 @@ describe('composables::history/filter-paginate', () => {
     });
 
     test('check the return types', async () => {
-      const { isLoading, state, filters, matchers } =
-        useHistoryPaginationFilter<
-          EthTransaction,
-          TransactionRequestPayload,
-          EthTransactionEntry,
-          Collection<EthTransactionEntry>,
-          Filters,
-          Matcher
-        >(
-          locationOverview,
-          mainPage,
-          () => useTransactionFilter(get(protocols).length > 0),
-          fetchTransactions,
-          {
-            onUpdateFilters,
-            extraParams,
-            customPageParams
-          }
-        );
+      const { isLoading, state, filters, matchers } = usePaginationFilters<
+        EthTransaction,
+        TransactionRequestPayload,
+        EthTransactionEntry,
+        Collection<EthTransactionEntry>,
+        Filters,
+        Matcher
+      >(
+        locationOverview,
+        mainPage,
+        () => useTransactionFilter(get(protocols).length > 0),
+        fetchTransactions,
+        {
+          onUpdateFilters,
+          extraParams,
+          customPageParams
+        }
+      );
 
       expect(get(isLoading)).toBe(false);
 
@@ -194,7 +193,7 @@ describe('composables::history/filter-paginate', () => {
       const pushSpy = vi.spyOn(router, 'push');
       const query = { sortBy: ['timestamp'], sortDesc: ['false'] };
 
-      const { isLoading, state, pageParams } = useHistoryPaginationFilter<
+      const { isLoading, state, pageParams } = usePaginationFilters<
         EthTransaction,
         TransactionRequestPayload,
         EthTransactionEntry,
@@ -247,7 +246,7 @@ describe('composables::history/filter-paginate', () => {
         protocols: get(protocols)
       };
 
-      const { isLoading, filters } = useHistoryPaginationFilter<
+      const { isLoading, filters } = usePaginationFilters<
         EthTransaction,
         TransactionRequestPayload,
         EthTransactionEntry,

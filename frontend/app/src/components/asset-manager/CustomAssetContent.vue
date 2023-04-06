@@ -111,7 +111,7 @@ const {
   setFilter,
   setOptions,
   isLoading: loading
-} = useHistoryPaginationFilter<
+} = usePaginationFilters<
   CustomAsset,
   CustomAssetRequestPayload,
   CustomAsset,
