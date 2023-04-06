@@ -1,14 +1,10 @@
 <script setup lang="ts">
 import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import { useEmptyFilter } from '@/composables/filters';
 import { type ActionStatus } from '@/types/action';
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { type Module } from '@/types/modules';
-import {
-  type NonFungibleBalance,
-  type NonFungibleBalancesRequestPayload
-} from '@/types/nfbalances';
+import { type NonFungibleBalance } from '@/types/nfbalances';
 import { type ManualPriceFormPayload } from '@/types/prices';
 import { Section } from '@/types/status';
 import { assert } from '@/utils/assertions';
@@ -185,21 +181,23 @@ const {
   options,
   setPage,
   setOptions
-} = useHistoryPaginationFilter<
-  NonFungibleBalance,
-  NonFungibleBalancesRequestPayload,
-  NonFungibleBalance
->(null, true, useEmptyFilter, fetchNonFungibleBalances, {
-  onUpdateFilters(query) {
-    set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
-  },
-  extraParams,
-  defaultSortBy: {
-    pagination: 'name',
-    pageParams: ['name'],
-    pageParamsAsc: [true]
+} = useHistoryPaginationFilter<NonFungibleBalance>(
+  null,
+  true,
+  useEmptyFilter,
+  fetchNonFungibleBalances,
+  {
+    onUpdateFilters(query) {
+      set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
+    },
+    extraParams,
+    defaultSortBy: {
+      pagination: 'name',
+      pageParams: ['name'],
+      pageParamsAsc: [true]
+    }
   }
-});
+);
 
 onMounted(async () => {
   await fetchData();

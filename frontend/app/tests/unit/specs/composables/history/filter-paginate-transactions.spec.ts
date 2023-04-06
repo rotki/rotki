@@ -129,6 +129,7 @@ describe('composables::history/filter-paginate', () => {
         EthTransaction,
         TransactionRequestPayload,
         EthTransactionEntry,
+        Collection<EthTransactionEntry>,
         Filters,
         Matcher
       >(
@@ -165,6 +166,7 @@ describe('composables::history/filter-paginate', () => {
           EthTransaction,
           TransactionRequestPayload,
           EthTransactionEntry,
+          Collection<EthTransactionEntry>,
           Filters,
           Matcher
         >(
@@ -196,6 +198,7 @@ describe('composables::history/filter-paginate', () => {
         EthTransaction,
         TransactionRequestPayload,
         EthTransactionEntry,
+        Collection<EthTransactionEntry>,
         Filters,
         Matcher
       >(
@@ -248,6 +251,7 @@ describe('composables::history/filter-paginate', () => {
         EthTransaction,
         TransactionRequestPayload,
         EthTransactionEntry,
+        Collection<EthTransactionEntry>,
         Filters,
         Matcher
       >(

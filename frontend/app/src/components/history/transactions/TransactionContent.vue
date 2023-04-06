@@ -12,6 +12,7 @@ import {
 import isEqual from 'lodash/isEqual';
 import { type ComputedRef, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
+import { type Collection } from '@/types/collection';
 import { SavedFilterLocation } from '@/types/filtering';
 import { IgnoreActionType } from '@/types/history/ignored';
 import {
@@ -169,6 +170,7 @@ const {
   EthTransaction,
   TransactionRequestPayload,
   EthTransactionEntry,
+  Collection<EthTransactionEntry>,
   Filters,
   Matcher
 >(

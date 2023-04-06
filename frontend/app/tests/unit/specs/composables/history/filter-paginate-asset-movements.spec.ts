@@ -71,6 +71,7 @@ describe('composables::history/filter-paginate', () => {
         AssetMovement,
         AssetMovementRequestPayload,
         AssetMovementEntry,
+        Collection<AssetMovementEntry>,
         Filters,
         Matcher
       >(
@@ -102,6 +103,7 @@ describe('composables::history/filter-paginate', () => {
           AssetMovement,
           AssetMovementRequestPayload,
           AssetMovementEntry,
+          Collection<AssetMovementEntry>,
           Filters,
           Matcher
         >(
@@ -128,6 +130,7 @@ describe('composables::history/filter-paginate', () => {
         AssetMovement,
         AssetMovementRequestPayload,
         AssetMovementEntry,
+        Collection<AssetMovementEntry>,
         Filters,
         Matcher
       >(

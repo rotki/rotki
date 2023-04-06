@@ -4,6 +4,7 @@ import keys from 'lodash/keys';
 import pick from 'lodash/pick';
 import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
 import { type ZodSchema } from 'zod';
+import { type PaginationRequestPayload } from '@/types/common';
 import { type Collection } from '@/types/collection';
 import { type TablePagination } from '@/types/pagination';
 import {
@@ -27,7 +28,7 @@ interface FilterSchema<F, M> {
  * Creates a universal pagination and filter structure
  * given the required fields, can manage pagination and filtering and data
  * fetching when params change
- * @template T,U,V,W,X
+ * @template T,U,V,S,W,X
  * @param {MaybeRef<string | null>} locationOverview
  * @param {MaybeRef<boolean>} mainPage
  * @param {() => FilterSchema<W, X>} filterSchema
@@ -36,19 +37,21 @@ interface FilterSchema<F, M> {
  */
 export const useHistoryPaginationFilter = <
   T extends Object,
-  U,
-  V,
+  U = PaginationRequestPayload<T>,
+  V = T,
+  S extends Collection<V> = Collection<V>,
   W extends Object | void = undefined,
   X = undefined
 >(
   locationOverview: MaybeRef<string | null>,
   mainPage: MaybeRef<boolean>,
   filterSchema: () => FilterSchema<W, X>,
-  fetchAssetData: (payload: MaybeRef<U>) => Promise<Collection<V>>,
+  fetchAssetData: (payload: MaybeRef<U>) => Promise<S>,
   options: {
     onUpdateFilters?: (query: LocationQuery) => void;
     extraParams?: ComputedRef<LocationQuery>;
     customPageParams?: ComputedRef<Partial<U>>;
+    defaultCollection?: () => S;
     defaultSortBy?: {
       pagination?: keyof T;
       pageParams?: (keyof T)[];
@@ -69,8 +72,13 @@ export const useHistoryPaginationFilter = <
   const expanded: Ref<V[]> = ref([]);
   const userAction: Ref<boolean> = ref(false);
 
-  const { onUpdateFilters, extraParams, customPageParams, defaultSortBy } =
-    options;
+  const {
+    onUpdateFilters,
+    defaultCollection,
+    extraParams,
+    customPageParams,
+    defaultSortBy
+  } = options;
 
   const { filters, matchers, updateFilter, RouteFilterSchema } = filterSchema();
 
@@ -105,14 +113,23 @@ export const useHistoryPaginationFilter = <
     } as U; // todo: figure out a way to not typecast
   });
 
-  const { isLoading, state, execute } = useAsyncState<
-    Collection<V>,
-    MaybeRef<U>[]
-  >(fetchAssetData, defaultCollectionState(), {
-    immediate: false,
-    resetOnExecute: false,
-    delay: 0
-  });
+  const getCollectionDefault = (): S => {
+    if (defaultCollection) {
+      return defaultCollection();
+    }
+
+    return defaultCollectionState<V>() as S;
+  };
+
+  const { isLoading, state, execute } = useAsyncState<S, MaybeRef<U>[]>(
+    fetchAssetData,
+    getCollectionDefault(),
+    {
+      immediate: false,
+      resetOnExecute: false,
+      delay: 0
+    }
+  );
 
   /**
    * Triggered on route change and on component mount

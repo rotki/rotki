@@ -80,6 +80,7 @@ describe('composables::history/filter-paginate', () => {
         Trade,
         TradeRequestPayload,
         TradeEntry,
+        Collection<TradeEntry>,
         Filters,
         Matcher
       >(locationOverview, mainPage, useTradeFilters, fetchTrades, {
@@ -109,6 +110,7 @@ describe('composables::history/filter-paginate', () => {
           Trade,
           TradeRequestPayload,
           TradeEntry,
+          Collection<TradeEntry>,
           Filters,
           Matcher
         >(locationOverview, mainPage, useTradeFilters, fetchTrades, {
@@ -133,6 +135,7 @@ describe('composables::history/filter-paginate', () => {
         Trade,
         TradeRequestPayload,
         TradeEntry,
+        Collection<TradeEntry>,
         Filters,
         Matcher
       >(locationOverview, mainPage, useTradeFilters, fetchTrades, {

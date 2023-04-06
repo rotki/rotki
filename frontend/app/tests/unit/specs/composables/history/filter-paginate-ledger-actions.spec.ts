@@ -71,6 +71,7 @@ describe('composables::history/filter-paginate', () => {
         LedgerAction,
         LedgerActionRequestPayload,
         LedgerActionEntry,
+        Collection<LedgerActionEntry>,
         Filters,
         Matcher
       >(locationOverview, mainPage, useLedgerActionsFilter, fetchLedgerActions);
@@ -97,6 +98,7 @@ describe('composables::history/filter-paginate', () => {
           LedgerAction,
           LedgerActionRequestPayload,
           LedgerActionEntry,
+          Collection<LedgerActionEntry>,
           Filters,
           Matcher
         >(
@@ -123,6 +125,7 @@ describe('composables::history/filter-paginate', () => {
         LedgerAction,
         LedgerActionRequestPayload,
         LedgerActionEntry,
+        Collection<LedgerActionEntry>,
         Filters,
         Matcher
       >(locationOverview, mainPage, useLedgerActionsFilter, fetchLedgerActions);
