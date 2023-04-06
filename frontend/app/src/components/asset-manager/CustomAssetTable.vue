@@ -27,9 +27,8 @@ const emit = defineEmits<{
   (e: 'delete-asset', asset: CustomAsset): void;
   (e: 'update:pagination', pagination: CustomAssetRequestPayload): void;
   (e: 'update:filters', filters: Filters): void;
+  (e: 'update:expanded', expandedAssets: CustomAsset[]): void;
 }>();
-
-const expanded: Ref<SupportedAsset[]> = ref([]);
 
 const { tc } = useI18n();
 
@@ -63,6 +62,8 @@ const deleteAsset = (asset: CustomAsset) => emit('delete-asset', asset);
 const updatePagination = (pagination: CustomAssetRequestPayload) =>
   emit('update:pagination', pagination);
 const updateFilter = (filters: Filters) => emit('update:filters', filters);
+const updateExpanded = (expandedAssets: CustomAsset[]) =>
+  emit('update:expanded', expandedAssets);
 
 const getAsset = (item: CustomAsset) => ({
   name: item.name,
@@ -157,7 +158,7 @@ const getAsset = (item: CustomAsset) => ({
         <row-expander
           v-if="item.notes"
           :expanded="expanded.includes(item)"
-          @click="expanded = expanded.includes(item) ? [] : [item]"
+          @click="updateExpanded(expanded.includes(item) ? [] : [item])"
         />
       </template>
     </data-table>
