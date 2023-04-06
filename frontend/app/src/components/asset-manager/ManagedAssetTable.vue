@@ -1,45 +1,49 @@
 <script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
-import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
+import { type Filters, type Matcher } from '@/composables/filters/assets';
 import {
-  type AssetPagination,
-  type AssetPaginationOptions,
+  type AssetRequestPayload,
   CUSTOM_ASSET,
-  type IgnoredAssetsHandlingType,
-  defaultAssetPagination
+  type IgnoredAssetsHandlingType
 } from '@/types/asset';
-import { convertPagination } from '@/types/pagination';
 import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@/utils/assets';
 import { uniqueStrings } from '@/utils/data';
 import { toSentenceCase } from '@/utils/text';
 import { type ActionStatus } from '@/types/action';
 
-defineProps({
-  tokens: { required: true, type: Array as PropType<SupportedAsset[]> },
-  loading: { required: false, type: Boolean, default: false },
-  serverItemLength: { required: true, type: Number }
-});
+const props = withDefaults(
+  defineProps<{
+    tokens: SupportedAsset[];
+    serverItemLength: number;
+    matchers: Matcher[];
+    filters: Filters;
+    expanded: SupportedAsset[];
+    selected: SupportedAsset[];
+    ignoredAssets: string[];
+    onlyShowOwned: boolean;
+    ignoredAssetsHandling: IgnoredAssetsHandlingType;
+    loading?: boolean;
+  }>(),
+  { loading: false }
+);
 
 const emit = defineEmits<{
   (e: 'add'): void;
+  (e: 'refresh'): void;
   (e: 'edit', asset: SupportedAsset): void;
   (e: 'delete-asset', asset: SupportedAsset): void;
-  (e: 'update:pagination', pagination: AssetPagination): void;
+  (e: 'update:pagination', pagination: AssetRequestPayload): void;
+  (e: 'update:filters', filters: Filters): void;
+  (e: 'update:selected', selectedAssets: SupportedAsset[]): void;
+  (e: 'update:expanded', expandedAssets: SupportedAsset[]): void;
+  (
+    e: 'update:ignored-assets-handling',
+    ignoredAssetsHandling: IgnoredAssetsHandlingType
+  ): void;
+  (e: 'update:only-show-owned', onlyShowOwned: boolean): void;
 }>();
 
-const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
-const { filters, matchers, updateFilter } = useAssetFilter();
-
-const expanded: Ref<SupportedAsset[]> = ref([]);
-const selected: Ref<SupportedAsset[]> = ref([]);
-const onlyShowOwned = ref<boolean>(false);
-const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>('exclude');
-const options: Ref<AssetPaginationOptions> = ref(
-  defaultAssetPagination(get(itemsPerPage))
-);
-
-const { ignoredAssets } = storeToRefs(useIgnoredAssetsStore());
 const { tc } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
@@ -82,6 +86,22 @@ const add = () => emit('add');
 const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
+const updatePagination = (pagination: AssetRequestPayload) =>
+  emit('update:pagination', pagination);
+const updateFilter = (filters: Filters) => emit('update:filters', filters);
+const updateSelected = (selectedAssets: SupportedAsset[]) =>
+  emit('update:selected', selectedAssets);
+const updateExpanded = (expandedAssets: SupportedAsset[]) =>
+  emit('update:expanded', expandedAssets);
+const updateIgnoredAssetsHandling = (
+  ignoredAssetsHandling: IgnoredAssetsHandlingType
+) => {
+  emit('update:ignored-assets-handling', ignoredAssetsHandling);
+};
+const updateShowOwned = (onlyShowOwned: boolean) => {
+  emit('update:only-show-owned', onlyShowOwned);
+};
+
 const formatType = (string?: string) => toSentenceCase(string ?? 'EVM token');
 
 const getAsset = (item: SupportedAsset) => {
@@ -104,24 +124,21 @@ const getAsset = (item: SupportedAsset) => {
 const { setMessage } = useMessageStore();
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
 const { getChain } = useSupportedChains();
+const css = useCssModule();
 
 const toggleIgnoreAsset = async (identifier: string) => {
-  let success = false;
   if (get(isAssetIgnored(identifier))) {
-    const response = await unignoreAsset(identifier);
-    success = response.success;
+    await unignoreAsset(identifier);
   } else {
-    const response = await ignoreAsset(identifier);
-    success = response.success;
+    await ignoreAsset(identifier);
   }
-
-  if (success && get(ignoredAssetsHandling) !== 'none') {
-    updatePaginationHandler(get(options));
+  if (props.ignoredAssetsHandling !== 'none') {
+    emit('refresh');
   }
 };
 
 const massIgnore = async (ignored: boolean) => {
-  const ids = get(selected)
+  const ids = get(props.selected)
     .filter(item => {
       const isItemIgnored = get(isAssetIgnored(item.identifier));
       return ignored ? !isItemIgnored : isItemIgnored;
@@ -148,47 +165,9 @@ const massIgnore = async (ignored: boolean) => {
   }
 
   if (status.success) {
-    set(selected, []);
-
-    if (get(ignoredAssetsHandling) !== 'none') {
-      updatePaginationHandler(get(options));
-    }
+    updateSelected([]);
   }
 };
-
-const updatePaginationHandler = (updateOptions: AssetPaginationOptions) => {
-  set(options, updateOptions);
-
-  const apiPagination = convertPagination<SupportedAsset>(
-    updateOptions,
-    'symbol'
-  ) as AssetPagination;
-  const filter = get(filters);
-  const onlyOwned = get(onlyShowOwned);
-  const ignored = get(ignoredAssetsHandling);
-
-  emit('update:pagination', {
-    ...apiPagination,
-    symbol: filter.symbol as string | undefined,
-    name: filter.name as string | undefined,
-    evmChain: filter.evmChain as string | undefined,
-    address: filter.address as string | undefined,
-    showUserOwnedAssetsOnly: onlyOwned,
-    ignoredAssetsHandling: ignored
-  });
-};
-
-watch([filters, onlyShowOwned, ignoredAssetsHandling], () => {
-  const pageOptions = get(options);
-  if (pageOptions) {
-    updatePaginationHandler({
-      ...pageOptions,
-      page: 1
-    });
-  }
-});
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -208,7 +187,7 @@ const css = useCssModule();
           />
           <div v-if="selected.length > 0" class="mt-2 ms-1">
             {{ tc('asset_table.selected', 0, { count: selected.length }) }}
-            <v-btn small text @click="selected = []">
+            <v-btn small text @click="updateSelected([])">
               {{ tc('common.actions.clear_selection') }}
             </v-btn>
           </div>
@@ -229,7 +208,7 @@ const css = useCssModule();
               </v-btn>
             </template>
             <v-list data-cy="asset-filter-menu">
-              <v-list-item link @click="onlyShowOwned = !onlyShowOwned">
+              <v-list-item link @click="updateShowOwned(!onlyShowOwned)">
                 <v-checkbox
                   data-cy="asset-filter-only-show-owned"
                   :input-value="onlyShowOwned"
@@ -246,9 +225,10 @@ const css = useCssModule();
               </v-list-item>
               <v-list-item>
                 <v-radio-group
-                  v-model="ignoredAssetsHandling"
+                  :value="ignoredAssetsHandling"
                   class="mt-0"
                   data-cy="asset-filter-ignored"
+                  @change="updateIgnoredAssetsHandling"
                 >
                   <v-radio value="none" :label="tc('asset_table.show_all')" />
                   <v-radio
@@ -282,7 +262,7 @@ const css = useCssModule();
       <v-icon> mdi-plus </v-icon>
     </v-btn>
     <data-table
-      v-model="selected"
+      :value="selected"
       :items="tokens"
       :loading="loading"
       :headers="tableHeaders"
@@ -294,8 +274,8 @@ const css = useCssModule();
       :server-items-length="serverItemLength"
       :single-select="false"
       show-select
-      :options="options"
-      @update:options="updatePaginationHandler($event)"
+      @update:options="updatePagination"
+      @input="updateSelected"
     >
       <template #item.symbol="{ item }">
         <asset-details-base
@@ -348,7 +328,7 @@ const css = useCssModule();
         <row-expander
           v-if="item.underlyingTokens && item.underlyingTokens.length > 0"
           :expanded="expanded.includes(item)"
-          @click="expanded = expanded.includes(item) ? [] : [item]"
+          @click="updateExpanded(expanded.includes(item) ? [] : [item])"
         />
       </template>
     </data-table>
