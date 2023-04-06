@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
 import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 import { type Nullable } from '@/types';
 import { type Collection } from '@/types/collection';
@@ -27,7 +26,7 @@ const valid = ref<boolean>(false);
 const showForm = ref<boolean>(false);
 const saving = ref<boolean>(false);
 const editMode = ref<boolean>(false);
-const assetForm: Ref<InstanceType<typeof CustomAssetForm> | null> = ref(null);
+const assetForm = ref<InstanceType<typeof CustomAssetForm> | null>(null);
 
 const dialogTitle = computed<string>(() =>
   get(editMode)
@@ -106,6 +105,7 @@ const closeDialog = async () => {
 const {
   state,
   filters,
+  expanded,
   matchers,
   fetchData,
   setFilter,
@@ -174,11 +174,13 @@ watch(identifier, assetId => {
       :server-item-length="state.found"
       :filters="filters"
       :matchers="matchers"
+      :expanded="expanded"
       @add="add()"
       @edit="edit"
       @delete-asset="showDeleteConfirmation"
       @update:pagination="setOptions"
       @update:filters="setFilter"
+      @update:expanded="expanded = $event"
     />
     <big-dialog
       :display="showForm"
