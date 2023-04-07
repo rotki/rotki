@@ -85,3 +85,36 @@ def test_hop_optimism_eth_receive(database, optimism_inquirer):
             extra_data={'sent_amount': '0.2'},
         )]
     assert expected_events == events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('optimism_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
+def test_hop_optimism_eth_receive_no_event(database, optimism_inquirer, optimism_accounts):
+    """Data taken from
+    https://optimistic.etherscan.io/tx/0x3e18e3a0220857ecce91ad79065f10a663128926854b6087161fd0364c7f76f5
+
+    Test that HOP bridge events that have no TRANSFER_FROM_L1_COMPLETED event are decoded.
+    """
+    tx_hash = deserialize_evm_tx_hash('0x3e18e3a0220857ecce91ad79065f10a663128926854b6087161fd0364c7f76f5')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    user_address = optimism_accounts[0]
+    expected_events = [
+        EvmEvent(
+            event_identifier=tx_hash,
+            sequence_index=0,
+            timestamp=TimestampMS(1666977475000),
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.03958480553397407')),
+            location_label=user_address,
+            notes='Bridge 0.03958480553397407 ETH via hop protocol',
+            counterparty=CPT_HOP,
+            address=string_to_evm_address('0x86cA30bEF97fB651b8d866D45503684b90cb3312'),
+        )]
+    assert events == expected_events
