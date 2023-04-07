@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type DataTableHeader } from 'vuetify';
+import { type TablePagination } from '@/types/pagination';
 import { type Filters, type Matcher } from '@/composables/filters/assets';
 import {
   type AssetRequestPayload,
@@ -20,6 +21,7 @@ const props = withDefaults(
     filters: Filters;
     expanded: SupportedAsset[];
     selected: SupportedAsset[];
+    options: TablePagination<SupportedAsset>;
     ignoredAssets: string[];
     onlyShowOwned: boolean;
     ignoredAssetsHandling: IgnoredAssetsHandlingType;
@@ -268,6 +270,7 @@ const massIgnore = async (ignored: boolean) => {
       :headers="tableHeaders"
       single-expand
       :expanded="expanded"
+      :options="options"
       item-key="identifier"
       sort-by="symbol"
       :sort-desc="false"

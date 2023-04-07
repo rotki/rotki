@@ -107,6 +107,7 @@ const {
   filters,
   expanded,
   matchers,
+  options,
   fetchData,
   setFilter,
   setOptions,
@@ -175,6 +176,7 @@ watch(identifier, assetId => {
       :filters="filters"
       :matchers="matchers"
       :expanded="expanded"
+      :options="options"
       @add="add()"
       @edit="edit"
       @delete-asset="showDeleteConfirmation"

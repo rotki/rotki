@@ -140,6 +140,7 @@ const {
   state: assets,
   isLoading: loading,
   editableItem: asset,
+  options,
   fetchData,
   setOptions,
   setFilter,
@@ -176,6 +177,7 @@ const showDeleteConfirmation = (item: SupportedAsset) => {
 };
 
 onMounted(async () => {
+  await fetchData();
   await editAsset(get(identifier));
 
   const query = get(route).query;
@@ -236,6 +238,7 @@ watch(identifier, async assetId => {
       :only-show-owned="showUserOwnedAssetsOnly"
       :expanded="expanded"
       :selected="selected"
+      :options="options"
       @refresh="fetchData"
       @add="add()"
       @edit="edit"

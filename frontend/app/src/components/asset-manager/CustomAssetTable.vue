@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type DataTableHeader } from 'vuetify';
+import { type TablePagination } from '@/types/pagination';
 import {
   type CustomAsset,
   type CustomAssetRequestPayload
@@ -13,6 +14,7 @@ withDefaults(
   defineProps<{
     assets: CustomAsset[];
     expanded: CustomAsset[];
+    options: TablePagination<CustomAsset>;
     serverItemLength: number;
     matchers: Matcher[];
     filters: Filters;
@@ -113,6 +115,7 @@ const getAsset = (item: CustomAsset) => ({
       :headers="tableHeaders"
       single-expand
       :expanded="expanded"
+      :options="options"
       item-key="identifier"
       sort-by="name"
       class="custom-assets-table"

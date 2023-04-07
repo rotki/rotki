@@ -217,8 +217,9 @@ export const usePaginationFilters = <
     updateFilter(newFilter);
   };
 
-  onBeforeMount(() => {
-    applyRouteFilter();
+  onBeforeMount(async () => {
+    // need to set the initial route query on first load
+    await router.replace({ query: getQuery() });
   });
 
   watch(route, () => {
