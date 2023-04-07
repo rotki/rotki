@@ -1,4 +1,5 @@
 import { type MaybeRef } from '@vueuse/core';
+import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 import keys from 'lodash/keys';
 import pick from 'lodash/pick';
@@ -138,6 +139,13 @@ export const usePaginationFilters = <
     }
 
     const query = get(route).query;
+
+    if (isEmpty(query)) {
+      // for empty query, we reset the filters, and pagination to defaults
+      updateFilter(RouteFilterSchema.parse({}));
+      return setOptions(defaultOptions<T>(options.defaultSortBy?.key));
+    }
+
     const parsedOptions = RouterPaginationOptionsSchema.parse(query);
     const parsedFilters = RouteFilterSchema.parse(query);
 
@@ -218,8 +226,7 @@ export const usePaginationFilters = <
   };
 
   onBeforeMount(async () => {
-    // need to set the initial route query on first load
-    await router.replace({ query: getQuery() });
+    applyRouteFilter();
   });
 
   watch(route, () => {

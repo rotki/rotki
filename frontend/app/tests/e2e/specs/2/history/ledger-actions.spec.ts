@@ -58,7 +58,7 @@ describe('ledger actions history', () => {
     ledgerActionPage.ledgerActionIsVisible(0, externalLedgerActions[1]);
   });
 
-  it('filter and pagination', () => {
+  it.only('filter and pagination', () => {
     for (let i = 0; i < 6; i++) {
       cy.addLedgerAction(externalLedgerActions[0]);
       cy.addLedgerAction(externalLedgerActions[1]);
@@ -79,22 +79,27 @@ describe('ledger actions history', () => {
     // go to page 2
     ledgerActionPage.nextPage();
     ledgerActionPage.shouldBeOnPage(2);
+    app.shouldHaveQueryParam('page', '2');
+    app.shouldHaveQueryParams('sortBy', ['timestamp']);
 
     // apply filter location
     ledgerActionPage.filterLedgerActions('location: kraken');
     ledgerActionPage.visibleEntries(10);
     ledgerActionPage.totalEntries(12);
     ledgerActionPage.shouldBeOnPage(1);
+    app.shouldHaveQueryParam('page', '1');
 
     // go to page 2
     ledgerActionPage.nextPage();
     ledgerActionPage.shouldBeOnPage(2);
     ledgerActionPage.visibleEntries(2);
+    app.shouldHaveQueryParam('page', '2');
 
     // history back, should go back to page 1
     cy.go(-1);
     ledgerActionPage.shouldBeOnPage(1);
     ledgerActionPage.visibleEntries(10);
+    app.shouldHaveQueryParam('page', '1');
 
     // history back, should remove filter
     cy.go(-1);
@@ -104,5 +109,6 @@ describe('ledger actions history', () => {
     // history forward, should reapply location filter
     cy.go(1);
     ledgerActionPage.totalEntries(12);
+    app.shouldHaveQueryParam('page', '1');
   });
 });

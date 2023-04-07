@@ -104,4 +104,28 @@ export class RotkiApp {
       isVisible ? 'be.visible' : 'not.be.visible'
     );
   }
+
+  /**
+   * to get single query param values from route
+   * @param {string} key
+   * @param {string} value
+   */
+  shouldHaveQueryParam(key: string, value: string) {
+    cy.location().should(loc => {
+      const query = new URLSearchParams(loc.href);
+      expect(query.get(key)).to.equal(value);
+    });
+  }
+
+  /**
+   * to get array query param values from route
+   * @param {string} key
+   * @param {string[]} values
+   */
+  shouldHaveQueryParams(key: string, values: string[]) {
+    cy.location().should(loc => {
+      const query = new URLSearchParams(loc.href);
+      expect(query.getAll(key)).to.deep.equal(values);
+    });
+  }
 }
