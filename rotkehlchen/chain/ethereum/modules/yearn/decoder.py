@@ -10,10 +10,16 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.types import YEARN_VAULTS_V1_PROTOCOL, YEARN_VAULTS_V2_PROTOCOL, ChainID
+from rotkehlchen.types import (
+    DECODER_EVENT_MAPPING,
+    YEARN_VAULTS_V1_PROTOCOL,
+    YEARN_VAULTS_V2_PROTOCOL,
+    ChainID,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumInquirer
@@ -125,19 +131,27 @@ class YearnDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
         return {
             CPT_YEARN_V1: {
-                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
-                (HistoryEventType.DEPOSIT, HistoryEventSubType.RECEIVE_WRAPPED),
-                (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
-                (HistoryEventType.WITHDRAWAL, HistoryEventSubType.RETURN_WRAPPED),
+                HistoryEventType.WITHDRAWAL: {
+                    HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+                    HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+                },
+                HistoryEventType.DEPOSIT: {
+                    HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+                    HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
+                },
             },
             CPT_YEARN_V2: {
-                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
-                (HistoryEventType.DEPOSIT, HistoryEventSubType.RECEIVE_WRAPPED),
-                (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
-                (HistoryEventType.WITHDRAWAL, HistoryEventSubType.RETURN_WRAPPED),
+                HistoryEventType.WITHDRAWAL: {
+                    HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+                    HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+                },
+                HistoryEventType.DEPOSIT: {
+                    HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+                    HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
+                },
             },
         }
 

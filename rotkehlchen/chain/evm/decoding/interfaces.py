@@ -2,11 +2,10 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
-    from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -81,7 +80,7 @@ class DecoderInterface(metaclass=ABCMeta):
             f'try to decode the event again {event.event_identifier.hex()}.',
         )
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
         """Return the possible types and subtypes used in decoders"""
         return {}
 

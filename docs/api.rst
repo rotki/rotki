@@ -12389,37 +12389,53 @@ Event Mappings
 
       {
         "result":{
-            "mappings":{
+          "global_mappings":{
+            "spend":{
+              "fee":"gas",
+              "return wrapped":"send",
+              "donate":"donate",
+              "none":"send"
+            }
+          },
+          "per_protocol_mappings":{
+            "ethereum":{
+              "aave":{
                 "spend":{
-                    "fee": "gas",
-                    "payback debt": "repay",
-                    "return wrapped": "send",
-                    "donate": "donate",
-                    "liquidate": "liquidate",
-                    "none": "send"
+                  "payback debt":"repay",
+                  "liquidate":"liquidate"
                 }
+              }
             },
-            "event_type_details":{
-              "gas":{
-                  "label": "gas_fee",
-                  "icon": "mdi-fire",
-                  "color": null
-              },
-              "send":{
-                  "label": "send",
-                  "icon": "mdi-arrow-up",
-                  "color": null
-              },
-              "receive":{
-                  "label": "receive",
-                  "icon": "mdi-arrow-down",
-                  "color": "green"
+            "optimism":{
+              "aave":{
+                "spend":{
+                  "payback debt":"repay",
+                  "liquidate":"liquidate"
+                }
               }
             }
+          },
+          "event_type_details":{
+            "gas":{
+              "label":"gas_fee",
+              "icon":"mdi-fire",
+              "color":null
+            },
+            "send":{
+              "label":"send",
+              "icon":"mdi-arrow-up",
+              "color":null
+            },
+            "receive":{
+              "label":"receive",
+              "icon":"mdi-arrow-down",
+              "color":"green"
+            }
+          }
         }
       }
-
-  :resjson object mappings: keys of this object are the history event types names and values are mappings of subtypes' names to the ``TransactionEventType`` name.
+  :resjson object global_mappings: keys of this object are the history event types names and values are mappings of subtypes' names to the ``TransactionEventType`` name. Contains mappings that should be applied if there is no a specific protocol rule.
+  :resjson object per_protocol_mappings: same as global_mappings but contains specific mappings per chain and protocol.
   :resjson object event_type_details: Properties for ``TransactionEventType``.
   :resjson string label: Label to show in the frontend for the event type.
   :resjson string icon: Icon to be used by the frontend for this event type.
@@ -12431,7 +12447,7 @@ Event Mappings
 Counterparties
 ================
 
-.. http:post:: /api/(version)/history/events/counterparties
+.. http:get:: /api/(version)/history/events/counterparties
 
    Doing a GET on this endpoint will return information for all the counterparties used for decoding events in the backend.
 

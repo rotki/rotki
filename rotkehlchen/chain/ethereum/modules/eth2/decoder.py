@@ -8,9 +8,10 @@ from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
 from rotkehlchen.chain.ethereum.modules.curve.decoder import DEFAULT_DECODING_OUTPUT
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
 from rotkehlchen.utils.misc import from_gwei, hex_or_bytes_to_int
 
 from .constants import CPT_ETH2
@@ -49,8 +50,12 @@ class Eth2Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
-        return {CPT_ETH2: {(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)}}
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
+        return {CPT_ETH2: {
+            HistoryEventType.STAKING: {
+                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+            },
+        }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

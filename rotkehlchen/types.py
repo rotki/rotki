@@ -1,6 +1,17 @@
 import typing
 from enum import Enum, auto
-from typing import Any, Final, Literal, NamedTuple, NewType, Optional, TypeVar, Union, get_args
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Final,
+    Literal,
+    NamedTuple,
+    NewType,
+    Optional,
+    TypeVar,
+    Union,
+    get_args,
+)
 
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes as Web3HexBytes
@@ -13,6 +24,10 @@ from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 from rotkehlchen.utils.mixins.serializableenumvalue import SerializableEnumValueMixin
 
 from rotkehlchen.chain.substrate.types import SubstrateAddress  # isort:skip
+
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+    from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 
 ModuleName = Literal[
     'makerdao_dsr',
@@ -785,4 +800,12 @@ DEFAULT_ADDRESS_NAME_PRIORITY: list[AddressNameSource] = [
     'ethereum_tokens',
     'hardcoded_mappings',
     'ens_names',
+]
+
+DECODER_EVENT_MAPPING = dict[
+    str,
+    dict[
+        'HistoryEventType',
+        dict['HistoryEventSubType', 'TransactionEventType'],
+    ],
 ]

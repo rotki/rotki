@@ -19,6 +19,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
@@ -27,7 +28,13 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.types import (
+    DECODER_EVENT_MAPPING,
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    EvmTransaction,
+)
 from rotkehlchen.utils.misc import hex_or_bytes_to_int, ts_ms_to_sec
 
 from ..constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
@@ -519,13 +526,21 @@ class Uniswapv3Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
         return {CPT_UNISWAP_V3: {
-            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
-            (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
-            (HistoryEventType.RECEIVE, HistoryEventSubType.NFT),
+            HistoryEventType.TRADE: {
+                HistoryEventSubType.RECEIVE: TransactionEventType.SWAP_IN,
+                HistoryEventSubType.SPEND: TransactionEventType.SWAP_OUT,
+            },
+            HistoryEventType.DEPOSIT: {
+                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+            },
+            HistoryEventType.WITHDRAWAL: {
+                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+            },
+            HistoryEventType.RECEIVE: {
+                HistoryEventSubType.NFT: TransactionEventType.RECEIVE,
+            },
         }}
 
     def decoding_rules(self) -> list[Callable]:

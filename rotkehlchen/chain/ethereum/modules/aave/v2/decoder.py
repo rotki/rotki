@@ -12,10 +12,16 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.types import (
+    DECODER_EVENT_MAPPING,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    EvmTransaction,
+)
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,
     hex_or_bytes_to_int,
@@ -241,17 +247,27 @@ class Aavev2Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
         return {CPT_AAVE_V2: {
-            (HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED),
-            (HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT),
-            (HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT),
-            (HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED),
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
-            (HistoryEventType.RECEIVE, HistoryEventSubType.RETURN_WRAPPED),
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
-            (HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED),
-            (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE),
+            HistoryEventType.RECEIVE: {
+                HistoryEventSubType.GENERATE_DEBT: TransactionEventType.CLAIM_REWARD,
+                HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
+                HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.RECEIVE,
+            },
+            HistoryEventType.DEPOSIT: {
+                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+            },
+            HistoryEventType.SPEND: {
+                HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+                HistoryEventSubType.PAYBACK_DEBT: TransactionEventType.REPAY,
+
+            },
+            HistoryEventType.WITHDRAWAL: {
+                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+            },
+            HistoryEventType.INFORMATIONAL: {
+                HistoryEventSubType.NONE: TransactionEventType.INFORMATIONAL,
+            },
         }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:

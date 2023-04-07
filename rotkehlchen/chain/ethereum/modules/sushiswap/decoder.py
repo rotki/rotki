@@ -17,9 +17,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.types import SUSHISWAP_PROTOCOL, EvmTransaction
+from rotkehlchen.types import DECODER_EVENT_MAPPING, SUSHISWAP_PROTOCOL, EvmTransaction
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -103,15 +104,27 @@ class SushiswapDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
         return {CPT_SUSHISWAP_V2: {
-            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
-            (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
-            (HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED),
-            (HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED),
-            (HistoryEventType.TRANSFER, HistoryEventSubType.NONE),
+            HistoryEventType.TRADE: {
+                HistoryEventSubType.RECEIVE: TransactionEventType.SWAP_IN,
+                HistoryEventSubType.SPEND: TransactionEventType.SWAP_OUT,
+            },
+            HistoryEventType.DEPOSIT: {
+                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+            },
+            HistoryEventType.WITHDRAWAL: {
+                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+            },
+            HistoryEventType.SPEND: {
+                HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+            },
+            HistoryEventType.RECEIVE: {
+                HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
+            },
+            HistoryEventType.TRANSFER: {
+                HistoryEventSubType.NONE: TransactionEventType.TRANSFER,
+            },
         }}
 
     def decoding_rules(self) -> list[Callable]:

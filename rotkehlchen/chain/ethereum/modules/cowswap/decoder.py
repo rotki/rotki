@@ -15,13 +15,20 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.types import (
+    DECODER_EVENT_MAPPING,
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    EvmTransaction,
+)
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -242,14 +249,22 @@ class CowswapDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
-        return {CPT_COWSWAP: {
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.PLACE_ORDER),
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.CANCEL_ORDER),
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REFUND),
-            (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
-            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
-        }}
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
+        return {
+            CPT_COWSWAP: {
+                HistoryEventType.TRADE: {
+                    HistoryEventSubType.SPEND: TransactionEventType.SWAP_OUT,
+                    HistoryEventSubType.RECEIVE: TransactionEventType.SWAP_IN,
+                },
+                HistoryEventType.DEPOSIT: {
+                    HistoryEventSubType.PLACE_ORDER: TransactionEventType.PLACE_ORDER,
+                },
+                HistoryEventType.WITHDRAWAL: {
+                    HistoryEventSubType.CANCEL_ORDER: TransactionEventType.CANCEL_ORDER,
+                    HistoryEventSubType.REFUND: TransactionEventType.REFUND,
+                },
+            },
+        }
 
     def counterparties(self) -> list[str]:
         return [CPT_COWSWAP]

@@ -61,8 +61,8 @@ from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as g
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.frontend_structures.events_mappings import (
+    DEFAULT_FRONTEND_MAPPINGS,
     EVENT_DETAILS,
-    FRONTEND_MAPPING,
 )
 from rotkehlchen.chain.evm.frontend_structures.protocols import PROTOCOLS
 from rotkehlchen.chain.evm.manager import EvmManager
@@ -4299,8 +4299,12 @@ class RestAPI():
 
     def get_types_mappings(self) -> Response:
         result = {
-            'mappings': FRONTEND_MAPPING,
+            'global_mappings': DEFAULT_FRONTEND_MAPPINGS,
             'event_type_details': EVENT_DETAILS,
+            'per_protocol_mappings': {
+                'ethereum': self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.events_types_tuples,  # noqa: E501
+                'optimism': self.rotkehlchen.chains_aggregator.optimism.transactions_decoder.events_types_tuples,  # noqa: E501
+            },
         }
         return api_response(
             result=_wrap_in_ok_result(process_result(result)),
