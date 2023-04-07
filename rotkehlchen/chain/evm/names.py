@@ -14,6 +14,7 @@ from rotkehlchen.types import (
     ChainAddress,
     ChecksumEvmAddress,
     EnsMapping,
+    GlobalAddressbookSource,
     OptionalChainAddress,
     SupportedBlockchain,
     Timestamp,
@@ -22,6 +23,13 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+
+
+GLOBAL_ADDRESSBOOK_PRIORITIES = {
+    GlobalAddressbookSource.MANUAL: 0,
+    GlobalAddressbookSource.CURVE_CACHE: 1,
+    GlobalAddressbookSource.WALLET_LABELS_XYZ: 2,
+}
 
 
 def find_ens_mappings(
@@ -166,7 +174,7 @@ def _private_addressbook_address_to_name(
     """
     db_addressbook = DBAddressbook(db)
     return db_addressbook.get_addressbook_entry_name(
-        book_type=AddressbookType.PRIVATE,
+        book_type=AddressbookType.USER,
         chain_address=chain_address,
     )
 
@@ -182,6 +190,7 @@ def _global_addressbook_address_to_name(
     return db_addressbook.get_addressbook_entry_name(
         book_type=AddressbookType.GLOBAL,
         chain_address=chain_address,
+        priorities=GLOBAL_ADDRESSBOOK_PRIORITIES,
     )
 
 

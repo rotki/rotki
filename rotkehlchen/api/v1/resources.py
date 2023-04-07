@@ -3,7 +3,7 @@ from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union
 
 from flask import Blueprint, Request, Response, request as flask_request
 from flask.views import MethodView
@@ -189,6 +189,7 @@ from rotkehlchen.types import (
     SUPPORTED_EVM_CHAINS,
     AddressbookEntry,
     AddressbookType,
+    AnyAddressbookEntry,
     ApiKey,
     ApiSecret,
     AssetAmount,
@@ -199,6 +200,7 @@ from rotkehlchen.types import (
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
+    GlobalAddressbookKey,
     HexColorCode,
     ListOfBlockchainAddresses,
     Location,
@@ -2665,7 +2667,7 @@ class CounterpartiesResource(BaseMethodView):
 
 
 class AddressbookResource(BaseMethodView):
-    post_delete_schema = AddressbookAddressesSchema()
+    post_delete_schema = AddressbookAddressesSchema()  # TODO: understand what format is needed
     update_schema = AddressbookUpdateSchema()
 
     @require_loggedin_user()
@@ -2685,7 +2687,7 @@ class AddressbookResource(BaseMethodView):
     def put(
             self,
             book_type: AddressbookType,
-            entries: list[AddressbookEntry],
+            entries: list[AnyAddressbookEntry],
     ) -> Response:
         return self.rest_api.add_addressbook_entries(book_type=book_type, entries=entries)
 
@@ -2694,7 +2696,7 @@ class AddressbookResource(BaseMethodView):
     def patch(
             self,
             book_type: AddressbookType,
-            entries: list[AddressbookEntry],
+            entries: list[AnyAddressbookEntry],
     ) -> Response:
         return self.rest_api.update_addressbook_entries(book_type=book_type, entries=entries)
 
@@ -2703,7 +2705,7 @@ class AddressbookResource(BaseMethodView):
     def delete(
             self,
             book_type: AddressbookType,
-            addresses: list[OptionalChainAddress],
+            addresses: Union[list[OptionalChainAddress], list[GlobalAddressbookKey]],
     ) -> Response:
         return self.rest_api.delete_addressbook_entries(
             book_type=book_type,
