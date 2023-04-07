@@ -5,15 +5,59 @@ import pytest
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.updates import RotkiDataUpdater, UpdateType
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import SPAM_PROTOCOL, ChainID, EvmTokenKind
+from rotkehlchen.types import (
+    SPAM_PROTOCOL,
+    AddressbookEntry,
+    ChainID,
+    EvmTokenKind,
+    SupportedBlockchain,
+)
 
 ETHEREUM_SPAM_ASSET_ADDRESS = make_evm_address()
 OPTIMISM_SPAM_ASSET_ADDRESS = make_evm_address()
+
+ADDRESSBOOK_ADDRESS_1 = make_evm_address()
+ADDRESSBOOK_ADDRESS_2 = make_evm_address()
+
+REMOTE_ADDRESSBOOK = [
+    AddressbookEntry(
+        name='Remote name that doesnt conflict with anything',
+        address=ADDRESSBOOK_ADDRESS_1,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    ), AddressbookEntry(
+        name='Remote name that has a conflict, and it should replace the local name',
+        address=ADDRESSBOOK_ADDRESS_2,
+        blockchain=SupportedBlockchain.OPTIMISM,
+    ), AddressbookEntry(
+        name='Remote name that has a conflict, but the local name should be preferred',
+        address=ADDRESSBOOK_ADDRESS_2,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    ),
+]
+SERIALIZED_REMOTE_ADDRESSBOOK = [
+    {
+        'address': ADDRESSBOOK_ADDRESS_1,
+        'blockchain': 'ETH',
+        'new_name': 'Remote name that doesnt conflict with anything',
+    },
+    {
+        'address': ADDRESSBOOK_ADDRESS_2,
+        'blockchain': 'OPTIMISM',
+        'new_name': 'Remote name that has a conflict, and it should replace the local name',
+        'old_name': 'Local name that has a conflict and should be replaced by the remote name',
+    },
+    {
+        'address': ADDRESSBOOK_ADDRESS_2,
+        'blockchain': 'ETH',
+        'new_name': 'Remote name that has a conflict, but the local name should be preferred',
+    },
+]
 
 
 ABI_DATA = [
@@ -35,6 +79,7 @@ def make_mock_github_data_response(target: UpdateType):
                 'spam_assets': {'latest': 1 if target == UpdateType.SPAM_ASSETS else 0},
                 'rpc_nodes': {'latest': 1 if target == UpdateType.RPC_NODES else 0},
                 'contracts': {'latest': 1 if target == UpdateType.CONTRACTS else 0},
+                'global_addressbook': {'latest': 1 if target == UpdateType.GLOBAL_ADDRESSBOOK else 0},  # noqa: E501
             }
         elif 'spam_assets/v' in url:
             data = {
@@ -82,6 +127,8 @@ def make_mock_github_data_response(target: UpdateType):
                     'contracts_data': CONTRACT_DATA,
                 },
             }
+        elif 'global_addressbook/v' in url:
+            data = {'global_addressbook': SERIALIZED_REMOTE_ADDRESSBOOK}
         else:
             raise AssertionError(f'Unexpected url {url} called')
 
@@ -94,7 +141,12 @@ def mock_github_data_response_old_update(url, timeout):  # pylint: disable=unuse
     if 'info' not in url:
         raise AssertionError(f'Unexpected url {url} called')
 
-    return MockResponse(200, '{"spam_assets":{"latest":1}, "rpc_nodes": {"latest":1}, "contracts": {"latest":1}}')  # noqa: E501
+    return MockResponse(200, json.dumps({
+        'spam_assets': {'latest': 1},
+        'rpc_nodes': {'latest': 1},
+        'contracts': {'latest': 1},
+        'global_addressbook': {'latest': 1},
+    }))
 
 
 @pytest.fixture(name='data_updater')
@@ -147,6 +199,7 @@ def test_no_update_performed(data_updater: RotkiDataUpdater) -> None:
                 (UpdateType.SPAM_ASSETS.serialize(), 999),
                 (UpdateType.RPC_NODES.serialize(), 999),
                 (UpdateType.CONTRACTS.serialize(), 999),
+                (UpdateType.GLOBAL_ADDRESSBOOK.serialize(), 999),
             ],
         )
 
@@ -155,11 +208,13 @@ def test_no_update_performed(data_updater: RotkiDataUpdater) -> None:
         patch.object(data_updater, 'update_spam_assets') as spam_assets,
         patch.object(data_updater, 'update_rpc_nodes') as rpc_nodes,
         patch.object(data_updater, 'update_contracts') as contracts,
+        patch.object(data_updater, 'update_global_addressbook') as global_addressbook,
     ):
         data_updater.check_for_updates()
         assert spam_assets.call_count == 0
         assert rpc_nodes.call_count == 0
         assert contracts.call_count == 0
+        assert global_addressbook.call_count == 0
 
 
 def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
@@ -242,3 +297,44 @@ def test_update_contracts(data_updater: RotkiDataUpdater) -> None:
         # Check that the new abis and contracts were added and the old ones were not modified
         contracts_after_update = cursor.execute('SELECT * FROM contract_data')
         assert set(contracts_after_update) == set(initial_contracts) | set(expected_new_contracts)
+
+
+@pytest.mark.parametrize('empty_global_addressbook', [True])
+def test_global_addressbook(data_updater: RotkiDataUpdater) -> None:
+    """Test that remote updates for global addressbook work"""
+    db_addressbook = DBAddressbook(data_updater.user_db)
+    # check state of the address book before updating
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        cursor.execute('SELECT COUNT(*) FROM address_book')
+        assert cursor.fetchone()[0] == 0
+
+    # Populate addressbook and see that preferring local / remote names works as expected.
+    initial_entries = [
+        AddressbookEntry(
+            address=ADDRESSBOOK_ADDRESS_1,
+            name='Local name that does not conflict with anything',
+            blockchain=SupportedBlockchain.AVALANCHE,
+        ), AddressbookEntry(
+            address=ADDRESSBOOK_ADDRESS_2,
+            name='Local name that has a conflict with remote, but should stay as is',
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ), AddressbookEntry(
+            address=ADDRESSBOOK_ADDRESS_2,
+            name='Local name that has a conflict and should be replaced by the remote name',
+            blockchain=SupportedBlockchain.OPTIMISM,
+        ),
+    ]
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        db_addressbook.add_addressbook_entries(
+            write_cursor=write_cursor,
+            entries=initial_entries,
+        )
+
+    with patch('requests.get', wraps=make_mock_github_data_response(UpdateType.GLOBAL_ADDRESSBOOK)):  # noqa: E501
+        data_updater.check_for_updates()
+
+    # Assert state of the address book after the update
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        all_entries = db_addressbook.get_addressbook_entries(cursor=cursor)
+
+    assert set(all_entries) == set(initial_entries[:2] + REMOTE_ADDRESSBOOK[:2])
