@@ -84,9 +84,8 @@ describe('composables::history/filter-paginate', () => {
           onUpdateFilters,
           extraParams,
           defaultSortBy: {
-            pagination: 'name',
-            pageParams: ['name'],
-            pageParamsAsc: [true]
+            key: 'name',
+            ascending: [true]
           }
         }
       );
@@ -120,9 +119,8 @@ describe('composables::history/filter-paginate', () => {
             onUpdateFilters,
             extraParams,
             defaultSortBy: {
-              pagination: 'name',
-              pageParams: ['name'],
-              pageParamsAsc: [true]
+              key: 'name',
+              ascending: [true]
             }
           }
         );
@@ -149,9 +147,8 @@ describe('composables::history/filter-paginate', () => {
           onUpdateFilters,
           extraParams,
           defaultSortBy: {
-            pagination: 'name',
-            pageParams: ['name'],
-            pageParamsAsc: [true]
+            key: 'name',
+            ascending: [true]
           }
         }
       );

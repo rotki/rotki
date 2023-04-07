@@ -158,8 +158,8 @@ const {
   },
   extraParams,
   defaultSortBy: {
-    pageParams: ['symbol'],
-    pageParamsAsc: [false]
+    key: 'symbol',
+    ascending: [false]
   }
 });
 

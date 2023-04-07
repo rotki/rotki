@@ -49,7 +49,7 @@ const {
 >(exchange, true, useEmptyFilter, fetchExchangeSavings, {
   defaultCollection: defaultCollectionState,
   defaultSortBy: {
-    pageParamsAsc: [true]
+    ascending: [true]
   },
   extraParams
 });

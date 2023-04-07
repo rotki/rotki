@@ -88,7 +88,7 @@ describe('composables::history/filter-paginate', () => {
         defaultCollection: defaultCollectionState,
         extraParams,
         defaultSortBy: {
-          pageParamsAsc: [true]
+          ascending: [true]
         }
       });
 
@@ -123,7 +123,7 @@ describe('composables::history/filter-paginate', () => {
         defaultCollection: defaultCollectionState,
         extraParams,
         defaultSortBy: {
-          pageParamsAsc: [true]
+          ascending: [true]
         }
       });
 
@@ -149,7 +149,7 @@ describe('composables::history/filter-paginate', () => {
         defaultCollection: defaultCollectionState,
         extraParams,
         defaultSortBy: {
-          pageParamsAsc: [true]
+          ascending: [true]
         }
       });
 

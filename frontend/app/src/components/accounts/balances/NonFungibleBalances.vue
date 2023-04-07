@@ -192,9 +192,8 @@ const {
     },
     extraParams,
     defaultSortBy: {
-      pagination: 'name',
-      pageParams: ['name'],
-      pageParamsAsc: [true]
+      key: 'name',
+      ascending: [true]
     }
   }
 );

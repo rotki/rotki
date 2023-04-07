@@ -120,8 +120,8 @@ const {
   Matcher
 >(null, mainPage, () => useCustomAssetFilter(types), queryAllCustomAssets, {
   defaultSortBy: {
-    pageParams: ['name'],
-    pageParamsAsc: [false]
+    key: 'name',
+    ascending: [false]
   }
 });
 
@@ -145,7 +145,7 @@ const showDeleteConfirmation = (item: CustomAsset) => {
 };
 
 onMounted(async () => {
-  await refreshTypes();
+  await refresh();
   editAsset(get(identifier));
 
   const query = get(route).query;

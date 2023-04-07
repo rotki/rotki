@@ -53,16 +53,15 @@ export const usePaginationFilters = <
     customPageParams?: ComputedRef<Partial<U>>;
     defaultCollection?: () => S;
     defaultSortBy?: {
-      pagination?: keyof T;
-      pageParams?: (keyof T)[];
-      pageParamsAsc?: boolean[];
+      key?: keyof T;
+      ascending?: boolean[];
     };
   } = {}
 ) => {
   const router = useRouter();
   const route = useRoute();
   const paginationOptions: Ref<TablePagination<T>> = ref(
-    defaultOptions<T>(options.defaultSortBy?.pagination)
+    defaultOptions<T>(options.defaultSortBy?.key)
   );
   const selected: Ref<V[]> = ref([]);
   const openDialog: Ref<boolean> = ref(false);
@@ -103,13 +102,11 @@ export const usePaginationFilters = <
       limit: itemsPerPage,
       offset,
       orderByAttributes:
-        sortBy?.length > 0
-          ? sortBy
-          : defaultSortBy?.pageParams ?? ['timestamp'],
+        sortBy?.length > 0 ? sortBy : [defaultSortBy?.key ?? 'timestamp'],
       ascending:
         sortBy?.length > 0
           ? sortDesc.map(bool => !bool)
-          : defaultSortBy?.pageParamsAsc ?? [false]
+          : defaultSortBy?.ascending ?? [false]
     } as U; // todo: figure out a way to not typecast
   });
 
