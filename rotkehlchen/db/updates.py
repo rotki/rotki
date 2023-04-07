@@ -8,11 +8,19 @@ import requests
 
 from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.types import (
+    AddressbookEntry,
+    AddressbookType,
+    OptionalChainAddress,
+    SupportedBlockchain,
+)
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.network import query_file
 
@@ -27,12 +35,14 @@ LAST_DATA_UPDATES_KEY: Final = 'last_data_updates_ts'
 SPAM_ASSETS_URL = 'https://raw.githubusercontent.com/rotki/data/{branch}/updates/spam_assets/v{version}.json'  # noqa: E501
 RPC_NODES_URL = 'https://raw.githubusercontent.com/rotki/data/{branch}/updates/rpc_nodes/v{version}.json'  # noqa: E501
 CONTRACTS_URL = 'https://raw.githubusercontent.com/rotki/data/{branch}/updates/contracts/v{version}.json'  # noqa: E501
+GLOBAL_ADDRESSBOOK_URL = 'https://raw.githubusercontent.com/rotki/data/{branch}/updates/global_addressbook/v{version}.json'  # noqa: E501
 
 
 class UpdateType(Enum):
     SPAM_ASSETS = 'spam_assets'
     RPC_NODES = 'rpc_nodes'
     CONTRACTS = 'contracts'
+    GLOBAL_ADDRESSBOOK = 'global_addressbook'
 
     def serialize(self) -> str:
         """Serializes the update type for the DB and API"""
@@ -221,6 +231,70 @@ class RotkiDataUpdater:
                     (UpdateType.CONTRACTS.serialize(), version),
                 )
 
+    def update_global_addressbook(self, from_version: int, to_version: int) -> None:
+        """Downloads and applies global addressbook updates from from_version to to_version"""
+        db_addressbook = DBAddressbook(self.user_db)
+        for version in range(from_version + 1, to_version + 1):
+            log.debug(f'Applying global address book update version {version}')
+            success, new_raw_entries = self._get_file_content(
+                file_url=GLOBAL_ADDRESSBOOK_URL.format(branch=self.branch, version=version),
+                update_type=UpdateType.GLOBAL_ADDRESSBOOK,
+            )
+            if success is False:
+                log.error(f'Failed to download globaldb addressbook for version {version}')
+                continue
+
+            entries_to_add = []
+            for raw_entry in new_raw_entries:
+                try:
+                    address = deserialize_evm_address(raw_entry['address'])
+                    blockchain = SupportedBlockchain.deserialize(raw_entry['blockchain']) if raw_entry['blockchain'] else None  # noqa: E501
+                except DeserializationError as e:
+                    self.msg_aggregator.add_error(
+                        f'Could not deserialize address {raw_entry["address"]} or blockchain '
+                        f'{raw_entry["blockchain"]} that was seen in a global addressbook update. '
+                        f'Please report it to the rotki team. {str(e)}',
+                    )
+                    continue
+
+                entry = AddressbookEntry(
+                    address=address,
+                    name=raw_entry['new_name'],
+                    blockchain=blockchain,
+                )
+                existing_name = db_addressbook.get_addressbook_entry_name(
+                    book_type=AddressbookType.GLOBAL,
+                    chain_address=OptionalChainAddress(
+                        address=address,
+                        blockchain=blockchain,
+                    ),
+                )
+                if existing_name is None:
+                    entries_to_add.append(entry)
+                elif raw_entry.get('old_name') is not None and existing_name == raw_entry['old_name']:  # noqa: E501
+                    # If old_name is specified, replace the entry with the old name.
+                    db_addressbook.delete_addressbook_entries(
+                        book_type=AddressbookType.GLOBAL,
+                        chain_addresses=[OptionalChainAddress(
+                            address=address,
+                            blockchain=blockchain,
+                        )],
+                    )
+                    entries_to_add.append(entry)
+                else:
+                    log.debug(
+                        f'Global address book entry for address {address} and blockchain '
+                        f'{blockchain} already exists (probably was input by the user). '
+                        f'Update for this entry will not be applied.',
+                    )
+                    continue
+
+            with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                db_addressbook.add_addressbook_entries(
+                    write_cursor=write_cursor,
+                    entries=entries_to_add,
+                )
+
     def check_for_updates(self) -> None:
         """Retrieve the information about the latest available update"""
         remote_information = self._get_remote_info_json()
@@ -258,7 +332,11 @@ class RotkiDataUpdater:
     @overload
     def _get_file_content(
             file_url: str,
-            update_type: Literal[UpdateType.SPAM_ASSETS, UpdateType.RPC_NODES],
+            update_type: Literal[
+                UpdateType.SPAM_ASSETS,
+                UpdateType.RPC_NODES,
+                UpdateType.GLOBAL_ADDRESSBOOK,
+            ],
     ) -> tuple[bool, list[dict[str, Any]]]:
         ...
 
