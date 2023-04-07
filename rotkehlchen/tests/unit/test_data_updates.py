@@ -274,10 +274,9 @@ def test_update_contracts(data_updater: RotkiDataUpdater) -> None:
     remote_id_to_local_id = {}
     with GlobalDBHandler().conn.read_ctx() as cursor:
         for entry in ABI_DATA:
-            reduced_abi = json.dumps(entry['value'], separators=(',', ':'))
             cursor.execute(
                 'SELECT id FROM contract_abi WHERE name=? AND value=?',
-                (entry['name'], reduced_abi),
+                (entry['name'], entry['value']),
             )
             local_id = cursor.fetchone()
             assert local_id is not None

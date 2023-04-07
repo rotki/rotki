@@ -96,7 +96,7 @@ class RotkiDataUpdater:
 
     def update_spam_assets(self, from_version: int, to_version: int) -> None:
         """
-        Check the updates in the inclusive range [local_version + 1, to_version] and update the
+        Check the updates in the inclusive range [from_version + 1, to_version] and update the
         spam assets for those versions. Assets are also added to the globaldb if they don't exist
         locally
         """
@@ -120,7 +120,7 @@ class RotkiDataUpdater:
                     (UpdateType.SPAM_ASSETS.serialize(), version),
                 )
 
-    def update_rpc_nodes(self, from_version: int, to_version: int) -> None:  # pylint: disable=unused-argument  # from_version is here to have the same format as other updating functions  # noqa: E501
+    def update_rpc_nodes(self, from_version: int, to_version: int) -> None:  # pylint: disable=unused-argument  # noqa: E501
         """Checks the update for the latest version and update the default rpc nodes in the global db.
 
         It also updates the user db with these default nodes.
@@ -181,27 +181,13 @@ class RotkiDataUpdater:
 
             log.info(f'Applying update for contracts to v{version}')
             remote_id_to_local_id = {}
-            with GlobalDBHandler().conn.read_ctx() as cursor:
-                for single_abi_data in updated_contracts['abis_data']:
-                    serialized_abi = json.dumps(single_abi_data['value'], separators=(',', ':'))
-
-                    # check if the abi is already present in the database
-                    existing_abi_id = cursor.execute(
-                        'SELECT id FROM contract_abi WHERE value=?',
-                        (serialized_abi,),
-                    ).fetchone()
-
-                    if existing_abi_id is not None:
-                        abi_id = existing_abi_id[0]
-                    else:
-                        with GlobalDBHandler().conn.write_ctx() as write_cursor:
-                            write_cursor.execute(
-                                'INSERT INTO contract_abi(name, value) VALUES(?, ?)',
-                                (single_abi_data['name'], serialized_abi),
-                            )
-                            abi_id = write_cursor.lastrowid
-                    # store a mapping of the virtual id to the id in the user's globaldb
-                    remote_id_to_local_id[single_abi_data['id']] = abi_id
+            for single_abi_data in updated_contracts['abis_data']:
+                # store a mapping of the virtual id to the id in the user's globaldb
+                abi_id = GlobalDBHandler().get_or_write_abi(
+                    serialized_abi=single_abi_data['value'],
+                    abi_name=single_abi_data.get('name'),
+                )
+                remote_id_to_local_id[single_abi_data['id']] = abi_id
 
             new_contracts_data = []
             for single_contract_data in updated_contracts['contracts_data']:

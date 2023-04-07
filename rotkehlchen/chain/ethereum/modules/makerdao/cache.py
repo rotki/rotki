@@ -201,20 +201,11 @@ def update_ilk_registry(
                 log.error(f'Did not add ilk {ilk} due to no response for {join_address} metadata')
                 continue
 
-            serialized_abi = json.dumps(abi, separators=(',', ':'))
-            cursor.execute('SELECT id from contract_abi WHERE value=?', (serialized_abi,))
-            result = cursor.fetchone()
-            name = f'MAKERDAO_{ilk}_JOIN'
-            if result is None:
-                with GlobalDBHandler().conn.write_ctx() as write_cursor:
-                    write_cursor.execute(
-                        'INSERT INTO contract_abi(value, name) VALUES(?, ?)',
-                        (serialized_abi, name),
-                    )
-                    abi_id = write_cursor.lastrowid
-            else:
-                abi_id = result[0]
-
+            abi_name = f'MAKERDAO_{ilk}_JOIN'
+            abi_id = GlobalDBHandler().get_or_write_abi(
+                serialized_abi=json.dumps(abi, separators=(',', ':')),
+                abi_name=abi_name,
+            )
             cursor.execute(
                 'SELECT COUNT(*) FROM contract_data WHERE address=? and chain_id=?',
                 (join_address, 1),
@@ -226,7 +217,7 @@ def update_ilk_registry(
                 write_cursor.execute(
                     'INSERT INTO contract_data(address, chain_id, name, abi, deployed_block)'
                     ' VALUES(? ,? , ?, ?, ?)',
-                    (join_address, 1, name, abi_id, deployed_block),
+                    (join_address, 1, abi_name, abi_id, deployed_block),
                 )
 
             # if the underlying token does not exist, add it
