@@ -11,8 +11,9 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from ..constants import CPT_ONEINCH_V1
@@ -127,11 +128,15 @@ class Oneinchv1Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
         return {CPT_ONEINCH_V1: {
-            (HistoryEventType.SPEND, HistoryEventSubType.FEE),
-            (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
-            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
+            HistoryEventType.SPEND: {
+                HistoryEventSubType.FEE: TransactionEventType.GAS,
+            },
+            HistoryEventType.TRADE: {
+                HistoryEventSubType.SPEND: TransactionEventType.SWAP_OUT,
+                HistoryEventSubType.RECEIVE: TransactionEventType.SWAP_IN,
+            },
         }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:

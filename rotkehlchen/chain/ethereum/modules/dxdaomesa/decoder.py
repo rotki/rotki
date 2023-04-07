@@ -12,7 +12,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
 
 from .constants import CPT_DXDAO_MESA
 
@@ -175,12 +176,18 @@ class DxdaomesaDecoder(DecoderInterface):
         return DecodingOutput(event=event)
 
     # -- DecoderInterface methods
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
         return {CPT_DXDAO_MESA: {
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
-            (HistoryEventType.INFORMATIONAL, HistoryEventSubType.REMOVE_ASSET),
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
-            (HistoryEventType.INFORMATIONAL, HistoryEventSubType.PLACE_ORDER),
+            HistoryEventType.WITHDRAWAL: {
+                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+            },
+            HistoryEventType.DEPOSIT: {
+                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+            },
+            HistoryEventType.INFORMATIONAL: {
+                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+                HistoryEventSubType.PLACE_ORDER: TransactionEventType.PLACE_ORDER,
+            },
         }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:

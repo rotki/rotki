@@ -520,6 +520,7 @@ def test_cache_deletion(rotkehlchen_api_server):
     assert response.headers['Content-Type'] == 'image/png'
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 def test_query_frontend_mappings(rotkehlchen_api_server):
     """
     Test that the information for event types mappings and counterparties is correctly

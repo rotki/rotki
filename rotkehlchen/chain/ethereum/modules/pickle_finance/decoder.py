@@ -10,9 +10,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.types import PICKLE_JAR_PROTOCOL
+from rotkehlchen.types import DECODER_EVENT_MAPPING, PICKLE_JAR_PROTOCOL
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_PICKLE
@@ -136,12 +137,20 @@ class PickleFinanceDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
         return {CPT_PICKLE: {
-            (HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED),
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
-            (HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED),
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+            HistoryEventType.WITHDRAWAL: {
+                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+            },
+            HistoryEventType.SPEND: {
+                HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+            },
+            HistoryEventType.RECEIVE: {
+                HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
+            },
+            HistoryEventType.DEPOSIT: {
+                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+            },
         }}
 
     def enricher_rules(self) -> list[Callable]:

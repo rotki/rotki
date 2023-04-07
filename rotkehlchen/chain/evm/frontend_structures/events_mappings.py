@@ -2,12 +2,11 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.evm.frontend_structures.types import EventDetails, TransactionEventType
 
 
-FRONTEND_MAPPING = {
+DEFAULT_FRONTEND_MAPPINGS = {
     HistoryEventType.SPEND: {
         HistoryEventSubType.FEE: TransactionEventType.GAS,
         HistoryEventSubType.PAYBACK_DEBT: TransactionEventType.REPAY,
         HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
-        HistoryEventSubType.DONATE: TransactionEventType.DONATE,
         HistoryEventSubType.LIQUIDATE: TransactionEventType.LIQUIDATE,
         HistoryEventSubType.NONE: TransactionEventType.SEND,
     },
@@ -18,7 +17,6 @@ FRONTEND_MAPPING = {
         HistoryEventSubType.AIRDROP: TransactionEventType.AIRDROP,
         HistoryEventSubType.REWARD: TransactionEventType.CLAIM_REWARD,
         HistoryEventSubType.NONE: TransactionEventType.RECEIVE,
-        HistoryEventSubType.DONATE: TransactionEventType.RECEIVE_DONATION,
         HistoryEventSubType.NFT: TransactionEventType.RECEIVE,
     },
     HistoryEventType.INFORMATIONAL: {
@@ -53,9 +51,6 @@ FRONTEND_MAPPING = {
         HistoryEventSubType.SPEND: TransactionEventType.SEND,
         HistoryEventSubType.RECEIVE: TransactionEventType.RECEIVE,
     },
-    HistoryEventType.RENEW: {
-        HistoryEventSubType.NFT: TransactionEventType.RENEW,
-    },
     HistoryEventType.STAKING: {
         HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
         HistoryEventSubType.REWARD: TransactionEventType.RECEIVE,
@@ -68,7 +63,7 @@ FRONTEND_MAPPING = {
 
 EVENT_DETAILS = {
     TransactionEventType.GAS: EventDetails(
-        label='gas_fee',
+        label='gas fee',
         icon='mdi-fire',
     ),
     TransactionEventType.SEND: EventDetails(
@@ -81,11 +76,11 @@ EVENT_DETAILS = {
         color='green',
     ),
     TransactionEventType.SWAP_OUT: EventDetails(
-        label='swap_out',
+        label='swap out',
         icon='mdi-arrow-u-right-bottom',
     ),
     TransactionEventType.SWAP_IN: EventDetails(
-        label='swap_in',
+        label='swap in',
         icon='mdi-arrow-u-left-top',
         color='green',
     ),
@@ -131,7 +126,7 @@ EVENT_DETAILS = {
         icon='mdi-hand-heart-outline',
     ),
     TransactionEventType.RECEIVE_DONATION: EventDetails(
-        label='receive_donation',
+        label='receive donation',
         icon='mdi-hand-heart-outline',
     ),
     TransactionEventType.RENEW: EventDetails(
@@ -139,7 +134,7 @@ EVENT_DETAILS = {
         icon='mdi-calendar-refresh',
     ),
     TransactionEventType.PLACE_ORDER: EventDetails(
-        label='place_order',
+        label='place order',
         icon='mdi-briefcase-arrow-up-down',
     ),
     TransactionEventType.TRANSFER: EventDetails(
@@ -147,7 +142,7 @@ EVENT_DETAILS = {
         icon='mdi-swap-horizontal',
     ),
     TransactionEventType.CLAIM_REWARD: EventDetails(
-        label='claim_reward',
+        label='claim reward',
         icon='mdi-gift',
     ),
     TransactionEventType.LIQUIDATE: EventDetails(
@@ -159,7 +154,7 @@ EVENT_DETAILS = {
         icon='mdi-information-outline',
     ),
     TransactionEventType.CANCEL_ORDER: EventDetails(
-        label='cancel_order',
+        label='cancel order',
         icon='mdi-close-circle-multiple-outline',
         color='red',
     ),

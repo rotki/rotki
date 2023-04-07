@@ -11,9 +11,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EvmTransaction
+from rotkehlchen.types import DECODER_EVENT_MAPPING, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -263,14 +264,24 @@ class Balancerv1Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
-        return {CPT_BALANCER_V1: {
-            (HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED),
-            (HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED),
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
-            (HistoryEventType.RECEIVE, HistoryEventSubType.REMOVE_ASSET),
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
-        }}
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
+        return {
+            CPT_BALANCER_V1: {
+                HistoryEventType.RECEIVE: {
+                    HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
+                    HistoryEventSubType.REMOVE_ASSET: TransactionEventType.REFUND,
+                },
+                HistoryEventType.SPEND: {
+                    HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+                },
+                HistoryEventType.WITHDRAWAL: {
+                    HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+                },
+                HistoryEventType.DEPOSIT: {
+                    HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+                },
+            },
+        }
 
     def enricher_rules(self) -> list[Callable]:
         return [

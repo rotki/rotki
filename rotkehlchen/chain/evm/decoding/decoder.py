@@ -30,7 +30,13 @@ from rotkehlchen.errors.serialization import ConversionError, DeserializationErr
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction, EVMTxHash
+from rotkehlchen.types import (
+    DECODER_EVENT_MAPPING,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    EvmTransaction,
+    EVMTxHash,
+)
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -151,7 +157,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         self.value_asset = value_asset
         self.decoders: dict[str, 'DecoderInterface'] = {}
         # store the mapping of possible counterparties to the allowed types and subtypes in events
-        self.events_types_tuples: dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]] = {}  # noqa: E501
+        self.events_types_tuples: DECODER_EVENT_MAPPING = {}
         # Recursively check all submodules to get all decoder address mappings and rules
         rules = self._recursively_initialize_decoders(self.chain_modules_root)
         self.rules += rules
@@ -808,11 +814,14 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             if event.counterparty is None:
                 continue
 
-            expected_events = self.events_types_tuples.get(event.counterparty)
-            if expected_events is None:
+            expected_mappings = self.events_types_tuples.get(event.counterparty)
+            if expected_mappings is None:
                 continue
 
-            if (event.event_type, event.event_subtype) not in expected_events:
+            if (
+                event.event_type not in expected_mappings and
+                event.event_subtype not in expected_mappings[event.event_type]
+            ):
                 unexpected_types.add((event.event_type, event.event_subtype, event.counterparty))
 
         assert len(unexpected_types) == 0, f'Found the following unexpected types {unexpected_types}'  # noqa: E501

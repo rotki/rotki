@@ -13,12 +13,13 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.names import find_ens_mappings
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
 from rotkehlchen.utils.misc import from_wei
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -219,12 +220,18 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
         return {CPT_ENS: {
-            (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
-            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
-            (HistoryEventType.RENEW, HistoryEventSubType.NFT),
-            (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE),
+            HistoryEventType.RENEW: {
+                HistoryEventSubType.NFT: TransactionEventType.RENEW,
+            },
+            HistoryEventType.TRADE: {
+                HistoryEventSubType.SPEND: TransactionEventType.SWAP_OUT,
+                HistoryEventSubType.RECEIVE: TransactionEventType.SWAP_IN,
+            },
+            HistoryEventType.INFORMATIONAL: {
+                HistoryEventSubType.NONE: TransactionEventType.INFORMATIONAL,
+            },
         }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:

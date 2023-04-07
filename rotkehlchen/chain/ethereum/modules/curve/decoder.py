@@ -1,8 +1,8 @@
 import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
-from rotkehlchen.accounting.structures.evm_event import EvmProduct
 
+from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -17,13 +17,20 @@ from rotkehlchen.chain.evm.decoding.structures import (
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.types import (
+    DECODER_EVENT_MAPPING,
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    EvmTransaction,
+)
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_CURVE
@@ -638,17 +645,28 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
-        return {CPT_CURVE: {
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
-            (HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED),
-            (HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED),
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
-            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
-            (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
-            (HistoryEventType.RECEIVE, HistoryEventSubType.REWARD),
-        }}
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
+        return {
+            CPT_CURVE: {
+                HistoryEventType.TRADE: {
+                    HistoryEventSubType.SPEND: TransactionEventType.SWAP_OUT,
+                    HistoryEventSubType.RECEIVE: TransactionEventType.SWAP_IN,
+                },
+                HistoryEventType.WITHDRAWAL: {
+                    HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+                },
+                HistoryEventType.RECEIVE: {
+                    HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
+                    HistoryEventSubType.REWARD: TransactionEventType.CLAIM_REWARD,
+                },
+                HistoryEventType.SPEND: {
+                    HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+                },
+                HistoryEventType.DEPOSIT: {
+                    HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+                },
+            },
+        }
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = {

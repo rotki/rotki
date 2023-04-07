@@ -8,10 +8,11 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
 
 # https://github.com/hop-protocol/hop/blob/develop/packages/core/src/addresses/mainnet.ts
@@ -60,8 +61,12 @@ class HopDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
-        return {CPT_HOP: {(HistoryEventType.DEPOSIT, HistoryEventSubType.BRIDGE)}}
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
+        return {CPT_HOP: {
+            HistoryEventType.DEPOSIT: {
+                HistoryEventSubType.BRIDGE: TransactionEventType.BRIDGE,
+            },
+        }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

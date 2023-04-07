@@ -10,13 +10,14 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_LIQUITY
@@ -222,15 +223,23 @@ class LiquityDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
         return {CPT_LIQUITY: {
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.GENERATE_DEBT),
-            (HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT),
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
-            (HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET),
-            (HistoryEventType.STAKING, HistoryEventSubType.REWARD),
-            (HistoryEventType.STAKING, HistoryEventSubType.REMOVE_ASSET),
+            HistoryEventType.WITHDRAWAL: {
+                HistoryEventSubType.GENERATE_DEBT: TransactionEventType.BORROW,
+                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+            },
+            HistoryEventType.SPEND: {
+                HistoryEventSubType.PAYBACK_DEBT: TransactionEventType.REPAY,
+            },
+            HistoryEventType.DEPOSIT: {
+                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+            },
+            HistoryEventType.STAKING: {
+                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+                HistoryEventSubType.REWARD: TransactionEventType.RECEIVE,
+                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+            },
         }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:

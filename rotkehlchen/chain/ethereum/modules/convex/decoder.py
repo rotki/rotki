@@ -29,9 +29,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CURVE_POOL_PROTOCOL, ChecksumEvmAddress
+from rotkehlchen.types import CURVE_POOL_PROTOCOL, DECODER_EVENT_MAPPING, ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 logger = logging.getLogger(__name__)
@@ -148,13 +149,23 @@ class ConvexDecoder(DecoderInterface):
             return DEFAULT_ENRICHMENT_OUTPUT
         return DEFAULT_ENRICHMENT_OUTPUT
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
-        return {CPT_CONVEX: {
-            (HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED),
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.NONE),
-            (HistoryEventType.RECEIVE, HistoryEventSubType.REWARD),
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.NONE),
-        }}
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
+        return {
+            CPT_CONVEX: {
+                HistoryEventType.RECEIVE: {
+                    HistoryEventSubType.REWARD: TransactionEventType.CLAIM_REWARD,
+                },
+                HistoryEventType.SPEND: {
+                    HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+                },
+                HistoryEventType.DEPOSIT: {
+                    HistoryEventSubType.NONE: TransactionEventType.DEPOSIT,
+                },
+                HistoryEventType.WITHDRAWAL: {
+                    HistoryEventSubType.NONE: TransactionEventType.WITHDRAW,
+                },
+            },
+        }
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         decoder_mappings: dict[ChecksumEvmAddress, tuple[Callable, ...]] = {

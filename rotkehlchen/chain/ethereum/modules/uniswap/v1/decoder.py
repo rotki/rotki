@@ -7,10 +7,11 @@ from rotkehlchen.chain.ethereum.modules.aave.v1.decoder import DEFAULT_DECODING_
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EvmTransaction
+from rotkehlchen.types import DECODER_EVENT_MAPPING, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
 from ..constants import CPT_UNISWAP_V1
@@ -82,10 +83,12 @@ class Uniswapv1Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
         return {CPT_UNISWAP_V1: {
-            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
-            (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
+            HistoryEventType.TRADE: {
+                HistoryEventSubType.RECEIVE: TransactionEventType.SWAP_IN,
+                HistoryEventSubType.SPEND: TransactionEventType.SWAP_OUT,
+            },
         }}
 
     def decoding_rules(self) -> list[Callable]:

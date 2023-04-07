@@ -11,7 +11,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from ..constants import CPT_AAVE_V1
@@ -102,13 +103,21 @@ class Aavev1Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
         return {CPT_AAVE_V1: {
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
-            (HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED),
-            (HistoryEventType.RECEIVE, HistoryEventSubType.REWARD),
-            (HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED),
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+            HistoryEventType.RECEIVE: {
+                HistoryEventSubType.REWARD: TransactionEventType.CLAIM_REWARD,
+                HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
+            },
+            HistoryEventType.DEPOSIT: {
+                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+            },
+            HistoryEventType.SPEND: {
+                HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+            },
+            HistoryEventType.WITHDRAWAL: {
+                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+            },
         }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:

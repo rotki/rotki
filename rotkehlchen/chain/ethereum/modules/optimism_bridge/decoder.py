@@ -9,11 +9,12 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import DECODER_EVENT_MAPPING, ChainID, ChecksumEvmAddress, EvmTokenKind
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 BRIDGE_ADDRESS = string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1')
@@ -88,11 +89,17 @@ class OptimismBridgeDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
         return {CPT_OPTIMISM: {
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.BRIDGE),
-            (HistoryEventType.RECEIVE, HistoryEventSubType.BRIDGE),
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.BRIDGE),
+            HistoryEventType.DEPOSIT: {
+                HistoryEventSubType.BRIDGE: TransactionEventType.BRIDGE,
+            },
+            HistoryEventType.RECEIVE: {
+                HistoryEventSubType.BRIDGE: TransactionEventType.BRIDGE,
+            },
+            HistoryEventType.WITHDRAWAL: {
+                HistoryEventSubType.BRIDGE: TransactionEventType.BRIDGE,
+            },
         }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:

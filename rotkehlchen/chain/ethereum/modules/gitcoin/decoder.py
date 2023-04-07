@@ -8,7 +8,9 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
+from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import DECODER_EVENT_MAPPING
 
 from .constants import CPT_GITCOIN
 
@@ -47,10 +49,14 @@ class GitcoinDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> dict[str, set[tuple['HistoryEventType', 'HistoryEventSubType']]]:
+    def possible_events(self) -> DECODER_EVENT_MAPPING:
         return {CPT_GITCOIN: {
-            (HistoryEventType.SPEND, HistoryEventSubType.DONATE),
-            (HistoryEventType.RECEIVE, HistoryEventSubType.DONATE),
+            HistoryEventType.SPEND: {
+                HistoryEventSubType.DONATE: TransactionEventType.DONATE,
+            },
+            HistoryEventType.RECEIVE: {
+                HistoryEventSubType.DONATE: TransactionEventType.RECEIVE_DONATION,
+            },
         }}
 
     def enricher_rules(self) -> list[Callable]:
