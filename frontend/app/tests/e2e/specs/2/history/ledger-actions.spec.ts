@@ -58,7 +58,7 @@ describe('ledger actions history', () => {
     ledgerActionPage.ledgerActionIsVisible(0, externalLedgerActions[1]);
   });
 
-  it.only('filter and pagination', () => {
+  it('filter and pagination', () => {
     for (let i = 0; i < 6; i++) {
       cy.addLedgerAction(externalLedgerActions[0]);
       cy.addLedgerAction(externalLedgerActions[1]);

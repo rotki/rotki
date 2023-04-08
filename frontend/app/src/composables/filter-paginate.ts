@@ -225,7 +225,7 @@ export const usePaginationFilters = <
     updateFilter(newFilter);
   };
 
-  onBeforeMount(async () => {
+  onBeforeMount(() => {
     applyRouteFilter();
   });
 
