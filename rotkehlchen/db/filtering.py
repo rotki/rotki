@@ -9,7 +9,7 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.types import SchemaEventType
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import EvmAccount
@@ -67,6 +67,13 @@ class DBFilterPagination(NamedTuple):
 
     def prepare(self) -> str:
         return f'LIMIT {self.limit} OFFSET {self.offset}'
+
+
+class DBFilterGroupBy(NamedTuple):
+    field_name: str
+
+    def prepare(self) -> str:
+        return f'GROUP BY {self.field_name}'
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -128,58 +135,33 @@ class DBTimestampFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBETHTransactionJoinsFilter(DBFilter):
-    """ This join filter does 2 things:
-
-    1. If accounts is not None, find transactions involving any of the address/chain combos.
+class DBEvmTransactionJoinsFilter(DBFilter):
+    """ This join finds transactions involving any of the address/chain combos.
     Including internal ones. This uses the mappings we create in the DB at transaction
     addition to signify relevant addresses for a transaction.
-
-    2. If join_events is True, join history_events which makes it possible to apply
-    filters by history_events' properties
     """
-    accounts: Optional[list[EvmAccount]]
-    should_join_events: bool = False
-    chain_id: Optional[SUPPORTED_CHAIN_IDS] = None
+    accounts: list[EvmAccount]
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         query_filters: list[str] = []
         bindings: list[Union[ChecksumEvmAddress, int]] = []
-        if self.should_join_events is True:
-            query_filters.append(
-                'LEFT JOIN (SELECT event_identifier, counterparty, asset, type, subtype FROM history_events LEFT JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier) '  # noqa: E501
-                'ON evm_transactions.tx_hash=event_identifier',
-            )
-        if self.accounts is not None:
-            query_filter_str = (
-                'INNER JOIN evmtx_address_mappings WHERE '
-                'evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND ('
-            )
-            individual_queries = []
-            for address, paired_chain_id in self.accounts:
-                individual_query = '(evmtx_address_mappings.address = ?'
-                bindings.append(address)
-                if paired_chain_id is not None:
-                    individual_query += ' AND evmtx_address_mappings.chain_id=?'
-                    bindings.append(paired_chain_id.serialize_for_db())
-                individual_query += ')'
+        query_filter_str = (
+            'INNER JOIN evmtx_address_mappings WHERE '
+            'evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND ('
+        )
+        individual_queries = []
+        for address, paired_chain_id in self.accounts:
+            individual_query = '(evmtx_address_mappings.address = ?'
+            bindings.append(address)
+            if paired_chain_id is not None:
+                individual_query += ' AND evmtx_address_mappings.chain_id=?'
+                bindings.append(paired_chain_id.serialize_for_db())
+            individual_query += ')'
 
-                individual_queries.append(individual_query)
+            individual_queries.append(individual_query)
 
-            query_filter_str += ' OR '.join(individual_queries)
-            query_filters.append(query_filter_str + ')')
-
-        elif self.chain_id is not None:
-            query_filters.append(
-                'INNER JOIN evmtx_address_mappings WHERE '
-                'evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND '
-                'evmtx_address_mappings.chain_id=?',
-            )
-            bindings.append(self.chain_id.serialize_for_db())
-
-        else:
-            # We need this because other filters expect the join clause to end with a WHERE clause.
-            query_filters.append('WHERE 1')
+        query_filter_str += ' OR '.join(individual_queries)
+        query_filters.append(query_filter_str + ')')
 
         query = f' {" ".join(query_filters)} '
         return [query], bindings
@@ -296,6 +278,7 @@ class DBFilterQuery():
     and_op: bool
     filters: list[DBFilter]
     join_clause: Optional[DBFilter] = None
+    group_by: Optional[DBFilterGroupBy] = None
     order_by: Optional[DBFilterOrder] = None
     pagination: Optional[DBFilterPagination] = None
 
@@ -303,6 +286,7 @@ class DBFilterQuery():
             self,
             with_pagination: bool = True,
             with_order: bool = True,
+            with_group_by: bool = False,
     ) -> tuple[str, list[Any]]:
         query_parts = []
         bindings: list[Any] = []
@@ -327,6 +311,10 @@ class DBFilterQuery():
             filter_query = f'{"WHERE " if self.join_clause is None else "AND ("}{operator.join(filterstrings)}{"" if self.join_clause is None else ")"}'  # noqa: E501
             query_parts.append(filter_query)
 
+        if with_group_by and self.group_by is not None:
+            groupby_query = self.group_by.prepare()
+            query_parts.append(groupby_query)
+
         if with_order and self.order_by is not None:
             orderby_query = self.order_by.prepare()
             query_parts.append(orderby_query)
@@ -345,20 +333,25 @@ class DBFilterQuery():
             offset: Optional[int],
             order_by_case_sensitive: bool = True,
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
+            group_by_field: Optional[str] = None,
     ) -> 'DBFilterQuery':
         if limit is None or offset is None:
             pagination = None
         else:
             pagination = DBFilterPagination(limit=limit, offset=offset)
 
-        if order_by_rules is None:
-            order_by = None
-        else:
+        group_by = None
+        if group_by_field is not None:
+            group_by = DBFilterGroupBy(field_name=group_by_field)
+
+        order_by = None
+        if order_by_rules is not None:
             order_by = DBFilterOrder(rules=order_by_rules, case_sensitive=order_by_case_sensitive)
 
         return cls(
             and_op=and_op,
             filters=[],
+            group_by=group_by,
             order_by=order_by,
             pagination=pagination,
         )
@@ -411,7 +404,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         if self.join_clause is None:
             return None
 
-        ethaddress_filter = cast('DBETHTransactionJoinsFilter', self.join_clause)
+        ethaddress_filter = cast('DBEvmTransactionJoinsFilter', self.join_clause)
         return ethaddress_filter.accounts
 
     @property
@@ -432,11 +425,6 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             to_ts: Optional[Timestamp] = None,
             tx_hash: Optional[EVMTxHash] = None,
             chain_id: Optional[SUPPORTED_CHAIN_IDS] = None,
-            counterparties: Optional[list[str]] = None,
-            asset: Optional[EvmToken] = None,
-            exclude_ignored_assets: bool = False,
-            event_types: Optional[list[HistoryEventType]] = None,
-            event_subtypes: Optional[list[HistoryEventSubType]] = None,
     ) -> 'EvmTransactionsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -461,47 +449,11 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
                 filters.append(DBEvmChainIDFilter(and_op=True, chain_id=chain_id))
 
         else:
-            should_join_events = (
-                asset is not None or
-                counterparties is not None or
-                exclude_ignored_assets is True or
-                event_types is not None or
-                event_subtypes is not None
-            )
-            if accounts is not None or should_join_events is True:
-                filter_query.join_clause = DBETHTransactionJoinsFilter(
+            if accounts is not None:
+                filter_query.join_clause = DBEvmTransactionJoinsFilter(
                     and_op=False,
                     accounts=accounts,
-                    should_join_events=should_join_events,
-                    chain_id=chain_id,
                 )
-
-            if asset is not None:
-                filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
-            if counterparties is not None:
-                filters.append(DBMultiStringFilter(
-                    and_op=True,
-                    column='counterparty',
-                    values=counterparties,
-                    operator='IN',
-                ))
-
-            if exclude_ignored_assets is True:
-                filters.append(DBIgnoredAssetsFilter(and_op=True, asset_key='asset'))
-            if event_types is not None:
-                filters.append(DBMultiStringFilter(
-                    and_op=True,
-                    column='type',
-                    values=[x.serialize() for x in event_types],
-                    operator='IN',
-                ))
-            if event_subtypes is not None:
-                filters.append(DBMultiStringFilter(
-                    and_op=True,
-                    column='subtype',
-                    values=[x.serialize() for x in event_subtypes],
-                    operator='IN',
-                ))
 
             filters.append(filter_query.timestamp_filter)
             if chain_id is not None:  # keep it as last (see chain_id property of this filter)
@@ -588,8 +540,11 @@ class DBMultiValueFilter(Generic[T], DBFilter):
     operator: Literal['IN', 'NOT IN'] = 'IN'
 
     def prepare(self) -> tuple[list[str], list[T]]:
+        suffix = ''  # for NOT IN comparison remember NULL is a special case
+        if self.operator == 'NOT IN':
+            suffix = f' OR {self.column} IS NULL'
         return (
-            [f'{self.column} {self.operator} ({", ".join(["?"] * len(self.values))}) OR {self.column} IS NULL'],  # noqa: E501
+            [f'{self.column} {self.operator} ({", ".join(["?"] * len(self.values))}){suffix}'],
             self.values,
         )
 
@@ -917,7 +872,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             event_subtypes: Optional[list[HistoryEventSubType]] = None,
             exclude_subtypes: Optional[list[HistoryEventSubType]] = None,
             location: Optional[Location] = None,
-            location_label: Optional[str] = None,
+            location_labels: Optional[list[str]] = None,
             ignored_ids: Optional[list[str]] = None,
             null_columns: Optional[list[str]] = None,
             event_identifiers: Optional[list[bytes]] = None,
@@ -932,6 +887,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             limit=limit,
             offset=offset,
             order_by_rules=order_by_rules,
+            group_by_field='event_identifier',
         )
         filter_query = cast(T_HistoryFilterQuery, filter_query)
         filters: list[DBFilter] = []
@@ -970,10 +926,13 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
         if location is not None:
             filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
             filters.append(filter_query.location_filter)
-        if location_label is not None:
-            filters.append(
-                DBEqualsFilter(and_op=True, column='location_label', value=location_label),
-            )
+        if location_labels is not None:
+            filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='location_label',
+                values=location_labels,
+                operator='IN',
+            ))
         if ignored_ids is not None:
             filters.append(
                 DBIgnoreValuesFilter(
@@ -1061,7 +1020,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             event_subtypes: Optional[list[HistoryEventSubType]] = None,
             exclude_subtypes: Optional[list[HistoryEventSubType]] = None,
             location: Optional[Location] = None,
-            location_label: Optional[str] = None,
+            location_labels: Optional[list[str]] = None,
             ignored_ids: Optional[list[str]] = None,
             null_columns: Optional[list[str]] = None,
             event_identifiers: Optional[list[bytes]] = None,
@@ -1082,7 +1041,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             event_subtypes=event_subtypes,
             exclude_subtypes=exclude_subtypes,
             location=location,
-            location_label=location_label,
+            location_labels=location_labels,
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             event_identifiers=event_identifiers,

@@ -118,18 +118,21 @@ CUSTOM_USDT = EvmToken.initialize(
 def make_ethereum_event(
         index: int,
         tx_hash: Optional[bytes] = None,
+        location_label: Optional[str] = None,
         asset: CryptoAsset = CUSTOM_USDT,
         counterparty: Optional[str] = None,
         event_type: HistoryEventType = HistoryEventType.UNKNOWN,
         event_subtype: HistoryEventSubType = HistoryEventSubType.NONE,
+        timestamp: TimestampMS = 0,  # type: ignore
 ) -> EvmEvent:
     if tx_hash is None:
         tx_hash = make_random_bytes(32)
     return EvmEvent(
         event_identifier=tx_hash,
         sequence_index=index,
+        location_label=location_label,
         identifier=index,
-        timestamp=TimestampMS(0),
+        timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=event_type,
         event_subtype=event_subtype,
@@ -139,22 +142,15 @@ def make_ethereum_event(
     )
 
 
-def generate_tx_entries_response(
-        data: list[tuple[EvmTransaction, list['EvmEvent']]],
+def generate_events_response(
+        data: list['EvmEvent'],
 ) -> list:
     result = []
-    for tx, events in data:
-        decoded_events = []
-        for event in events:
-            decoded_events.append({
-                'entry': event.serialize_without_extra_data(),
-                'has_details': False,
-                'customized': False,
-            })
+    for event in data:
         result.append({
-            'entry': tx.serialize(),
-            'decoded_events': decoded_events,
-            'ignored_in_accounting': False,
+            'entry': event.serialize(),
+            'has_details': False,
+            'customized': False,
         })
     return result
 

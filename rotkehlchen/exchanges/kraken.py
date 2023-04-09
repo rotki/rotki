@@ -682,7 +682,7 @@ class Kraken(ExchangeInterface):
                     HistoryEventType.ADJUSTMENT,
                 ],
                 location=Location.KRAKEN,
-                location_label=self.name,
+                location_labels=[self.name],
                 limit_to_entry_type=True,
             )
             trades_raw = self.history_events_db.get_history_events(
@@ -728,7 +728,7 @@ class Kraken(ExchangeInterface):
                     HistoryEventType.WITHDRAWAL,
                 ],
                 location=Location.KRAKEN,
-                location_label=self.name,
+                location_labels=[self.name],
                 limit_to_entry_type=True,
             )
             events = self.history_events_db.get_history_events(

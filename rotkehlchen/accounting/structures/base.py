@@ -220,13 +220,21 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             'notes': self.notes,
         }
 
-    def serialize_for_api(self, customized_event_ids: list[int]) -> dict[str, Any]:
+    def serialize_for_api(
+            self,
+            customized_event_ids: list[int],
+            grouped_events_num: Optional[int] = None,
+    ) -> dict[str, Any]:
         """Serialize event and extra flags for api"""
-        return {
+        result = {
             'entry': self.serialize(),
             'has_details': False,
             'customized': self.identifier in customized_event_ids,
         }
+        if grouped_events_num is not None:
+            result['grouped_events_num'] = grouped_events_num
+
+        return result
 
     @classmethod
     def _deserialize_base_history_data(cls: type[T], data: dict[str, Any]) -> HistoryBaseEntryData:

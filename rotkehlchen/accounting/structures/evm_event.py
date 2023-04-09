@@ -134,16 +134,14 @@ class EvmEvent(HistoryBaseEntry):
             'counterparty': self.counterparty,
             'product': self.product.serialize() if self.product is not None else None,
             'address': self.address,
-            'extra_data': self.extra_data,
         }
 
-    def serialize_without_extra_data(self) -> dict[str, Any]:
-        result = self.serialize()
-        result.pop('extra_data')
-        return result
-
-    def serialize_for_api(self, customized_event_ids: list[int]) -> dict[str, Any]:
-        result = super().serialize_for_api(customized_event_ids)
+    def serialize_for_api(
+            self,
+            customized_event_ids: list[int],
+            grouped_events_num: Optional[int] = None,
+    ) -> dict[str, Any]:
+        result = super().serialize_for_api(customized_event_ids, grouped_events_num)
         result['has_details'] = self.has_details()
         return result
 

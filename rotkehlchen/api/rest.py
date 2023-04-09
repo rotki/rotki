@@ -2760,7 +2760,6 @@ class RestAPI():
             self,
             only_cache: bool,
             filter_query: EvmTransactionsFilterQuery,
-            event_params: dict[str, Any],
     ) -> dict[str, Any]:
         chain_ids: tuple[SUPPORTED_CHAIN_IDS]
         if filter_query.chain_id is None:  # type ignore below is due to get_args
@@ -2802,37 +2801,9 @@ class RestAPI():
                 mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.EVM_TRANSACTION)  # noqa: E501
                 ignored_ids = mapping.get(ActionType.EVM_TRANSACTION, set())
                 entries_result = []
-                dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
-                asset = None
-                if event_params['asset'] is not None:
-                    asset = (event_params['asset'], )
                 for entry in transactions:
-                    events = dbevents.get_history_events(
-                        cursor=cursor,
-                        filter_query=EvmEventFilterQuery.make(
-                            event_identifiers=[entry.tx_hash],
-                            assets=asset,
-                            counterparties=event_params['counterparties'],
-                            event_types=event_params['event_types'],
-                            event_subtypes=event_params['event_subtypes'],
-                            exclude_ignored_assets=event_params['exclude_ignored_assets'],
-                        ),
-                        has_premium=True,  # for this function we don't limit. We only limit txs.
-                    )
-
-                    customized_event_ids = dbevents.get_customized_event_identifiers(
-                        cursor=cursor,
-                        chain_id=filter_query.chain_id,
-                    )
                     entries_result.append({
                         'entry': entry.serialize(),
-                        'decoded_events': [
-                            {
-                                'entry': x.serialize_without_extra_data(),
-                                'has_details': x.has_details(),
-                                'customized': x.identifier in customized_event_ids,
-                            } for x in events
-                        ],
                         'ignored_in_accounting': entry.identifier in ignored_ids,
                     })
             else:
@@ -3564,6 +3535,7 @@ class RestAPI():
     def get_history_events(
             self,
             filter_query: HistoryBaseEntryFilterQuery,
+            group_by_event_ids: bool,
     ) -> Response:
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         has_premium = False
@@ -3573,10 +3545,11 @@ class RestAPI():
             entries_limit = - 1
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            events, entries_found = dbevents.get_all_history_events_and_limit_info(
+            events_result, entries_found = dbevents.get_all_history_events_and_limit_info(
                 cursor=cursor,
                 filter_query=filter_query,
                 has_premium=has_premium,
+                group_by_event_ids=group_by_event_ids,
             )
             entries_total = self.rotkehlchen.data.db.get_entries_count(
                 cursor=cursor,
@@ -3593,8 +3566,14 @@ class RestAPI():
                 chain_id=chain_id,  # type: ignore
             )
 
+        if group_by_event_ids is True:
+            entries = [  # type: ignore  # mypy doesnt understand significance of boolean check
+                x.serialize_for_api(customized_event_ids, grouped_events_num) for grouped_events_num, x in events_result  # noqa: E501
+            ]
+        else:
+            entries = [x.serialize_for_api(customized_event_ids) for x in events_result]
         result = {
-            'entries': [x.serialize_for_api(customized_event_ids) for x in events],
+            'entries': entries,
             'entries_found': entries_found,
             'entries_limit': entries_limit,
             'entries_total': entries_total,

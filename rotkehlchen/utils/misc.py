@@ -10,7 +10,7 @@ import time
 from collections import defaultdict
 from collections.abc import Iterable, Iterator
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union, overload
 
 import pkg_resources
 from eth_utils import is_hexstr
@@ -386,13 +386,19 @@ def is_valid_ethereum_tx_hash(val: str) -> bool:
 
 def create_order_by_rules_list(
         data: dict[str, Any],
-        default_order_by_field: str = 'timestamp',
+        default_order_by_fields: Optional[list[str]] = None,
+        default_ascending: Optional[list[bool]] = None,
         is_ascending_by_default: bool = False,
-) -> list[tuple[str, bool]]:
+) -> Optional[list[tuple[str, bool]]]:
     """Create a list of attributes and sorting order taking values from DBOrderBySchema
     to be used by the filters that allow sorting. By default, the attribute used for sorting is
     timestamp and the ascending value for this field is False.
     """
-    order_by_attribute = data['order_by_attributes'] if data['order_by_attributes'] is not None else [default_order_by_field]  # noqa: E501
-    ascending = data['ascending'] if data['ascending'] is not None else [is_ascending_by_default]
-    return list(zip(order_by_attribute, ascending))
+    order_by_attributes = data['order_by_attributes'] if data['order_by_attributes'] is not None else default_order_by_fields  # noqa: E501
+    if order_by_attributes is None:
+        return None
+
+    ascending = data['ascending'] if data['ascending'] is not None else default_ascending
+    if ascending is None:
+        ascending = []
+    return list(zip_longest(order_by_attributes, ascending, fillvalue=is_ascending_by_default))  # type: ignore[arg-type]  # noqa: E501
