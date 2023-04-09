@@ -504,13 +504,11 @@ class EvmTransactionsResource(BaseMethodView):
             async_query: bool,
             only_cache: bool,
             filter_query: EvmTransactionsFilterQuery,
-            event_params: dict[str, Any],
     ) -> Response:
         return self.rest_api.get_evm_transactions(
             async_query=async_query,
             only_cache=only_cache,
             filter_query=filter_query,
-            event_params=event_params,
         )
 
     @require_loggedin_user()
@@ -1162,8 +1160,8 @@ class HistoryEventResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
-    def post(self, filter_query: 'HistoryBaseEntryFilterQuery') -> Response:
-        return self.rest_api.get_history_events(filter_query=filter_query)
+    def post(self, filter_query: 'HistoryBaseEntryFilterQuery', group_by_event_ids: bool) -> Response:  # noqa: E501
+        return self.rest_api.get_history_events(filter_query=filter_query, group_by_event_ids=group_by_event_ids)  # noqa: E501
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')

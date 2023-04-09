@@ -95,6 +95,7 @@ from rotkehlchen.types import (
     Timestamp,
     TradeType,
     UserNote,
+    deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import create_order_by_rules_list, ts_now
@@ -256,18 +257,7 @@ class EvmTransactionQuerySchema(
     )
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
-    counterparties = DelimitedOrNormalList(fields.String(), load_default=None)
-    asset = AssetField(expected_type=CryptoAsset, load_default=None)
-    exclude_ignored_assets = fields.Boolean(load_default=True)
     evm_chain = EvmChainNameField(required=False, load_default=None)
-    event_types = DelimitedOrNormalList(
-        SerializableEnumField(enum_class=HistoryEventType),
-        load_default=None,
-    )
-    event_subtypes = DelimitedOrNormalList(
-        SerializableEnumField(enum_class=HistoryEventSubType),
-        load_default=None,
-    )
 
     @validates_schema
     def validate_evmtx_query_schema(
@@ -288,12 +278,6 @@ class EvmTransactionQuerySchema(
                 message=error_msg,
                 field_name='order_by_attributes',
             )
-        counterparties = data['counterparties']
-        if counterparties is not None and len(counterparties) == 0:
-            raise ValidationError(
-                message='counterparties have to be either not passed or contain at least one item',
-                field_name='counterparties',
-            )
 
         if (
             data['evm_chain'] is not None and
@@ -310,37 +294,24 @@ class EvmTransactionQuerySchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        counterparties, asset = data['counterparties'], data['asset']
-        exclude_ignored_assets = data['exclude_ignored_assets']
-        event_types = data['event_types']
-        event_subtypes = data['event_subtypes']
         filter_query = EvmTransactionsFilterQuery.make(
-            order_by_rules=create_order_by_rules_list(data),
+            order_by_rules=create_order_by_rules_list(
+                data=data,  # by default, descending order of time
+                default_order_by_fields=['timestamp'],
+                default_ascending=[False],
+            ),
             limit=data['limit'],
             offset=data['offset'],
             accounts=data['accounts'],
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
             chain_id=data['evm_chain'],
-            counterparties=counterparties,
-            asset=asset,
-            exclude_ignored_assets=exclude_ignored_assets,
-            event_types=event_types,
-            event_subtypes=event_subtypes,
         )
-        event_params = {
-            'asset': asset,
-            'counterparties': counterparties,
-            'event_types': event_types,
-            'event_subtypes': event_subtypes,
-            'exclude_ignored_assets': exclude_ignored_assets,
-        }
 
         return {
             'async_query': data['async_query'],
             'only_cache': data['only_cache'],
             'filter_query': filter_query,
-            'event_params': event_params,
         }
 
 
@@ -473,7 +444,11 @@ class TradesQuerySchema(
             quote_assets = (A_ETH, A_ETH2)
 
         filter_query = TradesFilterQuery.make(
-            order_by_rules=create_order_by_rules_list(data),
+            order_by_rules=create_order_by_rules_list(
+                data=data,
+                default_order_by_fields=['timestamp'],
+                default_ascending=[False],
+            ),
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
@@ -529,7 +504,11 @@ class BaseStakingQuerySchema(
 
         asset_list = self._get_assets_list(data)
         query_filter = HistoryEventFilterQuery.make(
-            order_by_rules=create_order_by_rules_list(data),
+            order_by_rules=create_order_by_rules_list(
+                data=data,
+                default_order_by_fields=['timestamp'],
+                default_ascending=[False],
+            ),
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
@@ -609,9 +588,11 @@ class StakingQuerySchema(BaseStakingQuerySchema):
 
 class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
     """Schema for quering history events"""
-
+    exclude_ignored_assets = fields.Boolean(load_default=True)
+    group_by_event_ids = fields.Boolean(load_default=False)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
+    event_identifiers = DelimitedOrNormalList(fields.String(), load_default=None)
     event_types = DelimitedOrNormalList(
         SerializableEnumField(enum_class=HistoryEventType),
         load_default=None,
@@ -620,11 +601,12 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
         SerializableEnumField(enum_class=HistoryEventSubType),
         load_default=None,
     )
+    location_labels = DelimitedOrNormalList(fields.String(), load_default=None)
     asset = AssetField(expected_type=CryptoAsset, load_default=None)
-    counterparties = DelimitedOrNormalList(fields.String(), load_default=None)
 
     # EvmEvent only
     evm_chain = EvmChainNameField(required=False, load_default=None)
+    counterparties = DelimitedOrNormalList(fields.String(), load_default=None)
     products = DelimitedOrNormalList(SerializableEnumField(enum_class=EvmProduct), load_default=None)  # noqa: E501
 
     @validates_schema
@@ -647,19 +629,62 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
                 field_name='order_by_attributes',
             )
 
+        for attribute in ('counterparties', 'products', 'event_types', 'event_subtypes'):
+            value = data[attribute]
+            if value is not None and len(value) == 0:
+                raise ValidationError(
+                    message=f'{attribute} have to be either not passed or contain at least one item',  # noqa: E501
+                    field_name=attribute,
+                )
+
+        if (
+            data['evm_chain'] is not None and
+            data['evm_chain'] not in get_args(SUPPORTED_CHAIN_IDS)
+        ):
+            raise ValidationError(
+                message=f'rotki does not support evm transactions for {data["evm_chain"]}',
+                field_name='evm_chain',
+            )
+
     @post_load
     def make_history_event_filter(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        should_query_evm_event = any(data[x] is not None for x in ('evm_chain', 'products'))
+        should_query_evm_event = any(data[x] is not None for x in ('evm_chain', 'products', 'counterparties'))  # noqa: E501
+
+        event_identifiers = None
+        if data['event_identifiers'] is not None:
+            event_identifiers = []
+            try:  # encode to bytes since this is how event identifiers are in the DB
+                for identifier in data['event_identifiers']:
+                    if identifier.startswith('0x'):
+                        event_identifiers.append(deserialize_evm_tx_hash(identifier))
+                    else:
+                        event_identifiers.append(identifier.encode())
+            except (UnicodeEncodeError, AttributeError, DeserializationError) as e:
+                raise ValidationError(
+                    message=f'Invalid event identifier given: {str(e)}',
+                    field_name='event_identifiers',
+                ) from e
+
         common_arguments = {
-            'order_by_rules': create_order_by_rules_list(data),
+            'order_by_rules': create_order_by_rules_list(
+                data=data,  # descending timestamp and ascending sequence index
+                default_order_by_fields=['timestamp', 'sequence_index'],
+                default_ascending=[False, True],
+            ),
             'limit': data['limit'],
             'offset': data['offset'],
             'from_ts': data['from_timestamp'],
             'to_ts': data['to_timestamp'],
+            'exclude_ignored_assets': data['exclude_ignored_assets'],
+            'event_identifiers': event_identifiers,
+            'location_labels': data['location_labels'],
+            'assets': [data['asset']] if data['asset'] is not None else None,
+            'event_types': data['event_types'],
+            'event_subtypes': data['event_subtypes'],
         }
         filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery]
         if should_query_evm_event:
@@ -667,12 +692,14 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
                 **common_arguments,
                 location=Location.from_chain_id(data['evm_chain']),
                 products=data['products'],
+                counterparties=data['counterparties'],
             )
         else:
             filter_query = HistoryEventFilterQuery.make(**common_arguments)
 
         return {
             'filter_query': filter_query,
+            'group_by_event_ids': data['group_by_event_ids'],
         }
 
 
@@ -695,7 +722,7 @@ class EvmEventSchema(Schema):
         allow_none=True,
     )
     counterparty = fields.String(load_default=None)
-    product = fields.String(load_default=None)
+    product = SerializableEnumField(enum_class=EvmProduct, load_default=None)
     address = EvmAddressField(load_default=None)
 
     @post_load
@@ -774,7 +801,11 @@ class AssetMovementsQuerySchema(
             asset_list = (A_ETH, A_ETH2)
 
         filter_query = AssetMovementsFilterQuery.make(
-            order_by_rules=create_order_by_rules_list(data),
+            order_by_rules=create_order_by_rules_list(
+                data=data,
+                default_order_by_fields=['timestamp'],
+                default_ascending=[False],
+            ),
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
@@ -810,7 +841,7 @@ class LedgerActionsQuerySchema(
         self.treat_eth2_as_eth = treat_eth2_as_eth
 
     @validates_schema
-    def validate_asset_movements_query_schema(
+    def validate_ledger_action_query_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -837,7 +868,7 @@ class LedgerActionsQuerySchema(
             )
 
     @post_load
-    def make_asset_movements_query(
+    def make_ledger_actions_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
@@ -849,7 +880,11 @@ class LedgerActionsQuerySchema(
             asset_list = (A_ETH, A_ETH2)
 
         filter_query = LedgerActionsFilterQuery.make(
-            order_by_rules=create_order_by_rules_list(data),
+            order_by_rules=create_order_by_rules_list(
+                data=data,
+                default_order_by_fields=['timestamp'],
+                default_ascending=[False],
+            ),
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
@@ -1432,7 +1467,11 @@ class AccountingReportDataSchema(DBPaginationSchema, DBOrderBySchema):
         report_id = data.get('report_id')
         event_type = data.get('event_type')
         filter_query = ReportDataFilterQuery.make(
-            order_by_rules=create_order_by_rules_list(data),
+            order_by_rules=create_order_by_rules_list(
+                data=data,
+                default_order_by_fields=['timestamp'],
+                default_ascending=[False],
+            ),
             limit=data['limit'],
             offset=data['offset'],
             report_id=report_id,
@@ -2018,7 +2057,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
                 and_op=True,
                 order_by_rules=create_order_by_rules_list(
                     data=data,
-                    default_order_by_field='name',
+                    default_order_by_fields=['name'],
                 ),
                 limit=data['limit'],
                 offset=data['offset'],
@@ -2091,7 +2130,7 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
             ignored_assets_filter_params = ('NOT IN', self.db.get_ignored_asset_ids(cursor))
         filter_query = AssetsFilterQuery.make(
             and_op=True,
-            order_by_rules=create_order_by_rules_list(data=data, default_order_by_field='name'),
+            order_by_rules=create_order_by_rules_list(data=data, default_order_by_fields=['name']),
             limit=data['limit'],
             offset=0,  # this is needed for the `limit` argument to work.
             substring_search=data['value'].strip(),
@@ -2546,7 +2585,11 @@ class Eth2DailyStatsSchema(
             **_kwargs: Any,
     ) -> dict[str, Any]:
         filter_query = Eth2DailyStatsFilterQuery.make(
-            order_by_rules=create_order_by_rules_list(data),
+            order_by_rules=create_order_by_rules_list(
+                data=data,
+                default_order_by_fields=['timestamp'],
+                default_ascending=[False],
+            ),
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
@@ -2866,7 +2909,11 @@ class UserNotesGetSchema(DBPaginationSchema, DBOrderBySchema):
             **_kwargs: Any,
     ) -> dict[str, Any]:
         filter_query = UserNotesFilterQuery.make(
-            order_by_rules=create_order_by_rules_list(data, 'last_update_timestamp'),
+            order_by_rules=create_order_by_rules_list(
+                data,
+                default_order_by_fields=['last_update_timestamp'],
+                default_ascending=[False],
+            ),
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
@@ -2895,7 +2942,7 @@ class CustomAssetsQuerySchema(DBPaginationSchema, DBOrderBySchema):
             offset=data['offset'],
             order_by_rules=create_order_by_rules_list(
                 data=data,
-                default_order_by_field='name',
+                default_order_by_fields=['name'],
                 is_ascending_by_default=True,
             ),
             name=data['name'],
@@ -2981,7 +3028,7 @@ class NFTFilterQuerySchema(
         filter_query = NFTFilterQuery.make(
             order_by_rules=create_order_by_rules_list(
                 data=data,
-                default_order_by_field='name',
+                default_order_by_fields=['name'],
             ),
             limit=data['limit'],
             offset=data['offset'],

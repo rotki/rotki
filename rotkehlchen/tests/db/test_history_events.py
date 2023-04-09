@@ -125,7 +125,10 @@ def test_read_write_events_from_db(database):
                 (db.get_history_events, HistoryEventFilterQuery, True),
                 (db.get_history_events, EvmEventFilterQuery, True),
         ):
-            all_events = query_fn(cursor, filter_query.make(limit_to_entry_type=limit_to_entry_type), True)  # noqa: E501
+            if query_fn == db.get_all_history_events:
+                all_events = query_fn(cursor, filter_query.make(limit_to_entry_type=limit_to_entry_type), True, False)  # noqa: E501
+            else:
+                all_events = query_fn(cursor, filter_query.make(limit_to_entry_type=limit_to_entry_type), True)  # noqa: E501
             for event in all_events:
                 if isinstance(event, HistoryEvent):
                     data_entry = history_data[event.identifier]

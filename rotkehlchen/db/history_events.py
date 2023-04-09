@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -336,55 +336,92 @@ class DBHistoryEvents():
         count = self.get_history_events_count(cursor=cursor, query_filter=filter_query)
         return events, count
 
+    @overload
     def get_all_history_events(
             self,
             cursor: 'DBCursor',
             filter_query: HistoryBaseEntryFilterQuery,
             has_premium: bool,
+            group_by_event_ids: Literal[False],
     ) -> list[HistoryBaseEntry]:
+        ...
+
+    @overload
+    def get_all_history_events(
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryBaseEntryFilterQuery,
+            has_premium: bool,
+            group_by_event_ids: Literal[True],
+    ) -> list[tuple[int, HistoryBaseEntry]]:
+        ...
+
+    def get_all_history_events(
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryBaseEntryFilterQuery,
+            has_premium: bool,
+            group_by_event_ids: bool,
+    ) -> Union[list[HistoryBaseEntry], list[tuple[int, HistoryBaseEntry]]]:
         """Get all events from the DB, deserialized depending on the event type"""
-        prepared_query, bindings = filter_query.prepare()
+        prepared_query, bindings = filter_query.prepare(with_group_by=group_by_event_ids)
+        base_prefix = 'SELECT '
+        type_idx = 0
+        if group_by_event_ids is True:
+            base_prefix += 'COUNT(*), '
+            type_idx = 1
+
         if has_premium is True:
-            base_query = f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
+            base_query = f'{base_prefix} {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
         else:
-            base_query = f'SELECT * FROM (SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
+            base_query = f'{base_prefix} * FROM (SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
             bindings.insert(0, FREE_HISTORY_EVENTS_LIMIT)
 
         cursor.execute(base_query + prepared_query, bindings)
-        output = []
+        output: Union[list[HistoryBaseEntry], list[tuple[int, HistoryBaseEntry]]] = []  # type: ignore  # noqa: E501
+        data_start_idx = type_idx + 1
         for entry in cursor:
             try:
                 deserialized_event: Union[HistoryEvent, EvmEvent]
                 # Deserialize event depending on its type
-                if HistoryBaseEntryType(entry[0]) == HistoryBaseEntryType.EVM_EVENT:
-                    deserialized_event = EvmEvent.deserialize_from_db(entry[1:])
+                if HistoryBaseEntryType(entry[type_idx]) == HistoryBaseEntryType.EVM_EVENT:
+                    deserialized_event = EvmEvent.deserialize_from_db(entry[data_start_idx:])
                 else:
-                    deserialized_event = HistoryEvent.deserialize_from_db(entry[1:])
+                    deserialized_event = HistoryEvent.deserialize_from_db(entry[data_start_idx:])
             except (DeserializationError, UnknownAsset) as e:
                 log.debug(f'Failed to deserialize history event {entry} due to {str(e)}')
                 continue
 
-            output.append(deserialized_event)
+            if group_by_event_ids is True:
+                output.append((entry[0], deserialized_event))  # type: ignore
+            else:
+                output.append(deserialized_event)  # type: ignore
 
-        return output  # type: ignore[return-value]  # expected only the two types
+        return output
 
     def get_all_history_events_and_limit_info(
             self,
             cursor: 'DBCursor',
             filter_query: 'HistoryBaseEntryFilterQuery',
             has_premium: bool,
+            group_by_event_ids: bool,
     ) -> tuple[Union[list[HistoryEvent], list[EvmEvent]], int]:
         """Gets all history events for all types, based on the filter query.
 
         Also returns how many are the total found for the filter
         """
-        events = self.get_all_history_events(
-            cursor=cursor,
+        events = self.get_all_history_events(  # type: ignore[call-overload]
+            cursor=cursor,  # ignore above is since True/False not given for group_by_event_ids
             filter_query=filter_query,
             has_premium=has_premium,
+            group_by_event_ids=group_by_event_ids,
         )
-        count = self.get_history_events_count(cursor=cursor, query_filter=filter_query)
-        return events, count  # type: ignore  # is a subset
+        count = self.get_history_events_count(
+            cursor=cursor,
+            query_filter=filter_query,
+            group_by_event_ids=group_by_event_ids,
+        )
+        return events, count
 
     def rows_missing_prices_in_base_entries(
             self,
@@ -445,10 +482,19 @@ class DBHistoryEvents():
                 )
         return assets
 
-    def get_history_events_count(self, cursor: 'DBCursor', query_filter: HistoryBaseEntryFilterQuery) -> int:  # noqa: E501
+    def get_history_events_count(
+            self,
+            cursor: 'DBCursor',
+            query_filter: HistoryBaseEntryFilterQuery,
+            group_by_event_ids: bool = False,
+    ) -> int:
         """Returns how many events matching the filter but ignoring pagination are in the DB"""
-        prepared_query, bindings = query_filter.prepare(with_pagination=False)
+        prepared_query, bindings = query_filter.prepare(
+            with_pagination=False,
+            with_group_by=group_by_event_ids,
+        )
         query = query_filter.get_count_query() + prepared_query
+        # if group_by_event_ids:
         cursor.execute(query, bindings)
         return cursor.fetchone()[0]  # count(*) always returns
 

@@ -40,7 +40,7 @@ def entry_to_input_dict(
         entry: 'EvmEvent',
         include_identifier: bool,
 ) -> dict[str, Any]:
-    serialized = entry.serialize_without_extra_data()
+    serialized = entry.serialize()
     if include_identifier:
         assert entry.identifier is not None
         serialized['identifier'] = entry.identifier
@@ -148,7 +148,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     db = DBHistoryEvents(rotki.data.db)
     entries = _add_entries(server=rotkehlchen_api_server, events_db=db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        saved_events = db.get_all_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True)  # noqa: E501
+        saved_events = db.get_all_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True, False)  # noqa: E501
     for idx, event in enumerate(saved_events):
         assert event == entries[idx]
 
@@ -224,7 +224,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
 
     entries.sort(key=lambda x: x.timestamp)  # resort by timestamp
     with rotki.data.db.conn.read_ctx() as cursor:
-        saved_events = db.get_all_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True)  # noqa: E501
+        saved_events = db.get_all_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True, False)  # noqa: E501
         assert len(saved_events) == 5
         for idx, event in enumerate(saved_events):
             assert event == entries[idx]
@@ -239,7 +239,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
             contained_in_msg='Tried to remove history event with id 19 which does not exist',
             status_code=HTTPStatus.CONFLICT,
         )
-        saved_events = db.get_all_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True)  # noqa: E501
+        saved_events = db.get_all_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True, False)  # noqa: E501
         assert len(saved_events) == 5
         for idx, event in enumerate(saved_events):
             assert event == entries[idx]
@@ -251,7 +251,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
         )
         result = assert_proper_response_with_result(response)
         assert result is True
-        saved_events = db.get_all_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True)  # noqa: E501
+        saved_events = db.get_all_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True, False)  # noqa: E501
         # entry is now last since the timestamp was modified
         assert saved_events == [entries[0], entries[3], entry]
 
@@ -265,7 +265,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
             contained_in_msg='Tried to remove history event with id 1 which was the last event of a transaction',  # noqa: E501
             status_code=HTTPStatus.CONFLICT,
         )
-        saved_events = db.get_all_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True)  # noqa: E501
+        saved_events = db.get_all_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True, False)  # noqa: E501
         assert saved_events == [entries[0], entries[3], entry]
 
 
@@ -333,16 +333,13 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'evmtransactionsresource',
-        ), json={
-            'async_query': False,
-            'only_cache': True,
-        },
+            'historyeventresource',
+        ),
     )
     result = assert_proper_response_with_result(response)
-    decoded_events = result['entries'][0]['decoded_events']
-    assert decoded_events[0]['has_details'] is False
-    assert decoded_events[1]['has_details'] is True
+    events = result['entries']
+    assert events[0]['has_details'] is False
+    assert events[1]['has_details'] is True
 
     # Check that if an event is not in the db, an error is returned
     response = requests.get(
@@ -362,7 +359,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
         api_url_for(
             rotkehlchen_api_server,
             'eventdetailsresource',
-        ), json={'identifier': decoded_events[0]['entry']['identifier']},
+        ), json={'identifier': events[0]['entry']['identifier']},
     )
     assert_error_response(
         response=response,
@@ -375,7 +372,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
         api_url_for(
             rotkehlchen_api_server,
             'eventdetailsresource',
-        ), json={'identifier': decoded_events[1]['entry']['identifier']},
+        ), json={'identifier': events[1]['entry']['identifier']},
     )
     result = assert_proper_response_with_result(response)
     assert result == {SUB_SWAPS_DETAILS: event2.extra_data[SUB_SWAPS_DETAILS]}  # type: ignore[index]  # extra_data is not None here  # noqa: E501

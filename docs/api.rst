@@ -2327,10 +2327,7 @@ Querying evm transactions
    :reqjson bool only_cache: If true then only the ethereum transactions in the DB are queried.
    :reqjson string evm_chain: Optional. The name of the evm chain by which to filter all transactions. ``"ethereum"``, ``"optimism"`` etc.
    :reqjson string asset: Optional. Serialized asset to filter by.
-   :reqjson list counterparties: Optional. Counterparties (mostly protocols) to filter by. List of strings.
    :reqjson bool exclude_ignored_assets: Optional. Whether to exclude transactions with ignored assets. Default true.
-   :reqjson list[string] event_types: Optional.This is the list of event types by which to filter the decoded events.
-   :reqjson list[string] event_subtypes: Optional.This is the list of event subtypes by which to filter the decoded events.
 
 
    **Example Response**:
@@ -2358,23 +2355,6 @@ Querying evm transactions
               "nonce": 2720
             },
             "ignored_in_accounting": false,
-            "decoded_events": [{
-              "entry": {
-                "identifier": 1,
-                "asset": "ETH",
-                "balance": {"amount": "0.00863351371344", "usd_value": "0"},
-                "counterparty": "gas",
-                "event_identifier": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
-                "event_subtype": "fee",
-                "event_type": "spend",
-                "location": "blockchain",
-                "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
-                "notes": "Burned 0.00863351371344 ETH for gas",
-                "sequence_index": 0,
-                "timestamp": 1642802807,
-              },
-              "customized": false,
-              "has_details": false
             }, {
               "entry": {
                 "tx_hash": "0x867119d6c66cab26561ccc5775c9cd215389efb2e3832e54baed2a0a34498c4b",
@@ -2390,91 +2370,9 @@ Querying evm transactions
                 "input_data": "0xa694fc3a0000000000000000000000000000000000000000000000162069b9d8ad5c348a",
                 "nonce": 88
               },
-              "decoded_events": [
-                {
-                  "entry": {
-                    "identifier": 594,
-                    "event_identifier": "0x867119d6c66cab26561ccc5775c9cd215389efb2e3832e54baed2a0a34498c4b",
-                    "sequence_index": 1,
-                    "timestamp": 1661993636,
-                    "location": "blockchain",
-                    "asset": "ETH",
-                    "balance": {
-                      "amount": "0.002916189466526136",
-                      "usd_value": "4.62501817012112117328"
-                    },
-                    "event_type": "staking",
-                    "event_subtype": "reward",
-                    "location_label": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238",
-                    "notes": "Receive reward of 0.002916189466526136 ETH from Liquity's staking",
-                    "counterparty": "liquity",
-                  },
-                  "customized": false,
-                  "has_details": true
-                },
-                {
-                  "entry": {
-                    "identifier": 595,
-                    "event_identifier": "0x867119d6c66cab26561ccc5775c9cd215389efb2e3832e54baed2a0a34498c4b",
-                    "sequence_index": 403,
-                    "timestamp": 1661993636,
-                    "location": "blockchain",
-                    "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D",
-                    "balance": {
-                      "amount": "408.16397184365102401",
-                      "usd_value": "371.4292143777224318491"
-                    },
-                    "event_type": "staking",
-                    "event_subtype": "deposit asset",
-                    "location_label": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238",
-                    "notes": "Stake 408.16397184365102401 LQTY in the Liquity protocol",
-                    "counterparty": "liquity",
-                  },
-                  "customized": false,
-                  "has_details": false
-                },
-                {
-                  "entry": {
-                    "identifier": 596,
-                    "event_identifier": "0x867119d6c66cab26561ccc5775c9cd215389efb2e3832e54baed2a0a34498c4b",
-                    "sequence_index": 406,
-                    "timestamp": 1661993636,
-                    "location": "blockchain",
-                    "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
-                    "balance": {
-                      "amount": "21.405502592141755289",
-                      "usd_value": "21.23806917172022328115288721"
-                    },
-                    "event_type": "staking",
-                    "event_subtype": "reward",
-                    "location_label": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238",
-                    "notes": "Receive reward of 21.405502592141755289 LUSD from Liquity's staking",
-                    "counterparty": "liquity",
-                  },
-                  "customized": false,
-                  "has_details": false
-                }
-              ],
-              "ignored_in_accounting": false
+	      "ignored_in_accounting" true,
+
             }, {
-              "entry": {
-                "identifier": 2,
-                "asset": "ETH",
-                "balance": {"amount": "0.096809163374771208", "usd_value": "0"},
-                "counterparty": "0xA090e606E30bD747d4E6245a1517EbE430F0057e",
-                "event_identifier": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
-                "event_subtype": null,
-                "event_type": "spend",
-                "location": "blockchain",
-                "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
-                "notes": "Send 0.096809163374771208 ETH 0x6e15887E2CEC81434C16D587709f64603b39b545 -> 0xA090e606E30bD747d4E6245a1517EbE430F0057e",
-                "sequence_index": 1,
-                "timestamp": 1642802807,
-              },
-              "customized": true,
-              "has_details": false
-            }]
-          }, {
             "entry": {
               "tx_hash": "0x19807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280635eb7",
               "evm_chain": "ethereum",
@@ -2489,26 +2387,8 @@ Querying evm transactions
               "input_data": "0x",
               "nonce": 55
             },
-            "ignored_in_accounting": true,
-            "decoded_events": [{
-              "entry": {
-                "identifier": 3,
-                "asset": "ETH",
-                "balance": {"amount": "0.00863351371344", "usd_value": "0"},
-                "counterparty": "gas",
-                "event_identifier": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
-                "event_subtype": "fee",
-                "event_type": "spend",
-                "location": "blockchain",
-                "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
-                "notes": "Burned 0.00863351371344 ETH for gas",
-                "sequence_index": 0,
-                "timestamp": 1642802807,
-              },
-              "customized": false,
-              "has_details": false
-            }]
-          }],
+            "ignored_in_accounting": false,
+            }],
           "entries_found": 95,
           "entries_limit": 500,
           "entries_total": 1000
@@ -2520,7 +2400,6 @@ Querying evm transactions
    :resjson object result: A list of transaction entries to return for the given filter.
    :resjson object entry: A single transaction entry
    :resjson bool ignored_in_accounting: A boolean indicating whether this transaction should be ignored in accounting or not
-   :resjson list decoded_events: A list of decoded events for the given transaction. Each event is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not. Each entry also has a `has_details` flag. If `has_details` is true, then it is possible to call /history/events/details endpoint to retrieve some extra information about the event.
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_limit: The limit of entries if free version. -1 for premium.
    :resjson int entries_total: The number of total entries ignoring all filters.
@@ -5027,11 +4906,18 @@ Dealing with History Events
 
    .. _history_base_entry_schema_section:
 
+   :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson list[string] order_by_attributes: This is the list of attributes of the transaction by which to order the results.
+   :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
+   :reqjson bool group_by_event_ids: A boolean determining if results should be grouped by common event identifiers. If true, the result will return only first event of each group but also the number of events the group has. Default is false.
    :reqjson int from_timestamp: The timestamp from which to start querying. Default is 0.
    :reqjson int to_timestamp: The timestamp until which to query. Default is now.
-   :reqjson list[string] event_types: A list of event types by which to filter the decoded events.
-   :reqjson list[string] event_subtypes: A list of event subtypes by which to filter the decoded events.
-   :reqjson string asset: The asset to filter by.
+   :reqjson list[string] event_identifiers : An optional list of event identifiers to filter for.
+   :reqjson list[string] event_types: An optional list of event types by which to filter the decoded events.
+   :reqjson list[string] event_subtypes: An optional list of event subtypes by which to filter the decoded events.
+   :reqjson list[string] location_labels: A list of location labels to optionally filter by. Location label is a string field that allows to provide more information about the location. When we use this structure in blockchains, it is used to specify the user address. For exchange events it's the exchange name assigned by the user.
+   :reqjson string asset: The asset to optionally filter by.
    :reqjson list counterparties: An optional list of counterparties to filter by. List of strings.
    :reqjson list evm_chain: An optional evm_chain name to filter events only for that chain. This makes it an EVMEVent query.
    :reqjson list products: An optional list of product type to filter by. List of strings. This makes it an EVMEVent query.
@@ -5061,7 +4947,8 @@ Dealing with History Events
                       "timestamp": 1642802807
                   },
                   "customized": false,
-                  "has_details": false
+                  "has_details": false,
+		  "grouped_events_num": 1
                 }, {
                   "entry": {
                       "identifier": 2,
@@ -5078,7 +4965,8 @@ Dealing with History Events
                       "timestamp": 1642802807
                   },
                   "customized": false,
-                  "has_details": false
+                  "has_details": false,
+		  "grouped_events_num": 3
               }],
              "entries_found": 95,
              "entries_limit": 500,
@@ -5087,7 +4975,7 @@ Dealing with History Events
           "message": ""
       }
 
-   :resjson list decoded_events: A list of history events. Each event is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not. Each entry also has a `has_details` flag. If `has_details` is true, then it is possible to call /history/events/details endpoint to retrieve some extra information about the event.
+   :resjson list decoded_events: A list of history events. Each event is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not. Each entry also has a `has_details` flag. If `has_details` is true, then it is possible to call /history/events/details endpoint to retrieve some extra information about the event. Also each entry has a `customized` flag denoting if the event has been customized/added by the user. Finally if `group_by_event_ids` is true, each entry contains `grouped_events_num` which is an integer with the amount of events under the common event identifier. The consumer has to query this endpoint again with `group_by_event_ids` set to false and with the `event_identifiers` filter set to the identifier of the events having more than 1 event.
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_limit: The limit of entries if free version. -1 for premium.
    :resjson int entries_total: The number of total entries ignoring all filters.

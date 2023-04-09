@@ -452,6 +452,7 @@ class EventsHistorian:
                     to_ts=end_ts,
                 ),
                 has_premium=True,  # ignore limits here. Limit applied at processing
+                group_by_event_ids=False,
             )
         history.extend(base_entries)
         self._increase_progress(step, total_steps)
