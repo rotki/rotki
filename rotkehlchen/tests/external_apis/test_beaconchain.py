@@ -45,20 +45,6 @@ def _assert_valid_balance_entry(entry):
     assert entry.epoch >= 0
 
 
-def test_get_balance_history_single(session_beaconchain):
-    balance_map = session_beaconchain.get_balance_history([9])
-    _assert_valid_balance_entry(balance_map[9])
-
-
-@pytest.mark.skip('Seems the endpoint behaviour is not consistent with the docs atm')
-def test_get_balance_history_more_than_100(session_beaconchain):
-    indices = list(range(1, 105))
-    balance_map = session_beaconchain.get_balance_history(indices)
-    assert len(indices) == len(balance_map)
-    for index in indices:
-        _assert_valid_balance_entry(balance_map[index])
-
-
 def test_get_eth1_validator_indices_single(session_beaconchain):
     address = '0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397'
     validators = session_beaconchain.get_eth1_address_validators(address=address)

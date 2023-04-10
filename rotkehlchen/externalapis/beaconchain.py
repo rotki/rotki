@@ -10,7 +10,6 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID, ValidatorPerformance
-from rotkehlchen.chain.ethereum.modules.eth2.utils import ValidatorBalance
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.timing import DEFAULT_CONNECT_TIMEOUT, QUERY_RETRY_TIMES
@@ -75,7 +74,7 @@ class BeaconChain(ExternalServiceWithApiKey):
     def _query(
             self,
             module: Literal['validator', 'execution'],
-            endpoint: Optional[Literal['balancehistory', 'performance', 'eth1', 'deposits', 'produced']],  # noqa: E501
+            endpoint: Optional[Literal['performance', 'eth1', 'deposits', 'produced']],  # noqa: E501
             encoded_args: str,
             extra_args: Optional[dict[str, Any]] = None,
     ) -> Union[list[dict[str, Any]], dict[str, Any]]:
@@ -185,7 +184,7 @@ class BeaconChain(ExternalServiceWithApiKey):
             self,
             indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
             module: Literal['validator'],
-            endpoint: Literal['balancehistory', 'performance'],
+            endpoint: Literal['performance'],
     ) -> list[dict[str, Any]]:
         chunks = _calculate_query_chunks(indices_or_pubkeys)
         data = []
@@ -230,49 +229,6 @@ class BeaconChain(ExternalServiceWithApiKey):
                     break  # found the end for this chunk
 
         return data
-
-    def get_balance_history(self, validator_indices: list[int]) -> dict[int, ValidatorBalance]:
-        """Get the balance history of all the validators given from the indices list
-
-        https://beaconcha.in/api/v1/docs/index.html#/Validator/get_api_v1_validator__indexOrPubkey__balancehistory
-
-        Queries in chunks of 100 due to api limitations.
-
-        NOTICE: Do not use yet. The results seem incosistent. The list can accept
-        up to 100 validators, but the balance history is for the last 100 epochs
-        of each validator, limited to 100 results. So it's not really useful.
-
-        Their devs said they will have a look as this may not be desired behaviour.
-        Probably need combination of epoch + offset + limit.
-
-        May raise:
-        - RemoteError due to problems querying beaconcha.in API
-        """
-        data = self._query_chunked_endpoint(
-            indices_or_pubkeys=validator_indices,
-            module='validator',
-            endpoint='balancehistory',
-        )
-        # We are only interested in last epoch, so get its value
-        balances: dict[int, ValidatorBalance] = {}
-        try:
-            for entry in data:
-                index = entry['validatorindex']
-                epoch = entry['epoch']
-                if index in balances and balances[index].epoch >= epoch:
-                    continue
-
-                balances[index] = ValidatorBalance(
-                    epoch=epoch,
-                    balance=entry['balance'],
-                    effective_balance=entry['effectivebalance'],
-                )
-        except KeyError as e:
-            raise RemoteError(
-                f'Beaconchai.in balance response processing error. Missing key entry {str(e)}',
-            ) from e
-
-        return balances
 
     def get_performance(
             self,
