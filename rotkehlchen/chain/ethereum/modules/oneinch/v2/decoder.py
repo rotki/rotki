@@ -14,7 +14,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from ..constants import CPT_ONEINCH_V2, ONEINCH_LABEL
+from ..constants import CPT_ONEINCH_V2, ONEINCH_ICON, ONEINCH_LABEL
 
 SWAPPED = b'v\xaf"J\x148e\xa5\x0bAIn\x1asb&\x98i,V\\\x12\x14\xbc\x86/\x18\xe2-\x82\x9c^'
 
@@ -89,5 +89,5 @@ class Oneinchv2Decoder(DecoderInterface):
         return [CounterpartyDetails(
             identifier=CPT_ONEINCH_V2,
             label=ONEINCH_LABEL,
-            image='1inch.svg',
+            image=ONEINCH_ICON,
         )]

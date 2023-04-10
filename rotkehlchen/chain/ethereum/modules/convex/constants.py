@@ -1,7 +1,14 @@
 from typing import Final
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 CPT_CONVEX: Final = 'convex'
+
+CONVEX_CPT_DETAILS = CounterpartyDetails(
+    identifier=CPT_CONVEX,
+    label='Convex',
+    image='convex.jpeg',
+)
 
 BOOSTER = string_to_evm_address('0xF403C135812408BFbE8713b5A23a04b3D48AAE31')
 CVX_LOCKER = string_to_evm_address('0xD18140b4B819b895A3dba5442F959fA44994AF50')

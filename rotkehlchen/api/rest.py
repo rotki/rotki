@@ -4290,7 +4290,7 @@ class RestAPI():
     def get_types_mappings(self) -> Response:
         result = {
             'global_mappings': DEFAULT_EVENT_CATEGORY_MAPPINGS,
-            'event_type_details': EVENT_CATEGORY_DETAILS,
+            'event_category_details': EVENT_CATEGORY_DETAILS,
             'per_protocol_mappings': {
                 'ethereum': self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.events_types_tuples,  # noqa: E501
                 'optimism': self.rotkehlchen.chains_aggregator.optimism.transactions_decoder.events_types_tuples,  # noqa: E501
@@ -4302,6 +4302,10 @@ class RestAPI():
         )
 
     def get_evm_counterparties_details(self) -> Response:
+        """
+        Collect the counterparties from decoders in the different evm chains and combine them
+        removing duplicates.
+        """
         ethereum_counterparties = self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.rules.all_counterparties  # noqa: E501
         optimism_counterparties = self.rotkehlchen.chains_aggregator.optimism.transactions_decoder.rules.all_counterparties  # noqa: E501
         return api_response(

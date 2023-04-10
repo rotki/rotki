@@ -46,7 +46,7 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, shift_num_right_by
 
-from .constants import CPT_DSR, CPT_MIGRATION, CPT_VAULT
+from .constants import CPT_DSR, CPT_MIGRATION, CPT_VAULT, MAKERDAO_ICON, MAKERDAO_LABEL
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -519,15 +519,15 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         return [
             CounterpartyDetails(
                 identifier=CPT_VAULT,
-                label='Makerdao',
-                image='makerdao.svg',
+                label=MAKERDAO_LABEL,
+                image=MAKERDAO_ICON,
             ), CounterpartyDetails(
                 identifier=CPT_DSR,
-                label='Makerdao',
-                image='makerdao.svg',
+                label=MAKERDAO_LABEL,
+                image=MAKERDAO_ICON,
             ), CounterpartyDetails(
                 identifier=CPT_MIGRATION,
-                label='Makerdao',
-                image='makerdao.svg',
+                label=MAKERDAO_LABEL,
+                image=MAKERDAO_ICON,
             ),
         ]

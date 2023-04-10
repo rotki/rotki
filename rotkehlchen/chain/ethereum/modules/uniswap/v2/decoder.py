@@ -2,7 +2,11 @@ from typing import TYPE_CHECKING, Callable, Optional
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
+from rotkehlchen.chain.ethereum.modules.uniswap.constants import (
+    CPT_UNISWAP_V2,
+    UNISWAP_ICON,
+    UNISWAP_LABEL,
+)
 from rotkehlchen.chain.ethereum.modules.uniswap.utils import decode_basic_uniswap_info
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.common import (
     UNISWAP_V2_ROUTER,
@@ -182,6 +186,6 @@ class Uniswapv2Decoder(DecoderInterface):
     def counterparties(self) -> list[CounterpartyDetails]:
         return [CounterpartyDetails(
             identifier=CPT_UNISWAP_V2,
-            label='Uniswap',
-            image='uniswap.svg',
+            label=UNISWAP_LABEL,
+            image=UNISWAP_ICON,
         )]

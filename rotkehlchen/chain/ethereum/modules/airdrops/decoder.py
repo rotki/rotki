@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING, Any, Literal
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_CPT_DETAILS
+from rotkehlchen.chain.ethereum.modules.oneinch.constants import ONEINCH_ICON, ONEINCH_LABEL
+from rotkehlchen.chain.ethereum.modules.uniswap.constants import UNISWAP_ICON, UNISWAP_LABEL
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -279,19 +282,15 @@ class AirdropsDecoder(DecoderInterface):
             ),
             CounterpartyDetails(
                 identifier=CPT_UNISWAP,
-                label='Uniswap',
-                image='uniswap.svg',
+                label=UNISWAP_LABEL,
+                image=UNISWAP_ICON,
             ),
             CounterpartyDetails(
                 identifier=CPT_ONEINCH,
-                label='1inch',
-                image='1inch.svg',
+                label=ONEINCH_LABEL,
+                image=ONEINCH_ICON,
             ),
-            CounterpartyDetails(
-                identifier=CPT_CONVEX,
-                label='Convex',
-                image='convex.jpeg',
-            ),
+            CONVEX_CPT_DETAILS,
             CounterpartyDetails(
                 identifier=CPT_FRAX,
                 label='FRAX',

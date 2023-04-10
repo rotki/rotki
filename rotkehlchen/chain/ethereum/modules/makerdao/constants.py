@@ -10,3 +10,6 @@ RAD = 10**RAD_DIGITS
 CPT_VAULT = 'makerdao vault'
 CPT_DSR = 'makerdao dsr'
 CPT_MIGRATION = 'makerdao migration'
+
+MAKERDAO_LABEL = 'Makerdao'
+MAKERDAO_ICON = 'makerdao.svg'

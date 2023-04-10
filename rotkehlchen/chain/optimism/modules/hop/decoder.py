@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.decoding.constants import CPT_HOP, HOP_DETAILS
+from rotkehlchen.chain.evm.decoding.constants import CPT_HOP, HOP_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -90,4 +90,4 @@ class HopDecoder(DecoderInterface):
         }
 
     def counterparties(self) -> list[CounterpartyDetails]:
-        return [HOP_DETAILS]
+        return [HOP_CPT_DETAILS]

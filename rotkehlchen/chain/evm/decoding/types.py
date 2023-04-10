@@ -18,7 +18,7 @@ class EventCategoryDetails(NamedTuple):
 
 class EventCategory(SerializableEnumMixin):
     """
-    Duplicate of the enum that the frontend keeps to show the events to the user
+    User friendly categories to classify combinations of event type and event subtype
     """
     GAS = auto()
     SEND = auto()
