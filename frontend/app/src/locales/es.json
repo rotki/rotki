@@ -2912,6 +2912,7 @@
     "tooltip": "Notes"
   },
   "notification": {
+    "copy": "Copiar",
     "copy_tooltip": "Copy the message to clipboard",
     "dismiss_tooltip": "Dismiss Notification"
   },
