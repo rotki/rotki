@@ -22,11 +22,10 @@ const dismiss = (id: number) => {
 const icon = computed(() => {
   switch (get(notification).severity) {
     case Severity.ERROR:
-      return 'mdi-alert-circle';
     case Severity.INFO:
       return 'mdi-information-outline';
     case Severity.WARNING:
-      return 'mdi-alert';
+      return 'mdi-alarm-light-outline';
   }
   return '';
 });
@@ -59,55 +58,68 @@ const action = async (notification: NotificationData) => {
 </script>
 
 <template>
-  <v-card :class="$style.notification" :outlined="!popup" :elevation="0">
-    <v-list-item :class="$style.body">
-      <v-list-item-avatar>
-        <v-icon size="32px" :color="color">
-          {{ icon }}
-        </v-icon>
-      </v-list-item-avatar>
-      <v-list-item-content>
-        <v-list-item-title class="mt-2">
-          {{ notification.title }}
-        </v-list-item-title>
-        <div class="mt-1" :style="fontStyle" :class="$style.message">
-          <div>{{ notification.message }}</div>
-
-          <v-btn
-            v-if="notification.action"
-            depressed
-            color="primary"
-            small
-            class="mt-2"
-            @click="action(notification)"
-          >
-            {{ notification.action.label }}
-          </v-btn>
-        </div>
-        <span class="text-caption text--secondary">
-          {{ date }}
-        </span>
-        <slot />
-      </v-list-item-content>
-      <div class="d-flex flex-column" :class="$style.actions">
-        <v-tooltip bottom open-delay="400">
+  <v-card
+    :class="[
+      $style.notification,
+      {
+        [$style.action]: !!notification.action,
+        [$style['fixed-height']]: !popup
+      }
+    ]"
+    :outlined="!popup"
+    :elevation="0"
+  >
+    <v-list-item :class="$style.body" class="flex-column align-stretch">
+      <div class="d-flex pa-1">
+        <v-list-item-avatar class="mr-3 ml-1 my-0" :color="color">
+          <v-icon size="24px" color="white">
+            {{ icon }}
+          </v-icon>
+        </v-list-item-avatar>
+        <v-list-item-content class="py-0">
+          <v-list-item-title>
+            {{ notification.title }}
+          </v-list-item-title>
+          <v-list-item-subtitle>
+            {{ date }}
+          </v-list-item-subtitle>
+        </v-list-item-content>
+        <v-tooltip bottom open-delay="400" z-index="9999">
           <template #activator="{ on }">
-            <v-btn
-              text
-              icon
-              :class="$style.dismiss"
-              v-on="on"
-              @click="dismiss(notification.id)"
-            >
+            <v-btn text icon v-on="on" @click="dismiss(notification.id)">
               <v-icon>mdi-close</v-icon>
             </v-btn>
           </template>
           <span>{{ t('notification.dismiss_tooltip') }}</span>
         </v-tooltip>
-        <v-tooltip bottom open-delay="400">
+      </div>
+      <div
+        class="mt-1 px-2"
+        :style="fontStyle"
+        :class="[$style.message, { [$style.inline]: !popup }]"
+      >
+        <div>{{ notification.message }}</div>
+      </div>
+      <slot />
+      <div class="d-flex mt-auto align-center ml-n1">
+        <div v-if="notification.action" class="d-flex align-start mr-2">
+          <v-btn
+            color="primary"
+            depressed
+            small
+            plain
+            text
+            @click="action(notification)"
+          >
+            {{ notification.action.label }}
+            <v-icon class="ml-1" small>mdi-arrow-right</v-icon>
+          </v-btn>
+        </div>
+        <v-tooltip bottom open-delay="400" z-index="9999">
           <template #activator="{ on }">
-            <v-btn :class="$style.copy" text icon v-on="on" @click="copy()">
-              <v-icon>mdi-content-copy</v-icon>
+            <v-btn color="primary" small plain text v-on="on" @click="copy()">
+              {{ t('notification.copy') }}
+              <v-icon class="ml-1" x-small>mdi-content-copy</v-icon>
             </v-btn>
           </template>
           <span> {{ t('notification.copy_tooltip') }}</span>
@@ -119,44 +131,40 @@ const action = async (notification: NotificationData) => {
 
 <style module lang="scss">
 .notification {
-  height: 120px;
   max-width: 400px;
+
+  &.fixed-height {
+    height: 164px;
+  }
+
+  &.action {
+    background-color: rgba(237, 108, 2, 0.12);
+  }
 }
 
 .body {
   max-width: 400px;
   height: 100% !important;
   padding: 8px !important;
+
+  &::after {
+    display: none;
+  }
 }
 
 .message {
-  font-size: 13px;
-  min-height: 60px;
+  font-size: 14px;
   max-height: 60px;
   overflow-y: auto;
   white-space: pre-line;
-}
 
-.dismiss {
-  position: absolute;
-  right: 0;
-  top: 0;
-}
-
-.copy {
-  position: absolute;
-  right: 0;
-  bottom: 4px;
+  .inline {
+    min-height: 60px;
+  }
 }
 
 .copy-area {
   position: absolute;
   left: -999em;
-}
-
-.actions {
-  height: 100%;
-  justify-content: space-between;
-  margin-right: -4px;
 }
 </style>
