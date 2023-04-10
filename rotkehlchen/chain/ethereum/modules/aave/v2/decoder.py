@@ -14,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
@@ -272,7 +273,7 @@ class Aavev2Decoder(DecoderInterface):
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
-            self.evm_inquirer.contracts.contract('AAVE_V2_LENDING_POOL').address: (self._decode_lending_pool_events,),  # noqa: E501
+            string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'): (self._decode_lending_pool_events,),  # AAVE_V2_LENDING_POOL  # noqa: E501
         }
 
     def counterparties(self) -> list[CounterpartyDetails]:

@@ -9,6 +9,7 @@ from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -143,7 +144,7 @@ class Aave(EthereumModule):
                 if reserve_data is None:
 
                     if balance_entry.protocol.name == 'Aave':
-                        contract = self.ethereum.contracts.contract('AAVE_V1_LENDING_POOL')
+                        contract = self.ethereum.contracts.contract(string_to_evm_address('0x398eC7346DcD622eDc5ae82352F02bE94C62d119'))  # noqa: E501
                         reserve_result = contract.call(
                             node_inquirer=self.ethereum,
                             method_name='getReserveData',
@@ -155,7 +156,7 @@ class Aave(EthereumModule):
                             stable_borrow_rate=FVal(reserve_result[6] / RAY),
                         )
                     else:  # Aave V2
-                        contract = self.ethereum.contracts.contract('AAVE_V2_LENDING_POOL')
+                        contract = self.ethereum.contracts.contract(string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'))  # noqa: E501
                         reserve_result = contract.call(
                             node_inquirer=self.ethereum,
                             method_name='getReserveData',

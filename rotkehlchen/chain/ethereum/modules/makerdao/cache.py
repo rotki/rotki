@@ -129,7 +129,7 @@ def query_ilk_registry(
     - RemoteError if any of the remote queries fail
     """
     ilks_mapping = {}
-    ilk_registry = ethereum.contracts.contract('ILK_REGISTRY')
+    ilk_registry = ethereum.contracts.contract(string_to_evm_address('0x5a464C28D19848f44199D003BeF5ecc87d090F87'))  # noqa: E501
     ilks_num = ilk_registry.call(ethereum, method_name='count')
     step = 20  # split into multiple multi-calls to not hit etherscan or gas limits
     for idx in range(0, ilks_num, step):

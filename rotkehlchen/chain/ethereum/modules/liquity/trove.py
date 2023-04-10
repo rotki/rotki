@@ -7,6 +7,7 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -70,9 +71,9 @@ class Liquity(HasDSProxy):
             msg_aggregator=msg_aggregator,
         )
         self.history_lock = Semaphore()
-        self.trove_manager_contract = self.ethereum.contracts.contract('LIQUITY_TROVE_MANAGER')
-        self.stability_pool_contract = self.ethereum.contracts.contract('LIQUITY_STABILITY_POOL')
-        self.staking_contract = self.ethereum.contracts.contract('LIQUITY_STAKING')
+        self.trove_manager_contract = self.ethereum.contracts.contract(string_to_evm_address('0xA39739EF8b0231DbFA0DcdA07d7e29faAbCf4bb2'))  # noqa: E501
+        self.stability_pool_contract = self.ethereum.contracts.contract(string_to_evm_address('0x66017D22b0f8556afDd19FC67041899Eb65a21bb'))  # noqa: E501
+        self.staking_contract = self.ethereum.contracts.contract(string_to_evm_address('0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d'))  # noqa: E501
 
     def get_positions(
             self,

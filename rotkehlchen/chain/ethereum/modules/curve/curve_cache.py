@@ -352,7 +352,7 @@ def query_curve_data_from_chain(
     May raise:
     - RemoteError if failed to query chain
     """
-    address_provider = ethereum.contracts.contract('CURVE_ADDRESS_PROVIDER')
+    address_provider = ethereum.contracts.contract(string_to_evm_address('0x0000000022D53366457F9d5E68Ec105046FC4383'))  # noqa: E501
     try:
         metaregistry_address = deserialize_evm_address(address_provider.call(
             node_inquirer=ethereum,

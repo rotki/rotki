@@ -11,6 +11,7 @@ from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.constants import RAY, RAY_DIGITS
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
@@ -159,13 +160,13 @@ class MakerdaoVaults(HasDSProxy):
         self.vault_details: list[MakerdaoVaultDetails] = []
 
         self.dai = A_DAI.resolve_to_evm_token()
-        self.makerdao_jug = self.ethereum.contracts.contract('MAKERDAO_JUG')
-        self.makerdao_vat = self.ethereum.contracts.contract('MAKERDAO_VAT')
-        self.makerdao_cdp_manager = self.ethereum.contracts.contract('MAKERDAO_CDP_MANAGER')
-        self.makerdao_get_cdps = self.ethereum.contracts.contract('MAKERDAO_GET_CDPS')
-        self.makerdao_dai_join = self.ethereum.contracts.contract('MAKERDAO_DAI_JOIN')
-        self.makerdao_cat = self.ethereum.contracts.contract('MAKERDAO_CAT')
-        self.makerdao_spot = self.ethereum.contracts.contract('MAKERDAO_SPOT')
+        self.makerdao_jug = self.ethereum.contracts.contract(string_to_evm_address('0x19c0976f590D67707E62397C87829d896Dc0f1F1'))  # noqa: E501
+        self.makerdao_vat = self.ethereum.contracts.contract(string_to_evm_address('0x35D1b3F3D7966A1DFe207aa4514C12a259A0492B'))  # noqa: E501
+        self.makerdao_cdp_manager = self.ethereum.contracts.contract(string_to_evm_address('0x5ef30b9986345249bc32d8928B7ee64DE9435E39'))  # noqa: E501
+        self.makerdao_get_cdps = self.ethereum.contracts.contract(string_to_evm_address('0x36a724Bd100c39f0Ea4D3A20F7097eE01A8Ff573'))  # noqa: E501
+        self.makerdao_dai_join = self.ethereum.contracts.contract(string_to_evm_address('0x9759A6Ac90977b93B58547b4A71c78317f391A28'))  # noqa: E501
+        self.makerdao_cat = self.ethereum.contracts.contract(string_to_evm_address('0x78F2c2AF65126834c51822F56Be0d7469D7A523E'))  # noqa: E501
+        self.makerdao_spot = self.ethereum.contracts.contract(string_to_evm_address('0x65C79fcB50Ca1594B025960e539eD7A9a6D434A3'))  # noqa: E501
 
     def reset_last_query_ts(self) -> None:
         """Reset the last query timestamps, effectively cleaning the caches"""

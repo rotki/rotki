@@ -33,7 +33,7 @@ def test_convex_pools(ethereum_inquirer):
     """Tests that our hardcoded information about convex pools is up-to-date.
     Queries data about convex pools reward addresses and their names from chain and compares it
     to the current hardcoded info."""
-    booster_contract = ethereum_inquirer.contracts.contract('CONVEX_BOOSTER')
+    booster_contract = ethereum_inquirer.contracts.contract(string_to_evm_address('0xF403C135812408BFbE8713b5A23a04b3D48AAE31'))  # noqa: E501
     pools_count = booster_contract.call(
         node_inquirer=ethereum_inquirer,
         method_name='poolLength',

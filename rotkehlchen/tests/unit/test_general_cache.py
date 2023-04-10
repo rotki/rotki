@@ -128,7 +128,7 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api):
         known_addresses = db_addressbook.get_addressbook_entries(cursor=cursor)
     assert len(known_addresses) == 0
 
-    curve_address_provider = ethereum_inquirer.contracts.contract('CURVE_ADDRESS_PROVIDER')  # noqa: E501
+    curve_address_provider = ethereum_inquirer.contracts.contract(string_to_evm_address('0x0000000022D53366457F9d5E68Ec105046FC4383'))  # noqa: E501
 
     def mock_call_contract(contract, node_inquirer, method_name, **kwargs):
         if use_curve_api is True:
