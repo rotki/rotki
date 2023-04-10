@@ -14,7 +14,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import DecoderEventMappingType, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
-from ..constants import CPT_UNISWAP_V1
+from ..constants import CPT_UNISWAP_V1, UNISWAP_ICON, UNISWAP_LABEL
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -99,6 +99,6 @@ class Uniswapv1Decoder(DecoderInterface):
     def counterparties(self) -> list[CounterpartyDetails]:
         return [CounterpartyDetails(
             identifier=CPT_UNISWAP_V1,
-            label='Uniswap',
-            image='uniswap.svg',
+            label=UNISWAP_LABEL,
+            image=UNISWAP_ICON,
         )]

@@ -532,4 +532,4 @@ def test_query_decoding_types_mappings(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert 'per_protocol_mappings' in result
     assert 'global_mappings' in result
-    assert 'event_type_details' in result
+    assert 'event_category_details' in result

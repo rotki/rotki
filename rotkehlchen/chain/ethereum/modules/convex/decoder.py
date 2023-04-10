@@ -7,6 +7,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.convex.constants import (
     BOOSTER,
     CONVEX_ABRAS_HEX,
+    CONVEX_CPT_DETAILS,
     CONVEX_POOLS,
     CONVEX_VIRTUAL_REWARDS,
     CPT_CONVEX,
@@ -182,7 +183,7 @@ class ConvexDecoder(DecoderInterface):
         return decoder_mappings
 
     def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(identifier=CPT_CONVEX, label='Convex', image='convex.jpeg')]
+        return [CONVEX_CPT_DETAILS]
 
     def enricher_rules(self) -> list[Callable]:
         return [self._maybe_enrich_convex_transfers]

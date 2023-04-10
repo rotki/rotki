@@ -5,6 +5,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     CPT_YEARN_V1,
     CPT_YEARN_V2,
+    YEARN_ICON,
     YEARN_LABEL,
 )
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -169,11 +170,11 @@ class YearnDecoder(DecoderInterface):
             CounterpartyDetails(
                 identifier=CPT_YEARN_V1,
                 label=YEARN_LABEL,
-                image='yearn_vaults.svg',
+                image=YEARN_ICON,
             ),
             CounterpartyDetails(
                 identifier=CPT_YEARN_V2,
                 label=YEARN_LABEL,
-                image='yearn_vaults.svg',
+                image=YEARN_ICON,
             ),
         ]

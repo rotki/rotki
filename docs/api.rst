@@ -12340,7 +12340,7 @@ Event Mappings
 
 .. http:get:: /api/(version)/history/events/type_mappings
 
-  Doing a GET on this endpoint will return a mapping of history events types and subtypes to the frontend's ``TransactionEventType`` representation. We also return properties such ``icon``, ``label`` and ``color`` for event types.
+  Doing a GET on this endpoint will return a mapping of history events types and subtypes to a ``EventCategory`` representation. We also return properties such ``icon``, ``label`` and ``color`` for event types.
 
   **Example Request**
 
@@ -12385,7 +12385,7 @@ Event Mappings
               }
             }
           },
-          "event_type_details":{
+          "event_category_details":{
             "gas":{
               "label":"gas_fee",
               "icon":"mdi-fire",
@@ -12404,9 +12404,9 @@ Event Mappings
           }
         }
       }
-  :resjson object global_mappings: keys of this object are the history event types names and values are mappings of subtypes' names to the ``TransactionEventType`` name. Contains mappings that should be applied if there is no a specific protocol rule.
+  :resjson object global_mappings: keys of this object are the history event types names and values are mappings of subtypes' names to the ``EventCategory`` name. Contains mappings that should be applied if there is no a specific protocol rule.
   :resjson object per_protocol_mappings: same as global_mappings but contains specific mappings per chain and protocol.
-  :resjson object event_type_details: Properties for ``TransactionEventType``.
+  :resjson object event_category_details: Properties for ``EventCategory``.
   :resjson string label: Label to show in the frontend for the event type.
   :resjson string icon: Icon to be used by the frontend for this event type.
   :resjson string color[optional]: Optional color to apply to the icon

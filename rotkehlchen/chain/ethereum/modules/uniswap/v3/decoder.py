@@ -37,7 +37,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import hex_or_bytes_to_int, ts_ms_to_sec
 
-from ..constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
+from ..constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3, UNISWAP_ICON, UNISWAP_LABEL
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -561,8 +561,8 @@ class Uniswapv3Decoder(DecoderInterface):
     def counterparties(self) -> list[CounterpartyDetails]:
         return [CounterpartyDetails(
             identifier=CPT_UNISWAP_V3,
-            label='Uniswap',
-            image='uniswap.svg',
+            label=UNISWAP_LABEL,
+            image=UNISWAP_ICON,
         )]
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:

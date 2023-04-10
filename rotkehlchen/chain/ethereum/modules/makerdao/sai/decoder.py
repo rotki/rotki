@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.ethereum.modules.makerdao.constants import MAKERDAO_ICON, MAKERDAO_LABEL
 from rotkehlchen.chain.ethereum.modules.makerdao.sai.constants import CPT_SAI
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, ERC20_OR_ERC721_TRANSFER
@@ -502,4 +503,8 @@ class MakerdaosaiDecoder(DecoderInterface):
         ]
 
     def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(identifier=CPT_SAI, label='Makerdao', image='makerdao.svg')]
+        return [CounterpartyDetails(
+            identifier=CPT_SAI,
+            label=MAKERDAO_LABEL,
+            image=MAKERDAO_ICON,
+        )]

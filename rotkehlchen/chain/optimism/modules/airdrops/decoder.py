@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.chain.evm.decoding.constants import OPTIMISM_DETAILS
+from rotkehlchen.chain.evm.decoding.constants import OPTIMISM_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -72,4 +72,4 @@ class AirdropsDecoder(DecoderInterface):
         }
 
     def counterparties(self) -> list[CounterpartyDetails]:
-        return [OPTIMISM_DETAILS]
+        return [OPTIMISM_CPT_DETAILS]

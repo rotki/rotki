@@ -2,7 +2,7 @@ from typing import Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.evm.decoding.constants import OPTIMISM_DETAILS
+from rotkehlchen.chain.evm.decoding.constants import OPTIMISM_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -62,4 +62,4 @@ class OptimismDecoder(DecoderInterface):
         }}
 
     def counterparties(self) -> list[CounterpartyDetails]:
-        return [OPTIMISM_DETAILS]
+        return [OPTIMISM_CPT_DETAILS]

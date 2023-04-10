@@ -21,12 +21,12 @@ ERC20_OR_ERC721_TRANSFER = b'\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xa
 ERC20_APPROVE = b'\x8c[\xe1\xe5\xeb\xec}[\xd1OqB}\x1e\x84\xf3\xdd\x03\x14\xc0\xf7\xb2)\x1e[ \n\xc8\xc7\xc3\xb9%'  # noqa: E501
 
 # Counterparty details shared between chains
-HOP_DETAILS = CounterpartyDetails(
+HOP_CPT_DETAILS = CounterpartyDetails(
     identifier=CPT_HOP,
     label='Hop Protocol',
     image='hop_protocol.png',
 )
-OPTIMISM_DETAILS = CounterpartyDetails(
+OPTIMISM_CPT_DETAILS = CounterpartyDetails(
     identifier=CPT_OPTIMISM,
     label='Optimism',
     image='optimism.svg',

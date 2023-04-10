@@ -9,3 +9,4 @@ CPT_YEARN_V1: Final = 'yearn-v1'
 CPT_YEARN_V2: Final = 'yearn-v2'
 
 YEARN_LABEL = 'Yearn'
+YEARN_ICON = 'yearn_vaults.svg'
