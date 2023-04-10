@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -37,8 +38,11 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 # Have to use a constant instead of make_evm_address() because vcr doesn't work otherwise.
 ADDRESS_WITHOUT_GENESIS_TX = '0x4bBa290826C253BD854121346c370a9886d1bC26'
 
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 
-def test_decoders_initialization(ethereum_transaction_decoder):
+
+def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransactionDecoder'):
     """Make sure that all decoders we have created are detected and initialized"""
     assert set(ethereum_transaction_decoder.decoders.keys()) == {
         'Aavev1',
@@ -73,7 +77,8 @@ def test_decoders_initialization(ethereum_transaction_decoder):
         'Yearn',
     }
 
-    assert ethereum_transaction_decoder.rules.all_counterparties == {
+    counterparty_ids = {counterparty.identifier for counterparty in ethereum_transaction_decoder.rules.all_counterparties}  # noqa: E501
+    assert counterparty_ids == {
         'kyber legacy',
         'element-finance',
         'badger',

@@ -8,9 +8,9 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_ZKSYNC
@@ -62,11 +62,11 @@ class ZksyncDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {
             CPT_ZKSYNC: {
                 HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.BRIDGE: TransactionEventType.BRIDGE,
+                    HistoryEventSubType.BRIDGE: EventCategory.BRIDGE,
                 },
             },
         }
@@ -76,5 +76,5 @@ class ZksyncDecoder(DecoderInterface):
             ZKSYNC_BRIDGE: (self._decode_event,),
         }
 
-    def counterparties(self) -> list[str]:
-        return [CPT_ZKSYNC]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(identifier=CPT_ZKSYNC, label='zkSync', image='zksync.jpg')]

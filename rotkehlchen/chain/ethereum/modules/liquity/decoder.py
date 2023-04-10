@@ -10,14 +10,14 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_LIQUITY
@@ -223,22 +223,22 @@ class LiquityDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {CPT_LIQUITY: {
             HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.GENERATE_DEBT: TransactionEventType.BORROW,
-                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+                HistoryEventSubType.GENERATE_DEBT: EventCategory.BORROW,
+                HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
             },
             HistoryEventType.SPEND: {
-                HistoryEventSubType.PAYBACK_DEBT: TransactionEventType.REPAY,
+                HistoryEventSubType.PAYBACK_DEBT: EventCategory.REPAY,
             },
             HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
             },
             HistoryEventType.STAKING: {
-                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
-                HistoryEventSubType.REWARD: TransactionEventType.RECEIVE,
-                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+                HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
+                HistoryEventSubType.REWARD: EventCategory.RECEIVE,
+                HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
             },
         }}
 
@@ -292,5 +292,5 @@ class LiquityDecoder(DecoderInterface):
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {CPT_LIQUITY: [(0, self._handle_post_decoding)]}
 
-    def counterparties(self) -> list[str]:
-        return [CPT_LIQUITY]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(identifier=CPT_LIQUITY, label='Liquity', image='liquity.svg')]

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Callable, Optional
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.common import (
@@ -17,10 +17,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.types import DECODER_EVENT_MAPPING, SUSHISWAP_PROTOCOL, EvmTransaction
+from rotkehlchen.types import SUSHISWAP_PROTOCOL, DecoderEventMappingType, EvmTransaction
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -104,26 +104,26 @@ class SushiswapDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {CPT_SUSHISWAP_V2: {
             HistoryEventType.TRADE: {
-                HistoryEventSubType.RECEIVE: TransactionEventType.SWAP_IN,
-                HistoryEventSubType.SPEND: TransactionEventType.SWAP_OUT,
+                HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
+                HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
             },
             HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
             },
             HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+                HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
             },
             HistoryEventType.SPEND: {
-                HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+                HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
             },
             HistoryEventType.RECEIVE: {
-                HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
+                HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
             },
             HistoryEventType.TRANSFER: {
-                HistoryEventSubType.NONE: TransactionEventType.TRANSFER,
+                HistoryEventSubType.NONE: EventCategory.TRANSFER,
             },
         }}
 
@@ -138,5 +138,9 @@ class SushiswapDecoder(DecoderInterface):
             self._maybe_enrich_lp_tokens_transfers,
         ]
 
-    def counterparties(self) -> list[str]:
-        return [CPT_SUSHISWAP_V2]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(
+            identifier=CPT_SUSHISWAP_V2,
+            label='Sushiswap',
+            image='sushi.png',
+        )]

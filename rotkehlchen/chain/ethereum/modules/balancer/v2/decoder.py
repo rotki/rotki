@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V2
+from rotkehlchen.chain.ethereum.modules.balancer.constants import BALANCER_LABEL, CPT_BALANCER_V2
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -15,12 +15,12 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -150,12 +150,12 @@ class Balancerv2Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {
             CPT_BALANCER_V2: {
                 HistoryEventType.TRADE: {
-                    HistoryEventSubType.SPEND: TransactionEventType.SWAP_OUT,
-                    HistoryEventSubType.RECEIVE: TransactionEventType.SWAP_IN,
+                    HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
+                    HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
                 },
             },
         }
@@ -170,5 +170,9 @@ class Balancerv2Decoder(DecoderInterface):
             self._maybe_enrich_balancer_v2_transfers,
         ]
 
-    def counterparties(self) -> list[str]:
-        return [CPT_BALANCER_V2]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(
+            identifier=CPT_BALANCER_V2,
+            label=BALANCER_LABEL,
+            image='balancer.svg',
+        )]

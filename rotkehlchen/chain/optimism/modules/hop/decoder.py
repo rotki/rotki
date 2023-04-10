@@ -2,16 +2,17 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.decoding.constants import CPT_HOP
+from rotkehlchen.chain.evm.decoding.constants import CPT_HOP, HOP_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_HETH_OPT, A_WETH_OPT
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -76,10 +77,17 @@ class HopDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    def possible_events(self) -> DecoderEventMappingType:
+        return {CPT_HOP: {
+            HistoryEventType.WITHDRAWAL: {
+                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE,
+            },
+        }}
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             ETH_BRIDGE: (self._decode_receive_eth,),
         }
 
-    def counterparties(self) -> list[str]:
-        return [CPT_HOP]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [HOP_DETAILS]

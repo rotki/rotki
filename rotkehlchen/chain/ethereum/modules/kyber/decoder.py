@@ -10,14 +10,14 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_KYBER
@@ -140,11 +140,11 @@ class KyberDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {CPT_KYBER: {
             HistoryEventType.TRADE: {
-                HistoryEventSubType.RECEIVE: TransactionEventType.SWAP_IN,
-                HistoryEventSubType.SPEND: TransactionEventType.SWAP_OUT,
+                HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
+                HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
             },
         }}
 
@@ -155,5 +155,5 @@ class KyberDecoder(DecoderInterface):
             KYBER_LEGACY_CONTRACT_UPGRADED: (self._decode_legacy_upgraded_trade,),
         }
 
-    def counterparties(self) -> list[str]:
-        return [CPT_KYBER]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(identifier=CPT_KYBER, label='Kyber Legacy', image='kyber.svg')]

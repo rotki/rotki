@@ -13,13 +13,13 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_ELFI, A_FOX, A_FPIS, A_UNI
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
@@ -250,11 +250,11 @@ class AirdropsDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {
             counterparty: {
                 HistoryEventType.RECEIVE: {
-                    HistoryEventSubType.AIRDROP: TransactionEventType.AIRDROP,
+                    HistoryEventSubType.AIRDROP: EventCategory.AIRDROP,
                 },
             } for counterparty in ETHEREUM_AIRDROPS_LIST
         }
@@ -270,5 +270,41 @@ class AirdropsDecoder(DecoderInterface):
             ELFI_LOCKING: (self._decode_elfi_claim,),
         }
 
-    def counterparties(self) -> list[str]:
-        return ETHEREUM_AIRDROPS_LIST
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [
+            CounterpartyDetails(
+                identifier=CPT_BADGER,
+                label='Badger',
+                image='badger.png',
+            ),
+            CounterpartyDetails(
+                identifier=CPT_UNISWAP,
+                label='Uniswap',
+                image='uniswap.svg',
+            ),
+            CounterpartyDetails(
+                identifier=CPT_ONEINCH,
+                label='1inch',
+                image='1inch.svg',
+            ),
+            CounterpartyDetails(
+                identifier=CPT_CONVEX,
+                label='Convex',
+                image='convex.jpeg',
+            ),
+            CounterpartyDetails(
+                identifier=CPT_FRAX,
+                label='FRAX',
+                image='frax.png',
+            ),
+            CounterpartyDetails(
+                identifier=CPT_SHAPESHIFT,
+                label='Shapeshift',
+                image='shapeshift.svg',
+            ),
+            CounterpartyDetails(
+                identifier=CPT_ELEMENT_FINANCE,
+                label='Element Finance',
+                image='element_finance.png',
+            ),
+        ]

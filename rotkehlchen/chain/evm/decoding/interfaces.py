@@ -2,10 +2,11 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
+    from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -30,7 +31,7 @@ class DecoderInterface(metaclass=ABCMeta):
         return {}
 
     @abstractmethod
-    def counterparties(self) -> list[str]:
+    def counterparties(self) -> list['CounterpartyDetails']:
         """
         Subclasses implement this to specify which counterparty values are introduced by the module
         """
@@ -80,8 +81,8 @@ class DecoderInterface(metaclass=ABCMeta):
             f'try to decode the event again {event.event_identifier.hex()}.',
         )
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
-        """Return the possible types and subtypes used in decoders"""
+    def possible_events(self) -> DecoderEventMappingType:
+        """Return the possible event types and subtypes used in the specific decoder"""
         return {}
 
 

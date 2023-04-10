@@ -13,14 +13,14 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_COMP, A_ETH
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import DECODER_EVENT_MAPPING, ChainID, ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, DecoderEventMappingType, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import COMPTROLLER_PROXY_ADDRESS, CPT_COMPOUND
@@ -261,23 +261,23 @@ class CompoundDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {
             CPT_COMPOUND: {
                 HistoryEventType.RECEIVE: {
-                    HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
-                    HistoryEventSubType.GENERATE_DEBT: TransactionEventType.BORROW,
-                    HistoryEventSubType.REWARD: TransactionEventType.CLAIM_REWARD,
+                    HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
+                    HistoryEventSubType.GENERATE_DEBT: EventCategory.BORROW,
+                    HistoryEventSubType.REWARD: EventCategory.CLAIM_REWARD,
                 },
                 HistoryEventType.SPEND: {
-                    HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
-                    HistoryEventSubType.PAYBACK_DEBT: TransactionEventType.REPAY,
+                    HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
+                    HistoryEventSubType.PAYBACK_DEBT: EventCategory.REPAY,
                 },
                 HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+                    HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
                 },
                 HistoryEventType.WITHDRAWAL: {
-                    HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+                    HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
                 },
             },
         }
@@ -296,5 +296,9 @@ class CompoundDecoder(DecoderInterface):
         mapping[COMPTROLLER_PROXY_ADDRESS] = (self.decode_comp_claim,)
         return mapping
 
-    def counterparties(self) -> list[str]:
-        return [CPT_COMPOUND]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(
+            identifier=CPT_COMPOUND,
+            label='Compound',
+            image='compound.svg',
+        )]

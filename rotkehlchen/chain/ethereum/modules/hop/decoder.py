@@ -1,18 +1,18 @@
 from typing import Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.evm.decoding.constants import CPT_HOP
+from rotkehlchen.chain.evm.decoding.constants import CPT_HOP, HOP_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
 
 # https://github.com/hop-protocol/hop/blob/develop/packages/core/src/addresses/mainnet.ts
@@ -61,10 +61,10 @@ class HopDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {CPT_HOP: {
             HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.BRIDGE: TransactionEventType.BRIDGE,
+                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE,
             },
         }}
 
@@ -73,5 +73,5 @@ class HopDecoder(DecoderInterface):
             ETH_BRIDGE: (self._decode_send_eth,),
         }
 
-    def counterparties(self) -> list[str]:
-        return [CPT_HOP]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [HOP_DETAILS]

@@ -2657,11 +2657,6 @@ class ReverseEnsResource(BaseMethodView):
         )
 
 
-class CounterpartiesResource(BaseMethodView):
-    def get(self) -> Response:
-        return self.rest_api.get_all_counterparties()
-
-
 class AddressbookResource(BaseMethodView):
     post_delete_schema = AddressbookAddressesSchema()
     update_schema = AddressbookUpdateSchema()

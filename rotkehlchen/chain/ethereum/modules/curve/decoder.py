@@ -16,8 +16,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
@@ -25,9 +25,9 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
-    DECODER_EVENT_MAPPING,
     ChainID,
     ChecksumEvmAddress,
+    DecoderEventMappingType,
     EvmTokenKind,
     EvmTransaction,
 )
@@ -645,25 +645,25 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {
             CPT_CURVE: {
                 HistoryEventType.TRADE: {
-                    HistoryEventSubType.SPEND: TransactionEventType.SWAP_OUT,
-                    HistoryEventSubType.RECEIVE: TransactionEventType.SWAP_IN,
+                    HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
+                    HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
                 },
                 HistoryEventType.WITHDRAWAL: {
-                    HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+                    HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
                 },
                 HistoryEventType.RECEIVE: {
-                    HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
-                    HistoryEventSubType.REWARD: TransactionEventType.CLAIM_REWARD,
+                    HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
+                    HistoryEventSubType.REWARD: EventCategory.CLAIM_REWARD,
                 },
                 HistoryEventType.SPEND: {
-                    HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+                    HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
                 },
                 HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+                    HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
                 },
             },
         }
@@ -688,8 +688,8 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             self._maybe_enrich_curve_transfers,
         ]
 
-    def counterparties(self) -> list[str]:
-        return [CPT_CURVE]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(identifier=CPT_CURVE, label='Curve.fi', image='curve.png')]
 
     def reload_data(self) -> Optional[Mapping[ChecksumEvmAddress, tuple[Any, ...]]]:
         """Make sure curve pools are recently queried from the chain, saved in the DB

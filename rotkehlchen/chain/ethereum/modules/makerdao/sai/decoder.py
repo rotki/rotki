@@ -16,6 +16,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -500,5 +501,5 @@ class MakerdaosaiDecoder(DecoderInterface):
             self._maybe_enrich_sai_tub_transfers,
         ]
 
-    def counterparties(self) -> list[str]:
-        return [CPT_SAI]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(identifier=CPT_SAI, label='Makerdao', image='makerdao.svg')]

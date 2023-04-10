@@ -10,12 +10,12 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
-from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from ..constants import CPT_AAVE_V1
+from ..constants import AAVE_LABEL, CPT_AAVE_V1
 
 DEPOSIT = b'\xc1,W\xb1\xc7:,:.\xa4a>\x94v\xab\xb3\xd8\xd1F\x85z\xabs)\xe2BC\xfbYq\x0c\x82'
 REDEEM_UNDERLYING = b'\x9cN\xd5\x99\xcd\x85U\xb9\xc1\xe8\xcdvC$\r}q\xebv\xb7\x92\x94\x8cI\xfc\xb4\xd4\x11\xf7\xb6\xb3\xc6'  # noqa: E501
@@ -103,20 +103,20 @@ class Aavev1Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {CPT_AAVE_V1: {
             HistoryEventType.RECEIVE: {
-                HistoryEventSubType.REWARD: TransactionEventType.CLAIM_REWARD,
-                HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
+                HistoryEventSubType.REWARD: EventCategory.CLAIM_REWARD,
+                HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
             },
             HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
             },
             HistoryEventType.SPEND: {
-                HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+                HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
             },
             HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+                HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
             },
         }}
 
@@ -125,5 +125,5 @@ class Aavev1Decoder(DecoderInterface):
             self.evm_inquirer.contracts.contract('AAVE_V1_LENDING_POOL').address: (self._decode_pool_event,),  # noqa: E501
         }
 
-    def counterparties(self) -> list[str]:
-        return [CPT_AAVE_V1]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(identifier=CPT_AAVE_V1, label=AAVE_LABEL, image='aave.svg')]

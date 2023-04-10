@@ -2,7 +2,11 @@ from typing import TYPE_CHECKING, Callable
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V1, CPT_YEARN_V2
+from rotkehlchen.chain.ethereum.modules.yearn.constants import (
+    CPT_YEARN_V1,
+    CPT_YEARN_V2,
+    YEARN_LABEL,
+)
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -10,15 +14,15 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import (
-    DECODER_EVENT_MAPPING,
     YEARN_VAULTS_V1_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,
     ChainID,
+    DecoderEventMappingType,
 )
 
 if TYPE_CHECKING:
@@ -131,26 +135,26 @@ class YearnDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {
             CPT_YEARN_V1: {
                 HistoryEventType.WITHDRAWAL: {
-                    HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
-                    HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+                    HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
+                    HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
                 },
                 HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
-                    HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
+                    HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
+                    HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
                 },
             },
             CPT_YEARN_V2: {
                 HistoryEventType.WITHDRAWAL: {
-                    HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
-                    HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+                    HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
+                    HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
                 },
                 HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
-                    HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
+                    HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
+                    HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
                 },
             },
         }
@@ -160,5 +164,16 @@ class YearnDecoder(DecoderInterface):
             self._maybe_enrich_yearn_transfers,
         ]
 
-    def counterparties(self) -> list[str]:
-        return [CPT_YEARN_V2, CPT_YEARN_V1]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [
+            CounterpartyDetails(
+                identifier=CPT_YEARN_V1,
+                label=YEARN_LABEL,
+                image='yearn_vaults.svg',
+            ),
+            CounterpartyDetails(
+                identifier=CPT_YEARN_V2,
+                label=YEARN_LABEL,
+                image='yearn_vaults.svg',
+            ),
+        ]

@@ -4,19 +4,19 @@ from typing import Literal, NamedTuple, Optional
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 
-class ProtocolDetails(NamedTuple):
+class CounterpartyDetails(NamedTuple):
     identifier: str
     label: str
     image: str
 
 
-class EventDetails(NamedTuple):
+class EventCategoryDetails(NamedTuple):
     label: str
     icon: str
     color: Optional[Literal['green', 'red']] = None
 
 
-class TransactionEventType(SerializableEnumMixin):
+class EventCategory(SerializableEnumMixin):
     """
     Duplicate of the enum that the frontend keeps to show the events to the user
     """

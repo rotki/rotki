@@ -27,7 +27,7 @@ from rotkehlchen.chain.substrate.types import SubstrateAddress  # isort:skip
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-    from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+    from rotkehlchen.chain.evm.decoding.types import EventCategory
 
 ModuleName = Literal[
     'makerdao_dsr',
@@ -802,10 +802,10 @@ DEFAULT_ADDRESS_NAME_PRIORITY: list[AddressNameSource] = [
     'ens_names',
 ]
 
-DECODER_EVENT_MAPPING = dict[
+DecoderEventMappingType = dict[
     str,
     dict[
         'HistoryEventType',
-        dict['HistoryEventSubType', 'TransactionEventType'],
+        dict['HistoryEventSubType', 'EventCategory'],
     ],
 ]
