@@ -11,6 +11,7 @@ from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USD, A_USDC, A_USDT, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
@@ -279,7 +280,7 @@ class UniswapV3Oracle(UniswapOracle):
     def __init__(self, ethereum_inquirer: 'EthereumInquirer'):
         super().__init__(ethereum_inquirer=ethereum_inquirer, version=3)
         self.uniswap_v3_pool_abi = self.ethereum.contracts.abi('UNISWAP_V3_POOL')
-        self.uniswap_v3_factory = self.ethereum.contracts.contract('UNISWAP_V3_FACTORY')
+        self.uniswap_v3_factory = self.ethereum.contracts.contract(string_to_evm_address('0x1F98431c8aD98523631AE4a59f267346ea31F984'))  # noqa: E501
 
     @cache_response_timewise()
     def get_pool(
@@ -383,7 +384,7 @@ class UniswapV2Oracle(UniswapOracle):
     def __init__(self, ethereum_inquirer: 'EthereumInquirer'):
         super().__init__(ethereum_inquirer=ethereum_inquirer, version=3)
         self.uniswap_v2_lp_abi = self.ethereum.contracts.abi('UNISWAP_V2_LP')
-        self.uniswap_v2_factory = self.ethereum.contracts.contract('UNISWAP_V2_FACTORY')
+        self.uniswap_v2_factory = self.ethereum.contracts.contract(string_to_evm_address('0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f'))  # noqa: E501
 
     @cache_response_timewise()
     def get_pool(

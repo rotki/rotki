@@ -11,6 +11,7 @@ from web3._utils.abi import get_abi_output_types
 
 from rotkehlchen.chain.ethereum.modules.makerdao.dsr import _dsrdai_to_dai
 from rotkehlchen.chain.evm.contracts import EvmContracts
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -109,9 +110,9 @@ def mock_etherscan_for_dsr(
         params: DSRMockParameters,
 ) -> _patch:
     ds_proxy_registry = contracts.contract('DS_PROXY_REGISTRY')
-    makerdao_dai_join = contracts.contract('MAKERDAO_DAI_JOIN')
-    makerdao_pot = contracts.contract('MAKERDAO_POT')
-    makerdao_vat = contracts.contract('MAKERDAO_VAT')
+    makerdao_dai_join = contracts.contract(string_to_evm_address('0x9759A6Ac90977b93B58547b4A71c78317f391A28'))  # noqa: E501
+    makerdao_pot = contracts.contract(string_to_evm_address('0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7'))  # noqa: E501
+    makerdao_vat = contracts.contract(string_to_evm_address('0x35D1b3F3D7966A1DFe207aa4514C12a259A0492B'))  # noqa: E501
     eth_multicall = contracts.contract('MULTICALL2')
 
     proxy1 = make_evm_address()

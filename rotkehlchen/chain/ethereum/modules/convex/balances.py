@@ -11,6 +11,7 @@ from rotkehlchen.chain.ethereum.modules.curve.balances import query_gauges_balan
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_CVX
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
@@ -114,10 +115,10 @@ class ConvexBalances(ProtocolWithBalance):
             )
 
         # query CVX locked but not staked
-        cvx_lock_contract = self.evm_inquirer.contracts.contract('CVX_REWARD_POOL')
+        cvx_lock_contract = self.evm_inquirer.contracts.contract(string_to_evm_address('0xCF50b810E57Ac33B91dCF525C6ddd9881B139332'))  # noqa: E501
         self._query_staked_cvx(balances, cvx_lock_contract)
         # query CVX staked
-        cvx_lock_contract = self.evm_inquirer.contracts.contract('CVX_LOCKER_V2')
+        cvx_lock_contract = self.evm_inquirer.contracts.contract(string_to_evm_address('0x72a19342e8F1838460eBFCCEf09F6585e32db86E'))  # noqa: E501
         self._query_staked_cvx(balances, cvx_lock_contract)
 
         return balances

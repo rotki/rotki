@@ -140,7 +140,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
         if context.tx_log.topics[0] == NEW_RESOLVER:
             node = context.tx_log.topics[1]
             try:
-                ens_name = self.ethereum.contracts.contract('ENS_REVERSE_RESOLVER').call(
+                ens_name = self.ethereum.contracts.contract(string_to_evm_address('0xA2C122BE93b0074270ebeE7f6b7292C7deB45047')).call(  # noqa: E501
                     node_inquirer=self.ethereum,
                     method_name='name',
                     arguments=[node],
@@ -186,7 +186,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
 
             node = context.tx_log.topics[1]
             try:
-                address = self.ethereum.contracts.contract('ENS_PUBLIC_RESOLVER_2').call(
+                address = self.ethereum.contracts.contract(string_to_evm_address('0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41')).call(  # noqa: E501
                     node_inquirer=self.ethereum,
                     method_name='addr',
                     arguments=[node],

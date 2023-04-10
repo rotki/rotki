@@ -8,6 +8,7 @@ from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
 from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.errors.misc import RemoteError
@@ -121,8 +122,8 @@ class MakerdaoDsr(HasDSProxy):
         self.historical_dsr_reports: dict[ChecksumEvmAddress, DSRAccountReport] = {}
         self.lock = Semaphore()
         self.dai = A_DAI.resolve_to_evm_token()
-        self.makerdao_dai_join = self.ethereum.contracts.contract('MAKERDAO_DAI_JOIN')
-        self.makerdao_pot = self.ethereum.contracts.contract('MAKERDAO_POT')
+        self.makerdao_dai_join = self.ethereum.contracts.contract(string_to_evm_address('0x9759A6Ac90977b93B58547b4A71c78317f391A28'))  # noqa: E501
+        self.makerdao_pot = self.ethereum.contracts.contract(string_to_evm_address('0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7'))  # noqa: E501
 
     def reset_last_query_ts(self) -> None:
         """Reset the last query timestamps, effectively cleaning the caches"""

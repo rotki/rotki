@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_PICKLE
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.inquirer import Inquirer
@@ -43,8 +44,8 @@ class PickleFinance(EthereumModule):
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator
-        self.rewards_contract = self.ethereum.contracts.contract('PICKLE_DILL_REWARDS')
-        self.dill_contract = self.ethereum.contracts.contract('PICKLE_DILL')
+        self.rewards_contract = self.ethereum.contracts.contract(string_to_evm_address('0x74C6CadE3eF61d64dcc9b97490d9FbB231e4BdCc'))  # noqa: E501
+        self.dill_contract = self.ethereum.contracts.contract(string_to_evm_address('0xbBCf169eE191A1Ba7371F30A1C344bFC498b29Cf'))  # noqa: E501
         self.pickle = A_PICKLE.resolve_to_evm_token()
 
     def get_dill_balances(

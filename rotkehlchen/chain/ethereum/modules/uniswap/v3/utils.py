@@ -21,6 +21,7 @@ from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import (
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV3Oracle
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_USDC
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
@@ -94,8 +95,8 @@ def uniswap_v3_lp_token_balances(
 
     May raise RemoteError if querying NFT manager contract fails.
     """
-    uniswap_v3_nft_manager = ethereum.contracts.contract('UNISWAP_V3_NFT_MANAGER')
-    uniswap_v3_factory = ethereum.contracts.contract('UNISWAP_V3_FACTORY')
+    uniswap_v3_nft_manager = ethereum.contracts.contract(string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'))  # noqa: E501
+    uniswap_v3_factory = ethereum.contracts.contract(string_to_evm_address('0x1F98431c8aD98523631AE4a59f267346ea31F984'))  # noqa: E501
     uniswap_v3_pool_abi = ethereum.contracts.abi('UNISWAP_V3_POOL')
     balances: list[NFTLiquidityPool] = []
     try:

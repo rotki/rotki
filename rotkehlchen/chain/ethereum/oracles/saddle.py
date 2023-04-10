@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Optional
 from web3.types import BlockIdentifier
 
 from rotkehlchen.assets.asset import AssetWithOracles
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ALETH, A_ETH, A_WETH
 from rotkehlchen.constants.misc import EXP18
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
@@ -54,7 +55,7 @@ class SaddleOracle(CurrentPriceOracleInterface):
                 f'{from_asset} is not a valid asset for the Saddle oracle',
             )
 
-        saddle_aleth_pool = self.ethereum.contracts.contract('SADDLE_ALETH_POOL')
+        saddle_aleth_pool = self.ethereum.contracts.contract(string_to_evm_address('0xa6018520EAACC06C30fF2e1B3ee2c7c22e64196a'))  # noqa: E501
         aleth_eth_price = saddle_aleth_pool.call(
             node_inquirer=self.ethereum,
             method_name='calculateSwap',

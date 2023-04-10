@@ -400,7 +400,7 @@ class Uniswapv3Decoder(DecoderInterface):
             # 9 -> position.feeGrowthInside1LastX128,
             # 10 -> position.tokensOwed0,
             # 11 -> position.tokensOwed1
-            liquidity_pool_position_info = self.evm_inquirer.contracts.contract('UNISWAP_V3_NFT_MANAGER').call(  # noqa: E501
+            liquidity_pool_position_info = self.evm_inquirer.contracts.contract(string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88')).call(  # noqa: E501
                 node_inquirer=self.evm_inquirer,
                 method_name='positions',
                 arguments=[liquidity_pool_id],

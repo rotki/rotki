@@ -7,6 +7,7 @@ from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.errors.misc import EventNotInABI
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
@@ -182,7 +183,7 @@ def test_call_contract(ethereum_inquirer, call_order, ethereum_manager_connect_a
         connect_at_start=ethereum_manager_connect_at_start,
         evm_inquirer=ethereum_inquirer,
     )
-    yearn_ycrv_vault = ethereum_inquirer.contracts.contract('YEARN_YCRV_VAULT')
+    yearn_ycrv_vault = ethereum_inquirer.contracts.contract(string_to_evm_address('0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c'))  # noqa: E501
     result = ethereum_inquirer.call_contract(
         contract_address=yearn_ycrv_vault.address,
         abi=yearn_ycrv_vault.abi,
@@ -209,7 +210,7 @@ def test_get_logs(ethereum_inquirer, call_order, ethereum_manager_connect_at_sta
         connect_at_start=ethereum_manager_connect_at_start,
         evm_inquirer=ethereum_inquirer,
     )
-    yearn_ycrv_vault = ethereum_inquirer.contracts.contract('YEARN_YCRV_VAULT')
+    yearn_ycrv_vault = ethereum_inquirer.contracts.contract(string_to_evm_address('0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c'))  # noqa: E501
     argument_filters = {
         'from': '0x7780E86699e941254c8f4D9b7eB08FF7e96BBE10',
         'to': yearn_ycrv_vault.address,

@@ -7,6 +7,7 @@ from web3 import Web3
 from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import WAD
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import ZERO_ETH_ADDRESS
 from rotkehlchen.types import ChecksumEvmAddress
@@ -122,15 +123,15 @@ def create_web3_mock(web3: Web3, ethereum: 'EthereumInquirer', test_data: VaultT
             address == ethereum.contracts.contract('DS_PROXY_REGISTRY').address and
             'ProxyRegistry' in test_data.mock_contracts
         )
-        if address == ethereum.contracts.contract('MAKERDAO_GET_CDPS').address and 'GetCDPS' in test_data.mock_contracts:  # noqa: E501
+        if address == string_to_evm_address('0x36a724Bd100c39f0Ea4D3A20F7097eE01A8Ff573') and 'GetCDPS' in test_data.mock_contracts:  # noqa: E501
             return MockContract(test_data, getCdpsAsc=mock_get_cdps_asc)
         if mock_proxy_registry:
             return MockContract(test_data, proxies=mock_registry_proxies)
-        if address == ethereum.contracts.contract('MAKERDAO_VAT').address and 'VAT' in test_data.mock_contracts:  # noqa: E501
+        if address == string_to_evm_address('0x35D1b3F3D7966A1DFe207aa4514C12a259A0492B') and 'VAT' in test_data.mock_contracts:  # noqa: E501
             return MockContract(test_data, urns=mock_vat_urns, ilks=mock_vat_ilks)
-        if address == ethereum.contracts.contract('MAKERDAO_SPOT').address and 'SPOT' in test_data.mock_contracts:  # noqa: E501
+        if address == string_to_evm_address('0x65C79fcB50Ca1594B025960e539eD7A9a6D434A3') and 'SPOT' in test_data.mock_contracts:  # noqa: E501
             return MockContract(test_data, ilks=mock_spot_ilks)
-        if address == ethereum.contracts.contract('MAKERDAO_JUG').address and 'JUG' in test_data.mock_contracts:  # noqa: E501
+        if address == string_to_evm_address('0x19c0976f590D67707E62397C87829d896Dc0f1F1') and 'JUG' in test_data.mock_contracts:  # noqa: E501
             return MockContract(test_data, ilks=mock_jug_ilks)
 
         raise AssertionError('Got unexpected address for contract during tests')

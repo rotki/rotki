@@ -28,6 +28,7 @@ from rotkehlchen.chain.ethereum.modules.curve.curve_cache import (
 )
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import WEB3_LOGQUERY_BLOCK_RANGE, EvmNodeInquirer
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
     InputError,
@@ -93,7 +94,7 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
         )
         self.blocks_subgraph = Graph('https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks')  # noqa: E501
         self.etherscan = cast(EthereumEtherscan, self.etherscan)
-        self.ens_reverse_records = self.contracts.contract('ENS_REVERSE_RECORDS')
+        self.ens_reverse_records = self.contracts.contract(string_to_evm_address('0x3671aE578E63FdF66ad4F3E12CC0c0d71Ac7510C'))  # noqa: E501
 
     def ens_reverse_lookup(self, addresses: list[ChecksumEvmAddress]) -> dict[ChecksumEvmAddress, Optional[str]]:  # noqa: E501
         """Performs a reverse ENS lookup on a list of addresses
