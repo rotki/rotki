@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import orderBy from 'lodash/orderBy';
 
-defineProps({
-  visible: { required: true, type: Boolean }
-});
+defineProps<{ visible: boolean }>();
 
 const { t, tc } = useI18n();
 

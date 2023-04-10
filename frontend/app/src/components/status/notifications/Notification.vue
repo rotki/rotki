@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { type NotificationData, Severity } from '@rotki/common/lib/messages';
 import dayjs from 'dayjs';
-import { type PropType } from 'vue';
 
-const props = defineProps({
-  popup: { required: false, type: Boolean, default: false },
-  notification: {
-    required: true,
-    type: Object as PropType<NotificationData>
-  }
-});
+const props = withDefaults(
+  defineProps<{
+    notification: NotificationData;
+    popup?: boolean;
+  }>(),
+  { popup: false }
+);
 
 const emit = defineEmits(['dismiss']);
 

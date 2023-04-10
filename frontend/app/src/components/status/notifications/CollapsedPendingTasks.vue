@@ -1,14 +1,8 @@
 <script setup lang="ts">
-const props = defineProps({
-  value: {
-    required: true,
-    type: Boolean
-  },
-  count: {
-    required: true,
-    type: Number
-  }
-});
+const props = defineProps<{
+  value: boolean;
+  count: number;
+}>();
 
 const emit = defineEmits(['input']);
 
