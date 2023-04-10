@@ -14,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_GTC
@@ -59,7 +60,13 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                 self._maybe_decode_governance,
                 self._maybe_enrich_transfers,
             ],
-            misc_counterparties=[CPT_GNOSIS_CHAIN],
+            misc_counterparties=[
+                CounterpartyDetails(
+                    identifier=CPT_GNOSIS_CHAIN,
+                    label='Gnosis Chain',
+                    image='gnosis.svg',
+                ),
+            ],
         )
 
     def _maybe_enrich_transfers(

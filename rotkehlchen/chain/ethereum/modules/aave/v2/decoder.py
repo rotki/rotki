@@ -12,13 +12,13 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
-    DECODER_EVENT_MAPPING,
     ChecksumEvmAddress,
+    DecoderEventMappingType,
     EvmTokenKind,
     EvmTransaction,
 )
@@ -28,7 +28,7 @@ from rotkehlchen.utils.misc import (
     hex_or_bytes_to_str,
 )
 
-from ..constants import CPT_AAVE_V2
+from ..constants import AAVE_LABEL, CPT_AAVE_V2
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -247,26 +247,26 @@ class Aavev2Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {CPT_AAVE_V2: {
             HistoryEventType.RECEIVE: {
-                HistoryEventSubType.GENERATE_DEBT: TransactionEventType.CLAIM_REWARD,
-                HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
-                HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.RECEIVE,
+                HistoryEventSubType.GENERATE_DEBT: EventCategory.CLAIM_REWARD,
+                HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
+                HistoryEventSubType.RETURN_WRAPPED: EventCategory.RECEIVE,
             },
             HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
             },
             HistoryEventType.SPEND: {
-                HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
-                HistoryEventSubType.PAYBACK_DEBT: TransactionEventType.REPAY,
+                HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
+                HistoryEventSubType.PAYBACK_DEBT: EventCategory.REPAY,
 
             },
             HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+                HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
             },
             HistoryEventType.INFORMATIONAL: {
-                HistoryEventSubType.NONE: TransactionEventType.INFORMATIONAL,
+                HistoryEventSubType.NONE: EventCategory.INFORMATIONAL,
             },
         }}
 
@@ -275,5 +275,5 @@ class Aavev2Decoder(DecoderInterface):
             self.evm_inquirer.contracts.contract('AAVE_V2_LENDING_POOL').address: (self._decode_lending_pool_events,),  # noqa: E501
         }
 
-    def counterparties(self) -> list[str]:
-        return [CPT_AAVE_V2]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(identifier=CPT_AAVE_V2, label=AAVE_LABEL, image='aave.svg')]

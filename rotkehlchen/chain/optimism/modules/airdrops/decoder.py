@@ -2,16 +2,18 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.decoding.constants import OPTIMISM_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_OP
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -57,10 +59,17 @@ class AirdropsDecoder(DecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def possible_events(self) -> DecoderEventMappingType:
+        return {CPT_OPTIMISM: {
+            HistoryEventType.RECEIVE: {
+                HistoryEventSubType.AIRDROP: EventCategory.AIRDROP,
+            },
+        }}
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             OPTIMISM_AIRDROP: (self._decode_optimism_airdrop_claim,),
         }
 
-    def counterparties(self) -> list[str]:
-        return [CPT_OPTIMISM]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [OPTIMISM_DETAILS]

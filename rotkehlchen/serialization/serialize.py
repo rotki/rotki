@@ -51,7 +51,11 @@ from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
     YearnVaultEvent,
     YearnVaultHistory,
 )
-from rotkehlchen.chain.evm.frontend_structures.types import EventDetails, TransactionEventType
+from rotkehlchen.chain.evm.decoding.types import (
+    CounterpartyDetails,
+    EventCategory,
+    EventCategoryDetails,
+)
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
@@ -88,7 +92,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
         for k, v in entry.items():
             if isinstance(k, Asset) is True:
                 k = k.identifier  # noqa: PLW2901
-            elif isinstance(k, (HistoryEventType, HistoryEventSubType, TransactionEventType)) is True:  # noqa: E501
+            elif isinstance(k, (HistoryEventType, HistoryEventSubType, EventCategory)) is True:  # noqa: E501
                 k = _process_entry(k)  # noqa: PLW2901
             new_dict[k] = _process_entry(v)
         return new_dict
@@ -159,7 +163,6 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             WeightedNode,
     )):
         return process_result(entry.serialize())
-    from rotkehlchen.chain.evm.frontend_structures.protocols import ProtocolDetails  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
     if isinstance(entry, (
             DBSettings,
             CompoundEvent,
@@ -174,8 +177,8 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             DefiProtocolBalances,
             YearnVaultHistory,
             BlockchainAccountData,
-            EventDetails,
-            ProtocolDetails,
+            EventCategoryDetails,
+            CounterpartyDetails,
     )):
         return process_result(entry._asdict())
     if isinstance(entry, tuple):
@@ -196,7 +199,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             CostBasisMethod,
             EvmTokenKind,
             HistoryBaseEntryType,
-            TransactionEventType,
+            EventCategory,
     )):
         return str(entry)
 

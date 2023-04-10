@@ -14,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
     A_AAVE,
@@ -514,5 +515,19 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             self.makerdao_cdp_manager.address: (self.decode_cdp_manager_events,),
         }
 
-    def counterparties(self) -> list[str]:
-        return [CPT_VAULT, CPT_DSR, CPT_MIGRATION]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [
+            CounterpartyDetails(
+                identifier=CPT_VAULT,
+                label='Makerdao',
+                image='makerdao.svg',
+            ), CounterpartyDetails(
+                identifier=CPT_DSR,
+                label='Makerdao',
+                image='makerdao.svg',
+            ), CounterpartyDetails(
+                identifier=CPT_MIGRATION,
+                label='Makerdao',
+                image='makerdao.svg',
+            ),
+        ]

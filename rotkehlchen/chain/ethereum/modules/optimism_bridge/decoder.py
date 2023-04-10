@@ -3,18 +3,19 @@ from typing import Any
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.decoding.constants import OPTIMISM_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
-from rotkehlchen.types import DECODER_EVENT_MAPPING, ChainID, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, DecoderEventMappingType, EvmTokenKind
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 BRIDGE_ADDRESS = string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1')
@@ -89,16 +90,16 @@ class OptimismBridgeDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {CPT_OPTIMISM: {
             HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.BRIDGE: TransactionEventType.BRIDGE,
+                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE,
             },
             HistoryEventType.RECEIVE: {
-                HistoryEventSubType.BRIDGE: TransactionEventType.BRIDGE,
+                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE,
             },
             HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.BRIDGE: TransactionEventType.BRIDGE,
+                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE,
             },
         }}
 
@@ -107,5 +108,5 @@ class OptimismBridgeDecoder(DecoderInterface):
             BRIDGE_ADDRESS: (self._decode_bridge,),
         }
 
-    def counterparties(self) -> list[str]:
-        return [CPT_OPTIMISM]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [OPTIMISM_DETAILS]

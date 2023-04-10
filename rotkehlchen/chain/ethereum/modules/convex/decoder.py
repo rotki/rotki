@@ -29,10 +29,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CURVE_POOL_PROTOCOL, DECODER_EVENT_MAPPING, ChecksumEvmAddress
+from rotkehlchen.types import CURVE_POOL_PROTOCOL, ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 logger = logging.getLogger(__name__)
@@ -149,20 +149,20 @@ class ConvexDecoder(DecoderInterface):
             return DEFAULT_ENRICHMENT_OUTPUT
         return DEFAULT_ENRICHMENT_OUTPUT
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {
             CPT_CONVEX: {
                 HistoryEventType.RECEIVE: {
-                    HistoryEventSubType.REWARD: TransactionEventType.CLAIM_REWARD,
+                    HistoryEventSubType.REWARD: EventCategory.CLAIM_REWARD,
                 },
                 HistoryEventType.SPEND: {
-                    HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+                    HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
                 },
                 HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.NONE: TransactionEventType.DEPOSIT,
+                    HistoryEventSubType.NONE: EventCategory.DEPOSIT,
                 },
                 HistoryEventType.WITHDRAWAL: {
-                    HistoryEventSubType.NONE: TransactionEventType.WITHDRAW,
+                    HistoryEventSubType.NONE: EventCategory.WITHDRAW,
                 },
             },
         }
@@ -181,8 +181,8 @@ class ConvexDecoder(DecoderInterface):
         decoder_mappings.update(virtual_rewards)
         return decoder_mappings
 
-    def counterparties(self) -> list[str]:
-        return [CPT_CONVEX]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(identifier=CPT_CONVEX, label='Convex', image='convex.jpeg')]
 
     def enricher_rules(self) -> list[Callable]:
         return [self._maybe_enrich_convex_transfers]

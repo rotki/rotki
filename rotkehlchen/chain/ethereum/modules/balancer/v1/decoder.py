@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V1
+from rotkehlchen.chain.ethereum.modules.balancer.constants import BALANCER_LABEL, CPT_BALANCER_V1
 from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerV1EventTypes
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -10,11 +10,11 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import DECODER_EVENT_MAPPING, EvmTransaction
+from rotkehlchen.types import DecoderEventMappingType, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -264,21 +264,21 @@ class Balancerv1Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {
             CPT_BALANCER_V1: {
                 HistoryEventType.RECEIVE: {
-                    HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
-                    HistoryEventSubType.REMOVE_ASSET: TransactionEventType.REFUND,
+                    HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
+                    HistoryEventSubType.REMOVE_ASSET: EventCategory.REFUND,
                 },
                 HistoryEventType.SPEND: {
-                    HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+                    HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
                 },
                 HistoryEventType.WITHDRAWAL: {
-                    HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+                    HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
                 },
                 HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+                    HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
                 },
             },
         }
@@ -288,8 +288,12 @@ class Balancerv1Decoder(DecoderInterface):
             self._maybe_enrich_balancer_v1_events,
         ]
 
-    def counterparties(self) -> list[str]:
-        return [CPT_BALANCER_V1]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(
+            identifier=CPT_BALANCER_V1,
+            label=BALANCER_LABEL,
+            image='balancer.svg',
+        )]
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {

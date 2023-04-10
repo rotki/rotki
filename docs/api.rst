@@ -1988,36 +1988,6 @@ Purging locally saved data for ethereum modules
    :statuscode 500: Internal rotki error
 
 
-Getting all available counterparties
-=====================================
-
-.. http:get:: /api/(version)/blockchains/ETH/modules/data/counterparties
-
-    Doing a GET on the counterparties endpoint will return all known counterparties
-
-    **Example Request**
-
-    .. http:example:: curl wget httpie python-requests
-
-    GET /api/(version)/blockchains/ETH/modules/data/counterparties HTTP/1.1
-    Host: localhost:5042
-    Content-Type: application/json;charset=UTF-8
-
-    {}
-
-    **Example Response**
-
-    .. sourcecode:: http
-
-        HTTP/1.1 200 OK
-        Content-Type: application/json
-
-        {"result": ["gas", "gnosis-chain"], "message": ""}
-
-    :resjson object result: Contains all counterparties known to the app.
-    :statuscode 200: Success
-    :statuscode 500: Internal rotki error
-
 Getting all supported chains
 ==============================
 
@@ -12444,8 +12414,8 @@ Event Mappings
   :statuscode 200: Information was correctly generated
   :statuscode 500: Internal rotki error
 
-Counterparties
-================
+Getting all available counterparties
+=====================================
 
 .. http:get:: /api/(version)/history/events/counterparties
 
@@ -12481,7 +12451,7 @@ Counterparties
         ]
       }
 
-  :resjson string identifier: value used by the backend to represent such counterparty.
+  :resjson string identifier: value used by the backend to represent the counterparty.
   :resjson string label: Name displayed in the frontend.
   :resjson string image: Relative path to the counterparty image.
 

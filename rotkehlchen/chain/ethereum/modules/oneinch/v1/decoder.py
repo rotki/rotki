@@ -10,13 +10,13 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from ..constants import CPT_ONEINCH_V1
+from ..constants import CPT_ONEINCH_V1, ONEINCH_LABEL
 
 HISTORY = b'\x89M\xbf\x12b\x19\x9c$\xe1u\x02\x98\xa3\x84\xc7\t\x16\x0fI\xd1cB,\xc6\xce\xe6\x94\xc77\x13\xf1\xd2'  # noqa: E501
 SWAPPED = b'\xe2\xce\xe3\xf6\x83`Y\x82\x0bg9C\x85:\xfe\xbd\x9b0&\x12]\xab\rwB\x84\xe6\xf2\x8aHU\xbe'  # noqa: E501
@@ -128,14 +128,14 @@ class Oneinchv1Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {CPT_ONEINCH_V1: {
             HistoryEventType.SPEND: {
-                HistoryEventSubType.FEE: TransactionEventType.GAS,
+                HistoryEventSubType.FEE: EventCategory.GAS,
             },
             HistoryEventType.TRADE: {
-                HistoryEventSubType.SPEND: TransactionEventType.SWAP_OUT,
-                HistoryEventSubType.RECEIVE: TransactionEventType.SWAP_IN,
+                HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
+                HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
             },
         }}
 
@@ -144,5 +144,9 @@ class Oneinchv1Decoder(DecoderInterface):
             string_to_evm_address('0x11111254369792b2Ca5d084aB5eEA397cA8fa48B'): (self.decode_action,),  # noqa: E501
         }
 
-    def counterparties(self) -> list[str]:
-        return [CPT_ONEINCH_V1]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(
+            identifier=CPT_ONEINCH_V1,
+            label=ONEINCH_LABEL,
+            image='1inch.svg',
+        )]

@@ -8,13 +8,13 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from ..constants import CPT_ONEINCH_V2
+from ..constants import CPT_ONEINCH_V2, ONEINCH_LABEL
 
 SWAPPED = b'v\xaf"J\x148e\xa5\x0bAIn\x1asb&\x98i,V\\\x12\x14\xbc\x86/\x18\xe2-\x82\x9c^'
 
@@ -72,11 +72,11 @@ class Oneinchv2Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {CPT_ONEINCH_V2: {
             HistoryEventType.TRADE: {
-                HistoryEventSubType.SPEND: TransactionEventType.SWAP_OUT,
-                HistoryEventSubType.RECEIVE: TransactionEventType.SWAP_IN,
+                HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
+                HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
             },
         }}
 
@@ -85,5 +85,9 @@ class Oneinchv2Decoder(DecoderInterface):
             string_to_evm_address('0x111111125434b319222CdBf8C261674aDB56F3ae'): (self.decode_action,),  # noqa: E501
         }
 
-    def counterparties(self) -> list[str]:
-        return [CPT_ONEINCH_V2]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(
+            identifier=CPT_ONEINCH_V2,
+            label=ONEINCH_LABEL,
+            image='1inch.svg',
+        )]

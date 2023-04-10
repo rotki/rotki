@@ -19,7 +19,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
@@ -29,9 +29,9 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
-    DECODER_EVENT_MAPPING,
     ChainID,
     ChecksumEvmAddress,
+    DecoderEventMappingType,
     EvmTokenKind,
     EvmTransaction,
 )
@@ -526,20 +526,20 @@ class Uniswapv3Decoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {CPT_UNISWAP_V3: {
             HistoryEventType.TRADE: {
-                HistoryEventSubType.RECEIVE: TransactionEventType.SWAP_IN,
-                HistoryEventSubType.SPEND: TransactionEventType.SWAP_OUT,
+                HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
+                HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
             },
             HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
             },
             HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+                HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
             },
             HistoryEventType.RECEIVE: {
-                HistoryEventSubType.NFT: TransactionEventType.RECEIVE,
+                HistoryEventSubType.NFT: EventCategory.RECEIVE,
             },
         }}
 
@@ -558,8 +558,12 @@ class Uniswapv3Decoder(DecoderInterface):
             self._maybe_enrich_liquidity_pool_creation,
         ]
 
-    def counterparties(self) -> list[str]:
-        return [CPT_UNISWAP_V3]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(
+            identifier=CPT_UNISWAP_V3,
+            label='Uniswap',
+            image='uniswap.svg',
+        )]
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {CPT_UNISWAP_V3: [(0, self._routers_post_decoding)]}

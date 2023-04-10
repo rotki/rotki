@@ -10,11 +10,11 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
-from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -134,18 +134,18 @@ class WethDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {
             CPT_WETH: {
                 HistoryEventType.SPEND: {
-                    HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+                    HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
                 },
                 HistoryEventType.RECEIVE: {
-                    HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
-                    HistoryEventSubType.NONE: TransactionEventType.RECEIVE,
+                    HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
+                    HistoryEventSubType.NONE: EventCategory.RECEIVE,
                 },
                 HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+                    HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
                 },
             },
         }
@@ -155,5 +155,5 @@ class WethDecoder(DecoderInterface):
             WETH_CONTRACT: (self._decode_weth,),
         }
 
-    def counterparties(self) -> list[str]:
-        return [CPT_WETH]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(identifier=CPT_WETH, label='WETH', image='weth.svg')]

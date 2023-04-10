@@ -60,11 +60,10 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LI
 from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as get_liquity_stats
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
-from rotkehlchen.chain.evm.frontend_structures.events_mappings import (
-    DEFAULT_FRONTEND_MAPPINGS,
-    EVENT_DETAILS,
+from rotkehlchen.chain.evm.decoding.constants import (
+    DEFAULT_EVENT_CATEGORY_MAPPINGS,
+    EVENT_CATEGORY_DETAILS,
 )
-from rotkehlchen.chain.evm.frontend_structures.protocols import PROTOCOLS
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import WeightedNode
@@ -3812,15 +3811,6 @@ class RestAPI():
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def get_all_counterparties(self) -> Response:
-        return api_response(
-            result={
-                # Converting to list since set is not json serializable
-                'result': list(self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.rules.all_counterparties),  # noqa: E501
-                'message': '',
-            },
-        )
-
     def get_addressbook_entries(
             self,
             book_type: AddressbookType,
@@ -4299,8 +4289,8 @@ class RestAPI():
 
     def get_types_mappings(self) -> Response:
         result = {
-            'global_mappings': DEFAULT_FRONTEND_MAPPINGS,
-            'event_type_details': EVENT_DETAILS,
+            'global_mappings': DEFAULT_EVENT_CATEGORY_MAPPINGS,
+            'event_type_details': EVENT_CATEGORY_DETAILS,
             'per_protocol_mappings': {
                 'ethereum': self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.events_types_tuples,  # noqa: E501
                 'optimism': self.rotkehlchen.chains_aggregator.optimism.transactions_decoder.events_types_tuples,  # noqa: E501
@@ -4312,7 +4302,11 @@ class RestAPI():
         )
 
     def get_evm_counterparties_details(self) -> Response:
+        ethereum_counterparties = self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.rules.all_counterparties  # noqa: E501
+        optimism_counterparties = self.rotkehlchen.chains_aggregator.optimism.transactions_decoder.rules.all_counterparties  # noqa: E501
         return api_response(
-            result=process_result(_wrap_in_ok_result(PROTOCOLS)),
+            result=process_result(_wrap_in_ok_result(
+                list(ethereum_counterparties | optimism_counterparties),
+            )),
             status_code=HTTPStatus.OK,
         )

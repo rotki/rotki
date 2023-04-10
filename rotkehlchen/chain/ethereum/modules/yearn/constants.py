@@ -7,3 +7,5 @@ YEARN_VAULTS_V2_PREFIX = 'yearn_vaults_v2_events'
 
 CPT_YEARN_V1: Final = 'yearn-v1'
 CPT_YEARN_V2: Final = 'yearn-v2'
+
+YEARN_LABEL = 'Yearn'

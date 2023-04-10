@@ -13,13 +13,13 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.names import find_ens_mappings
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import from_wei
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -220,17 +220,17 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {CPT_ENS: {
             HistoryEventType.RENEW: {
-                HistoryEventSubType.NFT: TransactionEventType.RENEW,
+                HistoryEventSubType.NFT: EventCategory.RENEW,
             },
             HistoryEventType.TRADE: {
-                HistoryEventSubType.SPEND: TransactionEventType.SWAP_OUT,
-                HistoryEventSubType.RECEIVE: TransactionEventType.SWAP_IN,
+                HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
+                HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
             },
             HistoryEventType.INFORMATIONAL: {
-                HistoryEventSubType.NONE: TransactionEventType.INFORMATIONAL,
+                HistoryEventSubType.NONE: EventCategory.INFORMATIONAL,
             },
         }}
 
@@ -241,5 +241,5 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             ENS_PUBLIC_RESOLVER_2_ADDRESS: (self._decode_ens_public_resolver_2_events,),
         }
 
-    def counterparties(self) -> list[str]:
-        return [CPT_ENS]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(identifier=CPT_ENS, label='ens', image='ens.svg')]

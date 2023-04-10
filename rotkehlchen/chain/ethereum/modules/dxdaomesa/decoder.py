@@ -12,8 +12,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
-from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 
 from .constants import CPT_DXDAO_MESA
 
@@ -176,17 +176,17 @@ class DxdaomesaDecoder(DecoderInterface):
         return DecodingOutput(event=event)
 
     # -- DecoderInterface methods
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {CPT_DXDAO_MESA: {
             HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+                HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
             },
             HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
             },
             HistoryEventType.INFORMATIONAL: {
-                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
-                HistoryEventSubType.PLACE_ORDER: TransactionEventType.PLACE_ORDER,
+                HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
+                HistoryEventSubType.PLACE_ORDER: EventCategory.PLACE_ORDER,
             },
         }}
 
@@ -195,5 +195,5 @@ class DxdaomesaDecoder(DecoderInterface):
             self.contract.address: (self._decode_events,),
         }
 
-    def counterparties(self) -> list[str]:
-        return [CPT_DXDAO_MESA]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(identifier=CPT_DXDAO_MESA, label='dxdao', image='dxdao.svg')]

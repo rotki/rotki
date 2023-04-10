@@ -10,10 +10,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.types import DECODER_EVENT_MAPPING, PICKLE_JAR_PROTOCOL
+from rotkehlchen.types import PICKLE_JAR_PROTOCOL, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_PICKLE
@@ -137,19 +137,19 @@ class PickleFinanceDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {CPT_PICKLE: {
             HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.REMOVE_ASSET: TransactionEventType.WITHDRAW,
+                HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
             },
             HistoryEventType.SPEND: {
-                HistoryEventSubType.RETURN_WRAPPED: TransactionEventType.SEND,
+                HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
             },
             HistoryEventType.RECEIVE: {
-                HistoryEventSubType.RECEIVE_WRAPPED: TransactionEventType.RECEIVE,
+                HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
             },
             HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.DEPOSIT_ASSET: TransactionEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
             },
         }}
 
@@ -158,5 +158,9 @@ class PickleFinanceDecoder(DecoderInterface):
             self._maybe_enrich_pickle_transfers,
         ]
 
-    def counterparties(self) -> list[str]:
-        return [CPT_PICKLE]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(
+            identifier=CPT_PICKLE,
+            label='Pickle Finance',
+            image='pickle.svg',
+        )]

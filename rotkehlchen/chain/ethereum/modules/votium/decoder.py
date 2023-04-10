@@ -9,15 +9,14 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import DECODER_EVENT_MAPPING, ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_VOTIUM
-
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -56,11 +55,11 @@ class VotiumDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {
             CPT_VOTIUM: {
                 HistoryEventType.RECEIVE: {
-                    HistoryEventSubType.REWARD: TransactionEventType.CLAIM_REWARD,
+                    HistoryEventSubType.REWARD: EventCategory.CLAIM_REWARD,
                 },
             },
         }
@@ -70,5 +69,5 @@ class VotiumDecoder(DecoderInterface):
             VOTIUM_CONTRACT: (self._decode_claim,),
         }
 
-    def counterparties(self) -> list[str]:
-        return [CPT_VOTIUM]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(identifier=CPT_VOTIUM, label='Votium', image='votium.png')]

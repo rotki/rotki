@@ -521,23 +521,15 @@ def test_cache_deletion(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('have_decoders', [True])
-def test_query_frontend_mappings(rotkehlchen_api_server):
-    """
-    Test that the information for event types mappings and counterparties is correctly
-    generated for the frontend.
-    """
+def test_query_decoding_types_mappings(rotkehlchen_api_server):
+    """Test that the structure for types mappings is correctly generated"""
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
             'typesmappingsresource',
         ),
     )
-    assert_proper_response(response)
-
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'evmcounterpartiesresource',
-        ),
-    )
-    assert_proper_response(response)
+    result = assert_proper_response_with_result(response)
+    assert 'per_protocol_mappings' in result
+    assert 'global_mappings' in result
+    assert 'event_type_details' in result

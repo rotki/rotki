@@ -14,8 +14,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.frontend_structures.types import TransactionEventType
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
@@ -23,9 +23,9 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
-    DECODER_EVENT_MAPPING,
     ChainID,
     ChecksumEvmAddress,
+    DecoderEventMappingType,
     EvmTokenKind,
     EvmTransaction,
 )
@@ -249,25 +249,25 @@ class CowswapDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DECODER_EVENT_MAPPING:
+    def possible_events(self) -> DecoderEventMappingType:
         return {
             CPT_COWSWAP: {
                 HistoryEventType.TRADE: {
-                    HistoryEventSubType.SPEND: TransactionEventType.SWAP_OUT,
-                    HistoryEventSubType.RECEIVE: TransactionEventType.SWAP_IN,
+                    HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
+                    HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
                 },
                 HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.PLACE_ORDER: TransactionEventType.PLACE_ORDER,
+                    HistoryEventSubType.PLACE_ORDER: EventCategory.PLACE_ORDER,
                 },
                 HistoryEventType.WITHDRAWAL: {
-                    HistoryEventSubType.CANCEL_ORDER: TransactionEventType.CANCEL_ORDER,
-                    HistoryEventSubType.REFUND: TransactionEventType.REFUND,
+                    HistoryEventSubType.CANCEL_ORDER: EventCategory.CANCEL_ORDER,
+                    HistoryEventSubType.REFUND: EventCategory.REFUND,
                 },
             },
         }
 
-    def counterparties(self) -> list[str]:
-        return [CPT_COWSWAP]
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(identifier=CPT_COWSWAP, label='Cowswap', image='cowswap.jpg')]
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {ETH_FLOW_ADDRESS: (self._decode_eth_orders,)}
