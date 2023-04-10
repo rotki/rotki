@@ -24,7 +24,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.types import ETHEREUM_KNOWN_ABI, ETHEREUM_KNOWN_CONTRACTS
+    from rotkehlchen.chain.ethereum.types import ETHEREUM_KNOWN_ABI
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.chain.evm.types import WeightedNode
@@ -146,28 +146,6 @@ class EvmContracts(Generic[T]):
     def __init__(self, chain_id: T) -> None:
         self.chain_id = chain_id
 
-    def contract_or_none(self, name: str) -> Optional[EvmContract]:
-        """Gets details of an evm contract from the globalDB by name
-
-        Returns None if missing
-        """
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(
-                'SELECT contract_data.address, contract_abi.value, contract_data.deployed_block '
-                'FROM contract_data LEFT JOIN contract_abi ON contract_data.abi=contract_abi.id'
-                ' WHERE contract_data.chain_id=? AND contract_data.name=?',
-                (self.chain_id.serialize_for_db(), name),
-            )
-            result = cursor.fetchone()
-            if result is None:
-                return None
-
-        return EvmContract(
-            address=result[0],
-            abi=json.loads(result[1]),  # not handling json error -- assuming DB consistency
-            deployed_block=result[2] if result[2] else 0,
-        )
-
     def contract_by_address(
             self,
             cursor: 'DBCursor',
@@ -190,21 +168,14 @@ class EvmContracts(Generic[T]):
             deployed_block=result[1] if result[1] else 0,
         )
 
-    @overload
-    def contract(self: 'EvmContracts[Literal[ChainID.ETHEREUM]]', name: 'ETHEREUM_KNOWN_CONTRACTS') -> EvmContract:  # noqa: E501
-        ...
-
-    @overload
-    def contract(self: 'EvmContracts[Literal[ChainID.OPTIMISM]]', name: Literal['to', 'do', 'PICKLE_DILL']) -> EvmContract:  # noqa: E501
-        ...
-
-    def contract(self, name: str) -> EvmContract:
+    def contract(self, address: ChecksumEvmAddress) -> EvmContract:
         """Gets details of an evm contract from the global DB by name
 
         Missing contract is a programming error and should never happen.
         """
-        contract = self.contract_or_none(name)
-        assert contract, f'No contract data for {name} found'
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            contract = self.contract_by_address(cursor=cursor, address=address)
+        assert contract, f'No contract data for {address} found'
         return contract
 
     def abi_or_none(self, name: str) -> Optional[list[dict[str, Any]]]:
