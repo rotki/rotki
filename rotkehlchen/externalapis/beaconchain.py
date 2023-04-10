@@ -1,6 +1,7 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from urllib.parse import urlencode
 
 import gevent
 import requests
@@ -76,6 +77,7 @@ class BeaconChain(ExternalServiceWithApiKey):
             module: Literal['validator', 'execution'],
             endpoint: Optional[Literal['balancehistory', 'performance', 'eth1', 'deposits', 'produced']],  # noqa: E501
             encoded_args: str,
+            extra_args: Optional[dict[str, Any]] = None,
     ) -> Union[list[dict[str, Any]], dict[str, Any]]:
         """
         May raise:
@@ -87,6 +89,9 @@ class BeaconChain(ExternalServiceWithApiKey):
             query_str = f'{self.url}{module}/{endpoint}/{encoded_args}'
         else:
             query_str = f'{self.url}{module}/{encoded_args}/{endpoint}'
+
+        if extra_args is not None:
+            query_str += urlencode(extra_args)
 
         api_key = self._get_api_key()
         if api_key is not None:
@@ -176,30 +181,12 @@ class BeaconChain(ExternalServiceWithApiKey):
 
         return json_ret['data']
 
-    @overload
     def _query_chunked_endpoint(
             self,
             indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
             module: Literal['validator'],
-            endpoint: Literal['deposits', 'balancehistory', 'performance'],
-    ) -> dict:
-        ...
-
-    @overload
-    def _query_chunked_endpoint(
-            self,
-            indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
-            module: Literal['execution'],
-            endpoint: Literal['produced'],
-    ) -> list:
-        ...
-
-    def _query_chunked_endpoint(
-            self,
-            indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
-            module: Literal['execution', 'validator'],
-            endpoint: Literal['deposits', 'balancehistory', 'performance', 'produced'],
-    ) -> Union[dict, list]:
+            endpoint: Literal['balancehistory', 'performance'],
+    ) -> list[dict[str, Any]]:
         chunks = _calculate_query_chunks(indices_or_pubkeys)
         data = []
         for chunk in chunks:
@@ -208,10 +195,39 @@ class BeaconChain(ExternalServiceWithApiKey):
                 endpoint=endpoint,
                 encoded_args=','.join(str(x) for x in chunk),
             )
-            if isinstance(result, list):
-                data.extend(result)
-            else:
-                data.append(result)
+            data.append(result)
+
+        return data  # type: ignore[return-value]  # given endpoints return list
+
+    def _query_chunked_endpoint_with_pagination(
+            self,
+            indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
+            module: Literal['execution'],
+            endpoint: Literal['produced'],
+            limit: int,
+    ) -> list[dict[str, Any]]:
+        """Queries chunked endpoints with limit/offset in beaconchain
+
+        Unfortunately max limit is not known. Default is 10. Tested with 50 and seems to work
+        without too many delays.
+        The offset unfortunately also starts from latest entry so no way to store
+        anything to avoid extra calls at the moment.
+        """
+        chunks = _calculate_query_chunks(indices_or_pubkeys)
+        data: list[dict[str, Any]] = []
+        offset = 0
+        for chunk in chunks:
+            while True:
+                result = self._query(
+                    module=module,
+                    endpoint=endpoint,
+                    encoded_args=','.join(str(x) for x in chunk),
+                    extra_args={'offset': offset, 'limit': limit},
+                )
+                offset += limit
+                data.extend(result)  # type: ignore[arg-type]  # is a list here
+                if len(result) != limit:
+                    break  # found the end for this chunk
 
         return data
 
@@ -227,6 +243,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         of each validator, limited to 100 results. So it's not really useful.
 
         Their devs said they will have a look as this may not be desired behaviour.
+        Probably need combination of epoch + offset + limit.
 
         May raise:
         - RemoteError due to problems querying beaconcha.in API
@@ -316,10 +333,11 @@ class BeaconChain(ExternalServiceWithApiKey):
         - RemoteError due to problems querying beaconcha.in API
         """
         # This will query everything. It's not filterable by time
-        data = self._query_chunked_endpoint(
+        data = self._query_chunked_endpoint_with_pagination(
             indices_or_pubkeys=indices_or_pubkeys,
             module='execution',
             endpoint='produced',
+            limit=50,
         )
         dbevents = DBHistoryEvents(self.db)
         block_data = []
