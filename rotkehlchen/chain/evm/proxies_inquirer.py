@@ -3,6 +3,7 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -23,9 +24,9 @@ log = RotkehlchenLogsAdapter(logger)
 class EvmProxiesInquirer():
     """Class to retrieve information about DSProxy for defi addresses."""
 
-    def __init__(self, node_inquirer: 'EvmNodeInquirer') -> None:
+    def __init__(self, node_inquirer: 'EvmNodeInquirer', dsproxy_registry: 'EvmContract') -> None:
         self.node_inquirer = node_inquirer
-        self.dsproxy_registry = node_inquirer.contracts.contract('DS_PROXY_REGISTRY')
+        self.dsproxy_registry = dsproxy_registry
         self.address_to_proxy: dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
         self.proxy_to_address: dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
         self.reset_last_query_ts()

@@ -187,7 +187,7 @@ def test_account_with_proxy(rotkehlchen_api_server, inquirer):  # pylint: disabl
 def test_stability_pool(rotkehlchen_api_server):
     """Test that we can get the status of the deposits in the stability pool"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    eth_multicall = rotki.chains_aggregator.ethereum.node_inquirer.contracts.contract('MULTICALL2')
+    eth_multicall = rotki.chains_aggregator.ethereum.node_inquirer.contracts.contract(string_to_evm_address('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696'))  # noqa: E501
 
     def mock_etherscan_transaction_response(etherscan: 'Etherscan'):
         def mocked_request_dict(url, *_args, **_kwargs):

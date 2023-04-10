@@ -10,7 +10,7 @@ from web3.exceptions import TransactionNotFound
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-from rotkehlchen.chain.evm.types import WeightedNode
+from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
 from rotkehlchen.errors.misc import BlockchainQueryError
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -46,6 +46,7 @@ class OptimismInquirer(EvmNodeInquirer):
             database=database,
             msg_aggregator=database.msg_aggregator,
         )
+        contracts = EvmContracts[Literal[ChainID.OPTIMISM]](chain_id=ChainID.OPTIMISM)
         super().__init__(
             greenlet_manager=greenlet_manager,
             database=database,
@@ -53,11 +54,12 @@ class OptimismInquirer(EvmNodeInquirer):
             blockchain=SupportedBlockchain.OPTIMISM,
             etherscan_node=OPTIMISM_ETHERSCAN_NODE,
             etherscan_node_name=OPTIMISM_ETHERSCAN_NODE_NAME,
-            contracts=EvmContracts[Literal[ChainID.OPTIMISM]](
-                chain_id=ChainID.OPTIMISM,
-            ),
+            contracts=contracts,
             connect_at_start=connect_at_start,
             rpc_timeout=rpc_timeout,
+            contract_multicall=contracts.contract(string_to_evm_address('0x2DC0E2aa608532Da689e89e237dF582B783E552C')),  # noqa: E501
+            contract_scan=contracts.contract(string_to_evm_address('0x1e21bc42FaF802A0F115dC998e2F0d522aDb1F68')),  # noqa: E501
+            dsproxy_registry=contracts.contract(string_to_evm_address('0x283Cc5C26e53D66ed2Ea252D986F094B37E6e895')),  # noqa: E501
         )
         self.etherscan = cast(OptimismEtherscan, self.etherscan)
 

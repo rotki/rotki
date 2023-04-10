@@ -109,11 +109,11 @@ def mock_etherscan_for_dsr(
         original_requests_get,
         params: DSRMockParameters,
 ) -> _patch:
-    ds_proxy_registry = contracts.contract('DS_PROXY_REGISTRY')
+    ds_proxy_registry = contracts.contract(string_to_evm_address('0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4'))  # noqa: E501
     makerdao_dai_join = contracts.contract(string_to_evm_address('0x9759A6Ac90977b93B58547b4A71c78317f391A28'))  # noqa: E501
     makerdao_pot = contracts.contract(string_to_evm_address('0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7'))  # noqa: E501
     makerdao_vat = contracts.contract(string_to_evm_address('0x35D1b3F3D7966A1DFe207aa4514C12a259A0492B'))  # noqa: E501
-    eth_multicall = contracts.contract('MULTICALL2')
+    eth_multicall = contracts.contract(string_to_evm_address('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696'))  # noqa: E501
 
     proxy1 = make_evm_address()
     proxy2 = make_evm_address()
