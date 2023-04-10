@@ -190,6 +190,9 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             etherscan_node_name: str,
             contracts: EvmContracts,
             connect_at_start: Sequence[WeightedNode],
+            contract_scan: 'EvmContract',
+            contract_multicall: 'EvmContract',
+            dsproxy_registry: 'EvmContract',
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
         self.greenlet_manager = greenlet_manager
@@ -199,15 +202,18 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         self.etherscan_node = etherscan_node
         self.etherscan_node_name = etherscan_node_name
         self.contracts = contracts
-        self.proxies_inquirer = EvmProxiesInquirer(node_inquirer=self)
+        self.proxies_inquirer = EvmProxiesInquirer(
+            node_inquirer=self,
+            dsproxy_registry=dsproxy_registry,
+        )
         self.web3_mapping: dict[NodeName, Web3Node] = {}
         self.rpc_timeout = rpc_timeout
         self.chain_id: SUPPORTED_CHAIN_IDS = blockchain.to_chain_id()  # type: ignore[assignment]
         self.chain_name = self.blockchain.name.lower()
         # BalanceScanner from mycrypto: https://github.com/MyCryptoHQ/eth-scan
-        self.contract_scan = self.contracts.contract('BALANCE_SCAN')
+        self.contract_scan = contract_scan
         # Multicall from MakerDAO: https://github.com/makerdao/multicall/
-        self.contract_multicall = self.contracts.contract('MULTICALL2')
+        self.contract_multicall = contract_multicall
 
         log.debug(f'Initializing {self.chain_name} inquirer. Nodes to connect {connect_at_start}')
 

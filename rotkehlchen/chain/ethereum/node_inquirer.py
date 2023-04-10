@@ -79,6 +79,7 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
             msg_aggregator=database.msg_aggregator,
         )
         LockableQueryMixIn.__init__(self)
+        contracts = EvmContracts[Literal[ChainID.ETHEREUM]](chain_id=ChainID.ETHEREUM)
         super().__init__(
             greenlet_manager=greenlet_manager,
             database=database,
@@ -86,11 +87,12 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
             blockchain=SupportedBlockchain.ETHEREUM,
             etherscan_node=ETHEREUM_ETHERSCAN_NODE,
             etherscan_node_name=ETHEREUM_ETHERSCAN_NODE_NAME,
-            contracts=EvmContracts[Literal[ChainID.ETHEREUM]](
-                chain_id=ChainID.ETHEREUM,
-            ),
+            contracts=contracts,
             connect_at_start=connect_at_start,
             rpc_timeout=rpc_timeout,
+            contract_multicall=contracts.contract(string_to_evm_address('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696')),  # noqa: E501
+            contract_scan=contracts.contract(string_to_evm_address('0x86F25b64e1Fe4C5162cDEeD5245575D32eC549db')),  # noqa: E501
+            dsproxy_registry=contracts.contract(string_to_evm_address('0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4')),  # noqa: E501
         )
         self.blocks_subgraph = Graph('https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks')  # noqa: E501
         self.etherscan = cast(EthereumEtherscan, self.etherscan)
