@@ -38,7 +38,7 @@ KELSOS_BOOK_ENTRY = AddressbookEntry(
 
 
 @pytest.mark.parametrize('empty_global_addressbook', [True])
-@pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
+@pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.USER])
 def test_get_addressbook(
         rotkehlchen_api_server: 'APIServer',
         book_type: AddressbookType,
@@ -109,7 +109,7 @@ def test_get_addressbook(
 
 
 @pytest.mark.parametrize('empty_global_addressbook', [True])
-@pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
+@pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.USER])
 def test_insert_into_addressbook(
         rotkehlchen_api_server: 'APIServer',
         book_type: AddressbookType,
@@ -229,7 +229,7 @@ def test_insert_into_addressbook(
 
 
 @pytest.mark.parametrize('empty_global_addressbook', [True])
-@pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
+@pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.USER])
 def test_update_addressbook(
         rotkehlchen_api_server: 'APIServer',
         book_type: AddressbookType,
@@ -325,7 +325,7 @@ def test_update_addressbook(
 
 
 @pytest.mark.parametrize('empty_global_addressbook', [True])
-@pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
+@pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.USER])
 def test_delete_addressbook(
         rotkehlchen_api_server: 'APIServer',
         book_type: AddressbookType,
@@ -540,7 +540,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
     result = assert_proper_response_with_result(response)
     assert {AddressbookEntry.deserialize(x) for x in result} == labels_expected
 
-    with db_addressbook.write_ctx(book_type=AddressbookType.PRIVATE) as write_cursor:
+    with db_addressbook.write_ctx(book_type=AddressbookType.USER) as write_cursor:
         db_addressbook.add_addressbook_entries(
             write_cursor=write_cursor,
             entries=[
@@ -573,7 +573,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('empty_global_addressbook', [True])
-@pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
+@pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.USER])
 def test_insert_into_addressbook_no_blockchain(
         rotkehlchen_api_server: 'APIServer',
         book_type: AddressbookType,
@@ -647,7 +647,7 @@ def test_insert_into_addressbook_no_blockchain(
     )
     result = assert_proper_response_with_result(response)
     assert result == [custom_name.serialize()]
-    if book_type == AddressbookType.PRIVATE:
+    if book_type == AddressbookType.USER:
         with database.conn.read_ctx() as cursor:
             cursor.execute('SELECT * FROM address_book')
             result = cursor.fetchall()

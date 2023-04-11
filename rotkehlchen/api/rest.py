@@ -163,6 +163,7 @@ from rotkehlchen.types import (
     SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
     AddressbookType,
+    AnyAddressbookEntry,
     ApiKey,
     ApiSecret,
     AssetAmount,
@@ -3829,12 +3830,16 @@ class RestAPI():
     def add_addressbook_entries(
             self,
             book_type: AddressbookType,
-            entries: list[AddressbookEntry],
+            entries: list[AnyAddressbookEntry],
     ) -> Response:
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
         try:
             with db_addressbook.write_ctx(book_type) as write_cursor:
-                db_addressbook.add_addressbook_entries(write_cursor=write_cursor, entries=entries)
+                db_addressbook.add_addressbook_entries(
+                    write_cursor=write_cursor,
+                    book_type=book_type,
+                    entries=entries,
+                )
         except InputError as e:
             return api_response(
                 result=wrap_in_fail_result(str(e)),

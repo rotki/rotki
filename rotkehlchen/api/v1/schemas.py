@@ -80,6 +80,7 @@ from rotkehlchen.types import (
     SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
     AddressbookType,
+    AnyAddressbookEntry,
     AssetMovementCategory,
     BTCAddress,
     ChainID,
@@ -89,11 +90,14 @@ from rotkehlchen.types import (
     ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
+    GlobalAddressbookEntry,
+    GlobalAddressbookSource,
     Location,
     OptionalChainAddress,
     SupportedBlockchain,
     Timestamp,
     TradeType,
+    UserAddressbookEntry,
     UserNote,
     deserialize_evm_tx_hash,
 )
@@ -2693,22 +2697,47 @@ class AddressbookEntrySchema(Schema):
     name = fields.String(required=True)
     # Need None option here in case the user wants to update all the entries for the address.
     blockchain = BlockchainField(load_default=None)
+    source = SerializableEnumField(enum_class=GlobalAddressbookSource, load_default=None)
 
+
+class AddressbookUpdateSchema(BaseAddressbookSchema):
+    entries = NonEmptyList(fields.Nested(AddressbookEntrySchema), required=True)
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        """Check that provided entries correspond to the book type"""
+        for entry in data['entries']:
+            if data['book_type'] == AddressbookType.GLOBAL and entry['source'] is None:
+                raise ValidationError(
+                    f'entry {entry} should have had source specified since it is expected '
+                    f'to be a global address book entry',
+                )
+            elif data['book_type'] == AddressbookType.USER and entry['source'] is not None:
+                raise ValidationError(
+                    f'entry {entry} should have NO source specified since it is expected '
+                    f'to be a user address book entry',
+                )
+    
     @post_load()
     def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
-        return AddressbookEntry(
-            address=data['address'],
-            name=data['name'],
-            blockchain=data['blockchain'],
-        )
+        """
+        Transform address book entries. Transforming here instead of AddressbookEntrySchema to
+        check correctness depending on book_type.
+        """
+        entries_class: AnyAddressbookEntry = data['book_type'].get_class()
+        deserialized_entries = []
+        for entry in data['entries']:
+            deserialized_entries.append(entries_class.deserialize(entry))
 
-
-class AddressbookUpdateSchema(BaseAddressbookSchema):
-    entries = NonEmptyList(fields.Nested(AddressbookEntrySchema), required=True)
+        return {'book_type': data['book_type'], 'entries': deserialized_entries}
 
 
 class SnapshotImportingSchema(Schema):
