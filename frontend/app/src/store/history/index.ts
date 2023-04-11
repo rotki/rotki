@@ -7,10 +7,8 @@ export const useHistoryStore = defineStore('history', () => {
   const { t } = useI18n();
   const counterparties: Ref<string[]> = ref([]);
   const associatedLocations: Ref<TradeLocation[]> = ref([]);
-  const {
-    fetchAssociatedLocations: fetchAssociatedLocationsApi,
-    fetchAvailableCounterparties
-  } = useHistoryApi();
+  const { fetchAssociatedLocations: fetchAssociatedLocationsApi } =
+    useHistoryApi();
 
   const fetchAssociatedLocations = async () => {
     try {
@@ -30,16 +28,9 @@ export const useHistoryStore = defineStore('history', () => {
     }
   };
 
-  const fetchCounterparties = async (): Promise<void> => {
-    const result = await fetchAvailableCounterparties();
-
-    set(counterparties, result);
-  };
-
   return {
     counterparties,
     associatedLocations,
-    fetchAssociatedLocations,
-    fetchCounterparties
+    fetchAssociatedLocations
   };
 });
