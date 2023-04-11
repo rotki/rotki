@@ -12,21 +12,21 @@ import {
   validWithParamsSessionAndExternalService
 } from '@/services/utils';
 import { type CollectionResponse } from '@/types/collection';
-import { type EntryWithMeta } from '@/types/history/meta';
 import {
   type AddTransactionHashPayload,
   type AddressesAndEvmChainPayload,
-  type EthTransaction,
-  EthTransactionCollectionResponse,
-  EthTransactionEventDetail,
-  type NewEthTransactionEvent,
+  HistoryEventDetail,
+  type HistoryEventEntryWithMeta,
+  type HistoryEventRequestPayload,
+  HistoryEventsCollectionResponse,
+  type NewHistoryEvent,
   type TransactionEventRequestPayload,
   type TransactionRequestPayload
 } from '@/types/history/tx';
 import { nonEmptyProperties } from '@/utils/data';
 import { type PendingTask } from '@/types/task';
 
-export const useTransactionsApi = () => {
+export const useHistoryEventsApi = () => {
   const internalEthTransactions = async <T>(
     payload: TransactionRequestPayload,
     asyncQuery: boolean
@@ -57,16 +57,6 @@ export const useTransactionsApi = () => {
   ): Promise<PendingTask> =>
     internalEthTransactions<PendingTask>(payload, true);
 
-  const fetchEthTransactions = async (
-    payload: TransactionRequestPayload
-  ): Promise<CollectionResponse<EntryWithMeta<EthTransaction>>> => {
-    const response = await internalEthTransactions<
-      CollectionResponse<EntryWithMeta<EthTransaction>>
-    >(payload, false);
-
-    return EthTransactionCollectionResponse.parse(response);
-  };
-
   const deleteEthTransactions = async (): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       `/blockchains/evm/transactions`,
@@ -78,7 +68,7 @@ export const useTransactionsApi = () => {
     return handleResponse(response);
   };
 
-  const fetchEthTransactionEvents = async (
+  const decodeHistoryEvents = async (
     payload: TransactionEventRequestPayload
   ): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
@@ -109,7 +99,7 @@ export const useTransactionsApi = () => {
   };
 
   const addTransactionEvent = async (
-    event: NewEthTransactionEvent
+    event: NewHistoryEvent
   ): Promise<{ identifier: number }> => {
     const response = await api.instance.put<
       ActionResult<{ identifier: number }>
@@ -121,7 +111,7 @@ export const useTransactionsApi = () => {
   };
 
   const editTransactionEvent = async (
-    event: NewEthTransactionEvent
+    event: NewHistoryEvent
   ): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       '/history/events',
@@ -150,13 +140,14 @@ export const useTransactionsApi = () => {
 
   const getEventDetails = async (
     identifier: number
-  ): Promise<EthTransactionEventDetail> => {
-    const response = await api.instance.get<
-      ActionResult<EthTransactionEventDetail>
-    >('/history/events/details', {
-      params: snakeCaseTransformer({ identifier })
-    });
-    return EthTransactionEventDetail.parse(handleResponse(response));
+  ): Promise<HistoryEventDetail> => {
+    const response = await api.instance.get<ActionResult<HistoryEventDetail>>(
+      '/history/events/details',
+      {
+        params: snakeCaseTransformer({ identifier })
+      }
+    );
+    return HistoryEventDetail.parse(handleResponse(response));
   };
 
   const addTransactionHash = async (
@@ -173,16 +164,28 @@ export const useTransactionsApi = () => {
     return handleResponse(response);
   };
 
+  const fetchHistoryEvents = async (
+    payload: HistoryEventRequestPayload
+  ): Promise<CollectionResponse<HistoryEventEntryWithMeta>> => {
+    const response = await api.instance.post<
+      ActionResult<CollectionResponse<HistoryEventEntryWithMeta>>
+    >('/history/events', snakeCaseTransformer(payload), {
+      validateStatus: validStatus
+    });
+
+    return HistoryEventsCollectionResponse.parse(handleResponse(response));
+  };
+
   return {
     fetchEthTransactionsTask,
-    fetchEthTransactions,
     deleteEthTransactions,
-    fetchEthTransactionEvents,
+    decodeHistoryEvents,
     reDecodeMissingTransactionEvents,
     addTransactionEvent,
     editTransactionEvent,
     deleteTransactionEvent,
     getEventDetails,
-    addTransactionHash
+    addTransactionHash,
+    fetchHistoryEvents
   };
 };

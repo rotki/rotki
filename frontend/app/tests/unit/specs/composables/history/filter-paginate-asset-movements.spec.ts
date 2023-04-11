@@ -7,7 +7,7 @@ import type {
   AssetMovementEntry,
   AssetMovementRequestPayload
 } from '@/types/history/movements';
-import type { MaybeRef } from '@vueuse/shared';
+import type { MaybeRef } from '@vueuse/core';
 import type Vue from 'vue';
 
 vi.mock('vue-router/composables', () => ({

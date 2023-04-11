@@ -12,9 +12,9 @@ import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { type Writeable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
-  type EthTransactionEntry,
-  type EthTransactionEvent,
-  type NewEthTransactionEvent
+  type HistoryEvent,
+  type HistoryEventEntry,
+  type NewHistoryEvent
 } from '@/types/history/tx';
 import { TaskType } from '@/types/task-type';
 import { Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
@@ -23,19 +23,18 @@ import { useEventTypeData } from '@/utils/history';
 import { toMessages } from '@/utils/validation-errors';
 import { type ActionDataEntry } from '@/types/action';
 import { transactionEventTypeMapping } from '@/data/transaction-event-mapping';
-import { isValidEthAddress } from '@/utils/text';
+import { isValidEthAddress, isValidTxHash } from '@/utils/text';
 import { useHistoryStore } from '@/store/history';
 
 const props = withDefaults(
   defineProps<{
     value?: boolean;
-    edit?: EthTransactionEvent | null;
-    transaction?: EthTransactionEntry | null;
+    edit?: HistoryEvent | null;
+    transaction: HistoryEventEntry;
   }>(),
   {
     value: false,
-    edit: null,
-    transaction: null
+    edit: null
   }
 );
 
@@ -61,7 +60,6 @@ const lastLocation = useLocalStorage(
 );
 
 const identifier = ref<number | null>(null);
-const eventIdentifier = ref<string>('');
 const sequenceIndex = ref<string>('');
 const datetime = ref<string>('');
 const location = ref<string>('');
@@ -130,12 +128,6 @@ const rules = {
     )
   },
   counterparty: {
-    required: helpers.withMessage(
-      t(
-        'transactions.events.form.counterparty.validation.non_empty'
-      ).toString(),
-      required
-    ),
     isValid: helpers.withMessage(
       t('transactions.events.form.counterparty.validation.valid').toString(),
       (value: string) =>
@@ -166,13 +158,12 @@ const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
 
 const reset = () => {
   set(identifier, null);
-  set(eventIdentifier, get(transaction)?.txHash || '');
   set(sequenceIndex, '0');
   set(
     datetime,
-    convertFromTimestamp(get(transaction)?.timestamp || dayjs().unix(), true)
+    convertFromTimestamp(get(transaction).timestamp || dayjs().unix(), true)
   );
-  set(location, get(transaction)?.evmChain || get(lastLocation));
+  set(location, get(transaction).location || get(lastLocation));
   set(eventType, '');
   set(eventSubtype, '');
   set(asset, '');
@@ -192,9 +183,8 @@ const setEditMode = async () => {
     return;
   }
 
-  const event: EthTransactionEvent = editVal;
+  const event: HistoryEvent = editVal;
   set(identifier, event.identifier ?? null);
-  set(eventIdentifier, event.eventIdentifier);
   set(sequenceIndex, event.sequenceIndex?.toString() ?? '');
   set(datetime, convertFromTimestamp(event.timestamp, true));
   set(location, event.location);
@@ -210,13 +200,13 @@ const setEditMode = async () => {
 
 const { setMessage } = useMessageStore();
 
-const { editTransactionEvent, addTransactionEvent } = useTransactions();
+const { editTransactionEvent, addTransactionEvent } = useHistoryEvents();
 
 const save = async (): Promise<boolean> => {
   const timestamp = convertToTimestamp(get(datetime));
   const assetVal = get(asset);
 
-  const transactionEventPayload: Writeable<NewEthTransactionEvent> = {
+  const transactionEventPayload: Writeable<NewHistoryEvent> = {
     eventIdentifier: get(eventIdentifier),
     sequenceIndex: get(sequenceIndex) || '0',
     timestamp,
@@ -408,9 +398,16 @@ watch(amount, () => {
   }
 });
 
+const eventIdentifier: ComputedRef<string> = computed(
+  () => get(transaction).eventIdentifier
+);
+
+const isTx: ComputedRef<boolean> = computed(() =>
+  isValidTxHash(get(eventIdentifier))
+);
+
 watch(transaction, transaction => {
-  set(eventIdentifier, transaction?.txHash || '');
-  set(location, transaction?.evmChain || get(lastLocation));
+  set(location, transaction.location || get(lastLocation));
 });
 
 watch(location, (location: string) => {
@@ -453,7 +450,9 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
 
     const subTypeMapping = Object.keys(mapping[eventTypeVal]);
 
-    return allData.filter(data => subTypeMapping.includes(data.identifier));
+    return allData.filter((data: ActionDataEntry) =>
+      subTypeMapping.includes(data.identifier)
+    );
   });
 
 const { counterparties } = storeToRefs(useHistoryStore());
@@ -470,6 +469,7 @@ const { counterparties } = storeToRefs(useHistoryStore());
           v-model="location"
           required
           outlined
+          :disabled="isTx"
           data-cy="location"
           :label="t('common.location')"
           :error-messages="toMessages(v$.location)"

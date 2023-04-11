@@ -2,20 +2,20 @@
 import { type ComputedRef, type Ref } from 'vue';
 import { type AssetBalance } from '@rotki/common';
 import {
-  type EthTransactionEventDetail,
-  type EthTransactionEventEntry
+  type HistoryEventDetail,
+  type HistoryEventEntry
 } from '@/types/history/tx';
 
 const props = defineProps<{
-  event: EthTransactionEventEntry;
+  event: HistoryEventEntry;
 }>();
 
 const { event } = toRefs(props);
 
-const { getEventDetails } = useTransactionsApi();
+const { getEventDetails } = useHistoryEventsApi();
 
 const loading: Ref<boolean> = ref(false);
-const extraData: Ref<EthTransactionEventDetail | null> = ref(null);
+const extraData: Ref<HistoryEventDetail | null> = ref(null);
 
 onBeforeMount(async () => {
   const { identifier } = get(event);

@@ -10,7 +10,7 @@ const tabs: ComputedRef<TabContent[]> = computed(() => {
   return [
     Routes.HISTORY_TRADES,
     Routes.HISTORY_DEPOSITS_WITHDRAWALS,
-    Routes.HISTORY_TRANSACTIONS,
+    Routes.HISTORY_EVENTS,
     Routes.HISTORY_LEDGER_ACTIONS
   ];
 });

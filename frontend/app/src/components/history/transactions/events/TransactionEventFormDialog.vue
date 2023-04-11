@@ -1,31 +1,32 @@
 <script lang="ts" setup>
 import { type ComputedRef, type Ref } from 'vue';
 import {
-  type EthTransactionEntry,
-  type EthTransactionEvent
+  type EvmChainAndTxHash,
+  type HistoryEvent,
+  type HistoryEventEntry
 } from '@/types/history/tx';
 import TransactionEventForm from '@/components/history/transactions/events/TransactionEventForm.vue';
+import { toEvmChainAndTxHash } from '@/utils/history';
 
 const props = withDefaults(
   defineProps<{
     value: boolean;
-    editableItem?: EthTransactionEvent | null;
+    editableItem?: HistoryEvent | null;
     loading?: boolean;
-    transaction?: EthTransactionEntry | null;
+    transaction: HistoryEventEntry;
   }>(),
   {
     editableItem: null,
-    loading: false,
-    transaction: null
+    loading: false
   }
 );
 
-const { editableItem } = toRefs(props);
+const { editableItem, transaction } = toRefs(props);
 
 const emit = defineEmits<{
   (e: 'input', open: boolean): void;
   (e: 'reset-edit'): void;
-  (e: 'saved'): void;
+  (e: 'saved', item: EvmChainAndTxHash): void;
 }>();
 
 const valid: Ref<boolean> = ref(false);
@@ -43,8 +44,9 @@ const confirmSave = async () => {
   }
   const success = await get(form)?.save();
   if (success) {
+    const tx = get(transaction);
     clearDialog();
-    emit('saved');
+    emit('saved', toEvmChainAndTxHash(tx));
   }
 };
 

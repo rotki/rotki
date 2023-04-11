@@ -12,20 +12,23 @@ import {
 import isEqual from 'lodash/isEqual';
 import { type ComputedRef, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
+import { not } from '@vueuse/math';
 import { type Collection } from '@/types/collection';
 import { SavedFilterLocation } from '@/types/filtering';
 import { IgnoreActionType } from '@/types/history/ignored';
 import {
-  type EthTransaction,
-  type EthTransactionEntry,
-  type EthTransactionEventEntry,
-  type EvmChainAddress,
-  type TransactionRequestPayload
+  type EvmChainAndTxHash,
+  type HistoryEvent,
+  type HistoryEventEntry,
+  type HistoryEventRequestPayload
 } from '@/types/history/tx';
 import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { getCollectionData } from '@/utils/collection';
+import { type Writeable } from '@/types';
+import { isValidTxHash } from '@/utils/text';
+import { toEvmChainAndTxHash } from '@/utils/history';
 import type { Filters, Matcher } from '@/composables/filters/transactions';
 
 const props = withDefaults(
@@ -64,13 +67,14 @@ const {
   onlyChains
 } = toRefs(props);
 
-const editableItem: Ref<EthTransactionEventEntry | null> = ref(null);
-const selectedTransaction: Ref<EthTransactionEntry | null> = ref(null);
-const eventToDelete: Ref<EthTransactionEventEntry | null> = ref(null);
-const transactionToIgnore: Ref<EthTransactionEntry | null> = ref(null);
+const editableItem: Ref<HistoryEventEntry | null> = ref(null);
+const selectedTransaction: Ref<HistoryEventEntry | null> = ref(null);
+const eventToDelete: Ref<HistoryEventEntry | null> = ref(null);
+const transactionToIgnore: Ref<HistoryEventEntry | null> = ref(null);
 const confirmationTitle: Ref<string> = ref('');
 const confirmationPrimaryAction: Ref<string> = ref('');
 const accounts: Ref<GeneralAccount[]> = ref([]);
+const lastUpdatedEventIdentifier: Ref<string> = ref('');
 
 const usedTitle: ComputedRef<string> = computed(
   () => get(sectionTitle) || tc('transactions.title')
@@ -81,38 +85,10 @@ const usedAccounts: ComputedRef<Account<BlockchainSelection>[]> = computed(
     if (get(useExternalAccountFilter)) {
       return get(externalAccountFilter);
     }
-    return get(accounts);
+    const accountsVal = get(accounts);
+    return accountsVal.length > 0 ? [accountsVal[0]] : accountsVal;
   }
 );
-
-const filteredAccounts: ComputedRef<EvmChainAddress[]> = computed(() => {
-  const accounts = get(usedAccounts);
-
-  if (accounts.length === 0) {
-    return [];
-  }
-
-  const filterAccounts: EvmChainAddress[] = [];
-
-  accounts.forEach(account => {
-    if (account.chain === 'ALL') {
-      const chains = get(txEvmChains);
-      chains.forEach(chain => {
-        filterAccounts.push({
-          address: account.address,
-          evmChain: chain.evmChainName
-        });
-      });
-    } else {
-      filterAccounts.push({
-        address: account.address,
-        evmChain: getEvmChainName(account.chain)!
-      });
-    }
-  });
-
-  return filterAccounts;
-});
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -124,7 +100,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     width: '0px'
   },
   {
-    text: tc('common.tx_hash'),
+    text: tc('transactions.events.headers.event_identifier'),
     value: 'txHash',
     sortable: false
   },
@@ -145,20 +121,20 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 const { isTaskRunning } = useTaskStore();
 
 const {
-  fetchTransactions,
   refreshTransactions,
   fetchTransactionEvents,
-  deleteTransactionEvent
-} = useTransactions();
+  deleteTransactionEvent,
+  fetchHistoryEvents
+} = useHistoryEvents();
 
 const {
   options,
   selected,
   openDialog,
   confirmationMessage,
-  isLoading,
+  isLoading: isEventsLoading,
   userAction,
-  state: transactions,
+  state: events,
   filters,
   matchers,
   setPage,
@@ -167,89 +143,108 @@ const {
   updateFilter,
   fetchData
 } = usePaginationFilters<
-  EthTransaction,
-  TransactionRequestPayload,
-  EthTransactionEntry,
-  Collection<EthTransactionEntry>,
+  HistoryEvent,
+  HistoryEventRequestPayload,
+  HistoryEventEntry,
+  Collection<HistoryEventEntry>,
   Filters,
   Matcher
 >(
   null,
   mainPage,
   () => useTransactionFilter(get(protocols).length > 0),
-  fetchTransactions,
+  fetchHistoryEvents,
   {
     onUpdateFilters(query) {
       const parsedAccounts = RouterAccountsSchema.parse(query);
-      set(accounts, parsedAccounts.accounts ?? []);
+      const accountsParsed = parsedAccounts.accounts;
+      if (!accountsParsed) {
+        set(accounts, []);
+      } else {
+        set(accounts, accountsParsed.length > 0 ? [accountsParsed[0]] : []);
+      }
     },
     extraParams: computed(() => ({
       accounts: get(usedAccounts).map(
         account => `${account.address}#${account.chain}`
       )
     })),
-    customPageParams: computed<Partial<TransactionRequestPayload>>(() => ({
-      protocols: get(protocols),
-      eventTypes: get(eventTypes),
-      eventSubtypes: get(eventSubTypes),
-      accounts: get(filteredAccounts)
-    }))
+    customPageParams: computed<Partial<HistoryEventRequestPayload>>(() => {
+      const params: Writeable<Partial<HistoryEventRequestPayload>> = {
+        counterparties: get(protocols),
+        eventTypes: get(eventTypes),
+        eventSubtypes: get(eventSubTypes),
+        groupByEventIds: true
+      };
+
+      const accounts = get(usedAccounts);
+
+      if (accounts.length > 0) {
+        const firstAccount = accounts[0];
+
+        if (firstAccount.chain !== 'ALL') {
+          params.evmChain = getEvmChainName(firstAccount.chain)!;
+        }
+
+        params.locationLabels = accounts.map(({ address }) => address);
+      }
+
+      return params;
+    })
   }
 );
 
-const { data } = getCollectionData<EthTransactionEntry>(transactions);
+const { data } = getCollectionData<HistoryEventEntry>(events);
 
-const onUpdateFilteredAccounts = (acc: Account<BlockchainSelection>[]) => {
+const onFilterAccountsChanged = (acc: Account<BlockchainSelection>[]) => {
   set(userAction, true);
-  set(accounts, acc);
+  set(accounts, acc.length > 0 ? [acc[0]] : []);
 };
 
 const redecodeEvents = async (all = false) => {
-  const txHashes = all ? null : get(data);
+  const txHashes = all
+    ? null
+    : get(data).map(item => toEvmChainAndTxHash(item));
   await fetchTransactionEvents(txHashes, true);
 };
 
-const forceRedecodeEvents = async (transaction: EthTransactionEntry) => {
-  await fetchTransactionEvents([transaction], true);
+const forceRedecodeTxEvents = async (data: EvmChainAndTxHash) => {
+  await fetchTransactionEvents([data], true);
 };
 
-const { ignore } = useIgnore(
+const { ignore } = useIgnore<HistoryEventEntry>(
   {
     actionType: IgnoreActionType.EVM_TRANSACTIONS,
-    toData: (item: EthTransactionEntry) => ({
-      txHash: item.txHash,
-      evmChain: item.evmChain
-    })
+    toData: (item: HistoryEventEntry) => toEvmChainAndTxHash(item)
   },
   selected,
   fetchData
 );
 
-const toggleIgnore = async (item: EthTransactionEntry) => {
+const toggleIgnore = async (item: HistoryEventEntry) => {
   set(selected, [item]);
   await ignore(!item.ignoredInAccounting);
 };
 
-const addEvent = (item: EthTransactionEntry) => {
-  set(selectedTransaction, item);
+const addEvent = (tx: HistoryEventEntry) => {
+  set(selectedTransaction, tx);
   set(editableItem, null);
   set(openDialog, true);
 };
 
-const editEventHandler = (event: EthTransactionEventEntry) => {
+const editEventHandler = (event: HistoryEventEntry, tx: HistoryEventEntry) => {
+  set(selectedTransaction, tx);
   set(editableItem, event);
   set(openDialog, true);
 };
 
 const promptForDelete = ({
-  txEvent,
-  tx
+  item,
+  canDelete
 }: {
-  tx: EthTransactionEntry;
-  txEvent: EthTransactionEventEntry;
+  item: HistoryEventEntry;
+  canDelete: boolean;
 }) => {
-  const canDelete = tx.decodedEvents!.length > 1;
-
   if (canDelete) {
     set(confirmationTitle, tc('transactions.events.confirmation.delete.title'));
     set(
@@ -257,7 +252,7 @@ const promptForDelete = ({
       tc('transactions.events.confirmation.delete.message')
     );
     set(confirmationPrimaryAction, tc('common.actions.confirm'));
-    set(eventToDelete, txEvent);
+    set(eventToDelete, item);
   } else {
     set(confirmationTitle, tc('transactions.events.confirmation.ignore.title'));
     set(
@@ -268,7 +263,7 @@ const promptForDelete = ({
       confirmationPrimaryAction,
       tc('transactions.events.confirmation.ignore.action')
     );
-    set(transactionToIgnore, tx);
+    set(transactionToIgnore, item);
   }
   showDeleteConfirmation();
 };
@@ -280,14 +275,15 @@ const deleteEventHandler = async () => {
     await ignore(true);
   }
 
-  const id = get(eventToDelete)?.identifier;
+  const eventToDeleteVal = get(eventToDelete);
+  const id = eventToDeleteVal?.identifier;
 
-  if (id) {
+  if (eventToDeleteVal && id) {
     const { success } = await deleteTransactionEvent(id);
     if (!success) {
       return;
     }
-    await fetchData();
+    await fetchDataAndRefreshEvents(toEvmChainAndTxHash(eventToDeleteVal));
   }
 
   set(eventToDelete, null);
@@ -297,7 +293,7 @@ const deleteEventHandler = async () => {
   set(confirmationPrimaryAction, '');
 };
 
-const getItemClass = (item: EthTransactionEntry) =>
+const getItemClass = (item: HistoryEventEntry) =>
   item.ignoredInAccounting ? 'darken-row' : '';
 
 watch(
@@ -330,31 +326,33 @@ watch(
 );
 
 const { isLoading: isSectionLoading } = useStatusStore();
-const loading = isSectionLoading(Section.TX);
+const sectionLoading = isSectionLoading(Section.TX);
 
 const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
-const { isAllFinished } = toRefs(useTxQueryStatusStore());
-
-const { pause, resume, isActive } = useIntervalFn(fetchData, 10000);
-
-watch(
-  [loading, eventTaskLoading, isAllFinished],
-  ([sectionLoading, eventTaskLoading, isAllFinished]) => {
-    if (
-      (sectionLoading || eventTaskLoading || !isAllFinished) &&
-      !get(isActive)
-    ) {
-      resume();
-    } else if (
-      !sectionLoading &&
-      !eventTaskLoading &&
-      isAllFinished &&
-      get(isActive)
-    ) {
-      pause();
-    }
-  }
+const { isAllFinished: isQueryingTxsFinished } = toRefs(
+  useTxQueryStatusStore()
 );
+
+const shouldFetchEventsRegularly = logicOr(
+  sectionLoading,
+  not(isQueryingTxsFinished),
+  eventTaskLoading
+);
+
+const anyLoading = logicOr(shouldFetchEventsRegularly, isEventsLoading);
+
+const { pause, resume, isActive } = useIntervalFn(() => {
+  fetchData();
+}, 10000);
+
+watch(shouldFetchEventsRegularly, shouldFetchEventsRegularly => {
+  const active = get(isActive);
+  if (shouldFetchEventsRegularly && !active) {
+    resume();
+  } else if (!shouldFetchEventsRegularly && active) {
+    pause();
+  }
+});
 
 const { show } = useConfirmStore();
 
@@ -387,7 +385,7 @@ onUnmounted(() => {
   pause();
 });
 
-watch(loading, async (isLoading, wasLoading) => {
+watch(eventTaskLoading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading) {
     await fetchData();
   }
@@ -396,6 +394,17 @@ watch(loading, async (isLoading, wasLoading) => {
 const openAddTxDialog: Ref<boolean> = ref(false);
 const addTransactionHash = () => {
   set(openAddTxDialog, true);
+};
+
+const fetchDataAndRefreshEvents = async (
+  data: EvmChainAndTxHash,
+  reDecodeEvents = false
+) => {
+  await fetchData();
+  set(lastUpdatedEventIdentifier, data.txHash);
+  if (reDecodeEvents) {
+    await forceRedecodeTxEvents(data);
+  }
 };
 </script>
 
@@ -417,7 +426,7 @@ const addTransactionHash = () => {
       </v-btn>
       <template #title>
         <refresh-button
-          :loading="loading"
+          :loading="sectionLoading"
           :tooltip="tc('transactions.refresh_tooltip')"
           @refresh="refreshTransactions(onlyChains, true)"
         />
@@ -454,13 +463,12 @@ const addTransactionHash = () => {
                     :value="accounts"
                     :chains="txChains"
                     dense
-                    multiple
                     :label="tc('transactions.filter.account')"
                     outlined
                     no-padding
                     multichain
                     flat
-                    @input="onUpdateFilteredAccounts"
+                    @input="onFilterAccountsChanged"
                   />
                 </div>
               </v-col>
@@ -471,7 +479,7 @@ const addTransactionHash = () => {
               <table-filter
                 :matches="filters"
                 :matchers="matchers"
-                :location="SavedFilterLocation.HISTORY_TRANSACTIONS"
+                :location="SavedFilterLocation.HISTORY_EVENTS"
                 @update:matches="setFilter($event)"
               />
             </div>
@@ -479,13 +487,21 @@ const addTransactionHash = () => {
         </v-row>
       </template>
 
-      <collection-handler :collection="transactions" @set-page="setPage">
-        <template #default="{ itemLength, showUpgradeRow, limit, total }">
+      <collection-handler :collection="events" @set-page="setPage">
+        <template
+          #default="{
+            data: eventsData,
+            itemLength,
+            showUpgradeRow,
+            limit,
+            total
+          }"
+        >
           <data-table
-            :expanded="data"
+            :expanded="eventsData"
             :headers="tableHeaders"
-            :items="data"
-            :loading="isLoading"
+            :items="eventsData"
+            :loading="anyLoading"
             :options="options"
             :server-items-length="itemLength"
             :single-select="false"
@@ -494,7 +510,7 @@ const addTransactionHash = () => {
             @update:options="setOptions($event)"
           >
             <template #item.ignoredInAccounting="{ item, isMobile }">
-              <div v-if="item.ignoredInAccounting" class="pl-4">
+              <div v-if="item.tx?.ignoredInAccounting" class="pl-4">
                 <badge-display v-if="isMobile" color="grey">
                   <v-icon small> mdi-eye-off</v-icon>
                   <span class="ml-2">
@@ -517,25 +533,16 @@ const addTransactionHash = () => {
               <div class="d-flex">
                 <div class="mr-2">
                   <adaptive-wrapper>
-                    <evm-chain-icon size="20" tooltip :chain="item.evmChain" />
+                    <evm-chain-icon size="20" tooltip :chain="item.location" />
                   </adaptive-wrapper>
                 </div>
                 <hash-link
-                  :text="item.txHash"
+                  :text="item.eventIdentifier"
                   :truncate-length="8"
                   :full-address="$vuetify.breakpoint.lgAndUp"
-                  :chain="getChain(item.evmChain)"
+                  :chain="getChain(item.location)"
                   tx
                 />
-                <v-chip
-                  v-if="item.gasPrice.lt(0)"
-                  small
-                  text-color="white"
-                  color="accent"
-                  class="mb-1 mt-1"
-                >
-                  {{ tc('transactions.details.internal_transaction') }}
-                </v-chip>
               </div>
             </template>
             <template #item.timestamp="{ item }">
@@ -543,21 +550,6 @@ const addTransactionHash = () => {
             </template>
             <template #item.action="{ item }">
               <div class="d-flex align-center">
-                <v-dialog width="600">
-                  <template #activator="{ on }">
-                    <v-btn small color="primary" text v-on="on">
-                      {{ tc('common.details') }}
-                      <v-icon small>mdi-chevron-right</v-icon>
-                    </v-btn>
-                  </template>
-
-                  <template #default="dialog">
-                    <transaction-detail
-                      :transaction="item"
-                      @close="dialog.value = false"
-                    />
-                  </template>
-                </v-dialog>
                 <v-menu
                   transition="slide-y-transition"
                   max-width="250px"
@@ -577,7 +569,11 @@ const addTransactionHash = () => {
                         {{ tc('transactions.actions.add_event') }}
                       </v-list-item-content>
                     </v-list-item>
-                    <v-list-item link @click="toggleIgnore(item)">
+                    <v-list-item
+                      v-if="isValidTxHash(item.eventIdentifier)"
+                      link
+                      @click="toggleIgnore(item)"
+                    >
                       <v-list-item-icon class="mr-4">
                         <v-icon v-if="item.ignoredInAccounting">
                           mdi-eye
@@ -595,7 +591,7 @@ const addTransactionHash = () => {
                     <v-list-item
                       link
                       :disabled="eventTaskLoading"
-                      @click="forceRedecodeEvents(item)"
+                      @click="forceRedecodeTxEvents(toEvmChainAndTxHash(item))"
                     >
                       <v-list-item-icon class="mr-4">
                         <v-icon>mdi-database-refresh</v-icon>
@@ -610,11 +606,13 @@ const addTransactionHash = () => {
             </template>
             <template #expanded-item="{ headers, item }">
               <transaction-events
-                :transaction="item"
+                :key="item.eventIdentifier"
+                :last-updated="lastUpdatedEventIdentifier"
+                :event-group-header="item"
                 :colspan="headers.length"
                 :show-event-detail="protocols.length > 0"
-                :loading="loading || eventTaskLoading"
-                @edit:event="editEventHandler"
+                :loading="sectionLoading || eventTaskLoading"
+                @edit:event="editEventHandler($event, item)"
                 @delete:event="promptForDelete"
               />
             </template>
@@ -635,20 +633,21 @@ const addTransactionHash = () => {
         </template>
       </collection-handler>
     </card>
+
     <transaction-event-form-dialog
       v-model="openDialog"
-      :loading="loading"
+      :loading="sectionLoading"
       :editable-item="editableItem"
       :open="openDialog"
       :transaction="selectedTransaction"
       @reset-edit="editableItem = null"
-      @saved="fetchData()"
+      @saved="fetchDataAndRefreshEvents($event)"
     />
 
     <transaction-form-dialog
       v-model="openAddTxDialog"
-      :loading="loading"
-      @saved="fetchData()"
+      :loading="sectionLoading"
+      @saved="fetchDataAndRefreshEvents($event, true)"
     />
   </div>
 </template>

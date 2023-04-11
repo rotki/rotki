@@ -4,37 +4,36 @@ import {
   HistoryEventSubType,
   TransactionEventProtocol
 } from '@rotki/common/lib/history/tx-events';
-import {
-  type EthTransactionEntry,
-  type EthTransactionEventEntry,
-  type EthTransactionEventWithMeta
-} from '@/types/history/tx';
+import { type ComputedRef, type Ref } from 'vue';
+import { type HistoryEventEntry } from '@/types/history/tx';
 
 const props = withDefaults(
   defineProps<{
-    transaction: EthTransactionEntry;
+    eventGroupHeader: HistoryEventEntry;
     colspan: number;
     showEventDetail?: boolean;
     loading?: boolean;
+    lastUpdated?: string;
   }>(),
   {
     showEventDetail: false,
-    loading: false
+    loading: false,
+    lastUpdated: ''
   }
 );
 
 const emit = defineEmits<{
-  (e: 'edit:event', data: EthTransactionEventEntry): void;
+  (e: 'edit:event', data: HistoryEventEntry): void;
   (
     e: 'delete:event',
     data: {
-      tx: EthTransactionEntry;
-      txEvent: EthTransactionEventEntry;
+      canDelete: boolean;
+      item: HistoryEventEntry;
     }
   ): void;
 }>();
 
-const { transaction } = toRefs(props);
+const { eventGroupHeader, lastUpdated } = toRefs(props);
 
 const css = useCssModule();
 const { tc } = useI18n();
@@ -68,31 +67,60 @@ const headers: DataTableHeader[] = [
   }
 ];
 
-const events = computed<EthTransactionEventEntry[]>(() =>
-  get(transaction).decodedEvents!.map((event: EthTransactionEventWithMeta) => {
-    const { entry, ...entriesMeta } = event;
-    return {
-      ...entry,
-      ...entriesMeta
-    };
-  })
+const { fetchHistoryEvents } = useHistoryEvents();
+
+const evaluating: Ref<boolean> = ref(false);
+
+const num: ComputedRef<number> = computed(
+  () => get(eventGroupHeader).groupedEventsNum || 1
 );
 
-const editEvent = (item: EthTransactionEventEntry) => emit('edit:event', item);
-const deleteEvent = (item: EthTransactionEventEntry) =>
-  emit('delete:event', { txEvent: item, tx: get(transaction) });
+const events: Ref<HistoryEventEntry[]> = ref([get(eventGroupHeader)]);
 
-const panel = ref<number[]>(get(transaction).ignoredInAccounting ? [] : [0]);
+const fetchEvents = async () => {
+  set(evaluating, true);
+  const { data } = await fetchHistoryEvents({
+    limit: -1,
+    offset: 0,
+    eventIdentifiers: get(eventGroupHeader).eventIdentifier,
+    groupByEventIds: false
+  });
+  set(evaluating, false);
+  set(events, data);
+};
 
-watch(transaction, (current, old) => {
-  if (old.ignoredInAccounting && !current.ignoredInAccounting) {
+watch(
+  [num, lastUpdated],
+  ([currentNum, currentLastUpdated], [oldNum]) => {
+    if (
+      (currentNum !== oldNum && currentNum !== 1) ||
+      currentLastUpdated === get(eventGroupHeader).eventIdentifier
+    ) {
+      fetchEvents();
+    }
+  },
+  { immediate: true }
+);
+
+const editEvent = (item: HistoryEventEntry) => emit('edit:event', item);
+const deleteEvent = (item: HistoryEventEntry) =>
+  emit('delete:event', { item, canDelete: get(events).length > 1 });
+
+const ignoredInAccounting: ComputedRef<boolean> = computed(
+  () => !!get(events)[0]?.ignoredInAccounting
+);
+
+const panel = ref<number[]>(get(ignoredInAccounting) ? [] : [0]);
+
+watch(ignoredInAccounting, (current, old) => {
+  if (old && !current) {
     panel.value = [0];
-  } else if (!old.ignoredInAccounting && current.ignoredInAccounting) {
+  } else if (!old && current) {
     panel.value = [];
   }
 });
 
-const isNoTxHash = (item: EthTransactionEventEntry) =>
+const isNoTxHash = (item: HistoryEventEntry) =>
   item.counterparty === TransactionEventProtocol.ETH2 &&
   item.eventSubtype === HistoryEventSubType.DEPOSIT_ASSET;
 </script>
@@ -112,7 +140,7 @@ const isNoTxHash = (item: EthTransactionEventEntry) =>
       >
         <v-expansion-panel>
           <v-expansion-panel-header
-            v-if="transaction.ignoredInAccounting && events.length > 0"
+            v-if="ignoredInAccounting && events.length > 0"
           >
             <template #default="{ open }">
               <div class="primary--text font-weight-bold">
@@ -130,14 +158,14 @@ const isNoTxHash = (item: EthTransactionEventEntry) =>
             <div
               class="my-n4"
               :class="{
-                'pt-4': transaction.ignoredInAccounting && events.length > 0
+                'pt-4': ignoredInAccounting && events.length > 0
               }"
             >
               <data-table
                 :class="css.table"
                 :headers="headers"
                 :items="events"
-                :loading="loading"
+                :loading="loading || evaluating"
                 :loading-text="tc('transactions.events.loading')"
                 :no-data-text="tc('transactions.events.no_data')"
                 class="transparent"
@@ -148,7 +176,7 @@ const isNoTxHash = (item: EthTransactionEventEntry) =>
                 <template #item.type="{ item }">
                   <transaction-event-type
                     :event="item"
-                    :chain="getChain(transaction.evmChain)"
+                    :chain="getChain(item.location)"
                   />
                 </template>
                 <template #item.asset="{ item }">
@@ -162,7 +190,7 @@ const isNoTxHash = (item: EthTransactionEventEntry) =>
                     :notes="item.notes"
                     :amount="item.balance.amount"
                     :asset="item.asset"
-                    :chain="getChain(transaction.evmChain)"
+                    :chain="getChain(item.location)"
                     :no-tx-hash="isNoTxHash(item)"
                   />
                 </template>

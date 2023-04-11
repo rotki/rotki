@@ -4,7 +4,10 @@ import { helpers, required } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
 import { type Ref } from 'vue';
 import { isValidTxHash } from '@/utils/text';
-import { type AddTransactionHashPayload } from '@/types/history/tx';
+import {
+  type AddTransactionHashPayload,
+  type EvmChainAndTxHash
+} from '@/types/history/tx';
 import { type Writeable } from '@/types';
 import { assert } from '@/utils/assertions';
 
@@ -69,18 +72,21 @@ const { txEvmChains, getEvmChainName } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
 
 const { setMessage } = useMessageStore();
-const { addTransactionHash } = useTransactions();
-const save = async (): Promise<boolean> => {
+const { addTransactionHash } = useHistoryEvents();
+
+const save = async (): Promise<EvmChainAndTxHash | null> => {
   const accountsVal = get(accounts);
   if (accountsVal.length === 0) {
-    return false;
+    return null;
   }
 
   const evmChain = getEvmChainName(accountsVal[0].chain);
   assert(evmChain);
 
+  const txHashVal = get(txHash);
+
   const payload: Writeable<AddTransactionHashPayload> = {
-    txHash: get(txHash),
+    txHash: txHashVal,
     associatedAddress: accountsVal[0].address,
     evmChain
   };
@@ -90,7 +96,10 @@ const save = async (): Promise<boolean> => {
   set(loading, false);
 
   if (result.success) {
-    return true;
+    return {
+      evmChain,
+      txHash: txHashVal
+    };
   }
 
   if (result.message) {
@@ -104,7 +113,7 @@ const save = async (): Promise<boolean> => {
     }
   }
 
-  return false;
+  return null;
 };
 
 const loading: Ref<boolean> = ref(false);

@@ -69,8 +69,8 @@ const navItems: MenuItem[] = [
       },
       {
         type: 'item',
-        class: 'eth-transactions',
-        ...Routes.HISTORY_TRANSACTIONS
+        class: 'history-events',
+        ...Routes.HISTORY_EVENTS
       },
       {
         type: 'item',

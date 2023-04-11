@@ -37,7 +37,7 @@ const showConfirmation = (source: PurgeParams) => {
 };
 
 const { deleteModuleData } = useBlockchainBalancesApi();
-const { deleteEthTransactions } = useTransactionsApi();
+const { deleteEthTransactions } = useHistoryEventsApi();
 const { deleteExchangeData } = useExchangeApi();
 
 const purgeSource = async (source: Purgeable) => {

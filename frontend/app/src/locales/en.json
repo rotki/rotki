@@ -808,7 +808,7 @@
     },
     "transactions_events": {
       "task": {
-        "description": "Retrieving transactions events",
+        "description": "Retrieving transactions events | Retrieving transactions events for address: {address} ({evmChain})",
         "title": "Evm Transactions Events"
       }
     },
@@ -2993,7 +2993,7 @@
     "history": "History",
     "history_sub": {
       "deposits_withdrawals": "Deposits & Withdrawals",
-      "ethereum_transactions": "Evm Transactions",
+      "history_events": "History Events",
       "ledger_actions": "Ledger Actions",
       "trades": "Trades"
     },
@@ -3871,16 +3871,6 @@
       "add_event": "Add a new event",
       "redecode_events": "Redecode events"
     },
-    "details": {
-      "gas_fee": "Gas Fee",
-      "gas_limit": "Gas Limit",
-      "gas_price": "Gas Price",
-      "gas_used": "Gas Used",
-      "input_data": "Input Data",
-      "internal_transaction": "Internal",
-      "nonce": "Nonce",
-      "title": "Transaction details"
-    },
     "dialog": {
       "add_tx": "Add transaction by tx hash"
     },
@@ -3930,7 +3920,6 @@
         "counterparty": {
           "label": "Counterparty",
           "validation": {
-            "non_empty": "The counterparty field cannot be empty",
             "valid": "The counterparty field is invalid, fill with available counterparties, or valid address"
           }
         },
@@ -3976,6 +3965,9 @@
         "transaction_event_type": {
           "label": "Transaction Event Type"
         }
+      },
+      "headers": {
+        "event_identifier": "Event group ID"
       },
       "history_event_subtype": {
         "airdrop": "Airdrop",
@@ -4094,7 +4086,7 @@
       "title": "Redecode Events"
     },
     "refresh_tooltip": "Refresh evm transactions",
-    "title": "Evm Transactions",
+    "title": "History Events",
     "unignore": "Unignore Tx in Accounting"
   },
   "underlying_token_manager": {

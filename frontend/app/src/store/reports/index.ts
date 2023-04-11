@@ -14,7 +14,7 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type AccountingSettings } from '@/types/user';
 import { logger } from '@/utils/logging';
-import { filterAddressesFromWords } from '@/utils/history';
+import { getEthAddressesFromText } from '@/utils/history';
 
 const notify = (info: {
   title: string;
@@ -170,15 +170,13 @@ export const useReportsStore = defineStore('reports', () => {
         set(actionableItems, actionable);
       }
       set(loaded, false);
-      const words = reportEntries.entries
+      const notes = reportEntries.entries
         .filter(
           event => event.type === ProfitLossEventTypeEnum.TRANSACTION_EVENT
         )
-        .map(event => event.notes)
-        .join(' ')
-        .split(' ');
+        .map(event => event.notes);
 
-      const addresses = filterAddressesFromWords(words);
+      const addresses = getEthAddressesFromText(notes);
 
       const { fetchEnsNames } = useAddressesNamesStore();
       await fetchEnsNames(addresses);

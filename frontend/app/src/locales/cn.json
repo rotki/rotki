@@ -2877,7 +2877,7 @@
     "history": "历史",
     "history_sub": {
       "deposits_withdrawals": "存款和取款",
-      "ethereum_transactions": "Evm 交易",
+      "history_events": "历史事件",
       "ledger_actions": "Ledger 操作",
       "trades": "交易"
     },
@@ -3735,16 +3735,6 @@
       "add_event": "添加新事件",
       "redecode_events": "重新解码事件"
     },
-    "details": {
-      "gas_fee": "Gas Fee",
-      "gas_limit": "Gas Limit",
-      "gas_price": "Gas Price",
-      "gas_used": "Gas Used",
-      "input_data": "输入数据",
-      "internal_transaction": "内部",
-      "nonce": "Nonce",
-      "title": "交易详情"
-    },
     "events": {
       "actions": {
         "delete": "删除事件",
@@ -3930,7 +3920,7 @@
       "title": "重新解码事件"
     },
     "refresh_tooltip": "刷新 evm 交易",
-    "title": "EVM 交易",
+    "title": "历史事件",
     "unignore": "在会计中忽略交易"
   },
   "underlying_token_manager": {

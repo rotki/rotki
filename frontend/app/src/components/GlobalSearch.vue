@@ -120,8 +120,8 @@ const getRoutes = (keyword: string): SearchItemWithoutValue[] => {
       texts: [Routes.HISTORY.text, Routes.HISTORY_DEPOSITS_WITHDRAWALS.text]
     },
     {
-      ...Routes.HISTORY_TRANSACTIONS,
-      texts: [Routes.HISTORY.text, Routes.HISTORY_TRANSACTIONS.text]
+      ...Routes.HISTORY_EVENTS,
+      texts: [Routes.HISTORY.text, Routes.HISTORY_EVENTS.text]
     },
     {
       ...Routes.HISTORY_LEDGER_ACTIONS,

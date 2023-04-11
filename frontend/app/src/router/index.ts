@@ -126,10 +126,10 @@ const routes = setupLayouts([
           import('../pages/history/deposits-withdrawals/index.vue')
       },
       {
-        path: Routes.HISTORY_TRANSACTIONS,
-        name: 'transactions',
+        path: Routes.HISTORY_EVENTS,
+        name: 'history-events',
         meta: {
-          noteLocation: NoteLocation.HISTORY_TRANSACTIONS
+          noteLocation: NoteLocation.HISTORY_EVENTS
         },
         component: () => import('../pages/history/transactions/index.vue')
       },
