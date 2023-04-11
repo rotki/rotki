@@ -19,9 +19,7 @@ import { nonEmptyProperties } from '@/utils/data';
 interface FilterSchema<F, M> {
   filters: Ref<F>;
   matchers: ComputedRef<M[]>;
-
   updateFilter: (filter: F) => void;
-
   RouteFilterSchema: ZodSchema;
 }
 
@@ -142,6 +140,7 @@ export const usePaginationFilters = <
 
     if (isEmpty(query)) {
       // for empty query, we reset the filters, and pagination to defaults
+      onUpdateFilters?.(query);
       updateFilter(RouteFilterSchema.parse({}));
       return setOptions(defaultOptions<T>(options.defaultSortBy?.key));
     }
@@ -149,7 +148,7 @@ export const usePaginationFilters = <
     const parsedOptions = RouterPaginationOptionsSchema.parse(query);
     const parsedFilters = RouteFilterSchema.parse(query);
 
-    onUpdateFilters?.call(null, query);
+    onUpdateFilters?.(query);
 
     updateFilter(parsedFilters);
     set(paginationOptions, {
