@@ -3558,6 +3558,7 @@ class RestAPI():
             entries_total = self.rotkehlchen.data.db.get_entries_count(
                 cursor=cursor,
                 entries_table='history_events',
+                group_by='event_identifier' if group_by_event_ids else None,
             )
             location = filter_query.location
             chain_id = None

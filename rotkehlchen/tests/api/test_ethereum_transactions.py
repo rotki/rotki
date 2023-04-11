@@ -174,7 +174,7 @@ EXPECTED_4193_TXS = [{
 }]
 
 
-def query_events(server, json, expected_num_with_grouping):
+def query_events(server, json, expected_num_with_grouping, expected_totals_with_grouping, entries_limit=-1):  # noqa: E501
     """Query history events as frontend would have, with grouped identifiers
 
     First query all events with grouping enabled. Then if any events have more,
@@ -187,6 +187,9 @@ def query_events(server, json, expected_num_with_grouping):
     )
     result = assert_proper_response_with_result(response)
     entries = result['entries']
+    assert result['entries_limit'] == entries_limit
+    assert result['entries_found'] == expected_num_with_grouping
+    assert result['entries_total'] == expected_totals_with_grouping
     assert len(entries) == expected_num_with_grouping
 
     augmented_entries = []
@@ -1082,7 +1085,7 @@ def test_query_transactions_check_decoded_events(
 
     tx_result = query_transactions(rotki)
     assert len(tx_result['entries']) == 4
-    returned_events = query_events(rotkehlchen_api_server, json={'evm_chain': 'ethereum'}, expected_num_with_grouping=4)  # noqa: E501
+    returned_events = query_events(rotkehlchen_api_server, json={'evm_chain': 'ethereum'}, expected_num_with_grouping=4, expected_totals_with_grouping=4)  # noqa: E501
 
     tx1_events = [{
         'entry': {
@@ -1279,7 +1282,7 @@ def test_query_transactions_check_decoded_events(
     result = query_transactions(rotki)
     entries = result['entries']
     assert len(entries) == 4
-    returned_events = query_events(rotkehlchen_api_server, json={'evm_chain': 'ethereum'}, expected_num_with_grouping=4)  # noqa: E501
+    returned_events = query_events(rotkehlchen_api_server, json={'evm_chain': 'ethereum'}, expected_num_with_grouping=4, expected_totals_with_grouping=4)  # noqa: E501
 
     assert len(returned_events) == 7
     assert_serialized_lists_equal(returned_events[0:2], tx1_events, ignore_keys='identifier')  # noqa: E501
@@ -1369,6 +1372,8 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
             'location_labels': [ethereum_accounts[0]],
         },
         expected_num_with_grouping=2,
+        expected_totals_with_grouping=3,
+        entries_limit=100,
     )
     expected = generate_events_response([event4, event3])
     assert returned_events == expected
@@ -1377,6 +1382,8 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         rotkehlchen_api_server,
         json={'asset': A_ETH.serialize(), 'evm_chain': 'ethereum'},
         expected_num_with_grouping=1,
+        expected_totals_with_grouping=3,
+        entries_limit=100,
     )
     expected = generate_events_response([event1, event2])
     assert returned_events == expected
@@ -1385,6 +1392,8 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         rotkehlchen_api_server,
         json={'asset': A_WETH.serialize(), 'evm_chain': 'ethereum'},
         expected_num_with_grouping=2,
+        expected_totals_with_grouping=3,
+        entries_limit=100,
     )
     expected = generate_events_response([event4, event3])
     assert returned_events == expected
@@ -1393,6 +1402,8 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         rotkehlchen_api_server,
         json={'counterparties': ['EXAMPLE_PROTOCOL'], 'evm_chain': 'ethereum'},
         expected_num_with_grouping=1,
+        expected_totals_with_grouping=3,
+        entries_limit=100,
     )
     expected = generate_events_response([event2, event3])
     assert returned_events == expected
@@ -1405,6 +1416,8 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
             'counterparties': ['EXAMPLE_PROTOCOL'],
         },
         expected_num_with_grouping=1,
+        expected_totals_with_grouping=3,
+        entries_limit=100,
     )
     expected = generate_events_response([event3])
     assert returned_events == expected
@@ -1417,6 +1430,8 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
             'event_types': ['staking'],
         },
         expected_num_with_grouping=1,
+        expected_totals_with_grouping=3,
+        entries_limit=100,
     )
     expected = generate_events_response([event5, event6])
     assert returned_events == expected
@@ -1430,6 +1445,8 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
             'event_subtypes': ['deposit_asset'],
         },
         expected_num_with_grouping=1,
+        expected_totals_with_grouping=3,
+        entries_limit=100,
     )
     expected = generate_events_response([event5])
     assert returned_events == expected
@@ -1463,6 +1480,8 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
             'evm_chain': 'ethereum',
         },
         expected_num_with_grouping=2,
+        expected_totals_with_grouping=2,
+        entries_limit=100,
     )
     expected = generate_events_response([event4, event1, event2, event3])
     assert returned_events == expected
@@ -1471,6 +1490,8 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
         rotkehlchen_api_server,  # test that default exclude_ignored_assets is True
         json={'evm_chain': 'ethereum'},
         expected_num_with_grouping=1,
+        expected_totals_with_grouping=2,
+        entries_limit=100,
     )
     expected = generate_events_response([event1, event3])
     assert returned_events == expected

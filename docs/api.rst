@@ -4883,7 +4883,7 @@ Dealing with History Events
    :reqjson bool group_by_event_ids: A boolean determining if results should be grouped by common event identifiers. If true, the result will return only first event of each group but also the number of events the group has. Default is false.
    :reqjson int from_timestamp: The timestamp from which to start querying. Default is 0.
    :reqjson int to_timestamp: The timestamp until which to query. Default is now.
-   :reqjson list[string] event_identifiers : An optional list of event identifiers to filter for.
+   :reqjson list[string] event_identifiers: An optional list of event identifiers to filter for.
    :reqjson list[string] event_types: An optional list of event types by which to filter the decoded events.
    :reqjson list[string] event_subtypes: An optional list of event subtypes by which to filter the decoded events.
    :reqjson list[string] location_labels: A list of location labels to optionally filter by. Location label is a string field that allows to provide more information about the location. When we use this structure in blockchains, it is used to specify the user address. For exchange events it's the exchange name assigned by the user.

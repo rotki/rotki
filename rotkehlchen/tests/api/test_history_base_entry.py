@@ -398,3 +398,44 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         assert event['entry'] in expected_entries
         assert event['customized'] is False
         assert event['has_details'] is False
+
+    # now try with grouping
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ),
+        json={'group_by_event_ids': True},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_found'] == 3
+    assert result['entries_limit'] == 100
+    assert result['entries_total'] == 3
+    assert len(result['entries']) == 3
+
+    # now try with grouping and pagination
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ),
+        json={'group_by_event_ids': True, 'offset': 1, 'limit': 1},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 1
+    assert result['entries_found'] == 3
+    assert result['entries_limit'] == 100
+    assert result['entries_total'] == 3
+    # now with grouping, pagination and a filter
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ),
+        json={'group_by_event_ids': True, 'offset': 0, 'limit': 1, 'asset': 'ETH'},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 1
+    assert result['entries_found'] == 2
+    assert result['entries_limit'] == 100
+    assert result['entries_total'] == 3

@@ -1971,6 +1971,7 @@ class DBHandler:
                 'history_events',
             ],
             op: Literal['OR', 'AND'] = 'OR',
+            group_by: Optional[str] = None,
             **kwargs: Any,
     ) -> int:
         """Returns how many of a certain type of entry are saved in the DB"""
@@ -1978,8 +1979,15 @@ class DBHandler:
         if len(kwargs) != 0:
             cursorstr += ' WHERE'
             cursorstr += op.join([f' {arg} = "{val}" ' for arg, val in kwargs.items()])
+        if group_by is not None:
+            cursorstr += f' GROUP BY {group_by}'
+
         cursorstr += ';'
         cursor.execute(cursorstr)
+
+        if group_by is not None:
+            return len(cursor.fetchall())
+        # else
         return cursor.fetchone()[0]
 
     def delete_data_for_evm_address(
