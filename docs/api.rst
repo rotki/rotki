@@ -4917,8 +4917,9 @@ Dealing with History Events
                       "timestamp": 1642802807
                   },
                   "customized": false,
+                  "ignored_in_accounting": false,
                   "has_details": false,
-		  "grouped_events_num": 1
+                  "grouped_events_num": 1
                 }, {
                   "entry": {
                       "identifier": 2,
@@ -4935,8 +4936,9 @@ Dealing with History Events
                       "timestamp": 1642802807
                   },
                   "customized": false,
+                  "ignored_in_accounting": false,
                   "has_details": false,
-		  "grouped_events_num": 3
+                  "grouped_events_num": 3
               }],
              "entries_found": 95,
              "entries_limit": 500,
@@ -4945,7 +4947,7 @@ Dealing with History Events
           "message": ""
       }
 
-   :resjson list decoded_events: A list of history events. Each event is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not. Each entry also has a `has_details` flag. If `has_details` is true, then it is possible to call /history/events/details endpoint to retrieve some extra information about the event. Also each entry has a `customized` flag denoting if the event has been customized/added by the user. Finally if `group_by_event_ids` is true, each entry contains `grouped_events_num` which is an integer with the amount of events under the common event identifier. The consumer has to query this endpoint again with `group_by_event_ids` set to false and with the `event_identifiers` filter set to the identifier of the events having more than 1 event.
+   :resjson list decoded_events: A list of history events. Each event is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not. Each entry also has a `has_details` flag. If `has_details` is true, then it is possible to call /history/events/details endpoint to retrieve some extra information about the event. Also each entry has a `customized` flag denoting if the event has been customized/added by the user. Finally if `group_by_event_ids` is true, each entry contains `grouped_events_num` which is an integer with the amount of events under the common event identifier. The consumer has to query this endpoint again with `group_by_event_ids` set to false and with the `event_identifiers` filter set to the identifier of the events having more than 1 event. Finally `ignored_in_accounting` is set to `true` when the user has marked this event as ignored.
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_limit: The limit of entries if free version. -1 for premium.
    :resjson int entries_total: The number of total entries ignoring all filters.

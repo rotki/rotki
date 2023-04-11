@@ -151,6 +151,7 @@ def generate_events_response(
             'entry': event.serialize(),
             'has_details': False,
             'customized': False,
+            'ignored_in_accounting': False,
         })
     return result
 
