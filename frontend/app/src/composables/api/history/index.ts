@@ -9,17 +9,6 @@ import { type TradeLocation } from '@/types/history/trade/location';
 import { ReportProgress } from '@/types/reports';
 
 export const useHistoryApi = () => {
-  const fetchAvailableCounterparties = async (): Promise<string[]> => {
-    const response = await api.instance.get<ActionResult<string[]>>(
-      '/blockchains/ETH/modules/data/counterparties',
-      {
-        validateStatus: validStatus
-      }
-    );
-
-    return handleResponse(response);
-  };
-
   const getProgress = async (): Promise<ReportProgress> => {
     const response = await api.instance.get<ActionResult<ReportProgress>>(
       `/history/status`,
@@ -43,7 +32,6 @@ export const useHistoryApi = () => {
   };
 
   return {
-    fetchAvailableCounterparties,
     getProgress,
     fetchAssociatedLocations
   };
