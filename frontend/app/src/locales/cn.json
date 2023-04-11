@@ -2995,6 +2995,7 @@
     "tooltip": "注释"
   },
   "notification": {
+    "copy": "复制",
     "copy_tooltip": "将消息复制到剪贴板",
     "dismiss_tooltip": "关闭通知"
   },

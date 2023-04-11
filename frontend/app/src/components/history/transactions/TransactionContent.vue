@@ -199,6 +199,11 @@ const {
 
 const { data } = getCollectionData<EthTransactionEntry>(transactions);
 
+const onUpdateFilteredAccounts = (acc: Account<BlockchainSelection>[]) => {
+  set(userAction, true);
+  set(accounts, acc);
+};
+
 const redecodeEvents = async (all = false) => {
   const txHashes = all ? null : get(data);
   await fetchTransactionEvents(txHashes, true);
@@ -455,7 +460,7 @@ const addTransactionHash = () => {
                     no-padding
                     multichain
                     flat
-                    @input="userAction = true"
+                    @input="onUpdateFilteredAccounts"
                   />
                 </div>
               </v-col>

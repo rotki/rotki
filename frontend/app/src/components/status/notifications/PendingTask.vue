@@ -1,15 +1,9 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
-import { type PropType } from 'vue';
 import { type Task, type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
-const props = defineProps({
-  task: {
-    required: true,
-    type: Object as PropType<Task<TaskMeta>>
-  }
-});
+const props = defineProps<{ task: Task<TaskMeta> }>();
 
 const { task } = toRefs(props);
 const isHistory = computed(() => task.value.type === TaskType.TRADE_HISTORY);

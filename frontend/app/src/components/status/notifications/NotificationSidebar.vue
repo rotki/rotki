@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import orderBy from 'lodash/orderBy';
 
-defineProps({
-  visible: { required: true, type: Boolean }
-});
+defineProps<{ visible: boolean }>();
 
 const { t, tc } = useI18n();
 
@@ -109,13 +107,9 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
           class="pl-2"
           :class="$style.content"
         >
-          <v-virtual-scroll :items="notifications" item-height="130px">
+          <v-virtual-scroll :items="notifications" item-height="172px">
             <template #default="{ item }">
-              <notification
-                class="mb-2 mt-2"
-                :notification="item"
-                @dismiss="remove($event)"
-              />
+              <notification :notification="item" @dismiss="remove($event)" />
             </template>
           </v-virtual-scroll>
         </div>
