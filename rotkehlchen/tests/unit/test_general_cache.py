@@ -13,15 +13,17 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.db.addressbook import DBAddressbook
+from rotkehlchen.db.filtering import GlobalAddressbookFilterQuery
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values, read_curve_pool_tokens
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
-    AddressbookEntry,
     ChainID,
     EvmTokenKind,
     GeneralCacheType,
+    GlobalAddressbookEntry,
+    GlobalAddressbookSource,
     SupportedBlockchain,
 )
 
@@ -51,42 +53,50 @@ CURVE_EXPECTED_GAUGES = {
 }
 
 EXPECTED_ADDRESBOOK_ENTRIES_FROM_API = [
-    AddressbookEntry(
+    GlobalAddressbookEntry(
         address=string_to_evm_address('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7'),
         name='Curve.fi DAI/USDC/USDT',
         blockchain=SupportedBlockchain.ETHEREUM,
-    ), AddressbookEntry(
+        source=GlobalAddressbookSource.CURVE_CACHE,
+    ), GlobalAddressbookEntry(
         address=string_to_evm_address('0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A'),
         name='Curve gauge for Curve.fi DAI/USDC/USDT',
         blockchain=SupportedBlockchain.ETHEREUM,
-    ), AddressbookEntry(
+        source=GlobalAddressbookSource.CURVE_CACHE,
+    ), GlobalAddressbookEntry(
         address=string_to_evm_address('0xDeBF20617708857ebe4F679508E7b7863a8A8EeE'),
         name='Curve.fi aDAI/aUSDC/aUSDT',
         blockchain=SupportedBlockchain.ETHEREUM,
-    ), AddressbookEntry(
+        source=GlobalAddressbookSource.CURVE_CACHE,
+    ), GlobalAddressbookEntry(
         address=string_to_evm_address('0xd662908ADA2Ea1916B3318327A97eB18aD588b5d'),
         name='Curve gauge for Curve.fi aDAI/aUSDC/aUSDT',
         blockchain=SupportedBlockchain.ETHEREUM,
+        source=GlobalAddressbookSource.CURVE_CACHE,
     ),
 ]
 
 EXPECTED_ADDRESBOOK_ENTRIES_FROM_CHAIN = [
-    AddressbookEntry(
+    GlobalAddressbookEntry(
         address=string_to_evm_address('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7'),
         name='3pool',
         blockchain=SupportedBlockchain.ETHEREUM,
-    ), AddressbookEntry(
+        source=GlobalAddressbookSource.CURVE_CACHE,
+    ), GlobalAddressbookEntry(
         address=string_to_evm_address('0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A'),
         name='Curve gauge for 3pool',
         blockchain=SupportedBlockchain.ETHEREUM,
-    ), AddressbookEntry(
+        source=GlobalAddressbookSource.CURVE_CACHE,
+    ), GlobalAddressbookEntry(
         address=string_to_evm_address('0xDeBF20617708857ebe4F679508E7b7863a8A8EeE'),
         name='aave',
         blockchain=SupportedBlockchain.ETHEREUM,
-    ), AddressbookEntry(
+        source=GlobalAddressbookSource.CURVE_CACHE,
+    ), GlobalAddressbookEntry(
         address=string_to_evm_address('0xd662908ADA2Ea1916B3318327A97eB18aD588b5d'),
         name='Curve gauge for aave',
         blockchain=SupportedBlockchain.ETHEREUM,
+        source=GlobalAddressbookSource.CURVE_CACHE,
     ),
 ]
 
@@ -124,8 +134,7 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api):
 
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         write_cursor.execute('DELETE FROM address_book')
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        known_addresses = db_addressbook.get_addressbook_entries(cursor=cursor)
+    known_addresses = db_addressbook.get_addressbook_entries(GlobalAddressbookFilterQuery.make())
     assert len(known_addresses) == 0
 
     curve_address_provider = ethereum_inquirer.contracts.contract('CURVE_ADDRESS_PROVIDER')  # noqa: E501
@@ -227,8 +236,7 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api):
         assert len(globaldb_get_general_cache_values(cursor, key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, 'pool-address-1'])) == 0  # noqa: E501
         assert len(globaldb_get_general_cache_values(cursor, key_parts=[GeneralCacheType.CURVE_GAUGE_ADDRESS, 'pool-address-1'])) == 0  # noqa: E501
 
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        known_addresses = db_addressbook.get_addressbook_entries(cursor=cursor)
+    known_addresses = db_addressbook.get_addressbook_entries(GlobalAddressbookFilterQuery.make())  # noqa: E501
     if use_curve_api:
         assert known_addresses == EXPECTED_ADDRESBOOK_ENTRIES_FROM_API
     else:

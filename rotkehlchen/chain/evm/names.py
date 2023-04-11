@@ -8,12 +8,13 @@ from rotkehlchen.db.ens import DBEns
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import (
-    AddressbookEntry,
     AddressbookType,
     AddressNameSource,
     ChainAddress,
     ChecksumEvmAddress,
     EnsMapping,
+    GlobalAddressbookSource,
+    NamedAddressbookEntry,
     OptionalChainAddress,
     SupportedBlockchain,
     Timestamp,
@@ -22,6 +23,13 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+
+
+GLOBAL_ADDRESSBOOK_PRIORITIES = {
+    GlobalAddressbookSource.MANUAL: 0,
+    GlobalAddressbookSource.CURVE_CACHE: 1,
+    GlobalAddressbookSource.WALLET_LABELS_XYZ: 2,
+}
 
 
 def find_ens_mappings(
@@ -70,7 +78,7 @@ def find_ens_mappings(
 def search_for_addresses_names(
         database: DBHandler,
         chain_addresses: list[OptionalChainAddress],
-) -> list[AddressbookEntry]:
+) -> list[NamedAddressbookEntry]:
     """
     This method searches for all names of provided addresses known to rotki. We can show
     only one name per address, and thus we prioritize known names. Priority is read from settings.
@@ -114,7 +122,7 @@ class NamePrioritizer:
             self,
             prioritized_name_source: list[AddressNameSource],
             chain_addresses: list[OptionalChainAddress],
-    ) -> list[AddressbookEntry]:
+    ) -> list[NamedAddressbookEntry]:
         """
         Gets the name from the name source with the highest priority.
         Name source ids with lower index have a higher priority.
@@ -132,7 +140,7 @@ class NamePrioritizer:
                 name: Optional[str] = fetcher(self._db, chain_address)
                 if name is None:
                     continue
-                top_prio_names.append(AddressbookEntry(
+                top_prio_names.append(NamedAddressbookEntry(
                     name=name,
                     address=chain_address.address,
                     blockchain=chain_address.blockchain,
@@ -166,7 +174,7 @@ def _private_addressbook_address_to_name(
     """
     db_addressbook = DBAddressbook(db)
     return db_addressbook.get_addressbook_entry_name(
-        book_type=AddressbookType.PRIVATE,
+        book_type=AddressbookType.USER,
         chain_address=chain_address,
     )
 
@@ -182,6 +190,7 @@ def _global_addressbook_address_to_name(
     return db_addressbook.get_addressbook_entry_name(
         book_type=AddressbookType.GLOBAL,
         chain_address=chain_address,
+        priorities=GLOBAL_ADDRESSBOOK_PRIORITIES,
     )
 
 

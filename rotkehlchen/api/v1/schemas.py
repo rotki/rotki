@@ -48,16 +48,19 @@ from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
+    BaseAddressbookFilterQuery,
     CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
     EvmEventFilterQuery,
     EvmTransactionsFilterQuery,
+    GlobalAddressbookFilterQuery,
     HistoryEventFilterQuery,
     LedgerActionsFilterQuery,
     LevenshteinFilterQuery,
     NFTFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
+    UserAddressbookFilterQuery,
     UserNotesFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -78,7 +81,6 @@ from rotkehlchen.types import (
     NON_EVM_CHAINS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_SUBSTRATE_CHAINS,
-    AddressbookEntry,
     AddressbookType,
     AssetMovementCategory,
     BTCAddress,
@@ -89,6 +91,7 @@ from rotkehlchen.types import (
     ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
+    GlobalAddressbookSource,
     Location,
     OptionalChainAddress,
     SupportedBlockchain,
@@ -2638,11 +2641,29 @@ class BaseAddressbookSchema(Schema):
     book_type = SerializableEnumField(enum_class=AddressbookType, required=True)
 
 
-class AddressbookAddressesSchema(
+class ManualAddressbookAddressesSchema(
     BaseAddressbookSchema,
     OptionalAddressesWithBlockchainsListSchema,
 ):
     ...
+
+
+class ManualAddressbookReadAddressesSchema(ManualAddressbookAddressesSchema):
+    @post_load()
+    def transform_data(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        kwargs = {'optional_chain_addresses': data['addresses']}
+        filter_query: BaseAddressbookFilterQuery
+        if data['book_type'] == AddressbookType.GLOBAL:
+            kwargs['sources'] = [GlobalAddressbookSource.MANUAL]
+            filter_query = GlobalAddressbookFilterQuery.make(**kwargs)
+        else:
+            filter_query = UserAddressbookFilterQuery.make(**kwargs)
+
+        return {'filter_query': filter_query}
 
 
 class AddressbookEntrySchema(Schema):
@@ -2651,21 +2672,64 @@ class AddressbookEntrySchema(Schema):
     # Need None option here in case the user wants to update all the entries for the address.
     blockchain = BlockchainField(load_default=None)
 
+
+class AddressbookUpdateSchema(BaseAddressbookSchema):
+    entries = NonEmptyList(fields.Nested(AddressbookEntrySchema), required=True)
+
     @post_load()
     def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
-        return AddressbookEntry(
-            address=data['address'],
-            name=data['name'],
-            blockchain=data['blockchain'],
+        """
+        Transform address book entries. Transforming here instead of AddressbookEntrySchema to
+        take book_type into account.
+        """
+        book_type: AddressbookType = data['book_type']
+        entries_class = book_type.get_class()
+        deserialized_entries = []
+        for entry in data['entries']:
+            if book_type == AddressbookType.GLOBAL:
+                entry['source'] = GlobalAddressbookSource.MANUAL
+            deserialized_entries.append(entries_class(**entry))
+
+        return {'book_type': book_type, 'entries': deserialized_entries}
+
+
+class AutomaticAddressbookQuerySchema(
+    DBPaginationSchema,
+    DBOrderBySchema,
+    OptionalAddressesWithBlockchainsListSchema,
+):
+    names = fields.List(fields.String(required=True), load_default=None)
+    sources = fields.List(
+        SerializableEnumField(
+            enum_class=GlobalAddressbookSource,
+            required=True,
+        ),
+        load_default=None,
+    )
+
+    @post_load()
+    def transform_data(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        filter_query = GlobalAddressbookFilterQuery.make(
+            limit=data['limit'],
+            offset=data['offset'],
+            order_by_rules=create_order_by_rules_list(
+                data=data,
+                default_order_by_field='name',
+                is_ascending_by_default=True,
+            ),
+            optional_chain_addresses=data['addresses'],
+            names=data['names'],
+            sources=data['sources'],
         )
-
-
-class AddressbookUpdateSchema(BaseAddressbookSchema):
-    entries = NonEmptyList(fields.Nested(AddressbookEntrySchema), required=True)
+        return {'filter_query': filter_query}
 
 
 class SnapshotImportingSchema(Schema):

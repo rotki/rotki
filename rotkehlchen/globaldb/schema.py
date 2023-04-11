@@ -241,7 +241,8 @@ CREATE TABLE IF NOT EXISTS address_book (
     address TEXT NOT NULL,
     blockchain TEXT,
     name TEXT NOT NULL,
-    PRIMARY KEY(address, blockchain)
+    source INTEGER NOT NULL,
+    PRIMARY KEY(address, blockchain, source)
 );
 """
 

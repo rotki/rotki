@@ -326,6 +326,7 @@ def test_upgrade_v4_v5(globaldb):
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS],
         )
         assert len(pool_tokens_in_global_db) > 0, 'There should be some pool tokens set'
+        initial_addressbook = cursor.execute('SELECT * FROM address_book').fetchall()
 
     # execute upgrade
     with ExitStack() as stack:
@@ -370,6 +371,8 @@ def test_upgrade_v4_v5(globaldb):
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS],
         )
         assert len(pool_tokens_in_global_db) == 0, 'All curve pool tokens should have been deleted'
+        expected_addressbook = [(*entry, 0) for entry in initial_addressbook]
+        assert cursor.execute('SELECT * FROM address_book').fetchall() == expected_addressbook
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

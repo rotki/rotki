@@ -1,8 +1,9 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Iterable
+from collections.abc import Collection, Iterable, Sequence
 from dataclasses import dataclass
 from typing import Any, Generic, Literal, NamedTuple, Optional, TypeVar, Union, cast
+
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
@@ -18,11 +19,14 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
+    AddressbookType,
     AssetMovementCategory,
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
+    GlobalAddressbookSource,
     Location,
+    OptionalChainAddress,
     Timestamp,
     TradeType,
 )
@@ -81,7 +85,7 @@ class DBFilter():
 class DBNestedFilter(DBFilter):
     """Filter that allows combination of multiple subfilters with different operands."""
     and_op: bool
-    filters: list[DBFilter]
+    filters: Sequence[DBFilter]
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         filterstrings = []
@@ -600,6 +604,10 @@ class DBMultiStringFilter(DBMultiValueFilter[str]):
 
 class DBMultiBytesFilter(DBMultiValueFilter[bytes]):
     """Filter a column having a bytes value out of a selection of values"""
+
+
+class DBMultiIntFilter(DBMultiValueFilter[int]):
+    """Filter a column having an int value out of a selection of values"""
 
 
 class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
@@ -1537,3 +1545,132 @@ class TransactionsNotDecodedFilterQuery(DBFilterQuery):
 
         filter_query.filters = filters
         return filter_query
+
+
+class BaseAddressbookFilterQuery(DBFilterQuery, metaclass=ABCMeta):
+    """Base class for addressbook filter queries"""
+    @classmethod
+    @abstractmethod
+    def make(
+            cls,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            optional_chain_addresses: Optional[list[OptionalChainAddress]] = None,
+            names: Optional[list[str]] = None,
+    ) -> 'BaseAddressbookFilterQuery':
+        ...
+
+    @abstractmethod
+    def get_book_type(self) -> AddressbookType:
+        ...
+
+    @abstractmethod
+    def get_base_query(self) -> str:
+        ...
+
+
+class UserAddressbookFilterQuery(BaseAddressbookFilterQuery):
+    """Filter to find entries in global address book"""
+    @classmethod
+    def make(  # type: ignore[override]
+            cls,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
+            optional_chain_addresses: Optional[list[OptionalChainAddress]] = None,
+            names: Optional[list[str]] = None,
+    ) -> 'UserAddressbookFilterQuery':
+        filter_query = cls.create(
+            and_op=True,
+            limit=limit,
+            offset=offset,
+            order_by_rules=order_by_rules,
+        )
+        filter_query = cast('UserAddressbookFilterQuery', filter_query)
+
+        filters: list[DBFilter] = []
+        if optional_chain_addresses is not None:
+            addresses_filters: list[Any] = []
+            for chain_address in optional_chain_addresses:
+                if chain_address.blockchain is None:
+                    addresses_filters.append(DBEqualsFilter(
+                        and_op=True,
+                        column='address',
+                        value=chain_address.address,
+                    ))
+                else:
+                    addresses_filters.append(DBNestedFilter(
+                        and_op=True,
+                        filters=[
+                            DBEqualsFilter(
+                                and_op=True,
+                                column='address',
+                                value=chain_address.address,
+                            ),
+                            DBEqualsFilter(
+                                and_op=True,
+                                column='blockchain',
+                                value=chain_address.blockchain.value,
+                            ),
+                        ],
+                    ))
+            filters.append(DBNestedFilter(
+                and_op=False,
+                filters=addresses_filters,
+            ))
+        if names is not None:
+            filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='name',
+                operator='IN',
+                values=names,
+            ))
+
+        filter_query.filters = filters
+        return filter_query
+
+    def get_book_type(self) -> AddressbookType:
+        return AddressbookType.USER
+
+    def get_base_query(self) -> str:
+        return 'SELECT address, name, blockchain FROM address_book '
+
+
+class GlobalAddressbookFilterQuery(UserAddressbookFilterQuery):
+    """Filter to find entries in global address book"""
+    @classmethod
+    def make(  # type: ignore[override]
+            cls,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
+            optional_chain_addresses: Optional[list[OptionalChainAddress]] = None,
+            names: Optional[list[str]] = None,
+            sources: Optional[list[GlobalAddressbookSource]] = None,
+    ) -> 'GlobalAddressbookFilterQuery':
+        filter_query = super().make(
+            limit=limit,
+            offset=offset,
+            optional_chain_addresses=optional_chain_addresses,
+            names=names,
+            order_by_rules=order_by_rules,
+        )
+        filter_query = cast('GlobalAddressbookFilterQuery', filter_query)
+
+        filters: list[DBFilter] = []
+        if sources is not None:
+            filters.append(DBMultiIntFilter(
+                and_op=True,
+                column='source',
+                operator='IN',
+                values=[source.serialize_for_db() for source in sources],
+            ))
+        filters.extend(filter_query.filters)
+        filter_query.filters = filters
+        return filter_query
+
+    def get_book_type(self) -> AddressbookType:
+        return AddressbookType.GLOBAL
+
+    def get_base_query(self) -> str:
+        return 'SELECT address, name, blockchain, source FROM address_book '

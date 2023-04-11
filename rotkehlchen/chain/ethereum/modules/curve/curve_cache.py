@@ -27,11 +27,13 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
-    AddressbookEntry,
+    AddressbookType,
     ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
     GeneralCacheType,
+    GlobalAddressbookEntry,
+    GlobalAddressbookSource,
     SupportedBlockchain,
 )
 from rotkehlchen.utils.network import request_get_dict
@@ -237,21 +239,24 @@ def save_curve_data_to_cache(
     """Stores data received about curve pools and gauges in the cache"""
     db_addressbook = DBAddressbook(db_handler=database)
     for pool in new_pools:
-        addresbook_entries = [AddressbookEntry(
+        addresbook_entries = [GlobalAddressbookEntry(
             address=pool.pool_address,
             name=pool.pool_name,
             blockchain=SupportedBlockchain.ETHEREUM,
+            source=GlobalAddressbookSource.CURVE_CACHE,
         )]
         if pool.gauge_address is not None:
-            addresbook_entries.append(AddressbookEntry(
+            addresbook_entries.append(GlobalAddressbookEntry(
                 address=pool.gauge_address,
                 name=f'Curve gauge for {pool.pool_name}',
                 blockchain=SupportedBlockchain.ETHEREUM,
+                source=GlobalAddressbookSource.CURVE_CACHE,
             ))
         try:
             db_addressbook.add_addressbook_entries(
                 write_cursor=write_cursor,
-                entries=addresbook_entries,
+                book_type=AddressbookType.GLOBAL,
+                entries=addresbook_entries,  # type: ignore  # GlobalAddressbookEntry is a subclass of NamedAddressbookEntry  # noqa: E501
             )
         except InputError as e:
             log.debug(

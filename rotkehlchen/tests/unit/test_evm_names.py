@@ -14,10 +14,10 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
-    AddressbookEntry,
     AddressNameSource,
     ChainAddress,
     ChecksumEvmAddress,
+    NamedAddressbookEntry,
     OptionalChainAddress,
     SupportedBlockchain,
 )
@@ -45,7 +45,7 @@ def test_get_prioritized_name(evm_address: ChecksumEvmAddress) -> None:
     )
 
     prioritizer_names = prioritizer.get_prioritized_names(list(fetchers.keys()), [OptionalChainAddress(evm_address, SupportedBlockchain.ETHEREUM)])  # noqa: E501
-    assert prioritizer_names == [AddressbookEntry(
+    assert prioritizer_names == [NamedAddressbookEntry(
         name='blockchain account label',
         address=evm_address,
         blockchain=SupportedBlockchain.ETHEREUM,
@@ -70,7 +70,7 @@ def test_get_name_of_lowest_prio_name_source(
     )
 
     prioritizer_names = prioritizer.get_prioritized_names(list(fetchers.keys()), [OptionalChainAddress(evm_address, SupportedBlockchain.ETHEREUM)])  # noqa: E501
-    assert prioritizer_names == [AddressbookEntry(
+    assert prioritizer_names == [NamedAddressbookEntry(
         name='global addressbook label',
         address=evm_address,
         blockchain=SupportedBlockchain.ETHEREUM,

@@ -58,6 +58,25 @@ def _reset_curve_cache(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('DELETE FROM general_cache WHERE key LIKE "%CURVE%"')
 
 
+def _add_source_to_address_book(cursor: 'DBCursor') -> None:
+    """Adds source column to global address book"""
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS address_book_new (
+        address TEXT NOT NULL,
+        blockchain TEXT,
+        name TEXT NOT NULL,
+        source INTEGER NOT NULL,
+        PRIMARY KEY(address, blockchain, source)
+    );
+    """)
+    cursor.execute(
+        'INSERT INTO address_book_new(address, blockchain, name, source) '
+        'SELECT address, blockchain, name, 0 FROM address_book',  # 0 is for manual input
+    )
+    cursor.execute('DROP TABLE address_book')
+    cursor.execute('ALTER TABLE address_book_new RENAME TO address_book')
+
+
 def migrate_to_v5(connection: 'DBConnection') -> None:
     """This globalDB upgrade is introduced at 1.28.0 and does the following:
     - Adds the `default_rpc_nodes` table.
@@ -70,5 +89,6 @@ def migrate_to_v5(connection: 'DBConnection') -> None:
         _create_new_tables(cursor)
         _populate_rpc_nodes(cursor, root_dir)
         _reset_curve_cache(cursor)
+        _add_source_to_address_book(cursor)
 
     log.debug('Finished globaldb v4->v5 upgrade')

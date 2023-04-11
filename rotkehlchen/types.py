@@ -1,4 +1,5 @@
 import typing
+from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any, Final, Literal, NamedTuple, NewType, Optional, TypeVar, Union, get_args
 
@@ -646,7 +647,8 @@ class CostBasisMethod(SerializableEnumMixin):
     ACB = auto()
 
 
-class AddressbookEntry(NamedTuple):
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=True, frozen=False)
+class NamedAddressbookEntry():
     address: ChecksumEvmAddress
     name: str
     blockchain: Optional[SupportedBlockchain]
@@ -658,14 +660,23 @@ class AddressbookEntry(NamedTuple):
             'blockchain': self.blockchain.serialize() if self.blockchain is not None else None,
         }
 
-    def serialize_for_db(self) -> tuple[str, str, Optional[str]]:
+    def serialize_for_db(self) -> tuple:
         blockchain = self.blockchain.value if self.blockchain is not None else None
         return (self.address, self.name, blockchain)
 
     @classmethod
-    def deserialize(cls: type['AddressbookEntry'], data: dict[str, Any]) -> 'AddressbookEntry':
+    def deserialize_from_db(cls, entry: tuple) -> 'NamedAddressbookEntry':
+        return cls(
+            address=entry[0],
+            name=entry[1],
+            blockchain=SupportedBlockchain(entry[2]) if entry[2] is not None else None,
+        )
+
+    @classmethod
+    def deserialize(cls: type['NamedAddressbookEntry'], data: dict[str, Any]) -> 'NamedAddressbookEntry':  # noqa: E501
         """May raise:
-        -KeyError if required keys are missing
+        - KeyError if required keys are missing
+        - DeserializationError if blockchain is not known
         """
         return cls(
             address=data['address'],
@@ -674,7 +685,65 @@ class AddressbookEntry(NamedTuple):
         )
 
     def __str__(self) -> str:
-        return f'Addressbook entry with name "{self.name}", address "{self.address}" and blockchain {self.blockchain.value if self.blockchain is not None else None}'  # noqa: E501
+        return f'Named addressbook entry with name "{self.name}", address "{self.address}" and blockchain {self.blockchain.value if self.blockchain is not None else None}'  # noqa: E501
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=True, frozen=False)
+class UserAddressbookEntry(NamedAddressbookEntry):
+    def __str__(self) -> str:
+        return f'User addressbook entry with name "{self.name}", address "{self.address}" and blockchain {self.blockchain.value if self.blockchain is not None else None}'  # noqa: E501
+
+
+class GlobalAddressbookSource(SerializableEnumMixin):
+    MANUAL = 0
+    CURVE_CACHE = 1
+    WALLET_LABELS_XYZ = 2
+
+    @classmethod
+    def deserialize_from_db(cls, value: int) -> 'GlobalAddressbookSource':
+        try:
+            return cls(value)
+        except ValueError as e:
+            raise DeserializationError(
+                f'Could not deserialize GlobalAddressbookSource from value {value}',
+            ) from e
+
+    def serialize_for_db(self) -> int:
+        return self.value
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=True, frozen=False)
+class GlobalAddressbookEntry(UserAddressbookEntry):
+    source: GlobalAddressbookSource
+
+    def serialize_for_db(self) -> tuple:
+        blockchain = self.blockchain.value if self.blockchain is not None else None
+        return (self.address, self.name, blockchain, self.source.serialize_for_db())
+
+    @classmethod
+    def deserialize(cls: type['GlobalAddressbookEntry'], data: dict[str, Any]) -> 'GlobalAddressbookEntry':  # noqa: E501
+        """May raise:
+        - KeyError if required keys are missing
+        - DeserializationError if blockchain or source are not known
+        """
+        return cls(
+            address=data['address'],
+            name=data['name'],
+            blockchain=SupportedBlockchain.deserialize(data['blockchain']) if data['blockchain'] is not None else None,  # noqa: E501
+            source=GlobalAddressbookSource.deserialize(data['source']),
+        )
+
+    @classmethod
+    def deserialize_from_db(cls, entry: tuple) -> 'NamedAddressbookEntry':
+        return cls(
+            address=entry[0],
+            name=entry[1],
+            blockchain=SupportedBlockchain(entry[2]) if entry[2] is not None else None,
+            source=GlobalAddressbookSource.deserialize_from_db(entry[3]),
+        )
+
+    def __str__(self) -> str:
+        return f'Global addressbook entry with name "{self.name}", address "{self.address}", blockchain {self.blockchain.value if self.blockchain is not None else None} and source {self.source.name}'  # noqa: E501
 
 
 class OptionalChainAddress(NamedTuple):
@@ -686,9 +755,19 @@ class ChainAddress(OptionalChainAddress):
     blockchain: SupportedBlockchain
 
 
+class GlobalAddressbookKey(OptionalChainAddress):
+    source: GlobalAddressbookSource
+
+
 class AddressbookType(SerializableEnumMixin):
     GLOBAL = 1
-    PRIVATE = 2
+    USER = 2
+
+    def get_class(self) -> type[NamedAddressbookEntry]:
+        if self == self.USER:
+            return UserAddressbookEntry
+        else:
+            return GlobalAddressbookEntry
 
 
 class UserNote(NamedTuple):

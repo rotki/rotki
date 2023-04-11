@@ -20,7 +20,6 @@ from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.schemas import (
     AccountingReportDataSchema,
     AccountingReportsSchema,
-    AddressbookAddressesSchema,
     AddressbookUpdateSchema,
     AllBalancesQuerySchema,
     AppInfoSchema,
@@ -39,6 +38,7 @@ from rotkehlchen.api.v1.schemas import (
     AsyncIgnoreCacheQueryArgumentSchema,
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
+    AutomaticAddressbookQuerySchema,
     AvalancheTransactionQuerySchema,
     BaseCustomAssetSchema,
     BaseXpubSchema,
@@ -97,6 +97,8 @@ from rotkehlchen.api.v1.schemas import (
     IntegerIdentifierSchema,
     LedgerActionSchema,
     LedgerActionsQuerySchema,
+    ManualAddressbookAddressesSchema,
+    ManualAddressbookReadAddressesSchema,
     ManuallyTrackedBalancesAddSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesEditSchema,
@@ -169,6 +171,7 @@ from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
+    BaseAddressbookFilterQuery,
     CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
     EvmTransactionsFilterQuery,
@@ -187,7 +190,6 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
-    AddressbookEntry,
     AddressbookType,
     ApiKey,
     ApiSecret,
@@ -203,6 +205,7 @@ from rotkehlchen.types import (
     ListOfBlockchainAddresses,
     Location,
     ModuleName,
+    NamedAddressbookEntry,
     OptionalChainAddress,
     Price,
     SupportedBlockchain,
@@ -2664,28 +2667,26 @@ class CounterpartiesResource(BaseMethodView):
         return self.rest_api.get_all_counterparties()
 
 
-class AddressbookResource(BaseMethodView):
-    post_delete_schema = AddressbookAddressesSchema()
+class ManualAddressbookResource(BaseMethodView):
+    post_schema = ManualAddressbookReadAddressesSchema()
+    delete_schema = ManualAddressbookAddressesSchema()
     update_schema = AddressbookUpdateSchema()
 
     @require_loggedin_user()
-    @use_kwargs(post_delete_schema, location='json_and_view_args')
+    @use_kwargs(post_schema, location='json_and_view_args')
     def post(
             self,
-            book_type: AddressbookType,
-            addresses: Optional[list[OptionalChainAddress]],
+            filter_query: BaseAddressbookFilterQuery,
+            book_type: AddressbookType,  # pylint: disable=unused-argument
     ) -> Response:
-        return self.rest_api.get_addressbook_entries(
-            book_type=book_type,
-            chain_addresses=addresses,
-        )
+        return self.rest_api.get_addressbook_entries(filter_query=filter_query)
 
     @require_loggedin_user()
     @use_kwargs(update_schema, location='json_and_view_args')
     def put(
             self,
             book_type: AddressbookType,
-            entries: list[AddressbookEntry],
+            entries: list[NamedAddressbookEntry],
     ) -> Response:
         return self.rest_api.add_addressbook_entries(book_type=book_type, entries=entries)
 
@@ -2694,12 +2695,12 @@ class AddressbookResource(BaseMethodView):
     def patch(
             self,
             book_type: AddressbookType,
-            entries: list[AddressbookEntry],
+            entries: list[NamedAddressbookEntry],
     ) -> Response:
         return self.rest_api.update_addressbook_entries(book_type=book_type, entries=entries)
 
     @require_loggedin_user()
-    @use_kwargs(post_delete_schema, location='json_and_view_args')
+    @use_kwargs(delete_schema, location='json_and_view_args')
     def delete(
             self,
             book_type: AddressbookType,
@@ -2709,6 +2710,17 @@ class AddressbookResource(BaseMethodView):
             book_type=book_type,
             chain_addresses=addresses,
         )
+
+
+class AutomaticAddressbookResource(BaseMethodView):
+    post_schema = AutomaticAddressbookQuerySchema()
+
+    def get(self) -> Response:
+        return self.rest_api.get_automatic_addressbook_sources()
+
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(self, filter_query: BaseAddressbookFilterQuery) -> Response:
+        return self.rest_api.get_addressbook_entries(filter_query=filter_query)
 
 
 class AllNamesResource(BaseMethodView):

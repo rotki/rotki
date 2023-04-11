@@ -15,7 +15,7 @@ from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
-    AddressbookEntry,
+    AddressbookType,
     ApiKey,
     ApiSecret,
     AssetAmount,
@@ -24,12 +24,16 @@ from rotkehlchen.types import (
     EvmTokenKind,
     EvmTransaction,
     Fee,
+    GlobalAddressbookEntry,
+    GlobalAddressbookSource,
     Location,
+    NamedAddressbookEntry,
     Price,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
     TradeType,
+    UserAddressbookEntry,
     make_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -159,24 +163,59 @@ def generate_tx_entries_response(
     return result
 
 
-def make_addressbook_entries() -> list[AddressbookEntry]:
+def deserialize_addressbook_entry(
+        book_type: AddressbookType,
+        data: dict[str, Any],
+) -> NamedAddressbookEntry:
+    if book_type == AddressbookType.GLOBAL:
+        data['source'] = GlobalAddressbookSource.MANUAL.serialize()
+
+    return book_type.get_class().deserialize(data)
+
+
+def make_addressbook_entry(
+        book_type: AddressbookType,
+        address: ChecksumEvmAddress,
+        name: str,
+        blockchain: Optional[SupportedBlockchain],
+) -> NamedAddressbookEntry:
+    if book_type == AddressbookType.USER:
+        return UserAddressbookEntry(
+            address=address,
+            name=name,
+            blockchain=blockchain,
+        )
+
+    return GlobalAddressbookEntry(
+        address=address,
+        name=name,
+        blockchain=blockchain,
+        source=GlobalAddressbookSource.MANUAL,
+    )
+
+
+def make_addressbook_entries(book_type: AddressbookType) -> list[NamedAddressbookEntry]:
     return [
-        AddressbookEntry(
+        make_addressbook_entry(
+            book_type=book_type,
             address=to_checksum_address('0x9d904063e7e120302a13c6820561940538a2ad57'),
             name='My dear friend Fred',
             blockchain=SupportedBlockchain.ETHEREUM,
         ),
-        AddressbookEntry(
+        make_addressbook_entry(
+            book_type=book_type,
             address=to_checksum_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67'),
             name='Neighbour Thomas',
             blockchain=SupportedBlockchain.OPTIMISM,
         ),
-        AddressbookEntry(
+        make_addressbook_entry(
+            book_type=book_type,
             address=to_checksum_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67'),
             name='Neighbour Thomas but in Ethereum',
             blockchain=SupportedBlockchain.ETHEREUM,
         ),
-        AddressbookEntry(
+        make_addressbook_entry(
+            book_type=book_type,
             address=to_checksum_address('0x3D61AEBB1238062a21BE5CC79df308f030BF0c1B'),
             name='Secret agent Rose',
             blockchain=SupportedBlockchain.OPTIMISM,

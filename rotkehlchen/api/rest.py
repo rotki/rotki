@@ -92,6 +92,7 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
+    BaseAddressbookFilterQuery,
     CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
     EvmEventFilterQuery,
@@ -157,7 +158,6 @@ from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
-    AddressbookEntry,
     AddressbookType,
     ApiKey,
     ApiSecret,
@@ -170,10 +170,12 @@ from rotkehlchen.types import (
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
+    GlobalAddressbookSource,
     HexColorCode,
     ListOfBlockchainAddresses,
     Location,
     ModuleName,
+    NamedAddressbookEntry,
     OptionalChainAddress,
     Price,
     SubstrateAddress,
@@ -3837,29 +3839,33 @@ class RestAPI():
             },
         )
 
-    def get_addressbook_entries(
-            self,
-            book_type: AddressbookType,
-            chain_addresses: Optional[list[OptionalChainAddress]],
-    ) -> Response:
+    def get_automatic_addressbook_sources(self) -> Response:
+        all_types = [
+            t.serialize()
+            for t in GlobalAddressbookSource
+            if t != GlobalAddressbookSource.MANUAL
+        ]
+        return api_response(_wrap_in_ok_result(all_types))
+
+    def get_addressbook_entries(self, filter_query: BaseAddressbookFilterQuery) -> Response:
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
-        with db_addressbook.read_ctx(book_type) as cursor:
-            entries = db_addressbook.get_addressbook_entries(
-                cursor=cursor,
-                optional_chain_addresses=chain_addresses,
-            )
+        entries = db_addressbook.get_addressbook_entries(filter_query=filter_query)
         serialized = [entry.serialize() for entry in entries]
         return api_response(_wrap_in_ok_result(serialized))
 
     def add_addressbook_entries(
             self,
             book_type: AddressbookType,
-            entries: list[AddressbookEntry],
+            entries: list[NamedAddressbookEntry],
     ) -> Response:
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
         try:
             with db_addressbook.write_ctx(book_type) as write_cursor:
-                db_addressbook.add_addressbook_entries(write_cursor=write_cursor, entries=entries)
+                db_addressbook.add_addressbook_entries(
+                    write_cursor=write_cursor,
+                    book_type=book_type,
+                    entries=entries,
+                )
         except InputError as e:
             return api_response(
                 result=wrap_in_fail_result(str(e)),
@@ -3871,7 +3877,7 @@ class RestAPI():
     def update_addressbook_entries(
             self,
             book_type: AddressbookType,
-            entries: list[AddressbookEntry],
+            entries: list[NamedAddressbookEntry],
     ) -> Response:
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
         try:
