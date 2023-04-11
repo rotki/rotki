@@ -494,8 +494,10 @@ class DBHistoryEvents():
             with_group_by=group_by_event_ids,
         )
         query = query_filter.get_count_query() + prepared_query
-        # if group_by_event_ids:
         cursor.execute(query, bindings)
+        if group_by_event_ids:  # due to GROUP BY we get a list of all grouped by counts
+            return len(cursor.fetchall())
+        # else
         return cursor.fetchone()[0]  # count(*) always returns
 
     def get_value_stats(
