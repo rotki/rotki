@@ -166,7 +166,7 @@ const {
   setFilter,
   updateFilter,
   fetchData
-} = useHistoryPaginationFilter<
+} = usePaginationFilters<
   EthTransaction,
   TransactionRequestPayload,
   EthTransactionEntry,
@@ -446,7 +446,7 @@ const addTransactionHash = () => {
               <v-col v-if="!useExternalAccountFilter">
                 <div>
                   <blockchain-account-selector
-                    v-model="accounts"
+                    :value="accounts"
                     :chains="txChains"
                     dense
                     multiple

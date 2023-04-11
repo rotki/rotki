@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { type SupportedAsset } from '@rotki/common/lib/data';
-import { type PropType, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
+import { type TablePagination } from '@/types/pagination';
 import {
   type CustomAsset,
   type CustomAssetRequestPayload
@@ -11,13 +10,18 @@ import {
   type Matcher
 } from '@/composables/filters/custom-assets';
 
-defineProps({
-  assets: { required: true, type: Array as PropType<CustomAsset[]> },
-  loading: { required: false, type: Boolean, default: false },
-  serverItemLength: { required: true, type: Number },
-  matchers: { required: true, type: Array as PropType<Matcher[]> },
-  filters: { required: true, type: Object as PropType<Filters> }
-});
+withDefaults(
+  defineProps<{
+    assets: CustomAsset[];
+    expanded: CustomAsset[];
+    options: TablePagination<CustomAsset>;
+    serverItemLength: number;
+    matchers: Matcher[];
+    filters: Filters;
+    loading?: boolean;
+  }>(),
+  { loading: false }
+);
 
 const emit = defineEmits<{
   (e: 'add'): void;
@@ -25,9 +29,8 @@ const emit = defineEmits<{
   (e: 'delete-asset', asset: CustomAsset): void;
   (e: 'update:pagination', pagination: CustomAssetRequestPayload): void;
   (e: 'update:filters', filters: Filters): void;
+  (e: 'update:expanded', expandedAssets: CustomAsset[]): void;
 }>();
-
-const expanded: Ref<SupportedAsset[]> = ref([]);
 
 const { tc } = useI18n();
 
@@ -61,6 +64,8 @@ const deleteAsset = (asset: CustomAsset) => emit('delete-asset', asset);
 const updatePagination = (pagination: CustomAssetRequestPayload) =>
   emit('update:pagination', pagination);
 const updateFilter = (filters: Filters) => emit('update:filters', filters);
+const updateExpanded = (expandedAssets: CustomAsset[]) =>
+  emit('update:expanded', expandedAssets);
 
 const getAsset = (item: CustomAsset) => ({
   name: item.name,
@@ -110,6 +115,7 @@ const getAsset = (item: CustomAsset) => ({
       :headers="tableHeaders"
       single-expand
       :expanded="expanded"
+      :options="options"
       item-key="identifier"
       sort-by="name"
       class="custom-assets-table"
@@ -155,7 +161,7 @@ const getAsset = (item: CustomAsset) => ({
         <row-expander
           v-if="item.notes"
           :expanded="expanded.includes(item)"
-          @click="expanded = expanded.includes(item) ? [] : [item]"
+          @click="updateExpanded(expanded.includes(item) ? [] : [item])"
         />
       </template>
     </data-table>

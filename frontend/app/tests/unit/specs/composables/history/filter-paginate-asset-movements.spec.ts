@@ -67,7 +67,7 @@ describe('composables::history/filter-paginate', () => {
         fetchData,
         applyRouteFilter,
         isLoading
-      } = useHistoryPaginationFilter<
+      } = usePaginationFilters<
         AssetMovement,
         AssetMovementRequestPayload,
         AssetMovementEntry,
@@ -98,20 +98,19 @@ describe('composables::history/filter-paginate', () => {
     });
 
     test('check the return types', async () => {
-      const { isLoading, state, filters, matchers } =
-        useHistoryPaginationFilter<
-          AssetMovement,
-          AssetMovementRequestPayload,
-          AssetMovementEntry,
-          Collection<AssetMovementEntry>,
-          Filters,
-          Matcher
-        >(
-          locationOverview,
-          mainPage,
-          useAssetMovementFilters,
-          fetchAssetMovements
-        );
+      const { isLoading, state, filters, matchers } = usePaginationFilters<
+        AssetMovement,
+        AssetMovementRequestPayload,
+        AssetMovementEntry,
+        Collection<AssetMovementEntry>,
+        Filters,
+        Matcher
+      >(
+        locationOverview,
+        mainPage,
+        useAssetMovementFilters,
+        fetchAssetMovements
+      );
 
       expect(get(isLoading)).toBe(false);
 
@@ -126,7 +125,7 @@ describe('composables::history/filter-paginate', () => {
       const pushSpy = vi.spyOn(router, 'push');
       const query = { sortBy: ['category'], sortDesc: ['true'] };
 
-      const { isLoading, state } = useHistoryPaginationFilter<
+      const { isLoading, state } = usePaginationFilters<
         AssetMovement,
         AssetMovementRequestPayload,
         AssetMovementEntry,

@@ -289,7 +289,6 @@ declare global {
   const useHistoryAutoRefresh: typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']
   const useHistoryEventTypeData: typeof import('./composables/history/transactions/event-data')['useHistoryEventTypeData']
   const useHistoryIgnoringApi: typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']
-  const useHistoryPaginationFilter: typeof import('./composables/history/filter-paginate')['useHistoryPaginationFilter']
   const useHistoryStore: typeof import('./store/history/index')['useHistoryStore']
   const useI18n: typeof import('vue-i18n-composable')['useI18n']
   const useIdle: typeof import('@vueuse/core')['useIdle']
@@ -358,6 +357,7 @@ declare global {
   const useOffsetPagination: typeof import('@vueuse/core')['useOffsetPagination']
   const useOnline: typeof import('@vueuse/core')['useOnline']
   const usePageLeave: typeof import('@vueuse/core')['usePageLeave']
+  const usePaginationFilters: typeof import('./composables/filter-paginate')['usePaginationFilters']
   const useParallax: typeof import('@vueuse/core')['useParallax']
   const usePeriodicStore: typeof import('./store/session/periodic')['usePeriodicStore']
   const usePermission: typeof import('@vueuse/core')['usePermission']
@@ -802,7 +802,6 @@ declare module 'vue' {
     readonly useHistoryAutoRefresh: UnwrapRef<typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']>
     readonly useHistoryEventTypeData: UnwrapRef<typeof import('./composables/history/transactions/event-data')['useHistoryEventTypeData']>
     readonly useHistoryIgnoringApi: UnwrapRef<typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']>
-    readonly useHistoryPaginationFilter: UnwrapRef<typeof import('./composables/history/filter-paginate')['useHistoryPaginationFilter']>
     readonly useHistoryStore: UnwrapRef<typeof import('./store/history/index')['useHistoryStore']>
     readonly useI18n: UnwrapRef<typeof import('vue-i18n-composable')['useI18n']>
     readonly useIdle: UnwrapRef<typeof import('@vueuse/core')['useIdle']>
@@ -871,6 +870,7 @@ declare module 'vue' {
     readonly useOffsetPagination: UnwrapRef<typeof import('@vueuse/core')['useOffsetPagination']>
     readonly useOnline: UnwrapRef<typeof import('@vueuse/core')['useOnline']>
     readonly usePageLeave: UnwrapRef<typeof import('@vueuse/core')['usePageLeave']>
+    readonly usePaginationFilters: UnwrapRef<typeof import('./composables/filter-paginate')['usePaginationFilters']>
     readonly useParallax: UnwrapRef<typeof import('@vueuse/core')['useParallax']>
     readonly usePeriodicStore: UnwrapRef<typeof import('./store/session/periodic')['usePeriodicStore']>
     readonly usePermission: UnwrapRef<typeof import('@vueuse/core')['usePermission']>

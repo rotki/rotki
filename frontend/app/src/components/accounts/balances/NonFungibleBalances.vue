@@ -181,7 +181,7 @@ const {
   options,
   setPage,
   setOptions
-} = useHistoryPaginationFilter<NonFungibleBalance>(
+} = usePaginationFilters<NonFungibleBalance>(
   null,
   true,
   useEmptyFilter,
@@ -192,9 +192,8 @@ const {
     },
     extraParams,
     defaultSortBy: {
-      pagination: 'name',
-      pageParams: ['name'],
-      pageParamsAsc: [true]
+      key: 'name',
+      ascending: [true]
     }
   }
 );

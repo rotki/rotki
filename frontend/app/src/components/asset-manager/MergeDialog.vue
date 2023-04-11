@@ -3,9 +3,7 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, requiredUnless } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation-errors';
 
-defineProps({
-  value: { required: true, type: Boolean }
-});
+defineProps<{ value: boolean }>();
 
 const emit = defineEmits(['input']);
 const done = ref(false);

@@ -1,4 +1,5 @@
 import { type ComputedRef, type Ref } from 'vue';
+import { z } from 'zod';
 import { type MatchedKeyword, type SearchMatcher } from '@/types/filtering';
 import { isValidEthAddress } from '@/utils/text';
 
@@ -16,8 +17,8 @@ enum AssetFilterValueKeys {
   ADDRESS = 'address'
 }
 
-type Matcher = SearchMatcher<AssetFilterKeys, AssetFilterValueKeys>;
-type Filters = MatchedKeyword<AssetFilterValueKeys>;
+export type Matcher = SearchMatcher<AssetFilterKeys, AssetFilterValueKeys>;
+export type Filters = MatchedKeyword<AssetFilterValueKeys>;
 
 export const useAssetFilter = () => {
   const filters: Ref<Filters> = ref({});
@@ -66,9 +67,18 @@ export const useAssetFilter = () => {
     set(filters, newFilters);
   };
 
+  const OptionalString = z.string().optional();
+  const RouteFilterSchema = z.object({
+    [AssetFilterValueKeys.SYMBOL]: OptionalString,
+    [AssetFilterValueKeys.NAME]: OptionalString,
+    [AssetFilterValueKeys.EVM_CHAIN]: OptionalString,
+    [AssetFilterValueKeys.ADDRESS]: OptionalString
+  });
+
   return {
     filters,
     matchers,
-    updateFilter
+    updateFilter,
+    RouteFilterSchema
   };
 };

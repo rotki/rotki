@@ -79,7 +79,7 @@ describe('composables::history/filter-paginate', () => {
         fetchData,
         applyRouteFilter,
         isLoading
-      } = useHistoryPaginationFilter<
+      } = usePaginationFilters<
         ExchangeSavingsEvent,
         ExchangeSavingsRequestPayload,
         ExchangeSavingsEvent,
@@ -88,7 +88,7 @@ describe('composables::history/filter-paginate', () => {
         defaultCollection: defaultCollectionState,
         extraParams,
         defaultSortBy: {
-          pageParamsAsc: [true]
+          ascending: [true]
         }
       });
 
@@ -114,19 +114,18 @@ describe('composables::history/filter-paginate', () => {
     });
 
     test('check the return types', async () => {
-      const { isLoading, state, filters, matchers } =
-        useHistoryPaginationFilter<
-          ExchangeSavingsEvent,
-          ExchangeSavingsRequestPayload,
-          ExchangeSavingsEvent,
-          ExchangeSavingsCollection
-        >(exchange, mainPage, useEmptyFilter, fetchExchangeSavings, {
-          defaultCollection: defaultCollectionState,
-          extraParams,
-          defaultSortBy: {
-            pageParamsAsc: [true]
-          }
-        });
+      const { isLoading, state, filters, matchers } = usePaginationFilters<
+        ExchangeSavingsEvent,
+        ExchangeSavingsRequestPayload,
+        ExchangeSavingsEvent,
+        ExchangeSavingsCollection
+      >(exchange, mainPage, useEmptyFilter, fetchExchangeSavings, {
+        defaultCollection: defaultCollectionState,
+        extraParams,
+        defaultSortBy: {
+          ascending: [true]
+        }
+      });
 
       expect(get(isLoading)).toBe(false);
 
@@ -141,7 +140,7 @@ describe('composables::history/filter-paginate', () => {
       const pushSpy = vi.spyOn(router, 'push');
       const query = { sortDesc: ['false'] };
 
-      const { isLoading, state } = useHistoryPaginationFilter<
+      const { isLoading, state } = usePaginationFilters<
         ExchangeSavingsEvent,
         ExchangeSavingsRequestPayload,
         ExchangeSavingsEvent,
@@ -150,7 +149,7 @@ describe('composables::history/filter-paginate', () => {
         defaultCollection: defaultCollectionState,
         extraParams,
         defaultSortBy: {
-          pageParamsAsc: [true]
+          ascending: [true]
         }
       });
 

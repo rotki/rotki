@@ -94,7 +94,7 @@ const {
   setOptions,
   setFilter,
   fetchData
-} = useHistoryPaginationFilter<
+} = usePaginationFilters<
   AssetMovement,
   AssetMovementRequestPayload,
   AssetMovementEntry,

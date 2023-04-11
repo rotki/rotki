@@ -41,7 +41,7 @@ const {
   options,
   fetchData,
   setOptions
-} = useHistoryPaginationFilter<
+} = usePaginationFilters<
   ExchangeSavingsEvent,
   ExchangeSavingsRequestPayload,
   ExchangeSavingsEvent,
@@ -49,7 +49,7 @@ const {
 >(exchange, true, useEmptyFilter, fetchExchangeSavings, {
   defaultCollection: defaultCollectionState,
   defaultSortBy: {
-    pageParamsAsc: [true]
+    ascending: [true]
   },
   extraParams
 });

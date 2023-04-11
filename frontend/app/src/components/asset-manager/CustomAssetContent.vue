@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
 import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 import { type Nullable } from '@/types';
 import { type Collection } from '@/types/collection';
@@ -27,7 +26,7 @@ const valid = ref<boolean>(false);
 const showForm = ref<boolean>(false);
 const saving = ref<boolean>(false);
 const editMode = ref<boolean>(false);
-const assetForm: Ref<InstanceType<typeof CustomAssetForm> | null> = ref(null);
+const assetForm = ref<InstanceType<typeof CustomAssetForm> | null>(null);
 
 const dialogTitle = computed<string>(() =>
   get(editMode)
@@ -106,12 +105,14 @@ const closeDialog = async () => {
 const {
   state,
   filters,
+  expanded,
   matchers,
+  options,
   fetchData,
   setFilter,
   setOptions,
   isLoading: loading
-} = useHistoryPaginationFilter<
+} = usePaginationFilters<
   CustomAsset,
   CustomAssetRequestPayload,
   CustomAsset,
@@ -120,8 +121,8 @@ const {
   Matcher
 >(null, mainPage, () => useCustomAssetFilter(types), queryAllCustomAssets, {
   defaultSortBy: {
-    pageParams: ['name'],
-    pageParamsAsc: [false]
+    key: 'name',
+    ascending: [false]
   }
 });
 
@@ -145,7 +146,7 @@ const showDeleteConfirmation = (item: CustomAsset) => {
 };
 
 onMounted(async () => {
-  await refreshTypes();
+  await refresh();
   editAsset(get(identifier));
 
   const query = get(route).query;
@@ -174,11 +175,14 @@ watch(identifier, assetId => {
       :server-item-length="state.found"
       :filters="filters"
       :matchers="matchers"
+      :expanded="expanded"
+      :options="options"
       @add="add()"
       @edit="edit"
       @delete-asset="showDeleteConfirmation"
       @update:pagination="setOptions"
       @update:filters="setFilter"
+      @update:expanded="expanded = $event"
     />
     <big-dialog
       :display="showForm"

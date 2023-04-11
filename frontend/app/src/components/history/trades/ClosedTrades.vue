@@ -134,7 +134,7 @@ const {
   setOptions,
   setFilter,
   fetchData
-} = useHistoryPaginationFilter<
+} = usePaginationFilters<
   Trade,
   TradeRequestPayload,
   TradeEntry,

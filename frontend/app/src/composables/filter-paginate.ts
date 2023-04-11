@@ -1,4 +1,5 @@
 import { type MaybeRef } from '@vueuse/core';
+import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 import keys from 'lodash/keys';
 import pick from 'lodash/pick';
@@ -35,7 +36,7 @@ interface FilterSchema<F, M> {
  * @param {(payload: MaybeRef<U>) => Promise<Collection<V>>} fetchAssetData
  * @param {{onUpdateFilters?: (query: LocationQuery) => void, extraParams?: ComputedRef<LocationQuery>, customPageParams?: ComputedRef<Partial<U>>, defaultSortBy?: {pagination?: keyof T, pageParams?: (keyof T)[], pageParamsAsc?: boolean[]}}} options
  */
-export const useHistoryPaginationFilter = <
+export const usePaginationFilters = <
   T extends Object,
   U = PaginationRequestPayload<T>,
   V = T,
@@ -53,16 +54,15 @@ export const useHistoryPaginationFilter = <
     customPageParams?: ComputedRef<Partial<U>>;
     defaultCollection?: () => S;
     defaultSortBy?: {
-      pagination?: keyof T;
-      pageParams?: (keyof T)[];
-      pageParamsAsc?: boolean[];
+      key?: keyof T;
+      ascending?: boolean[];
     };
   } = {}
 ) => {
   const router = useRouter();
   const route = useRoute();
   const paginationOptions: Ref<TablePagination<T>> = ref(
-    defaultOptions<T>(options.defaultSortBy?.pagination)
+    defaultOptions<T>(options.defaultSortBy?.key)
   );
   const selected: Ref<V[]> = ref([]);
   const openDialog: Ref<boolean> = ref(false);
@@ -103,13 +103,11 @@ export const useHistoryPaginationFilter = <
       limit: itemsPerPage,
       offset,
       orderByAttributes:
-        sortBy?.length > 0
-          ? sortBy
-          : defaultSortBy?.pageParams ?? ['timestamp'],
+        sortBy?.length > 0 ? sortBy : [defaultSortBy?.key ?? 'timestamp'],
       ascending:
         sortBy?.length > 0
           ? sortDesc.map(bool => !bool)
-          : defaultSortBy?.pageParamsAsc ?? [false]
+          : defaultSortBy?.ascending ?? [false]
     } as U; // todo: figure out a way to not typecast
   });
 
@@ -141,6 +139,13 @@ export const useHistoryPaginationFilter = <
     }
 
     const query = get(route).query;
+
+    if (isEmpty(query)) {
+      // for empty query, we reset the filters, and pagination to defaults
+      updateFilter(RouteFilterSchema.parse({}));
+      return setOptions(defaultOptions<T>(options.defaultSortBy?.key));
+    }
+
     const parsedOptions = RouterPaginationOptionsSchema.parse(query);
     const parsedFilters = RouteFilterSchema.parse(query);
 

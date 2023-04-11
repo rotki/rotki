@@ -5,7 +5,7 @@ import {
 } from '@rotki/common/lib/data';
 import { z } from 'zod';
 import { type PaginationRequestPayload } from '@/types/common';
-import { type ApiPagination, type TablePagination } from '@/types/pagination';
+import { type TablePagination } from '@/types/pagination';
 import { CollectionCommonFields } from '@/types/collection';
 
 export interface AssetDBVersion {
@@ -59,7 +59,8 @@ export const AssetMap = z.object({
 
 export type AssetMap = z.infer<typeof AssetMap>;
 
-export interface AssetPagination extends ApiPagination<SupportedAsset> {
+export interface AssetRequestPayload
+  extends PaginationRequestPayload<SupportedAsset> {
   assetType?: string;
   name?: string;
   symbol?: string;

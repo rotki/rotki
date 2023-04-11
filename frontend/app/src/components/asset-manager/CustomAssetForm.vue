@@ -2,21 +2,17 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import omit from 'lodash/omit';
-import { type PropType, type Ref } from 'vue';
+import { type Ref } from 'vue';
 import { type CustomAsset } from '@/types/asset';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 
-const props = defineProps({
-  edit: {
-    required: true,
-    type: Boolean
-  },
-  types: {
-    required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
-  }
-});
+const props = withDefaults(
+  defineProps<{
+    edit: boolean;
+    types?: string[];
+  }>(),
+  { types: () => [] }
+);
 
 const emptyCustomAsset: () => CustomAsset = () => ({
   identifier: '',
