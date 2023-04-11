@@ -356,6 +356,19 @@ class DBHistoryEvents():
     ) -> list[tuple[int, HistoryBaseEntry]]:
         ...
 
+    @overload
+    def get_all_history_events(
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryBaseEntryFilterQuery,
+            has_premium: bool,
+            group_by_event_ids: bool,
+    ) -> Union[list[tuple[int, HistoryBaseEntry]], list[HistoryBaseEntry]]:
+        """
+        This fallback is needed due to
+        https://github.com/python/mypy/issues/6113#issuecomment-869828434
+        """
+
     def get_all_history_events(
             self,
             cursor: 'DBCursor',
@@ -399,19 +412,52 @@ class DBHistoryEvents():
 
         return output
 
+    @overload
+    def get_all_history_events_and_limit_info(
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryBaseEntryFilterQuery,
+            has_premium: bool,
+            group_by_event_ids: Literal[True],
+    ) -> tuple[list[tuple[int, HistoryBaseEntry]], int]:
+        ...
+
+    @overload
+    def get_all_history_events_and_limit_info(
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryBaseEntryFilterQuery,
+            has_premium: bool,
+            group_by_event_ids: Literal[False],
+    ) -> tuple[list[HistoryBaseEntry], int]:
+        ...
+
+    @overload
+    def get_all_history_events_and_limit_info(
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryBaseEntryFilterQuery,
+            has_premium: bool,
+            group_by_event_ids: bool,
+    ) -> tuple[Union[list[tuple[int, HistoryBaseEntry]], list[HistoryBaseEntry]], int]:
+        """
+        This fallback is needed due to
+        https://github.com/python/mypy/issues/6113#issuecomment-869828434
+        """
+
     def get_all_history_events_and_limit_info(
             self,
             cursor: 'DBCursor',
             filter_query: 'HistoryBaseEntryFilterQuery',
             has_premium: bool,
             group_by_event_ids: bool,
-    ) -> tuple[Union[list[HistoryEvent], list[EvmEvent]], int]:
+    ) -> tuple[Union[list[tuple[int, HistoryBaseEntry]], list[HistoryBaseEntry]], int]:
         """Gets all history events for all types, based on the filter query.
 
         Also returns how many are the total found for the filter
         """
-        events = self.get_all_history_events(  # type: ignore[call-overload]
-            cursor=cursor,  # ignore above is since True/False not given for group_by_event_ids
+        events = self.get_all_history_events(
+            cursor=cursor,
             filter_query=filter_query,
             has_premium=has_premium,
             group_by_event_ids=group_by_event_ids,

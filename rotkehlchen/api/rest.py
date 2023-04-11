@@ -2801,18 +2801,7 @@ class RestAPI():
                 has_premium=self.rotkehlchen.premium is not None,
             )
 
-            if len(transactions) != 0:
-                mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.EVM_TRANSACTION)  # noqa: E501
-                ignored_ids = mapping.get(ActionType.EVM_TRANSACTION, set())
-                entries_result = []
-                for entry in transactions:
-                    entries_result.append({
-                        'entry': entry.serialize(),
-                        'ignored_in_accounting': entry.identifier in ignored_ids,
-                    })
-            else:
-                entries_result = []
-
+            entries_result = [{'entry': entry.serialize()} for entry in transactions]
             result: Optional[dict[str, Any]] = None
             kwargs = {}
             if filter_query.chain_id is not None:
@@ -3570,13 +3559,26 @@ class RestAPI():
                 cursor=cursor,
                 chain_id=chain_id,  # type: ignore
             )
+            ignored_ids_mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
+                cursor=cursor,
+                action_type=ActionType.EVM_TRANSACTION,
+            )
 
         if group_by_event_ids is True:
             entries = [  # type: ignore  # mypy doesnt understand significance of boolean check
-                x.serialize_for_api(customized_event_ids, grouped_events_num) for grouped_events_num, x in events_result  # noqa: E501
+                x.serialize_for_api(
+                    customized_event_ids=customized_event_ids,
+                    ignored_ids_mapping=ignored_ids_mapping,
+                    grouped_events_num=grouped_events_num,
+                ) for grouped_events_num, x in events_result
             ]
         else:
-            entries = [x.serialize_for_api(customized_event_ids) for x in events_result]
+            entries = [
+                x.serialize_for_api(  # type: ignore
+                    customized_event_ids=customized_event_ids,
+                    ignored_ids_mapping=ignored_ids_mapping,
+                ) for x in events_result
+            ]
         result = {
             'entries': entries,
             'entries_found': entries_found,

@@ -312,7 +312,6 @@ def test_query_transactions(rotkehlchen_api_server):
     # but this check ignores them
     previous_index = 0
     result_entries = [x['entry'] for x in result['entries']]
-    assert all(x['ignored_in_accounting'] is False for x in result['entries']), 'by default nothing should be ignored'  # noqa: E501
     for entry in expected_result:
         assert entry in result_entries
         entry_idx = result_entries.index(entry)
@@ -369,8 +368,6 @@ def test_query_transactions(rotkehlchen_api_server):
 
     result_entries = [x['entry'] for x in result['entries']]
     assert result_entries == EXPECTED_AFB7_TXS[2:4][::-1]
-    msg = 'the transactions we ignored have not been ignored for accounting'
-    assert all(x['ignored_in_accounting'] is True for x in result['entries']), msg
 
     # Also check that requesting decoding of tx_hashes gets receipts and decodes events
     hashes = [EXPECTED_AFB7_TXS[0]['tx_hash'], EXPECTED_4193_TXS[0]['tx_hash']]
@@ -1106,6 +1103,7 @@ def test_query_transactions_check_decoded_events(
         },
         'customized': False,
         'has_details': False,
+        'ignored_in_accounting': False,
     }, {
         'entry': {
             'identifier': 5,
@@ -1125,6 +1123,7 @@ def test_query_transactions_check_decoded_events(
         },
         'customized': False,
         'has_details': False,
+        'ignored_in_accounting': False,
     }]
     assert returned_events[:2] == tx1_events
     tx2_events = [{
@@ -1146,6 +1145,7 @@ def test_query_transactions_check_decoded_events(
         },
         'customized': False,
         'has_details': False,
+        'ignored_in_accounting': False,
     }, {
         'entry': {
             'identifier': 2,
@@ -1165,6 +1165,7 @@ def test_query_transactions_check_decoded_events(
         },
         'customized': False,
         'has_details': False,
+        'ignored_in_accounting': False,
     }]
     assert returned_events[2:4] == tx2_events
     tx3_events = [{
@@ -1186,6 +1187,7 @@ def test_query_transactions_check_decoded_events(
         },
         'customized': False,
         'has_details': False,
+        'ignored_in_accounting': False,
     }]
     assert returned_events[4:5] == tx3_events
     tx4_events = [{
@@ -1207,6 +1209,7 @@ def test_query_transactions_check_decoded_events(
         },
         'customized': False,
         'has_details': False,
+        'ignored_in_accounting': False,
     }]
     assert returned_events[5:6] == tx4_events
 
@@ -1242,6 +1245,7 @@ def test_query_transactions_check_decoded_events(
         },
         'customized': True,
         'has_details': False,
+        'ignored_in_accounting': False,
     })
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),

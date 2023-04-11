@@ -7,7 +7,11 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.accounting.structures.types import (
+    ActionType,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -384,6 +388,15 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
     entries = _add_entries(server=rotkehlchen_api_server, events_db=db, add_directly=True)
     expected_entries = [x.serialize() for x in entries]
 
+    # add one event to the list of ignored events to check that the field ignored_in_accounting
+    # gets correctly populated
+    with rotki.data.db.conn.write_ctx() as cursor:
+        rotki.data.db.add_to_ignored_action_ids(
+            write_cursor=cursor,
+            action_type=ActionType.EVM_TRANSACTION,
+            identifiers=[f'{entries[0].location.to_chain_id()}{entries[0].serialized_event_identifier}'],  # noqa: E501
+        )
+
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -398,6 +411,12 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         assert event['entry'] in expected_entries
         assert event['customized'] is False
         assert event['has_details'] is False
+
+        # check that the only ignored event is the one that we have set
+        if event['entry']['event_identifier'] == entries[0].serialized_event_identifier:
+            assert event['ignored_in_accounting'] is True
+        else:
+            assert event['ignored_in_accounting'] is False
 
     # now try with grouping
     response = requests.post(
@@ -426,6 +445,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
     assert result['entries_found'] == 3
     assert result['entries_limit'] == 100
     assert result['entries_total'] == 3
+
     # now with grouping, pagination and a filter
     response = requests.post(
         api_url_for(
