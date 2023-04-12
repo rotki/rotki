@@ -652,7 +652,8 @@ def test_add_blockchain_accounts_concurrent(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_no_etherscan_is_detected(rotkehlchen_api_server):
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+def test_no_etherscan_is_detected(rotkehlchen_api_server, websocket_connection):
     """Make sure that interacting with ethereum without an etherscan key is given a warning"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     new_address = make_evm_address()
@@ -672,9 +673,15 @@ def test_no_etherscan_is_detected(rotkehlchen_api_server):
         ))
         assert_proper_response(response)
 
-    warnings = rotki.msg_aggregator.consume_warnings()
-    assert len(warnings) == 1
-    assert 'You do not have an ethereum Etherscan API key configured' in warnings[0]
+    websocket_connection.wait_until_messages_num(num=1, timeout=10)
+    msg = websocket_connection.pop_message()
+    assert msg == {
+        'type': 'missing_api_key',
+        'data': {
+            'service': 'etherscan',
+            'location': 'ethereum',
+        },
+    }
 
 
 @pytest.mark.parametrize('method', ['PUT', 'DELETE'])
