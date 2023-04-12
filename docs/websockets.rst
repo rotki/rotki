@@ -181,3 +181,23 @@ This also contains two optional, mutually excluse keys. If one exists the other 
 
 - ``seen_tx_hash``: A transaction hash in the same chain as the token in which the token was first seen.
 - ``seen_description``: A description of the action in which the token was first seen and added to the DB. For example, querying curve pools, querying yearn pools etc.
+
+
+Missing API Key
+=======================
+
+Having API keys for some services (such as etherscan) is crucial for rotki to work. So sometimes we might specifically prompt the user to add an API key for a service. In that case we send a websocket message to the frontend.
+
+::
+
+    {
+        "type": "missing_api_key",
+        "data": {
+            "service": "etherscan",
+            "location": "optimism"
+        }
+    }
+
+
+- ``service``: Service for which an API key is needed.
+- ``location``: For services like etherscan that require different API keys for different locations this is the location for which the API key is needed. If a service does not require a location then this key will be missing.

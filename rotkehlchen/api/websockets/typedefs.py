@@ -19,6 +19,7 @@ class WSMessageType(Enum):
     # Used for when a new token is found and saved via processing evm transactions
     NEW_EVM_TOKEN_DETECTED = auto()
     DATA_MIGRATION_STATUS = auto()
+    MISSING_API_KEY = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
 
 import gevent
 import requests
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.structures import TimestampOrBlockRange
@@ -187,12 +188,12 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         api_key = self._get_api_key()
         if api_key is None:
             if not self.warning_given:
-                self.msg_aggregator.add_warning(
-                    f'You do not have an {self.chain} Etherscan API key configured. rotki '
-                    f'etherscan queries will still work but will be very slow. '
-                    f'If you are not using your own ethereum node, it is recommended '
-                    f'to go to https://{self.base_url}/register, create an API '
-                    f'key and then input it in the external service credentials setting of rotki',
+                self.msg_aggregator.add_message(
+                    message_type=WSMessageType.MISSING_API_KEY,
+                    data={
+                        'service': ExternalService.ETHERSCAN.serialize(),
+                        'location': self.chain.to_chain_id().to_name(),
+                    },
                 )
                 self.warning_given = True
         else:
