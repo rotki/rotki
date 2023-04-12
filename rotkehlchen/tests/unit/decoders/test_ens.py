@@ -18,6 +18,8 @@ from rotkehlchen.types import (
     EvmTokenKind,
     EvmTransaction,
     Location,
+    Timestamp,
+    TimestampMS,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -291,6 +293,95 @@ def test_set_resolver(ethereum_transaction_decoder, ethereum_accounts):
             identifier=None,
             extra_data=None,
             address=string_to_evm_address('0x084b1c3C81545d370f3634392De611CaaBFf8148'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xbc2E9Df6281a8e853121dc52dBc8BCc8bBE3ed0e']])
+def test_set_attribute_v2(database, ethereum_inquirer, ethereum_accounts):
+    """Test that setting ens text attribute using public resolver deployed in March 2023 works"""
+    tx_hex = deserialize_evm_tx_hash('0x6b354e4da21cfb06a8eb4cb5b7efd20558ae3be6a7a7c563f318e041fb3bfdd9')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    expected_events = [
+        EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1681296527000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.0013186458834505')),
+            location_label=user_address,
+            notes='Burned 0.0013186458834505 ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=192,
+            timestamp=TimestampMS(1681296527000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes='Set ENS url to https://mercury.foundation attribute for alextatarsky.eth',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=string_to_evm_address('0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xA3B9E4b2C18eFB1C767542e8eb9419B840881467']])
+def test_register_v2(database, ethereum_inquirer, ethereum_accounts):
+    """Test that registering an ens name using eth registar deployed in March 2023 works"""
+    tx_hex = deserialize_evm_tx_hash('0x5150f6e1c76b74fa914e06df9e56577cdeec0faea11f9949ff529daeb16b1c76')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, decoder = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    expires_timestamp = Timestamp(1712756435)
+    expected_events = [
+        EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1681220435000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.00670203024617044')),
+            location_label=user_address,
+            notes='Burned 0.00670203024617044 ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=1,
+            timestamp=TimestampMS(1681220435000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.002609751671170445')),
+            location_label=user_address,
+            notes=f'Register ENS name ens2qr.eth for 0.002609751671170445 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=string_to_evm_address('0x253553366Da8546fC250F225fe3d25d0C782303b'),
         ),
     ]
     assert events == expected_events
