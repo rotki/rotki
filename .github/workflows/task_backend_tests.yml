@@ -69,7 +69,7 @@ jobs:
       - name: Install dependencies
         run: |          
           pip install --upgrade pip==${{ env.PIP_VERSION }} wheel
-          pip install codecov pytest-cov
+          pip install pytest-cov
           pip install -r requirements_dev.txt
           pip install -e .
       - name: Install pytest annotation plugin
