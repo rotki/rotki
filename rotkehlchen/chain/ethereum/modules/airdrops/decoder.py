@@ -2,7 +2,6 @@ import logging
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_CPT_DETAILS
 from rotkehlchen.chain.ethereum.modules.oneinch.constants import ONEINCH_ICON, ONEINCH_LABEL
@@ -12,17 +11,15 @@ from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
-    ActionItem,
     DecoderContext,
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_ELFI, A_FOX, A_FPIS, A_UNI
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
@@ -104,22 +101,15 @@ class AirdropsDecoder(DecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_fox_claim(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
-        if tx_log.topics[0] != FOX_CLAIMED:
+    def _decode_fox_claim(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != FOX_CLAIMED:
             return DEFAULT_DECODING_OUTPUT
 
-        user_address = hex_or_bytes_to_address(tx_log.topics[1])
-        raw_amount = hex_or_bytes_to_int(tx_log.data[64:96])
+        user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
         amount = asset_normalized_value(amount=raw_amount, asset=self.fox)
 
-        for event in decoded_events:
+        for event in context.decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and self.fox == event.asset:  # noqa: E501
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.AIRDROP
