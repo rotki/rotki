@@ -50,7 +50,7 @@ import {
 import { selectPort } from '@/electron-main/port-utils';
 import { type TrayManager } from '@/electron-main/tray-manager';
 import { checkIfDevelopment } from '@/utils/env-utils';
-import type PyHandler from '@/py-handler';
+import type SubprocessHandler from '@/subprocess-handler';
 
 const isDevelopment = checkIfDevelopment();
 
@@ -97,7 +97,10 @@ function setupMetamaskImport() {
 
 let firstStart = true;
 
-function setupBackendRestart(getWindow: WindowProvider, pyHandler: PyHandler) {
+function setupBackendRestart(
+  getWindow: WindowProvider,
+  pyHandler: SubprocessHandler
+) {
   ipcMain.on(
     IPC_RESTART_BACKEND,
     async (event, options: Partial<BackendOptions>) => {
@@ -211,7 +214,7 @@ function setupPasswordStorage() {
 }
 
 export function ipcSetup(
-  pyHandler: PyHandler,
+  pyHandler: SubprocessHandler,
   getWindow: WindowProvider,
   closeApp: () => Promise<void>,
   tray: TrayManager,
@@ -271,7 +274,7 @@ export function ipcSetup(
 }
 
 function setupInstallUpdate(
-  pyHandler: PyHandler,
+  pyHandler: SubprocessHandler,
   ensureSafeUpdateRestart: () => void
 ) {
   ipcMain.on(IPC_INSTALL_UPDATE, async event => {
@@ -299,7 +302,10 @@ function setupInstallUpdate(
   });
 }
 
-function setupDownloadUpdate(getWindow: WindowProvider, pyHandler: PyHandler) {
+function setupDownloadUpdate(
+  getWindow: WindowProvider,
+  pyHandler: SubprocessHandler
+) {
   ipcMain.on(IPC_DOWNLOAD_UPDATE, async event => {
     const window = getWindow();
     const progress = (progress: ProgressInfo) => {
@@ -319,7 +325,7 @@ function setupDownloadUpdate(getWindow: WindowProvider, pyHandler: PyHandler) {
   });
 }
 
-function setupCheckForUpdates(pyHandler: PyHandler) {
+function setupCheckForUpdates(pyHandler: SubprocessHandler) {
   ipcMain.on(IPC_CHECK_FOR_UPDATES, async event => {
     if (isDevelopment) {
       console.warn('Running in development skipping auto-updater check');
@@ -342,7 +348,7 @@ function setupCheckForUpdates(pyHandler: PyHandler) {
 }
 
 function setupUpdaterInterop(
-  pyHandler: PyHandler,
+  pyHandler: SubprocessHandler,
   getWindow: WindowProvider,
   ensureSafeUpdateRestart: () => void
 ) {

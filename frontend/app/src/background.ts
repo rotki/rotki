@@ -7,7 +7,7 @@ import { TrayManager } from '@/electron-main/tray-manager';
 import { type Nullable } from '@/types';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import createProtocol from './create-protocol';
-import PyHandler from './py-handler';
+import SubprocessHandler from './subprocess-handler';
 import { assert } from './utils/assertions';
 
 const isDevelopment = checkIfDevelopment();
@@ -152,7 +152,7 @@ const menuActions = {
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win: BrowserWindow | null;
-const pyHandler = new PyHandler(app);
+const pyHandler = new SubprocessHandler(app);
 
 // Standard scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([

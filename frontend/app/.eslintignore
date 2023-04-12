@@ -1,10 +1,5 @@
 node_modules
-package.json
-package-lock.json
 components.d.ts
-.electron-builder.config.js
-tsconfig.json
-tsconfig.eslint.json
 dist
 build
 coverage

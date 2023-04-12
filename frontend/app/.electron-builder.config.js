@@ -1,11 +1,20 @@
+const { platform } = require("os");
+
+const MACOS_ARCHS = ['x64', 'arm64'];
+const LINUX_TARGETS = ["AppImage", "tar.xz"];
+
 const isCI = !!process.env.CI;
-const macOsArch = process.env.MACOS_ELECTRON_ARCH
-const buildDebPackage = isCI || !!process.env.LINUX_BUILD_DEB
+const macOsArch = process.env.MACOS_ELECTRON_ARCH;
+const includeDebPackage = isCI || !!process.env.LINUX_BUILD_DEB;
 
-const linuxTargets = ["AppImage", "tar.xz"];
+const targetMacArch = MACOS_ARCHS.includes(macOsArch)? macOsArch : null
 
-if (buildDebPackage) {
-  linuxTargets.push('deb')
+const isMac = platform() === 'darwin'
+
+console.log(`\nBuilding on ${platform}: targeting ${targetMacArch}\n`)
+
+if (includeDebPackage) {
+  LINUX_TARGETS.push("deb");
 }
 /**
  * @type {import("electron-builder").Configuration}
@@ -14,12 +23,9 @@ if (buildDebPackage) {
 const config = {
   appId: "com.rotki.app",
   directories: {
-    output: 'build',
-    buildResources: 'buildResources',
+    output: "build",
+    buildResources: "buildResources"
   },
-  files: [
-    'dist/**',
-  ],
   publish: {
     provider: "github",
     vPrefixedTagName: true,
@@ -32,6 +38,11 @@ const config = {
     {
       from: "../../build/backend",
       to: "backend",
+      filter: ["**/*"]
+    },
+    {
+      from: isMac && !targetMacArch ? "../../build/colibri/bin/${arch}" : "../../build/colibri/bin",
+      to: "colibri",
       filter: ["**/*"]
     }
   ],
@@ -46,10 +57,7 @@ const config = {
     target: [
       {
         target: "default",
-        arch: macOsArch ? [macOsArch] : [
-          'x64',
-          'arm64'
-        ]
+        arch: targetMacArch ? [targetMacArch] : MACOS_ARCHS
       }
     ],
     category: "public.app-category.finance",
@@ -71,7 +79,7 @@ const config = {
     icon: "public/assets/images/rotki.ico"
   },
   linux: {
-    target: linuxTargets,
+    target: LINUX_TARGETS,
     icon: "public/assets/images/rotki_1024x1024.png",
     category: "Finance"
   },

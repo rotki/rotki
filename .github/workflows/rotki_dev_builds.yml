@@ -196,7 +196,12 @@ jobs:
           path: |
             dist/rotki-darwin_x64*.dmg
             dist/rotki-darwin_x64*.dmg.sha512
-
+      - name: Upload colibri files
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-colibri
+          path: |
+            dist/colibri
 
   build-windows:
     name: Build windows binary
