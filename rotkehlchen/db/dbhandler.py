@@ -671,7 +671,7 @@ class DBHandler:
                 tuples,
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-            raise InputError('One of the given action ids already exists in the dataase') from e  # noqa: E501
+            raise InputError('One of the given action ids already exists in the database') from e  # noqa: E501
 
     def remove_from_ignored_action_ids(
             self,
