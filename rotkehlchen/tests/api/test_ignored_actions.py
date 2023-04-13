@@ -75,7 +75,7 @@ def test_add_ignored_actions(rotkehlchen_api_server):
     assert_error_response(
         response=response,
         status_code=HTTPStatus.CONFLICT,
-        contained_in_msg='One of the given action ids already exists in the dataase',
+        contained_in_msg='One of the given action ids already exists in the database',
     )
 
     # get all entries and make sure nothing new slipped in

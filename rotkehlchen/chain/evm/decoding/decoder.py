@@ -2,6 +2,7 @@ import importlib
 import logging
 import pkgutil
 from abc import ABCMeta, abstractmethod
+from contextlib import suppress
 from dataclasses import dataclass
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, Optional, Protocol, Union
@@ -407,11 +408,12 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             else:
                 # This is probably a phishing zero value token transfer tx.
                 # Details here: https://github.com/rotki/rotki/issues/5749
-                self.database.add_to_ignored_action_ids(
-                    write_cursor=write_cursor,
-                    action_type=ActionType.EVM_TRANSACTION,
-                    identifiers=[transaction.identifier],
-                )
+                with suppress(InputError):  # We don't care if it's already in the DB
+                    self.database.add_to_ignored_action_ids(
+                        write_cursor=write_cursor,
+                        action_type=ActionType.EVM_TRANSACTION,
+                        identifiers=[transaction.identifier],
+                    )
             write_cursor.execute(
                 'INSERT OR IGNORE INTO evm_tx_mappings(tx_hash, chain_id, value) VALUES(?, ?, ?)',
                 (transaction.tx_hash, self.evm_inquirer.chain_id.serialize_for_db(), HISTORY_MAPPING_STATE_DECODED),  # noqa: E501
