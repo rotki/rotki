@@ -1,7 +1,7 @@
 import logging
 import re
 from collections import defaultdict
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import gevent
 
@@ -21,7 +21,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import from_gwei, ts_now
+from rotkehlchen.utils.misc import from_gwei, ts_now, ts_sec_to_ms
 
 from .constants import (
     CPT_ETH2,
@@ -37,7 +37,7 @@ from .structures import (
     ValidatorDetails,
     ValidatorID,
 )
-from .utils import scrape_validator_daily_stats
+from .utils import scrape_validator_daily_stats, scrape_validator_withdrawals
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -68,6 +68,7 @@ class Eth2(EthereumModule):
         self.beaconchain = beaconchain
         self.last_stats_query_ts = 0
         self.validator_stats_queried = 0
+        self.validator_withdrawals_queried = 0
         self.deposits_pubkey_re = re.compile(r'.*validator with pubkey (.*)\. Deposit.*')
 
     def fetch_and_update_eth1_validator_data(
@@ -285,6 +286,20 @@ class Eth2(EthereumModule):
 
         return result  # type: ignore  # location_label is set for this event
 
+    def _maybe_backoff_beaconchain(self, now: Timestamp, name: Literal['stats', 'withdrawals']) -> None:  # noqa: E501
+        should_backoff = (
+            now - getattr(self, f'last_{name}_query_ts') < VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE and  # noqa: E501
+            getattr(self, f'validator_{name}_queried') >= VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS  # noqa: E501
+        )
+        if should_backoff:
+            log.debug(
+                f'Queried {getattr(self, f"validator_{name}_queried")} validators in the last '
+                f'{VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE} seconds. Backing off for '
+                f'{VALIDATOR_STATS_QUERY_BACKOFF_TIME} seconds.',
+            )
+            setattr(self, f'validator_{name}_queried', 0)
+            gevent.sleep(VALIDATOR_STATS_QUERY_BACKOFF_TIME)
+
     def _query_services_for_validator_daily_stats(
             self,
             to_ts: Timestamp,
@@ -296,19 +311,7 @@ class Eth2(EthereumModule):
         result = dbeth2.get_validators_to_query_for_stats(up_to_ts=to_ts)
 
         for validator_index, last_ts in result:
-            should_backoff = (
-                now - self.last_stats_query_ts < VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE and
-                self.validator_stats_queried >= VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS
-            )
-            if should_backoff:
-                log.debug(
-                    f'Queried {self.validator_stats_queried} validators in the last '
-                    f'{VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE} seconds. Backing off for '
-                    f'{VALIDATOR_STATS_QUERY_BACKOFF_TIME} seconds.',
-                )
-                self.validator_stats_queried = 0
-                gevent.sleep(VALIDATOR_STATS_QUERY_BACKOFF_TIME)
-
+            self._maybe_backoff_beaconchain(now=now, name='stats')
             new_stats = scrape_validator_daily_stats(
                 validator_index=validator_index,
                 last_known_timestamp=last_ts,
@@ -319,6 +322,22 @@ class Eth2(EthereumModule):
 
             if len(new_stats) != 0:
                 dbeth2.add_validator_daily_stats(stats=new_stats)
+
+    def _query_services_for_validator_withdrawals(
+            self,
+            to_ts: Timestamp,
+    ) -> None:
+        """Goes through all saved validators and sees which need to query withdrawals"""
+        now = ts_now()
+        dbeth2 = DBEth2(self.database)
+        result = dbeth2.get_validators_to_query_for_withdrawals(up_to_tsms=ts_sec_to_ms(to_ts))
+
+        for validator_index, last_ts in result:
+            self._maybe_backoff_beaconchain(now=now, name='withdrawals')
+            scrape_validator_withdrawals(
+                validator_index=validator_index,
+                last_known_timestamp=last_ts,
+            )
 
     def get_validator_daily_stats(
             self,
@@ -344,6 +363,13 @@ class Eth2(EthereumModule):
 
         dbeth2 = DBEth2(self.database)
         return dbeth2.get_validator_daily_stats_and_limit_info(cursor, filter_query=filter_query)
+
+    def get_validator_withdrawals(
+            self,
+            filter_query: 'Eth2DailyStatsFilterQuery',  # fix with proper filter
+            only_cache: bool,
+    ) -> None:
+        pass
 
     def add_validator(
             self,

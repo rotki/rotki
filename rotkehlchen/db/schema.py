@@ -636,6 +636,16 @@ CREATE TABLE IF NOT EXISTS evm_events_info(
 );
 """  # noqa: E501
 
+# Table that extends history events table and stores data specific to ethereum staking
+DB_CREATE_ETH_STAKING_EVENTS_INFO = """
+CREATE TABLE IF NOT EXISTS eth_staking_events_info(
+    identifier INTEGER PRIMARY KEY,
+    validator_index INTEGER NOT NULL,
+    is_exit INTEGER NOT NULL CHECK (is_exit IN (0, 1)),
+    FOREIGN KEY(identifier) REFERENCES history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+);
+"""  # noqa: E501
+
 
 # This table is used to store for specific history events:
 # - whether it is customized
@@ -789,6 +799,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_ETH2_DAILY_STAKING_DETAILS}
 {DB_CREATE_HISTORY_EVENTS}
 {DB_CREATE_EVM_EVENTS_INFO}
+{DB_CREATE_ETH_STAKING_EVENTS_INFO}
 {DB_CREATE_HISTORY_EVENTS_MAPPINGS}
 {DB_CREATE_LEDGER_ACTION_TYPE}
 {DB_CREATE_LEDGER_ACTIONS}

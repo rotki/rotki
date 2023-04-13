@@ -9,6 +9,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntryType,
     HistoryEvent,
 )
+from rotkehlchen.accounting.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
@@ -62,7 +63,8 @@ class DBHistoryEvents():
             mapping_values: Optional[dict[str, int]] = None,
     ) -> Optional[int]:
         """Insert a single history entry to the DB. Returns its identifier or
-        None if it already exists.
+        None if it already exists. This function serializes the event depending
+        on type to the appropriate DB tables.
 
         Optionally map it to a specific value used to map attributes
         to some events
@@ -87,6 +89,12 @@ class DBHistoryEvents():
             write_cursor.execute(
                 'INSERT OR IGNORE INTO evm_events_info(identifier, counterparty, product,'
                 'address, extra_data) VALUES (?, ?, ?, ?, ?)',
+                (identifier, *db_tuples[1]),
+            )
+        elif isinstance(event, EthWithdrawalEvent):
+            write_cursor.execute(
+                'INSERT OR IGNORE INTO eth_staking_events_info(identifier, validator_index, '
+                'is_exit) VALUES (?, ?, ?)',
                 (identifier, *db_tuples[1]),
             )
 
