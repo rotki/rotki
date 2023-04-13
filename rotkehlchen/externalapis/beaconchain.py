@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID, Vali
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.timing import DEFAULT_CONNECT_TIMEOUT, QUERY_RETRY_TIMES
-from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_VALIDATOR
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_VALIDATOR_INDEX
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -32,6 +32,7 @@ MAX_WAIT_SECS = 60
 LAST_PRODUCED_BLOCKS_QUERY_TS = 'last_produced_blocks_query_ts'
 BEACONCHAIN_READ_TIMEOUT = 75
 BEACONCHAIN_TIMEOUT_TUPLE = (DEFAULT_CONNECT_TIMEOUT, BEACONCHAIN_READ_TIMEOUT)
+BEACONCHAIN_ROOT_URL = 'https://beaconcha.in'
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -69,7 +70,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         self.session = requests.session()
         self.warning_given = False
         set_user_agent(self.session)
-        self.url = 'https://beaconcha.in/api/v1/'
+        self.url = f'{BEACONCHAIN_ROOT_URL}/api/v1/'
 
     def _query(
             self,
@@ -344,7 +345,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                 dbevents.add_history_event(
                     write_cursor,
                     event,
-                    mapping_values={HISTORY_MAPPING_KEY_VALIDATOR: proposer_index},
+                    mapping_values={HISTORY_MAPPING_KEY_VALIDATOR_INDEX: proposer_index},
                 )
                 write_cursor.execute(
                     'INSERT OR IGNORE INTO blocks_produced('

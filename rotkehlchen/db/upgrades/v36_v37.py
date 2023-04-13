@@ -127,6 +127,14 @@ def _create_new_tables(write_cursor: 'DBCursor') -> None:
             FOREIGN KEY(identifier) REFERENCES history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE
         );
     """)  # noqa: E501
+    write_cursor.execute("""
+    CREATE TABLE IF NOT EXISTS eth_staking_events_info(
+        identifier INTEGER PRIMARY KEY,
+        validator_index INTEGER NOT NULL,
+        is_exit INTEGER NOT NULL CHECK (is_exit IN (0, 1)),
+        FOREIGN KEY(identifier) REFERENCES history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+    );
+    """)  # noqa: E501
 
     log.debug('Exit _create_new_tables')
 

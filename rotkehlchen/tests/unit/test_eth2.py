@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -7,6 +8,8 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
@@ -15,19 +18,21 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator, Va
 from rotkehlchen.chain.ethereum.modules.eth2.utils import (
     DAY_AFTER_ETH2_GENESIS,
     scrape_validator_daily_stats,
+    scrape_validator_withdrawals,
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Eth2PubKey, Location, Timestamp, TimestampMS
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import ts_now, ts_now_in_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.history.price import PriceHistorian
@@ -595,6 +600,20 @@ def test_validator_daily_stats_with_genesis_event(
     ]
 
 
+@pytest.mark.skipif('CI' in os.environ, reason='do not run this in CI as it spams')
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
+def test_scrape_genesis_validator_stats_all(price_historian, function_scope_messages_aggregator):  # noqa: E501 # pylint: disable=unused-argument
+    """A test to see that the scraper of daily stats goes to the very first day of
+    genesis for old validators despite UI actually showing pages"""
+    stats = scrape_validator_daily_stats(
+        validator_index=1,
+        last_known_timestamp=Timestamp(0),
+        msg_aggregator=function_scope_messages_aggregator,
+    )
+    assert len(stats) >= 861
+    assert stats[-1].timestamp == 1606694400
+
+
 @pytest.mark.parametrize('eth2_mock_data', [{
     'eth1': {
         ADDR1: [
@@ -686,3 +705,87 @@ def test_deposits_pubkey_re(eth2: 'Eth2', database):
     assert len(result) == 2
     assert result[pubkey1] == ADDR1
     assert result[pubkey2] == ADDR2
+
+
+def test_scrape_validator_withdrawals(function_scope_messages_aggregator):
+    with patch(
+            'rotkehlchen.chain.ethereum.modules.eth2.utils.BEACONCHAIN_ROOT_URL',
+            new='https://goerli.beaconcha.in',
+    ):
+        scrape_validator_withdrawals(270410, function_scope_messages_aggregator)
+
+
+def test_get_validators_to_query_for_withdrawals(database):
+    db = DBEth2(database)
+    dbevents = DBHistoryEvents(database)
+    now_ms = ts_now_in_ms()
+    address1 = make_evm_address()
+    address2 = make_evm_address()
+    assert db.get_validators_to_query_for_withdrawals(now_ms) == []
+
+    with database.user_write() as write_cursor:
+        withdrawal1 = EthWithdrawalEvent(
+            validator_index=1,
+            timestamp=TimestampMS(1),
+            balance=Balance(1, 1),
+            withdrawal_address=address1,
+            is_exit=False,
+        )
+        withdrawal1.identifier = dbevents.add_history_event(write_cursor, withdrawal1)
+        withdrawal2 = EthWithdrawalEvent(
+            validator_index=42,
+            timestamp=TimestampMS(now_ms - 3600 * 1000),
+            balance=Balance(1, 1),
+            withdrawal_address=address2,
+            is_exit=False,
+        )
+        withdrawal2.identifier = dbevents.add_history_event(write_cursor, withdrawal2)
+        withdrawal3 = EthWithdrawalEvent(
+            validator_index=2,
+            timestamp=TimestampMS(20),
+            balance=Balance(2, 1),
+            withdrawal_address=address1,
+            is_exit=False,
+        )
+        withdrawal3.identifier = dbevents.add_history_event(write_cursor, withdrawal3)
+        exit1 = EthWithdrawalEvent(
+            validator_index=3,
+            timestamp=TimestampMS(30),
+            balance=Balance(FVal('32.0023'), 1),
+            withdrawal_address=address1,
+            is_exit=True,
+        )
+        exit1.identifier = dbevents.add_history_event(write_cursor, exit1)
+        exit2 = EthWithdrawalEvent(
+            validator_index=46,
+            timestamp=TimestampMS(now_ms - 3600 * 1000 * 1.5),
+            balance=Balance(FVal('32.0044'), 1),
+            withdrawal_address=address2,
+            is_exit=True,
+        )
+        exit2.identifier = dbevents.add_history_event(write_cursor, exit2)
+
+        # also add some other events to make sure table populated with non-withdrawals does not
+        dbevents.add_history_event(write_cursor, HistoryEvent(
+            event_identifier=b'id1',
+            sequence_index=0,
+            timestamp=TimestampMS(10),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_DAI,
+            balance=Balance(1, 1),
+        ))
+        dbevents.add_history_event(write_cursor, HistoryEvent(
+            event_identifier=b'id2',
+            sequence_index=0,
+            timestamp=TimestampMS(now_ms - 1300 * 1000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_DAI,
+            balance=Balance(1, 1),
+        ))
+
+    result = db.get_validators_to_query_for_withdrawals(now_ms)
+    assert result == [(1, 1), (2, 20), (3, 30)]

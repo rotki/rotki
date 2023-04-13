@@ -9,7 +9,7 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -19,11 +19,32 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+WITHDRAWALS_RECHECK_PERIOD = 3 * 3600 * 1000  # 3 hours in milliseconds
+
 
 class DBEth2():
 
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
+
+    def get_validators_to_query_for_withdrawals(self, up_to_tsms: TimestampMS) -> list[tuple[int, Timestamp]]:  # noqa: E501
+        """Gets a list of validators that need to be queried for new withdrawals
+
+        Validators need to be queried if last time they are queried was more than X seconds.
+
+        Returns a list of tuples. First entry is validator index and second entry is
+        last queried timestamp for daily stats of that validator.
+        """
+        query_str = """
+            SELECT S.validator_index, E.timestamp FROM history_events E LEFT JOIN
+            eth_staking_events_info S ON
+            E.identifier = S.identifier WHERE ? - (SELECT MAX(timestamp) FROM history_events WHERE identifier=S.identifier) > ? AND S.validator_index IS NOT NULL
+        """  # noqa: E501
+        cursor = self.db.conn.cursor()
+        result = cursor.execute(
+            query_str, (up_to_tsms, WITHDRAWALS_RECHECK_PERIOD),
+        )
+        return result.fetchall()
 
     def get_validators_to_query_for_stats(self, up_to_ts: Timestamp) -> list[tuple[int, Timestamp]]:  # noqa: E501
         """Gets a list of validators that need to be queried for new daily stats
