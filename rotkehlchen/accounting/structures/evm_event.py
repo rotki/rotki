@@ -49,8 +49,7 @@ class EvmProduct(SerializableEnumMixin):
     """The type of EVM product we interact with"""
     POOL = auto()
     STAKING = auto()
-    CURVE_GAUGE = auto()
-    CONVEX_GAUGE = auto()
+    GAUGE = auto()
 
 
 def get_tx_event_type_identifier(event_type: HistoryEventType, event_subtype: HistoryEventSubType, counterparty: str) -> str:  # noqa: E501

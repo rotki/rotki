@@ -129,7 +129,7 @@ def test_booster_deposit(database, ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x989AEb4d175e16225E39E87d0D97A3360524AD80'),
             identifier=None,
             extra_data={'gauge_address': '0x008aEa5036b819B4FEAEd10b2190FBb3954981E8'},
-            product=EvmProduct.CONVEX_GAUGE,
+            product=EvmProduct.GAUGE,
         ),
     ]
     assert events == expected_events
@@ -193,7 +193,7 @@ def test_booster_withdraw(database, ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0xF403C135812408BFbE8713b5A23a04b3D48AAE31'),
             identifier=None,
             extra_data=None,
-            product=EvmProduct.CONVEX_GAUGE,
+            product=EvmProduct.GAUGE,
         ),
     ]
     assert events == expected_events
@@ -559,6 +559,7 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
             address=string_to_evm_address('0xCF50b810E57Ac33B91dCF525C6ddd9881B139332'),
             identifier=None,
             extra_data={'gauge_address': '0xCF50b810E57Ac33B91dCF525C6ddd9881B139332'},
+            product=EvmProduct.STAKING,
         ), EvmEvent(
             event_identifier=evmhash,
             sequence_index=344,

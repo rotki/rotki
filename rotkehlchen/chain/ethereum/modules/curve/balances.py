@@ -30,7 +30,7 @@ def query_gauges_balances(
     Query the set of gauges in gauges_to_token and return the balances for each
     lp token desposited in all gauges.
     """
-    balances = {}
+    balances: dict[EvmToken, Balance] = defaultdict(Balance)
     gauge_chunks = get_chunks(list(gauges_to_token.keys()), n=chunk_size)
     for gauge_chunk in gauge_chunks:
         tokens = [gauges_to_token[staking_addr] for staking_addr in gauge_chunk]
@@ -44,7 +44,7 @@ def query_gauges_balances(
         # Now map the gauge to the underlying token
         for lp_token, balance in gauges_balances.items():
             lp_token_price = Inquirer().find_usd_price(lp_token)
-            balances[lp_token] = Balance(
+            balances[lp_token] += Balance(
                 amount=balance,
                 usd_value=lp_token_price * balance,
             )
@@ -67,7 +67,7 @@ class CurveBalances(ProtocolWithBalance):
 
         # query addresses and gauges where they interacted
         addresses_with_deposits = self.addresses_with_deposits(
-            product=EvmProduct.CURVE_GAUGE,
+            product=EvmProduct.GAUGE,
             deposit_events={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
         )
 
