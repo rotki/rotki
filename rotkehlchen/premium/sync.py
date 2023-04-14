@@ -34,18 +34,12 @@ class SyncCheckResult(NamedTuple):
 
 class PremiumSyncManager():
 
-    def __init__(
-            self,
-            migration_manager: DataMigrationManager,
-            data: DataHandler,
-            password: str,
-    ) -> None:
+    def __init__(self, migration_manager: DataMigrationManager, data: DataHandler) -> None:
         # Initialize this with the value saved in the DB
         with data.db.conn.read_ctx() as cursor:
             self.last_data_upload_ts = data.db.get_setting(cursor, name='last_data_upload_ts')
         self.data = data
         self.migration_manager = migration_manager
-        self.password = password
         self.premium: Optional[Premium] = None
         self.upload_lock = Semaphore()
 
@@ -116,7 +110,7 @@ class PremiumSyncManager():
             return False, 'No data found'
 
         try:
-            self.data.decompress_and_decrypt_db(self.password, result['data'])
+            self.data.decompress_and_decrypt_db(result['data'])
         except UnableToDecryptRemoteData as e:
             raise PremiumAuthenticationError(
                 'The given password can not unlock the database that was retrieved  from '
@@ -153,7 +147,7 @@ class PremiumSyncManager():
             except (RemoteError, PremiumAuthenticationError) as e:
                 log.debug('upload to server -- fetching metadata error', error=str(e))
                 return False
-            b64_encoded_data, our_hash = self.data.compress_and_encrypt_db(self.password)
+            b64_encoded_data, our_hash = self.data.compress_and_encrypt_db()
 
             log.debug(
                 'CAN_PUSH',

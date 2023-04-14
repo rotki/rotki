@@ -130,7 +130,6 @@ def get_different_hash(given_hash: str) -> str:
 def setup_starting_environment(
         rotkehlchen_instance: Rotkehlchen,
         username: str,
-        db_password: str,
         first_time: bool,
         same_hash_with_remote: bool,
         newer_remote_db: bool,
@@ -154,7 +153,7 @@ def setup_starting_environment(
         our_last_write_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_write_ts')
         assert rotkehlchen_instance.data.db.get_setting(cursor, name='main_currency') == DEFAULT_TESTS_MAIN_CURRENCY  # noqa: E501
 
-    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
 
     if same_hash_with_remote:
         remote_hash = our_hash

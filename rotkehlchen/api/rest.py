@@ -1231,13 +1231,13 @@ class RestAPI():
             result_dict['message'] = f'Provided user "{name}" is not the logged in user'
             return api_response(result_dict, status_code=HTTPStatus.BAD_REQUEST)
 
-        if current_password != self.rotkehlchen.data.password:
+        if current_password != self.rotkehlchen.data.db.password:
             result_dict['message'] = 'Provided current password is not correct'
             return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
 
         success: bool
         try:
-            success = self.rotkehlchen.data.change_password(new_password=new_password)
+            success = self.rotkehlchen.data.db.change_password(new_password=new_password)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 

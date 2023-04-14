@@ -35,14 +35,12 @@ class DataHandler():
         self.logged_in = False
         self.data_directory = data_directory
         self.username = 'no_user'
-        self.password = ''
         self.msg_aggregator = msg_aggregator
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
 
     def logout(self) -> None:
         if self.logged_in:
             self.username = 'no_user'
-            self.password = ''
             self.user_data_dir: Optional[Path] = None
             db = getattr(self, 'db', None)
             if db is not None:
@@ -50,15 +48,6 @@ class DataHandler():
                     self.db.update_owned_assets_in_globaldb(cursor)
                 self.db.logout()
             self.logged_in = False
-
-    def change_password(self, new_password: str) -> bool:
-        success: bool = False
-
-        if self.logged_in:
-            success = self.db.change_password(new_password)
-            self.password = new_password
-
-        return success
 
     def unlock(
             self,
@@ -129,7 +118,6 @@ class DataHandler():
         self.user_data_dir = user_data_dir
         self.logged_in = True
         self.username = username
-        self.password = password
         return user_data_dir
 
     def add_ignored_assets(self, assets: list[Asset]) -> tuple[Optional[set[str]], str]:
@@ -191,7 +179,7 @@ class DataHandler():
 
         return users
 
-    def compress_and_encrypt_db(self, password: str) -> tuple[B64EncodedBytes, str]:
+    def compress_and_encrypt_db(self) -> tuple[B64EncodedBytes, str]:
         """Decrypt the DB, dump in temporary plaintextdb, compress it,
         and then re-encrypt it
 
@@ -216,12 +204,12 @@ class DataHandler():
         original_data_hash = base64.b64encode(
             hashlib.sha256(source_data).digest(),
         ).decode()
-        encrypted_data = encrypt(password.encode(), bytes(compressed_data))
+        encrypted_data = encrypt(self.db.password.encode(), bytes(compressed_data))
         # cleanup temp file to avoid windows problem (https://github.com/rotki/rotki/issues/5051)
         tempdbpath.unlink()
         return B64EncodedBytes(encrypted_data.encode()), original_data_hash
 
-    def decompress_and_decrypt_db(self, password: str, encrypted_data: B64EncodedString) -> None:
+    def decompress_and_decrypt_db(self, encrypted_data: B64EncodedString) -> None:
         """Decrypt and decompress the encrypted data we receive from the server
 
         If successful then replace our local Database
@@ -241,6 +229,6 @@ class DataHandler():
             self.data_directory / self.username / f'rotkehlchen_db_{date}.backup',
         )
 
-        decrypted_data = decrypt(password.encode(), encrypted_data)
+        decrypted_data = decrypt(self.db.password.encode(), encrypted_data)
         decompressed_data = zlib.decompress(decrypted_data)
-        self.db.import_unencrypted(decompressed_data, password)
+        self.db.import_unencrypted(decompressed_data)

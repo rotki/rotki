@@ -264,7 +264,6 @@ class Rotkehlchen():
         )
 
         # unlock or create the DB
-        self.password = password
         self.user_directory = self.data.unlock(user, password, create_new, initial_settings)
         # Run the DB integrity check due to https://github.com/rotki/rotki/issues/3010
         # TODO: Hopefully once 3010 is handled this can go away
@@ -281,7 +280,6 @@ class Rotkehlchen():
         self.premium_sync_manager = PremiumSyncManager(
             migration_manager=self.migration_manager,
             data=self.data,
-            password=password,
         )
         # set the DB in the external services instances that need it
         self.cryptocompare.set_database(self.data.db)
@@ -486,7 +484,6 @@ class Rotkehlchen():
         del self.data_importer
 
         self.data.logout()
-        self.password = ''
         self.cryptocompare.unset_database()
 
         # Make sure no messages leak to other user sessions
