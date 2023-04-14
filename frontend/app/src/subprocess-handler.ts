@@ -12,7 +12,10 @@ import { type BackendOptions } from '@/electron-main/ipc';
 import { DEFAULT_PORT, selectPort } from '@/electron-main/port-utils';
 import { assert } from '@/utils/assertions';
 import { wait } from '@/utils/backoff';
+import { checkIfDevelopment } from '@/utils/env-utils';
 import type stream from 'node:stream';
+
+const isDevelopment = checkIfDevelopment();
 
 const streamToString = (
   ioStream: stream.Readable,
@@ -436,11 +439,14 @@ export default class SubprocessHandler {
     );
 
     this.childProcess = spawn('python', allArgs);
-    this.colibriProcess = spawn('colibri');
-    if (this.colibriProcess.stdout) {
-      streamToString(this.colibriProcess.stdout, msg =>
-        this.logToFile(`Colibri says: ${msg}`)
-      );
+
+    if (!isDevelopment) {
+      this.colibriProcess = spawn('colibri');
+      if (this.colibriProcess.stdout) {
+        streamToString(this.colibriProcess.stdout, msg =>
+          this.logToFile(`Colibri says: ${msg}`)
+        );
+      }
     }
   }
 
@@ -486,22 +492,24 @@ export default class SubprocessHandler {
     );
     this.childProcess = spawn(executable, args);
 
-    const colibriDir = SubprocessHandler.packagedColibriPath();
-    const colibriExe = fs
-      .readdirSync(colibriDir)
-      .find(file => file.startsWith('colibri'));
+    if (!isDevelopment) {
+      const colibriDir = SubprocessHandler.packagedColibriPath();
+      const colibriExe = fs
+        .readdirSync(colibriDir)
+        .find(file => file.startsWith('colibri'));
 
-    if (!colibriExe) {
-      this.logAndQuit(`ERROR: colibri executable was not found`);
-      return;
-    }
-    this.colibriProcess = spawn(path.join(colibriDir, colibriExe));
-    if (this.colibriProcess.stdout) {
-      streamToString(
-        this.colibriProcess.stdout,
-        msg => this.logToFile(`output: ${msg}`),
-        'colibri'
-      );
+      if (!colibriExe) {
+        this.logAndQuit(`ERROR: colibri executable was not found`);
+        return;
+      }
+      this.colibriProcess = spawn(path.join(colibriDir, colibriExe));
+      if (this.colibriProcess.stdout) {
+        streamToString(
+          this.colibriProcess.stdout,
+          msg => this.logToFile(`output: ${msg}`),
+          'colibri'
+        );
+      }
     }
   }
 
