@@ -1,7 +1,11 @@
+import { type EntryMeta } from '@/types/history/meta';
+
 export interface EvmTransaction {
   evmChain: string;
   txHash: string;
 }
+
+export interface EvmTransactionWithMeta extends EvmTransaction, EntryMeta {}
 
 export enum IgnoreActionType {
   TRADES = 'trade',

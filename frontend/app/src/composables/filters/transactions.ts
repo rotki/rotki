@@ -24,7 +24,7 @@ enum TransactionFilterValueKeys {
   START = 'fromTimestamp',
   END = 'toTimestamp',
   ASSET = 'asset',
-  PROTOCOL = 'protocols',
+  PROTOCOL = 'counterparties',
   EVENT_TYPE = 'eventTypes',
   EVM_CHAIN = 'evmChain'
 }

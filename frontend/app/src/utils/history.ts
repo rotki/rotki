@@ -5,7 +5,10 @@ import {
   type TransactionEventType
 } from '@rotki/common/lib/history/tx-events';
 import { isValidEthAddress } from '@/utils/text';
-import { type EthTransactionEventEntry } from '@/types/history/tx';
+import {
+  type EvmChainAndTxHash,
+  type HistoryEventEntry
+} from '@/types/history/tx';
 import { uniqueStrings } from '@/utils/data';
 import { type EntryMeta, type EntryWithMeta } from '@/types/history/meta';
 import { type Collection } from '@/types/collection';
@@ -61,7 +64,7 @@ export const useEventTypeData = createSharedComposable(() => {
 });
 
 export const getEventCounterpartyData = (
-  event: EthTransactionEventEntry,
+  event: HistoryEventEntry,
   scrambler?: (hex: string) => string
 ): ActionDataEntry | null => {
   const { counterparty } = event;
@@ -132,3 +135,17 @@ export function transformEntryWithMeta<T>(
 export function filterAddressesFromWords(words: string[]): string[] {
   return words.filter(uniqueStrings).filter(isValidEthAddress);
 }
+
+export const getEthAddressesFromText = (notes: string[]): string[] =>
+  filterAddressesFromWords(notes.join(' ').split(/\s|\\n/));
+
+export const toEvmChainAndTxHash = ({
+  location,
+  eventIdentifier
+}: {
+  location: string;
+  eventIdentifier: string;
+}): EvmChainAndTxHash => ({
+  evmChain: location,
+  txHash: eventIdentifier
+});

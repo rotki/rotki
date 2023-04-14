@@ -783,7 +783,7 @@
     },
     "transactions_events": {
       "task": {
-        "description": "Retrieving transactions events",
+        "description": "Retrieving transactions events | Retrieving transactions events for address: {address} ({evmChain})",
         "title": "Evm Transactions Events"
       }
     },
@@ -2810,7 +2810,7 @@
     "history": "Historial",
     "history_sub": {
       "deposits_withdrawals": "Depositos & Retiros",
-      "ethereum_transactions": "Transacciones en Ethereum",
+      "history_events": "Historia Eventos",
       "ledger_actions": "Acciones contables",
       "trades": "Intercambios"
     },
@@ -3616,16 +3616,6 @@
       "add_event": "Añadir un nuevo evento",
       "redecode_events": "Releer eventos"
     },
-    "details": {
-      "gas_fee": "Gas Fee",
-      "gas_limit": "Gas Limit",
-      "gas_price": "Gas Price",
-      "gas_used": "Gas Used",
-      "input_data": "Input Data",
-      "internal_transaction": "Internal",
-      "nonce": "Nonce",
-      "title": "Transaction details"
-    },
     "events": {
       "actions": {
         "delete": "Delete event",
@@ -3812,7 +3802,7 @@
       "title": "Redecode Events"
     },
     "refresh_tooltip": "Refresh evm transactions",
-    "title": "Evm Transactions",
+    "title": "History Events",
     "unignore": "Unignore Tx in Accounting"
   },
   "underlying_token_manager": {

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { getEventCounterpartyData, useEventTypeData } from '@/utils/history';
-import { type EthTransactionEventEntry } from '@/types/history/tx';
+import { type HistoryEventEntry } from '@/types/history/tx';
 import { type ActionDataEntry } from '@/types/action';
 
 const props = defineProps<{
-  event: EthTransactionEventEntry;
+  event: HistoryEventEntry;
   chain: Blockchain;
 }>();
 
@@ -46,7 +46,9 @@ const { t } = useI18n();
 
                 <ens-avatar v-else :address="counterparty.label" />
               </v-avatar>
-              <v-avatar v-else-if="event.address" :address="event.address" />
+              <v-avatar v-else>
+                <ens-avatar :address="event.address" />
+              </v-avatar>
             </div>
           </template>
           <div>{{ counterparty?.label || event.address }}</div>

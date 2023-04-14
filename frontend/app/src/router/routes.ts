@@ -13,7 +13,7 @@ enum RouteNames {
   HISTORY = 'HISTORY',
   HISTORY_TRADES = 'HISTORY_TRADES',
   HISTORY_DEPOSITS_WITHDRAWALS = 'HISTORY_DEPOSITS_WITHDRAWALS',
-  HISTORY_TRANSACTIONS = 'HISTORY_TRANSACTIONS',
+  HISTORY_EVENTS = 'HISTORY_EVENTS',
   HISTORY_LEDGER_ACTIONS = 'HISTORY_LEDGER_ACTIONS',
   DEFI = 'DEFI',
   DEFI_OVERVIEW = 'DEFI_OVERVIEW',
@@ -71,7 +71,7 @@ export const Routes: AppRouteMap<string> = {
   HISTORY: '/history',
   HISTORY_TRADES: '/history/trades',
   HISTORY_DEPOSITS_WITHDRAWALS: '/history/deposits-withdrawals',
-  HISTORY_TRANSACTIONS: '/history/transactions',
+  HISTORY_EVENTS: '/history/transactions',
   HISTORY_LEDGER_ACTIONS: '/history/ledger-actions',
   DEFI: '/defi',
   DEFI_OVERVIEW: '/defi/overview',
@@ -163,10 +163,10 @@ export const useAppRoutes = createSharedComposable(() => {
       icon: 'mdi-bank-transfer',
       text: tc('navigation_menu.history_sub.deposits_withdrawals')
     },
-    HISTORY_TRANSACTIONS: {
-      route: Routes.HISTORY_TRANSACTIONS,
+    HISTORY_EVENTS: {
+      route: Routes.HISTORY_EVENTS,
       icon: 'mdi-swap-horizontal-bold',
-      text: tc('navigation_menu.history_sub.ethereum_transactions')
+      text: tc('navigation_menu.history_sub.history_events')
     },
     HISTORY_LEDGER_ACTIONS: {
       route: Routes.HISTORY_LEDGER_ACTIONS,

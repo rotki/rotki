@@ -1,15 +1,21 @@
 import groupBy from 'lodash/groupBy';
 import { type MaybeRef } from '@vueuse/core';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
+import omit from 'lodash/omit';
 import { type Collection, type CollectionResponse } from '@/types/collection';
 import { type EntryWithMeta } from '@/types/history/meta';
 import {
   type AddTransactionHashPayload,
+  type AddressesAndEvmChainPayload,
   type EthTransaction,
-  type EthTransactionEntry,
-  type EthTransactionEvent,
   type EvmChainAddress,
-  type NewEthTransactionEvent,
+  type EvmChainAndTxHash,
+  type HistoryEvent,
+  type HistoryEventEntry,
+  type HistoryEventEntryWithMeta,
+  type HistoryEventRequestPayload,
+  type HistoryEventsCollectionResponse,
+  type NewHistoryEvent,
   type TransactionHashAndEvmChainPayload,
   type TransactionRequestPayload
 } from '@/types/history/tx';
@@ -22,32 +28,29 @@ import {
 import { TaskType } from '@/types/task-type';
 import { mapCollectionResponse } from '@/utils/collection';
 import { logger } from '@/utils/logging';
-import {
-  filterAddressesFromWords,
-  mapCollectionEntriesWithMeta
-} from '@/utils/history';
+import { getEthAddressesFromText } from '@/utils/history';
 import { startPromise } from '@/utils';
 import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 
-export const useTransactions = () => {
-  const { t } = useI18n();
+export const useHistoryEvents = () => {
+  const { t, tc } = useI18n();
   const { notify } = useNotificationsStore();
 
   const {
-    fetchEthTransactions,
     fetchEthTransactionsTask,
     deleteTransactionEvent: deleteTransactionEventCaller,
-    fetchEthTransactionEvents,
+    decodeHistoryEvents,
     reDecodeMissingTransactionEvents,
     addTransactionEvent: addTransactionEventCaller,
     editTransactionEvent: editTransactionEventCaller,
-    addTransactionHash: addTransactionHashCaller
-  } = useTransactionsApi();
+    addTransactionHash: addTransactionHashCaller,
+    fetchHistoryEvents: fetchHistoryEventsCaller
+  } = useHistoryEventsApi();
+
   const { awaitTask, isTaskRunning } = useTaskStore();
 
   const { removeQueryStatus, resetQueryStatus } = useTxQueryStatusStore();
-  const { fetchEnsNames } = useAddressesNamesStore();
 
   const { txEvmChains, getEvmChainName, supportsTransactions } =
     useSupportedChains();
@@ -76,11 +79,18 @@ export const useTransactions = () => {
       }).toString()
     };
 
+    const { pause, resume } = useIntervalFn(() => {
+      startPromise(reDecodeMissingTransactionEventsTask(account));
+    }, 10000);
+
     try {
+      resume();
       await awaitTask<
         CollectionResponse<EntryWithMeta<EthTransaction>>,
         TaskMeta
       >(taskId, taskType, taskMeta, true);
+      pause();
+      startPromise(reDecodeMissingTransactionEventsTask(account));
       return true;
     } catch (e: any) {
       if (e instanceof BackendCancelledTaskError) {
@@ -101,6 +111,7 @@ export const useTransactions = () => {
       setStatus(
         get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
       );
+      pause();
     }
     return false;
   };
@@ -134,7 +145,6 @@ export const useTransactions = () => {
 
     try {
       await Promise.all(txAccounts.map(syncTransactionTask));
-      startPromise(checkTransactionsMissingEvents());
       setStatus(
         get(isTaskRunning(TaskType.TX)) ? Status.REFRESHING : Status.LOADED
       );
@@ -144,32 +154,79 @@ export const useTransactions = () => {
     }
   };
 
-  const fetchTransactions = async (
-    payload: MaybeRef<TransactionRequestPayload>
-  ): Promise<Collection<EthTransactionEntry>> => {
-    const result = await fetchEthTransactions({
-      ...get(payload),
-      onlyCache: true
-    });
-    const mapped = mapCollectionEntriesWithMeta<EthTransactionEntry>(
-      mapCollectionResponse(result)
+  const reDecodeMissingTransactionEventsTask = async (
+    account: EvmChainAddress
+  ) => {
+    const taskType = TaskType.TX_EVENTS;
+
+    const payload: AddressesAndEvmChainPayload = {
+      evmChain: account.evmChain,
+      addresses: [account.address]
+    };
+
+    if (get(isTaskRunning(taskType, payload))) {
+      return;
+    }
+
+    try {
+      const { taskId } = await reDecodeMissingTransactionEvents<PendingTask>([
+        payload
+      ]);
+
+      const taskMeta = {
+        title: t('actions.transactions_events.task.title').toString(),
+        description: tc(
+          'actions.transactions_events.task.description',
+          2,
+          account
+        ),
+        ...payload
+      };
+
+      await awaitTask(taskId, taskType, taskMeta, true);
+    } catch (e) {
+      logger.error(e);
+    }
+  };
+
+  const { fetchEnsNames } = useAddressesNamesStore();
+  const fetchHistoryEvents = async (
+    payload: MaybeRef<HistoryEventRequestPayload>
+  ): Promise<Collection<HistoryEventEntry>> => {
+    const result = await fetchHistoryEventsCaller(
+      omit(get(payload), 'accounts')
     );
 
-    startPromise(
-      Promise.allSettled([
-        fetchEnsNames(getNotesAddresses(mapped.data)),
-        fetchTransactionEvents(
-          mapped.data.filter(
-            ({ decodedEvents }) => decodedEvents && decodedEvents.length === 0
-          )
-        )
-      ])
-    );
-    return mapped;
+    const { data, ...other } = mapCollectionResponse<
+      HistoryEventEntryWithMeta,
+      HistoryEventsCollectionResponse
+    >(result);
+
+    const notesList: string[] = [];
+
+    const mappedData = data.map((event: HistoryEventEntryWithMeta) => {
+      const { entry, ...entriesMeta } = event;
+
+      if (entry.notes) {
+        notesList.push(entry.notes);
+      }
+
+      return {
+        ...entry,
+        ...entriesMeta
+      };
+    });
+
+    startPromise(fetchEnsNames(getEthAddressesFromText(notesList)));
+
+    return {
+      ...other,
+      data: mappedData
+    };
   };
 
   const addTransactionEvent = async (
-    event: NewEthTransactionEvent
+    event: NewHistoryEvent
   ): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
     let message: ValidationErrors | string = '';
@@ -187,7 +244,7 @@ export const useTransactions = () => {
   };
 
   const editTransactionEvent = async (
-    event: EthTransactionEvent
+    event: HistoryEvent
   ): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
     let message: ValidationErrors | string = '';
@@ -218,29 +275,8 @@ export const useTransactions = () => {
     return { success, message };
   };
 
-  const checkTransactionsMissingEvents = async () => {
-    try {
-      const taskType = TaskType.TX_EVENTS;
-      const { taskId } = await reDecodeMissingTransactionEvents<PendingTask>(
-        get(txEvmChains).map(chain => ({ evmChain: chain.evmChainName }))
-      );
-
-      const taskMeta = {
-        title: t('actions.transactions_events.task.title').toString(),
-        description: t(
-          'actions.transactions_events.task.description'
-        ).toString(),
-        numericKeys: []
-      };
-
-      await awaitTask(taskId, taskType, taskMeta, true);
-    } catch (e) {
-      logger.error(e);
-    }
-  };
-
   const fetchTransactionEvents = async (
-    transactions: EthTransactionEntry[] | null,
+    transactions: EvmChainAndTxHash[] | null,
     ignoreCache = false
   ): Promise<void> => {
     const isFetchAll = transactions === null;
@@ -265,30 +301,17 @@ export const useTransactions = () => {
     }
 
     const taskType = TaskType.TX_EVENTS;
-    const { taskId } = await fetchEthTransactionEvents({
+    const { taskId } = await decodeHistoryEvents({
       data: payloads,
       ignoreCache
     });
     const taskMeta = {
       title: t('actions.transactions_events.task.title').toString(),
-      description: t('actions.transactions_events.task.description').toString()
+      description: tc('actions.transactions_events.task.description', 1)
     };
 
     await awaitTask(taskId, taskType, taskMeta, true);
   };
-
-  const getTransactionsNotesWords = (
-    transactions: EthTransactionEntry[]
-  ): string[] =>
-    transactions
-      .flatMap(transaction =>
-        transaction.decodedEvents!.map(event => event.entry.notes)
-      )
-      .join(' ')
-      .split(/\s|\\n/);
-
-  const getNotesAddresses = (transactions: EthTransactionEntry[]): string[] =>
-    filterAddressesFromWords(getTransactionsNotesWords(transactions));
 
   const addTransactionHash = async (
     payload: AddTransactionHashPayload
@@ -309,13 +332,12 @@ export const useTransactions = () => {
   };
 
   return {
-    fetchTransactions,
     refreshTransactions,
     fetchTransactionEvents,
     addTransactionEvent,
     editTransactionEvent,
     deleteTransactionEvent,
-    checkTransactionsMissingEvents,
-    addTransactionHash
+    addTransactionHash,
+    fetchHistoryEvents
   };
 };

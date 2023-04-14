@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { type Ref } from 'vue';
 import TransactionForm from '@/components/history/transactions/TransactionForm.vue';
+import { type EvmChainAndTxHash } from '@/types/history/tx';
 
 withDefaults(
   defineProps<{
@@ -14,7 +15,7 @@ withDefaults(
 
 const emit = defineEmits<{
   (e: 'input', open: boolean): void;
-  (e: 'saved'): void;
+  (e: 'saved', data: EvmChainAndTxHash): void;
 }>();
 
 const valid: Ref<boolean> = ref(false);
@@ -29,10 +30,10 @@ const confirmSave = async () => {
   if (!isDefined(form)) {
     return;
   }
-  const success = await get(form).save();
-  if (success) {
+  const data = await get(form).save();
+  if (data) {
     clearDialog();
-    emit('saved');
+    emit('saved', data);
   }
 };
 

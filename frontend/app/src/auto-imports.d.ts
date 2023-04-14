@@ -125,7 +125,7 @@ declare global {
   const toReactive: typeof import('@vueuse/core')['toReactive']
   const toRef: typeof import('vue')['toRef']
   const toRefs: typeof import('vue')['toRefs']
-  const transactionEventProtocolData: typeof import('./composables/history/transactions/protocol-data')['transactionEventProtocolData']
+  const transactionEventProtocolData: typeof import('./composables/history/events/protocol-data')['transactionEventProtocolData']
   const triggerRef: typeof import('vue')['triggerRef']
   const tryOnBeforeMount: typeof import('@vueuse/core')['tryOnBeforeMount']
   const tryOnBeforeUnmount: typeof import('@vueuse/core')['tryOnBeforeUnmount']
@@ -287,7 +287,9 @@ declare global {
   const useGraph: typeof import('./composables/graphs')['useGraph']
   const useHistoryApi: typeof import('./composables/api/history/index')['useHistoryApi']
   const useHistoryAutoRefresh: typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']
-  const useHistoryEventTypeData: typeof import('./composables/history/transactions/event-data')['useHistoryEventTypeData']
+  const useHistoryEventTypeData: typeof import('./composables/history/events/event-data')['useHistoryEventTypeData']
+  const useHistoryEvents: typeof import('./composables/history/events/index')['useHistoryEvents']
+  const useHistoryEventsApi: typeof import('./composables/api/history/transactions')['useHistoryEventsApi']
   const useHistoryIgnoringApi: typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']
   const useHistoryStore: typeof import('./store/history/index')['useHistoryStore']
   const useI18n: typeof import('vue-i18n-composable')['useI18n']
@@ -461,11 +463,9 @@ declare global {
   const useTradeLocations: typeof import('./composables/history/trade-locations')['useTradeLocations']
   const useTrades: typeof import('./composables/history/trades/index')['useTrades']
   const useTradesApi: typeof import('./composables/api/history/trades')['useTradesApi']
-  const useTransactionEventTypeData: typeof import('./composables/history/transactions/tx-event-type')['useTransactionEventTypeData']
+  const useTransactionEventTypeData: typeof import('./composables/history/events/tx-event-type')['useTransactionEventTypeData']
   const useTransactionFilter: typeof import('./composables/filters/transactions')['useTransactionFilter']
-  const useTransactionQueryStatus: typeof import('./composables/history/transactions/query-status')['useTransactionQueryStatus']
-  const useTransactions: typeof import('./composables/history/transactions/index')['useTransactions']
-  const useTransactionsApi: typeof import('./composables/api/history/transactions')['useTransactionsApi']
+  const useTransactionQueryStatus: typeof import('./composables/history/events/query-status')['useTransactionQueryStatus']
   const useTransition: typeof import('@vueuse/core')['useTransition']
   const useTrunc: typeof import('@vueuse/math')['useTrunc']
   const useTxQueryStatusStore: typeof import('./store/history/query-status')['useTxQueryStatusStore']
@@ -638,7 +638,7 @@ declare module 'vue' {
     readonly toReactive: UnwrapRef<typeof import('@vueuse/core')['toReactive']>
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
-    readonly transactionEventProtocolData: UnwrapRef<typeof import('./composables/history/transactions/protocol-data')['transactionEventProtocolData']>
+    readonly transactionEventProtocolData: UnwrapRef<typeof import('./composables/history/events/protocol-data')['transactionEventProtocolData']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly tryOnBeforeMount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeMount']>
     readonly tryOnBeforeUnmount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeUnmount']>
@@ -800,7 +800,9 @@ declare module 'vue' {
     readonly useGraph: UnwrapRef<typeof import('./composables/graphs')['useGraph']>
     readonly useHistoryApi: UnwrapRef<typeof import('./composables/api/history/index')['useHistoryApi']>
     readonly useHistoryAutoRefresh: UnwrapRef<typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']>
-    readonly useHistoryEventTypeData: UnwrapRef<typeof import('./composables/history/transactions/event-data')['useHistoryEventTypeData']>
+    readonly useHistoryEventTypeData: UnwrapRef<typeof import('./composables/history/events/event-data')['useHistoryEventTypeData']>
+    readonly useHistoryEvents: UnwrapRef<typeof import('./composables/history/events/index')['useHistoryEvents']>
+    readonly useHistoryEventsApi: UnwrapRef<typeof import('./composables/api/history/transactions')['useHistoryEventsApi']>
     readonly useHistoryIgnoringApi: UnwrapRef<typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']>
     readonly useHistoryStore: UnwrapRef<typeof import('./store/history/index')['useHistoryStore']>
     readonly useI18n: UnwrapRef<typeof import('vue-i18n-composable')['useI18n']>
@@ -974,11 +976,9 @@ declare module 'vue' {
     readonly useTradeLocations: UnwrapRef<typeof import('./composables/history/trade-locations')['useTradeLocations']>
     readonly useTrades: UnwrapRef<typeof import('./composables/history/trades/index')['useTrades']>
     readonly useTradesApi: UnwrapRef<typeof import('./composables/api/history/trades')['useTradesApi']>
-    readonly useTransactionEventTypeData: UnwrapRef<typeof import('./composables/history/transactions/tx-event-type')['useTransactionEventTypeData']>
+    readonly useTransactionEventTypeData: UnwrapRef<typeof import('./composables/history/events/tx-event-type')['useTransactionEventTypeData']>
     readonly useTransactionFilter: UnwrapRef<typeof import('./composables/filters/transactions')['useTransactionFilter']>
-    readonly useTransactionQueryStatus: UnwrapRef<typeof import('./composables/history/transactions/query-status')['useTransactionQueryStatus']>
-    readonly useTransactions: UnwrapRef<typeof import('./composables/history/transactions/index')['useTransactions']>
-    readonly useTransactionsApi: UnwrapRef<typeof import('./composables/api/history/transactions')['useTransactionsApi']>
+    readonly useTransactionQueryStatus: UnwrapRef<typeof import('./composables/history/events/query-status')['useTransactionQueryStatus']>
     readonly useTransition: UnwrapRef<typeof import('@vueuse/core')['useTransition']>
     readonly useTrunc: UnwrapRef<typeof import('@vueuse/math')['useTrunc']>
     readonly useTxQueryStatusStore: UnwrapRef<typeof import('./store/history/query-status')['useTxQueryStatusStore']>

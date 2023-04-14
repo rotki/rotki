@@ -1,15 +1,14 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { TransactionEventProtocol } from '@rotki/common/lib/history/tx-events';
 import flushPromises from 'flush-promises';
-import { type ComputedRef, type Ref } from 'vue';
+import { type Ref } from 'vue';
 import { RouterAccountsSchema } from '@/types/route';
+import { useMainStore } from '@/store/main';
 import type { Filters, Matcher } from '@/composables/filters/transactions';
 import type { Collection } from '@/types/collection';
 import type {
-  EthTransaction,
-  EthTransactionEntry,
-  EvmChainAddress,
-  TransactionRequestPayload
+  HistoryEvent,
+  HistoryEventRequestPayload
 } from '@/types/history/tx';
 import type { LocationQuery } from '@/types/route';
 import type {
@@ -17,7 +16,7 @@ import type {
   HistoryEventType
 } from '@rotki/common/lib/history/tx-events';
 import type { GeneralAccount } from '@rotki/common/src/account';
-import type { MaybeRef } from '@vueuse/shared';
+import type { MaybeRef } from '@vueuse/core';
 import type Vue from 'vue';
 
 vi.mock('vue-router/composables', () => ({
@@ -44,9 +43,9 @@ vi.mock('vue', async () => {
 });
 
 describe('composables::history/filter-paginate', () => {
-  let fetchTransactions: (
-    payload: MaybeRef<TransactionRequestPayload>
-  ) => Promise<Collection<EthTransactionEntry>>;
+  let fetchHistoryEvents: (
+    payload: MaybeRef<HistoryEventRequestPayload>
+  ) => Promise<Collection<HistoryEvent>>;
   const locationOverview: MaybeRef<string | null> = null;
   const mainPage: Ref<boolean> = ref(false);
   const protocols: Ref<TransactionEventProtocol[]> = ref([]);
@@ -58,31 +57,16 @@ describe('composables::history/filter-paginate', () => {
       chain: Blockchain.ETH,
       label: '',
       tags: []
-    },
-    {
-      address: '0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25',
-      chain: Blockchain.OPTIMISM,
-      label: '',
-      tags: []
     }
   ]);
   const router = useRouter();
   const route = useRoute();
 
-  const filteredAccounts: ComputedRef<EvmChainAddress[]> = computed(() => [
-    {
-      address: '0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25',
-      evmChain: 'ethereum'
-    },
-    {
-      address: '0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25',
-      evmChain: 'optimism'
-    }
-  ]);
-
   beforeAll(() => {
     setActivePinia(createPinia());
-    fetchTransactions = useTransactions().fetchTransactions;
+    const { connected } = storeToRefs(useMainStore());
+    set(connected, true);
+    fetchHistoryEvents = useHistoryEvents().fetchHistoryEvents;
   });
 
   afterEach(() => {
@@ -103,12 +87,13 @@ describe('composables::history/filter-paginate', () => {
       )
     }));
 
-    const customPageParams = computed<Partial<TransactionRequestPayload>>(
+    const customPageParams = computed<Partial<HistoryEventRequestPayload>>(
       () => ({
         protocols: get(protocols),
         eventTypes: get(eventTypes),
         eventSubtypes: get(eventSubTypes),
-        accounts: get(filteredAccounts)
+        evmChain: 'ethereum',
+        locationLabels: get(accounts)[0].address
       })
     );
 
@@ -126,17 +111,17 @@ describe('composables::history/filter-paginate', () => {
         applyRouteFilter,
         isLoading
       } = usePaginationFilters<
-        EthTransaction,
-        TransactionRequestPayload,
-        EthTransactionEntry,
-        Collection<EthTransactionEntry>,
+        HistoryEvent,
+        HistoryEventRequestPayload,
+        HistoryEvent,
+        Collection<HistoryEvent>,
         Filters,
         Matcher
       >(
         locationOverview,
         mainPage,
         () => useTransactionFilter(get(protocols).length > 0),
-        fetchTransactions,
+        fetchHistoryEvents,
         {
           onUpdateFilters,
           extraParams,
@@ -162,17 +147,17 @@ describe('composables::history/filter-paginate', () => {
 
     test('check the return types', async () => {
       const { isLoading, state, filters, matchers } = usePaginationFilters<
-        EthTransaction,
-        TransactionRequestPayload,
-        EthTransactionEntry,
-        Collection<EthTransactionEntry>,
+        HistoryEvent,
+        HistoryEventRequestPayload,
+        HistoryEvent,
+        Collection<HistoryEvent>,
         Filters,
         Matcher
       >(
         locationOverview,
         mainPage,
         () => useTransactionFilter(get(protocols).length > 0),
-        fetchTransactions,
+        fetchHistoryEvents,
         {
           onUpdateFilters,
           extraParams,
@@ -182,8 +167,8 @@ describe('composables::history/filter-paginate', () => {
 
       expect(get(isLoading)).toBe(false);
 
-      expectTypeOf(get(state)).toEqualTypeOf<Collection<EthTransactionEntry>>();
-      expectTypeOf(get(state).data).toEqualTypeOf<EthTransactionEntry[]>();
+      expectTypeOf(get(state)).toEqualTypeOf<Collection<HistoryEvent>>();
+      expectTypeOf(get(state).data).toEqualTypeOf<HistoryEvent[]>();
       expectTypeOf(get(state).found).toEqualTypeOf<number>();
       expectTypeOf(get(filters)).toEqualTypeOf<Filters>();
       expectTypeOf(get(matchers)).toEqualTypeOf<Matcher[]>();
@@ -194,17 +179,17 @@ describe('composables::history/filter-paginate', () => {
       const query = { sortBy: ['timestamp'], sortDesc: ['false'] };
 
       const { isLoading, state, pageParams } = usePaginationFilters<
-        EthTransaction,
-        TransactionRequestPayload,
-        EthTransactionEntry,
-        Collection<EthTransactionEntry>,
+        HistoryEvent,
+        HistoryEventRequestPayload,
+        HistoryEvent,
+        Collection<HistoryEvent>,
         Filters,
         Matcher
       >(
         locationOverview,
         mainPage,
         () => useTransactionFilter(get(protocols).length > 0),
-        fetchTransactions,
+        fetchHistoryEvents,
         {
           onUpdateFilters,
           extraParams,
@@ -223,10 +208,12 @@ describe('composables::history/filter-paginate', () => {
       await flushPromises();
       expect(get(isLoading)).toBe(false);
 
-      assertType<Collection<EthTransactionEntry>>(get(state));
-      assertType<EthTransactionEntry[]>(get(state).data);
+      assertType<Collection<HistoryEvent>>(get(state));
+      assertType<HistoryEvent[]>(get(state).data);
       assertType<number>(get(state).found);
-      expect(get(pageParams).accounts).toHaveLength(2);
+
+      expect(get(pageParams).locationLabels).toEqual(get(accounts)[0].address);
+      expect(get(pageParams).evmChain).toEqual('ethereum');
 
       expect(get(state).data).toHaveLength(6);
       expect(get(state).found).toEqual(6);
@@ -243,21 +230,21 @@ describe('composables::history/filter-paginate', () => {
       const query = {
         sortBy: ['timestamp'],
         sortDesc: ['false'],
-        protocols: get(protocols)
+        counterparties: get(protocols)
       };
 
       const { isLoading, filters } = usePaginationFilters<
-        EthTransaction,
-        TransactionRequestPayload,
-        EthTransactionEntry,
-        Collection<EthTransactionEntry>,
+        HistoryEvent,
+        HistoryEventRequestPayload,
+        HistoryEvent,
+        Collection<HistoryEvent>,
         Filters,
         Matcher
       >(
         locationOverview,
         mainPage,
         () => useTransactionFilter(get(protocols).length > 0),
-        fetchTransactions,
+        fetchHistoryEvents,
         {
           onUpdateFilters,
           extraParams,
@@ -273,7 +260,7 @@ describe('composables::history/filter-paginate', () => {
       await flushPromises();
       expect(get(isLoading)).toBe(false);
 
-      expect(get(filters).protocols).toStrictEqual(get(protocols));
+      expect(get(filters).counterparties).toStrictEqual(get(protocols));
     });
   });
 });

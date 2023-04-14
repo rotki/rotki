@@ -9,45 +9,6 @@ const LiquityStakingEventExtraData = z.object({
   stakedAmount: NumericString
 });
 
-export const EthTransactionEventDetail = z
-  .object({
-    liquityStaking: LiquityStakingEventExtraData
-  })
-  .nullish();
-
-export type EthTransactionEventDetail = z.infer<
-  typeof EthTransactionEventDetail
->;
-
-export const EthTransactionEvent = z.object({
-  address: z.string().nullish(),
-  eventIdentifier: z.string(),
-  sequenceIndex: z.number().or(z.string()),
-  timestamp: z.number(),
-  location: z.string(),
-  locationLabel: z.string().nullish(),
-  eventType: z.string().nullish(),
-  eventSubtype: z.string().nullish(),
-  asset: z.string(),
-  balance: Balance,
-  notes: z.string().nullish(),
-  counterparty: z.string().nullish(),
-  identifier: z.number().nullish()
-});
-export type EthTransactionEvent = z.infer<typeof EthTransactionEvent>;
-export type NewEthTransactionEvent = Omit<
-  EthTransactionEvent,
-  'identifier' | 'ignoredInAccounting' | 'customized'
->;
-
-export const EthTransactionEventWithMeta = z.object({
-  customized: z.boolean(),
-  entry: EthTransactionEvent,
-  hasDetails: z.boolean()
-});
-export type EthTransactionEventWithMeta = z.infer<
-  typeof EthTransactionEventWithMeta
->;
 // ETH Transactions
 export const EthTransaction = z.object({
   txHash: z.string(),
@@ -66,14 +27,10 @@ export const EthTransaction = z.object({
 export type EthTransaction = z.infer<typeof EthTransaction>;
 
 export interface TransactionRequestPayload
-  extends PaginationRequestPayload<EthTransaction> {
+  extends PaginationRequestPayload<{ timestamp: number }> {
   readonly fromTimestamp?: string | number;
   readonly toTimestamp?: string | number;
   readonly accounts?: EvmChainAddress[] | null;
-  readonly asset?: string;
-  readonly protocols?: string | string[];
-  readonly eventTypes?: string | string[];
-  readonly eventSubtypes?: string | string[];
   readonly evmChain?: string;
 }
 
@@ -87,9 +44,12 @@ export interface AddressesAndEvmChainPayload {
   readonly evmChain: string;
 }
 
-export interface AddTransactionHashPayload {
+export interface EvmChainAndTxHash {
   readonly evmChain: string;
   readonly txHash: string;
+}
+
+export interface AddTransactionHashPayload extends EvmChainAndTxHash {
   readonly associatedAddress: string;
 }
 
@@ -105,34 +65,78 @@ export interface TransactionEventRequestPayload {
   readonly ignoreCache: boolean;
 }
 
-export const TxEntryMeta = EntryMeta.merge(
-  z.object({
-    decodedEvents: z.array(EthTransactionEventWithMeta).nullish()
+export const HistoryEventDetail = z
+  .object({
+    liquityStaking: LiquityStakingEventExtraData
   })
-);
-export type TxEntryMeta = z.infer<typeof TxEntryMeta>;
+  .nullish();
 
-export const TxEventEntryMeta = EntryMeta.merge(
+export type HistoryEventDetail = z.infer<typeof HistoryEventDetail>;
+
+export const HistoryEvent = z.object({
+  identifier: z.number().nullish(),
+  eventIdentifier: z.string(),
+  sequenceIndex: z.number().or(z.string()),
+  timestamp: z.number(),
+  location: z.string(),
+  asset: z.string(),
+  balance: Balance,
+  eventType: z.string().nullish(),
+  eventSubtype: z.string().nullish(),
+  locationLabel: z.string().nullish(),
+  notes: z.string().nullish(),
+  counterparty: z.string().nullish(),
+  product: z.string().nullish(),
+  address: z.string().nullish()
+});
+export type HistoryEvent = z.infer<typeof HistoryEvent>;
+
+export interface HistoryEventRequestPayload
+  extends PaginationRequestPayload<{ timestamp: number }> {
+  readonly fromTimestamp?: string | number;
+  readonly toTimestamp?: string | number;
+  readonly groupByEventIds: boolean;
+  readonly eventIdentifiers?: string;
+  readonly eventTypes?: string | string[];
+  readonly eventSubtypes?: string | string[];
+  readonly locationLabels?: string | string[];
+  readonly asset?: string;
+  readonly counterparties?: string | string[];
+  readonly evmChain?: string | string[];
+  readonly product?: string | string[];
+}
+
+export type NewHistoryEvent = Omit<
+  HistoryEvent,
+  'identifier' | 'ignoredInAccounting' | 'customized'
+>;
+
+export const HistoryEventMeta = EntryMeta.merge(
   z.object({
     customized: z.boolean(),
-    hasDetails: z.boolean()
+    hasDetails: z.boolean(),
+    groupedEventsNum: z.number().nullish()
   })
 );
 
-export type TxEventEntryMeta = z.infer<typeof TxEventEntryMeta>;
+export type HistoryEventMeta = z.infer<typeof HistoryEventMeta>;
 
-export const EthTransactionCollectionResponse = CollectionCommonFields.extend({
-  entries: z.array(
-    z
-      .object({
-        entry: EthTransaction
-      })
-      .merge(TxEntryMeta)
-  )
+const HistoryEventEntryWithMeta = z
+  .object({
+    entry: HistoryEvent
+  })
+  .merge(HistoryEventMeta);
+
+export type HistoryEventEntryWithMeta = z.infer<
+  typeof HistoryEventEntryWithMeta
+>;
+
+export const HistoryEventsCollectionResponse = CollectionCommonFields.extend({
+  entries: z.array(HistoryEventEntryWithMeta)
 });
 
-export interface EthTransactionEntry extends EthTransaction, TxEntryMeta {}
+export type HistoryEventsCollectionResponse = z.infer<
+  typeof HistoryEventsCollectionResponse
+>;
 
-export interface EthTransactionEventEntry
-  extends EthTransactionEvent,
-    TxEventEntryMeta {}
+export interface HistoryEventEntry extends HistoryEvent, HistoryEventMeta {}

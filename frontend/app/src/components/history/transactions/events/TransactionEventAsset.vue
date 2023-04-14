@@ -5,12 +5,12 @@ import {
   TransactionEventType
 } from '@rotki/common/lib/history/tx-events';
 import { getEventType } from '@/utils/history';
-import { type EthTransactionEventEntry } from '@/types/history/tx';
+import { type HistoryEventEntry } from '@/types/history/tx';
 import { CURRENCY_USD } from '@/types/currencies';
 
 const props = withDefaults(
   defineProps<{
-    event: EthTransactionEventEntry;
+    event: HistoryEventEntry;
     showEventDetail?: boolean;
   }>(),
   {
