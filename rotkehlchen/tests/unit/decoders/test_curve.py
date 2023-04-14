@@ -832,7 +832,7 @@ def test_gauge_deposit(ethereum_transaction_decoder, ethereum_accounts):
             notes='Deposit 7985.261401730774426743 crvPlain3andSUSD into 0xA90996896660DEcC6E997655E065b23788857849 curve gauge',  # noqa: E501
             counterparty='curve',
             address=string_to_evm_address('0xA90996896660DEcC6E997655E065b23788857849'),
-            product=EvmProduct.CURVE_GAUGE,
+            product=EvmProduct.GAUGE,
         ),
     ]
     assert events == expected_events
@@ -876,7 +876,7 @@ def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts):
             notes='Withdraw 37939.72737243936267785 crvPlain3andSUSD from 0xA90996896660DEcC6E997655E065b23788857849 curve gauge',  # noqa: E501
             counterparty='curve',
             address=string_to_evm_address('0xA90996896660DEcC6E997655E065b23788857849'),
-            product=EvmProduct.CURVE_GAUGE,
+            product=EvmProduct.GAUGE,
         ),
     ]
     assert events == expected_events

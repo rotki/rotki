@@ -31,6 +31,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.constants.assets import A_CVX
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CURVE_POOL_PROTOCOL, ChecksumEvmAddress, DecoderEventMappingType
@@ -77,14 +78,16 @@ class ConvexDecoder(DecoderInterface):
                     event.counterparty = CPT_CONVEX
                     if context.tx_log.address in CONVEX_POOLS:
                         event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} into convex {CONVEX_POOLS[context.tx_log.address]} pool'  # noqa: E501
-                        event.product = EvmProduct.CONVEX_GAUGE
+                        event.product = EvmProduct.GAUGE
                     else:
                         event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} into convex'  # noqa: E501
                         if (
                             isinstance(crypto_asset, EvmToken) and
                             crypto_asset.protocol == CURVE_POOL_PROTOCOL
                         ):
-                            event.product = EvmProduct.CONVEX_GAUGE
+                            event.product = EvmProduct.GAUGE
+                        elif crypto_asset == A_CVX:
+                            event.product = EvmProduct.STAKING
 
                     # in this case store information about the gauge in the extra details to use
                     # it during balances queries
@@ -105,14 +108,14 @@ class ConvexDecoder(DecoderInterface):
                     event.counterparty = CPT_CONVEX
                     if context.tx_log.address in CONVEX_POOLS:
                         event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} from convex {CONVEX_POOLS[context.tx_log.address]} pool'  # noqa: E501
-                        event.product = EvmProduct.CONVEX_GAUGE
+                        event.product = EvmProduct.GAUGE
                     else:
                         event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} from convex'  # noqa: E501
                         if (
                             isinstance(crypto_asset, EvmToken) and
                             crypto_asset.protocol == CURVE_POOL_PROTOCOL
                         ):
-                            event.product = EvmProduct.CONVEX_GAUGE
+                            event.product = EvmProduct.GAUGE
                 elif context.tx_log.topics[0] in REWARD_TOPICS:
                     event.event_subtype = HistoryEventSubType.REWARD
                     event.counterparty = CPT_CONVEX

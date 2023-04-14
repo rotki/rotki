@@ -984,7 +984,10 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             calls_chunk_size: int = MULTICALL_CHUNKS,
     ) -> Any:
         """Uses MULTICALL contract. Failure of one call is a failure of the entire multicall.
-        source: https://etherscan.io/address/0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441#code"""
+        source: https://etherscan.io/address/0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441#code
+        Can raise:
+        - RemoteError
+        """
         calls_chunked = list(get_chunks(calls, n=calls_chunk_size))
         output = []
         for call_chunk in calls_chunked:

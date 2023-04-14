@@ -98,6 +98,8 @@ if TYPE_CHECKING:
         'YEARN_YCRV_VAULT',
         'YEARN_YFI_VAULT',
         'ILK_REGISTRY',  # added in 1.27.1 data migration
+        'CVX_REWARD_POOL',  # added in 1.28.0 packaged globaldb
+        'CVX_LOCKER_V2',
     ]
     # This is a list of all ethereum abi that are guaranteed to be returned
     # by EthereumContracts as they are stored in the file/DB
@@ -118,4 +120,6 @@ if TYPE_CHECKING:
         'YEARN_VAULT_V2',
         'ZERION_ADAPTER',
         'ILK_REGISTRY',  # added in 1.27.1 data migration
+        'CVX_REWARD_POOL',  # added in 1.28.0 packaged globaldb
+        'CVX_LOCKER_V2',
     ]

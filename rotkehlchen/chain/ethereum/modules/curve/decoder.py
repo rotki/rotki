@@ -457,7 +457,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.balance.amount == asset_normalized_value(amount=raw_amount, asset=crypto_asset)  # noqa: E501
             ):
                 event.counterparty = CPT_CURVE
-                event.product = EvmProduct.CURVE_GAUGE
+                event.product = EvmProduct.GAUGE
                 if context.tx_log.topics[0] == GAUGE_DEPOSIT:
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
