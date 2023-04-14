@@ -3140,6 +3140,11 @@
       "title": "New Token Detected|New Tokens Detected",
       "message": "New token with identifier {identifier} was detected from event processing and queries.|{count} new tokens were detected from event processing and queries."
     },
+    "missing_api_key": {
+      "title": "{location} {service} API key",
+      "message": "You do not have an {location} {service} API key configured. rotki {service} queries will still work but will be very slow. If you are not using your own {location} node, it is recommended to go to {url}, create an API key and then input it in the external service credentials setting of rotki",
+      "action": "Enter key"
+    },
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"

@@ -16,7 +16,9 @@ export const createNotification = (
     action,
     category,
     group,
-    groupCount
+    groupCount,
+    i18nParam,
+    priority
   }: NotificationPayload = {
     title: '',
     message: '',
@@ -34,5 +36,7 @@ export const createNotification = (
   category,
   action,
   group,
-  groupCount
+  groupCount,
+  i18nParam,
+  priority
 });

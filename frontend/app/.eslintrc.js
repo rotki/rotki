@@ -13,7 +13,11 @@ module.exports = {
       'error',
       {
         extensions: ['.ts', '.vue'],
-        ignores: ['/transactions.query_status.*/', '/premium_components.*/']
+        ignores: [
+          '/transactions.query_status.*/',
+          '/premium_components.*/',
+          '/notification_messages.missing_api_key.*/'
+        ]
       }
     ],
     '@intlify/vue-i18n/no-duplicate-keys-in-locale': 'error',

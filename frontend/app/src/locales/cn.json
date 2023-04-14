@@ -3022,6 +3022,11 @@
       "title": "检测到新令牌|检测到新令牌",
       "message": "从事件处理和查询中检测到标识符为 {identifier} 的新令牌。|从事件处理和查询中检测到 {count} 个新令牌。"
     },
+    "missing_api_key": {
+      "title": "{location} {service} API 密钥",
+      "message": "您没有配置 {location} {service} API 密钥。 rotki {service} 查询仍然有效，但会很慢。如果你没有使用自己的{location}节点，建议去{url}，创建一个API密钥，然后在rotki的外部服务凭证设置中输入它",
+      "action": "回车键"
+    },
     "snapshot_failed": {
       "message": "无法在{location} 保存余额快照。{error}",
       "title": "余额快照失败"

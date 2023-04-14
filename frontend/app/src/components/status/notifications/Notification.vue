@@ -10,9 +10,11 @@ const props = withDefaults(
   { popup: false }
 );
 
-const emit = defineEmits(['dismiss']);
+const emit = defineEmits<{ (e: 'dismiss', id: number): void }>();
 
+const css = useCssModule();
 const { t } = useI18n();
+const { copy: copyToClipboard } = useClipboard();
 
 const { notification } = toRefs(props);
 const dismiss = (id: number) => {
@@ -45,7 +47,17 @@ const color = computed(() => {
 const date = computed(() => dayjs(get(notification).date).format('LLL'));
 
 const copy = async () => {
-  await navigator.clipboard.writeText(get(notification).message);
+  const { message, i18nParam } = get(notification);
+  let messageText = message;
+
+  if (i18nParam) {
+    messageText = t(i18nParam.message, {
+      service: i18nParam.props.service,
+      location: i18nParam.props.location,
+      url: i18nParam.props.url
+    }).toString();
+  }
+  await copyToClipboard(messageText);
 };
 
 const { fontStyle } = useTheme();
@@ -60,16 +72,16 @@ const action = async (notification: NotificationData) => {
 <template>
   <v-card
     :class="[
-      $style.notification,
+      css.notification,
       {
-        [$style.action]: !!notification.action,
-        [$style['fixed-height']]: !popup
+        [css.action]: !!notification.action,
+        [css['fixed-height']]: !popup
       }
     ]"
     :outlined="!popup"
     :elevation="0"
   >
-    <v-list-item :class="$style.body" class="flex-column align-stretch">
+    <v-list-item :class="css.body" class="flex-column align-stretch">
       <div class="d-flex pa-1">
         <v-list-item-avatar class="mr-3 ml-1 my-0" :color="color">
           <v-icon size="24px" color="white">
@@ -96,9 +108,15 @@ const action = async (notification: NotificationData) => {
       <div
         class="mt-1 px-2"
         :style="fontStyle"
-        :class="[$style.message, { [$style.inline]: !popup }]"
+        :class="[css.message, { [css.inline]: !popup }]"
       >
-        <div>{{ notification.message }}</div>
+        <missing-key-notification
+          v-if="notification.i18nParam"
+          :params="notification.i18nParam"
+        />
+        <div v-else>
+          {{ notification.message }}
+        </div>
       </div>
       <slot />
       <div class="d-flex mt-auto align-center ml-n1">

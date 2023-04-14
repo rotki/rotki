@@ -3,9 +3,11 @@ import {
   NotificationCategory,
   type NotificationData,
   type NotificationPayload,
+  Priority,
   Severity
 } from '@rotki/common/lib/messages';
 import { useSessionStorage } from '@vueuse/core';
+import orderBy from 'lodash/orderBy';
 import { type Ref } from 'vue';
 import { createNotification } from '@/utils/notifications';
 
@@ -24,6 +26,14 @@ export const useNotificationsStore = defineStore('notifications', () => {
     {}
   );
 
+  const prioritized = computed<NotificationData[]>(() => {
+    const byDate = orderBy(get(data), n => n.date, 'desc');
+    return orderBy(
+      byDate,
+      (n: NotificationData) => n.priority ?? Priority.NORMAL,
+      'desc'
+    );
+  });
   const count = computed(() => get(data).length);
   const nextId = computed(() => {
     const ids = get(data)
@@ -39,7 +49,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     return nextId;
   });
   const queue = computed(() =>
-    get(data).filter(notification => notification.display)
+    get(prioritized).filter(notification => notification.display)
   );
 
   function update(payload: NotificationData[]): void {
@@ -142,6 +152,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     count,
     nextId,
     queue,
+    prioritized,
     notify,
     displayed,
     remove
