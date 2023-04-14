@@ -456,6 +456,7 @@ def test_user_password_change(rotkehlchen_api_server, username, db_password):
             name=username,
         ), json=data_success)
     assert_simple_ok_response(response)
+    assert rotki.data.db.password == new_password
 
     # Logout
     data = {'action': 'logout'}
@@ -481,7 +482,7 @@ def test_user_password_change(rotkehlchen_api_server, username, db_password):
     assert users_data[username] == 'loggedin'
 
 
-def test_user_logout(rotkehlchen_api_server, username):
+def test_user_logout(rotkehlchen_api_server, username, db_password):
     """Test that user logout works succesfully and that common errors are handled"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -499,6 +500,7 @@ def test_user_logout(rotkehlchen_api_server, username):
     assert rotki.user_is_logged_in is True
 
     # Logout of the active user
+    assert rotki.data.db.password == db_password
     data = {'action': 'logout'}
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
@@ -506,6 +508,7 @@ def test_user_logout(rotkehlchen_api_server, username):
     )
     assert_simple_ok_response(response)
     assert rotki.user_is_logged_in is False
+    assert rotki.data.db.password == ''
 
     # Now try to log out of the same user again
     response = requests.patch(

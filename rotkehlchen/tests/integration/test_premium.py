@@ -51,7 +51,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_s
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         last_write_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_write_ts')
 
-    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
     remote_hash = get_different_hash(our_hash)
 
     def mock_succesfull_upload_data_to_server(
@@ -117,7 +117,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_s
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
+def test_upload_data_to_server_same_hash(rotkehlchen_instance):
     """Test that if the server has same data hash as we no upload happens"""
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
@@ -127,7 +127,7 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
         # Write anything in the DB to set a non-zero last_write_ts
         rotkehlchen_instance.data.db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
 
-    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
     remote_hash = our_hash
 
     patched_put = patch.object(
@@ -151,14 +151,14 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_password):
+def test_upload_data_to_server_smaller_db(rotkehlchen_instance):
     """Test that if the server has bigger DB size no upload happens"""
     with rotkehlchen_instance.data.db.user_write() as cursor:
         last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
         assert last_ts == 0
         # Write anything in the DB to set a non-zero last_write_ts
         rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
-    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
     remote_hash = get_different_hash(our_hash)
 
     patched_put = patch.object(
@@ -186,7 +186,6 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_password):
 def test_try_premium_at_start_new_account_can_pull_data(
         rotkehlchen_instance,
         username,
-        db_password,
         rotki_premium_credentials,
         premium_remote_data,
 ):
@@ -194,7 +193,6 @@ def test_try_premium_at_start_new_account_can_pull_data(
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
-        db_password=db_password,
         premium_credentials=rotki_premium_credentials,
         first_time=True,
         same_hash_with_remote=False,
@@ -209,7 +207,6 @@ def test_try_premium_at_start_new_account_can_pull_data(
 def test_try_premium_at_start_new_account_rejects_data(
         rotkehlchen_instance,
         username,
-        db_password,
         rotki_premium_credentials,
         premium_remote_data,
 ):
@@ -217,7 +214,6 @@ def test_try_premium_at_start_new_account_rejects_data(
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
-        db_password=db_password,
         premium_credentials=rotki_premium_credentials,
         first_time=True,
         same_hash_with_remote=False,
@@ -236,7 +232,6 @@ def test_try_premium_at_start_new_account_rejects_data(
 def test_try_premium_at_start_new_account_pull_old_data(
         rotkehlchen_instance,
         username,
-        db_password,
         rotki_premium_credentials,
 ):
     """
@@ -250,7 +245,6 @@ def test_try_premium_at_start_new_account_pull_old_data(
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
-        db_password=db_password,
         premium_credentials=rotki_premium_credentials,
         first_time=True,
         same_hash_with_remote=False,
@@ -265,14 +259,12 @@ def test_try_premium_at_start_new_account_pull_old_data(
 def test_try_premium_at_start_old_account_can_pull_data(
         rotkehlchen_instance,
         username,
-        db_password,
         rotki_premium_credentials,
         premium_remote_data,
 ):
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
-        db_password=db_password,
         premium_credentials=rotki_premium_credentials,
         first_time=False,
         same_hash_with_remote=False,
@@ -287,7 +279,6 @@ def test_try_premium_at_start_old_account_can_pull_data(
 def test_try_premium_at_start_old_account_can_pull_old_data(
         rotkehlchen_instance,
         username,
-        db_password,
         rotki_premium_credentials,
 ):
     """
@@ -301,7 +292,6 @@ def test_try_premium_at_start_old_account_can_pull_old_data(
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
-        db_password=db_password,
         premium_credentials=rotki_premium_credentials,
         first_time=False,
         same_hash_with_remote=False,
@@ -316,14 +306,12 @@ def test_try_premium_at_start_old_account_can_pull_old_data(
 def test_try_premium_at_start_old_account_doesnt_pull_data_with_no_premium_sync(
         rotkehlchen_instance,
         username,
-        db_password,
         rotki_premium_credentials,
         premium_remote_data,
 ):
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
-        db_password=db_password,
         premium_credentials=rotki_premium_credentials,
         first_time=False,
         same_hash_with_remote=False,
@@ -340,14 +328,12 @@ def test_try_premium_at_start_old_account_doesnt_pull_data_with_no_premium_sync(
 def test_try_premium_at_start_old_account_older_remote_ts_smaller_remote_size(
         rotkehlchen_instance,
         username,
-        db_password,
         rotki_premium_credentials,
         premium_remote_data,
 ):
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
-        db_password=db_password,
         premium_credentials=rotki_premium_credentials,
         first_time=False,
         same_hash_with_remote=False,
@@ -364,7 +350,6 @@ def test_try_premium_at_start_old_account_older_remote_ts_smaller_remote_size(
 def test_try_premium_at_start_old_account_newer_remote_ts_smaller_remote_size(
         rotkehlchen_instance,
         username,
-        db_password,
         rotki_premium_credentials,
         premium_remote_data,
 ):
@@ -373,7 +358,6 @@ def test_try_premium_at_start_old_account_newer_remote_ts_smaller_remote_size(
         setup_starting_environment(
             rotkehlchen_instance=rotkehlchen_instance,
             username=username,
-            db_password=db_password,
             premium_credentials=rotki_premium_credentials,
             first_time=False,
             same_hash_with_remote=False,
@@ -389,7 +373,6 @@ def test_try_premium_at_start_old_account_newer_remote_ts_smaller_remote_size(
 def test_try_premium_at_start_new_account_different_password_than_remote_db(
         rotkehlchen_instance,
         username,
-        db_password,
         rotki_premium_credentials,
         premium_remote_data,
 ):
@@ -402,7 +385,6 @@ def test_try_premium_at_start_new_account_different_password_than_remote_db(
         setup_starting_environment(
             rotkehlchen_instance=rotkehlchen_instance,
             username=username,
-            db_password=db_password,
             premium_credentials=rotki_premium_credentials,
             first_time=True,
             same_hash_with_remote=False,
@@ -417,7 +399,6 @@ def test_try_premium_at_start_new_account_different_password_than_remote_db(
 def test_try_premium_at_start_first_time_no_previous_db(
         rotkehlchen_instance,
         username,
-        db_password,
         rotki_premium_credentials,
         premium_remote_data,
 ):
@@ -428,7 +409,6 @@ def test_try_premium_at_start_first_time_no_previous_db(
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
-        db_password=db_password,
         premium_credentials=rotki_premium_credentials,
         first_time=True,
         same_hash_with_remote=False,
@@ -485,7 +465,7 @@ def test_premium_toggle_chains_aggregator(blockchain, rotki_premium_credentials)
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [10])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_upload_data_to_server_big_db(rotkehlchen_instance, db_password):
+def test_upload_data_to_server_big_db(rotkehlchen_instance):
     """Test that if the server has bigger DB size and context switch happens it
     all works out. Essentially a test for https://github.com/rotki/rotki/issues/5038
 
@@ -496,7 +476,7 @@ def test_upload_data_to_server_big_db(rotkehlchen_instance, db_password):
         assert last_ts == 0
         # Write anything in the DB to set a non-zero last_write_ts
         rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
-    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
     remote_hash = get_different_hash(our_hash)
 
     patched_put = patch.object(

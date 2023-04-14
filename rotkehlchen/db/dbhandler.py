@@ -208,16 +208,17 @@ class DBHandler:
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
         self.get_or_create_evm_token_lock = Semaphore()
-        self._connect(password)
-        self._check_unfinished_upgrades(password)
-        self._run_actions_after_first_connection(password)
+        self.password = password
+        self._connect()
+        self._check_unfinished_upgrades()
+        self._run_actions_after_first_connection()
         with self.user_write() as cursor:
             if initial_settings is not None:
                 self.set_settings(cursor, initial_settings)
             self.update_owned_assets_in_globaldb(cursor)
             self.add_globaldb_assetids(cursor)
 
-    def _check_unfinished_upgrades(self, password: str) -> None:
+    def _check_unfinished_upgrades(self) -> None:
         """
         Checks the database whether there are any not finished upgrades and automatically uses a
         backup if there are any. If no backup found, throws an error to the user
@@ -233,8 +234,8 @@ class DBHandler:
         if ongoing_upgrade_from_version is None:
             return  # We are all good
 
-        # Otherwise replace the db with a backup and relogin
-        self.logout()
+        # Otherwise replace the db with a backup and reconnect
+        self.disconnect()
         backup_postfix = f'rotkehlchen_db_v{ongoing_upgrade_from_version}.backup'
         found_backups = list(filter(
             lambda x: x[-len(backup_postfix):] == backup_postfix,
@@ -255,9 +256,10 @@ class DBHandler:
             f'Your encrypted database was in a half-upgraded state. '
             f'Trying to login with a backup {backup_to_use}',
         )
-        self._connect(password)
+        self._connect()
 
     def logout(self) -> None:
+        self.password = ''
         if self.conn is not None:
             self.disconnect(conn_attribute='conn')
         if self.conn_transient is not None:
@@ -272,7 +274,7 @@ class DBHandler:
         with open(self.user_data_dir / DBINFO_FILENAME, 'w') as f:
             f.write(rlk_jsondumps(dbinfo))
 
-    def _run_actions_after_first_connection(self, password: str) -> None:
+    def _run_actions_after_first_connection(self) -> None:
         """Perform the actions that are needed after the first DB connection
 
         Such as:
@@ -295,7 +297,7 @@ class DBHandler:
                 ('version', str(ROTKEHLCHEN_DB_VERSION)),
             )
         # set up transient connection
-        self._connect(password, conn_attribute='conn_transient')
+        self._connect(conn_attribute='conn_transient')
         if self.conn_transient:
             transient_version = 0
             cursor = self.conn_transient.cursor()
@@ -390,11 +392,7 @@ class DBHandler:
             (name, str(value)),
         )
 
-    def _connect(
-            self,
-            password: str,
-            conn_attribute: Literal['conn', 'conn_transient'] = 'conn',
-    ) -> None:
+    def _connect(self, conn_attribute: Literal['conn', 'conn_transient'] = 'conn') -> None:
         """Connect to the DB using password
 
         May raise:
@@ -419,7 +417,7 @@ class DBHandler:
                 f'Could not open database file: {fullpath}. Permission errors?',
             ) from e
 
-        password_for_sqlcipher = _protect_password_sqlcipher(password)
+        password_for_sqlcipher = _protect_password_sqlcipher(self.password)
         script = f'PRAGMA key="{password_for_sqlcipher}";'
         if self.sqlcipher_version == 3:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
@@ -470,6 +468,8 @@ class DBHandler:
             self._change_password(new_password, 'conn') and
             self._change_password(new_password, 'conn_transient')
         )
+        if result is True:
+            self.password = new_password
         return result
 
     def disconnect(self, conn_attribute: Literal['conn', 'conn_transient'] = 'conn') -> None:
@@ -485,7 +485,7 @@ class DBHandler:
             'DETACH DATABASE plaintext;'.format(temppath),
         )
 
-    def import_unencrypted(self, unencrypted_db_data: bytes, password: str) -> None:
+    def import_unencrypted(self, unencrypted_db_data: bytes) -> None:
         """Imports an unencrypted DB from raw data
 
         May raise:
@@ -515,7 +515,7 @@ class DBHandler:
                 connection_type=DBConnectionType.USER,
                 sql_vm_instructions_cb=self.sql_vm_instructions_cb,
             )
-            password_for_sqlcipher = _protect_password_sqlcipher(password)
+            password_for_sqlcipher = _protect_password_sqlcipher(self.password)
             script = f'ATTACH DATABASE "{rdbpath}" AS encrypted KEY "{password_for_sqlcipher}";'
             if self.sqlcipher_version == 3:
                 script += f'PRAGMA encrypted.kdf_iter={KDF_ITER};'
@@ -524,12 +524,12 @@ class DBHandler:
             self.disconnect()
 
         try:
-            self._connect(password)
+            self._connect()
         except SystemPermissionError as e:
             raise AssertionError(
                 f'Permission error when reopening the DB. {str(e)}. Should never happen here',
             ) from e
-        self._run_actions_after_first_connection(password)
+        self._run_actions_after_first_connection()
         # all went okay, remove the original temp backup
         (self.user_data_dir / 'rotkehlchen_temp_backup.db').unlink()
 
