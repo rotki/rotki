@@ -38,7 +38,7 @@ def decode_event_data_abi_str(
 
     May raise:
     - DeserializationError if the abi string is invalid or abi or log topics/data do not match
-    """  # noqa: E501
+    """
     try:
         event_abi = json.loads(abi_json)
     except json.decoder.JSONDecodeError as e:
@@ -57,7 +57,7 @@ def decode_event_data_abi(
 
     May raise:
     - DeserializationError if the abi string is invalid or abi or log topics/data do not match
-    """  # noqa: E501
+    """
     if event_abi['anonymous']:
         topics = tx_log.topics
     elif len(tx_log.topics) == 0:

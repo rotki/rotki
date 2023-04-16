@@ -56,7 +56,7 @@ def convert_transaction_from_covalent(
             formatstr=DATE_FORMAT_COVALENT,
         )
         # TODO input and nonce is decoded in Covalent api, encoded in future
-        return CovalentTransaction(  # noqa: TRY300  # can raise KeyError due to arg init
+        return CovalentTransaction(  # can raise KeyError due to arg init
             timestamp=timestamp,
             block_number=data['block_height'],
             tx_hash=data['tx_hash'],

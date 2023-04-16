@@ -522,7 +522,7 @@ class Poloniex(ExchangeInterface):
                         transaction_id = None
 
             asset = asset_from_poloniex(movement_data['currency'])
-            return AssetMovement(  # noqa: TRY300  # many deserializations can raise here
+            return AssetMovement(  # many deserializations can raise here
                 location=Location.POLONIEX,
                 category=movement_type,
                 address=deserialize_asset_movement_address(movement_data, 'address', asset),

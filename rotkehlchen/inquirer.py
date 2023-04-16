@@ -250,7 +250,7 @@ def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Optional[
     )
     try:
         resp = request_get_dict(querystr)
-        return Price(FVal(resp[pair]))  # noqa: TRY300  # can raise too
+        return Price(FVal(resp[pair]))  # can raise too
     except (ValueError, RemoteError, KeyError, UnableToDecryptRemoteData):
         log.error(
             'Querying free.currencyconverterapi.com fiat pair failed',

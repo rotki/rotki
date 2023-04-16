@@ -254,7 +254,7 @@ class ZerionSDK():
                     active=True,
                     weight=ONE,
                 )
-                return self.contract.call(  # noqa: TRY300  # this may raise
+                return self.contract.call(  # this may raise
                     node_inquirer=self.ethereum,
                     method_name='getBalances',
                     arguments=[account],

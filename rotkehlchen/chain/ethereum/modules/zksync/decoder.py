@@ -36,7 +36,7 @@ class ZksyncDecoder(DecoderInterface):
         We should include the zksync api querying module which is in this PR:
         https://github.com/rotki/rotki/pull/3985/files
         to get the ids of tokens and then match them to what is deposited.
-        """  # noqa: E501
+        """
         user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         amount_raw = hex_or_bytes_to_int(context.tx_log.data)
 
