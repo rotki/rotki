@@ -16,7 +16,7 @@ class KusamaNodeName(Enum):
     """Public nodes for Kusama.
 
     Taken from: https://github.com/polkadot-js/apps/blob/master/packages/apps-config/src/endpoints/production.ts#L34
-    """  # noqa: E501
+    """
     OWN = 0  # make sure it's always 0 to match PolkadotNodeName
     PARITY = 1
     ONFINALITY = 2
@@ -53,7 +53,7 @@ class PolkadotNodeName(Enum):
     """Public nodes for Polkadot.
 
     Taken from: https://github.com/polkadot-js/apps/blob/master/packages/apps-config/src/endpoints/production.ts#L34
-    """  # noqa: E501
+    """
     OWN = 0  # make sure it's always 0 to match KusamaNodeName
     PARITY = 1
     ONFINALITY = 2

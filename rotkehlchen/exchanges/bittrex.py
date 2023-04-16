@@ -474,7 +474,7 @@ class Bittrex(ExchangeInterface):
                 location='bittrex',
             )
             asset = asset_from_bittrex(raw_data['currencySymbol'])
-            return AssetMovement(  # noqa: TRY300  # can also raise
+            return AssetMovement(  # can also raise
                 location=Location.BITTREX,
                 category=category,
                 address=deserialize_asset_movement_address(raw_data, 'cryptoAddress', asset),
