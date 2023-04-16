@@ -676,6 +676,7 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
 @pytest.mark.parametrize('query_all_balances', [False, True])
 def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     ownership_proportion = FVal(0.45)
+    base_amount = FVal(32)
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -745,14 +746,13 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     per_acc = outcome['per_account']['ETH2']
     assert len(per_acc) == 2
     # hope they don't get slashed ;(
-    amount1 = FVal('34.547410412')
-    amount2 = FVal('34.600348623') * ownership_proportion
-    assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= amount1
-    assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount2
+    amount_proportion = FVal('34.600348623') * ownership_proportion
+    assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= base_amount
+    assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount_proportion
     totals = outcome['totals']
     assert len(totals['assets']) == 1
     assert len(totals['liabilities']) == 0
-    assert FVal(totals['assets']['ETH2']['amount']) >= amount1 + amount2
+    assert FVal(totals['assets']['ETH2']['amount']) >= base_amount + amount_proportion
 
     # now add 1 more validator and query ETH2 balances again to see it's included
     # the reason for this is to see the cache is properly invalidated at addition
@@ -774,13 +774,11 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     assert len(outcome['per_account']) == 1  # only ETH2
     per_acc = outcome['per_account']['ETH2']
     assert len(per_acc) == 3
-    amount1 = FVal('34.596290288')
-    amount2 = FVal('34.547410412')
-    amount3 = FVal('34.600348623') * ownership_proportion
-    assert FVal(per_acc[v0_pubkey]['assets']['ETH2']['amount']) >= amount1
-    assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= amount2
-    assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount3
+    amount_proportion = FVal('34.600348623') * ownership_proportion
+    assert FVal(per_acc[v0_pubkey]['assets']['ETH2']['amount']) >= base_amount
+    assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= base_amount
+    assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount_proportion
     totals = outcome['totals']
     assert len(totals['assets']) == 1
     assert len(totals['liabilities']) == 0
-    assert FVal(totals['assets']['ETH2']['amount']) >= amount1 + amount2 + amount3
+    assert FVal(totals['assets']['ETH2']['amount']) >= 2 * base_amount + amount_proportion
