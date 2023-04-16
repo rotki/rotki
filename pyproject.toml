@@ -115,6 +115,7 @@ select = [
     # "ARG",  # flake8-unused-arguments -- pylint already does this and we got ignores where needed
     "PL",  # all pylint rules
     "PIE",
+    "PYI",
     "COM",
     "DTZ",
     "EXE",
@@ -122,6 +123,7 @@ select = [
     "PT",
     # "TCH",  # Should do it at some point. Too many hits and no autofix. When enabled fully, remove from extend-select
     # "PTH",  # Should do it at some point. Many hits and no autofix. When enabled fully remove from extend-select
+    "INT",
     "TRY",
     "RSE",
     #  "SLF",  Private member access -- we unfortunately do that some times
