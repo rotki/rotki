@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, overload
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -18,6 +18,7 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_
 from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
     EVM_EVENT_JOIN,
+    EthWithdrawalFilterQuery,
     EvmEventFilterQuery,
     HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
@@ -44,11 +45,30 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-HISTORY_BASE_ENTRY_FIELDS = """entry_type, history_events.identifier, event_identifier,
-sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type,
-subtype"""
+HISTORY_BASE_ENTRY_FIELDS = 'entry_type, history_events.identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype '  # noqa: E501
+HISTORY_BASE_ENTRY_LENGTH = 12
 
 EVM_EVENT_FIELDS = 'counterparty, product, address, extra_data'
+EVM_FIELD_LENGTH = 4
+
+ETH_WITHDRAWAL_EVENT_FIELDS = 'validator_index, is_exit'
+ETH_WITHDRAWAL_FIELD_LENGTH = 2
+
+
+def _event_select_and_deserialize_fn(filter_query: HistoryBaseEntryFilterQuery) -> tuple[str, Callable]:  # noqa: E501
+    """Get the event select query and its deserialize function depending on type"""
+    deserialize_fn: Callable
+    if isinstance(filter_query, EvmEventFilterQuery):
+        select = f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {filter_query.get_join_query()}'  # noqa: E501
+        deserialize_fn = EvmEvent.deserialize_from_db
+    elif isinstance(filter_query, EthWithdrawalFilterQuery):
+        select = f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {ETH_WITHDRAWAL_EVENT_FIELDS} {filter_query.get_join_query()}'  # noqa: E501
+        deserialize_fn = EthWithdrawalEvent.deserialize_from_db
+    else:  # HistoryEventFilterQuery
+        select = f'SELECT {HISTORY_BASE_ENTRY_FIELDS} {filter_query.get_join_query()}'
+        deserialize_fn = HistoryEvent.deserialize_from_db
+
+    return select, deserialize_fn
 
 
 class DBHistoryEvents():
@@ -278,24 +298,34 @@ class DBHistoryEvents():
     ) -> list['EvmEvent']:
         ...
 
+    @overload
     def get_history_events(
             self,
             cursor: 'DBCursor',
-            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery],
+            filter_query: EthWithdrawalFilterQuery,
+            has_premium: bool,
+    ) -> list['EvmEvent']:
+        ...
+
+    def get_history_events(
+            self,
+            cursor: 'DBCursor',
+            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthWithdrawalFilterQuery],  # noqa: E501
             has_premium: bool,
     ) -> Union[list['HistoryEvent'], list['EvmEvent']]:
         """
         Get history events using the provided query filter
         """
         query, bindings = filter_query.prepare()
+
+        select, deserialize_fn = _event_select_and_deserialize_fn(filter_query)
         if has_premium is True:
-            base_query = f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {filter_query.get_join_query()}'  # noqa: E501
+            base_query = select
         else:
-            base_query = f'SELECT * FROM (SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {filter_query.get_join_query()} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
+            base_query = f'SELECT * FROM ({select} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
             bindings.insert(0, FREE_HISTORY_EVENTS_LIMIT)
 
         cursor.execute(base_query + query, bindings)
-        deserialize_fn = EvmEvent.deserialize_from_db if isinstance(filter_query, EvmEventFilterQuery) else HistoryEvent.deserialize_from_db  # noqa: E501
         output = []
         for entry in cursor:
             try:
@@ -306,7 +336,7 @@ class DBHistoryEvents():
 
             output.append(deserialized_event)
 
-        return output  # type: ignore[return-value]  # can't see different event types
+        return output
 
     @overload
     def get_specific_history_events_and_limit_info(
@@ -326,12 +356,21 @@ class DBHistoryEvents():
     ) -> tuple[list[EvmEvent], int]:
         ...
 
+    @overload
     def get_specific_history_events_and_limit_info(
             self,
             cursor: 'DBCursor',
-            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery],
+            filter_query: EthWithdrawalFilterQuery,
             has_premium: bool,
-    ) -> tuple[Union[list[HistoryEvent], list[EvmEvent]], int]:
+    ) -> tuple[list[EthWithdrawalEvent], int]:
+        ...
+
+    def get_specific_history_events_and_limit_info(
+            self,
+            cursor: 'DBCursor',
+            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthWithdrawalFilterQuery],  # noqa: E501
+            has_premium: bool,
+    ) -> tuple[Union[list[HistoryEvent], list[EvmEvent], list[EthWithdrawalEvent]], int]:
         """Gets all history events for the specific type, based on the filter query.
 
         Also returns how many are the total found for the filter
@@ -384,7 +423,14 @@ class DBHistoryEvents():
             has_premium: bool,
             group_by_event_ids: bool,
     ) -> Union[list[HistoryBaseEntry], list[tuple[int, HistoryBaseEntry]]]:
-        """Get all events from the DB, deserialized depending on the event type"""
+        """Get all events from the DB, deserialized depending on the event type
+
+        TODO: Think if we should change the way we query this. As events get more complicated
+        I am not sure if we should include all fields in the query. A different approach would be
+        to include only the base events and any field whose event type is in the filter.
+        And then either query more data in the for loop or query them all before for the
+        type and event identifier combination.
+        """
         prepared_query, bindings = filter_query.prepare(with_group_by=group_by_event_ids)
         base_prefix = 'SELECT '
         type_idx = 0
@@ -393,9 +439,9 @@ class DBHistoryEvents():
             type_idx = 1
 
         if has_premium is True:
-            base_query = f'{base_prefix} {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
+            base_query = f'{base_prefix} {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {ETH_WITHDRAWAL_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
         else:
-            base_query = f'{base_prefix} * FROM (SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
+            base_query = f'{base_prefix} * FROM (SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {ETH_WITHDRAWAL_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
             bindings.insert(0, FREE_HISTORY_EVENTS_LIMIT)
 
         cursor.execute(base_query + prepared_query, bindings)
@@ -403,11 +449,16 @@ class DBHistoryEvents():
         data_start_idx = type_idx + 1
         for entry in cursor:
             try:
-                deserialized_event: Union[HistoryEvent, EvmEvent]
+                deserialized_event: Union[HistoryEvent, EvmEvent, EthWithdrawalEvent]
                 # Deserialize event depending on its type
                 if HistoryBaseEntryType(entry[type_idx]) == HistoryBaseEntryType.EVM_EVENT:
-                    deserialized_event = EvmEvent.deserialize_from_db(entry[data_start_idx:])
+                    data = entry[data_start_idx:HISTORY_BASE_ENTRY_LENGTH + 1] + entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + 1]  # noqa: E501
+                    deserialized_event = EvmEvent.deserialize_from_db(data)
+                elif HistoryBaseEntryType(entry[type_idx]) == HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT:  # noqa: E501
+                    data = entry[data_start_idx:HISTORY_BASE_ENTRY_LENGTH + 1] + entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + ETH_WITHDRAWAL_FIELD_LENGTH + 1]  # noqa: E501
+                    deserialized_event = EthWithdrawalEvent.deserialize_from_db(data)
                 else:
+                    data = entry[data_start_idx:HISTORY_BASE_ENTRY_LENGTH + 1]
                     deserialized_event = HistoryEvent.deserialize_from_db(entry[data_start_idx:])
             except (DeserializationError, UnknownAsset) as e:
                 log.debug(f'Failed to deserialize history event {entry} due to {str(e)}')
