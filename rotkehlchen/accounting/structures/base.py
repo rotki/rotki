@@ -67,6 +67,7 @@ class HistoryBaseEntryType(Enum):
     """Type of a history entry. Value(int) is written/read into/from the DB"""
     BASE_ENTRY = auto()
     EVM_EVENT = auto()
+    ETH_WITHDRAWAL_EVENT = auto()
 
 
 class HistoryBaseEntryData(TypedDict):

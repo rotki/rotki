@@ -32,8 +32,11 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-ALL_EVENTS_DATA_JOIN = 'FROM history_events LEFT JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier '  # noqa: E501
+ALL_EVENTS_DATA_JOIN = """FROM history_events
+LEFT JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier
+LEFT JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier """  # noqa: E501
 EVM_EVENT_JOIN = 'FROM history_events INNER JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier '  # noqa: E501
+ETH_WITHDRAWAL_EVENT_JOIN = 'FROM history_events INNER JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier '  # noqa: E501
 
 
 T = TypeVar('T')
@@ -534,7 +537,7 @@ class DBEqualsFilter(DBFilter):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBMultiValueFilter(Generic[T], DBFilter):
-    """Filter a column having a string value out of a selection of values"""
+    """Filter a column having a value out of a selection of values"""
     column: str
     values: list[T]
     operator: Literal['IN', 'NOT IN'] = 'IN'
@@ -555,6 +558,10 @@ class DBMultiStringFilter(DBMultiValueFilter[str]):
 
 class DBMultiBytesFilter(DBMultiValueFilter[bytes]):
     """Filter a column having a bytes value out of a selection of values"""
+
+
+class DBMultiIntegerFilter(DBMultiValueFilter[int]):
+    """Filter a column having an integer value out of a selection of values"""
 
 
 class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
@@ -994,7 +1001,7 @@ class HistoryEventFilterQuery(HistoryBaseEntryFilterQuery):
 
     @staticmethod
     def get_join_query() -> str:
-        return ALL_EVENTS_DATA_JOIN
+        return 'FROM history_events '
 
     @staticmethod
     def get_count_query() -> str:
@@ -1073,6 +1080,71 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
     @staticmethod
     def get_count_query() -> str:
         return f'SELECT COUNT(*) {EVM_EVENT_JOIN}'
+
+    @staticmethod
+    def get_entry_type() -> HistoryBaseEntryType:
+        return HistoryBaseEntryType.EVM_EVENT
+
+
+class EthWithdrawalFilterQuery(HistoryBaseEntryFilterQuery):
+    @classmethod
+    def make(
+            cls,
+            and_op: bool = True,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+            assets: Optional[tuple[Asset, ...]] = None,
+            event_types: Optional[list[HistoryEventType]] = None,
+            event_subtypes: Optional[list[HistoryEventSubType]] = None,
+            exclude_subtypes: Optional[list[HistoryEventSubType]] = None,
+            location: Optional[Location] = None,
+            location_labels: Optional[list[str]] = None,
+            ignored_ids: Optional[list[str]] = None,
+            null_columns: Optional[list[str]] = None,
+            event_identifiers: Optional[list[bytes]] = None,
+            exclude_ignored_assets: bool = False,
+            limit_to_entry_type: bool = False,
+            validator_indices: Optional[list[int]] = None,
+    ) -> 'EthWithdrawalFilterQuery':
+        filter_query = super().make(
+            and_op=and_op,
+            order_by_rules=order_by_rules,
+            limit=limit,
+            offset=offset,
+            from_ts=from_ts,
+            to_ts=to_ts,
+            assets=assets,
+            event_types=event_types,
+            event_subtypes=event_subtypes,
+            exclude_subtypes=exclude_subtypes,
+            location=location,
+            location_labels=location_labels,
+            ignored_ids=ignored_ids,
+            null_columns=null_columns,
+            event_identifiers=event_identifiers,
+            exclude_ignored_assets=exclude_ignored_assets,
+            limit_to_entry_type=limit_to_entry_type,
+        )
+        if validator_indices is not None:
+            filter_query.filters.append(DBMultiIntegerFilter(
+                and_op=True,
+                column='validator_index',
+                values=validator_indices,
+                operator='IN',
+            ))
+
+        return filter_query
+
+    @staticmethod
+    def get_join_query() -> str:
+        return ETH_WITHDRAWAL_EVENT_JOIN
+
+    @staticmethod
+    def get_count_query() -> str:
+        return f'SELECT COUNT(*) {ETH_WITHDRAWAL_EVENT_JOIN}'
 
     @staticmethod
     def get_entry_type() -> HistoryBaseEntryType:
