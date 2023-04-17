@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { bigNumberify } from '@/utils/bignumbers';
-import { isValidEthAddress, isValidTxHash } from '@/utils/text';
 
 withDefaults(
   defineProps<{

@@ -3,10 +3,7 @@ import { BigNumber } from '@rotki/common';
 import { type ComputedRef, type Ref } from 'vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import { CURRENCY_USD, type Currency, useCurrencies } from '@/types/currencies';
-import { One, Zero } from '@/utils/bignumbers';
 import { type RoundingMode } from '@/types/frontend-settings';
-import { assert } from '@/utils/assertions';
-import { logger } from '@/utils/logging';
 
 const CurrencyType = ['none', 'ticker', 'symbol', 'name'] as const;
 type ShownCurrency = (typeof CurrencyType)[number];

@@ -8,9 +8,6 @@ import {
   CUSTOM_ASSET,
   type IgnoredAssetsHandlingType
 } from '@/types/asset';
-import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@/utils/assets';
-import { uniqueStrings } from '@/utils/data';
-import { toSentenceCase } from '@/utils/text';
 import { type ActionStatus } from '@/types/action';
 
 const props = withDefaults(

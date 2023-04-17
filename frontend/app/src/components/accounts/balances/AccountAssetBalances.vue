@@ -2,7 +2,6 @@
 import { type AssetBalance } from '@rotki/common';
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import { Zero } from '@/utils/bignumbers';
 
 defineProps({
   assets: { required: true, type: Array as PropType<AssetBalance[]> },

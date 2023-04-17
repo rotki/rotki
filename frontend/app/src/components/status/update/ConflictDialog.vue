@@ -8,7 +8,6 @@ import {
   type ConflictResolution,
   type ConflictResolutionStrategy
 } from '@/types/asset';
-import { uniqueStrings } from '@/utils/data';
 
 const props = defineProps({
   conflicts: {

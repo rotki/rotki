@@ -9,8 +9,6 @@ import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { logger } from '@/utils/logging';
-import { removeTags } from '@/utils/tags';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { type ActionStatus } from '@/types/action';
 import { type GeneralAccountData } from '@/types/blockchain/accounts';

@@ -1,6 +1,4 @@
 import { Section, Status } from '@/types/status';
-import { startPromise } from '@/utils';
-import { logger } from '@/utils/logging';
 
 export const useDataLoader = () => {
   const { shouldFetchData } = storeToRefs(useSessionAuthStore());

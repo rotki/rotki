@@ -8,7 +8,6 @@ import {
 } from '@rotki/common/lib/history/tx-events';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
-import { Zero } from '@/utils/bignumbers';
 
 const props = defineProps({
   vault: {

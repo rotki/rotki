@@ -3,8 +3,6 @@ import {
   type CreateAccountPayload,
   type LoginCredentials
 } from '@/types/login';
-import { setLastLogin } from '@/utils/account-management';
-import { wait } from '@/utils/backoff';
 
 export const useAccountManagement = () => {
   const loading: Ref<boolean> = ref(false);

@@ -2,7 +2,6 @@
 import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
 import { type PropType } from 'vue';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
-import { Zero } from '@/utils/bignumbers';
 
 const assetPadding = 3;
 

@@ -6,7 +6,6 @@ import {
   type HistoryEventEntry
 } from '@/types/history/tx';
 import TransactionEventForm from '@/components/history/transactions/events/TransactionEventForm.vue';
-import { toEvmChainAndTxHash } from '@/utils/history';
 
 const props = withDefaults(
   defineProps<{

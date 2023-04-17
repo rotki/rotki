@@ -6,7 +6,6 @@ import { type AssetPrices } from '@/types/prices';
 import { Status } from '@/types/status';
 import { type BlockchainMetadata } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { logger } from '@/utils/logging';
 import { type BlockchainBalancePayload } from '@/types/blockchain/accounts';
 
 export const useBlockchainBalances = () => {

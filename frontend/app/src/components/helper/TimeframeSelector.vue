@@ -4,7 +4,6 @@ import {
   type TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
 import { type PropType } from 'vue';
-import { isPeriodAllowed } from '@/utils/settings';
 
 const props = defineProps({
   value: { required: true, type: String as PropType<TimeFrameSetting> },

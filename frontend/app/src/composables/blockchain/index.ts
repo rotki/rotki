@@ -2,8 +2,6 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Severity } from '@rotki/common/lib/messages';
 import { type MaybeRef } from '@vueuse/core';
 import { TaskType } from '@/types/task-type';
-import { startPromise } from '@/utils';
-import { logger } from '@/utils/logging';
 import { isBlockchain, isTokenChain } from '@/types/blockchain/chains';
 import {
   type AccountPayload,
@@ -11,7 +9,6 @@ import {
   type BaseAddAccountsPayload
 } from '@/types/blockchain/accounts';
 import { type TaskMeta } from '@/types/task';
-import { useStatusUpdater } from '@/composables/status';
 import { Section } from '@/types/status';
 
 export const useBlockchains = () => {

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { startPromise } from '@/utils';
 import '@/utils/chartjs-adapter-dayjs';
 
 useSessionStateCleaner();

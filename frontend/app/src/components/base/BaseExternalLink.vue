@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { truncateAddress } from '@/filters';
-import { assert } from '@/utils/assertions';
 
 const props = defineProps({
   href: {

@@ -8,8 +8,6 @@ import {
 } from '@/types/blockchain/balances';
 import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
 import { type AssetPrices } from '@/types/prices';
-import { removeZeroAssets } from '@/utils/balances';
-import { updateBtcPrices, updateTotalsPrices } from '@/utils/prices';
 
 type Totals = Record<BtcChains, AssetBalances>;
 type Balances = Record<BtcChains, BtcBalances>;

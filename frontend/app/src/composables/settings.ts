@@ -2,7 +2,6 @@ import { promiseTimeout } from '@vueuse/core';
 import { type FrontendSettingsPayload } from '@/types/frontend-settings';
 import { type BaseMessage } from '@/types/messages';
 import { type SettingsUpdate } from '@/types/user';
-import { logger } from '@/utils/logging';
 import { type SessionSettings } from '@/types/session';
 import { type ActionStatus } from '@/types/action';
 

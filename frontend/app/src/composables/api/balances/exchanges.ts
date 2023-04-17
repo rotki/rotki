@@ -20,7 +20,6 @@ import {
   Exchanges,
   type SupportedExchange
 } from '@/types/exchanges';
-import { nonEmptyProperties } from '@/utils/data';
 import { type PendingTask } from '@/types/task';
 
 export const useExchangeApi = () => {

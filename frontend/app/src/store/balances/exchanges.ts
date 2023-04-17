@@ -15,22 +15,9 @@ import { Section, Status } from '@/types/status';
 import { type ExchangeMeta, type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import {
-  appendAssetBalance,
-  mergeAssociatedAssets,
-  sumAssetBalances,
-  toSortedAssetBalanceWithPrice
-} from '@/utils/balances';
-import { sortDesc } from '@/utils/bignumbers';
-import { assetSum } from '@/utils/calculation';
-import { updateBalancesPrices } from '@/utils/prices';
-import {
   type AssetBreakdown,
   type ExchangeBalancePayload
 } from '@/types/blockchain/accounts';
-import { logger } from '@/utils/logging';
-import { uniqueStrings } from '@/utils/data';
-import { mapCollectionResponse } from '@/utils/collection';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 export const useExchangeBalancesStore = defineStore(
   'balances/exchanges',

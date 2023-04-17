@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { invertColor } from '@/utils/color';
-
 type Style = Record<string, string>;
 interface Dimension {
   value: number;

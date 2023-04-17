@@ -1,6 +1,5 @@
 import { type Ref } from 'vue';
 import { type TradeLocation } from '@/types/history/trade/location';
-import { logger } from '@/utils/logging';
 
 export const useHistoryStore = defineStore('history', () => {
   const { notify } = useNotificationsStore();

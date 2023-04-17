@@ -5,13 +5,10 @@ import {
   type XswapPoolProfit
 } from '@rotki/common/lib/defi/xswap';
 import { type ComputedRef, type Ref } from 'vue';
-import { getBalances, getPoolProfit, getPools } from '@/utils/defi/xswap';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { uniqueStrings } from '@/utils/data';
-import { fetchDataAsync } from '@/utils/fetch-async';
 import { type OnError } from '@/types/fetch';
 
 export const useUniswapStore = defineStore('defi/uniswap', () => {

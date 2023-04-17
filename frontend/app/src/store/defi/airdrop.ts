@@ -7,7 +7,6 @@ import {
   Airdrops,
   type PoapDelivery
 } from '@/types/airdrops';
-import { bigNumberify } from '@/utils/bignumbers';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';

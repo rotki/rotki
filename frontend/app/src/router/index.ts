@@ -6,7 +6,6 @@ import Vue from 'vue';
 import Router, { type Route } from 'vue-router';
 import { Routes } from '@/router/routes';
 import { NoteLocation } from '@/types/notes';
-import { checkIfDevelopment } from '@/utils/env-utils';
 
 Vue.use(Router);
 

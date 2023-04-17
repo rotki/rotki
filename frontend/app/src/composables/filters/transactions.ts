@@ -9,7 +9,6 @@ import {
   dateSerializer,
   dateValidator
 } from '@/types/filtering';
-import { getDateInputISOFormat } from '@/utils/date';
 
 enum TransactionFilterKeys {
   START = 'start',

@@ -6,7 +6,6 @@ import {
 } from '@rotki/common/lib/settings/graphs';
 import { type PropType } from 'vue';
 import Fragment from '@/components/helper/Fragment';
-import { isPeriodAllowed } from '@/utils/settings';
 
 const props = defineProps({
   message: {

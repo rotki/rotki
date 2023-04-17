@@ -17,14 +17,9 @@ import {
   type NewHistoryEvent
 } from '@/types/history/tx';
 import { TaskType } from '@/types/task-type';
-import { Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
-import { useEventTypeData } from '@/utils/history';
 import { toMessages } from '@/utils/validation-errors';
 import { type ActionDataEntry } from '@/types/action';
 import { transactionEventTypeMapping } from '@/data/transaction-event-mapping';
-import { isValidEthAddress, isValidTxHash } from '@/utils/text';
-import { useHistoryStore } from '@/store/history';
 
 const props = withDefaults(
   defineProps<{

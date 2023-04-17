@@ -7,7 +7,6 @@ import {
   type LocationDataSnapshot,
   type LocationDataSnapshotPayload
 } from '@/types/snapshots';
-import { One, Zero, bigNumberify, sortDesc } from '@/utils/bignumbers';
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
 

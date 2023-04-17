@@ -5,7 +5,6 @@ import { type NetValue } from '@rotki/common/lib/statistics';
 import dayjs from 'dayjs';
 import { type ComputedRef } from 'vue';
 import { CURRENCY_USD } from '@/types/currencies';
-import { One, Zero, bigNumberify } from '@/utils/bignumbers';
 
 const defaultNetValue = (): NetValue => ({
   times: [],

@@ -13,8 +13,6 @@ import {
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type AccountingSettings } from '@/types/user';
-import { logger } from '@/utils/logging';
-import { getEthAddressesFromText } from '@/utils/history';
 
 const notify = (info: {
   title: string;

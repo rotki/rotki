@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { trimOnPaste } from '@/utils/event';
-
 const props = withDefaults(
   defineProps<{
     value: string;

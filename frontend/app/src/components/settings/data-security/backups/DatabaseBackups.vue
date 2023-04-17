@@ -4,7 +4,6 @@ import { type DataTableHeader } from 'vuetify';
 import Fragment from '@/components/helper/Fragment';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { type UserDbBackup } from '@/types/backup';
-import { getFilepath } from '@/utils/backups';
 import { size } from '@/utils/data';
 
 const props = defineProps({

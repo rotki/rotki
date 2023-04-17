@@ -1,7 +1,6 @@
 import { type ComputedRef } from 'vue';
 import { type MaybeRef } from '@vueuse/core';
 import { type AssetInfo } from '@rotki/common/lib/data';
-import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@/utils/assets';
 import { CUSTOM_ASSET } from '@/types/asset';
 import { type ERC20Token } from '@/types/blockchain/accounts';
 import { TaskType } from '@/types/task-type';

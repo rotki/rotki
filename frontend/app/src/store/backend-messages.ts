@@ -1,6 +1,4 @@
 import { BackendCode } from '@/electron-main/backend-code';
-import { checkIfDevelopment } from '@/utils/env-utils';
-import { logger } from '@/utils/logging';
 
 export const useBackendMessagesStore = defineStore('backendMessages', () => {
   const startupErrorMessage = ref('');

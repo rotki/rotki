@@ -3,7 +3,6 @@ import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
-import { assert } from '@/utils/assertions';
 
 const props = defineProps<{ module: Module }>();
 

@@ -3,8 +3,6 @@ import { type DataTableHeader } from 'vuetify';
 import { type ComputedRef, type Ref } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type NewDetectedToken } from '@/types/websocket-messages';
-import { uniqueStrings } from '@/utils/data';
-import { getAddressFromEvmIdentifier } from '@/utils/assets';
 
 const { tc } = useI18n();
 

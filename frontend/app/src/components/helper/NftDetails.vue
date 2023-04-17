@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
 import { isVideo } from '@/utils/nft';
-import { getDomain } from '@/utils/url';
-import { uniqueStrings } from '@/utils/data';
 
 const props = defineProps({
   identifier: {

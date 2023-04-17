@@ -11,12 +11,8 @@ import {
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { mapCollectionResponse } from '@/utils/collection';
-import { logger } from '@/utils/logging';
-import { mapCollectionEntriesWithMeta } from '@/utils/history';
 import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { useExchangesStore } from '@/store/exchanges';
 
 export const useTrades = () => {
   const { fetchAssociatedLocations } = useHistoryStore();

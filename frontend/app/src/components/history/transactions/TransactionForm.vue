@@ -3,13 +3,11 @@ import { type GeneralAccount } from '@rotki/common/lib/account';
 import { helpers, required } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
 import { type Ref } from 'vue';
-import { isValidTxHash } from '@/utils/text';
 import {
   type AddTransactionHashPayload,
   type EvmChainAndTxHash
 } from '@/types/history/tx';
 import { type Writeable } from '@/types';
-import { assert } from '@/utils/assertions';
 
 withDefaults(
   defineProps<{

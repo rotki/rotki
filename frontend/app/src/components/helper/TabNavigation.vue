@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type TabContent, getClass } from '@/types/tabs';
-import { checkIfDevelopment } from '@/utils/env-utils';
 
 const props = defineProps({
   tabContents: { required: true, type: Array as PropType<TabContent[]> },

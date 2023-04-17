@@ -6,7 +6,6 @@ import {
   type Snapshot,
   type SnapshotPayload
 } from '@/types/snapshots';
-import { sortDesc } from '@/utils/bignumbers';
 
 const props = defineProps({
   timestamp: {

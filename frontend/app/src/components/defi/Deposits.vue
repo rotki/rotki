@@ -17,7 +17,6 @@ import { type YearnVaultProfitLoss } from '@/types/defi/yearn';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { ProtocolVersion } from '@/types/defi';
-import { assert } from '@/utils/assertions';
 
 const section = Section.DEFI_LENDING;
 const historySection = Section.DEFI_LENDING_HISTORY;

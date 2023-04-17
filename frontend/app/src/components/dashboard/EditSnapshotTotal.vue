@@ -8,10 +8,6 @@ import {
   type BalanceSnapshot,
   type LocationDataSnapshot
 } from '@/types/snapshots';
-import { assert } from '@/utils/assertions';
-import { One, Zero, bigNumberify } from '@/utils/bignumbers';
-import { isNft } from '@/utils/nft';
-import { bigNumberSum } from '@/utils/calculation';
 
 const props = defineProps({
   value: {

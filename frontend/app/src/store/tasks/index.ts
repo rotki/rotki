@@ -12,9 +12,6 @@ import {
   TaskNotFoundError
 } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { assert } from '@/utils/assertions';
-import { checkIfDevelopment } from '@/utils/env-utils';
-import { logger } from '@/utils/logging';
 
 const unlockTask = (lockedTasks: Ref<number[]>, taskId: number): number[] => {
   const locked = [...get(lockedTasks)];

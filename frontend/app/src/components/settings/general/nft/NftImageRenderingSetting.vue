@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type ComputedRef, type Ref } from 'vue';
 import isEqual from 'lodash/isEqual';
-import { getDomain } from '@/utils/url';
-import { uniqueStrings } from '@/utils/data';
 
 const renderAllNftImages: Ref<boolean> = ref(false);
 const whitelistedDomainsForNftImages: Ref<string[]> = ref([]);

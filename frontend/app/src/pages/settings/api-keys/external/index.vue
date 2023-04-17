@@ -6,7 +6,7 @@ import {
   type ExternalServiceKeys,
   type ExternalServiceName
 } from '@/types/user';
-import { toCapitalCase, toSentenceCase } from '@/utils/text';
+import { toSentenceCase } from '@/utils/text';
 
 const evmEtherscanTabIndex: Ref<number> = ref(0);
 

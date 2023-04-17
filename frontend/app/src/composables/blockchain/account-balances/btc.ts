@@ -3,11 +3,6 @@ import { type ComputedRef } from 'vue';
 import { type BlockchainTotal } from '@/types/blockchain';
 import { Section } from '@/types/status';
 import {
-  btcAccountsWithBalances,
-  getBtcBreakdown,
-  sum
-} from '@/utils/balances';
-import {
   type AssetBreakdown,
   type BlockchainAccountWithBalance
 } from '@/types/blockchain/accounts';

@@ -1,5 +1,3 @@
-import { backoff } from '@/utils/backoff';
-
 export const usePeriodicStore = defineStore('session/periodic', () => {
   const lastBalanceSave = ref(0);
   const lastDataUpload = ref(0);

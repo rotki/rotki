@@ -7,7 +7,6 @@ import {
 } from '@/types/reports';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { downloadFileByUrl } from '@/utils/download';
 
 const { isTaskRunning } = useTaskStore();
 const reportsStore = useReportsStore();

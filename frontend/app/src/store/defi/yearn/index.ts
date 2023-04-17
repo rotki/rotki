@@ -11,12 +11,7 @@ import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { isEvmIdentifier } from '@/utils/assets';
-import { zeroBalance } from '@/utils/bignumbers';
-import { balanceSum } from '@/utils/calculation';
 import { ProtocolVersion } from '@/types/defi';
-import { useStatusUpdater } from '@/composables/status';
-import { getProtocolAddresses } from '@/utils/addresses';
 
 export const useYearnStore = defineStore('defi/yearn', () => {
   const vaultsBalances: Ref<YearnVaultsBalances> = ref({});

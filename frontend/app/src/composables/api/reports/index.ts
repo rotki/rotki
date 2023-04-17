@@ -10,7 +10,6 @@ import {
 } from '@/types/reports';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { handleResponse, validStatus, validTaskStatus } from '@/services/utils';
-import { downloadFileByUrl } from '@/utils/download';
 import { api } from '@/services/rotkehlchen-api';
 import { type ActionStatus } from '@/types/action';
 import { type PendingTask } from '@/types/task';

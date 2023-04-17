@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { type ComputedRef, type PropType } from 'vue';
 import { type StyleValue } from 'vue/types/jsx';
-import { getDomain } from '@/utils/url';
-import { isVideo } from '@/utils/nft';
 import { type GalleryNft } from '@/types/nfts';
-import { uniqueStrings } from '@/utils/data';
 
 const props = defineProps({
   item: {

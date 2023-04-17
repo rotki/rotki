@@ -8,7 +8,6 @@ import {
   type SupportedExchange
 } from '@/types/exchanges';
 import { Section } from '@/types/status';
-import { Zero } from '@/utils/bignumbers';
 
 const props = defineProps<{
   exchange: SupportedExchange.BINANCE | SupportedExchange.BINANCEUS;

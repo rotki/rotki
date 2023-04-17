@@ -9,7 +9,6 @@ import {
 import { useSessionStorage } from '@vueuse/core';
 import orderBy from 'lodash/orderBy';
 import { type Ref } from 'vue';
-import { createNotification } from '@/utils/notifications';
 
 const notificationDefaults = (): NotificationPayload => ({
   title: '',

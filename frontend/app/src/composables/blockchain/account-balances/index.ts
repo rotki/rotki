@@ -2,8 +2,6 @@ import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef, type Ref } from 'vue';
 import { type BlockchainTotal } from '@/types/blockchain';
-import { sortDesc } from '@/utils/bignumbers';
-import { uniqueStrings } from '@/utils/data';
 import {
   type AssetBreakdown,
   type BlockchainAccountWithBalance

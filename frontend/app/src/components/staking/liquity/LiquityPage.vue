@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
-import { useBalancePricesStore } from '@/store/balances/prices';
 
 const modules = [Module.LIQUITY];
 const { isModuleEnabled } = useModules();

@@ -1,7 +1,5 @@
 import { BigNumber } from '@rotki/common';
 import { type PiniaPluginContext } from 'pinia';
-import { bigNumberify } from '@/utils/bignumbers';
-import { logger } from '@/utils/logging';
 
 function convert(data: any): any {
   if (Array.isArray(data)) {

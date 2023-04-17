@@ -4,8 +4,6 @@ import {
   Priority,
   Severity
 } from '@rotki/common/lib/messages';
-import { toSentenceCase } from '@/utils/text';
-import { getServiceRegisterUrl } from '@/utils/url';
 import {
   type BalanceSnapshotError,
   type EvmTransactionQueryData,
@@ -17,11 +15,8 @@ import {
   WebsocketMessage
 } from '@/types/websocket-messages';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
-import { logger } from '@/utils/logging';
 import { Routes } from '@/router/routes';
 import router from '@/router';
-import { backoff } from '@/utils/backoff';
-import { uniqueStrings } from '@/utils/data';
 
 export const useMessageHandling = () => {
   const { setQueryStatus } = useTxQueryStatusStore();

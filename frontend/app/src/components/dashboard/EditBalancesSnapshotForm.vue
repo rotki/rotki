@@ -3,7 +3,6 @@ import { type BigNumber } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { type BalanceSnapshotPayload } from '@/types/snapshots';
-import { isNft } from '@/utils/nft';
 
 interface BalanceSnapshotPayloadAndLocation extends BalanceSnapshotPayload {
   location: string;

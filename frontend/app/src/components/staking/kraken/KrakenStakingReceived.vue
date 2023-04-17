@@ -2,7 +2,6 @@
 import { type Balance } from '@rotki/common';
 import { type PropType } from 'vue';
 import { type ReceivedAmount } from '@/types/staking';
-import { Zero } from '@/utils/bignumbers';
 
 defineProps({
   received: {

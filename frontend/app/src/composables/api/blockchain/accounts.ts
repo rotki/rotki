@@ -15,9 +15,7 @@ import {
   validWithSessionStatus
 } from '@/services/utils';
 import { type BtcChains } from '@/types/blockchain/chains';
-import { assert } from '@/utils/assertions';
 import { type Eth2Validator } from '@/types/balances';
-import { nonEmptyProperties } from '@/utils/data';
 import {
   type BlockchainAccountPayload,
   type BtcAccountData,

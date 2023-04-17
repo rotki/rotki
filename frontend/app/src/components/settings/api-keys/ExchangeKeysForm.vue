@@ -8,8 +8,6 @@ import {
   SUPPORTED_EXCHANGES,
   SupportedExchange
 } from '@/types/exchanges';
-import { trimOnPaste } from '@/utils/event';
-import { useExchangesStore } from '@/store/exchanges';
 
 const props = defineProps({
   value: { required: true, type: Boolean },

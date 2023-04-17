@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { downloadFileByUrl } from '@/utils/download';
 import IndexedDb from '@/utils/indexed-db';
 
 const { t } = useI18n();

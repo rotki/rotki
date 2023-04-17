@@ -2,7 +2,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Severity } from '@rotki/common/lib/messages';
 import { type Module } from '@/types/modules';
-import { getMetamaskAddresses } from '@/utils/metamask';
 import { type AccountPayload } from '@/types/blockchain/accounts';
 
 const selectedModules = ref<Module[]>([]);

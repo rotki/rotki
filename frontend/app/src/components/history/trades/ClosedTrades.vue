@@ -356,7 +356,7 @@ watch(loading, async (isLoading, wasLoading) => {
         </v-row>
       </template>
 
-      <collection-handler :collection="trades" @set-page="setPage">
+      <collection-handler :collection="trades" @set-page="setPage($event)">
         <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
           <data-table
             v-model="selected"

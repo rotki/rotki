@@ -7,7 +7,6 @@ import {
   validWithSessionAndExternalService
 } from '@/services/utils';
 import { type ManualBalance, ManualBalances } from '@/types/manual-balances';
-import { nonEmptyProperties } from '@/utils/data';
 import { type PendingTask } from '@/types/task';
 
 export const useManualBalancesApi = () => {

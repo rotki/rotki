@@ -1,5 +1,3 @@
-import { assert } from '@/utils/assertions';
-
 export const invertColor = (color: string, bw = true): string => {
   if (color.indexOf('#') === 0) {
     color = color.slice(1);

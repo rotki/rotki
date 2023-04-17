@@ -10,9 +10,6 @@ import {
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { Zero } from '@/utils/bignumbers';
-import { mapCollectionResponse } from '@/utils/collection';
-import { logger } from '@/utils/logging';
 
 export const useNonFungibleBalancesStore = defineStore(
   'balances/non-fungible',

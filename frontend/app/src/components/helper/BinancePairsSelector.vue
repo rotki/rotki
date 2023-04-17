@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { uniqueStrings } from '@/utils/data';
 
 const props = defineProps({
   label: { required: false, type: String, default: '' },

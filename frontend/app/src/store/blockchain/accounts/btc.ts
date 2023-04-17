@@ -3,8 +3,6 @@ import { type Ref } from 'vue';
 import { type BtcChains } from '@/types/blockchain/chains';
 import { type BlockchainMetadata } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { logger } from '@/utils/logging';
-import { removeBtcTags } from '@/utils/tags';
 import {
   type BtcAccountData,
   type XpubPayload

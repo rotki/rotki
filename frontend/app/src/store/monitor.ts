@@ -1,6 +1,4 @@
 import { type Ref } from 'vue';
-import { startPromise } from '@/utils';
-import { logger } from '@/utils/logging';
 
 const PERIODIC = 'periodic';
 const TASK = 'task';

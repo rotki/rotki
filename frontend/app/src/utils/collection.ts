@@ -1,7 +1,6 @@
 import { type BigNumber } from '@rotki/common';
 import { type ComputedRef, type Ref } from 'vue';
 import { type Collection, type CollectionResponse } from '@/types/collection';
-import { Zero } from '@/utils/bignumbers';
 import { type TablePagination } from '@/types/pagination';
 
 type Entries = 'entries' | 'entriesFound' | 'entriesLimit' | 'entriesTotal';

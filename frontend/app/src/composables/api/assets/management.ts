@@ -2,7 +2,6 @@ import { type ActionResult, type SupportedAsset } from '@rotki/common/lib/data';
 import { OwnedAssets } from '@rotki/common/lib/statistics';
 import { type MaybeRef } from '@vueuse/core';
 import { type Collection } from '@/types/collection';
-import { mapCollectionResponse } from '@/utils/collection';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {

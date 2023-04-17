@@ -4,7 +4,6 @@ import {
 } from '@/data/defaults';
 import { pslSuffixes } from '@/data/psl';
 import { Routes } from '@/router/routes';
-import { logger } from '@/utils/logging';
 
 export const getDomain = (str: string): string => {
   const pattern = /^(?:https?:)?(?:\/\/)?(?:[^\n@]+@)?(?:www\.)?([^\n/:]+)/;

@@ -8,9 +8,6 @@ import {
 } from '@rotki/common/lib/settings/graphs';
 import dayjs from 'dayjs';
 import { Section } from '@/types/status';
-import { assert } from '@/utils/assertions';
-import { bigNumberify } from '@/utils/bignumbers';
-import { isPeriodAllowed } from '@/utils/settings';
 
 const { t } = useI18n();
 const { currencySymbol, floatingPrecision } = storeToRefs(

@@ -1,12 +1,8 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n-composable';
 import { type ComputedRef, type Ref } from 'vue';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { type ProfitLossEvent } from '@/types/reports';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { convertFromTimestamp } from '@/utils/date';
-import { useMessageStore } from '@/store/message';
 import { type HistoricalPriceFormPayload } from '@/types/prices';
 
 const props = defineProps<{

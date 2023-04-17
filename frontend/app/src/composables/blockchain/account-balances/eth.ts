@@ -11,14 +11,6 @@ import {
 import { type BlockchainAssetBalances } from '@/types/blockchain/balances';
 import { L2_LOOPRING } from '@/types/protocols';
 import { Section } from '@/types/status';
-import {
-  accountsWithBalances,
-  getBlockchainBreakdown,
-  sum
-} from '@/utils/balances';
-import { zeroBalance } from '@/utils/bignumbers';
-import { assetSum, balanceSum } from '@/utils/calculation';
-import { uniqueStrings } from '@/utils/data';
 import { ReadOnlyTag } from '@/types/tags';
 import {
   type AccountWithBalance,

@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Eth2Validator } from '@/types/balances';
-import { assert } from '@/utils/assertions';
-import { startPromise } from '@/utils';
 import { type ValidationErrors } from '@/types/api/errors';
 import { type BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
 

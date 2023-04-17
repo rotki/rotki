@@ -23,8 +23,6 @@ import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { Zero } from '@/utils/bignumbers';
-import { logger } from '@/utils/logging';
 import { ProtocolVersion } from '@/types/defi';
 import {
   ALL_DECENTRALIZED_EXCHANGES,

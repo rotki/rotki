@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { Zero } from '@/utils/bignumbers';
 
 defineProps({
   loading: { required: false, type: Boolean },

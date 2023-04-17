@@ -4,7 +4,6 @@ import {
   type ProfitLossOverviewItem,
   type SelectedReport
 } from '@/types/reports';
-import { calculateTotalProfitLoss } from '@/utils/report';
 import { pluralizeLastWord, toCapitalCase } from '@/utils/text';
 
 const props = defineProps({

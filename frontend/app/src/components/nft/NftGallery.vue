@@ -4,7 +4,6 @@ import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type PropType, type Ref } from 'vue';
 import { type Module } from '@/types/modules';
-import { uniqueStrings } from '@/utils/data';
 import { type GalleryNft, type Nft, type Nfts } from '@/types/nfts';
 import { type NftPriceArray } from '@/types/prices';
 
@@ -23,7 +22,7 @@ const error = ref('');
 const loading = ref(true);
 const perAccount: Ref<Nfts | null> = ref(null);
 const sortBy = ref<'name' | 'priceUsd' | 'collection'>('name');
-const sortDesc = ref(false);
+const sortDescending = ref(false);
 
 const { tc } = useI18n();
 const { premiumURL } = useInterop();
@@ -83,10 +82,10 @@ const items = computed(() => {
         const sameCollection = selection ? selection === collection.name : true;
         return sameAccount && sameCollection;
       })
-      .sort((a, b) => sortNfts(sortBy, sortDesc, a, b));
+      .sort((a, b) => sortNfts(sortBy, sortDescending, a, b));
   }
 
-  return get(nfts).sort((a, b) => sortNfts(sortBy, sortDesc, a, b));
+  return get(nfts).sort((a, b) => sortNfts(sortBy, sortDescending, a, b));
 });
 
 const pages = computed(() => Math.ceil(get(items).length / get(itemsPerPage)));
@@ -264,9 +263,9 @@ const sortNfts = (
             <sorting-selector
               :sort-by="sortBy"
               :sort-properties="sortProperties"
-              :sort-desc="sortDesc"
+              :sort-desc="sortDescending"
               @update:sort-by="sortBy = $event"
-              @update:sort-desc="sortDesc = $event"
+              @update:sort-desc="sortDescending = $event"
             />
           </v-col>
           <v-col :cols="isMobile ? '12' : '6'">

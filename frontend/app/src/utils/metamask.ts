@@ -1,5 +1,3 @@
-import { assert } from '@/utils/assertions';
-
 export function isMetaMaskSupported(): boolean {
   return (
     (!!window.interop || (window.ethereum && window.ethereum.isMetaMask)) ??

@@ -2,7 +2,6 @@ import { type Ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
 import { type Nullable } from '@/types';
 import { type LogLevel } from '@/utils/log-level';
-import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
 import { type Version } from '@/types/action';
 
 let intervalId: any = null;

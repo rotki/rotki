@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { toCapitalCase } from '@/utils/text';
-
 interface Props {
   size?: string;
   chain: string;

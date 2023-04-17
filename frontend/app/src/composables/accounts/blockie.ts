@@ -1,6 +1,3 @@
-import { logger } from '@/utils/logging';
-import { createBlockie } from '@/utils/blockie';
-
 const CACHE_SIZE = 100;
 
 export const useBlockie = createSharedComposable(() => {

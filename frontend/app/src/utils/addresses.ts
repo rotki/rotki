@@ -1,6 +1,5 @@
 import { type AddressIndexed } from '@rotki/common';
 import { type AddressEntries } from '@/types/addresses';
-import { uniqueStrings } from '@/utils/data';
 
 export function filterAddresses<T>(
   entries: AddressEntries<T>,

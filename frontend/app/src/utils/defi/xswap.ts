@@ -8,7 +8,6 @@ import {
 } from '@rotki/common/lib/defi/xswap';
 import cloneDeep from 'lodash/cloneDeep';
 import { type Writeable } from '@/types';
-import { balanceSum } from '@/utils/calculation';
 
 export function getPools(
   balances: XswapBalances,

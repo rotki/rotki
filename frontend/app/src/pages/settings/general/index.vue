@@ -1,6 +1,4 @@
 ﻿<script setup lang="ts">
-import { bigNumberify } from '@/utils/bignumbers';
-
 const amountExample = bigNumberify(123456.789);
 const { t } = useI18n();
 </script>

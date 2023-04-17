@@ -20,7 +20,6 @@ import {
   type RoundingMode,
   SupportedLanguage
 } from '@/types/frontend-settings';
-import { assert } from '@/utils/assertions';
 import { type ActionStatus } from '@/types/action';
 import {
   type BaseSuggestion,

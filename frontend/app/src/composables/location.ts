@@ -1,7 +1,6 @@
 import { type MaybeRef } from '@vueuse/core';
 import { getIdentifierFromSymbolMap } from '@rotki/common/lib/data';
 import { Routes } from '@/router/routes';
-import { assert } from '@/utils/assertions';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { type TradeLocationData } from '@/types/history/trade/location';
 

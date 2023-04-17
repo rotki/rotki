@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Fragment from '@/components/helper/Fragment';
-import { checkIfDevelopment } from '@/utils/env-utils';
 
 const isDevelopment = checkIfDevelopment();
 

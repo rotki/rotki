@@ -176,7 +176,10 @@ watch(loading, async (isLoading, wasLoading) => {
       </v-row>
     </template>
 
-    <collection-handler :collection="assetMovements" @set-page="setPage">
+    <collection-handler
+      :collection="assetMovements"
+      @set-page="setPage($event)"
+    >
       <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
         <data-table
           v-model="selected"

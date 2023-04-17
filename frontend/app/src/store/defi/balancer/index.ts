@@ -13,10 +13,7 @@ import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { balanceSum } from '@/utils/calculation';
-import { fetchDataAsync } from '@/utils/fetch-async';
 import { type OnError } from '@/types/fetch';
-import { filterAddresses } from '@/utils/addresses';
 
 export const useBalancerStore = defineStore('defi/balancer', () => {
   const events: Ref<BalancerEvents> = ref({});

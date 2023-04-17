@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { assert } from '@/utils/assertions';
-
 const props = defineProps({
   locked: { required: false, type: Boolean, default: false },
   loading: { required: false, type: Boolean, default: false },

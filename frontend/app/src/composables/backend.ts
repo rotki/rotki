@@ -1,8 +1,6 @@
 import { BackendOptions } from '@/electron-main/ipc';
 import { type Writeable } from '@/types';
-import { deleteBackendUrl, getBackendUrl } from '@/utils/account-management';
 import { type LogLevel } from '@/utils/log-level';
-import { getDefaultLogLevel, setLevel } from '@/utils/logging';
 
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
 

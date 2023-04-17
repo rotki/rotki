@@ -8,12 +8,7 @@ import {
 import omit from 'lodash/omit';
 import { type ComputedRef, type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
-import {
-  isValidEthAddress,
-  sanitizeAddress,
-  toSentenceCase
-} from '@/utils/text';
+import { toSentenceCase } from '@/utils/text';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
 import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
 import { ApiValidationError } from '@/types/api/errors';

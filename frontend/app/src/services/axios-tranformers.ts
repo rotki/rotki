@@ -1,6 +1,5 @@
 import { BigNumber } from '@rotki/common';
 import { type AxiosResponseTransformer } from 'axios';
-import { isEvmIdentifier } from '@/utils/assets';
 
 const isObject = (data: any): boolean =>
   typeof data === 'object' &&

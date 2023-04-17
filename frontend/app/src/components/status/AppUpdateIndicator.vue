@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { startPromise } from '@/utils';
-
 const mainStore = useMainStore();
 const { version, updateNeeded } = storeToRefs(mainStore);
 const { getVersion } = mainStore;

@@ -1,6 +1,5 @@
 import { type AssetBalance } from '@rotki/common';
 import { type AssetInfo } from '@rotki/common/lib/data';
-import { assert } from '@/utils/assertions';
 
 const levenshtein = (a: string, b: string): number => {
   let tmp;
