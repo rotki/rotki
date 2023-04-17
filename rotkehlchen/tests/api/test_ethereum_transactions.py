@@ -1082,7 +1082,7 @@ def test_query_transactions_check_decoded_events(
 
     tx_result = query_transactions(rotki)
     assert len(tx_result['entries']) == 4
-    returned_events = query_events(rotkehlchen_api_server, json={'evm_chain': 'ethereum'}, expected_num_with_grouping=4, expected_totals_with_grouping=4)  # noqa: E501
+    returned_events = query_events(rotkehlchen_api_server, json={'location': 'ethereum'}, expected_num_with_grouping=4, expected_totals_with_grouping=4)  # noqa: E501
 
     tx1_events = [{
         'entry': {
@@ -1286,7 +1286,7 @@ def test_query_transactions_check_decoded_events(
     result = query_transactions(rotki)
     entries = result['entries']
     assert len(entries) == 4
-    returned_events = query_events(rotkehlchen_api_server, json={'evm_chain': 'ethereum'}, expected_num_with_grouping=4, expected_totals_with_grouping=4)  # noqa: E501
+    returned_events = query_events(rotkehlchen_api_server, json={'location': 'ethereum'}, expected_num_with_grouping=4, expected_totals_with_grouping=4)  # noqa: E501
 
     assert len(returned_events) == 7
     assert_serialized_lists_equal(returned_events[0:2], tx1_events, ignore_keys='identifier')  # noqa: E501
@@ -1358,7 +1358,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
                 'historyeventresource',
             ),
             json={
-                'evm_chain': 'ethereum',
+                'location': 'ethereum',
                 'asset': A_WETH.serialize(),
                 attribute: [],
             },
@@ -1371,7 +1371,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     returned_events = query_events(
         rotkehlchen_api_server,
         json={
-            'evm_chain': 'ethereum',
+            'location': 'ethereum',
             'asset': A_WETH.serialize(),
             'location_labels': [ethereum_accounts[0]],
         },
@@ -1384,7 +1384,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
 
     returned_events = query_events(
         rotkehlchen_api_server,
-        json={'asset': A_ETH.serialize(), 'evm_chain': 'ethereum'},
+        json={'asset': A_ETH.serialize(), 'location': 'ethereum'},
         expected_num_with_grouping=1,
         expected_totals_with_grouping=3,
         entries_limit=100,
@@ -1394,7 +1394,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
 
     returned_events = query_events(
         rotkehlchen_api_server,
-        json={'asset': A_WETH.serialize(), 'evm_chain': 'ethereum'},
+        json={'asset': A_WETH.serialize(), 'location': 'ethereum'},
         expected_num_with_grouping=2,
         expected_totals_with_grouping=3,
         entries_limit=100,
@@ -1404,7 +1404,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
 
     returned_events = query_events(
         rotkehlchen_api_server,
-        json={'counterparties': ['EXAMPLE_PROTOCOL'], 'evm_chain': 'ethereum'},
+        json={'counterparties': ['EXAMPLE_PROTOCOL'], 'location': 'ethereum'},
         expected_num_with_grouping=1,
         expected_totals_with_grouping=3,
         entries_limit=100,
@@ -1415,7 +1415,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     returned_events = query_events(
         rotkehlchen_api_server,
         json={
-            'evm_chain': 'ethereum',
+            'location': 'ethereum',
             'asset': A_WETH.serialize(),
             'counterparties': ['EXAMPLE_PROTOCOL'],
         },
@@ -1430,7 +1430,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     returned_events = query_events(
         rotkehlchen_api_server,
         json={
-            'evm_chain': 'ethereum',
+            'location': 'ethereum',
             'event_types': ['staking'],
         },
         expected_num_with_grouping=1,
@@ -1444,7 +1444,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     returned_events = query_events(
         rotkehlchen_api_server,
         json={
-            'evm_chain': 'ethereum',
+            'location': 'ethereum',
             'event_types': ['staking'],
             'event_subtypes': ['deposit_asset'],
         },
@@ -1481,7 +1481,7 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
         rotkehlchen_api_server,
         json={
             'exclude_ignored_assets': False,
-            'evm_chain': 'ethereum',
+            'location': 'ethereum',
         },
         expected_num_with_grouping=2,
         expected_totals_with_grouping=2,
@@ -1492,7 +1492,7 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
 
     returned_events = query_events(
         rotkehlchen_api_server,  # test that default exclude_ignored_assets is True
-        json={'evm_chain': 'ethereum'},
+        json={'location': 'ethereum'},
         expected_num_with_grouping=1,
         expected_totals_with_grouping=2,
         entries_limit=100,
