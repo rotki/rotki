@@ -31,4 +31,6 @@ COMMON_ASSETS_MAPPINGS: Final[dict[str, str]] = {
     evm_address_to_identifier('0x3845badAde8e6dFF049820680d1F14bD3903a5d0', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SAND',  # noqa: E501
     evm_address_to_identifier('0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'GALA',  # noqa: E501
     evm_address_to_identifier('0xCdF7028ceAB81fA0C6971208e83fa7872994beE5', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'T',  # noqa: E501
+    evm_address_to_identifier('0x912ce59144191c1204e64559fe8253a0e49e6548', ChainID.ARBITRUM, EvmTokenKind.ERC20): 'ARB',  # noqa: E501
+    evm_address_to_identifier('0xfb5B838b6cfEEdC2873aB27866079AC55363D37E', ChainID.BINANCE, EvmTokenKind.ERC20): 'FLOKI',  # noqa: E501
 }
