@@ -1591,6 +1591,12 @@ class DBHandler:
                 ],
             )
 
+            # also update the name of the events related to this exchange
+            write_cursor.execute(
+                'UPDATE history_events SET location_label=? WHERE location=? AND location_label=?',  # noqa: E501
+                (new_name, location.serialize_for_db(), name),
+            )
+
     def remove_exchange(self, write_cursor: 'DBCursor', name: str, location: Location) -> None:
         write_cursor.execute(
             'DELETE FROM user_credentials WHERE name=? AND location=?',

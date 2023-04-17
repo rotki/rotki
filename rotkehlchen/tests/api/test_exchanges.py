@@ -1,19 +1,26 @@
 import os
 import random
 from http import HTTPStatus
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
 from urllib.parse import urlencode
 
 import pytest
 import requests
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
 
-from rotkehlchen.accounting.structures.types import ActionType
+from rotkehlchen.accounting.structures.types import (
+    ActionType,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_BUSD, A_DAI, A_ETH, A_EUR, A_USDT
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
+from rotkehlchen.db.history_events import HISTORY_BASE_ENTRY_FIELDS, DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
@@ -21,7 +28,7 @@ from rotkehlchen.exchanges.bitstamp import (
 )
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE, SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
-from rotkehlchen.exchanges.kraken import DEFAULT_KRAKEN_ACCOUNT_TYPE, KrakenAccountType
+from rotkehlchen.exchanges.kraken import DEFAULT_KRAKEN_ACCOUNT_TYPE, Kraken, KrakenAccountType
 from rotkehlchen.exchanges.kucoin import API_KEY_ERROR_CODE_ACTION as KUCOIN_API_KEY_ERROR_CODE
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.binance import GlobalDBBinance
@@ -54,7 +61,7 @@ from rotkehlchen.tests.utils.history import (
     prepare_rotki_for_history_processing_test,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import AssetMovementCategory, Location, Timestamp, TradeType
+from rotkehlchen.types import AssetMovementCategory, Location, Timestamp, TimestampMS, TradeType
 
 if TYPE_CHECKING:
     from requests import Response
@@ -1001,38 +1008,62 @@ def test_delete_external_exchange_data_works(rotkehlchen_api_server_with_exchang
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN, Location.POLONIEX)])
-def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges):
+def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     db = rotki.data.db
-    # add some exchanges ranges
-    with db.user_write() as cursor:
-        db.update_used_query_range(cursor, name=f'{str(Location.KRAKEN)}_trades_mockkraken', start_ts=0, end_ts=9999)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{str(Location.KRAKEN)}_margins_mockkraken', start_ts=0, end_ts=9999)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{str(Location.KRAKEN)}_asset_movements_mockkraken', start_ts=0, end_ts=9999)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{str(Location.KRAKEN)}_margins_kraken_boi', start_ts=0, end_ts=9999)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{str(Location.KRAKEN)}_asset_movements_kraken_boi', start_ts=0, end_ts=9999)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{str(Location.POLONIEX)}_trades_poloniex', start_ts=0, end_ts=9999)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{str(Location.POLONIEX)}_margins_poloniex', start_ts=0, end_ts=9999)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{str(Location.POLONIEX)}_asset_movements_poloniex', start_ts=0, end_ts=9999)  # noqa: E501
-        db.update_used_query_range(cursor, name='uniswap_trades', start_ts=0, end_ts=9999)
+    event_db = DBHistoryEvents(db)
 
     kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
     poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
+    assert kraken is not None
+    assert poloniex is not None
+    kraken = cast(Kraken, kraken)
     assert kraken.name == 'mockkraken'
     assert kraken.account_type == DEFAULT_KRAKEN_ACCOUNT_TYPE
     assert poloniex.name == 'poloniex'
+
+    # test event to check that editing an exchange with history events edits the location label
+    test_event = HistoryEvent(
+        event_identifier=b'STARK-STARK-STARK',
+        sequence_index=0,
+        timestamp=TimestampMS(1673146287380),
+        location=Location.KRAKEN,
+        location_label=kraken.name,
+        asset=A_ETH,
+        balance=Balance(
+            amount=FVal('0.0000400780'),
+            usd_value=FVal('0.051645312360'),
+        ),
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.REWARD,
+        notes='Staking reward from kraken',
+    )
+
+    # add some exchanges ranges
+    start_ts, end_ts = Timestamp(0), Timestamp(9999)
+    with db.user_write() as cursor:
+        db.update_used_query_range(cursor, name=f'{str(Location.KRAKEN)}_trades_mockkraken', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{str(Location.KRAKEN)}_margins_mockkraken', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{str(Location.KRAKEN)}_asset_movements_mockkraken', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{str(Location.KRAKEN)}_margins_kraken_boi', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{str(Location.KRAKEN)}_asset_movements_kraken_boi', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{str(Location.POLONIEX)}_trades_poloniex', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{str(Location.POLONIEX)}_margins_poloniex', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{str(Location.POLONIEX)}_asset_movements_poloniex', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name='uniswap_trades', start_ts=start_ts, end_ts=end_ts)
+        test_event_id = event_db.add_history_event(write_cursor=cursor, event=test_event)
 
     data = {'name': 'mockkraken', 'location': 'kraken', 'new_name': 'my_kraken'}
     response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
     result = assert_proper_response_with_result(response)
     assert result is True
-    kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
+    assert kraken is not None
     assert kraken.name == 'my_kraken'
     assert kraken.account_type == DEFAULT_KRAKEN_ACCOUNT_TYPE
 
     # check that queryranges were succesfuly updated and the others were unmodified
-    expected_ranges_tuple = (Timestamp(0), Timestamp(9999))
+    expected_ranges_tuple = (start_ts, end_ts)
     with db.conn.read_ctx() as cursor:
         assert db.get_used_query_range(cursor, 'kraken_trades_mockkraken') is None
         assert db.get_used_query_range(cursor, 'kraken_margins_mockkraken') is None
@@ -1049,12 +1080,27 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges):
         result = assert_proper_response_with_result(response)
         assert result is True
         poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
+        assert poloniex is not None
         assert poloniex.name == 'my_poloniex'
         assert db.get_used_query_range(cursor, 'poloniex_trades_my_poloniex') == expected_ranges_tuple  # noqa: E501
         assert db.get_used_query_range(cursor, 'poloniex_margins_my_poloniex') == expected_ranges_tuple  # noqa: E501
         assert db.get_used_query_range(cursor, 'poloniex_asset_movements_my_poloniex') == expected_ranges_tuple  # noqa: E501
         assert db.get_used_query_range(cursor, 'poloniex_asset_movements_poloniex') is None
         assert db.get_used_query_range(cursor, 'uniswap_trades') == expected_ranges_tuple
+
+        # load from the database the updated history events
+        cursor.execute(
+            f'SELECT {HISTORY_BASE_ENTRY_FIELDS} FROM history_events WHERE identifier=?',
+            (test_event_id,),
+        )
+        updated_event = HistoryEvent.deserialize_from_db(cursor.fetchall()[0][1:])
+        # the location label should have been already updated
+        assert updated_event.location_label == kraken.name
+        # update the expected id and location label in the local object and check that no other
+        # information has changed
+        test_event.location_label = kraken.name
+        test_event.identifier = test_event_id
+        assert test_event == updated_event
 
     # Make sure that existing location exchange but wrong name returns error
     data = {'name': 'some_poloniex', 'location': 'poloniex', 'new_name': 'other_poloniex'}
