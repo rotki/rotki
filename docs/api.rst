@@ -4886,10 +4886,10 @@ Dealing with History Events
    :reqjson list[string] event_identifiers: An optional list of event identifiers to filter for.
    :reqjson list[string] event_types: An optional list of event types by which to filter the decoded events.
    :reqjson list[string] event_subtypes: An optional list of event subtypes by which to filter the decoded events.
+   :reqjson list location: An optional location name to filter events only for that location.
    :reqjson list[string] location_labels: A list of location labels to optionally filter by. Location label is a string field that allows to provide more information about the location. When we use this structure in blockchains, it is used to specify the user address. For exchange events it's the exchange name assigned by the user.
    :reqjson string asset: The asset to optionally filter by.
    :reqjson list counterparties: An optional list of counterparties to filter by. List of strings.
-   :reqjson list evm_chain: An optional evm_chain name to filter events only for that chain. This makes it an EVMEVent query.
    :reqjson list products: An optional list of product type to filter by. List of strings. This makes it an EVMEVent query.
 
    **Example Response**:

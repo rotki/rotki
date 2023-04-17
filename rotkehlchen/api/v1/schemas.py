@@ -601,11 +601,11 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
         SerializableEnumField(enum_class=HistoryEventSubType),
         load_default=None,
     )
+    location = SerializableEnumField(Location, load_default=None)
     location_labels = DelimitedOrNormalList(fields.String(), load_default=None)
     asset = AssetField(expected_type=CryptoAsset, load_default=None)
 
     # EvmEvent only
-    evm_chain = EvmChainNameField(required=False, load_default=None)
     counterparties = DelimitedOrNormalList(fields.String(), load_default=None)
     products = DelimitedOrNormalList(SerializableEnumField(enum_class=EvmProduct), load_default=None)  # noqa: E501
 
@@ -637,22 +637,15 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
                     field_name=attribute,
                 )
 
-        if (
-            data['evm_chain'] is not None and
-            data['evm_chain'] not in get_args(SUPPORTED_CHAIN_IDS)
-        ):
-            raise ValidationError(
-                message=f'rotki does not support evm transactions for {data["evm_chain"]}',
-                field_name='evm_chain',
-            )
-
     @post_load
     def make_history_event_filter(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        should_query_evm_event = any(data[x] is not None for x in ('evm_chain', 'products', 'counterparties'))  # noqa: E501
+        # product and counterparty are the only fields unique for evm transactions. In the case
+        # of history events and staking events we want to use histoy event filters
+        should_query_evm_event = any(data[x] is not None for x in ('products', 'counterparties'))
 
         event_identifiers = None
         if data['event_identifiers'] is not None:
@@ -685,12 +678,12 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
             'assets': [data['asset']] if data['asset'] is not None else None,
             'event_types': data['event_types'],
             'event_subtypes': data['event_subtypes'],
+            'location': data['location'],
         }
         filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery]
         if should_query_evm_event:
             filter_query = EvmEventFilterQuery.make(
                 **common_arguments,
-                location=Location.from_chain_id(data['evm_chain']),
                 products=data['products'],
                 counterparties=data['counterparties'],
             )

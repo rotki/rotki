@@ -6,6 +6,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.accounting.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent
 from rotkehlchen.accounting.structures.types import (
     ActionType,
@@ -15,7 +16,7 @@ from rotkehlchen.accounting.structures.types import (
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_SUSHI, A_USDT
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_SUSHI, A_USDT
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -41,7 +42,7 @@ if TYPE_CHECKING:
 
 
 def entry_to_input_dict(
-        entry: 'EvmEvent',
+        entry: 'HistoryBaseEntry',
         include_identifier: bool,
 ) -> dict[str, Any]:
     serialized = entry.serialize()
@@ -53,7 +54,7 @@ def entry_to_input_dict(
     return serialized
 
 
-def _add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: bool = False) -> list['EvmEvent']:  # noqa: E501
+def _add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: bool = False) -> list['HistoryBaseEntry']:  # noqa: E501
     entries = [EvmEvent(
         event_identifier=EvmEvent.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
         sequence_index=162,
@@ -115,14 +116,33 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: 
         notes='Receive 1 ETH from 0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a',
         event_subtype=HistoryEventSubType.NONE,
         address=string_to_evm_address('0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a'),
+    ), HistoryEvent(
+        event_identifier=b'STARK-STARK-STARK',
+        sequence_index=0,
+        timestamp=TimestampMS(1673146287380),
+        location=Location.KRAKEN,
+        location_label='Kraken',
+        asset=A_ETH2,
+        balance=Balance(
+            amount=FVal('0.0000400780'),
+            usd_value=FVal('0.051645312360'),
+        ),
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.REWARD,
+        notes='Staking reward from kraken',
     )]
 
     entries_added_using_api = 0
     for entry in entries:
-        if add_directly is True or entry.extra_data is not None:
+        if (
+            add_directly is True or
+            isinstance(entry, HistoryEvent) or
+            (isinstance(entry, EvmEvent) and entry.extra_data is not None)
+        ):
             # If any entry has extra data add it directly to the database instead of
             # making use of the API. The reason is that the API doesn't allow to edit
-            # the extra data field
+            # the extra data field.
+            # Also add HistoryEvent since the API doesn't allow to add them atm
             with events_db.db.conn.write_ctx() as write_cursor:
                 identifier = events_db.add_history_event(
                     write_cursor=write_cursor,
@@ -157,6 +177,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
         assert event == entries[idx]
 
     entry = entries[2]
+    assert isinstance(entry, EvmEvent)
     # test editing unknown fails
     unknown_id = 42
     json_data = entry_to_input_dict(entry, include_identifier=True)
@@ -404,9 +425,9 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result['entries_found'] == 5
+    assert result['entries_found'] == 6
     assert result['entries_limit'] == 100
-    assert result['entries_total'] == 5
+    assert result['entries_total'] == 6
     for event in result['entries']:
         assert event['entry'] in expected_entries
         assert event['customized'] is False
@@ -427,10 +448,10 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         json={'group_by_event_ids': True},
     )
     result = assert_proper_response_with_result(response)
-    assert result['entries_found'] == 3
+    assert result['entries_found'] == 4
     assert result['entries_limit'] == 100
-    assert result['entries_total'] == 3
-    assert len(result['entries']) == 3
+    assert result['entries_total'] == 4
+    assert len(result['entries']) == 4
 
     # now try with grouping and pagination
     response = requests.post(
@@ -442,9 +463,9 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
     )
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 1
-    assert result['entries_found'] == 3
+    assert result['entries_found'] == 4
     assert result['entries_limit'] == 100
-    assert result['entries_total'] == 3
+    assert result['entries_total'] == 4
 
     # now with grouping, pagination and a filter
     response = requests.post(
@@ -458,4 +479,31 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
     assert len(result['entries']) == 1
     assert result['entries_found'] == 2
     assert result['entries_limit'] == 100
-    assert result['entries_total'] == 3
+    assert result['entries_total'] == 4
+
+    # filter by location using kraken and ethereum
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ),
+        json={'location': Location.KRAKEN.serialize()},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 1
+    assert result['entries_found'] == 1
+    assert result['entries_limit'] == 100
+    assert result['entries_total'] == 6
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ),
+        json={'location': Location.ETHEREUM.serialize()},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 5
+    assert result['entries_found'] == 5
+    assert result['entries_limit'] == 100
+    assert result['entries_total'] == 6
