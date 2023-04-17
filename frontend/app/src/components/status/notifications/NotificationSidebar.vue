@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import orderBy from 'lodash/orderBy';
-
 defineProps<{ visible: boolean }>();
 
 const { t, tc } = useI18n();
+const css = useCssModule();
 
 const emit = defineEmits(['close']);
 const confirmStore = useConfirmStore();
@@ -11,7 +10,7 @@ const { visible: dialogVisible } = storeToRefs(confirmStore);
 const { show } = confirmStore;
 
 const notificationStore = useNotificationsStore();
-const { data } = storeToRefs(notificationStore);
+const { prioritized: notifications } = storeToRefs(notificationStore);
 const { remove } = notificationStore;
 
 const close = () => {
@@ -41,15 +40,13 @@ const showConfirmation = () => {
   );
 };
 
-const notifications = computed(() => orderBy(data.value, 'date', 'desc'));
-
 const { isMobile } = useTheme();
 const { hasRunningTasks } = storeToRefs(useTaskStore());
 </script>
 
 <template>
   <v-navigation-drawer
-    :class="{ [$style.mobile]: isMobile, [$style.sidebar]: true }"
+    :class="{ [css.mobile]: isMobile, [css.sidebar]: true }"
     width="400px"
     absolute
     clipped
@@ -60,7 +57,7 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
     hide-overlay
     @input="input($event)"
   >
-    <div v-if="visible" :class="$style.container">
+    <div v-if="visible" :class="css.container">
       <v-row align="center" no-gutters class="pl-2 pr-2 pt-1 pb-2">
         <v-col cols="auto">
           <v-tooltip bottom>
@@ -96,17 +93,13 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
         :class="$style['no-messages']"
       >
         <v-icon size="64px" color="primary">mdi-information</v-icon>
-        <div :class="$style.label">
+        <div :class="css.label">
           {{ t('notification_sidebar.no_messages') }}
         </div>
       </div>
-      <div v-else :class="$style.messages">
+      <div v-else :class="css.messages">
         <pending-tasks />
-        <div
-          v-if="notifications.length > 0"
-          class="pl-2"
-          :class="$style.content"
-        >
+        <div v-if="notifications.length > 0" class="pl-2" :class="css.content">
           <v-virtual-scroll :items="notifications" item-height="172px">
             <template #default="{ item }">
               <notification :notification="item" @dismiss="remove($event)" />

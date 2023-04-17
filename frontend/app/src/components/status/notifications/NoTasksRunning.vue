@@ -1,14 +1,15 @@
 <script setup lang="ts">
 const { t } = useI18n();
+const css = useCssModule();
 </script>
 <template>
-  <card outlined :class="$style.card">
+  <card outlined :class="css.card">
     <v-row no-gutters align="center">
       <v-col cols="auto">
         <v-icon color="success">mdi-check-circle</v-icon>
       </v-col>
       <v-col>
-        <div :class="$style.title" class="text--primary">
+        <div :class="css.title" class="text--primary">
           {{ t('no_task_running.description') }}
         </div>
       </v-col>

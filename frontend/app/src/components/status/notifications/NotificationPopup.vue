@@ -4,6 +4,7 @@ import { createNotification } from '@/utils/notifications';
 const visibleNotification = ref(createNotification());
 const notificationStore = useNotificationsStore();
 const { queue } = storeToRefs(notificationStore);
+const css = useCssModule();
 const { displayed } = notificationStore;
 
 const dismiss = async (id: number) => {
@@ -41,7 +42,7 @@ const { t } = useI18n();
 <template>
   <v-snackbar
     v-model="visibleNotification.display"
-    :class="$style.popup"
+    :class="css.popup"
     :timeout="visibleNotification.duration"
     top
     right
@@ -71,12 +72,12 @@ const { t } = useI18n();
     </v-row>
     <v-tooltip v-if="queue.length > 0" bottom>
       <template #activator="{ on }">
-        <div :class="$style.wrapper" v-on="on">
+        <div :class="css.wrapper" v-on="on">
           <v-badge
             inline
             :content="queue.length"
             color="info"
-            :class="$style.count"
+            :class="css.count"
           />
         </div>
       </template>

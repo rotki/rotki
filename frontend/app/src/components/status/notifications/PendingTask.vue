@@ -5,6 +5,8 @@ import { TaskType } from '@/types/task-type';
 
 const props = defineProps<{ task: Task<TaskMeta> }>();
 
+const css = useCssModule();
+
 const { task } = toRefs(props);
 const isHistory = computed(() => task.value.type === TaskType.TRADE_HISTORY);
 
@@ -14,12 +16,12 @@ const time = computed(() => dayjs(task.value.time).format('LLL'));
 </script>
 
 <template>
-  <card outlined :class="$style.task">
+  <card outlined :class="css.task">
     <v-row align="center" no-gutters class="flex-nowrap">
       <v-col>
         <v-row no-gutters>
           <v-col>
-            <div :class="$style.title" class="text--primary">
+            <div :class="css.title" class="text--primary">
               {{ task.meta.title }}
             </div>
           </v-col>
@@ -27,12 +29,12 @@ const time = computed(() => dayjs(task.value.time).format('LLL'));
         <v-row
           v-if="task.meta.description"
           no-gutters
-          :class="$style.description"
+          :class="css.description"
           class="text--secondary"
         >
           {{ task.meta.description }}
         </v-row>
-        <v-row class="text-caption px-3" :class="$style.date">
+        <v-row class="text-caption px-3" :class="css.date">
           {{ time }}
         </v-row>
       </v-col>

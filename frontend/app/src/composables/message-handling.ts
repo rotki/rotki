@@ -1,12 +1,16 @@
 import {
   type Notification,
   NotificationGroup,
+  Priority,
   Severity
 } from '@rotki/common/lib/messages';
+import { toSentenceCase } from '@/utils/text';
+import { getServiceRegisterUrl } from '@/utils/url';
 import {
   type BalanceSnapshotError,
   type EvmTransactionQueryData,
   MESSAGE_WARNING,
+  type MissingApiKey,
   type NewDetectedToken,
   type PremiumStatusUpdateData,
   SocketMessageType,
@@ -50,7 +54,8 @@ export const useMessageHandling = () => {
     title: tc('notification_messages.backend.title'),
     message,
     display: !isWarning,
-    severity: isWarning ? Severity.WARNING : Severity.ERROR
+    severity: isWarning ? Severity.WARNING : Severity.ERROR,
+    priority: Priority.BULK
   });
 
   const handlePremiumStatusUpdate = (
@@ -105,12 +110,43 @@ export const useMessageHandling = () => {
       }),
       display: true,
       severity: Severity.INFO,
+      priority: Priority.ACTION,
       action: {
         label: tc('notification_messages.new_detected_token.action'),
         action: () => router.push(Routes.ASSET_MANAGER_NEWLY_DETECTED)
       },
       group: NotificationGroup.NEW_DETECTED_TOKENS,
       groupCount: count
+    };
+  };
+
+  const handleMissingApiKeyMessage = (data: MissingApiKey): Notification => {
+    const { service, location } = data;
+    const { external, route } = getServiceRegisterUrl(service, location);
+
+    return {
+      title: tc('notification_messages.missing_api_key.title', 0, {
+        service: toSentenceCase(service),
+        location: toSentenceCase(location)
+      }),
+      message: '',
+      i18nParam: {
+        message: 'notification_messages.missing_api_key.message',
+        choice: 0,
+        props: {
+          service: toSentenceCase(service),
+          location: toSentenceCase(location),
+          url: external ?? ''
+        }
+      },
+      severity: Severity.WARNING,
+      priority: Priority.ACTION,
+      action: !route
+        ? undefined
+        : {
+            label: tc('notification_messages.missing_api_key.action'),
+            action: () => router.push(route)
+          }
     };
   };
 
@@ -122,7 +158,9 @@ export const useMessageHandling = () => {
 
     const notifications: Notification[] = [];
 
-    if (type === SocketMessageType.BALANCES_SNAPSHOT_ERROR) {
+    if (type === SocketMessageType.MISSING_API_KEY) {
+      notifications.push(handleMissingApiKeyMessage(message.data));
+    } else if (type === SocketMessageType.BALANCES_SNAPSHOT_ERROR) {
       notifications.push(handleSnapshotError(message.data));
     } else if (type === SocketMessageType.LEGACY) {
       const data = message.data;

@@ -6,6 +6,8 @@ const props = defineProps<{
 
 const emit = defineEmits(['input']);
 
+const css = useCssModule();
+
 const { value } = toRefs(props);
 const input = () => {
   emit('input', !get(value));
@@ -14,13 +16,13 @@ const input = () => {
 const { tc } = useI18n();
 </script>
 <template>
-  <card outlined :class="$style.collapsed">
+  <card outlined :class="css.collapsed">
     <v-row no-gutters align="center">
       <v-col cols="auto">
         <v-icon color="primary">mdi-spin mdi-loading</v-icon>
       </v-col>
       <v-col>
-        <div :class="$style.title">
+        <div :class="css.title">
           {{ tc('collapsed_pending_tasks.title', count, { count }) }}
         </div>
       </v-col>

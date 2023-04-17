@@ -2961,6 +2961,11 @@
       "title": "New Token Detected|New Tokens Detected",
       "message": "New token with identifier {identifier} was detected from event processing and queries.|{count} new tokens were detected from event processing and queries."
     },
+    "missing_api_key": {
+      "title": "Κλειδί API {location} {service}",
+      "message": "Δεν έχετε διαμορφώσει ένα κλειδί API {location} {service}. Τα ερωτήματα rotki {service} θα εξακολουθούν να λειτουργούν αλλά θα είναι πολύ αργά. Εάν δεν χρησιμοποιείτε τον δικό σας κόμβο {location}, συνιστάται να μεταβείτε στο {url}, να δημιουργήσετε ένα κλειδί API και, στη συνέχεια, να το εισαγάγετε στη ρύθμιση διαπιστευτηρίων εξωτερικής υπηρεσίας του rotki",
+      "action": "Εισάγετε κλειδί"
+    },
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"

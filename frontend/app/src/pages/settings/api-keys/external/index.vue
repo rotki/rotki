@@ -39,6 +39,7 @@ const { setMessage } = useMessageStore();
 const { fetchLoopringBalances } = useEthBalancesStore();
 
 const { tc } = useI18n();
+const route = useRoute();
 const api = useExternalServicesApi();
 
 const isLoopringActive = computed(() =>
@@ -123,7 +124,19 @@ const confirm = async (service: ExternalServiceName) => {
   set(loading, false);
 };
 
+const setActiveTab = (hash: string) => {
+  const id = hash?.slice(1);
+  if (id in evmEtherscanTabs) {
+    set(evmEtherscanTabIndex, Object.keys(evmEtherscanTabs).indexOf(id));
+  }
+};
+
+watch(route, ({ hash }) => {
+  setActiveTab(hash);
+});
+
 onMounted(async () => {
+  setActiveTab(route.hash);
   set(loading, true);
   updateKeys(await api.queryExternalServices());
   set(loading, false);
@@ -181,7 +194,7 @@ onMounted(async () => {
       </v-tabs-items>
     </api-key-box>
 
-    <api-key-box>
+    <api-key-box id="ext-service-key-cryptocompare">
       <service-key
         v-model="cryptocompareKey"
         class="external-services__cryptocompare-key"
@@ -196,7 +209,7 @@ onMounted(async () => {
       />
     </api-key-box>
 
-    <api-key-box>
+    <api-key-box id="ext-service-key-beaconchain">
       <service-key
         v-model="beaconchainKey"
         class="external-services__beaconchain-key"
@@ -211,7 +224,7 @@ onMounted(async () => {
       />
     </api-key-box>
 
-    <api-key-box>
+    <api-key-box id="ext-service-key-covalent">
       <service-key
         v-model="covalentKey"
         class="external-services__covalent-key"
@@ -226,7 +239,7 @@ onMounted(async () => {
       />
     </api-key-box>
 
-    <api-key-box>
+    <api-key-box id="ext-service-key-loopring">
       <service-key
         v-model="loopringKey"
         class="external-services__loopring_key"
@@ -260,7 +273,7 @@ onMounted(async () => {
       </v-alert>
     </api-key-box>
 
-    <api-key-box>
+    <api-key-box id="ext-service-key-opensea">
       <service-key
         v-model="openseaKey"
         class="external-services__opensea-key"
