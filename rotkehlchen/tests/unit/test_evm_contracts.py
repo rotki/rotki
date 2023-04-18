@@ -34,3 +34,30 @@ def test_evm_abi_data(globaldb):
             assert serialized_abi == entry[1]
             assert entry[1] not in abis_set
             abis_set.add(entry[1])
+
+
+def test_fallback_to_packaged_db(ethereum_inquirer: 'EthereumInquirer'):
+    """
+    Test that if a contract / abi is missing in the globaldb, it is searched in the packaged db.
+    """
+    with GlobalDBHandler().conn.write_ctx() as cursor:
+        # Delete one contract and its abi
+        cursor.execute(
+            'SELECT contract_data.address, contract_abi.value FROM contract_data INNER JOIN '
+            'contract_abi ON contract_data.abi=contract_abi.id WHERE chain_id=1 LIMIT 1',
+        )
+        (address, abi) = cursor.fetchone()  # There has to be at least one entry
+        cursor.execute('DELETE FROM contract_data WHERE address=? AND chain_id=1', (address,))
+        cursor.execute('DELETE FROM contract_abi WHERE value=?', (abi,))
+
+    ethereum_inquirer.contracts.contract(address)  # Query the contract
+
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        # Check that the contract and the abi were copied to the global db
+        cursor.execute(
+            'SELECT COUNT(*) FROM contract_data INNER JOIN '
+            'contract_abi ON contract_data.abi=contract_abi.id WHERE chain_id=1 AND '
+            'contract_data.address=? AND contract_abi.value=?',
+            (address, abi),
+        )
+        assert cursor.fetchone()[0] == 1

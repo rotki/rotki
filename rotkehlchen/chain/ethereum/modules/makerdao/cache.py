@@ -76,7 +76,7 @@ def collateral_type_to_join_contract(collateral_type: str, ethereum: 'EthereumIn
         if info is None:
             return None
 
-        return ethereum.contracts.contract_by_address(cursor, string_to_evm_address(info[2]))
+        return ethereum.contracts.contract_by_address(string_to_evm_address(info[2]))
 
 
 def ilk_cache_foreach(
@@ -215,9 +215,9 @@ def update_ilk_registry(
 
             with GlobalDBHandler().conn.write_ctx() as write_cursor:
                 write_cursor.execute(
-                    'INSERT INTO contract_data(address, chain_id, name, abi, deployed_block)'
-                    ' VALUES(? ,? , ?, ?, ?)',
-                    (join_address, 1, abi_name, abi_id, deployed_block),
+                    'INSERT INTO contract_data(address, chain_id, abi, deployed_block)'
+                    ' VALUES(? ,?, ?, ?)',
+                    (join_address, 1, abi_id, deployed_block),
                 )
 
             # if the underlying token does not exist, add it

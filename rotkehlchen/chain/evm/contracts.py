@@ -1,6 +1,7 @@
 import json
 import logging
 from collections.abc import Sequence
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -28,7 +29,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.chain.evm.types import WeightedNode
-    from rotkehlchen.db.drivers.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -145,58 +145,111 @@ class EvmContracts(Generic[T]):
 
     def __init__(self, chain_id: T) -> None:
         self.chain_id = chain_id
+        self.builtin_database_path = Path(__file__).resolve().parent.parent.parent / 'data' / 'global.db'  # noqa: E501
 
     def contract_by_address(
             self,
-            cursor: 'DBCursor',
             address: ChecksumEvmAddress,
+            fallback_to_packaged_db: bool = False,
     ) -> Optional[EvmContract]:
-        """Returns contract data by address if found"""
-        cursor.execute(
-            'SELECT contract_abi.value, contract_data.deployed_block FROM '
-            'contract_data LEFT JOIN contract_abi ON contract_data.abi=contract_abi.id'
-            ' WHERE contract_data.chain_id=? AND contract_data.address=?',
-            (self.chain_id.serialize_for_db(), address),
-        )
-        result = cursor.fetchone()
-        if result is None:
-            return None
+        """
+        Returns contract data by address if found. Optionally falls back to packaged global db if
+        not found in the normal global DB
+        """
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            bindings = (self.chain_id.serialize_for_db(), address)
+            result = cursor.execute(
+                'SELECT contract_abi.value, contract_data.deployed_block FROM '
+                'contract_data LEFT JOIN contract_abi ON contract_data.abi=contract_abi.id '
+                'WHERE contract_data.chain_id=? AND contract_data.address=?',
+                bindings,
+            ).fetchone()
+            if result is not None:
+                return EvmContract(
+                    address=address,
+                    abi=json.loads(result[0]),  # not handling json error -- assuming DB consistency  # noqa: E501
+                    deployed_block=result[1] if result[1] else 0,
+                )
 
+            if fallback_to_packaged_db is False:
+                return None
+
+            # Try to find the contract in the packaged db
+            cursor.execute(f'ATTACH DATABASE "{self.builtin_database_path}" AS packaged_db;')
+            result = cursor.execute(
+                'SELECT contract_data.address, contract_data.chain_id, '
+                'contract_data.deployed_block, contract_abi.name, contract_abi.value FROM '
+                'packaged_db.contract_data LEFT JOIN packaged_db.contract_abi ON '
+                'contract_data.abi=contract_abi.id WHERE contract_data.chain_id=? AND '
+                'contract_data.address=?',
+                bindings,
+            ).fetchone()
+            cursor.execute('DETACH DATABASE "packaged_db"')
+            if result is None:
+                return None
+
+        # Copy the contract to the global db
+        abi_id = GlobalDBHandler().get_or_write_abi(
+            serialized_abi=result[4],
+            abi_name=result[3],
+        )
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            write_cursor.execute(
+                'INSERT INTO contract_data(address, chain_id, abi, deployed_block) '
+                'VALUES (?, ?, ?, ?)',
+                (result[0], result[1], abi_id, result[2]),
+            )
         return EvmContract(
             address=address,
-            abi=json.loads(result[0]),  # not handling json error -- assuming DB consistency
-            deployed_block=result[1] if result[1] else 0,
+            abi=json.loads(result[4]),  # not handling json error -- assuming DB consistency
+            deployed_block=result[2] if result[2] else 0,
         )
 
     def contract(self, address: ChecksumEvmAddress) -> EvmContract:
-        """Gets details of an evm contract from the global DB by name
+        """Gets details of an evm contract from the global DB by address
 
         Missing contract is a programming error and should never happen.
         """
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            contract = self.contract_by_address(cursor=cursor, address=address)
+        contract = self.contract_by_address(address=address, fallback_to_packaged_db=True)
         assert contract, f'No contract data for {address} found'
         return contract
 
-    def abi_or_none(self, name: str) -> Optional[list[dict[str, Any]]]:
-        """Gets abi of an evm contract from the abi json file
+    def abi_or_none(
+            self,
+            name: str,
+            fallback_to_packaged_db: bool = False,
+    ) -> Optional[list[dict[str, Any]]]:
+        """Gets abi of an evm contract from the abi json file and optionally falls back to
+        the packaged db if the abi is not found.
 
         Returns None if missing
         """
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute('SELECT value FROM contract_abi WHERE name=?', (name,))
-            result = cursor.fetchone()
-            if result is None:
-                return None
-            try:
-                abi_data = json.loads(result[0])
-            except json.decoder.JSONDecodeError as e:
-                log.error(
-                    f'Failed to decode {name} abi {result[0]} from DB as json due to {str(e)}',
-                )
+            result = cursor.execute(
+                'SELECT value FROM contract_abi WHERE name=?',
+                (name,),
+            ).fetchone()
+            if result is not None:
+                return json.loads(result[0])
+
+            if fallback_to_packaged_db is False:
                 return None
 
-            return abi_data
+            # Try to find the ABI in the packaged db
+            cursor.execute(f'ATTACH DATABASE "{self.builtin_database_path}" AS packaged_db;')
+            result = cursor.execute(
+                'SELECT value FROM packaged_db.contract_abi WHERE name=?',
+                (name,),
+            ).fetchone()
+            cursor.execute('DETACH DATABASE "packaged_db"')
+            if result is None:
+                return None
+            GlobalDBHandler().get_or_write_abi(
+                serialized_abi=result[0],
+                abi_name=name,
+            )
+
+        return json.loads(result[0])
 
     @overload
     def abi(self: 'EvmContracts[Literal[ChainID.ETHEREUM]]', name: 'ETHEREUM_KNOWN_ABI') -> list[dict[str, Any]]:  # noqa: E501
@@ -211,6 +264,6 @@ class EvmContracts(Generic[T]):
 
         Missing abi is a programming error and should never happen
         """
-        abi = self.abi_or_none(name)
+        abi = self.abi_or_none(name=name, fallback_to_packaged_db=True)
         assert abi, f'No abi for {name} found'
         return abi
