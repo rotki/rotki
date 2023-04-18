@@ -385,3 +385,51 @@ def test_register_v2(database, ethereum_inquirer, ethereum_accounts):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xA01f6D0985389a8E106D3158A9441aC21EAC8D8c']])
+def test_renewal_with_refund(database, ethereum_inquirer, ethereum_accounts):
+    """
+    Check that if there was a refund during a renewal, the refund is subtracted from the
+    spent amount.
+    """
+    tx_hex = deserialize_evm_tx_hash('0xd4fd01f50c3c86e7e119311d6830d975cf7d78d6906004d30370ffcbaabdff95')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, decoder = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    expires_timestamp = Timestamp(2310615949)
+    expected_events = [
+        EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1663628627000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.001092736096479008')),
+            location_label=user_address,
+            notes='Burned 0.001092736096479008 ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            event_identifier=evmhash,
+            sequence_index=2,
+            timestamp=TimestampMS(1663628627000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RENEW,
+            event_subtype=HistoryEventSubType.NFT,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.054034186623924151')),
+            location_label=user_address,
+            notes=f'Renew ENS name dfern for 0.054034186623924151 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=string_to_evm_address('0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5'),
+        ),
+    ]
+    assert events == expected_events
