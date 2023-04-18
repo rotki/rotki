@@ -420,7 +420,7 @@ def fixture_rotkehlchen_api_server(
                     )
 
             if mocked_proxies is not None:
-                stack.enter_context(mock_proxies(mocked_proxies))
+                mock_proxies(stack, mocked_proxies)
 
             stack.enter_context(patch_decoder_reload_data())
 

@@ -311,11 +311,19 @@ def patch_avalanche_request(avalanche_manager, mock_data):
     )
 
 
-def mock_proxies(mocked_proxies):
-    return patch(
-        'rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_accounts_having_proxy',
-        return_value=mocked_proxies,
-    )
+def mock_proxies(stack, mocked_proxies):
+    stack.enter_context(patch(
+        'rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_account_proxy',
+        lambda _, address: mocked_proxies.get(address),
+    ))
+    stack.enter_context(patch(
+        'rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_accounts_proxy',
+        lambda _, addresses: {
+            address: mocked_proxies.get(address)
+            for address in addresses
+            if mocked_proxies.get(address) is not None
+        },
+    ))
 
 
 def mock_evm_chains_with_transactions():
