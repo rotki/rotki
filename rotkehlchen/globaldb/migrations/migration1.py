@@ -43,22 +43,10 @@ ILK_REGISTRY_ABI = '[{"inputs":[{"internalType":"address","name":"vat_","type":"
 
 def globaldb_data_migration_1(conn: 'DBConnection') -> None:
     """Introduced at 1.27.1
-    - Adds the ilk registry contract for ethereum mainnet
     - Removes old setting last_assets_json_version (if existing)
     - Adds a makerdao vault types cache
     """
     with conn.write_ctx() as write_cursor:
-        # Write the ilk registry contract
-        write_cursor.execute(
-            'INSERT INTO contract_abi(name, value) VALUES(?, ?)',
-            ('ILK_REGISTRY', ILK_REGISTRY_ABI),
-        )
-        written_id = write_cursor.lastrowid
-        write_cursor.execute(
-            'INSERT INTO contract_data(address, chain_id, name, abi, deployed_block) VALUES(?, ?, ?, ?, ?)',  # noqa: E501
-            ('0x5a464C28D19848f44199D003BeF5ecc87d090F87', 1, 'ILK_REGISTRY', written_id, 12251871),  # noqa: E501
-        )
-
         # Remove old setting if existing
         write_cursor.execute('DELETE FROM settings WHERE name="last_assets_json_version";')
 

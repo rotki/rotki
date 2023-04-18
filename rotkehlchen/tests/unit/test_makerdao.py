@@ -197,20 +197,16 @@ def test_query_ilk_registry_and_update_cache(globaldb, ethereum_inquirer):
     ) -> None:
         assert asset.identifier == expected_identifier
         assert join_address == expected_join_address
-        with globaldb.conn.read_ctx() as other_cursor:
-            contract = ethereum_inquirer.contracts.contract_by_address(
-                cursor=other_cursor,
-                address=join_address,
+        contract = ethereum_inquirer.contracts.contract_by_address(join_address)
+        assert contract.address == expected_join_address
+        for entry in contract.abi:
+            if entry['type'] == expected_abi_entry[0] and entry['name'] == expected_abi_entry[1]:  # noqa: E501
+                break
+        else:
+            raise AssertionError(
+                f'abi should have an {expected_abi_entry[0]} entry with '
+                f'name {expected_abi_entry[1]}',
             )
-            assert contract.address == expected_join_address
-            for entry in contract.abi:
-                if entry['type'] == expected_abi_entry[0] and entry['name'] == expected_abi_entry[1]:  # noqa: E501
-                    break
-            else:
-                raise AssertionError(
-                    f'abi should have an {expected_abi_entry[0]} entry with '
-                    f'name {expected_abi_entry[1]}',
-                )
 
     count = 0
     got_gno = got_reth = got_wsteth = got_crv = got_comp = False
