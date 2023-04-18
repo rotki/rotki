@@ -77,7 +77,7 @@ def _initialize_and_yield_evm_inquirer_fixture(
         mock_data=mock_data,
     )
     if mocked_proxies is not None:
-        parent_stack.enter_context(mock_proxies(mocked_proxies))
+        mock_proxies(parent_stack, mocked_proxies)
     return inquirer
 
 
