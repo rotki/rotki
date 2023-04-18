@@ -87,6 +87,7 @@ DEFAULT_EVENT_CATEGORY_MAPPINGS = {
         HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
         HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
         HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
+        HistoryEventSubType.FEE: EventCategory.FEE,
     },
 }
 
@@ -190,5 +191,9 @@ EVENT_CATEGORY_DETAILS = {
     EventCategory.REFUND: EventCategoryDetails(
         label='refund',
         icon='mdi-cash-refund',
+    ),
+    EventCategory.FEE: EventCategoryDetails(
+        label='fee',
+        icon='mdi-account-cash',
     ),
 }

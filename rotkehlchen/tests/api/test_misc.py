@@ -19,7 +19,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import ChainID, SupportedBlockchain
+from rotkehlchen.types import ChainID, Location, SupportedBlockchain
 from rotkehlchen.utils.misc import get_system_spec, ts_now
 
 
@@ -521,8 +521,12 @@ def test_cache_deletion(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('have_decoders', [True])
-def test_query_decoding_types_mappings(rotkehlchen_api_server):
-    """Test that the structure for types mappings is correctly generated"""
+def test_events_mappings(rotkehlchen_api_server):
+    """
+    Test different mappings and information that we provide for rendering events information
+    - Test that the structure for types mappings is correctly generated
+    - Test that the valid locations are correctly provided to the frontend
+    """
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -533,3 +537,12 @@ def test_query_decoding_types_mappings(rotkehlchen_api_server):
     assert 'per_protocol_mappings' in result
     assert 'global_mappings' in result
     assert 'event_category_details' in result
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'locationresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['locations'] == [location.serialize() for location in Location]

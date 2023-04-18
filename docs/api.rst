@@ -12459,3 +12459,37 @@ Getting all available counterparties
 
   :statuscode 200: Information was correctly generated
   :statuscode 500: Internal rotki error
+
+Get all valid locations
+========================
+
+.. http:get:: /api/(version)/locations/all
+
+   Doing a GET on this endpoint will return all the possible location values.
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+    GET /locations/all HTTP/1.1
+    Host: localhost:5042
+
+
+  **Example Response**
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result":{
+          "locations: ['ethereum', 'optimism', 'kraken']
+        }
+      }
+
+  :resjson list[string] locations: A list with all the possible location values
+
+  :statuscode 200: Information was correctly returned
+  :statuscode 500: Internal rotki error
+

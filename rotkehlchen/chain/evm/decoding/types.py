@@ -44,3 +44,4 @@ class EventCategory(SerializableEnumMixin):
     INFORMATIONAL = auto()
     CANCEL_ORDER = auto()
     REFUND = auto()
+    FEE = auto()
