@@ -17,6 +17,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCateg
 from rotkehlchen.chain.evm.names import find_ens_mappings
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
@@ -139,17 +140,25 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             return DEFAULT_DECODING_OUTPUT
 
         name = decoded_data[0]
-        amount = from_wei(decoded_data[1])
+        name_cost = from_wei(decoded_data[1])
         expires = decoded_data[2]
 
-        for event in context.decoded_events:
+        refund_event_idx, refund_amount = None, ZERO
+        for idx, event in enumerate(context.decoded_events):
+            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_ETH and event.address == context.tx_log.address:  # noqa: E501
+                refund_event_idx = idx
+                refund_amount = event.balance.amount
+
             # Find the transfer event which should be before the name renewed event
-            if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.balance.amount == amount and event.address == context.tx_log.address:  # noqa: E501
+            if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.balance.amount - refund_amount == name_cost and event.address == context.tx_log.address:  # noqa: E501
+                event.balance.amount -= refund_amount
                 event.event_type = HistoryEventType.RENEW
                 event.event_subtype = HistoryEventSubType.NFT
                 event.counterparty = CPT_ENS
-                event.notes = f'Renew ENS name {name} for {amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
+                event.notes = f'Renew ENS name {name} for {name_cost} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
 
+        if refund_event_idx is not None:
+            del context.decoded_events[refund_event_idx]
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_ens_registry_with_fallback_event(self, context: DecoderContext) -> DecodingOutput:
