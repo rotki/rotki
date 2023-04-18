@@ -131,7 +131,7 @@ def test_trove_staking(rotkehlchen_api_server, inquirer):  # pylint: disable=unu
                 'usd_value': '0.0000000345435577215',
             },
         },
-        'proxies': {},
+        'proxies': None,
     }
 
 

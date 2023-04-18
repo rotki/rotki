@@ -7427,8 +7427,8 @@ Getting Liquity staked amount
           "message": ""
       }
 
-   :resjson object balances: A mapping of the category to the amount & value of assets staked in the protocol.
-   :resjson object proxies: A mapping of proxy addresses to the amount and value of assets staked in the protocol.
+   :resjson object optional[balances]: A mapping of the category to the amount & value of assets staked in the protocol.
+   :resjson object optional[proxies]: A mapping of proxy addresses to the amount and value of assets staked in the protocol.
 
    :statuscode 200: Liquity staking information successfully queried.
    :statuscode 409: User is not logged in or Liquity module is not activated.

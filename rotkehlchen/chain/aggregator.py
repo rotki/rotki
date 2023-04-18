@@ -41,18 +41,7 @@ from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
-from rotkehlchen.constants.assets import (
-    A_AVAX,
-    A_BCH,
-    A_BTC,
-    A_DAI,
-    A_DOT,
-    A_ETH,
-    A_ETH2,
-    A_KSM,
-    A_LQTY,
-    A_LUSD,
-)
+from rotkehlchen.constants.assets import A_AVAX, A_BCH, A_BTC, A_DAI, A_DOT, A_ETH, A_ETH2, A_KSM
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.eth2 import DBEth2
@@ -1012,42 +1001,19 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         liquity_module = self.get_module('liquity')
         if liquity_module is not None:
+            liquity_addresses = self.queried_addresses_for_module('liquity')
             # Get trove information
-            liquity_balances = liquity_module.get_positions(
-                addresses_list=self.queried_addresses_for_module('liquity'),
-            )
+            liquity_balances = liquity_module.get_positions(addresses_list=liquity_addresses)
             for address, deposits in liquity_balances.items():
                 collateral = deposits.collateral.balance
                 if collateral.amount > ZERO:
                     eth_balances[address].assets[A_ETH] += collateral
 
             # Get staked amounts
-            liquity_staked = liquity_module.liquity_staking_balances(
-                addresses=self.queried_addresses_for_module('liquity'),
+            liquity_module.enrich_staking_balances(
+                balances=eth_balances,
+                queried_addresses=liquity_addresses,
             )
-            for address, staked_info in liquity_staked.items():
-                staked_balance = staked_info['balances']['staked'].balance
-                if staked_balance.amount > ZERO:
-                    eth_balances[address].assets[A_LQTY] += staked_balance
-
-                for proxy_balance in staked_info['proxies'].values():
-                    staked_balance = proxy_balance['staked'].balance
-                    if staked_balance.amount > ZERO:
-                        eth_balances[address].assets[A_LQTY] += staked_balance
-
-            # Get stability pool balances
-            liquity_stability_pool = liquity_module.get_stability_pool_balances(
-                addresses=self.queried_addresses_for_module('liquity'),
-            )
-            for address, staked_info in liquity_stability_pool.items():
-                pool_balance = staked_info['balances']['deposited'].balance
-                if pool_balance.amount > ZERO:
-                    eth_balances[address].assets[A_LUSD] += pool_balance
-
-                for proxy_balance in staked_info['proxies'].values():
-                    pool_balance = proxy_balance['deposited'].balance
-                    if pool_balance.amount > ZERO:
-                        eth_balances[address].assets[A_LUSD] += pool_balance
 
         # Finally count the balances detected in various protocols in defi balances
         self.add_defi_balances_to_account()
