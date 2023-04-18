@@ -9,6 +9,7 @@ import requests
 from flaky import flaky
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
 from rotkehlchen.constants.assets import A_DAI, A_USDC, A_WBTC
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -19,6 +20,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
+    assert_proper_response,
     assert_proper_response_with_result,
     wait_for_async_task_with_result,
 )
@@ -26,6 +28,7 @@ from rotkehlchen.tests.utils.checks import (
     assert_serialized_dicts_equal,
     assert_serialized_lists_equal,
 )
+from rotkehlchen.types import SupportedBlockchain
 
 mocked_prices = {
     'ETH': {
@@ -891,3 +894,45 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
     details = assert_proper_response_with_result(response)
     expected_details = [vault_7538_details]
     assert_serialized_lists_equal(expected_details, details)
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_1]])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
+@pytest.mark.parametrize('mocked_proxies', [{
+    TEST_ADDRESS_1: '0x689D4C2229717f877A644A0aAd742D67E5D0a2FB',
+}])
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+def test_delete_vault_owner(rotkehlchen_api_server: 'APIServer'):
+    """Check that deleting owner of a makerdao vault doesnt break balance queries"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'blockchainbalancesresource',
+            blockchain=SupportedBlockchain.ETHEREUM.serialize(),
+        ),
+        json={'ignore_cache': True},
+    )
+
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'blockchainsaccountsresource',
+            blockchain=SupportedBlockchain.ETHEREUM.serialize(),
+        ),
+        json={'accounts': [TEST_ADDRESS_1]},
+    )
+    assert_proper_response(response)
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'blockchainbalancesresource',
+            blockchain=SupportedBlockchain.ETHEREUM.serialize(),
+        ),
+        json={'ignore_cache': True},
+    )
+    assert_proper_response(response)
+    assert len(rotki.msg_aggregator.consume_errors()) == 0

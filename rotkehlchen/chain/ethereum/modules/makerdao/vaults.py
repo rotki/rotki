@@ -729,3 +729,7 @@ class MakerdaoVaults(HasDSProxy):
         if proxy_address:
             # get any vaults the proxy owns
             self._get_vaults_of_address(user_address=address, proxy_address=proxy_address)
+
+    def on_account_removal(self, address: ChecksumEvmAddress) -> None:
+        super().on_account_removal(address)
+        self.vault_mappings.pop(address, None)

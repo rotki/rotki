@@ -32,6 +32,7 @@ Changelog
 * :bug:`5749` Phishing zero token transfer transactions will now be hidden and ignored.
 * :bug:`5717` Swaps will now be processed in accounting correctly even if set manually.
 * :bug:`-` If a premium user changes their rotki password they will now be able to pull remote data without restarting the app.
+* :bug:`-` Now there won't be errors querying balances when an address owning a Makerdao vault is deleted.
 
 * :release:`1.27.1 <2023-02-24>`
 * :feature:`-` Transactions involving Sai CDP migration to Dai CDP are now properly decoded.
