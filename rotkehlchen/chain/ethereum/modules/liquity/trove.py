@@ -1,14 +1,15 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypedDict, cast
 
 from gevent.lock import Semaphore
 
-from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
+from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceSheet
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -51,8 +52,12 @@ class Trove(NamedTuple):
 
 
 class LiquityBalanceWithProxy(TypedDict):
-    proxies: dict[ChecksumEvmAddress, dict[str, AssetBalance]]
-    balances: dict[str, AssetBalance]
+    proxies: Optional[dict[ChecksumEvmAddress, dict[str, AssetBalance]]]
+    balances: Optional[dict[str, AssetBalance]]
+
+
+def default_balance_with_proxy_factory() -> LiquityBalanceWithProxy:
+    return cast(LiquityBalanceWithProxy, {'proxies': None, 'balances': None})
 
 
 class Liquity(HasDSProxy):
@@ -200,12 +205,7 @@ class Liquity(HasDSProxy):
 
         # the structure of the queried data is:
         # staked address 1, reward 1 of address 1, reward 2 of address 1, staked address 2, reward 1 of address 2, ...  # noqa: E501
-        data: defaultdict[ChecksumEvmAddress, LiquityBalanceWithProxy] = defaultdict(
-            lambda: LiquityBalanceWithProxy(
-                proxies=defaultdict(lambda: defaultdict(AssetBalance)),  # type: ignore[arg-type]  # noqa: E501
-                balances=defaultdict(AssetBalance),  # type: ignore[arg-type]
-            ),
-        )
+        data: defaultdict[ChecksumEvmAddress, LiquityBalanceWithProxy] = defaultdict(default_balance_with_proxy_factory)  # noqa: E501
         for idx, output in enumerate(outputs):
             # depending on the output index get the address we are tracking
             current_address = addresses[idx // 3]
@@ -232,7 +232,10 @@ class Liquity(HasDSProxy):
             )
             proxy_owner = self.ethereum.proxies_inquirer.proxy_to_address.get(current_address)
             if proxy_owner is not None:
-                data[proxy_owner]['proxies'][current_address][key] = AssetBalance(
+                if data[proxy_owner]['proxies'] is None:
+                    data[proxy_owner]['proxies'] = defaultdict(lambda: {})
+
+                data[proxy_owner]['proxies'][current_address][key] = AssetBalance(  # type: ignore[index]  # here and below mypy fails to detect that we check the None case  # noqa: E501
                     asset=asset,
                     balance=Balance(
                         amount=amount,
@@ -240,7 +243,10 @@ class Liquity(HasDSProxy):
                     ),
                 )
             else:
-                data[current_address]['balances'][key] = AssetBalance(
+                if data[current_address]['balances'] is None:
+                    data[current_address]['balances'] = {}
+
+                data[current_address]['balances'][key] = AssetBalance(  # type: ignore[index]
                     asset=asset,
                     balance=Balance(
                         amount=amount,
@@ -281,4 +287,47 @@ class Liquity(HasDSProxy):
             methods=('stakes', 'getPendingLUSDGain', 'getPendingETHGain'),
             keys=('staked', 'lusd_rewards', 'eth_rewards'),
             assets=(A_LQTY, A_LUSD, A_ETH),
+        )
+
+    @staticmethod
+    def _add_addr_and_proxy_balances(
+            balances: defaultdict[ChecksumEvmAddress, BalanceSheet],
+            new_balances: dict[ChecksumEvmAddress, LiquityBalanceWithProxy],
+            token: 'Asset',
+            key: str,
+    ) -> None:
+        """
+        Add to balances the information in new_balances abstracting the key and token fields
+        """
+        for address, staked_info in new_balances.items():
+            if staked_info['balances'] is not None:
+                pool_balance = staked_info['balances'][key].balance
+                if pool_balance.amount > ZERO:
+                    balances[address].assets[token] += pool_balance
+
+            if staked_info['proxies'] is not None:
+                for proxy_balance in staked_info['proxies'].values():
+                    pool_balance = proxy_balance[key].balance
+                    if pool_balance.amount > ZERO:
+                        balances[address].assets[token] += pool_balance
+
+    def enrich_staking_balances(
+            self,
+            balances: defaultdict[ChecksumEvmAddress, BalanceSheet],
+            queried_addresses: list[ChecksumEvmAddress],
+    ) -> None:
+        """Include LQTY and LUSD staking balances in the balances mapping"""
+        liquity_staked = self.liquity_staking_balances(addresses=queried_addresses)
+        self._add_addr_and_proxy_balances(
+            balances=balances,
+            new_balances=liquity_staked,
+            token=A_LQTY,
+            key='staked',
+        )
+        lusd_stability_pool = self.get_stability_pool_balances(addresses=queried_addresses)
+        self._add_addr_and_proxy_balances(
+            balances=balances,
+            new_balances=lusd_stability_pool,
+            token=A_LUSD,
+            key='deposited',
         )
