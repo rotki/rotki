@@ -285,7 +285,6 @@ DB_CREATE_CONTRACT_DATA = """
 CREATE TABLE IF NOT EXISTS contract_data (
     address VARCHAR[42] NOT NULL,
     chain_id INTEGER NOT NULL,
-    name TEXT,
     abi INTEGER NOT NULL,
     deployed_block INTEGER,
     FOREIGN KEY(abi) REFERENCES contract_abi(id) ON UPDATE CASCADE ON DELETE SET NULL,
