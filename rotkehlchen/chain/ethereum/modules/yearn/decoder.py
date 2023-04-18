@@ -104,7 +104,7 @@ class YearnDecoder(DecoderInterface):
             context.event.event_type == HistoryEventType.RECEIVE and
             context.event.address == ZERO_ADDRESS
         ):
-            context.event.event_type = HistoryEventType.DEPOSIT
+            context.event.event_type = HistoryEventType.RECEIVE
             context.event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
             context.event.counterparty = protocol
             vault_token_name = _get_vault_token_name(context.transaction.to_address)
@@ -124,7 +124,7 @@ class YearnDecoder(DecoderInterface):
             context.event.event_type == HistoryEventType.SPEND and
             context.event.address == ZERO_ADDRESS
         ):
-            context.event.event_type = HistoryEventType.WITHDRAWAL
+            context.event.event_type = HistoryEventType.SPEND
             context.event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
             context.event.counterparty = protocol
             context.event.notes = f'Return {context.event.balance.amount} {context.token.symbol} to a {protocol} vault'  # noqa: E501
