@@ -1858,16 +1858,17 @@ class GlobalDBHandler():
         Finds and returns the id of the given abi.
         If the abi doesn't exist in the db, inserts it there.
         """
-        with GlobalDBHandler().conn.write_ctx() as cursor:
-            # check if the abi is already present in the database
+        # check if the abi is already present in the database
+        with GlobalDBHandler().conn.read_ctx() as cursor:
             existing_abi_id = cursor.execute(
                 'SELECT id FROM contract_abi WHERE value=?',
                 (serialized_abi,),
             ).fetchone()
 
-            if existing_abi_id is not None:
-                return existing_abi_id[0]
-            else:
+        if existing_abi_id is not None:
+            return existing_abi_id[0]
+        else:
+            with GlobalDBHandler().conn.write_ctx() as cursor:
                 cursor.execute(
                     'INSERT INTO contract_abi(name, value) VALUES(?, ?)',
                     (abi_name, serialized_abi),
