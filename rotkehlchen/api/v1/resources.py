@@ -184,6 +184,7 @@ from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.types import HistoricalPriceOracle
+from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
@@ -2883,3 +2884,13 @@ class EvmCounterpartiesResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.get_evm_counterparties_details()
+
+
+class LocationResource(BaseMethodView):
+
+    def get(self) -> Response:
+        result = process_result({'locations': [location.serialize() for location in Location]})
+        return api_response(
+            result={'result': result, 'message': ''},
+            status_code=HTTPStatus.OK,
+        )
