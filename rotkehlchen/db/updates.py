@@ -200,14 +200,13 @@ class RotkiDataUpdater:
                 new_contracts_data.append((
                     single_contract_data['address'],
                     single_contract_data['chain_id'],
-                    single_contract_data['name'],
                     remote_id_to_local_id[single_contract_data['abi']],
                     single_contract_data['deployed_block'],
                 ))
 
             with GlobalDBHandler().conn.write_ctx() as write_cursor:
                 write_cursor.executemany(
-                    'INSERT OR REPLACE INTO contract_data(address, chain_id, name, abi, deployed_block) VALUES(?, ?, ?, ?, ?)',  # noqa: E501
+                    'INSERT OR REPLACE INTO contract_data(address, chain_id, abi, deployed_block) VALUES(?, ?, ?, ?)',  # noqa: E501
                     new_contracts_data,
                 )
 

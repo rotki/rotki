@@ -65,9 +65,9 @@ ABI_DATA = [
     {'id': 2, 'name': 'ABI2', 'value': '[{"name":"BasePoolAdded","inputs":[{"name":"base_pool","type":"address","indexed":false}],"anonymous":false,"type":"event"}]'},  # noqa: E501
 ]
 CONTRACT_DATA = [
-    {'address': '0x4bBa290826C253BD854121346c370a9886d1bC26', 'chain_id': 1, 'name': 'CONTRACT1_ETH', 'abi': 1, 'deployed_block': 1000},  # noqa: E501
-    {'address': '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'chain_id': 10, 'name': 'CONTRACT1_OP', 'abi': 1, 'deployed_block': 20},  # noqa: E501
-    {'address': '0x19e4057A38a730be37c4DA690b103267AAE1d75d', 'chain_id': 1, 'name': None, 'abi': 2, 'deployed_block': None},  # noqa: E501
+    {'address': '0x4bBa290826C253BD854121346c370a9886d1bC26', 'chain_id': 1, 'abi': 1, 'deployed_block': 1000},  # noqa: E501
+    {'address': '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'chain_id': 10, 'abi': 1, 'deployed_block': 20},  # noqa: E501
+    {'address': '0x19e4057A38a730be37c4DA690b103267AAE1d75d', 'chain_id': 1, 'abi': 2, 'deployed_block': None},  # noqa: E501
 ]
 
 
@@ -287,7 +287,6 @@ def test_update_contracts(data_updater: RotkiDataUpdater) -> None:
         expected_new_contracts.append((
             contract_data['address'],
             contract_data['chain_id'],
-            contract_data['name'],
             remote_id_to_local_id[contract_data['abi']],
             contract_data['deployed_block'],
         ))

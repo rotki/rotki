@@ -1,6 +1,8 @@
 import json
 
 from eth_utils import is_checksum_address
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 from rotkehlchen.types import ChainID
 
@@ -9,13 +11,12 @@ def test_evm_contracts_data(globaldb):
     """Test that all evm contract entries in the packaged global DB have legal data"""
     serialized_chain_ids = [x.serialize_for_db() for x in ChainID]
     with globaldb.conn.read_ctx() as cursor:
-        cursor.execute('SELECT address, chain_id, name, abi, deployed_block FROM contract_data')
+        cursor.execute('SELECT address, chain_id, abi, deployed_block FROM contract_data')
         for entry in cursor:
             assert is_checksum_address(entry[0])
             assert isinstance(entry[1], int) and entry[1] in serialized_chain_ids
-            assert isinstance(entry[2], str)
-            assert isinstance(entry[3], int)
-            assert isinstance(entry[4], int) and entry[4] > 0
+            assert isinstance(entry[2], int)
+            assert isinstance(entry[3], int) and entry[3] > 0
 
 
 def test_evm_abi_data(globaldb):

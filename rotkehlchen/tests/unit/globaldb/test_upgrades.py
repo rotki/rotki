@@ -326,6 +326,12 @@ def test_upgrade_v4_v5(globaldb):
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS],
         )
         assert len(pool_tokens_in_global_db) > 0, 'There should be some pool tokens set'
+        contracts_before_upgrade = cursor.execute(
+            'SELECT address, chain_id, abi, deployed_block FROM contract_data',
+        ).fetchall()
+        assert len(contracts_before_upgrade) > 0, 'There should be some contracts'
+        columns = [column_data[1] for column_data in cursor.execute('PRAGMA table_info(contract_data)')]  # noqa: E501
+        assert 'name' in columns, 'The name column should be in the contract_data table'
 
     # execute upgrade
     with ExitStack() as stack:
@@ -370,6 +376,10 @@ def test_upgrade_v4_v5(globaldb):
             key_parts=[GeneralCacheType.CURVE_POOL_TOKENS],
         )
         assert len(pool_tokens_in_global_db) == 0, 'All curve pool tokens should have been deleted'
+        contracts_after_upgrade = cursor.execute('SELECT * FROM contract_data').fetchall()
+        assert contracts_after_upgrade == contracts_before_upgrade
+        columns = [column_data[1] for column_data in cursor.execute('PRAGMA table_info(contract_data)')]  # noqa: E501
+        assert 'name' not in columns, 'The name column should not be in the contract_data table'
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
