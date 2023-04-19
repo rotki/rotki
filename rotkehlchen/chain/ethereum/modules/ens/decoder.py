@@ -151,7 +151,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
 
             # Find the transfer event which should be before the name renewed event
             if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.balance.amount - refund_amount == name_cost and event.address == context.tx_log.address:  # noqa: E501
-                event.balance.amount -= refund_amount
+                event.balance.amount -= refund_amount  # is now equal to name_cost
                 event.event_type = HistoryEventType.RENEW
                 event.event_subtype = HistoryEventSubType.NFT
                 event.counterparty = CPT_ENS
