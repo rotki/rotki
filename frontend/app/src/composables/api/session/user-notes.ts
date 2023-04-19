@@ -8,7 +8,6 @@ import {
   UserNoteCollectionResponse,
   type UserNotesFilter
 } from '@/types/notes';
-import { mapCollectionResponse } from '@/utils/collection';
 
 export const useUserNotesApi = () => {
   const fetchUserNotes = async (

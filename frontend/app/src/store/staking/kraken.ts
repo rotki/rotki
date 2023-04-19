@@ -7,9 +7,6 @@ import {
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { Zero } from '@/utils/bignumbers';
-import { balanceSum } from '@/utils/calculation';
-import { logger } from '@/utils/logging';
 
 const defaultPagination = (): KrakenStakingPagination => ({
   offset: 0,

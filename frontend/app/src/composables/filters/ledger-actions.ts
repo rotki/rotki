@@ -10,7 +10,6 @@ import {
   dateValidator
 } from '@/types/filtering';
 import { LedgerActionType } from '@/types/history/ledger-action/ledger-actions-type';
-import { getDateInputISOFormat } from '@/utils/date';
 
 enum LedgerActionFilterKeys {
   ASSET = 'asset',

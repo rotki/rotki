@@ -10,9 +10,6 @@ import { type Nullable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
 import { type DashboardTableType } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
-import { getSortItems } from '@/utils/assets';
-import { One } from '@/utils/bignumbers';
-import { aggregateTotal, calculatePercentage } from '@/utils/calculation';
 import { isEvmNativeToken } from '@/types/asset';
 
 const props = defineProps({

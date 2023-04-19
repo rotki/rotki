@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
 import { Module, SUPPORTED_MODULES } from '@/types/modules';
-import { useStatusUpdater } from '@/composables/status';
 import { Section } from '@/types/status';
 
 const wasActivated = (

@@ -1,8 +1,6 @@
 import { type Ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
 import { type Nullable } from '@/types';
-import { startPromise } from '@/utils';
-import { logger } from '@/utils/logging';
 
 export const useWebsocketStore = defineStore('websocket', () => {
   const connection: Ref<Nullable<WebSocket>> = ref(null);

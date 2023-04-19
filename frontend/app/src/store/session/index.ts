@@ -11,8 +11,6 @@ import {
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { UserAccount, type UserSettingsModel } from '@/types/user';
-import { lastLogin } from '@/utils/account-management';
-import { logger } from '@/utils/logging';
 import { type ChangePasswordPayload } from '@/types/session';
 import { type ActionStatus } from '@/types/action';
 

@@ -1,6 +1,4 @@
 import Vue from 'vue';
-import { checkIfDevelopment } from '@/utils/env-utils';
-import { logger } from '@/utils/logging';
 import type * as Chart from 'chart.js';
 
 class ComponentLoadFailedError extends Error {

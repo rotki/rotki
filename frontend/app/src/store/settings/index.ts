@@ -1,7 +1,6 @@
 import { type KrakenAccountType } from '@/types/exchanges';
 import { type Module } from '@/types/modules';
 import { type SettingsUpdate } from '@/types/user';
-import { uniqueStrings } from '@/utils/data';
 import { type ActionStatus } from '@/types/action';
 
 export const useSettingsStore = defineStore('settings', () => {

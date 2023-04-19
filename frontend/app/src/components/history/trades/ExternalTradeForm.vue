@@ -9,9 +9,6 @@ import {
   type TradeType
 } from '@/types/history/trade';
 import { TaskType } from '@/types/task-type';
-import { Zero, bigNumberifyFromRef } from '@/utils/bignumbers';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
-import { useTrades } from '@/composables/history/trades';
 import { toMessages } from '@/utils/validation-errors';
 
 const props = withDefaults(

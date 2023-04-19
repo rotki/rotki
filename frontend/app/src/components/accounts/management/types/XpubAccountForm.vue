@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { type BtcChains } from '@/types/blockchain/chains';
-import { startPromise } from '@/utils';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { logger } from '@/utils/logging';
-import { assert } from '@/utils/assertions';
 import {
   type XpubAccountWithBalance,
   type XpubPayload

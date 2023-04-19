@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type SupportedExchange } from '@/types/exchanges';
-import { toSentenceCase } from '@/utils/text';
 import { type TradeLocationData } from '@/types/history/trade/location';
 
 const props = defineProps({

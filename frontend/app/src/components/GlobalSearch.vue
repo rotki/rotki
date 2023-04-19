@@ -4,7 +4,6 @@ import { type Ref } from 'vue';
 import { useAppRoutes } from '@/router/routes';
 import { type Exchange } from '@/types/exchanges';
 import { type TradeLocationData } from '@/types/history/trade/location';
-import { useExchangesStore } from '@/store/exchanges';
 
 interface SearchItem {
   value: number;

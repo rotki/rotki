@@ -7,10 +7,6 @@ import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';
 import vuetify from '@/plugins/vuetify';
 import { usePremiumApi } from '@/premium/setup-interface';
-import { setupDayjs } from '@/utils/date';
-import { checkIfDevelopment } from '@/utils/env-utils';
-import { logger } from '@/utils/logging';
-import { setupFormatter } from '@/utils/setup-formatter';
 import i18n from './i18n';
 import router from './router';
 

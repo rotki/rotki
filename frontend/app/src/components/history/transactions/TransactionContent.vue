@@ -25,7 +25,6 @@ import {
 import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import { getCollectionData } from '@/utils/collection';
 import { type Writeable } from '@/types';
 import { isValidTxHash } from '@/utils/text';
 import { toEvmChainAndTxHash } from '@/utils/history';
@@ -487,7 +486,7 @@ const fetchDataAndRefreshEvents = async (
         </v-row>
       </template>
 
-      <collection-handler :collection="events" @set-page="setPage">
+      <collection-handler :collection="events" @set-page="setPage($event)">
         <template
           #default="{
             data: eventsData,

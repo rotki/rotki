@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type Blockchain } from '@rotki/common/lib/blockchain';
-import { getEventCounterpartyData, useEventTypeData } from '@/utils/history';
 import { type HistoryEventEntry } from '@/types/history/tx';
 import { type ActionDataEntry } from '@/types/action';
 

@@ -10,9 +10,6 @@ import {
 } from '@/types/eth-names';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { uniqueObjects, uniqueStrings } from '@/utils/data';
-import { logger } from '@/utils/logging';
-import { isValidEthAddress } from '@/utils/text';
 import { type Chains } from '@/types/asset/asset-urls';
 import { isBlockchain } from '@/types/blockchain/chains';
 

@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { invertColor, randomColor } from '@/utils/color';
-import { checkIfDevelopment } from '@/utils/env-utils';
-import { logger } from '@/utils/logging';
 import { type Tag } from '@/types/tags';
 
 const props = defineProps({

@@ -8,9 +8,7 @@ import { type ComputedRef, type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import { CURRENCY_USD } from '@/types/currencies';
 import { isNft } from '@/utils/nft';
-import { One } from '@/utils/bignumbers';
 import { type ManualPrice } from '@/types/prices';
-import { useStatusUpdater } from '@/composables/status';
 import { Section } from '@/types/status';
 
 const props = defineProps({

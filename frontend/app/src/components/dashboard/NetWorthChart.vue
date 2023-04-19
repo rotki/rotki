@@ -15,8 +15,6 @@ import {
 import dayjs from 'dayjs';
 import { type PropType } from 'vue';
 import { type ValueOverTime } from '@/types/graphs';
-import { assert } from '@/utils/assertions';
-import { bigNumberify } from '@/utils/bignumbers';
 
 const props = defineProps({
   timeframe: {

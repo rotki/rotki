@@ -6,7 +6,6 @@ import {
   type ExchangePayload,
   SupportedExchange
 } from '@/types/exchanges';
-import { useExchangesStore } from '@/store/exchanges';
 
 const placeholder: () => ExchangePayload = () => ({
   location: SupportedExchange.KRAKEN,

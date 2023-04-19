@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
 import ManagedAssetForm from '@/components/asset-manager/ManagedAssetForm.vue';
-import { useAssetFilter } from '@/composables/filters/assets';
 import { type Collection } from '@/types/collection';
 import { type Nullable } from '@/types';
 import {
@@ -9,7 +8,6 @@ import {
   EVM_TOKEN,
   type IgnoredAssetsHandlingType
 } from '@/types/asset';
-import { assert } from '@/utils/assertions';
 import { type Filters, type Matcher } from '@/composables/filters/assets';
 
 const props = withDefaults(
@@ -241,10 +239,10 @@ watch(identifier, async assetId => {
       :options="options"
       @refresh="fetchData"
       @add="add()"
-      @edit="edit"
-      @delete-asset="showDeleteConfirmation"
-      @update:pagination="setOptions"
-      @update:filters="setFilter"
+      @edit="edit($event)"
+      @delete-asset="showDeleteConfirmation($event)"
+      @update:pagination="setOptions($event)"
+      @update:filters="setFilter($event)"
       @update:expanded="expanded = $event"
       @update:selected="selected = $event"
       @update:ignored-assets-handling="ignoredAssetsHandling = $event"

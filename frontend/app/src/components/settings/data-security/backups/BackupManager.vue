@@ -3,9 +3,6 @@ import { Severity } from '@rotki/common/lib/messages';
 import { type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { type DatabaseInfo, type UserDbBackup } from '@/types/backup';
-import { getFilepath } from '@/utils/backups';
-import { size } from '@/utils/data';
-import { logger } from '@/utils/logging';
 
 const { notify } = useNotificationsStore();
 

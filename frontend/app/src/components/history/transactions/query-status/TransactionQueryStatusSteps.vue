@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { toSentenceCase } from '@/utils/text';
 import { type EvmTransactionQueryData } from '@/types/websocket-messages';
 
 defineProps<{ item: EvmTransactionQueryData }>();

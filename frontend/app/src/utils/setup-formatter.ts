@@ -1,5 +1,4 @@
 import { BigNumber } from '@rotki/common';
-import { checkIfDevelopment } from '@/utils/env-utils';
 
 export function setupFormatter(): void {
   if (!checkIfDevelopment()) {

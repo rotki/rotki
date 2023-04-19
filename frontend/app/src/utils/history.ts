@@ -4,12 +4,10 @@ import {
   TransactionEventProtocol,
   type TransactionEventType
 } from '@rotki/common/lib/history/tx-events';
-import { isValidEthAddress } from '@/utils/text';
 import {
   type EvmChainAndTxHash,
   type HistoryEventEntry
 } from '@/types/history/tx';
-import { uniqueStrings } from '@/utils/data';
 import { type EntryMeta, type EntryWithMeta } from '@/types/history/meta';
 import { type Collection } from '@/types/collection';
 import { transactionEventTypeMapping } from '@/data/transaction-event-mapping';

@@ -1,5 +1,3 @@
-import { useSessionSettingsStore } from '@/store/settings/session';
-
 export const useScramble = () => {
   const alphaNumerics =
     '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';

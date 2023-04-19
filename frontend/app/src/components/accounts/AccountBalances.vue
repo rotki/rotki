@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { TaskType } from '@/types/task-type';
-import { startPromise } from '@/utils';
 import { isTokenChain } from '@/types/blockchain/chains';
 import {
   type AccountWithBalance,

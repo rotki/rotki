@@ -8,11 +8,6 @@ import {
 } from '@/types/blockchain/balances';
 import { type RestChains, isRestChain } from '@/types/blockchain/chains';
 import { type AssetPrices } from '@/types/prices';
-import { removeZeroAssets } from '@/utils/balances';
-import {
-  updateBlockchainAssetBalances,
-  updateTotalsPrices
-} from '@/utils/prices';
 
 type Totals = Record<RestChains, AssetBalances>;
 type Balances = Record<RestChains, BlockchainAssetBalances>;

@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type ManualBalance } from '@/types/manual-balances';
-import { One } from '@/utils/bignumbers';
-import { aggregateTotal } from '@/utils/calculation';
 
 const props = defineProps({
   title: { required: true, type: String },

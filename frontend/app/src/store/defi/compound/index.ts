@@ -4,9 +4,6 @@ import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { logger } from '@/utils/logging';
-import { toProfitLossModel } from '@/utils/defi';
-import { getProtocolAddresses } from '@/utils/addresses';
 
 const defaultCompoundHistory = (): CompoundHistory => ({
   events: [],

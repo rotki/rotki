@@ -14,9 +14,6 @@ import {
   type BlockchainAssetBalances,
   type BtcBalances
 } from '@/types/blockchain/balances';
-import { NoPrice, Zero, sortDesc, zeroBalance } from '@/utils/bignumbers';
-import { assetSum, balanceSum, bigNumberSum } from '@/utils/calculation';
-import { getTags } from '@/utils/tags';
 import {
   type AccountWithBalance,
   type AssetBreakdown,

@@ -7,11 +7,6 @@ import {
   type SyncApproval,
   type SyncConflict
 } from '@/types/login';
-import {
-  deleteBackendUrl,
-  getBackendUrl,
-  saveBackendUrl
-} from '@/utils/account-management';
 
 const KEY_REMEMBER_USERNAME = 'rotki.remember_username';
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';

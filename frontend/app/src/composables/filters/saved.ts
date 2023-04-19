@@ -1,12 +1,10 @@
 import { type ComputedRef } from 'vue';
 import { type MaybeRef } from '@vueuse/core';
-import { useI18n } from 'vue-i18n-composable';
 import {
   type BaseSuggestion,
   type SavedFilterLocation,
   type Suggestion
 } from '@/types/filtering';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type ActionStatus } from '@/types/action';
 
 const LIMIT_PER_LOCATION = 10;

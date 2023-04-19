@@ -6,9 +6,6 @@ import {
   type SearchMatcher,
   type Suggestion
 } from '@/types/filtering';
-import { assert } from '@/utils/assertions';
-import { logger } from '@/utils/logging';
-import { splitSearch } from '@/utils/search';
 
 const props = withDefaults(
   defineProps<{

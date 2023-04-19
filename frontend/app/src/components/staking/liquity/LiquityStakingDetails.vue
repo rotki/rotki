@@ -15,9 +15,6 @@ import {
 } from '@rotki/common/lib/history/tx-events';
 import { type AssetBalance, type Balance } from '@rotki/common';
 import { Section } from '@/types/status';
-import { balanceSum } from '@/utils/calculation';
-import { uniqueStrings } from '@/utils/data';
-import { zeroBalance } from '@/utils/bignumbers';
 
 const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
 const liquityStore = useLiquityStore();

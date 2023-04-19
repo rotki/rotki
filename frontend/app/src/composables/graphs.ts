@@ -1,8 +1,6 @@
 import { type BigNumber } from '@rotki/common';
 import { type TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
 import { type TooltipModel } from 'chart.js';
-import { assert } from '@/utils/assertions';
-import { bigNumberify } from '@/utils/bignumbers';
 
 export const useGraph = (canvasId: string) => {
   const getCanvasCtx = (): CanvasRenderingContext2D => {

@@ -6,9 +6,7 @@ import {
   validStatus,
   validWithoutSessionStatus
 } from '@/services/utils';
-import { assert } from '@/utils/assertions';
 import { api } from '@/services/rotkehlchen-api';
-import { downloadFileByUrl } from '@/utils/download';
 import { type ActionStatus } from '@/types/action';
 import { type ConflictResolution } from '@/types/asset';
 import { type PendingTask } from '@/types/task';

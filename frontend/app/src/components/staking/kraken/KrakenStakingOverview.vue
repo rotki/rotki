@@ -2,8 +2,6 @@
 import { BigNumber } from '@rotki/common';
 import { type PropType } from 'vue';
 import { type ReceivedAmount } from '@/types/staking';
-import { assert } from '@/utils/assertions';
-import { Zero } from '@/utils/bignumbers';
 
 const props = defineProps({
   totalUsd: { required: true, type: BigNumber },

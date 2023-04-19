@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { createNotification } from '@/utils/notifications';
-
 const visibleNotification = ref(createNotification());
 const notificationStore = useNotificationsStore();
 const { queue } = storeToRefs(notificationStore);

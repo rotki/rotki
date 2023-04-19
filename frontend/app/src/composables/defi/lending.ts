@@ -25,11 +25,7 @@ import {
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 import { type YearnVaultsHistory } from '@/types/defi/yearn';
 import { Section, Status } from '@/types/status';
-import { assert } from '@/utils/assertions';
-import { Zero, zeroBalance } from '@/utils/bignumbers';
-import { uniqueStrings } from '@/utils/data';
 import { type LiquityLoan } from '@/types/defi/liquity';
-import { balanceUsdValueSum } from '@/utils/balances';
 
 type NullableLoan =
   | MakerDAOVaultModel

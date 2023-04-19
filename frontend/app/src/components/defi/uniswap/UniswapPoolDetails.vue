@@ -4,7 +4,6 @@ import {
   type XswapBalance
 } from '@rotki/common/lib/defi/xswap';
 import { type PropType } from 'vue';
-import { One } from '@/utils/bignumbers';
 
 defineProps({
   balance: { required: true, type: Object as PropType<XswapBalance> }

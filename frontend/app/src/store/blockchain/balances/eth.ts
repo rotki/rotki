@@ -12,13 +12,6 @@ import { type AssetPrices } from '@/types/prices';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { removeZeroAssets } from '@/utils/balances';
-import { balanceSum } from '@/utils/calculation';
-import {
-  updateAssetBalances,
-  updateBlockchainAssetBalances,
-  updateTotalsPrices
-} from '@/utils/prices';
 
 type Totals = Record<EthChains, AssetBalances>;
 type Balances = Record<EthChains, BlockchainAssetBalances>;

@@ -14,7 +14,6 @@ import {
 } from '@/types/frontend-settings';
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
-import { calculatePercentage } from '@/utils/calculation';
 
 const { tc } = useI18n();
 const LIQUIDITY_POSITION = DashboardTableType.LIQUIDITY_POSITION;

@@ -1,5 +1,3 @@
-import { assert } from '@/utils/assertions';
-
 export const useProxy = () => {
   const currentInstance = getCurrentInstance();
   assert(currentInstance?.proxy);

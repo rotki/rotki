@@ -19,8 +19,6 @@ import {
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
 import { truncateAddress } from '@/filters';
-import { One } from '@/utils/bignumbers';
-import { isNft } from '@/utils/nft';
 
 export const assetsApi = (): AssetsApi => {
   const { assetInfo, assetSymbol, assetName, tokenAddress } =

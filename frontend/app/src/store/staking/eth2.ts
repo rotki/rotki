@@ -8,8 +8,6 @@ import isEqual from 'lodash/isEqual';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { Zero } from '@/utils/bignumbers';
-import { logger } from '@/utils/logging';
 
 const defaultStats = (): Eth2DailyStats => ({
   entries: [],

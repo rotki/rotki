@@ -12,9 +12,6 @@ import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { Zero, bigNumberify } from '@/utils/bignumbers';
-import { logger } from '@/utils/logging';
-import { getProtocolAddresses } from '@/utils/addresses';
 
 const convertMakerDAOVaults = (vaults: ApiMakerDAOVault[]): MakerDAOVault[] =>
   vaults.map(vault => ({

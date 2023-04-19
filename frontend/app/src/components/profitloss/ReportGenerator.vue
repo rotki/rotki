@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { convertToTimestamp } from '@/utils/date';
-import { checkIfDevelopment } from '@/utils/env-utils';
-
 const emit = defineEmits(['generate', 'export-data', 'import-data']);
 
 const { t } = useI18n();

@@ -24,7 +24,6 @@ import {
   type TradeLocation,
   type TradeLocationData
 } from '@/types/history/trade/location';
-import { assert } from '@/utils/assertions';
 
 export const useTradeLocations = createSharedComposable(() => {
   const { tc } = useI18n();

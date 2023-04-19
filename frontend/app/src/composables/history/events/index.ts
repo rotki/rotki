@@ -26,10 +26,6 @@ import {
   type TaskMeta
 } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { mapCollectionResponse } from '@/utils/collection';
-import { logger } from '@/utils/logging';
-import { getEthAddressesFromText } from '@/utils/history';
-import { startPromise } from '@/utils';
 import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type LiquityPoolDetailEntry } from '@rotki/common/lib/liquity';
 import { type PropType } from 'vue';
-import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 
 defineProps({

@@ -10,7 +10,6 @@ import {
   dateValidator
 } from '@/types/filtering';
 import { TradeType } from '@/types/history/trade';
-import { getDateInputISOFormat } from '@/utils/date';
 
 enum TradeFilterKeys {
   BASE = 'base',

@@ -4,7 +4,6 @@ import { type AssetBalance } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
 import isEmpty from 'lodash/isEmpty';
 import { type BlockchainAssetBalances } from '@/types/blockchain/balances';
-import { toSortedAssetBalanceArray } from '@/utils/balances';
 
 export const useAccountDetails = (
   blockchain: MaybeRef<Blockchain>,

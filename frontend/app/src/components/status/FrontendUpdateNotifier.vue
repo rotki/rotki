@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { logger } from '@/utils/logging';
-
 const updateSW = ref<((refresh: boolean) => Promise<void>) | undefined>(
   undefined
 );

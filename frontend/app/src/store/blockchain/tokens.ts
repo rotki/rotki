@@ -4,7 +4,6 @@ import isEqual from 'lodash/isEqual';
 import { type ComputedRef, type Ref } from 'vue';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { logger } from '@/utils/logging';
 import { type TokenChains, isTokenChain } from '@/types/blockchain/chains';
 import {
   type EthDetectedTokensInfo,

@@ -2,9 +2,6 @@
 import { type AssetInfo } from '@rotki/common/lib/data';
 import { type ComputedRef, type Ref } from 'vue';
 import { type SearchMatcher, type Suggestion } from '@/types/filtering';
-import { compareSymbols } from '@/utils/assets';
-import { logger } from '@/utils/logging';
-import { splitSearch } from '@/utils/search';
 
 const props = withDefaults(
   defineProps<{

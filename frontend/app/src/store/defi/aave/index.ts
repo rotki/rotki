@@ -5,9 +5,6 @@ import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { balanceSum } from '@/utils/calculation';
-import { logger } from '@/utils/logging';
-import { getProtocolAddresses } from '@/utils/addresses';
 
 export const useAaveStore = defineStore('defi/aave', () => {
   const balances: Ref<AaveBalances> = ref({});

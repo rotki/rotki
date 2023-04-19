@@ -1,7 +1,6 @@
 import { type MaybeRef } from '@vueuse/core';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { TaskType } from '@/types/task-type';
-import { assert } from '@/utils/assertions';
 import { isTokenChain } from '@/types/blockchain/chains';
 
 export const useTokenDetection = (

@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { toCapitalCase } from '@/utils/text';
 
 const BasicChainInfo = z.object({
   id: z.string(),

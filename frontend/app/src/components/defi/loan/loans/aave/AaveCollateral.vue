@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type AaveLoan } from '@/types/defi/lending';
-import { totalCollateral } from '@/utils/total-collateral';
 
 const props = defineProps({
   loan: {

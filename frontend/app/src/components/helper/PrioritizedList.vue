@@ -10,8 +10,6 @@ import {
   EmptyListId,
   type PrioritizedListId
 } from '@/types/prioritized-list-id';
-import { assert } from '@/utils/assertions';
-import { pluralize } from '@/utils/text';
 
 const props = defineProps({
   value: { required: true, type: Array as PropType<PrioritizedListId[]> },

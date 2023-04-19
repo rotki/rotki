@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { checkIfDevelopment } from '@/utils/env-utils';
-
 const DevApp = defineAsyncComponent(() => import('@/DevApp.vue'));
 
 const { animationsEnabled } = storeToRefs(useSessionSettingsStore());

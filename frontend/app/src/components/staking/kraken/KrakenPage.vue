@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { SupportedExchange } from '@/types/exchanges';
 import { Section } from '@/types/status';
-import { useExchangesStore } from '@/store/exchanges';
 
 const { shouldShowLoadingScreen } = useStatusStore();
 const { load, $reset } = useKrakenStakingStore();

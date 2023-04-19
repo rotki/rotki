@@ -6,7 +6,6 @@ import {
   validWithoutSessionStatus
 } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
-import { nonEmptyProperties } from '@/utils/data';
 import {
   type HistoricalPrice,
   type HistoricalPriceDeletePayload,

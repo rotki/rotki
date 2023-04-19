@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
-import { trimOnPaste } from '@/utils/event';
 import { type PremiumCredentialsPayload } from '@/types/session';
 
 const { username } = storeToRefs(useSessionAuthStore());

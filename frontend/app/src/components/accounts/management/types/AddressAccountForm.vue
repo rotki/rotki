@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Module } from '@/types/modules';
-import { startPromise } from '@/utils';
 import {
   type BlockchainAccountPayload,
   type BlockchainAccountWithBalance

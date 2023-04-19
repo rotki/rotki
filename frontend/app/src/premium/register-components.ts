@@ -51,7 +51,6 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import StatisticsGraphSettings from '@/components/settings/StatisticsGraphSettings.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { logger } from '@/utils/logging';
 import TransactionContent from '@/components/history/transactions/TransactionContent.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 

@@ -5,8 +5,6 @@ import { type Ref } from 'vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { type TradeLocation } from '@/types/history/trade/location';
 import { type ManualBalance } from '@/types/manual-balances';
-import { startPromise } from '@/utils';
-import { bigNumberify } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation-errors';
 import { BalanceType } from '@/types/balances';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';

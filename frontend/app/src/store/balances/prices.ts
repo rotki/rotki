@@ -14,13 +14,8 @@ import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ExchangeRates } from '@/types/user';
-import { One } from '@/utils/bignumbers';
-import { chunkArray } from '@/utils/data';
-import { convertFromTimestamp } from '@/utils/date';
 import { type ActionStatus } from '@/types/action';
 import { type FetchPricePayload } from '@/types/blockchain/accounts';
-import { logger } from '@/utils/logging';
-import { assert } from '@/utils/assertions';
 
 export const useBalancePricesStore = defineStore('balances/prices', () => {
   const prices = ref<AssetPrices>({});

@@ -3,12 +3,6 @@ import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
 import { samePriceAssets } from '@/types/blockchain';
 import { type AssetPriceInfo } from '@/types/prices';
-import {
-  sumAssetBalances,
-  toSortedAssetBalanceWithPrice
-} from '@/utils/balances';
-import { Zero } from '@/utils/bignumbers';
-import { uniqueStrings } from '@/utils/data';
 
 export const useAggregatedBalances = () => {
   const { isAssetIgnored } = useIgnoredAssetsStore();

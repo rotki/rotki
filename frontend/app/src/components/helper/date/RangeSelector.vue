@@ -6,7 +6,6 @@ import {
   type PeriodChangedEvent,
   type SelectionChangedEvent
 } from '@/types/reports';
-import { convertToTimestamp } from '@/utils/date';
 
 const props = defineProps({
   value: {

@@ -100,7 +100,12 @@ export default defineConfig({
         }
       ],
       dts: 'src/auto-imports.d.ts',
-      dirs: ['src/composables/**', 'src/api/**', 'src/store/**'],
+      dirs: [
+        'src/composables/**',
+        'src/api/**',
+        'src/store/**',
+        'src/utils/**'
+      ],
       vueTemplate: true,
       eslintrc: {
         enabled: true

@@ -2,12 +2,6 @@
 import Fragment from '@/components/helper/Fragment';
 import { type Collection } from '@/types/collection';
 import { type UserNote, type UserNotesFilter } from '@/types/notes';
-import {
-  defaultCollectionState,
-  getCollectionData,
-  setupEntryLimit
-} from '@/utils/collection';
-import { logger } from '@/utils/logging';
 
 const getDefaultForm = () => ({
   title: '',

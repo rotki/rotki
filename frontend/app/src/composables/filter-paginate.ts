@@ -12,9 +12,6 @@ import {
   type LocationQuery,
   RouterPaginationOptionsSchema
 } from '@/types/route';
-import { assert } from '@/utils/assertions';
-import { defaultCollectionState, defaultOptions } from '@/utils/collection';
-import { nonEmptyProperties } from '@/utils/data';
 
 interface FilterSchema<F, M> {
   filters: Ref<F>;

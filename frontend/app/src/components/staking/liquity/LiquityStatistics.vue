@@ -5,11 +5,8 @@ import {
 } from '@rotki/common/lib/liquity';
 import { type ComputedRef, type Ref } from 'vue';
 import { type AssetBalance, type Balance, type BigNumber } from '@rotki/common';
-import { One } from '@/utils/bignumbers';
-import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
-import { useRefMap } from '@/composables/utils/useRefMap';
 
 const props = withDefaults(
   defineProps<{

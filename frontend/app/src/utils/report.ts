@@ -2,7 +2,6 @@ import {
   type ProfitLossOverviewItem,
   type SelectedReport
 } from '@/types/reports';
-import { Zero } from '@/utils/bignumbers';
 
 export const calculateTotalProfitLoss = (
   item: SelectedReport

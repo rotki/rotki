@@ -2,7 +2,6 @@
 import Fragment from '@/components/helper/Fragment';
 import { type Writeable } from '@/types';
 import { TaskType } from '@/types/task-type';
-import { startPromise } from '@/utils';
 import {
   SYNC_DOWNLOAD,
   SYNC_UPLOAD,

@@ -178,10 +178,10 @@ watch(identifier, assetId => {
       :expanded="expanded"
       :options="options"
       @add="add()"
-      @edit="edit"
-      @delete-asset="showDeleteConfirmation"
-      @update:pagination="setOptions"
-      @update:filters="setFilter"
+      @edit="edit($event)"
+      @delete-asset="showDeleteConfirmation($event)"
+      @update:pagination="setOptions($event)"
+      @update:filters="setFilter($event)"
       @update:expanded="expanded = $event"
     />
     <big-dialog

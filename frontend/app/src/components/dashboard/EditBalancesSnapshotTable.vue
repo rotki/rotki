@@ -8,12 +8,9 @@ import {
   type BalanceSnapshotPayload,
   type Snapshot
 } from '@/types/snapshots';
-import { One, Zero, bigNumberify, sortDesc } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
 import { toSentenceCase } from '@/utils/text';
-import { assert } from '@/utils/assertions';
 import { BalanceType } from '@/types/balances';
-import { bigNumberSum } from '@/utils/calculation';
 
 type IndexedBalanceSnapshot = BalanceSnapshot & { index: number };
 

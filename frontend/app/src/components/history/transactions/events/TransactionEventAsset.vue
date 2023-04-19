@@ -4,7 +4,6 @@ import {
   TransactionEventProtocol,
   TransactionEventType
 } from '@rotki/common/lib/history/tx-events';
-import { getEventType } from '@/utils/history';
 import { type HistoryEventEntry } from '@/types/history/tx';
 import { CURRENCY_USD } from '@/types/currencies';
 

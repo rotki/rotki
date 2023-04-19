@@ -5,9 +5,6 @@ import {
   type ExchangeSetupPayload,
   type SupportedExchange
 } from '@/types/exchanges';
-import { assert } from '@/utils/assertions';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 export const useExchangesStore = defineStore('exchanges', () => {
   const exchangeBalancesStore = useExchangeBalancesStore();

@@ -2,9 +2,7 @@
 import { type AssetBalanceWithPrice } from '@rotki/common';
 import { type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import { getSortItems } from '@/utils/assets';
 import { isEvmNativeToken } from '@/types/asset';
-import { bigNumberSum } from '@/utils/calculation';
 
 const props = withDefaults(
   defineProps<{

@@ -5,7 +5,6 @@ import {
   type SearchMatcher,
   type Suggestion
 } from '@/types/filtering';
-import { useSavedFilter } from '@/composables/filters/saved';
 
 const props = defineProps<{
   matchers: SearchMatcher<any>[];

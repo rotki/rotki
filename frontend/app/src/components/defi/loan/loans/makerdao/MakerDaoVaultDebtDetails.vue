@@ -2,7 +2,6 @@
 import { BigNumber } from '@rotki/common';
 import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
 import Fragment from '@/components/helper/Fragment';
-import { Zero } from '@/utils/bignumbers';
 
 const props = defineProps({
   totalInterestOwed: {

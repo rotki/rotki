@@ -2,7 +2,6 @@
 import { type PropType } from 'vue';
 import { CompoundBorrowingDetails } from '@/premium/premium';
 import { type CompoundLoan } from '@/types/defi/compound';
-import { uniqueStrings } from '@/utils/data';
 
 const props = defineProps({
   loan: {

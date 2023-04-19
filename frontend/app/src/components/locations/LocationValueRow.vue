@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import { Zero } from '@/utils/bignumbers';
 
 const props = defineProps({
   identifier: { required: true, type: String }

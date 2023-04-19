@@ -7,8 +7,6 @@ import { type Module } from '@/types/modules';
 import { type NonFungibleBalance } from '@/types/nfbalances';
 import { type ManualPriceFormPayload } from '@/types/prices';
 import { Section } from '@/types/status';
-import { assert } from '@/utils/assertions';
-import { uniqueStrings } from '@/utils/data';
 
 defineProps({
   modules: {
@@ -238,7 +236,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
         :ignored-assets-handling="ignoredAssetsHandling"
         @update:selected="selected = $event"
         @update:ignored-assets-handling="ignoredAssetsHandling = $event"
-        @mass-ignore="massIgnore"
+        @mass-ignore="massIgnore($event)"
       />
     </template>
     <template #details>
@@ -253,7 +251,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
       </div>
     </template>
 
-    <collection-handler :collection="balances" @set-page="setPage">
+    <collection-handler :collection="balances" @set-page="setPage($event)">
       <template #default="{ data, itemLength, totalUsdValue }">
         <data-table
           v-model="selected"

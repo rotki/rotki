@@ -288,7 +288,10 @@ watch(loading, async (isLoading, wasLoading) => {
           </v-col>
         </v-row>
       </template>
-      <collection-handler :collection="ledgerActions" @set-page="setPage">
+      <collection-handler
+        :collection="ledgerActions"
+        @set-page="setPage($event)"
+      >
         <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
           <data-table
             v-model="selected"

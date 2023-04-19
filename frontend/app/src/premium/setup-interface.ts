@@ -20,7 +20,6 @@ import {
 } from '@/premium/premium-apis';
 import { type DateFormat } from '@/types/date-format';
 import { type FrontendSettingsPayload } from '@/types/frontend-settings';
-import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
 const date: DateUtilities = {
   epoch(): number {

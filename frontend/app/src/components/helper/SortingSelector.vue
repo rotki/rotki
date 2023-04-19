@@ -17,12 +17,12 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:sort-by', 'update:sort-desc']);
-const { sortDesc } = toRefs(props);
+const { sortDesc: sortDescending } = toRefs(props);
 const updateSortBy = (value: string) => {
   emit('update:sort-by', value);
 };
 const updateSortDesc = () => {
-  emit('update:sort-desc', !get(sortDesc));
+  emit('update:sort-desc', !get(sortDescending));
 };
 const { dark } = useTheme();
 
@@ -41,11 +41,11 @@ const { t } = useI18n();
             @click="updateSortDesc"
             v-on="on"
           >
-            <v-icon v-if="sortDesc">mdi-sort-descending</v-icon>
+            <v-icon v-if="sortDescending">mdi-sort-descending</v-icon>
             <v-icon v-else>mdi-sort-ascending</v-icon>
           </v-btn>
         </template>
-        <span v-if="sortDesc">
+        <span v-if="sortDescending">
           {{ t('sorting_selector.desc.sort_asc_tooltip') }}
         </span>
         <span v-else>{{ t('sorting_selector.desc.sort_desc_tooltip') }}</span>

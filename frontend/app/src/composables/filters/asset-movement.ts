@@ -10,7 +10,6 @@ import {
   dateValidator
 } from '@/types/filtering';
 import { MovementCategory } from '@/types/history/movements';
-import { getDateInputISOFormat } from '@/utils/date';
 
 enum AssetMovementFilterKeys {
   LOCATION = 'location',

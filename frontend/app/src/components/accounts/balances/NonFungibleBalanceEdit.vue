@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type NonFungibleBalance } from '@/types/nfbalances';
-import { assert } from '@/utils/assertions';
 
 const props = defineProps({
   value: {

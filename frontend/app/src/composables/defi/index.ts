@@ -1,8 +1,5 @@
 import { type BigNumber } from '@rotki/common';
 import { LpType } from '@rotki/common/lib/defi';
-import { createEvmIdentifierFromAddress } from '@/utils/assets';
-import { sortDesc } from '@/utils/bignumbers';
-import { bigNumberSum } from '@/utils/calculation';
 
 export const useLiquidityPosition = () => {
   const { uniswapV2Balances, uniswapV3Balances } = useUniswapStore();

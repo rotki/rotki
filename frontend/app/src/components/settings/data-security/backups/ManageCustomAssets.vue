@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { assert } from '@/utils/assertions';
-
 const zip = ref<File | null>(null);
 const importError = ref('');
 const exportError = ref('');

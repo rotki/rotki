@@ -3,10 +3,7 @@ import { type Balance, type BigNumber } from '@rotki/common';
 import { type ComputedRef, type PropType } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { truncateAddress, truncationPoints } from '@/filters';
-import { assert } from '@/utils/assertions';
-import { balanceUsdValueSum } from '@/utils/balances';
 import { type XpubAccountWithBalance } from '@/types/blockchain/accounts';
-import { bigNumberSum } from '@/utils/calculation';
 
 const props = defineProps({
   group: { required: true, type: String },
