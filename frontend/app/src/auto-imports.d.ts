@@ -65,7 +65,9 @@ declare global {
   const createPinia: typeof import('pinia')['createPinia']
   const createProjection: typeof import('@vueuse/math')['createProjection']
   const createReactiveFn: typeof import('@vueuse/core')['createReactiveFn']
+  const createReusableTemplate: typeof import('@vueuse/core')['createReusableTemplate']
   const createSharedComposable: typeof import('@vueuse/core')['createSharedComposable']
+  const createTemplatePromise: typeof import('@vueuse/core')['createTemplatePromise']
   const createUnrefFn: typeof import('@vueuse/core')['createUnrefFn']
   const customRef: typeof import('vue')['customRef']
   const debouncedRef: typeof import('@vueuse/core')['debouncedRef']
@@ -231,12 +233,13 @@ declare global {
   const toProfitLossModel: typeof import('./utils/defi/index')['toProfitLossModel']
   const toRaw: typeof import('vue')['toRaw']
   const toReactive: typeof import('@vueuse/core')['toReactive']
-  const toRef: typeof import('vue')['toRef']
+  const toRef: typeof import('@vueuse/core')['toRef']
   const toRefs: typeof import('vue')['toRefs']
   const toSentenceCase: typeof import('./utils/text')['toSentenceCase']
   const toSortedAssetBalanceArray: typeof import('./utils/balances')['toSortedAssetBalanceArray']
   const toSortedAssetBalanceWithPrice: typeof import('./utils/balances')['toSortedAssetBalanceWithPrice']
   const toUnit: typeof import('./utils/calculation')['toUnit']
+  const toValue: typeof import('@vueuse/core')['toValue']
   const totalCollateral: typeof import('./utils/total-collateral')['totalCollateral']
   const transactionEventProtocolData: typeof import('./composables/history/events/protocol-data')['transactionEventProtocolData']
   const transformEntryWithMeta: typeof import('./utils/history')['transformEntryWithMeta']
@@ -272,15 +275,18 @@ declare global {
   const useAddressesNamesStore: typeof import('./store/blockchain/accounts/addresses-names')['useAddressesNamesStore']
   const useAggregatedBalances: typeof import('./composables/balances/aggregated')['useAggregatedBalances']
   const useAirdropStore: typeof import('./store/defi/airdrop')['useAirdropStore']
+  const useAnimate: typeof import('@vueuse/core')['useAnimate']
   const useAnimation: typeof import('./composables/user/animations')['useAnimation']
   const useAppNavigation: typeof import('./composables/navigation')['useAppNavigation']
   const useAreaVisibilityStore: typeof import('./store/session/visibility')['useAreaVisibilityStore']
+  const useArrayDifference: typeof import('@vueuse/core')['useArrayDifference']
   const useArrayEvery: typeof import('@vueuse/core')['useArrayEvery']
   const useArrayFilter: typeof import('@vueuse/core')['useArrayFilter']
   const useArrayFind: typeof import('@vueuse/core')['useArrayFind']
   const useArrayFindIndex: typeof import('@vueuse/core')['useArrayFindIndex']
   const useArrayFindLast: typeof import('@vueuse/core')['useArrayFindLast']
   const useArrayInclude: typeof import('./composables/array/index')['useArrayInclude']
+  const useArrayIncludes: typeof import('@vueuse/core')['useArrayIncludes']
   const useArrayJoin: typeof import('@vueuse/core')['useArrayJoin']
   const useArrayMap: typeof import('@vueuse/core')['useArrayMap']
   const useArrayReduce: typeof import('@vueuse/core')['useArrayReduce']
@@ -484,6 +490,8 @@ declare global {
   const usePageLeave: typeof import('@vueuse/core')['usePageLeave']
   const usePaginationFilters: typeof import('./composables/filter-paginate')['usePaginationFilters']
   const useParallax: typeof import('@vueuse/core')['useParallax']
+  const useParentElement: typeof import('@vueuse/core')['useParentElement']
+  const usePerformanceObserver: typeof import('@vueuse/core')['usePerformanceObserver']
   const usePeriodicStore: typeof import('./store/session/periodic')['usePeriodicStore']
   const usePermission: typeof import('@vueuse/core')['usePermission']
   const usePointer: typeof import('@vueuse/core')['usePointer']
@@ -576,7 +584,6 @@ declare global {
   const useTimeoutPoll: typeof import('@vueuse/core')['useTimeoutPoll']
   const useTimestamp: typeof import('@vueuse/core')['useTimestamp']
   const useTitle: typeof import('@vueuse/core')['useTitle']
-  const useToFixed: typeof import('@vueuse/math')['useToFixed']
   const useToNumber: typeof import('@vueuse/core')['useToNumber']
   const useToString: typeof import('@vueuse/core')['useToString']
   const useToggle: typeof import('@vueuse/core')['useToggle']
@@ -621,8 +628,10 @@ declare global {
   const watchArray: typeof import('@vueuse/core')['watchArray']
   const watchAtMost: typeof import('@vueuse/core')['watchAtMost']
   const watchDebounced: typeof import('@vueuse/core')['watchDebounced']
+  const watchDeep: typeof import('@vueuse/core')['watchDeep']
   const watchEffect: typeof import('vue')['watchEffect']
   const watchIgnorable: typeof import('@vueuse/core')['watchIgnorable']
+  const watchImmediate: typeof import('@vueuse/core')['watchImmediate']
   const watchOnce: typeof import('@vueuse/core')['watchOnce']
   const watchPausable: typeof import('@vueuse/core')['watchPausable']
   const watchPostEffect: typeof import('vue')['watchPostEffect']
@@ -704,7 +713,9 @@ declare module 'vue' {
     readonly createPinia: UnwrapRef<typeof import('pinia')['createPinia']>
     readonly createProjection: UnwrapRef<typeof import('@vueuse/math')['createProjection']>
     readonly createReactiveFn: UnwrapRef<typeof import('@vueuse/core')['createReactiveFn']>
+    readonly createReusableTemplate: UnwrapRef<typeof import('@vueuse/core')['createReusableTemplate']>
     readonly createSharedComposable: UnwrapRef<typeof import('@vueuse/core')['createSharedComposable']>
+    readonly createTemplatePromise: UnwrapRef<typeof import('@vueuse/core')['createTemplatePromise']>
     readonly createUnrefFn: UnwrapRef<typeof import('@vueuse/core')['createUnrefFn']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly debouncedRef: UnwrapRef<typeof import('@vueuse/core')['debouncedRef']>
@@ -870,12 +881,13 @@ declare module 'vue' {
     readonly toProfitLossModel: UnwrapRef<typeof import('./utils/defi/index')['toProfitLossModel']>
     readonly toRaw: UnwrapRef<typeof import('vue')['toRaw']>
     readonly toReactive: UnwrapRef<typeof import('@vueuse/core')['toReactive']>
-    readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
+    readonly toRef: UnwrapRef<typeof import('@vueuse/core')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
     readonly toSentenceCase: UnwrapRef<typeof import('./utils/text')['toSentenceCase']>
     readonly toSortedAssetBalanceArray: UnwrapRef<typeof import('./utils/balances')['toSortedAssetBalanceArray']>
     readonly toSortedAssetBalanceWithPrice: UnwrapRef<typeof import('./utils/balances')['toSortedAssetBalanceWithPrice']>
     readonly toUnit: UnwrapRef<typeof import('./utils/calculation')['toUnit']>
+    readonly toValue: UnwrapRef<typeof import('@vueuse/core')['toValue']>
     readonly totalCollateral: UnwrapRef<typeof import('./utils/total-collateral')['totalCollateral']>
     readonly transactionEventProtocolData: UnwrapRef<typeof import('./composables/history/events/protocol-data')['transactionEventProtocolData']>
     readonly transformEntryWithMeta: UnwrapRef<typeof import('./utils/history')['transformEntryWithMeta']>
@@ -911,15 +923,18 @@ declare module 'vue' {
     readonly useAddressesNamesStore: UnwrapRef<typeof import('./store/blockchain/accounts/addresses-names')['useAddressesNamesStore']>
     readonly useAggregatedBalances: UnwrapRef<typeof import('./composables/balances/aggregated')['useAggregatedBalances']>
     readonly useAirdropStore: UnwrapRef<typeof import('./store/defi/airdrop')['useAirdropStore']>
+    readonly useAnimate: UnwrapRef<typeof import('@vueuse/core')['useAnimate']>
     readonly useAnimation: UnwrapRef<typeof import('./composables/user/animations')['useAnimation']>
     readonly useAppNavigation: UnwrapRef<typeof import('./composables/navigation')['useAppNavigation']>
     readonly useAreaVisibilityStore: UnwrapRef<typeof import('./store/session/visibility')['useAreaVisibilityStore']>
+    readonly useArrayDifference: UnwrapRef<typeof import('@vueuse/core')['useArrayDifference']>
     readonly useArrayEvery: UnwrapRef<typeof import('@vueuse/core')['useArrayEvery']>
     readonly useArrayFilter: UnwrapRef<typeof import('@vueuse/core')['useArrayFilter']>
     readonly useArrayFind: UnwrapRef<typeof import('@vueuse/core')['useArrayFind']>
     readonly useArrayFindIndex: UnwrapRef<typeof import('@vueuse/core')['useArrayFindIndex']>
     readonly useArrayFindLast: UnwrapRef<typeof import('@vueuse/core')['useArrayFindLast']>
     readonly useArrayInclude: UnwrapRef<typeof import('./composables/array/index')['useArrayInclude']>
+    readonly useArrayIncludes: UnwrapRef<typeof import('@vueuse/core')['useArrayIncludes']>
     readonly useArrayJoin: UnwrapRef<typeof import('@vueuse/core')['useArrayJoin']>
     readonly useArrayMap: UnwrapRef<typeof import('@vueuse/core')['useArrayMap']>
     readonly useArrayReduce: UnwrapRef<typeof import('@vueuse/core')['useArrayReduce']>
@@ -1123,6 +1138,8 @@ declare module 'vue' {
     readonly usePageLeave: UnwrapRef<typeof import('@vueuse/core')['usePageLeave']>
     readonly usePaginationFilters: UnwrapRef<typeof import('./composables/filter-paginate')['usePaginationFilters']>
     readonly useParallax: UnwrapRef<typeof import('@vueuse/core')['useParallax']>
+    readonly useParentElement: UnwrapRef<typeof import('@vueuse/core')['useParentElement']>
+    readonly usePerformanceObserver: UnwrapRef<typeof import('@vueuse/core')['usePerformanceObserver']>
     readonly usePeriodicStore: UnwrapRef<typeof import('./store/session/periodic')['usePeriodicStore']>
     readonly usePermission: UnwrapRef<typeof import('@vueuse/core')['usePermission']>
     readonly usePointer: UnwrapRef<typeof import('@vueuse/core')['usePointer']>
@@ -1215,7 +1232,6 @@ declare module 'vue' {
     readonly useTimeoutPoll: UnwrapRef<typeof import('@vueuse/core')['useTimeoutPoll']>
     readonly useTimestamp: UnwrapRef<typeof import('@vueuse/core')['useTimestamp']>
     readonly useTitle: UnwrapRef<typeof import('@vueuse/core')['useTitle']>
-    readonly useToFixed: UnwrapRef<typeof import('@vueuse/math')['useToFixed']>
     readonly useToNumber: UnwrapRef<typeof import('@vueuse/core')['useToNumber']>
     readonly useToString: UnwrapRef<typeof import('@vueuse/core')['useToString']>
     readonly useToggle: UnwrapRef<typeof import('@vueuse/core')['useToggle']>
@@ -1260,8 +1276,10 @@ declare module 'vue' {
     readonly watchArray: UnwrapRef<typeof import('@vueuse/core')['watchArray']>
     readonly watchAtMost: UnwrapRef<typeof import('@vueuse/core')['watchAtMost']>
     readonly watchDebounced: UnwrapRef<typeof import('@vueuse/core')['watchDebounced']>
+    readonly watchDeep: UnwrapRef<typeof import('@vueuse/core')['watchDeep']>
     readonly watchEffect: UnwrapRef<typeof import('vue')['watchEffect']>
     readonly watchIgnorable: UnwrapRef<typeof import('@vueuse/core')['watchIgnorable']>
+    readonly watchImmediate: UnwrapRef<typeof import('@vueuse/core')['watchImmediate']>
     readonly watchOnce: UnwrapRef<typeof import('@vueuse/core')['watchOnce']>
     readonly watchPausable: UnwrapRef<typeof import('@vueuse/core')['watchPausable']>
     readonly watchPostEffect: UnwrapRef<typeof import('vue')['watchPostEffect']>
