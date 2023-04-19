@@ -17,6 +17,8 @@ Changelog
 * :feature:`5588` Users will now be able to save and restore used filters in the history section.
 * :feature:`5587` Forward/Backward navigation for filters/pagination (using mouse buttons) will now be possible in the history section.
 * :feature:`5569` It is now possible to detect when an evm address is used in other chains and start tracking it. Also a background task runs periodically that performs this check.
+* :feature:`3004` Users will now be able to automatically track balances in convex gauges and their locked and staked CVX.
+* :feature:`5611` Users will now see an improved notification if their API keys for Etherscan are missing and it will be easier to take action on it.
 * :bug:`5491` Show original manual latest price asset in manual balance form.
 * :bug:`5572` Fix a detection error that caused some uniswap v2 trade edge cases not to be accounted for properly in pnl report.
 * :feature:`5592` Either include fees in the bought assets price or treat them as standalone events depending on the accounting settings.
@@ -28,7 +30,9 @@ Changelog
 * :bug:`-` Fixed an edge case where removing an EVM account multiple times in a row, while a transactions querying task ran, would result in an error.
 * :bug:`-` Ignoring forked assets ETC, BCH and BSV for accounting should now also remove any pre-fork references of them and completely omit them from the PnL report.
 * :bug:`-` Users with kraken accounts with old data that were never purged and repulled will no longer have missing events.
+* :bug:`-` Fixed a bug that didn't allow adding a new Bitpanda account.
 * :bug:`-` PnL report will now correctly show progress bar percentage if user has connected but non-syncing exchanges.
+* :bug:`5697` Tokens returned to the user when decoding Balancer V1 deposits won't be detected as received wrapped tokens.
 * :bug:`5749` Phishing zero token transfer transactions will now be hidden and ignored.
 * :bug:`5717` Swaps will now be processed in accounting correctly even if set manually.
 * :bug:`-` If a premium user changes their rotki password they will now be able to pull remote data without restarting the app.
