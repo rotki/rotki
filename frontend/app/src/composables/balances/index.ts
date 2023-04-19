@@ -5,7 +5,7 @@ import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { type AllBalancePayload } from '@/types/blockchain/accounts';
 
-export const useBalances = () => {
+export const useBalances = createSharedComposable(() => {
   const { updatePrices: updateManualPrices, fetchManualBalances } =
     useManualBalancesStore();
   const { updatePrices: updateChainPrices } = useBlockchainBalances();
@@ -62,15 +62,30 @@ export const useBalances = () => {
     setStatus(Status.LOADED);
   };
 
-  watchThrottled(
+  const pendingAssets: Ref<string[]> = ref([]);
+  const noPriceAssets = useArrayFilter(
     assets(),
+    asset => !get(assetPrice(asset))
+  );
+
+  watchDebounced(
+    noPriceAssets,
     async assets => {
-      const noPriceAssets = assets.filter(asset => !get(assetPrice(asset)));
-      if (noPriceAssets.length > 0) {
-        await refreshPrices(false, noPriceAssets);
+      const pending = get(pendingAssets);
+      const newAssets = assets.filter(asset => !pending.includes(asset));
+
+      if (newAssets.length === 0) {
+        return;
       }
+
+      set(pendingAssets, [...pending, ...newAssets]);
+      await refreshPrices(false, newAssets);
+      set(
+        pendingAssets,
+        get(pendingAssets).filter(asset => !newAssets.includes(asset))
+      );
     },
-    { throttle: 800 }
+    { debounce: 800, maxWait: 2000 }
   );
 
   const fetchBalances = async (payload: Partial<AllBalancePayload> = {}) => {
@@ -126,4 +141,4 @@ export const useBalances = () => {
     adjustPrices,
     fetch
   };
-};
+});
