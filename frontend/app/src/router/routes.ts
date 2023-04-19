@@ -205,22 +205,22 @@ export const useAppRoutes = createSharedComposable(() => {
     },
     DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2: {
       route: '/defi/deposits/liquidity/uniswap_v2',
-      image: './assets/images/defi/uniswap.svg',
+      image: './assets/images/protocols/uniswap.svg',
       text: tc('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2')
     },
     DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3: {
       route: '/defi/deposits/liquidity/uniswap_v3',
-      image: './assets/images/defi/uniswap.svg',
+      image: './assets/images/protocols/uniswap.svg',
       text: tc('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v3')
     },
     DEFI_DEPOSITS_LIQUIDITY_BALANCER: {
       route: '/defi/deposits/liquidity/balancer',
-      image: './assets/images/defi/balancer.svg',
+      image: './assets/images/protocols/balancer.svg',
       text: tc('navigation_menu.defi_sub.deposits_sub.liquidity_sub.balancer')
     },
     DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP: {
       route: '/defi/deposits/liquidity/sushiswap',
-      image: './assets/images/modules/sushiswap.svg',
+      image: './assets/images/protocols/sushiswap.svg',
       text: tc('navigation_menu.defi_sub.deposits_sub.liquidity_sub.sushiswap')
     },
     DEFI_AIRDROPS: {

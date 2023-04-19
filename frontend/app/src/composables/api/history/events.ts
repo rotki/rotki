@@ -22,11 +22,13 @@ import {
   type NewHistoryEvent,
   type TransactionEventRequestPayload,
   type TransactionRequestPayload
-} from '@/types/history/tx';
+} from '@/types/history/events';
 import { type PendingTask } from '@/types/task';
+import { HistoryEventTypeData } from '@/types/history/events/event-type';
+import { type ActionDataEntry } from '@/types/action';
 
 export const useHistoryEventsApi = () => {
-  const internalEthTransactions = async <T>(
+  const internalEvmTransactions = async <T>(
     payload: TransactionRequestPayload,
     asyncQuery: boolean
   ): Promise<T> => {
@@ -51,12 +53,12 @@ export const useHistoryEventsApi = () => {
     return handleResponse(response);
   };
 
-  const fetchEthTransactionsTask = async (
+  const fetchEvmTransactionsTask = async (
     payload: TransactionRequestPayload
   ): Promise<PendingTask> =>
-    internalEthTransactions<PendingTask>(payload, true);
+    internalEvmTransactions<PendingTask>(payload, true);
 
-  const deleteEthTransactions = async (): Promise<boolean> => {
+  const deleteEvmTransactions = async (): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       `/blockchains/evm/transactions`,
       {
@@ -163,6 +165,30 @@ export const useHistoryEventsApi = () => {
     return handleResponse(response);
   };
 
+  const getTransactionTypeMappings =
+    async (): Promise<HistoryEventTypeData> => {
+      const response = await api.instance.get<
+        ActionResult<HistoryEventTypeData>
+      >('/history/events/type_mappings', {
+        validateStatus: validStatus
+      });
+
+      return HistoryEventTypeData.parse(handleResponse(response));
+    };
+
+  const getHistoryEventCounterpartiesData = async (): Promise<
+    ActionDataEntry[]
+  > => {
+    const response = await api.instance.get<ActionResult<ActionDataEntry[]>>(
+      '/history/events/counterparties',
+      {
+        validateStatus: validStatus
+      }
+    );
+
+    return handleResponse(response);
+  };
+
   const fetchHistoryEvents = async (
     payload: HistoryEventRequestPayload
   ): Promise<CollectionResponse<HistoryEventEntryWithMeta>> => {
@@ -176,8 +202,8 @@ export const useHistoryEventsApi = () => {
   };
 
   return {
-    fetchEthTransactionsTask,
-    deleteEthTransactions,
+    fetchEvmTransactionsTask,
+    deleteEvmTransactions,
     decodeHistoryEvents,
     reDecodeMissingTransactionEvents,
     addTransactionEvent,
@@ -185,6 +211,8 @@ export const useHistoryEventsApi = () => {
     deleteTransactionEvent,
     getEventDetails,
     addTransactionHash,
+    getTransactionTypeMappings,
+    getHistoryEventCounterpartiesData,
     fetchHistoryEvents
   };
 };

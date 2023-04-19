@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { type AssetMovementEntry } from '@/types/history/movements';
+import { type AssetMovementEntry } from '@/types/history/asset-movements';
 
 defineProps({
   span: {

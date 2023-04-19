@@ -3,7 +3,7 @@ import {
   type EvmTransactionQueryData,
   EvmTransactionsQueryStatus
 } from '@/types/websocket-messages';
-import { type EvmChainAddress } from '@/types/history/tx';
+import { type EvmChainAddress } from '@/types/history/events';
 
 export const useTxQueryStatusStore = defineStore(
   'history/transaction-query-status',

@@ -17,7 +17,7 @@ const icon = computed(() => {
   if (!protocol.icon) {
     return '';
   }
-  return `./assets/images/defi/${protocol.icon}`;
+  return `./assets/images/protocols/${protocol.icon}`;
 });
 
 const assets = computed(() => {

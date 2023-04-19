@@ -37,12 +37,12 @@ const showConfirmation = (source: PurgeParams) => {
 };
 
 const { deleteModuleData } = useBlockchainBalancesApi();
-const { deleteEthTransactions } = useHistoryEventsApi();
+const { deleteEvmTransactions } = useHistoryEventsApi();
 const { deleteExchangeData } = useExchangeApi();
 
 const purgeSource = async (source: Purgeable) => {
   if (source === ALL_TRANSACTIONS) {
-    await deleteEthTransactions();
+    await deleteEvmTransactions();
   } else if (source === ALL_MODULES) {
     await deleteModuleData();
   } else if (source === ALL_CENTRALIZED_EXCHANGES) {

@@ -276,7 +276,7 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
       </template>
       <template #item.notes="{ item }">
         <div class="py-4">
-          <transaction-event-note
+          <history-event-note
             v-if="isTransactionEvent(item)"
             :notes="item.notes"
             :amount="

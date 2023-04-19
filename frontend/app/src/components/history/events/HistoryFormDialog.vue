@@ -1,7 +1,6 @@
 <script lang="ts" setup>
-import { type Ref } from 'vue';
-import TransactionForm from '@/components/history/transactions/TransactionForm.vue';
-import { type EvmChainAndTxHash } from '@/types/history/tx';
+import TransactionForm from '@/components/history/events/tx/TransactionForm.vue';
+import { type EvmChainAndTxHash } from '@/types/history/events';
 
 withDefaults(
   defineProps<{

@@ -52,7 +52,7 @@ const { t } = useI18n();
                 <v-img
                   width="64px"
                   contain
-                  src="/assets/images/exchanges/kraken.svg"
+                  src="/assets/images/protocols/kraken.svg"
                 />
               </router-link>
             </v-col>

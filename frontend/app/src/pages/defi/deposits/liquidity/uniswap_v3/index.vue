@@ -6,10 +6,6 @@ import {
   type XswapAsset,
   type XswapBalance
 } from '@rotki/common/lib/defi/xswap';
-import {
-  HistoryEventType,
-  TransactionEventProtocol
-} from '@rotki/common/lib/history/tx-events';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 
@@ -221,15 +217,10 @@ const getIdentifier = (item: XswapBalance) => item.nftId;
       </template>
     </paginated-cards>
 
-    <transaction-content
+    <history-events-view
       use-external-account-filter
       :section-title="tc('common.events')"
-      :protocols="[TransactionEventProtocol.UNISWAP_V3]"
-      :event-types="[
-        HistoryEventType.WITHDRAWAL,
-        HistoryEventType.SPEND,
-        HistoryEventType.DEPOSIT
-      ]"
+      :protocols="['uniswap-v3']"
       :external-account-filter="selectedAccounts"
       :only-chains="chains"
     />

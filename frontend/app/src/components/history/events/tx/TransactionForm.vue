@@ -2,11 +2,10 @@
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { helpers, required } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
-import { type Ref } from 'vue';
 import {
   type AddTransactionHashPayload,
   type EvmChainAndTxHash
-} from '@/types/history/tx';
+} from '@/types/history/events';
 import { type Writeable } from '@/types';
 
 withDefaults(

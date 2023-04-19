@@ -4,7 +4,7 @@ const sources = [
   {
     identifier: 'cointracking.info',
     name: tc('import_data.cointracking.name'),
-    logo: './assets/images/cointracking.svg',
+    logo: './assets/images/protocols/cointracking.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/CointrackingImport.vue')
     )
@@ -12,7 +12,7 @@ const sources = [
   {
     identifier: 'cryptocom',
     name: tc('import_data.cryptocom.name'),
-    logo: './assets/images/crypto_com.svg',
+    logo: './assets/images/protocols/crypto_com.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/CryptoComImport.vue')
     )
@@ -20,7 +20,7 @@ const sources = [
   {
     identifier: 'blockfi',
     name: tc('import_data.blockfi.name'),
-    logo: './assets/images/blockfi.svg',
+    logo: './assets/images/protocols/blockfi.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/BlockFiImport.vue')
     )
@@ -28,7 +28,7 @@ const sources = [
   {
     identifier: 'nexo',
     name: tc('import_data.nexo.name'),
-    logo: './assets/images/nexo.svg',
+    logo: './assets/images/protocols/nexo.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/NexoImport.vue')
     )
@@ -36,7 +36,7 @@ const sources = [
   {
     identifier: 'shapeshift-trades',
     name: tc('import_data.shapeshift.name'),
-    logo: './assets/images/shapeshift.svg',
+    logo: './assets/images/protocols/shapeshift.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/ShapeshiftImport.vue')
     )
@@ -44,7 +44,7 @@ const sources = [
   {
     identifier: 'uphold',
     name: tc('import_data.uphold.name'),
-    logo: './assets/images/uphold.svg',
+    logo: './assets/images/protocols/uphold.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/UpholdImport.vue')
     )
@@ -52,7 +52,7 @@ const sources = [
   {
     identifier: 'bisq',
     name: tc('import_data.bisq.name'),
-    logo: './assets/images/bisq.svg',
+    logo: './assets/images/protocols/bisq.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/BisqImport.vue')
     )
@@ -60,7 +60,7 @@ const sources = [
   {
     identifier: 'binance',
     name: tc('import_data.binance.name'),
-    logo: './assets/images/exchanges/binance.svg',
+    logo: './assets/images/protocols/binance.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/BinanceImport.vue')
     )

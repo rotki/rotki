@@ -12,12 +12,12 @@ const dual: Protocol[] = [
   {
     identifier: DefiProtocol.AAVE,
     name: 'Aave',
-    icon: './assets/images/defi/aave.svg'
+    icon: './assets/images/protocols/aave.svg'
   },
   {
     identifier: DefiProtocol.COMPOUND,
     name: 'Compound',
-    icon: './assets/images/defi/compound.svg'
+    icon: './assets/images/protocols/compound.svg'
   }
 ];
 
@@ -25,12 +25,12 @@ const borrowing: Protocol[] = [
   {
     identifier: DefiProtocol.MAKERDAO_VAULTS,
     name: 'MakerDAO Vaults',
-    icon: './assets/images/defi/makerdao.svg'
+    icon: './assets/images/protocols/makerdao.svg'
   },
   {
     identifier: DefiProtocol.LIQUITY,
     name: 'Liquity',
-    icon: './assets/images/defi/liquity.svg'
+    icon: './assets/images/protocols/liquity.svg'
   }
 ];
 
@@ -38,17 +38,17 @@ const lending: Protocol[] = [
   {
     identifier: DefiProtocol.MAKERDAO_DSR,
     name: 'MakerDAO DSR',
-    icon: './assets/images/defi/makerdao.svg'
+    icon: './assets/images/protocols/makerdao.svg'
   },
   {
     identifier: DefiProtocol.YEARN_VAULTS,
     name: 'yearn.finance',
-    icon: './assets/images/defi/yearn_vaults.svg'
+    icon: './assets/images/protocols/yearn_vaults.svg'
   },
   {
     identifier: DefiProtocol.YEARN_VAULTS_V2,
     name: 'yearn.finance v2',
-    icon: './assets/images/defi/yearn_vaults.svg'
+    icon: './assets/images/protocols/yearn_vaults.svg'
   }
 ];
 

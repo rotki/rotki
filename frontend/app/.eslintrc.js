@@ -14,9 +14,10 @@ module.exports = {
       {
         extensions: ['.ts', '.vue'],
         ignores: [
-          '/transactions.query_status.*/',
+          '/backend_mappings.*/',
+          '/notification_messages.missing_api_key.*/',
           '/premium_components.*/',
-          '/notification_messages.missing_api_key.*/'
+          '/transactions.query_status.*/'
         ]
       }
     ],

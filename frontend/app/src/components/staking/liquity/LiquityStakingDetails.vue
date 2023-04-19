@@ -9,10 +9,6 @@ import {
   type LiquityStatisticDetails
 } from '@rotki/common/lib/liquity';
 import { type ComputedRef, type Ref } from 'vue';
-import {
-  HistoryEventType,
-  TransactionEventProtocol
-} from '@rotki/common/lib/history/tx-events';
 import { type AssetBalance, type Balance } from '@rotki/common';
 import { Section } from '@/types/status';
 
@@ -332,11 +328,10 @@ const css = useCssModule();
       </v-col>
     </v-row>
 
-    <transaction-content
+    <history-events-view
       use-external-account-filter
       :section-title="tc('liquity_staking_events.title')"
-      :protocols="[TransactionEventProtocol.LIQUITY]"
-      :event-types="[HistoryEventType.STAKING]"
+      :protocols="['liquity']"
       :external-account-filter="selectedAccounts"
       :only-chains="chains"
     />

@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { type ComputedRef, type PropType } from 'vue';
-import {
-  HistoryEventSubType,
-  HistoryEventType,
-  TransactionEventProtocol
-} from '@rotki/common/lib/history/tx-events';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 
@@ -72,22 +67,9 @@ const chain = Blockchain.ETH;
         </v-col>
       </v-row>
       <div v-else>
-        <transaction-content
+        <history-events-view
           :section-title="tc('common.events')"
-          :protocols="[
-            TransactionEventProtocol.MAKERDAO,
-            TransactionEventProtocol.MAKERDAO_VAULT
-          ]"
-          :event-types="[
-            HistoryEventType.WITHDRAWAL,
-            HistoryEventType.SPEND,
-            HistoryEventType.DEPOSIT
-          ]"
-          :event-sub-types="[
-            HistoryEventSubType.DEPOSIT_ASSET,
-            HistoryEventSubType.REMOVE_ASSET,
-            HistoryEventSubType.PAYBACK_DEBT
-          ]"
+          :protocols="['makerdao', 'makerdao vault']"
           :use-external-account-filter="true"
           :external-account-filter="[{ chain, address: vault.owner }]"
           :only-chains="[chain]"

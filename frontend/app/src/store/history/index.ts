@@ -4,7 +4,6 @@ import { type TradeLocation } from '@/types/history/trade/location';
 export const useHistoryStore = defineStore('history', () => {
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
-  const counterparties: Ref<string[]> = ref([]);
   const associatedLocations: Ref<TradeLocation[]> = ref([]);
   const { fetchAssociatedLocations: fetchAssociatedLocationsApi } =
     useHistoryApi();
@@ -28,7 +27,6 @@ export const useHistoryStore = defineStore('history', () => {
   };
 
   return {
-    counterparties,
     associatedLocations,
     fetchAssociatedLocations
   };

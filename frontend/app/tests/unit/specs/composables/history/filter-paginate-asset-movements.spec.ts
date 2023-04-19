@@ -6,7 +6,7 @@ import type {
   AssetMovement,
   AssetMovementEntry,
   AssetMovementRequestPayload
-} from '@/types/history/movements';
+} from '@/types/history/asset-movements/index';
 import type { MaybeRef } from '@vueuse/core';
 import type Vue from 'vue';
 

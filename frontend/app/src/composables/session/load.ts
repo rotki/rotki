@@ -6,6 +6,7 @@ export const useDataLoader = () => {
   const { fetchTags } = useTagStore();
   const { fetchIgnoredAssets } = useIgnoredAssetsStore();
   const { fetchNetValue } = useStatisticsStore();
+
   const { fetch, refreshPrices } = useBalances();
 
   const refreshData = async (): Promise<void> => {

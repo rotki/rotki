@@ -1,20 +1,15 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { TransactionEventProtocol } from '@rotki/common/lib/history/tx-events';
 import flushPromises from 'flush-promises';
 import { type Ref } from 'vue';
 import { RouterAccountsSchema } from '@/types/route';
 import { useMainStore } from '@/store/main';
-import type { Filters, Matcher } from '@/composables/filters/transactions';
+import type { Filters, Matcher } from '@/composables/filters/events';
 import type { Collection } from '@/types/collection';
 import type {
   HistoryEvent,
   HistoryEventRequestPayload
-} from '@/types/history/tx';
+} from '@/types/history/events';
 import type { LocationQuery } from '@/types/route';
-import type {
-  HistoryEventSubType,
-  HistoryEventType
-} from '@rotki/common/lib/history/tx-events';
 import type { GeneralAccount } from '@rotki/common/src/account';
 import type { MaybeRef } from '@vueuse/core';
 import type Vue from 'vue';
@@ -48,9 +43,9 @@ describe('composables::history/filter-paginate', () => {
   ) => Promise<Collection<HistoryEvent>>;
   const locationOverview: MaybeRef<string | null> = null;
   const mainPage: Ref<boolean> = ref(false);
-  const protocols: Ref<TransactionEventProtocol[]> = ref([]);
-  const eventTypes: Ref<HistoryEventType[]> = ref([]);
-  const eventSubTypes: Ref<HistoryEventSubType[]> = ref([]);
+  const protocols: Ref<string[]> = ref([]);
+  const eventTypes: Ref<string[]> = ref([]);
+  const eventSubTypes: Ref<string[]> = ref([]);
   const accounts: Ref<GeneralAccount[]> = ref([
     {
       address: '0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25',
@@ -73,7 +68,7 @@ describe('composables::history/filter-paginate', () => {
     vi.clearAllMocks();
   });
 
-  describe('components::history/trades/TransactionContent', () => {
+  describe('components::history/trades/HistoryEventsView', () => {
     const onUpdateFilters = (query: LocationQuery) => {
       const parsedAccounts = RouterAccountsSchema.parse(query);
       if (parsedAccounts.accounts) {
@@ -120,7 +115,7 @@ describe('composables::history/filter-paginate', () => {
       >(
         locationOverview,
         mainPage,
-        () => useTransactionFilter(get(protocols).length > 0),
+        () => useHistoryEventFilter(get(protocols).length > 0),
         fetchHistoryEvents,
         {
           onUpdateFilters,
@@ -156,7 +151,7 @@ describe('composables::history/filter-paginate', () => {
       >(
         locationOverview,
         mainPage,
-        () => useTransactionFilter(get(protocols).length > 0),
+        () => useHistoryEventFilter(get(protocols).length > 0),
         fetchHistoryEvents,
         {
           onUpdateFilters,
@@ -188,7 +183,7 @@ describe('composables::history/filter-paginate', () => {
       >(
         locationOverview,
         mainPage,
-        () => useTransactionFilter(get(protocols).length > 0),
+        () => useHistoryEventFilter(get(protocols).length > 0),
         fetchHistoryEvents,
         {
           onUpdateFilters,
@@ -222,10 +217,7 @@ describe('composables::history/filter-paginate', () => {
     });
 
     test('add protocols to filters and expect the value to be set', async () => {
-      set(protocols, [
-        TransactionEventProtocol.GAS,
-        TransactionEventProtocol.ENS
-      ]);
+      set(protocols, ['gas', 'ens']);
 
       const query = {
         sortBy: ['timestamp'],
@@ -243,7 +235,7 @@ describe('composables::history/filter-paginate', () => {
       >(
         locationOverview,
         mainPage,
-        () => useTransactionFilter(get(protocols).length > 0),
+        () => useHistoryEventFilter(get(protocols).length > 0),
         fetchHistoryEvents,
         {
           onUpdateFilters,

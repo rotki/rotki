@@ -10,7 +10,7 @@ const LiquityStakingEventExtraData = z.object({
 });
 
 // ETH Transactions
-export const EthTransaction = z.object({
+export const EvmTransaction = z.object({
   txHash: z.string(),
   timestamp: z.number(),
   blockNumber: z.number(),
@@ -24,7 +24,7 @@ export const EthTransaction = z.object({
   inputData: z.string(),
   nonce: z.number()
 });
-export type EthTransaction = z.infer<typeof EthTransaction>;
+export type EvmTransaction = z.infer<typeof EvmTransaction>;
 
 export interface TransactionRequestPayload
   extends PaginationRequestPayload<{ timestamp: number }> {
@@ -96,13 +96,13 @@ export interface HistoryEventRequestPayload
   readonly fromTimestamp?: string | number;
   readonly toTimestamp?: string | number;
   readonly groupByEventIds: boolean;
-  readonly eventIdentifiers?: string;
+  readonly eventIdentifiers?: string | string[];
   readonly eventTypes?: string | string[];
   readonly eventSubtypes?: string | string[];
   readonly locationLabels?: string | string[];
   readonly asset?: string;
   readonly counterparties?: string | string[];
-  readonly evmChain?: string | string[];
+  readonly location?: string | string[];
   readonly product?: string | string[];
 }
 

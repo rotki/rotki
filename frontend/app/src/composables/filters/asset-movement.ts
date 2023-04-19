@@ -9,7 +9,7 @@ import {
   dateSerializer,
   dateValidator
 } from '@/types/filtering';
-import { MovementCategory } from '@/types/history/movements';
+import { MovementCategory } from '@/types/history/asset-movements';
 
 enum AssetMovementFilterKeys {
   LOCATION = 'location',

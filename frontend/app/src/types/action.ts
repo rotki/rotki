@@ -25,9 +25,9 @@ export interface Version {
 export interface ActionDataEntry<T = string> {
   readonly identifier: T;
   readonly label: string;
-  readonly icon?: string | undefined;
-  readonly image?: string | undefined;
-  readonly color?: string | undefined;
-  readonly matcher?: (identifier: string) => boolean | undefined;
-  readonly detailPath?: string | undefined;
+  readonly icon?: string | null;
+  readonly image?: string | null;
+  readonly color?: string | null;
+  readonly matcher?: (identifier: string) => boolean | null;
+  readonly detailPath?: string | null;
 }

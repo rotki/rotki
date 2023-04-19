@@ -1,3 +1,3 @@
 <template>
-  <transaction-content main-page />
+  <history-events-view main-page />
 </template>

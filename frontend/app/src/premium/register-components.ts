@@ -51,7 +51,7 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import StatisticsGraphSettings from '@/components/settings/StatisticsGraphSettings.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import TransactionContent from '@/components/history/transactions/TransactionContent.vue';
+import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 
 /**
@@ -133,7 +133,7 @@ export function registerComponents(): void {
   // Version 20 - 1.27
   Vue.component('BadgeDisplay', BadgeDisplay);
   // Version 21 - 1.28
-  Vue.component('TransactionContent', TransactionContent);
+  Vue.component('HistoryEventsView', HistoryEventsView);
   vuetifyRegister();
   logger.info('Components registered');
 }

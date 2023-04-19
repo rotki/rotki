@@ -260,9 +260,8 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
     <slot name="actions" />
 
     <ledger-action-form-dialog
-      :open="openLedgerActionDialog"
+      v-model="openLedgerActionDialog"
       :form-data="ledgerActionForm"
-      @update:open="openLedgerActionDialog = $event"
     />
   </div>
 </template>
