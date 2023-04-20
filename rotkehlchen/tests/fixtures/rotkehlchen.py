@@ -537,6 +537,8 @@ def rotkehlchen_api_server_with_exchanges(
             kwargs['api_key'] = okx_api_key
             kwargs['secret'] = okx_api_secret
             kwargs['passphrase'] = okx_passphrase
+        if exchange_location == Location.BINANCEUS:
+            kwargs['location'] = Location.BINANCEUS
         exchangeobj = create_fn(
             database=rotki.data.db,
             msg_aggregator=rotki.msg_aggregator,
