@@ -30,6 +30,7 @@ Changelog
 * :bug:`-` Ignoring forked assets ETC, BCH and BSV for accounting should now also remove any pre-fork references of them and completely omit them from the PnL report.
 * :bug:`-` Users with kraken accounts with old data that were never purged and repulled will no longer have missing events.
 * :bug:`-` Fixed a bug that didn't allow adding a new Bitpanda account.
+* :bug:`-` Handled ETH2 staking rewards conversions in Kraken after the activation of withdrawals.
 * :bug:`-` PnL report will now correctly show progress bar percentage if user has connected but non-syncing exchanges.
 * :bug:`5697` Tokens returned to the user when decoding Balancer V1 deposits won't be detected as received wrapped tokens.
 * :bug:`5749` Phishing zero token transfer transactions will now be hidden and ignored.

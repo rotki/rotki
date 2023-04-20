@@ -1,11 +1,14 @@
 import logging
 from typing import TYPE_CHECKING
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.constants.assets import A_ETH2
 
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
     HISTORY_MAPPING_STATE_DECODED,
 )
+from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location
 
@@ -158,13 +161,42 @@ def _update_ens_mappings_schema(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _update_ens_mappings_schema')
 
 
+def _fix_kraken_eth2_events(write_cursor: 'DBCursor') -> None:
+    """Fix kraken events with negative amounts related to staking ETH after the merge"""
+    log.debug('Enter _fix_kraken_eth2_events')
+    write_cursor.execute(
+        'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
+        'asset=? AND type="staking" AND subtype="reward" AND CAST(amount AS REAL) < 0',
+        (A_ETH2.identifier,),
+    )
+    update_tuples = []
+    for event_row in write_cursor:
+        update_tuples.append(
+            (
+                HistoryEventType.INFORMATIONAL.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+                str(-FVal(event_row[1])),
+                str(-FVal(event_row[2])),
+                'Automatic virtual conversion of staked ETH rewards to ETH',
+                event_row[0],
+            ),
+        )
+
+    if len(update_tuples) != 0:
+        write_cursor.executemany(
+            'UPDATE history_events SET type=?, subtype=?, amount=?, usd_value=?, notes=? WHERE identifier=?',  # noqa: E501
+            update_tuples,
+        )
+    log.debug('Exit _fix_kraken_eth2_events')
+
+
 def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v36 to v37. This was in v1.28.0 release.
 
         - Replace null history event subtype
     """
     log.debug('Entered userdb v36->v37 upgrade')
-    progress_handler.set_total_steps(4)
+    progress_handler.set_total_steps(5)
     with db.user_write() as write_cursor:
         _create_new_tables(write_cursor)
         progress_handler.new_step()
@@ -173,6 +205,8 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _update_ens_mappings_schema(write_cursor)
         progress_handler.new_step()
         _delete_old_tables(write_cursor)
+        progress_handler.new_step()
+        _fix_kraken_eth2_events(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finished userdb v36->v36 upgrade')
