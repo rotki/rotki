@@ -19,6 +19,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    ExchangeAuthCredentials,
     ExchangeLocationID,
     Location,
     T_ApiKey,

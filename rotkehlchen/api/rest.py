@@ -549,25 +549,19 @@ class RestAPI():
             binance_markets: Optional[list[str]],
             ftx_subaccount: Optional[str],
     ) -> Response:
+        edited, msg = self.rotkehlchen.exchange_manager.edit_exchange(
+            name=name,
+            location=location,
+            new_name=new_name,
+            api_key=api_key,
+            api_secret=api_secret,
+            passphrase=passphrase,
+            kraken_account_type=kraken_account_type,
+            binance_selected_trade_pairs=binance_markets,
+            ftx_subaccount=ftx_subaccount,
+        )
         result: Optional[bool] = True
         status_code = HTTPStatus.OK
-        msg = ''
-        try:
-            edited, msg = self.rotkehlchen.exchange_manager.edit_exchange(
-                name=name,
-                location=location,
-                new_name=new_name,
-                api_key=api_key,
-                api_secret=api_secret,
-                passphrase=passphrase,
-                kraken_account_type=kraken_account_type,
-                binance_selected_trade_pairs=binance_markets,
-                ftx_subaccount=ftx_subaccount,
-            )
-        except InputError as e:
-            edited = False
-            msg = str(e)
-
         if not edited:
             result = None
             status_code = HTTPStatus.CONFLICT
