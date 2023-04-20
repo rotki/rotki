@@ -134,6 +134,7 @@ TABLES_AT_INIT = [
     'rpc_nodes',
     'user_notes',
     'evm_events_info',
+    'eth_staking_events_info',
 ]
 
 

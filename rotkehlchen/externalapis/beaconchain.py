@@ -188,16 +188,19 @@ class BeaconChain(ExternalServiceWithApiKey):
             endpoint: Literal['performance'],
     ) -> list[dict[str, Any]]:
         chunks = _calculate_query_chunks(indices_or_pubkeys)
-        data = []
+        data: list[dict[str, Any]] = []
         for chunk in chunks:
             result = self._query(
                 module=module,
                 endpoint=endpoint,
                 encoded_args=','.join(str(x) for x in chunk),
             )
-            data.append(result)
+            if isinstance(result, list):
+                data.extend(result)
+            else:
+                data.append(result)
 
-        return data  # type: ignore[return-value]  # given endpoints return list
+        return data
 
     def _query_chunked_endpoint_with_pagination(
             self,

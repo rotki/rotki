@@ -1472,7 +1472,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     missing_views = views_before - views_after_upgrade
     assert missing_tables == removed_tables
     assert missing_views == removed_views
-    assert tables_after_creation - tables_after_upgrade == {'evm_events_info'}
+    assert tables_after_creation - tables_after_upgrade == {'evm_events_info', 'eth_staking_events_info'}  # noqa: E501
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
     assert new_tables == {
