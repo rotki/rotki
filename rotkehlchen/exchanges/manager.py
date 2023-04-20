@@ -5,13 +5,19 @@ from importlib import import_module
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Optional
 
-from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
+from rotkehlchen.db.constants import BINANCE_MARKETS_KEY, KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.ftx import FTX_BASE_URL, FTXUS_BASE_URL
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ApiKey, ApiSecret, ExchangeApiCredentials, Location
+from rotkehlchen.types import (
+    ApiKey,
+    ApiSecret,
+    ExchangeApiCredentials,
+    ExchangeAuthCredentials,
+    Location,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 
 from .constants import SUPPORTED_EXCHANGES
@@ -82,44 +88,62 @@ class ExchangeManager():
         """Edits both the exchange object and the database entry
 
         Returns True if an entry was found and edited and false otherwise
-
-        May raise:
-        - InputError if there is an error updating the DB
         """
         exchangeobj = self.get_exchange(name=name, location=location)
         if not exchangeobj:
             return False, f'Could not find {str(location)} exchange {name} for editing'
 
-        # First edit the database entries. This may raise InputError
-        with self.database.user_write() as cursor:
-            self.database.edit_exchange(
-                cursor,
-                name=name,
-                location=location,
-                new_name=new_name,
-                api_key=api_key,
-                api_secret=api_secret,
-                passphrase=passphrase,
-                kraken_account_type=kraken_account_type,
-                binance_selected_trade_pairs=binance_selected_trade_pairs,
-                ftx_subaccount=ftx_subaccount,
-            )
+        # First validate exchange credentials
+        edited = exchangeobj.edit_exchange_credentials(ExchangeAuthCredentials(
+            api_key=api_key,
+            api_secret=api_secret,
+            passphrase=passphrase,
+            ftx_subaccount=ftx_subaccount,
+        ))
+        if edited is True:
+            try:
+                credentials_are_valid, msg = exchangeobj.validate_api_key()
+            except Exception as e:  # pylint: disable=broad-except
+                msg = str(e)
+                credentials_are_valid = False
 
-            # Edit the exchange object
-            success, msg = exchangeobj.edit_exchange(
-                name=new_name,
-                api_key=api_key,
-                api_secret=api_secret,
-                passphrase=passphrase,
-                kraken_account_type=kraken_account_type,
-                binance_selected_trade_pairs=binance_selected_trade_pairs,
-                ftx_subaccount=ftx_subaccount,
-            )
-            if success is False:
-                # by raising we also rollback the DB writes due to user_write()
-                raise InputError(msg)
+            if credentials_are_valid is False:
+                exchangeobj.reset_to_db_credentials()
+                return False, f'New credentials are invalid. {msg}'
 
-            return True, ''
+        # Then edit extra properties
+        success, msg = exchangeobj.edit_exchange_extras({
+            KRAKEN_ACCOUNT_TYPE_KEY: kraken_account_type,
+            BINANCE_MARKETS_KEY: binance_selected_trade_pairs,
+        })
+        if success is False:
+            exchangeobj.reset_to_db_credentials()
+            return False, f'Failed to edit exchange extras. {msg}'
+
+        try:
+            with self.database.user_write() as cursor:
+                self.database.edit_exchange(
+                    cursor,
+                    name=name,
+                    location=location,
+                    new_name=new_name,
+                    api_key=api_key,
+                    api_secret=api_secret,
+                    passphrase=passphrase,
+                    kraken_account_type=kraken_account_type,
+                    binance_selected_trade_pairs=binance_selected_trade_pairs,
+                    ftx_subaccount=ftx_subaccount,
+                )
+        except InputError as e:
+            exchangeobj.reset_to_db_credentials()  # DB is already rolled back at this point
+            exchangeobj.reset_to_db_extras()
+            return False, f"Couldn't update exchange properties in the DB. {str(e)}"
+
+        # Finally edit the name of the exchange object
+        if new_name is not None:
+            exchangeobj.name = new_name
+
+        return True, ''
 
     def delete_exchange(self, name: str, location: Location) -> tuple[bool, str]:
         """

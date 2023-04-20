@@ -16,6 +16,7 @@ from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from
 from rotkehlchen.assets.exchanges_mappings.binance import WORLD_TO_BINANCE
 from rotkehlchen.constants.assets import A_ADA, A_BNB, A_BTC, A_DOT, A_ETH, A_EUR, A_USDT, A_WBTC
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.binance import (
@@ -876,12 +877,7 @@ def test_binance_query_trade_history_custom_markets(function_scope_binance):
     binance = function_scope_binance
 
     markets = ['ETHBTC', 'BNBBTC', 'BTCUSDC']
-    binance.edit_exchange(
-        name=None,
-        api_key=None,
-        api_secret=None,
-        binance_selected_trade_pairs=markets,
-    )
+    binance.edit_exchange_extras({BINANCE_MARKETS_KEY: markets})
     count = 0
     p = re.compile(r'symbol=[A-Z]*')
     seen = set()
