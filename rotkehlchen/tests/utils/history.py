@@ -726,7 +726,6 @@ def mock_history_processing(
         remote_errors: bool = False,
         history_start_ts: Optional[Timestamp] = None,
         history_end_ts: Optional[Timestamp] = None,
-        unicode_check: bool = False,
 ):
     """ Patch away the processing of history """
     if remote_errors is True and should_mock_history_processing is False:
@@ -817,7 +816,7 @@ def mock_history_processing(
 
         tx_events = [x for x in events if isinstance(x, EvmEvent) and x.serialized_event_identifier.startswith('0x')]  # noqa: E501
         gas_in_eth = FVal('14.36963')
-        assert len(tx_events) == 7 if unicode_check else len(tx_events) == 6
+        assert len(tx_events) == 6
         assert tx_events[0].location_label == ETH_ADDRESS1
         assert tx_events[0].event_type == HistoryEventType.SPEND
         assert tx_events[0].event_subtype == HistoryEventSubType.FEE
@@ -953,7 +952,6 @@ def mock_history_processing_and_exchanges(
         history_start_ts: Optional[Timestamp] = None,
         history_end_ts: Optional[Timestamp] = None,
         remote_errors: bool = False,
-        unicode_check: bool = False,
 ) -> TradesTestSetup:
     """Prepare patches to mock querying of trade history from various locations for testing
 
@@ -968,7 +966,6 @@ def mock_history_processing_and_exchanges(
         history_start_ts=history_start_ts,
         history_end_ts=history_end_ts,
         remote_errors=remote_errors,
-        unicode_check=unicode_check,
     )
 
     polo_patch, binance_patch, bittrex_patch, bitmex_patch = mock_exchange_responses(
@@ -995,7 +992,6 @@ def prepare_rotki_for_history_processing_test(
         history_start_ts: Optional[Timestamp] = None,
         history_end_ts: Optional[Timestamp] = None,
         remote_errors: bool = False,
-        unicode_check: bool = False,
 ) -> TradesTestSetup:
     """Prepares rotki for the history processing tests
 
@@ -1012,7 +1008,6 @@ def prepare_rotki_for_history_processing_test(
         history_start_ts=history_start_ts,
         history_end_ts=history_end_ts,
         remote_errors=remote_errors,
-        unicode_check=unicode_check,
     )
     return setup
 
