@@ -29,7 +29,15 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_int_from_str,
 )
-from rotkehlchen.types import ApiKey, ApiSecret, Fee, Location, Timestamp, TradeType
+from rotkehlchen.types import (
+    ApiKey,
+    ApiSecret,
+    ExchangeAuthCredentials,
+    Fee,
+    Location,
+    Timestamp,
+    TradeType,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
@@ -121,14 +129,9 @@ class Bitpanda(ExchangeInterface):
 
         self.first_connection_made = True
 
-    def edit_exchange_credentials(
-            self,
-            api_key: Optional[ApiKey],
-            api_secret: Optional[ApiSecret],
-            passphrase: Optional[str],
-    ) -> bool:
-        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
-        if api_key is not None:
+    def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
+        changed = super().edit_exchange_credentials(credentials)
+        if credentials.api_key is not None:
             self.session.headers.update({'X-API-KEY': self.api_key})
 
         return changed

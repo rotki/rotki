@@ -49,6 +49,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
+    ExchangeAuthCredentials,
     Fee,
     Location,
     Price,
@@ -311,39 +312,19 @@ class Kraken(ExchangeInterface):
             self.call_limit = 20
             self.reduction_every_secs = 1
 
-    def edit_exchange_credentials(
-            self,
-            api_key: Optional[ApiKey],
-            api_secret: Optional[ApiSecret],
-            passphrase: Optional[str],
-    ) -> bool:
-        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
-        if api_key is not None:
+    def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
+        changed = super().edit_exchange_credentials(credentials)
+        if credentials.api_key is not None:
             self.session.headers.update({'API-Key': self.api_key})
 
         return changed
 
-    def edit_exchange(
-            self,
-            name: Optional[str],
-            api_key: Optional[ApiKey],
-            api_secret: Optional[ApiSecret],
-            **kwargs: Any,
-    ) -> tuple[bool, str]:
-        success, msg = super().edit_exchange(
-            name=name,
-            api_key=api_key,
-            api_secret=api_secret,
-            **kwargs,
-        )
-        if success is False:
-            return success, msg
-
-        account_type = kwargs.get(KRAKEN_ACCOUNT_TYPE_KEY)
+    def edit_exchange_extras(self, extras: dict) -> tuple[bool, str]:
+        account_type = extras.get(KRAKEN_ACCOUNT_TYPE_KEY)
         if account_type is None:
-            return success, msg
+            return False, 'No account type provided'
 
-        # here we can finally update the account type
+        # now we can update the account type
         self.set_account_type(account_type)
         return True, ''
 

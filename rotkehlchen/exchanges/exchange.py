@@ -69,27 +69,45 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         set_user_agent(self.session)
         log.info(f'Initialized {str(location)} exchange {name}')
 
+    def reset_to_db_credentials(self) -> None:
+        """Resets the exchange credentials to the ones saved in the DB"""
+        with self.db.conn.read_ctx() as cursor:
+            credentials_in_db = self.db.get_exchange_credentials(
+                cursor=cursor,
+                location=self.location,
+                name=self.name,
+            )
+        assert self.location in credentials_in_db and len(credentials_in_db[self.location]) == 1
+        credentials = credentials_in_db[self.location][0]
+        ftx_subaccount = self.db.get_ftx_subaccount(self.name) if self.location in (Location.FTX, Location.FTXUS) else None  # noqa: E501
+        self.edit_exchange_credentials(ExchangeAuthCredentials(
+            api_key=credentials.api_key,
+            api_secret=credentials.api_secret,
+            passphrase=credentials.passphrase,
+            ftx_subaccount=ftx_subaccount,
+        ))
+
+    def reset_to_db_extras(self) -> None:
+        """Resets the exchange extras to the ones saved in the DB"""
+        extras = self.db.get_exchange_credentials_extras(location=self.location, name=self.name)
+        self.edit_exchange_extras(extras)
+
     def location_id(self) -> ExchangeLocationID:
         """Returns unique location identifier for this exchange object (name + location)"""
         return ExchangeLocationID(name=self.name, location=self.location)
 
-    def edit_exchange_credentials(
-            self,
-            api_key: Optional[ApiKey],
-            api_secret: Optional[ApiSecret],
-            passphrase: Optional[str],
-    ) -> bool:
+    def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
         """Edits the exchange object with new credentials given from the API
         Returns true if an edit happened and false otherwise.
 
         Needs to be implemented for each subclass
         """
-        if api_key is not None:
-            self.api_key = api_key
-        if api_secret is not None:
-            self.secret = api_secret
+        if credentials.api_key is not None:
+            self.api_key = credentials.api_key
+        if credentials.api_secret is not None:
+            self.secret = credentials.api_secret
 
-        return api_key is not None or api_secret is not None or passphrase is not None
+        return credentials.api_key is not None or credentials.api_secret is not None or credentials.passphrase is not None  # noqa: E501
 
     def edit_exchange(
             self,
@@ -136,6 +154,8 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         if name is not None:
             self.name = name
 
+    def edit_exchange_extras(self, extras: dict) -> tuple[bool, str]:  # pylint: disable=unused-argument  # noqa: E501
+        """Subclasses may implement this method to accept extra properties"""
         return True, ''
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:

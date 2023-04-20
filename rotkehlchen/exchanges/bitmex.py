@@ -26,7 +26,15 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount_force_positive,
     deserialize_fee,
 )
-from rotkehlchen.types import ApiKey, ApiSecret, AssetAmount, AssetMovementCategory, Fee, Timestamp
+from rotkehlchen.types import (
+    ApiKey,
+    ApiSecret,
+    AssetAmount,
+    AssetMovementCategory,
+    ExchangeAuthCredentials,
+    Fee,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, satoshis_to_btc
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
@@ -111,15 +119,10 @@ class Bitmex(ExchangeInterface):
         self.msg_aggregator = msg_aggregator
         self.btc = A_BTC.resolve_to_crypto_asset()
 
-    def edit_exchange_credentials(
-            self,
-            api_key: Optional[ApiKey],
-            api_secret: Optional[ApiSecret],
-            passphrase: Optional[str],
-    ) -> bool:
-        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
-        if api_key is not None:
-            self.session.headers.update({'api-key': api_key})
+    def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
+        changed = super().edit_exchange_credentials(credentials)
+        if credentials.api_key is not None:
+            self.session.headers.update({'api-key': credentials.api_key})
         return changed
 
     def first_connection(self) -> None:

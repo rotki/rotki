@@ -34,6 +34,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetMovementCategory,
+    ExchangeAuthCredentials,
     Fee,
     Location,
     Timestamp,
@@ -131,21 +132,15 @@ class Ftx(ExchangeInterface):
     def first_connection(self) -> None:
         self.first_connection_made = True
 
-    def edit_exchange_credentials(
-            self,
-            api_key: Optional[ApiKey],
-            api_secret: Optional[ApiSecret],
-            passphrase: Optional[str],
-    ) -> bool:
-        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
-        if api_key is not None:
+    def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
+        changed = super().edit_exchange_credentials(credentials)
+        if credentials.api_key is not None:
             self.session.headers.update({f'{self.base_header_string}-KEY': self.api_key})
-            subaccount = self.db.get_ftx_subaccount(self.name)
-            if subaccount is not None:
+            if credentials.ftx_subaccount is not None:
                 self.session.headers.update(
-                    {f'{self.base_header_string}-SUBACCOUNT': quote(subaccount)},
+                    {f'{self.base_header_string}-SUBACCOUNT': quote(credentials.ftx_subaccount)},
                 )
-                self.subaccount = subaccount
+                self.subaccount = credentials.ftx_subaccount
             else:
                 self.session.headers.pop(f'{self.base_header_string}-SUBACCOUNT', None)
 
