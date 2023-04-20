@@ -576,7 +576,10 @@ class RestAPI():
 
     def remove_exchange(self, name: str, location: Location) -> Response:
         result: Optional[bool]
-        result, message = self.rotkehlchen.remove_exchange(name=name, location=location)
+        result, message = self.rotkehlchen.exchange_manager.delete_exchange(
+            name=name,
+            location=location,
+        )
         status_code = HTTPStatus.OK
         if not result:
             result = None
