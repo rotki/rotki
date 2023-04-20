@@ -32,7 +32,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import ApiKey, ApiSecret, Timestamp, TradeType
+from rotkehlchen.types import ApiKey, ApiSecret, ExchangeAuthCredentials, Timestamp, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp
 
@@ -152,15 +152,10 @@ class Bitcoinde(ExchangeInterface):
         self.session.headers.update({'x-api-key': api_key})
         self.msg_aggregator = msg_aggregator
 
-    def edit_exchange_credentials(
-            self,
-            api_key: Optional[ApiKey],
-            api_secret: Optional[ApiSecret],
-            passphrase: Optional[str],
-    ) -> bool:
-        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
-        if api_key is not None:
-            self.session.headers.update({'x-api-key': api_key})
+    def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
+        changed = super().edit_exchange_credentials(credentials)
+        if credentials.api_key is not None:
+            self.session.headers.update({'x-api-key': credentials.api_key})
         return changed
 
     def _generate_signature(self, request_type: str, url: str, nonce: str) -> str:

@@ -108,15 +108,6 @@ class Iconomi(ExchangeInterface):
         self.msg_aggregator = msg_aggregator
         self.aust = A_AUST.resolve_to_asset_with_oracles()
 
-    def edit_exchange_credentials(
-            self,
-            api_key: Optional[ApiKey],
-            api_secret: Optional[ApiSecret],
-            passphrase: Optional[str],
-    ) -> bool:
-        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
-        return changed
-
     def _generate_signature(self, request_type: str, request_path: str, timestamp: str) -> str:
         signed_data = ''.join([timestamp, request_type.upper(), request_path, '']).encode()
         signature = hmac.new(

@@ -36,6 +36,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetMovementCategory,
+    ExchangeAuthCredentials,
     Fee,
     Location,
     Price,
@@ -173,14 +174,9 @@ class Bittrex(ExchangeInterface):
     def first_connection(self) -> None:
         self.first_connection_made = True
 
-    def edit_exchange_credentials(
-            self,
-            api_key: Optional[ApiKey],
-            api_secret: Optional[ApiSecret],
-            passphrase: Optional[str],
-    ) -> bool:
-        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
-        if api_key is not None:
+    def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
+        changed = super().edit_exchange_credentials(credentials)
+        if credentials.api_key is not None:
             self.session.headers.update({'Api-Key': self.api_key})
         return changed
 

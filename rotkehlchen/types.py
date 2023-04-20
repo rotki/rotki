@@ -623,6 +623,18 @@ class AssetMovementCategory(DBEnumMixIn):
     WITHDRAWAL = 2
 
 
+class ExchangeAuthCredentials(NamedTuple):
+    """
+    Data structure that is used for editing credentials of exchanges.
+    If a certain field is not None, it is modified in the exchange, otherwise
+    the current value is kept.
+    """
+    api_key: Optional[ApiKey]
+    api_secret: Optional[ApiSecret]
+    passphrase: Optional[str]
+    ftx_subaccount: Optional[str]
+
+
 class ExchangeApiCredentials(NamedTuple):
     """Represents Credentials for Exchanges
 

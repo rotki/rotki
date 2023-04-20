@@ -28,6 +28,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetMovementCategory,
+    ExchangeAuthCredentials,
     Fee,
     Location,
     Timestamp,
@@ -76,16 +77,11 @@ class Okx(ExchangeInterface):
             'OK-ACCESS-PASSPHRASE': self.passphrase,
         })
 
-    def edit_exchange_credentials(
-            self,
-            api_key: Optional[ApiKey],
-            api_secret: Optional[ApiSecret],
-            passphrase: Optional[str],
-    ) -> bool:
-        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
-        if api_key is not None:
+    def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
+        changed = super().edit_exchange_credentials(credentials)
+        if credentials.api_key is not None:
             self.session.headers.update({'OK-ACCESS-KEY': self.api_key})
-        if passphrase is not None:
+        if credentials.passphrase is not None:
             self.session.headers.update({'OK-ACCESS-PASSPHRASE': self.passphrase})
         return changed
 
