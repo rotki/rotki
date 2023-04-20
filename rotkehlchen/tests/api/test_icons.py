@@ -26,7 +26,7 @@ from rotkehlchen.utils.misc import ts_now
 def test_upload_custom_icon(rotkehlchen_api_server, file_upload, data_dir):
     """Test that uploading custom icon works"""
     root_path = Path(__file__).resolve().parent.parent.parent.parent
-    filepath = root_path / 'frontend' / 'app' / 'public' / 'assets' / 'images' / 'exchanges' / 'kraken.svg'  # noqa: E501
+    filepath = root_path / 'frontend' / 'app' / 'public' / 'assets' / 'images' / 'protocols' / 'kraken.svg'  # noqa: E501
     gno_id_quoted = urllib.parse.quote_plus(A_GNO.identifier)
 
     if file_upload:
@@ -76,7 +76,7 @@ def test_upload_custom_icon(rotkehlchen_api_server, file_upload, data_dir):
 def test_upload_custom_icon_errors(rotkehlchen_api_server, file_upload):
     """Test that common error handling for uploading custom icons"""
     root_path = Path(__file__).resolve().parent.parent.parent.parent
-    filepath = root_path / 'frontend' / 'app' / 'public' / 'assets' / 'images' / 'exchanges' / 'kraken.svg'  # noqa: E501
+    filepath = root_path / 'frontend' / 'app' / 'public' / 'assets' / 'images' / 'protocols' / 'kraken.svg'  # noqa: E501
 
     # Let's also try to upload a file without the csv prefix
     with TemporaryDirectory() as temp_directory:
@@ -117,7 +117,7 @@ def test_refresh_icon(rotkehlchen_api_server):
     # add icon for an asset
     icon_manager = rotkehlchen_api_server.rest_api.rotkehlchen.icon_manager
     root_path = Path(__file__).resolve().parent.parent.parent.parent
-    sample_filepath = root_path / 'frontend' / 'app' / 'public' / 'assets' / 'images' / 'exchanges' / 'kraken.svg'  # noqa: E501
+    sample_filepath = root_path / 'frontend' / 'app' / 'public' / 'assets' / 'images' / 'protocols' / 'kraken.svg'  # noqa: E501
     icon_filepath = icon_manager.icons_dir / 'DOGE_small.png'
     shutil.copyfile(sample_filepath, icon_filepath)
 
