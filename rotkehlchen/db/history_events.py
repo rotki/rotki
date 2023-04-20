@@ -452,7 +452,7 @@ class DBHistoryEvents():
                 deserialized_event: Union[HistoryEvent, EvmEvent, EthWithdrawalEvent]
                 # Deserialize event depending on its type
                 if HistoryBaseEntryType(entry[type_idx]) == HistoryBaseEntryType.EVM_EVENT:
-                    data = entry[data_start_idx:HISTORY_BASE_ENTRY_LENGTH + 1] + entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + 1]  # noqa: E501
+                    data = entry[data_start_idx:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1] + entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + 1]  # noqa: E501
                     deserialized_event = EvmEvent.deserialize_from_db(data)
                 elif HistoryBaseEntryType(entry[type_idx]) == HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT:  # noqa: E501
                     data = entry[data_start_idx:HISTORY_BASE_ENTRY_LENGTH + 1] + entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + ETH_WITHDRAWAL_FIELD_LENGTH + 1]  # noqa: E501
