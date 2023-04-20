@@ -26,7 +26,7 @@ from rotkehlchen.accounting.structures.base import (
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
-from rotkehlchen.constants.assets import A_KFEE, A_USD
+from rotkehlchen.constants.assets import A_ETH2, A_KFEE, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
@@ -153,7 +153,15 @@ def history_event_from_kraken(
                 else:
                     event_subtype = HistoryEventSubType.RECEIVE
             elif event_type == HistoryEventType.STAKING:
-                event_subtype = HistoryEventSubType.REWARD
+                # in the case of ETH.S after the activation of withdrawals rewards no longer
+                # compound unlike what happens with other assets and a virtual event with
+                # negative amount is created
+                if asset == A_ETH2 and raw_amount < ZERO:
+                    event_type = HistoryEventType.INFORMATIONAL
+                    notes = 'Automatic virtual conversion of staked ETH rewards to ETH'
+                    raw_amount = AssetAmount(-raw_amount)
+                else:
+                    event_subtype = HistoryEventSubType.REWARD
             elif event_type == HistoryEventType.INFORMATIONAL:
                 found_unknown_event = True
                 notes = raw_event['type']
