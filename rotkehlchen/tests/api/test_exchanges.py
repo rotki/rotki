@@ -1054,7 +1054,12 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
         db.update_used_query_range(cursor, name='uniswap_trades', start_ts=start_ts, end_ts=end_ts)
         test_event_id = event_db.add_history_event(write_cursor=cursor, event=test_event)
 
-    data = {'name': 'mockkraken', 'location': 'kraken', 'new_name': 'my_kraken'}
+    data = {
+        'name': 'mockkraken',
+        'location': 'kraken',
+        'new_name': 'my_kraken',
+        'kraken_account_type': KrakenAccountType.STARTER.serialize(),
+    }
     response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
     result = assert_proper_response_with_result(response)
     assert result is True
@@ -1218,6 +1223,10 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges):
             'api_key': new_key,
             'api_secret': new_secret,
         }
+        if location in (Location.BINANCE, Location.BINANCEUS):
+            data['binance_markets'] = ['ETHBTC']
+        elif location == Location.KRAKEN:
+            data['kraken_account_type'] = KrakenAccountType.STARTER.serialize()
         with mock_validate_api_key_success(location):
             response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
             assert_simple_ok_response(response)
