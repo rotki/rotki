@@ -45,7 +45,13 @@ const aggregatedStake: ComputedRef<LiquityStakingDetailEntry | null> = computed(
         continue;
       }
 
-      filteredStakes.push(stake.balances, ...Object.values(stake.proxies));
+      if (stake.balances) {
+        filteredStakes.push(stake.balances);
+      }
+
+      if (stake.proxies) {
+        filteredStakes.push(...Object.values(stake.proxies));
+      }
     }
 
     let stakes: LiquityStakingDetailEntry | null = null;
@@ -86,7 +92,13 @@ const aggregatedStakingPool: ComputedRef<LiquityPoolDetailEntry | null> =
         continue;
       }
 
-      filteredPools.push(pool.balances, ...Object.values(pool.proxies));
+      if (pool.balances) {
+        filteredPools.push(pool.balances);
+      }
+
+      if (pool.proxies) {
+        filteredPools.push(...Object.values(pool.proxies));
+      }
     }
 
     let pools: LiquityPoolDetailEntry | null = null;
@@ -130,7 +142,7 @@ const proxyInformation: ComputedRef<Record<string, string[]> | null> = computed(
 
     selectedAddresses.forEach(address => {
       const pool = allPools[address];
-      if (pool) {
+      if (pool && pool.proxies) {
         const poolProxies = Object.keys(pool.proxies);
         if (poolProxies.length > 0) {
           addToProxies(address, poolProxies);
@@ -138,7 +150,7 @@ const proxyInformation: ComputedRef<Record<string, string[]> | null> = computed(
       }
 
       const stake = allStakes[address];
-      if (stake) {
+      if (stake && stake.proxies) {
         const stakeProxies = Object.keys(stake.proxies);
         if (stakeProxies.length > 0) {
           addToProxies(address, stakeProxies);
