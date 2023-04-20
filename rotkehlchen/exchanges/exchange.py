@@ -109,51 +109,6 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
 
         return credentials.api_key is not None or credentials.api_secret is not None or credentials.passphrase is not None  # noqa: E501
 
-    def edit_exchange(
-            self,
-            name: Optional[str],
-            api_key: Optional[ApiKey],
-            api_secret: Optional[ApiSecret],
-            **kwargs: Any,
-    ) -> tuple[bool, str]:
-        """Edits the exchange object with new info given from the API
-
-        Returns False and error message in case of problems
-
-        If extra exchange info should be edited this needs to also be implemented by the subclass.
-        """
-        passphrase = kwargs.get('passphrase')
-        old_passphrase = None
-        if passphrase is not None:  # backup old passphrase
-            with self.db.conn.read_ctx() as cursor:
-                mapping = self.db.get_exchange_credentials(cursor, name=self.name, location=self.location)  # noqa: E501
-            credentials = mapping.get(self.location)
-            if not credentials or len(credentials) == 0 or credentials[0].passphrase is None:
-                old_passphrase = None  # should not happen, unless passphrase is optional
-                log.warning(
-                    f'When updating the passphrase for {self.name} {str(self.location)} '
-                    f'exchange, could not find an old passphrase to restore.',
-                )
-            else:
-                old_passphrase = credentials[0].passphrase
-
-        old_api_key = self.api_key
-        old_api_secret = self.secret
-        changed = self.edit_exchange_credentials(api_key, api_secret, passphrase)
-        if changed is True:
-            try:
-                success, message = self.validate_api_key()
-            except Exception as e:  # pylint: disable=broad-except
-                success = False
-                message = str(e)
-
-            if success is False:
-                self.edit_exchange_credentials(old_api_key, old_api_secret, old_passphrase)
-                return False, message
-
-        if name is not None:
-            self.name = name
-
     def edit_exchange_extras(self, extras: dict) -> tuple[bool, str]:  # pylint: disable=unused-argument  # noqa: E501
         """Subclasses may implement this method to accept extra properties"""
         return True, ''

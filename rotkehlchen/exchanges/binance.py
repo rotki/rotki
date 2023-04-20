@@ -251,27 +251,12 @@ class Binance(ExchangeInterface):
             self.session.headers.update({'X-MBX-APIKEY': credentials.api_key})
         return changed
 
-    def edit_exchange(
-            self,
-            name: Optional[str],
-            api_key: Optional[ApiKey],
-            api_secret: Optional[ApiSecret],
-            **kwargs: Any,
-    ) -> tuple[bool, str]:
-        success, msg = super().edit_exchange(
-            name=name,
-            api_key=api_key,
-            api_secret=api_secret,
-            **kwargs,
-        )
-        if success is False:
-            return success, msg
-
-        binance_markets = kwargs.get(BINANCE_MARKETS_KEY)
+    def edit_exchange_extras(self, extras: dict) -> tuple[bool, str]:
+        binance_markets = extras.get(BINANCE_MARKETS_KEY)
         if binance_markets is None:
-            return success, msg
+            return False, 'No binance markets provided'
 
-        # here we can finally update the account type
+        # now we can update the account type
         self.selected_pairs = binance_markets
         return True, ''
 
