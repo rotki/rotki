@@ -1069,19 +1069,6 @@ class Rotkehlchen():
             )
         return is_success, msg
 
-    def remove_exchange(self, name: str, location: Location) -> tuple[bool, str]:
-        if self.exchange_manager.get_exchange(name=name, location=location) is None:
-            return False, f'{str(location)} exchange {name} is not registered'
-
-        self.exchange_manager.delete_exchange(name=name, location=location)
-        # Success, remove it also from the DB
-        with self.data.db.user_write() as write_cursor:
-            self.data.db.remove_exchange(write_cursor=write_cursor, name=name, location=location)
-            if self.exchange_manager.connected_exchanges.get(location) is None:
-                # was last exchange of the location type. Delete used query ranges
-                self.data.db.delete_used_query_range_for_exchange(write_cursor=write_cursor, location=location)  # noqa: E501
-        return True, ''
-
     def query_periodic_data(self) -> dict[str, Union[bool, list[str], Timestamp]]:
         """Query for frequently changing data"""
         result: dict[str, Union[bool, list[str], Timestamp]] = {}

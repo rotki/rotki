@@ -121,19 +121,31 @@ class ExchangeManager():
 
             return True, ''
 
-    def delete_exchange(self, name: str, location: Location) -> None:
-        """Deletes exchange only from the manager. Not from the DB"""
+    def delete_exchange(self, name: str, location: Location) -> tuple[bool, str]:
+        """
+        Deletes an exchange with the specified name + location from both connected_exchanges
+        and the DB.
+        """
+        if self.get_exchange(name=name, location=location) is None:
+            return False, f'{str(location)} exchange {name} is not registered'
+
         exchanges_list = self.connected_exchanges.get(location)
         if exchanges_list is None:
-            return
+            return False, f'{str(location)} exchange {name} is not registered'
 
-        if len(exchanges_list) == 1:
+        last_in_location = len(exchanges_list) == 1
+        if last_in_location is True:
             self.connected_exchanges.pop(location)
-            return
-
-        self.connected_exchanges[location] = [x for x in exchanges_list if x.name != name]
+        else:
+            self.connected_exchanges[location] = [x for x in exchanges_list if x.name != name]
+        with self.database.user_write() as write_cursor:  # Also remove it from the db
+            self.database.remove_exchange(write_cursor=write_cursor, name=name, location=location)  # noqa: E501
+            if last_in_location is True:
+                self.database.delete_used_query_range_for_exchange(write_cursor=write_cursor, location=location)  # noqa: E501
+        return True, ''
 
     def delete_all_exchanges(self) -> None:
+        """Deletes all exchanges from the manager. Not from the DB"""
         self.connected_exchanges.clear()
 
     def get_connected_exchanges_info(self) -> list[dict[str, Any]]:

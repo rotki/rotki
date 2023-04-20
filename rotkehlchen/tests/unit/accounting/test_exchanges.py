@@ -114,7 +114,7 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges):
             )],
         )
 
-    rotki.remove_exchange(name='coinbase', location=Location.COINBASE)
+    rotki.exchange_manager.delete_exchange(name='coinbase', location=Location.COINBASE)
     _, events = accounting_create_and_process_history(rotki=rotki, start_ts=0, end_ts=1611426233)
     assert len(events) == 7
     event1 = events[0]
