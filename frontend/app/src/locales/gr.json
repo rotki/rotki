@@ -284,7 +284,7 @@
       },
       "historic_fetch_price": {
         "task": {
-          "description": "Fetching rate from {fromAsset} to {toAsset} on {date}",
+          "description": "Fetching rate from {fromAsset} to {toAsset} on {date} | Fetching rates for {count} pairs to {toAsset}",
           "title": "Fetching conversion rate"
         }
       },

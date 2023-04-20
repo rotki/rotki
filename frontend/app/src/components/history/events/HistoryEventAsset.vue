@@ -26,8 +26,8 @@ const showBalance = computed<boolean>(() => {
 });
 
 const eventAsset = computed(() => get(event).asset);
-const symbol = assetSymbol(eventAsset);
 
+const symbol = assetSymbol(eventAsset);
 const extraDataPanel: Ref<number[]> = ref([]);
 </script>
 <template>
@@ -44,6 +44,7 @@ const extraDataPanel: Ref<number[]> = ref([]);
         </div>
         <div>
           <amount-display
+            :key="event.timestamp"
             :amount="event.balance.amount"
             :value="event.balance.usdValue"
             :price-asset="event.asset"

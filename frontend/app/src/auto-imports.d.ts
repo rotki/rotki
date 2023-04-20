@@ -410,6 +410,7 @@ declare global {
   const useGeneralSettingsStore: typeof import('./store/settings/general')['useGeneralSettingsStore']
   const useGeolocation: typeof import('@vueuse/core')['useGeolocation']
   const useGraph: typeof import('./composables/graphs')['useGraph']
+  const useHistoricCachePriceStore: typeof import('./store/prices/historic')['useHistoricCachePriceStore']
   const useHistoryApi: typeof import('./composables/api/history/index')['useHistoryApi']
   const useHistoryAutoRefresh: typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']
   const useHistoryEventFilter: typeof import('./composables/filters/events')['useHistoryEventFilter']
@@ -430,6 +431,7 @@ declare global {
   const useIntersectionObserver: typeof import('@vueuse/core')['useIntersectionObserver']
   const useInterval: typeof import('@vueuse/core')['useInterval']
   const useIntervalFn: typeof import('@vueuse/core')['useIntervalFn']
+  const useItemCache: typeof import('./composables/useItemCache')['useItemCache']
   const useKeyModifier: typeof import('@vueuse/core')['useKeyModifier']
   const useKrakenApi: typeof import('./composables/api/staking/kraken')['useKrakenApi']
   const useKrakenStakingEventTypes: typeof import('./composables/staking/kraken-events')['useKrakenStakingEventTypes']
@@ -1053,6 +1055,7 @@ declare module 'vue' {
     readonly useGeneralSettingsStore: UnwrapRef<typeof import('./store/settings/general')['useGeneralSettingsStore']>
     readonly useGeolocation: UnwrapRef<typeof import('@vueuse/core')['useGeolocation']>
     readonly useGraph: UnwrapRef<typeof import('./composables/graphs')['useGraph']>
+    readonly useHistoricCachePriceStore: UnwrapRef<typeof import('./store/prices/historic')['useHistoricCachePriceStore']>
     readonly useHistoryApi: UnwrapRef<typeof import('./composables/api/history/index')['useHistoryApi']>
     readonly useHistoryAutoRefresh: UnwrapRef<typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']>
     readonly useHistoryEventFilter: UnwrapRef<typeof import('./composables/filters/events')['useHistoryEventFilter']>
@@ -1073,6 +1076,7 @@ declare module 'vue' {
     readonly useIntersectionObserver: UnwrapRef<typeof import('@vueuse/core')['useIntersectionObserver']>
     readonly useInterval: UnwrapRef<typeof import('@vueuse/core')['useInterval']>
     readonly useIntervalFn: UnwrapRef<typeof import('@vueuse/core')['useIntervalFn']>
+    readonly useItemCache: UnwrapRef<typeof import('./composables/useItemCache')['useItemCache']>
     readonly useKeyModifier: UnwrapRef<typeof import('@vueuse/core')['useKeyModifier']>
     readonly useKrakenApi: UnwrapRef<typeof import('./composables/api/staking/kraken')['useKrakenApi']>
     readonly useKrakenStakingEventTypes: UnwrapRef<typeof import('./composables/staking/kraken-events')['useKrakenStakingEventTypes']>

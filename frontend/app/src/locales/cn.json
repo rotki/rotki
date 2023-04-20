@@ -295,7 +295,7 @@
       },
       "historic_fetch_price": {
         "task": {
-          "description": "在 {date} 从 {fromAsset} 获取利率到 {toAsset}",
+          "description": "在 {date} 从 {fromAsset} 获取利率到 {toAsset} | 获取 {count} 对到 {toAsset} 的速率",
           "title": "获取转化率"
         }
       },
