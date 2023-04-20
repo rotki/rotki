@@ -434,6 +434,7 @@
     "useIntersectionObserver": true,
     "useInterval": true,
     "useIntervalFn": true,
+    "useItemCache": true,
     "useKeyModifier": true,
     "useKrakenApi": true,
     "useKrakenStakingEventTypes": true,
