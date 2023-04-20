@@ -410,6 +410,7 @@ declare global {
   const useGeneralSettingsStore: typeof import('./store/settings/general')['useGeneralSettingsStore']
   const useGeolocation: typeof import('@vueuse/core')['useGeolocation']
   const useGraph: typeof import('./composables/graphs')['useGraph']
+  const useHistoricCachePriceStore: typeof import('./store/prices/historic')['useHistoricCachePriceStore']
   const useHistoryApi: typeof import('./composables/api/history/index')['useHistoryApi']
   const useHistoryAutoRefresh: typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']
   const useHistoryEventFilter: typeof import('./composables/filters/events')['useHistoryEventFilter']
@@ -1053,6 +1054,7 @@ declare module 'vue' {
     readonly useGeneralSettingsStore: UnwrapRef<typeof import('./store/settings/general')['useGeneralSettingsStore']>
     readonly useGeolocation: UnwrapRef<typeof import('@vueuse/core')['useGeolocation']>
     readonly useGraph: UnwrapRef<typeof import('./composables/graphs')['useGraph']>
+    readonly useHistoricCachePriceStore: UnwrapRef<typeof import('./store/prices/historic')['useHistoricCachePriceStore']>
     readonly useHistoryApi: UnwrapRef<typeof import('./composables/api/history/index')['useHistoryApi']>
     readonly useHistoryAutoRefresh: UnwrapRef<typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']>
     readonly useHistoryEventFilter: UnwrapRef<typeof import('./composables/filters/events')['useHistoryEventFilter']>

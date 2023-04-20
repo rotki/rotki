@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { type ComputedRef, type Ref } from 'vue';
+import { type ComputedRef } from 'vue';
+import { or } from '@vueuse/math';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import { CURRENCY_USD, type Currency, useCurrencies } from '@/types/currencies';
 import { type RoundingMode } from '@/types/frontend-settings';
@@ -65,8 +66,6 @@ const {
   timestamp
 } = toRefs(props);
 
-const evaluating: Ref<boolean> = ref(false);
-
 const {
   currency,
   currencySymbol: currentCurrency,
@@ -77,7 +76,8 @@ const { scrambleData, shouldShowAmount, scrambleMultiplier } = storeToRefs(
   useSessionSettingsStore()
 );
 
-const { exchangeRate, assetPrice, getHistoricPrice } = useBalancePricesStore();
+const { exchangeRate, assetPrice, isAssetPriceInCurrentCurrency } =
+  useBalancePricesStore();
 
 const {
   abbreviateNumber,
@@ -88,48 +88,16 @@ const {
   valueRoundingMode
 } = storeToRefs(useFrontendSettingsStore());
 
-const { isAssetPriceInCurrentCurrency } = useBalancePricesStore();
-
 const isCurrentCurrency = isAssetPriceInCurrentCurrency(priceAsset);
 
 const { findCurrency } = useCurrencies();
 
-const priceHistoricRate = asyncComputed(
-  async () => {
-    assert(isDefined(priceAsset));
-    return await getHistoricPrice({
-      fromAsset: get(priceAsset),
-      toAsset: get(currentCurrency),
-      timestamp: get(timestamp)
-    });
-  },
-  One.negated(),
-  {
-    lazy: true,
-    evaluating,
-    onError(e: any) {
-      logger.error(e);
-    }
-  }
-);
+const { historicPriceInCurrentCurrency, isPending } =
+  useHistoricCachePriceStore();
 
-const historicExchangeRate = asyncComputed(
-  async () => {
-    assert(isDefined(sourceCurrency));
-    return await getHistoricPrice({
-      fromAsset: get(sourceCurrency),
-      toAsset: get(currentCurrency),
-      timestamp: get(timestamp)
-    });
-  },
-  One.negated(),
-  {
-    lazy: true,
-    evaluating,
-    onError(e: any) {
-      logger.error(e);
-    }
-  }
+const evaluating = or(
+  isPending(`${get(priceAsset)}#${get(timestamp)}`),
+  isPending(`${get(sourceCurrency)}#${get(timestamp)}`)
 );
 
 const latestFiatValue: ComputedRef<BigNumber> = computed(() => {
@@ -160,6 +128,7 @@ const internalValue: ComputedRef<BigNumber> = computed(() => {
   const currentCurrencyVal = get(currentCurrency);
   const priceAssetVal = get(priceAsset);
   const isCurrentCurrencyVal = get(isCurrentCurrency);
+  const timestampVal = get(timestamp);
 
   // If `priceAsset` is defined, it means we will not use value from `value`, but calculate it ourselves from the price of `priceAsset`
   if (priceAssetVal) {
@@ -174,8 +143,10 @@ const internalValue: ComputedRef<BigNumber> = computed(() => {
     }
   }
 
-  if (get(timestamp) > 0 && get(amount) && get(priceAsset)) {
-    const assetHistoricRate = get(priceHistoricRate);
+  if (timestampVal > 0 && get(amount) && priceAssetVal) {
+    const assetHistoricRate = get(
+      historicPriceInCurrentCurrency(priceAssetVal, timestampVal)
+    );
     if (assetHistoricRate.isPositive()) {
       return get(amount).multipliedBy(assetHistoricRate);
     }
@@ -185,8 +156,11 @@ const internalValue: ComputedRef<BigNumber> = computed(() => {
   if (sourceCurrencyVal !== currentCurrencyVal) {
     let calculatedValue = get(latestFiatValue);
 
-    if (get(timestamp) > 0) {
-      const historicRate = get(historicExchangeRate);
+    if (timestampVal > 0) {
+      const historicRate = get(
+        historicPriceInCurrentCurrency(sourceCurrencyVal, timestampVal)
+      );
+
       if (historicRate.isPositive()) {
         calculatedValue = get(value).multipliedBy(historicRate);
       } else {

@@ -7,7 +7,6 @@ import flushPromises from 'flush-promises';
 import { useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
 import { FrontendSettings } from '@/types/frontend-settings';
-import { Zero, bigNumberify } from '@/utils/bignumbers';
 import '@/filters';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import createCustomPinia from '../../../utils/create-pinia';
@@ -435,8 +434,15 @@ describe('AmountDisplay.vue', () => {
 
   describe('uses historic price', () => {
     test('when timestamp is set and prices exists', async () => {
-      const getPrice = vi.spyOn(useBalancePricesStore(), 'getHistoricPrice');
-      getPrice.mockResolvedValue(bigNumberify(1.2));
+      const getPrice = vi.spyOn(
+        useHistoricCachePriceStore(),
+        'historicPriceInCurrentCurrency'
+      );
+      getPrice.mockReturnValue(computed(() => bigNumberify(1.2)));
+
+      vi.spyOn(useHistoricCachePriceStore(), 'isPending').mockReturnValue(
+        computed(() => false)
+      );
 
       wrapper = createWrapper(bigNumberify(1), {
         fiatCurrency: 'USD',
@@ -447,16 +453,19 @@ describe('AmountDisplay.vue', () => {
       await flushPromises();
 
       expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.20');
-      expect(getPrice).toHaveBeenCalledWith({
-        timestamp: 1000,
-        fromAsset: 'USD',
-        toAsset: 'EUR'
-      });
+      expect(getPrice).toHaveBeenCalledWith('USD', 1000);
     });
 
     test('when timestamp is set and prices does not exist', async () => {
-      const getPrice = vi.spyOn(useBalancePricesStore(), 'getHistoricPrice');
-      getPrice.mockResolvedValue(Zero);
+      const getPrice = vi.spyOn(
+        useHistoricCachePriceStore(),
+        'historicPriceInCurrentCurrency'
+      );
+      getPrice.mockReturnValue(computed(() => Zero));
+
+      vi.spyOn(useHistoricCachePriceStore(), 'isPending').mockReturnValue(
+        computed(() => false)
+      );
 
       wrapper = createWrapper(bigNumberify(1), {
         fiatCurrency: 'USD',
@@ -467,11 +476,7 @@ describe('AmountDisplay.vue', () => {
       await flushPromises();
 
       expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('0.00');
-      expect(getPrice).toHaveBeenCalledWith({
-        timestamp: 1000,
-        fromAsset: 'USD',
-        toAsset: 'EUR'
-      });
+      expect(getPrice).toHaveBeenCalledWith('USD', 1000);
     });
   });
 });

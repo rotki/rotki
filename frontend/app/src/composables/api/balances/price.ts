@@ -10,7 +10,10 @@ import {
 } from '@/services/utils';
 import { type SupportedCurrency } from '@/types/currencies';
 import { type PriceOracle } from '@/types/price-oracle';
-import { type OracleCacheMeta } from '@/types/prices';
+import {
+  type HistoricPricesPayload,
+  type OracleCacheMeta
+} from '@/types/prices';
 import { type PendingTask } from '@/types/task';
 
 export const usePriceApi = () => {
@@ -88,6 +91,23 @@ export const usePriceApi = () => {
     return handleResponse(response);
   };
 
+  const queryHistoricalRates = async (
+    payload: HistoricPricesPayload
+  ): Promise<PendingTask> => {
+    const response = await api.instance.post<ActionResult<PendingTask>>(
+      '/assets/prices/historical',
+      snakeCaseTransformer({
+        asyncQuery: true,
+        ...payload
+      }),
+      {
+        validateStatus: validWithSessionAndExternalService
+      }
+    );
+
+    return handleResponse(response);
+  };
+
   const queryPrices = async (
     assets: string[],
     targetAsset: string,
@@ -131,6 +151,7 @@ export const usePriceApi = () => {
     queryPrices,
     queryFiatExchangeRates,
     queryHistoricalRate,
+    queryHistoricalRates,
     getPriceCache,
     createPriceCache,
     deletePriceCache

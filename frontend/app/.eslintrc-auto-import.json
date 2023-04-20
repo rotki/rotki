@@ -413,6 +413,7 @@
     "useGeneralSettingsStore": true,
     "useGeolocation": true,
     "useGraph": true,
+    "useHistoricCachePriceStore": true,
     "useHistoryApi": true,
     "useHistoryAutoRefresh": true,
     "useHistoryEventFilter": true,
