@@ -1658,7 +1658,7 @@ class RestAPI():
             },
         }
         if directory_path is not None:
-            with open(f'{directory_path}/pnl_debug.json', mode='w') as f:
+            with open(f'{directory_path}/pnl_debug.json', mode='w', encoding='utf-8') as f:
                 json.dump(debug_info, f, indent=2)
             return OK_RESULT
         return _wrap_in_ok_result(debug_info)

@@ -32,7 +32,7 @@ class DebugHistoryImporter:
     ) -> tuple[bool, str, dict[str, Any]]:
         """Imports the user events, settings & ignored actions identifiers for debugging."""
         try:
-            with open(filepath) as f:
+            with open(filepath, encoding='utf-8') as f:
                 debug_data = json.load(f)
         except (PermissionError, json.JSONDecodeError) as e:
             error_msg = f'Failed to import history events due to: {str(e)}'

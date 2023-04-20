@@ -52,7 +52,7 @@ def _dict_to_csv_file(path: Path, dictionary_list: list) -> None:
         log.debug(f'Skipping writting empty CSV for {path}')
         return
 
-    with open(path, 'w', newline='') as f:
+    with open(path, 'w', newline='', encoding='utf-8') as f:
         w = DictWriter(f, fieldnames=dictionary_list[0].keys())
         w.writeheader()
         try:
