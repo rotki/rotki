@@ -37,6 +37,11 @@ The default log locations are:
 - **OSX**: ``~/Library/Application Support/rotki/logs``
 - **Windows**: ``%APPDATA%\rotki\logs``
 
+Logs created by running in debug mode will contain private data such as addresses.
+To try and reduce the amount of private data in the logs, you can optionally run a `regex` find and replace script on your log file.
+
+`Here <https://gist.github.com/iSpeakNerd/7261feaf97d25a55d173cedeb4568544>`_ is an example script. It is included in the docs for inspiration, will catch some instances of private data but not all. **Do not** make any assumptions about the logs and only share them with rotki developers. If you write a script that is over-censoring and important data are redacted we may ask you to give us the uncensored logs.
+
 Feature Requests
 ******************
 
