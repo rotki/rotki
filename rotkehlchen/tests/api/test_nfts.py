@@ -93,7 +93,7 @@ def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
 
 
 @requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
-@flaky(max_runs=3, min_passes=1)  # all opensea calls have become quite flaky
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
@@ -162,7 +162,7 @@ def test_nft_ids_are_unique(rotkehlchen_api_server):
 
 
 @requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
-@flaky(max_runs=3, min_passes=1)  # all opensea calls have become quite flaky
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC4, TEST_ACC5, TEST_ACC6]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts', 'uniswap']])
@@ -323,7 +323,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
     assert result == {
         'name': 'yabir.eth',
         'asset_type': 'nft',
-        'image_url': 'https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg',
+        'image_url': 'https://openseauserdata.com/files/238f73fa1bbea518eec64f9c9d5ed7fe.svg',
         'collection_name': 'ENS: Ethereum Name Service',
     }
 
