@@ -545,4 +545,8 @@ def test_events_mappings(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result['locations'] == [location.serialize() for location in Location]
+    excluded_locations = {Location.TOTAL}
+    valid_locations = {location.serialize() for location in Location if location not in excluded_locations}  # noqa: E501
+    assert set(result['locations'].keys()) == valid_locations
+    for detail in result['locations'].values():
+        assert 'icon' in detail or 'image' in detail

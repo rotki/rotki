@@ -73,6 +73,7 @@ from rotkehlchen.types import (
     EvmTransaction,
     ExchangeLocationID,
     Location,
+    LocationDetails,
     SupportedBlockchain,
     TradeType,
 )
@@ -92,7 +93,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
         for k, v in entry.items():
             if isinstance(k, Asset) is True:
                 k = k.identifier  # noqa: PLW2901
-            elif isinstance(k, (HistoryEventType, HistoryEventSubType, EventCategory)) is True:  # noqa: E501
+            elif isinstance(k, (HistoryEventType, HistoryEventSubType, EventCategory, Location)) is True:  # noqa: E501
                 k = _process_entry(k)  # noqa: PLW2901
             new_dict[k] = _process_entry(v)
         return new_dict
@@ -133,6 +134,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             SupportedBlockchain,
             HistoryEventType,
             HistoryEventSubType,
+            LocationDetails,
     )):
         return entry.serialize()
     if isinstance(entry, (
