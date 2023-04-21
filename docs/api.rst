@@ -12536,7 +12536,7 @@ Get all valid locations
         }
       }
 
-  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set.
+  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Can also contain `display_name` if a special name has to be used. 
 
   :statuscode 200: Information was correctly returned
   :statuscode 500: Internal rotki error

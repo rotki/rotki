@@ -63,4 +63,4 @@ class Eth2Decoder(DecoderInterface):
         }
 
     def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(identifier=CPT_ETH2, label='ETH2', image='eth.svg')]
+        return [CounterpartyDetails(identifier=CPT_ETH2, label='ETH2', image='ethereum.svg')]
