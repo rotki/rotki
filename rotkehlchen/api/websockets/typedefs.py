@@ -20,6 +20,7 @@ class WSMessageType(Enum):
     NEW_EVM_TOKEN_DETECTED = auto()
     DATA_MIGRATION_STATUS = auto()
     MISSING_API_KEY = auto()
+    HISTORY_EVENTS_STATUS = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member
@@ -31,6 +32,15 @@ class TransactionStatusStep(Enum):
     QUERYING_INTERNAL_TRANSACTIONS = auto()
     QUERYING_EVM_TOKENS_TRANSACTIONS = auto()
     QUERYING_TRANSACTIONS_FINISHED = auto()
+
+    def __str__(self) -> str:
+        return self.name.lower()  # pylint: disable=no-member
+
+
+class HistoryEventsStep(Enum):
+    QUERYING_EVENTS_STARTED = auto()
+    QUERYING_EVENTS_STATUS_UPDATE = auto()
+    QUERYING_EVENTS_FINISHED = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member

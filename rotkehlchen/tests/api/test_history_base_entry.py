@@ -1,4 +1,5 @@
 import json
+import random
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
@@ -18,18 +19,21 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_SUSHI, A_USDT
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.db.filtering import EvmEventFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_ok_async_response,
+    assert_proper_response,
     assert_proper_response_with_result,
     assert_simple_ok_response,
 )
 from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
+    HistoryEventQueryType,
     Location,
     Timestamp,
     TimestampMS,
@@ -507,3 +511,43 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
     assert result['entries_found'] == 5
     assert result['entries_limit'] == 100
     assert result['entries_total'] == 6
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
+def test_query_new_events(rotkehlchen_api_server_with_exchanges: 'APIServer'):
+    """Test that the endpoint for querying new events works correctly both sync and async"""
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    db = DBHistoryEvents(rotki.data.db)
+    query_filter = HistoryEventFilterQuery.make(location=Location.KRAKEN)
+    async_query = random.choice([True, False])
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        kraken_events_count = db.get_history_events_count(
+            cursor=cursor,
+            query_filter=query_filter,
+        )
+        assert kraken_events_count == 0
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            'eventsonlinequeryresource',
+        ),
+        json={
+            'async_query': async_query,
+            'query_type': HistoryEventQueryType.EXCHANGES.serialize(),
+        },
+    )
+
+    if async_query is True:
+        assert_ok_async_response(response)
+    else:
+        assert_proper_response(response)
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        kraken_events_count = db.get_history_events_count(
+            cursor=cursor,
+            query_filter=query_filter,
+        )
+        assert kraken_events_count != 0

@@ -23,6 +23,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.api.websockets.typedefs import HistoryEventsStep, WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
@@ -295,6 +296,7 @@ class Kraken(ExchangeInterface):
         self.call_counter = 0
         self.last_query_ts = 0
         self.history_events_db = DBHistoryEvents(self.db)
+        self.supports_history_events = True
 
     def set_account_type(self, account_type: Optional[KrakenAccountType]) -> None:
         if account_type is None:
@@ -1085,6 +1087,15 @@ class Kraken(ExchangeInterface):
         with_errors = False
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying kraken ledger entries from {query_start_ts} to {query_end_ts}')
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.HISTORY_EVENTS_STATUS,
+                data={
+                    'status': str(HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE),
+                    'location': str(self.location),
+                    'name': self.name,
+                    'period': [query_start_ts, query_end_ts],
+                },
+            )
             try:
                 response, with_errors = self.query_until_finished(
                     endpoint='Ledgers',
@@ -1149,3 +1160,27 @@ class Kraken(ExchangeInterface):
                 return True  # we had errors so stop any further queries and quit
 
         return False  # no errors
+
+    def query_history_events(self) -> None:
+        self.msg_aggregator.add_message(
+            message_type=WSMessageType.HISTORY_EVENTS_STATUS,
+            data={
+                'status': str(HistoryEventsStep.QUERYING_EVENTS_STARTED),
+                'location': str(self.location),
+                'name': self.name,
+            },
+        )
+        with self.db.conn.read_ctx() as cursor:
+            self.query_kraken_ledgers(
+                cursor=cursor,
+                start_ts=Timestamp(0),
+                end_ts=ts_now(),
+            )
+        self.msg_aggregator.add_message(
+            message_type=WSMessageType.HISTORY_EVENTS_STATUS,
+            data={
+                'status': str(HistoryEventsStep.QUERYING_EVENTS_FINISHED),
+                'location': str(self.location),
+                'name': self.name,
+            },
+        )

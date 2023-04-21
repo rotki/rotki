@@ -5111,12 +5111,12 @@ Querying online events
 
       {
           "async_query": true,
-          "name": "eth_withdrawals"
+          "query_type": "eth_withdrawals"
       }
 
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :reqjson string name: The name of the type of events to query for. Valid values are: ``"eth_withdrawals"``, ``"block_productions"``
+   :reqjson string query_type: The name of the type of events to query for. Valid values are: ``"eth_withdrawals"``, ``"block_productions"``, ``"exchanges"``
 
     **Example Response**
 
@@ -12540,4 +12540,3 @@ Get all valid locations
 
   :statuscode 200: Information was correctly returned
   :statuscode 500: Internal rotki error
-

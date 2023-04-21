@@ -89,6 +89,7 @@ from rotkehlchen.types import (
     ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
+    HistoryEventQueryType,
     Location,
     OptionalChainAddress,
     SupportedBlockchain,
@@ -334,9 +335,7 @@ class SingleEVMTransactionDecodingSchema(Schema):
 
 
 class EventsOnlineQuerySchema(AsyncQueryArgumentSchema):
-    name = fields.String(
-        validate=webargs.validate.OneOf(choices=('eth_withdrawals', 'block_productions')),
-    )
+    query_type = SerializableEnumField(enum_class=HistoryEventQueryType, required=True)
 
 
 class EvmTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
