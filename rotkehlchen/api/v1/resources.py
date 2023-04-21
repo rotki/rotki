@@ -165,6 +165,7 @@ from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+from rotkehlchen.constants.location_details import LOCATION_DETAILS
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -182,7 +183,6 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
-from rotkehlchen.detail_mappings import LOCATION_DETAILS
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.serialization.serialize import process_result

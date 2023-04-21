@@ -599,16 +599,22 @@ EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE_, ...] = typing.get_args(EVM_LOCATIONS_T
 
 
 class LocationDetails(NamedTuple):
+    """Information about Location enum values to display them to the user"""
+    label: Optional[str] = None
     icon: Optional[str] = None
     image: Optional[str] = None
 
     def serialize(self) -> dict[str, str]:
-        if self.icon is not None:
-            return {'icon': self.icon}
-        if self.image is not None:
-            return {'image': self.image}
+        data = {}
+        if self.label is not None:
+            data = {'label': self.label}
 
-        raise InputError('Location details does not have either icon or image')
+        if self.icon is not None:
+            return data | {'icon': self.icon}
+        if self.image is not None:
+            return data | {'image': self.image}
+
+        raise InputError('Location details has neither an icon nor an image')
 
 
 class AssetMovementCategory(DBEnumMixIn):
