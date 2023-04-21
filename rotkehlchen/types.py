@@ -15,6 +15,7 @@ from typing import (
 
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes as Web3HexBytes
+from rotkehlchen.errors.misc import InputError
 
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -595,6 +596,19 @@ class Location(DBEnumMixIn):
 
 EVM_LOCATIONS_TYPE_ = Literal[Location.ETHEREUM, Location.OPTIMISM]
 EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE_, ...] = typing.get_args(EVM_LOCATIONS_TYPE_)
+
+
+class LocationDetails(NamedTuple):
+    icon: Optional[str] = None
+    image: Optional[str] = None
+
+    def serialize(self) -> dict[str, str]:
+        if self.icon is not None:
+            return {'icon': self.icon}
+        if self.image is not None:
+            return {'image': self.image}
+
+        raise InputError('Location details does not have either icon or image')
 
 
 class AssetMovementCategory(DBEnumMixIn):
