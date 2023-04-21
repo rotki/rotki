@@ -1352,7 +1352,6 @@
     "deposits": "Deposits",
     "description": "Description",
     "details": "Details",
-    "event": "Event",
     "events": "Events",
     "here": "here",
     "ignored_in_accounting": "Ignored in Accounting",
@@ -2467,15 +2466,11 @@
       "type": "filter by the type of the staking events"
     },
     "refresh_tooltip": "Refresh your Kraken staking events",
-    "titles": "Kraken Staking Events",
     "types": {
       "receive_staked_asset": "receive staked asset",
       "stake_asset": "stake asset",
       "staking_reward": "staking reward",
       "unstake_asset": "unstake asset"
-    },
-    "upgrade": {
-      "label": "Staking events"
     }
   },
   "kraken_staking_overview": {

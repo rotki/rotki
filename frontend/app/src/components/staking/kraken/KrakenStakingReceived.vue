@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { type Balance } from '@rotki/common';
-import { type PropType } from 'vue';
 import { type ReceivedAmount } from '@/types/staking';
 
-defineProps({
-  received: {
-    required: true,
-    type: Array as PropType<ReceivedAmount[]>
+withDefaults(
+  defineProps<{
+    received: ReceivedAmount[];
+    loading?: boolean;
+  }>(),
+  {
+    loading: false
   }
-});
+);
 
 const { prices } = storeToRefs(useBalancePricesStore());
 const current = ref(true);
@@ -29,7 +31,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <card full-height>
+  <card full-height :loading="loading">
     <template #title>{{ t('kraken_staking_received.title') }}</template>
     <template #details>
       <v-btn-toggle v-model="current" dense mandatory>

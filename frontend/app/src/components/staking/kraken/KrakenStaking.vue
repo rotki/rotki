@@ -2,13 +2,9 @@
 import Fragment from '@/components/helper/Fragment';
 import { Section } from '@/types/status';
 
-const store = useKrakenStakingStore();
-const { load, updatePagination } = store;
-const { events } = toRefs(store);
+const { events } = toRefs(useKrakenStakingStore());
 const { isLoading } = useStatusStore();
 const loading = isLoading(Section.STAKING_KRAKEN);
-
-const refresh = () => load(true);
 </script>
 
 <template>
@@ -18,18 +14,16 @@ const refresh = () => load(true);
         <kraken-staking-overview
           :total-usd="events.totalUsdValue"
           :earned="events.received"
+          :loading="loading"
         />
       </v-col>
       <v-col>
-        <kraken-staking-received :received="events.received" />
+        <kraken-staking-received
+          :received="events.received"
+          :loading="loading"
+        />
       </v-col>
     </v-row>
-    <kraken-staking-events
-      class="mt-4"
-      :events="events"
-      :loading="loading"
-      @refresh.capture="refresh"
-      @update:pagination="updatePagination"
-    />
+    <history-events-view use-external-account-filter location="kraken" />
   </fragment>
 </template>
