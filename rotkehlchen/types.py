@@ -829,3 +829,10 @@ DecoderEventMappingType = dict[
         dict['HistoryEventSubType', 'EventCategory'],
     ],
 ]
+
+
+class HistoryEventQueryType(SerializableEnumMixin):
+    """Locations to """
+    ETH_WITHDRAWALS = auto()
+    BLOCK_PRODUCTIONS = auto()
+    EXCHANGES = auto()

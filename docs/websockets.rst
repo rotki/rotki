@@ -201,3 +201,43 @@ Having API keys for some services (such as etherscan) is crucial for rotki to wo
 
 - ``service``: Service for which an API key is needed.
 - ``location``: For services like etherscan that require different API keys for different locations this is the location for which the API key is needed. If a service does not require a location then this key will be missing.
+
+
+Query new history events
+=========================
+
+In addition to history from evm transactions we need to query events from exchanges that support this kind of events. The backend will emit a ws message as the following when a query start for such exchange.
+
+::
+
+    {
+        "type": "querying_events_status",
+        "data": {
+            "status": "querying_events_started",
+            "location": "kraken",
+            "name": "My kraken exchange"
+        }
+    }
+
+
+- ``status``: Can be either `querying_events_started`, `querying_events_finished`, `querying_events_status_update`. Each pair of events is triggered per exchange instance.
+- ``location``: Exchange location triggering the event.
+- ``name``: Name of the exchange instance that is being queried.
+
+Finally the backend provides more granular information to know what interval of time is getting queried.
+
+::
+
+    {
+        "type": "querying_events_status",
+        "data": {
+            "status": "history_event_status",
+            "location": "kraken",
+            "name": "My kraken exchange",
+            'period': [0, 1682100570]
+        }
+    }
+
+- ``location``: Exchange location triggering the event.
+- ``name``: Name of the exchange instance that is being queried.
+- ``period``: Time range that is being queried.

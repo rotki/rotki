@@ -277,3 +277,7 @@ class ExchangeManager():
         if is_connected:
             return self.database.get_binance_pairs(name, location)
         return []
+
+    def query_history_events(self) -> None:
+        for exchange in self.iterate_exchanges():
+            exchange.query_history_events()

@@ -244,6 +244,10 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             'query_online_income_loss_expense should only be implemented by subclasses',
         )
 
+    def query_history_events(self) -> None:
+        """Query and store in the database history events from the current exchange instance"""
+        return None
+
     @protect_with_lock()
     def query_trade_history(
             self,

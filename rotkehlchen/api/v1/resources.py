@@ -203,6 +203,7 @@ from rotkehlchen.types import (
     ExternalServiceApiCredentials,
     Fee,
     HexColorCode,
+    HistoryEventQueryType,
     ListOfBlockchainAddresses,
     Location,
     ModuleName,
@@ -1160,8 +1161,11 @@ class EventsOnlineQueryResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
-    def post(self, name: Literal['eth_withdrawals', 'block_productions']) -> Response:
-        return self.rest_api.query_online_events(name=name)
+    def post(self, async_query: bool, query_type: HistoryEventQueryType) -> Response:
+        return self.rest_api.query_online_events(
+            async_query=async_query,
+            query_type=query_type,
+        )
 
 
 class HistoryEventResource(BaseMethodView):
