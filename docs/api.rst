@@ -5093,6 +5093,50 @@ Dealing with History Events
    :statuscode 409: No user is logged in or one of the identifiers to delete did not correspond to an event in the DB or one of the identifiers was for the last event in the corresponding transaction hash.
    :statuscode 500: Internal rotki error
 
+
+Querying online events
+============================================
+
+.. http:post:: /api/(version)/history/events/query
+
+   Doing a POST on this endpoint will query latest online events for the given event type and save them in the DB
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/history/events/pull HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "async_query": true,
+          "name": "eth_withdrawals"
+      }
+
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :reqjson string name: The name of the type of events to query for. Valid values are: ``"eth_withdrawals"``, ``"block_productions"``
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/zip
+
+        {
+            "result": True,
+            "message": ""
+        }
+
+    :resjson bool result: A boolean for success or failure
+    :resjson str message: Error message if any errors occurred.
+    :statuscode 200: Events were queried succesfully
+    :statuscode 400: Provided JSON is in some way malformed.
+    :statuscode 409: Module for the given events is not active.
+    :statuscode 500: Internal rotki error.
+
 Querying messages to show to the user
 =====================================
 

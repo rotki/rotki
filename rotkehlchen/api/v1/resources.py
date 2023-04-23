@@ -68,6 +68,7 @@ from rotkehlchen.api.v1.schemas import (
     Eth2ValidatorPatchSchema,
     Eth2ValidatorPutSchema,
     EventDetailsQuerySchema,
+    EventsOnlineQuerySchema,
     EvmAccountsPutSchema,
     EvmEventSchema,
     EvmPendingTransactionDecodingSchema,
@@ -1150,6 +1151,16 @@ class LedgerActionsResource(BaseMethodView):
     @use_kwargs(delete_schema, location='json')
     def delete(self, identifiers: list[int]) -> Response:
         return self.rest_api.delete_ledger_actions(identifiers=identifiers)
+
+
+class EventsOnlineQueryResource(BaseMethodView):
+
+    post_schema = EventsOnlineQuerySchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(self, name: Literal['eth_withdrawals', 'block_productions']) -> Response:
+        return self.rest_api.query_online_events(name=name)
 
 
 class HistoryEventResource(BaseMethodView):

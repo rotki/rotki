@@ -44,11 +44,9 @@ class DBEth2():
             SELECT DISTINCT V2.validator_index, 0 FROM eth2_validators V2 WHERE
             V2.validator_index NOT IN (SELECT validator_index FROM eth_staking_events_info)
         """  # noqa: E501
-        cursor = self.db.conn.cursor()
-        result = cursor.execute(
-            query_str, (up_to_tsms, WITHDRAWALS_RECHECK_PERIOD),
-        )
-        return result.fetchall()
+        with self.db.conn.read_ctx() as cursor:
+            result = cursor.execute(query_str, (up_to_tsms, WITHDRAWALS_RECHECK_PERIOD)).fetchall()
+        return result
 
     def get_validators_to_query_for_stats(self, up_to_ts: Timestamp) -> list[tuple[int, Timestamp]]:  # noqa: E501
         """Gets a list of validators that need to be queried for new daily stats
@@ -66,15 +64,15 @@ class DBEth2():
             SELECT DISTINCT V2.validator_index, 0 FROM eth2_validators V2 WHERE
             V2.validator_index NOT IN (SELECT validator_index FROM eth2_daily_staking_details)
         """  # noqa: E501
-        cursor = self.db.conn.cursor()
-        result = cursor.execute(
-            query_str,
-            # 2 days since stats page only appears once day is over. So if today is
-            # 27/10 19:46 the last full day it has is 26/10 00:00, which is more than a day
-            # but less than 2
-            (up_to_ts, DAY_IN_SECONDS * 2 + 1),
-        )
-        return result.fetchall()
+        with self.db.conn.read_ctx() as cursor:
+            result = cursor.execute(
+                query_str,
+                # 2 days since stats page only appears once day is over. So if today is
+                # 27/10 19:46 the last full day it has is 26/10 00:00, which is more than a day
+                # but less than 2
+                (up_to_ts, DAY_IN_SECONDS * 2 + 1),
+            ).fetchall()
+        return result
 
     def add_validator_daily_stats(self, stats: list[ValidatorDailyStats]) -> None:
         """Adds given daily stats for validator in the DB. If an entry exists it's skipped"""

@@ -333,6 +333,12 @@ class SingleEVMTransactionDecodingSchema(Schema):
             )
 
 
+class EventsOnlineQuerySchema(AsyncQueryArgumentSchema):
+    name = fields.String(
+        validate=webargs.validate.OneOf(choices=('eth_withdrawals', 'block_productions')),
+    )
+
+
 class EvmTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
     data = NonEmptyList(fields.Nested(SingleEVMTransactionDecodingSchema), required=True)
 

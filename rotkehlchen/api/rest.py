@@ -3525,6 +3525,23 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
+    def query_online_events(
+            self,
+            name: Literal['eth_withdrawals', 'block_productions'],
+    ) -> Response:
+        """Queries the specified event type for any new events and saves them in the DB"""
+        eth2 = self.rotkehlchen.chains_aggregator.get_module('eth2')
+        if eth2 is None:
+            return api_response(wrap_in_fail_result('eth2 module is not active'), status_code=HTTPStatus.CONFLICT)  # noqa: E501
+        if name == 'eth_withdrawals':
+            eth2.query_services_for_validator_withdrawals(to_ts=ts_now())
+        else:  # block production
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                indices = cursor.execute('SELECT validator_index FROM eth2_validators').fetchall()
+            eth2.beaconchain.get_and_store_produced_blocks(indices)
+
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
     def get_history_events(
             self,
             filter_query: HistoryBaseEntryFilterQuery,
