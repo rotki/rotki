@@ -161,8 +161,8 @@ def test_nft_ids_are_unique(rotkehlchen_api_server):
     assert len(all_ids) == len(set_of_ids)
 
 
-@requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
-@pytest.mark.vcr()
+@requires_env([TestEnvironment.STANDARD, TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC4, TEST_ACC5, TEST_ACC6]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts', 'uniswap']])
