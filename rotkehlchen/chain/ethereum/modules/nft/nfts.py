@@ -209,7 +209,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
         with self.db.conn.read_ctx() as cursor:
             accounts = self.db.get_blockchain_accounts(cursor=cursor)
         # Be sure that the only addresses queried already exist in the database. Fix for #4456
-        queried_addresses = list(set(accounts.eth) & set(addresses))
+        queried_addresses = sorted(set(accounts.eth) & set(addresses))  # Sorting for consistency in tests  # noqa: E501
         nft_results, _ = self._get_all_nft_data(queried_addresses, ignore_cache=True)
         db_data: list[NFT_DB_TUPLE] = []
         # get uniswap v3 lp balances and update nfts that are LPs with their worth.
