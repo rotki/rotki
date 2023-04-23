@@ -26,7 +26,7 @@ from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.eth2 import DBEth2
-from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
+from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address
@@ -707,12 +707,31 @@ def test_deposits_pubkey_re(eth2: 'Eth2', database):
     assert result[pubkey2] == ADDR2
 
 
-def test_scrape_validator_withdrawals(function_scope_messages_aggregator):
-    with patch(
-            'rotkehlchen.chain.ethereum.modules.eth2.utils.BEACONCHAIN_ROOT_URL',
-            new='https://goerli.beaconcha.in',
-    ):
-        scrape_validator_withdrawals(270410, function_scope_messages_aggregator)
+def test_scrape_validator_withdrawals():
+    """Simple test for withdrawal scraping.
+    Uses goerli since mainnet has few withdrawals for pagination.
+
+    TODO: Switch to mainnet later(?) and add VCR
+    """
+    goerli_url = patch(
+        'rotkehlchen.chain.ethereum.modules.eth2.utils.BEACONCHAIN_ROOT_URL',
+        new='https://goerli.beaconcha.in',
+    )
+    goerli_start = patch(
+        'rotkehlchen.chain.ethereum.modules.eth2.utils.ETH2_GENESIS_TIMESTAMP',
+        new=1616508000,
+    )
+
+    last_known_timestamp = ts_now() - 20 * DAY_IN_SECONDS  # so we have ~2-3 pages
+    with goerli_url, goerli_start:
+        withdrawal_data = scrape_validator_withdrawals(270410, last_known_timestamp)
+
+    assert len(withdrawal_data) >= 20, 'should have multiple pages'
+    for entry in withdrawal_data:
+        assert isinstance(entry[0], int)
+        assert entry[0] > last_known_timestamp
+        assert entry[1] == '0xBC86717BaD3F8CcF86d2882a6bC351C94580A994'
+        assert isinstance(entry[2], FVal)
 
 
 def test_get_validators_to_query_for_withdrawals(database):
@@ -723,7 +742,31 @@ def test_get_validators_to_query_for_withdrawals(database):
     address2 = make_evm_address()
     assert db.get_validators_to_query_for_withdrawals(now_ms) == []
 
-    with database.user_write() as write_cursor:
+    with database.user_write() as write_cursor:  # first add some validators
+        db.add_validators(write_cursor, [
+            Eth2Validator(
+                index=1,
+                public_key=Eth2PubKey('0xf001'),
+                ownership_proportion=ONE,
+            ), Eth2Validator(
+                index=2,
+                public_key=Eth2PubKey('0xf002'),
+                ownership_proportion=ONE,
+            ), Eth2Validator(
+                index=3,
+                public_key=Eth2PubKey('0xf003'),
+                ownership_proportion=ONE,
+            ), Eth2Validator(
+                index=42,
+                public_key=Eth2PubKey('0xf0042'),
+                ownership_proportion=ONE,
+            ),
+        ])
+
+    # now check that all need to be queried since we have no withdrawals
+    assert db.get_validators_to_query_for_withdrawals(now_ms) == [(1, 0), (2, 0), (3, 0), (42, 0)]
+
+    with database.user_write() as write_cursor:  # now add some withdrawals in the DB
         withdrawal1 = EthWithdrawalEvent(
             validator_index=1,
             timestamp=TimestampMS(1),
@@ -765,7 +808,7 @@ def test_get_validators_to_query_for_withdrawals(database):
         )
         exit2.identifier = dbevents.add_history_event(write_cursor, exit2)
 
-        # also add some other events to make sure table populated with non-withdrawals does not
+        # add some other events to make sure table populated with non-withdrawals doesn't mess up
         dbevents.add_history_event(write_cursor, HistoryEvent(
             event_identifier=b'id1',
             sequence_index=0,
@@ -789,3 +832,87 @@ def test_get_validators_to_query_for_withdrawals(database):
 
     result = db.get_validators_to_query_for_withdrawals(now_ms)
     assert result == [(1, 1), (2, 20), (3, 30)]
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.freeze_time('2023-04-23 00:52:55 GMT')
+def test_withdrawals(eth2: 'Eth2', database):
+    """Test that when withdrawals are queried, they are properly saved in the DB"""
+    dbevents = DBHistoryEvents(database)
+    dbeth2 = DBEth2(database)
+    with database.user_write() as write_cursor:
+        dbeth2.add_validators(write_cursor, [
+            Eth2Validator(  # this has exited
+                index=7287,
+                public_key=Eth2PubKey('0xb7763831fdf87f3ee728e60a579cf2be889f6cc89a4878c8651a2a267377cf7e9406b4bcd8f664b88a3e20c368155bf6'),  # noqa: E501
+                ownership_proportion=ONE,
+            ), Eth2Validator(  # this has exited
+                index=7288,
+                public_key=Eth2PubKey('0x92db89739c6a3529facf858223b8872bbcf150c4bf3b30eb21ab8b09d4ea2f4d7b07b949a27d9766c70807d3b18ad934'),  # noqa: E501
+                ownership_proportion=ONE,
+            ), Eth2Validator(  # this is active and has withdrawals
+                index=295601,
+                public_key=Eth2PubKey('0xab82f22254143786651a1600ce747f22f79bb3c3b016f7a2564e104ffb16af409fc3a8bb48b0ba012454a79c3460f5ae'),  # noqa: E501
+                ownership_proportion=ONE,
+            ), Eth2Validator(  # this is active and has withdrawals
+                index=295603,
+                public_key=Eth2PubKey('0x97777229490da343d0b7e661eda342fe1083e35a5c4076da76297ccac08cea6e2c8520fad2afdd4e43d73f0e620cc155'),  # noqa: E501
+                ownership_proportion=ONE,
+            ),
+        ])
+
+    to_ts = ts_now()
+    eth2.query_services_for_validator_withdrawals(to_ts=to_ts)
+
+    with database.conn.read_ctx() as cursor:
+        events = dbevents.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True, False)  # noqa: E501
+        assert events == [EthWithdrawalEvent(
+            validator_index=295601,
+            timestamp=TimestampMS(1681392599000),
+            balance=Balance(amount=FVal('1.631508097')),
+            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
+            is_exit=False,
+        ), EthWithdrawalEvent(
+            validator_index=295603,
+            timestamp=TimestampMS(1681392599000),
+            balance=Balance(amount=FVal('1.581794994')),
+            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
+            is_exit=False,
+        ), EthWithdrawalEvent(
+            validator_index=7287,
+            timestamp=TimestampMS(1681567319000),
+            balance=Balance(amount=FVal('36.411594425')),
+            withdrawal_address=string_to_evm_address('0x4231B2f83CB7C833Db84ceC0cEAAa9959f051374'),
+            is_exit=True,
+        ), EthWithdrawalEvent(
+            validator_index=7288,
+            timestamp=TimestampMS(1681567319000),
+            balance=Balance(amount=FVal('36.422259087')),
+            withdrawal_address=string_to_evm_address('0x4231B2f83CB7C833Db84ceC0cEAAa9959f051374'),
+            is_exit=True,
+        ), EthWithdrawalEvent(
+            validator_index=295601,
+            timestamp=TimestampMS(1681736279000),
+            balance=Balance(amount=FVal('0.010870946')),
+            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
+            is_exit=False,
+        ), EthWithdrawalEvent(
+            validator_index=295603,
+            timestamp=TimestampMS(1681736279000),
+            balance=Balance(amount=FVal('0.010692337')),
+            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
+            is_exit=False,
+        ), EthWithdrawalEvent(
+            validator_index=295601,
+            timestamp=TimestampMS(1682110295000),
+            balance=Balance(amount=FVal('0.011993962')),
+            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
+            is_exit=False,
+        ), EthWithdrawalEvent(
+            validator_index=295603,
+            timestamp=TimestampMS(1682110295000),
+            balance=Balance(amount=FVal('0.011965595')),
+            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
+            is_exit=False,
+        )]

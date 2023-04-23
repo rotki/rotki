@@ -10,6 +10,10 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.constants import LAST_EVM_ACCOUNTS_DETECT_KEY
+from rotkehlchen.chain.ethereum.modules.eth2.constants import (
+    LAST_PRODUCED_BLOCKS_QUERY_TS,
+    LAST_WITHDRAWALS_QUERY_TS,
+)
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
 )
@@ -20,6 +24,7 @@ from rotkehlchen.constants.timing import (
     DATA_UPDATES_REFRESH,
     DAY_IN_SECONDS,
     EVM_ACCOUNTS_DETECTION_REFRESH,
+    HOUR_IN_SECONDS,
 )
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
@@ -35,7 +40,6 @@ from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
-from rotkehlchen.externalapis.beaconchain import LAST_PRODUCED_BLOCKS_QUERY_TS
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.price import PriceHistorian
@@ -158,6 +162,7 @@ class TaskManager():
             self._maybe_detect_evm_accounts,
             self._maybe_update_ilk_cache,
             self._maybe_query_produced_blocks,
+            self._maybe_query_withdrawals,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -602,6 +607,28 @@ class TaskManager():
             exception_is_error=True,
             method=self.chains_aggregator.beaconchain.get_and_store_produced_blocks,
             indices_or_pubkeys=indices,
+        )]
+
+    def _maybe_query_withdrawals(self) -> Optional[list[gevent.Greenlet]]:
+        """Schedules the eth withdrawal query if enough time has passed"""
+        eth2 = self.chains_aggregator.get_module('eth2')
+        if eth2 is None:
+            return None
+
+        now = ts_now()
+        with self.database.conn.read_ctx() as cursor:
+            result = self.database.get_used_query_range(cursor, LAST_WITHDRAWALS_QUERY_TS)
+            if result is not None and now - result[1] <= HOUR_IN_SECONDS * 3:
+                return None
+
+        task_name = 'Periodically query ethereum withdrawals'
+        log.debug(f'Scheduling task to {task_name}')
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name=task_name,
+            exception_is_error=True,
+            method=eth2.query_services_for_validator_withdrawals,
+            to_ts=now,
         )]
 
     def _maybe_update_curve_pools(self) -> Optional[list[gevent.Greenlet]]:
