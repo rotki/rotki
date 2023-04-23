@@ -1517,10 +1517,11 @@ def test_fresh_db_adds_version(user_data_dir, sql_vm_instructions_cb):
     assert int(query[0][0]) == ROTKEHLCHEN_DB_VERSION
 
 
-def test_db_schema_sanity_check(database):
+def test_db_schema_sanity_check(database, caplog):
     connection = database.conn
     # by default should run without problems
     connection.schema_sanity_check()
+    assert 'Your user database has the following unexpected tables' not in caplog.text, 'Found unexpected table in clean DB'  # noqa: E501
     with suppress(ValueError), database.user_write() as cursor:
         cursor.execute('DROP TABLE rpc_nodes')
         cursor.execute('CREATE TABLE rpc_nodes(column1 INTEGER)')
@@ -1534,6 +1535,7 @@ def test_db_schema_sanity_check(database):
     with database.user_write() as cursor:
         cursor.execute('CREATE TABLE new_table(some_column integer)')
         connection.schema_sanity_check()
+        assert "Your user database has the following unexpected tables: {'new_table'}" in caplog.text  # noqa: E501
 
     with database.user_write() as cursor:
         cursor.execute('DROP TABLE user_notes;')
