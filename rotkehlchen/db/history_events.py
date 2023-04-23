@@ -439,9 +439,9 @@ class DBHistoryEvents():
             type_idx = 1
 
         if has_premium is True:
-            base_query = f'{base_prefix} {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {ETH_WITHDRAWAL_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
+            base_query = f'{base_prefix} {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_WITHDRAWAL_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
         else:
-            base_query = f'{base_prefix} * FROM (SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {ETH_WITHDRAWAL_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
+            base_query = f'{base_prefix} * FROM (SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_WITHDRAWAL_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
             bindings.insert(0, FREE_HISTORY_EVENTS_LIMIT)
 
         cursor.execute(base_query + prepared_query, bindings)
@@ -455,7 +455,13 @@ class DBHistoryEvents():
                     data = entry[data_start_idx:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1] + entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + 1]  # noqa: E501
                     deserialized_event = EvmEvent.deserialize_from_db(data)
                 elif HistoryBaseEntryType(entry[type_idx]) == HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT:  # noqa: E501
-                    data = entry[data_start_idx:HISTORY_BASE_ENTRY_LENGTH + 1] + entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + ETH_WITHDRAWAL_FIELD_LENGTH + 1]  # noqa: E501
+                    data = (
+                        entry[data_start_idx:data_start_idx + 1] +
+                        entry[data_start_idx + 3:data_start_idx + 4] +
+                        entry[data_start_idx + 5:data_start_idx + 6] +
+                        entry[data_start_idx + 7:data_start_idx + 9] +
+                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + ETH_WITHDRAWAL_FIELD_LENGTH + 1]  # noqa: E501
+                    )
                     deserialized_event = EthWithdrawalEvent.deserialize_from_db(data)
                 else:
                     data = entry[data_start_idx:HISTORY_BASE_ENTRY_LENGTH + 1]

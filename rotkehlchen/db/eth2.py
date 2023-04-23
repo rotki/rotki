@@ -36,9 +36,13 @@ class DBEth2():
         last queried timestamp for daily stats of that validator.
         """
         query_str = """
-            SELECT S.validator_index, E.timestamp FROM history_events E LEFT JOIN
-            eth_staking_events_info S ON
+            SELECT V.validator_index, E.timestamp FROM eth2_validators V
+            LEFT JOIN eth_staking_events_info S ON S.validator_index = V.validator_index
+            LEFT JOIN history_events E ON
             E.identifier = S.identifier WHERE ? - (SELECT MAX(timestamp) FROM history_events WHERE identifier=S.identifier) > ? AND S.validator_index IS NOT NULL
+            UNION
+            SELECT DISTINCT V2.validator_index, 0 FROM eth2_validators V2 WHERE
+            V2.validator_index NOT IN (SELECT validator_index FROM eth_staking_events_info)
         """  # noqa: E501
         cursor = self.db.conn.cursor()
         result = cursor.execute(

@@ -59,10 +59,10 @@ class EthWithdrawalEvent(HistoryBaseEntry):
         )
 
     def __repr__(self) -> str:
-        return f'WithdrawalEvent({self.validator_index=}, {self.timestamp=})'
+        return f'WithdrawalEvent({self.validator_index=}, {self.timestamp=}, {self.is_exit=})'
 
     def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE, tuple[int, int]]:
-        base_tuple = self._serialize_base_tuple_for_db(HistoryBaseEntryType.EVM_EVENT)
+        base_tuple = self._serialize_base_tuple_for_db(HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT)
         return (base_tuple, (self.validator_index, int(self.is_exit)))
 
     def serialize(self) -> dict[str, Any]:
@@ -79,7 +79,7 @@ class EthWithdrawalEvent(HistoryBaseEntry):
             balance=Balance(amount, usd_value),
             withdrawal_address=entry[2],  # type: ignore  # exists for these events
             validator_index=entry[5],
-            is_exit=entry[6],
+            is_exit=bool(entry[6]),
         )
 
     @property

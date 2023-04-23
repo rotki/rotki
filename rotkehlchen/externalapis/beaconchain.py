@@ -9,6 +9,7 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.chain.ethereum.modules.eth2.constants import LAST_PRODUCED_BLOCKS_QUERY_TS
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID, ValidatorPerformance
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
@@ -29,7 +30,6 @@ if TYPE_CHECKING:
 
 
 MAX_WAIT_SECS = 60
-LAST_PRODUCED_BLOCKS_QUERY_TS = 'last_produced_blocks_query_ts'
 BEACONCHAIN_READ_TIMEOUT = 75
 BEACONCHAIN_TIMEOUT_TUPLE = (DEFAULT_CONNECT_TIMEOUT, BEACONCHAIN_READ_TIMEOUT)
 BEACONCHAIN_ROOT_URL = 'https://beaconcha.in'
@@ -185,7 +185,7 @@ class BeaconChain(ExternalServiceWithApiKey):
             self,
             indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
             module: Literal['validator'],
-            endpoint: Literal['performance'],
+            endpoint: Optional[Literal['performance']],
     ) -> list[dict[str, Any]]:
         chunks = _calculate_query_chunks(indices_or_pubkeys)
         data: list[dict[str, Any]] = []

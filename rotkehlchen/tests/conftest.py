@@ -173,8 +173,10 @@ def get_cassette_dir(request: pytest.FixtureRequest) -> Path:
 
 
 def is_etherscan_rate_limited(response: dict[str, Any]) -> bool:
+    """Checks if etherscan is rate limited.
+    Suppression is for errors parsing when response does not match etherscan"""
     result = False
-    with suppress(JSONDecodeError, KeyError, UnicodeDecodeError):
+    with suppress(JSONDecodeError, KeyError, UnicodeDecodeError, ValueError):
         body = jsonloads_dict(response['body']['string'])
         result = int(body['status']) == 0 and 'rate limit reached' in body['result']
     return result
@@ -289,7 +291,8 @@ def fixture_vcr_base_dir() -> Path:
 
     # see if the branch is ahead of origin, meaning local is being worked on
     compare_result = os.popen(f'cd "{root_dir}" && git rev-list --left-right --count {current_branch}...origin/{current_branch}').read()  # noqa: E501
-    commits_ahead = int(compare_result.split()[0])
+    result_split = compare_result.split()
+    commits_ahead = 0 if len(result_split) == 0 else int(result_split[0])
     if commits_ahead > 0:
         log.debug(f'VCR setup: The local test-caching branch {current_branch} is {commits_ahead} commits ahead of the remote. Not modifying it.')  # noqa: E501
         return base_dir

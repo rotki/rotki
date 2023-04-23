@@ -37,6 +37,11 @@ EPOCH_DURATION_SECS = 384
 EPOCH_PARSE_REGEX = re.compile(r'<a href="/epoch/(.*?)">.*')
 ADDRESS_PARSE_REGEX = re.compile(r'<a href="/address/(.*?)".*')
 ETH_PARSE_REGEX = re.compile(r'.*title="(.*?)">.*')
+ETH2_GENESIS_TIMESTAMP = 1606824023
+
+
+def epoch_to_timestamp(epoch: int) -> Timestamp:
+    return Timestamp(ETH2_GENESIS_TIMESTAMP + epoch * EPOCH_DURATION_SECS)
 
 
 class ValidatorBalance(NamedTuple):
@@ -105,7 +110,8 @@ def scrape_validator_withdrawals(
 ) -> list[tuple[Timestamp, ChecksumEvmAddress, FVal]]:
     """Kind of "scrapes" the website of beaconcha.in and parses withdrawals data.
 
-    Will stop querying when a timestamp les
+    Will stop querying when a timestamp less than or equal to the last known
+    timestamp is found.
 
     This should be replaced by the withdrawals endpoint.
     https://beaconcha.in/api/v1/docs/index.html#/Validator/get_api_v1_validator__indexOrPubkey__withdrawals
@@ -125,7 +131,7 @@ def scrape_validator_withdrawals(
     now = ts_now()
     start = 0
     page_length = 10
-    first_epoch = 1616508000  # goerli first epoch
+    stop_iterating = False
 
     while True:
         url = f'{BEACONCHAIN_ROOT_URL}/validator/{validator_index}/withdrawals?draw=1&columns%5B0%5D%5Bdata%5D=0&columns%5B0%5D%5Bname%5D=&columns%5B0%5D%5Bsearchable%5D=true&columns%5B0%5D%5Borderable%5D=true&columns%5B0%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B0%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B1%5D%5Bdata%5D=1&columns%5B1%5D%5Bname%5D=&columns%5B1%5D%5Bsearchable%5D=true&columns%5B1%5D%5Borderable%5D=true&columns%5B1%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B1%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B2%5D%5Bdata%5D=2&columns%5B2%5D%5Bname%5D=&columns%5B2%5D%5Bsearchable%5D=true&columns%5B2%5D%5Borderable%5D=true&columns%5B2%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B2%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B3%5D%5Bdata%5D=3&columns%5B3%5D%5Bname%5D=&columns%5B3%5D%5Bsearchable%5D=true&columns%5B3%5D%5Borderable%5D=true&columns%5B3%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B3%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B4%5D%5Bdata%5D=4&columns%5B4%5D%5Bname%5D=&columns%5B4%5D%5Bsearchable%5D=true&columns%5B4%5D%5Borderable%5D=true&columns%5B4%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B4%5D%5Bsearch%5D%5Bregex%5D=false&order%5B0%5D%5Bcolumn%5D=0&order%5B0%5D%5Bdir%5D=desc&start={start}&length={page_length}&search%5Bvalue%5D=&search%5Bregex%5D=false&_={now}'  # noqa: E501
@@ -145,8 +151,9 @@ def scrape_validator_withdrawals(
                 log.error(f'Failed to match epoch regex for {entry[0]}')
                 raise RemoteError('Failed to parse withdrawals response from beaconchain. Check logs')  # noqa: E501
             epoch = deserialize_int_from_str(groups[0], location='beaconchain epoch')
-            timestamp = Timestamp(first_epoch + epoch * EPOCH_DURATION_SECS)
+            timestamp = epoch_to_timestamp(epoch)
             if timestamp <= last_known_timestamp:
+                stop_iterating = True
                 break  # we already know about this withdrawal
 
             address_match = ADDRESS_PARSE_REGEX.match(entry[3])
@@ -171,7 +178,7 @@ def scrape_validator_withdrawals(
 
             withdrawals.append((timestamp, address, eth_amount))
 
-        if len(withdrawals) >= result['recordsTotal']:
+        if stop_iterating or len(withdrawals) >= result['recordsTotal']:
             break  # reached the end
         start += page_length
 
