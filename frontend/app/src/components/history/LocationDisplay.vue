@@ -1,25 +1,32 @@
 <script setup lang="ts">
-import { type ComputedRef, type PropType } from 'vue';
 import { Routes } from '@/router/routes';
 import {
   type TradeLocation,
   type TradeLocationData
 } from '@/types/history/trade/location';
 
-const props = defineProps({
-  identifier: { required: true, type: String as PropType<TradeLocation> },
-  icon: { required: false, type: Boolean, default: false },
-  size: { required: false, type: String, default: '24px' },
-  opensDetails: { required: false, type: Boolean, default: true },
-  detailPath: { required: false, type: String, default: '' }
-});
+const props = withDefaults(
+  defineProps<{
+    identifier: TradeLocation;
+    icon?: boolean;
+    size?: string;
+    openDetails?: boolean;
+    detailPath?: string;
+  }>(),
+  {
+    icon: false,
+    size: '24px',
+    openDetails: true,
+    detailPath: ''
+  }
+);
 
 const { identifier, detailPath } = toRefs(props);
 
-const { getLocation } = useLocationInfo();
+const { getLocation } = useLocations();
 
 const location: ComputedRef<TradeLocationData> = computed(() =>
-  getLocation(get(identifier))
+  getLocation(identifier)
 );
 
 const route = computed<{ path: string }>(() => {
@@ -39,7 +46,7 @@ const route = computed<{ path: string }>(() => {
 </script>
 
 <template>
-  <navigator-link :enabled="opensDetails" :to="route" component="div">
+  <navigator-link :enabled="openDetails" :to="route" component="div">
     <list-item
       v-bind="$attrs"
       class="my-0 text-center"

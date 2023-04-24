@@ -88,7 +88,7 @@ const toggleSync = async (exchange: Exchange) => {
   resetNonSyncingExchanges();
 };
 
-const { exchangeName } = useTradeLocations();
+const { exchangeName } = useLocations();
 
 const addExchange = () => {
   set(edit, false);

@@ -5,16 +5,15 @@ import { SUPPORTED_EXCHANGES } from '@/types/exchanges';
 export const TradeLocation = z.enum([
   ...SUPPORTED_EXCHANGES,
   ...SUPPORTED_TRADE_LOCATIONS,
-  'gitcoin'
+  'gitcoin',
+  'loopring'
 ]);
 export type TradeLocation = z.infer<typeof TradeLocation>;
 
 export interface TradeLocationData {
   readonly identifier: TradeLocation;
   readonly name: string;
-  readonly icon: string;
-  readonly imageIcon: boolean;
-  readonly component?: any;
-  readonly exchange: boolean;
-  readonly detailPath?: string;
+  readonly icon?: string | null;
+  readonly image?: string | null;
+  readonly detailPath?: string | null;
 }

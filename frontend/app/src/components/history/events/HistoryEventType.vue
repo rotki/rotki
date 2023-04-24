@@ -39,6 +39,7 @@ const imagePath = '/assets/images/protocols/';
                 <v-img
                   v-else-if="counterparty.image"
                   :src="`${imagePath}${counterparty.image}`"
+                  contain
                 />
 
                 <ens-avatar v-else :address="counterparty.label" />

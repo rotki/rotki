@@ -1171,6 +1171,13 @@
         "unknown": "Unknown",
         "withdraw": "Withdraw"
       }
+    },
+    "trade_location": {
+      "banks": "Banks",
+      "commodities": "Commodities",
+      "equities": "Equities",
+      "external": "External",
+      "real_estate": "Real Estate"
     }
   },
   "backend_settings": {
@@ -3931,13 +3938,6 @@
   },
   "trade_history": {
     "loading": "Please wait while your trades are getting loaded..."
-  },
-  "trade_location": {
-    "banks": "Banks",
-    "commodities": "Commodities",
-    "equities": "Equities",
-    "external": "External",
-    "real_estate": "Real Estate"
   },
   "transactions": {
     "actions": {

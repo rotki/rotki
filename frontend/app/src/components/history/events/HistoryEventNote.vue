@@ -2,20 +2,22 @@
 import { type BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     notes?: string;
     amount?: BigNumber | null;
     asset?: string;
     chain?: Blockchain;
     noTxHash?: boolean;
+    validatorIndex?: number | null;
   }>(),
   {
     notes: '',
     amount: null,
     asset: '',
     chain: Blockchain.ETH,
-    noTxHash: false
+    noTxHash: false,
+    validatorIndex: null
   }
 );
 
@@ -34,19 +36,24 @@ interface NoteFormat {
   amount?: BigNumber;
   asset?: string;
   url?: string;
+  chain?: Blockchain;
 }
 
-const formatNotes = (
-  notes: string,
-  amount: BigNumber | null,
-  assetId: string,
-  noTxHash: boolean
-): NoteFormat[] => {
+const {
+  notes,
+  amount,
+  asset: assetId,
+  noTxHash,
+  validatorIndex
+} = toRefs(props);
+
+const formatNotes: ComputedRef<NoteFormat[]> = computed(() => {
   const { assetSymbol } = useAssetInfoRetrieval();
 
-  const asset = get(assetSymbol(assetId));
+  const asset = get(assetSymbol(get(assetId)));
 
-  if (!notes) {
+  const notesVal = get(notes);
+  if (!notesVal) {
     return [];
   }
 
@@ -54,7 +61,7 @@ const formatNotes = (
   let skip = false;
 
   // label each word from notes whether it is an address or not
-  const words = notes.split(/\s/);
+  const words = notesVal.split(/\s/);
 
   words.forEach((word, index) => {
     if (skip) {
@@ -74,16 +81,28 @@ const formatNotes = (
       return;
     }
 
+    // Check if the word is ETH2 Validator Index
+    if (get(validatorIndex)?.toString() === word) {
+      formats.push({
+        type: NoteType.ADDRESS,
+        address: word,
+        chain: Blockchain.ETH2
+      });
+      return;
+    }
+
+    const amountVal = get(amount);
+
     const isAmount =
-      amount &&
+      amountVal &&
       !isNaN(Number.parseFloat(word)) &&
-      bigNumberify(word).eq(amount) &&
-      amount.gt(0) &&
+      bigNumberify(word).eq(amountVal) &&
+      amountVal.gt(0) &&
       index < words.length - 1 &&
       words[index + 1] === asset;
 
     if (isAmount) {
-      formats.push({ type: NoteType.AMOUNT, amount, asset: assetId });
+      formats.push({ type: NoteType.AMOUNT, amount: amountVal, asset });
       skip = true;
       return;
     }
@@ -126,13 +145,11 @@ const formatNotes = (
   });
 
   return formats;
-};
+});
 </script>
 <template>
   <div>
-    <template
-      v-for="(note, index) in formatNotes(notes, amount, asset, noTxHash)"
-    >
+    <template v-for="(note, index) in formatNotes">
       <span
         v-if="note.type === 'address' || note.type === 'tx'"
         :key="index"
@@ -146,7 +163,7 @@ const formatNotes = (
           }"
           :text="note.address"
           :tx="note.type === 'tx'"
-          :chain="chain"
+          :chain="note.chain ?? chain"
         />
       </span>
       <span v-else-if="note.type === 'amount'" :key="index">

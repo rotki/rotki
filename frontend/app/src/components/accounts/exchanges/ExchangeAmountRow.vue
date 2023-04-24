@@ -9,7 +9,7 @@ const props = defineProps({
 });
 
 const { exchange } = toRefs(props);
-const { exchangeName } = useTradeLocations();
+const { exchangeName } = useLocations();
 
 const name = computed<string>(() => {
   if (!get(exchange)) {

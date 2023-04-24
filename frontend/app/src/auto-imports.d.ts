@@ -448,7 +448,7 @@ declare global {
   const useLiquityApi: typeof import('./composables/api/defi/liquity')['useLiquityApi']
   const useLiquityStore: typeof import('./store/defi/liquity/index')['useLiquityStore']
   const useLocalStorage: typeof import('@vueuse/core')['useLocalStorage']
-  const useLocationInfo: typeof import('./composables/location')['useLocationInfo']
+  const useLocations: typeof import('./composables/locations')['useLocations']
   const useMagicKeys: typeof import('@vueuse/core')['useMagicKeys']
   const useMainStore: typeof import('./store/main')['useMainStore']
   const useMakerDaoApi: typeof import('./composables/api/defi/makerdao')['useMakerDaoApi']
@@ -588,7 +588,6 @@ declare global {
   const useTokenDetection: typeof import('./composables/balances/token-detection')['useTokenDetection']
   const useTooltip: typeof import('./composables/graphs')['useTooltip']
   const useTradeFilters: typeof import('./composables/filters/trades')['useTradeFilters']
-  const useTradeLocations: typeof import('./composables/history/trade-locations')['useTradeLocations']
   const useTrades: typeof import('./composables/history/trades/index')['useTrades']
   const useTradesApi: typeof import('./composables/api/history/trades')['useTradesApi']
   const useTransactionQueryStatus: typeof import('./composables/history/events/query-status')['useTransactionQueryStatus']
@@ -1092,7 +1091,7 @@ declare module 'vue' {
     readonly useLiquityApi: UnwrapRef<typeof import('./composables/api/defi/liquity')['useLiquityApi']>
     readonly useLiquityStore: UnwrapRef<typeof import('./store/defi/liquity/index')['useLiquityStore']>
     readonly useLocalStorage: UnwrapRef<typeof import('@vueuse/core')['useLocalStorage']>
-    readonly useLocationInfo: UnwrapRef<typeof import('./composables/location')['useLocationInfo']>
+    readonly useLocations: UnwrapRef<typeof import('./composables/locations')['useLocations']>
     readonly useMagicKeys: UnwrapRef<typeof import('@vueuse/core')['useMagicKeys']>
     readonly useMainStore: UnwrapRef<typeof import('./store/main')['useMainStore']>
     readonly useMakerDaoApi: UnwrapRef<typeof import('./composables/api/defi/makerdao')['useMakerDaoApi']>
@@ -1232,7 +1231,6 @@ declare module 'vue' {
     readonly useTokenDetection: UnwrapRef<typeof import('./composables/balances/token-detection')['useTokenDetection']>
     readonly useTooltip: UnwrapRef<typeof import('./composables/graphs')['useTooltip']>
     readonly useTradeFilters: UnwrapRef<typeof import('./composables/filters/trades')['useTradeFilters']>
-    readonly useTradeLocations: UnwrapRef<typeof import('./composables/history/trade-locations')['useTradeLocations']>
     readonly useTrades: UnwrapRef<typeof import('./composables/history/trades/index')['useTrades']>
     readonly useTradesApi: UnwrapRef<typeof import('./composables/api/history/trades')['useTradesApi']>
     readonly useTransactionQueryStatus: UnwrapRef<typeof import('./composables/history/events/query-status')['useTransactionQueryStatus']>

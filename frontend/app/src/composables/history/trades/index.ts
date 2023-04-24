@@ -17,7 +17,7 @@ import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 export const useTrades = () => {
   const { fetchAssociatedLocations } = useHistoryStore();
   const { connectedExchanges } = storeToRefs(useExchangesStore());
-  const { exchangeName } = useTradeLocations();
+  const { exchangeName } = useLocations();
   const { awaitTask } = useTaskStore();
   const { tc } = useI18n();
   const { notify } = useNotificationsStore();

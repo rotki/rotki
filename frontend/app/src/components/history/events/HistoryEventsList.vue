@@ -170,6 +170,7 @@ const isNoTxHash = (item: HistoryEventEntry) =>
                     :asset="item.asset"
                     :chain="getChain(item.location)"
                     :no-tx-hash="isNoTxHash(item)"
+                    :validator-index="item.validatorIndex"
                   />
                 </template>
                 <template #item.actions="{ item }">

@@ -43,7 +43,7 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { connectedExchanges } = storeToRefs(useExchangesStore());
 const { balances } = useAggregatedBalances();
 const { balancesByLocation } = useBalancesBreakdown();
-const { getLocation } = useLocationInfo();
+const { getLocation } = useLocations();
 const { assetSearch } = useAssetInfoApi();
 const { dark } = useTheme();
 

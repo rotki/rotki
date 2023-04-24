@@ -8,7 +8,7 @@ defineProps({
   amount: { required: true, type: BigNumber }
 });
 
-const { exchangeName } = useTradeLocations();
+const { exchangeName } = useLocations();
 </script>
 
 <template>

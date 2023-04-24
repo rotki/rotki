@@ -5,16 +5,16 @@ defineOptions({
   name: 'LocationBreakdown'
 });
 
-const props = defineProps({
-  identifier: { required: true, type: String }
-});
+const props = defineProps<{
+  identifier: string;
+}>();
 
 const { identifier } = toRefs(props);
 
-const { getLocation } = useLocationInfo();
+const { getLocation } = useLocations();
 
-const location = computed<TradeLocationData>(() =>
-  getLocation(get(identifier))
+const location: ComputedRef<TradeLocationData> = computed(() =>
+  getLocation(identifier)
 );
 </script>
 <template>
