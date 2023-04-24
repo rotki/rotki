@@ -87,7 +87,7 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
     timestamp = TimestampMS(1646375440000)
     expected_events = [
         EvmEvent(
-            event_identifier=EvmEvent.deserialize_event_identifier(
+            tx_hash=deserialize_evm_tx_hash(
                 '0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17',
             ),
             sequence_index=0,
@@ -104,7 +104,7 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=EvmEvent.deserialize_event_identifier(
+            tx_hash=deserialize_evm_tx_hash(
                 '0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17',
             ),
             sequence_index=298,
@@ -199,7 +199,7 @@ def test_gnosis_chain_bridge(database, ethereum_inquirer, eth_transactions):
     assert len(events) == 2
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=1646375440000,
             location=Location.ETHEREUM,
@@ -214,7 +214,7 @@ def test_gnosis_chain_bridge(database, ethereum_inquirer, eth_transactions):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=474,
             timestamp=1646375440000,
             location=Location.ETHEREUM,
@@ -293,7 +293,7 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
     assert len(events) == 2
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -308,7 +308,7 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=474,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,

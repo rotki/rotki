@@ -15,8 +15,8 @@ from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.factories import make_evm_address, make_random_bytes
-from rotkehlchen.types import Location, Price, Timestamp, make_evm_tx_hash
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.types import Location, Price, Timestamp
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 TIMESTAMP_1_SECS = Timestamp(1624395186)
@@ -56,12 +56,12 @@ MOCKED_PRICES = {
 
 }
 
-EVM_HASH = make_evm_tx_hash(make_random_bytes(32))
+EVM_HASH = make_evm_tx_hash()
 USER_ADDRESS = make_evm_address()
 
 DEPOSIT_ENTRIES = [
     EvmEvent(
-        event_identifier=EVM_HASH,
+        tx_hash=EVM_HASH,
         sequence_index=0,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,
@@ -73,7 +73,7 @@ DEPOSIT_ENTRIES = [
         notes='Burned 0.011180845456491718 ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
-        event_identifier=EVM_HASH,
+        tx_hash=EVM_HASH,
         sequence_index=76,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,
@@ -86,7 +86,7 @@ DEPOSIT_ENTRIES = [
         counterparty=CPT_CURVE,
         extra_data={'deposit_events_num': 4},
     ), EvmEvent(
-        event_identifier=EVM_HASH,
+        tx_hash=EVM_HASH,
         sequence_index=77,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,
@@ -98,7 +98,7 @@ DEPOSIT_ENTRIES = [
         notes='Deposit 10 DAI in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',
         counterparty=CPT_CURVE,
     ), EvmEvent(
-        event_identifier=EVM_HASH,
+        tx_hash=EVM_HASH,
         sequence_index=77,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,
@@ -110,7 +110,7 @@ DEPOSIT_ENTRIES = [
         notes='Deposit 0 USDC in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',
         counterparty=CPT_CURVE,
     ), EvmEvent(
-        event_identifier=EVM_HASH,
+        tx_hash=EVM_HASH,
         sequence_index=78,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,
@@ -122,7 +122,7 @@ DEPOSIT_ENTRIES = [
         notes='Deposit 5 USDT in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',
         counterparty=CPT_CURVE,
     ), EvmEvent(
-        event_identifier=EVM_HASH,
+        tx_hash=EVM_HASH,
         sequence_index=79,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,

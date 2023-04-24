@@ -33,7 +33,7 @@ def test_1inchv1_swap(database, ethereum_inquirer):
     timestamp = TimestampMS(1594500575000)
     expected_events = [
         EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -45,7 +45,7 @@ def test_1inchv1_swap(database, ethereum_inquirer):
             notes='Burned 0.00896373909 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=90,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -58,7 +58,7 @@ def test_1inchv1_swap(database, ethereum_inquirer):
             counterparty=CPT_UNISWAP_V2,
             address=oneinch_contract,
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=91,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -71,7 +71,7 @@ def test_1inchv1_swap(database, ethereum_inquirer):
             counterparty=CPT_ONEINCH_V1,
             address=oneinch_contract,
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=103,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -106,7 +106,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
     oneinch_v2_addy = string_to_evm_address('0x111111125434b319222CdBf8C261674aDB56F3ae')
     expected_events = [
         EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -118,7 +118,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
             notes='Burned 0.002618947 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=217,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -131,7 +131,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
             counterparty=CPT_ONEINCH_V2,
             address=string_to_evm_address('0xd47140F6Ab73f6d6B6675Fb1610Bb5E9B5d96FE5'),
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=218,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -144,7 +144,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
             counterparty=CPT_ONEINCH_V2,
             address=string_to_evm_address('0xF53bBFBff01c50F2D42D542b09637DcA97935fF7'),
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=221,
             timestamp=timestamp,
             location=Location.ETHEREUM,

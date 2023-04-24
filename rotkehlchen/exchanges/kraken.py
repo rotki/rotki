@@ -178,7 +178,7 @@ def history_event_from_kraken(
             # Make sure to not generate an event for KFEES that is not of type FEE
             if asset != A_KFEE:
                 group_events.append(HistoryEvent(
-                    event_identifier=HistoryEvent.deserialize_event_identifier(identifier),
+                    event_identifier=identifier,
                     sequence_index=idx,
                     timestamp=timestamp,
                     location=Location.KRAKEN,
@@ -194,7 +194,7 @@ def history_event_from_kraken(
                 ))
             if fee_amount != ZERO:
                 group_events.append(HistoryEvent(
-                    event_identifier=HistoryEvent.deserialize_event_identifier(identifier),
+                    event_identifier=identifier,
                     sequence_index=current_fee_index,
                     timestamp=timestamp,
                     location=Location.KRAKEN,
@@ -788,7 +788,7 @@ class Kraken(ExchangeInterface):
                     amount=amount,
                     fee_asset=asset,
                     fee=fee,
-                    link=movement.serialized_event_identifier,
+                    link=movement.event_identifier,
                 ))
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
@@ -838,7 +838,7 @@ class Kraken(ExchangeInterface):
             adjustments.append(trade_parts[0])
             return None  # skip as they don't have same refid
 
-        event_id = trade_parts[0].serialized_event_identifier
+        event_id = trade_parts[0].event_identifier
         is_spend_receive = False
         trade_assets = []
         spend_part, receive_part, fee_part, kfee_part = None, None, None, None
@@ -1052,7 +1052,7 @@ class Kraken(ExchangeInterface):
                     rate=rate,
                     fee=None,
                     fee_currency=None,
-                    link='adjustment' + a1.serialized_event_identifier + a2.serialized_event_identifier,  # noqa: 501
+                    link='adjustment' + a1.event_identifier + a2.event_identifier,
                 )
                 trades.append(trade)
 

@@ -97,7 +97,7 @@ def test_kyber_legacy_old_contract(database, ethereum_inquirer, eth_transactions
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=1591043988000,
             location=Location.ETHEREUM,
@@ -112,7 +112,7 @@ def test_kyber_legacy_old_contract(database, ethereum_inquirer, eth_transactions
             notes='Burned 0.01212979988 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=1591043988000,
             location=Location.ETHEREUM,
@@ -125,7 +125,7 @@ def test_kyber_legacy_old_contract(database, ethereum_inquirer, eth_transactions
             counterparty=CPT_KYBER,
             address=string_to_evm_address('0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=89,
             timestamp=1591043988000,
             location=Location.ETHEREUM,
@@ -220,7 +220,7 @@ def test_kyber_legacy_new_contract(database, ethereum_inquirer, eth_transactions
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=1644182638000,
             location=Location.ETHEREUM,
@@ -235,7 +235,7 @@ def test_kyber_legacy_new_contract(database, ethereum_inquirer, eth_transactions
             notes='Burned 0.066614401 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=350,
             timestamp=1644182638000,
             location=Location.ETHEREUM,
@@ -248,7 +248,7 @@ def test_kyber_legacy_new_contract(database, ethereum_inquirer, eth_transactions
             counterparty=CPT_KYBER,
             address=string_to_evm_address('0x7C66550C9c730B6fdd4C03bc2e73c5462c5F7ACC'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=370, timestamp=1644182638000,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,

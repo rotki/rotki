@@ -38,7 +38,7 @@ class EthStakingEvent(HistoryBaseEntry, metaclass=ABCMeta):
 
     def __init__(
             self,
-            event_identifier: bytes,
+            event_identifier: str,
             sequence_index: int,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
@@ -86,7 +86,7 @@ class EthWithdrawalEvent(EthStakingEvent):
             identifier: Optional[int] = None,
     ) -> None:
         super().__init__(
-            event_identifier=f'eth2_withdrawal_{validator_index}_{timestamp}'.encode(),
+            event_identifier=f'eth2_withdrawal_{validator_index}_{timestamp}',
             sequence_index=0,
             timestamp=timestamp,
             event_type=HistoryEventType.STAKING,
@@ -121,14 +121,6 @@ class EthWithdrawalEvent(EthStakingEvent):
             validator_index=entry[6],
             is_exit=bool(entry[7]),
         )
-
-    @property
-    def serialized_event_identifier(self) -> str:
-        return self.event_identifier.decode()
-
-    @classmethod
-    def deserialize_event_identifier(cls: type['EthWithdrawalEvent'], val: str) -> bytes:
-        return val.encode()
 
     @classmethod
     def deserialize(cls: type['EthWithdrawalEvent'], data: dict[str, Any]) -> 'EthWithdrawalEvent':
@@ -211,7 +203,7 @@ class EthBlockEvent(EthStakingEvent):
             name = 'block reward'
 
         super().__init__(
-            event_identifier=f'evm_1_block_{block_number}'.encode(),
+            event_identifier=f'evm_1_block_{block_number}',
             sequence_index=sequence_index,
             timestamp=timestamp,
             event_type=HistoryEventType.STAKING,
@@ -247,14 +239,6 @@ class EthBlockEvent(EthStakingEvent):
             block_number=entry[7],
             is_mev_reward=entry[5] == HistoryEventSubType.MEV_REWARD.serialize(),
         )
-
-    @property
-    def serialized_event_identifier(self) -> str:
-        return self.event_identifier.decode()
-
-    @classmethod
-    def deserialize_event_identifier(cls: type['EthBlockEvent'], val: str) -> bytes:
-        return val.encode()
 
     @classmethod
     def deserialize(cls: type['EthBlockEvent'], data: dict[str, Any]) -> 'EthBlockEvent':

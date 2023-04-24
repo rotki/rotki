@@ -89,7 +89,7 @@ def test_pickle_deposit(database, ethereum_inquirer, eth_transactions):
     timestamp = TimestampMS(1646375440000)
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -104,7 +104,7 @@ def test_pickle_deposit(database, ethereum_inquirer, eth_transactions):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=260,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -117,7 +117,7 @@ def test_pickle_deposit(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_PICKLE,
             address=string_to_evm_address('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=262,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -198,7 +198,7 @@ def test_pickle_withdraw(database, ethereum_inquirer, eth_transactions):
     timestamp = TimestampMS(1646375440000)
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -213,7 +213,7 @@ def test_pickle_withdraw(database, ethereum_inquirer, eth_transactions):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=106,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -226,7 +226,7 @@ def test_pickle_withdraw(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_PICKLE,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=107,
             timestamp=timestamp,
             location=Location.ETHEREUM,

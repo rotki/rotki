@@ -4054,6 +4054,7 @@ class RestAPI():
         return api_response(_wrap_in_ok_result(custom_asset_types), status_code=HTTPStatus.OK)
 
     def get_event_details(self, identifier: int) -> Response:
+        """Gets an evm event details"""
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         event = dbevents.get_evm_event_by_identifier(identifier=identifier)
         if event is None:

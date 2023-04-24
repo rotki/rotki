@@ -219,7 +219,7 @@ class BaseDecoderTools():
         """A convenience function to create an EvmEvent depending on the
         decoder's chain id"""
         return EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=sequence_index,
             timestamp=ts_sec_to_ms(timestamp),
             location=Location.from_chain_id(self.evm_inquirer.chain_id),

@@ -46,7 +46,7 @@ if TYPE_CHECKING:
 
 
 def entry_to_input_dict(
-        entry: 'HistoryBaseEntry',
+        entry: 'EvmEvent',
         include_identifier: bool,
 ) -> dict[str, Any]:
     serialized = entry.serialize()
@@ -55,12 +55,13 @@ def entry_to_input_dict(
         serialized['identifier'] = entry.identifier
     else:
         serialized.pop('identifier')  # there is `identifier`: `None` which we have to remove
+    serialized.pop('event_identifier')
     return serialized
 
 
 def _add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: bool = False) -> list['HistoryBaseEntry']:  # noqa: E501
     entries = [EvmEvent(
-        event_identifier=EvmEvent.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
+        tx_hash=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
         sequence_index=162,
         timestamp=TimestampMS(1569924574000),
         location=Location.ETHEREUM,
@@ -72,7 +73,7 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: 
         event_subtype=HistoryEventSubType.APPROVE,
         address=string_to_evm_address('0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE'),
     ), EvmEvent(
-        event_identifier=EvmEvent.deserialize_event_identifier('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
+        tx_hash=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
         sequence_index=163,
         timestamp=TimestampMS(1569924574000),
         location=Location.ETHEREUM,
@@ -84,7 +85,7 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: 
         event_subtype=HistoryEventSubType.APPROVE,
         address=string_to_evm_address('0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE'),
     ), EvmEvent(
-        event_identifier=EvmEvent.deserialize_event_identifier('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
+        tx_hash=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
         sequence_index=2,
         timestamp=TimestampMS(1619924574000),
         location=Location.ETHEREUM,
@@ -97,7 +98,7 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: 
         counterparty=CPT_GAS,
         extra_data={'testing_data': 42},
     ), EvmEvent(
-        event_identifier=EvmEvent.deserialize_event_identifier('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
+        tx_hash=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
         sequence_index=3,
         timestamp=TimestampMS(1619924574000),
         location=Location.ETHEREUM,
@@ -109,7 +110,7 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: 
         event_subtype=HistoryEventSubType.NONE,
         counterparty='somewhere',
     ), EvmEvent(
-        event_identifier=EvmEvent.deserialize_event_identifier('0x4b5489ed325483db3a8c4831da1d5ac08fb9ab0fd8c570aa3657e0c267a7d023'),  # noqa: E501
+        tx_hash=deserialize_evm_tx_hash('0x4b5489ed325483db3a8c4831da1d5ac08fb9ab0fd8c570aa3657e0c267a7d023'),  # noqa: E501
         sequence_index=55,
         timestamp=TimestampMS(1629924574000),
         location=Location.ETHEREUM,
@@ -121,7 +122,7 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: 
         event_subtype=HistoryEventSubType.NONE,
         address=string_to_evm_address('0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a'),
     ), HistoryEvent(
-        event_identifier=b'STARK-STARK-STARK',
+        event_identifier='STARK-STARK-STARK',
         sequence_index=0,
         timestamp=TimestampMS(1673146287380),
         location=Location.KRAKEN,
@@ -154,7 +155,7 @@ def _add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: 
                 )
                 entry.identifier = identifier
         else:
-            json_data = entry_to_input_dict(entry, include_identifier=False)
+            json_data = entry_to_input_dict(entry, include_identifier=False)  # type: ignore
             response = requests.put(
                 api_url_for(server, 'historyeventresource'),
                 json=json_data,
@@ -205,7 +206,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Tried to edit event to have event_identifier 0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc and sequence_index 3 but it already exists',  # noqa: E501
+        contained_in_msg='Tried to edit event to have event_identifier 10xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc and sequence_index 3 but it already exists',  # noqa: E501
         status_code=HTTPStatus.CONFLICT,
     )
     # test adding event with  sequence index same as an existing one fails
@@ -224,7 +225,6 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     # test editing works
     entry.sequence_index = 4
     entry.timestamp = TimestampMS(1639924575000)
-    entry.location = Location.UNISWAP
     entry.event_type = HistoryEventType.DEPOSIT
     entry.asset = A_USDT
     entry.balance = Balance(amount=FVal('1500.1'), usd_value=FVal('1499.45'))
@@ -318,7 +318,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
         nonce=26,
     )
     event1 = EvmEvent(
-        event_identifier=transaction.tx_hash,
+        tx_hash=transaction.tx_hash,
         sequence_index=221,
         timestamp=ts_sec_to_ms(transaction.timestamp),
         location=Location.ETHEREUM,
@@ -328,7 +328,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
         balance=Balance(amount=FVal(100)),
     )
     event2 = EvmEvent(
-        event_identifier=transaction.tx_hash,
+        tx_hash=transaction.tx_hash,
         sequence_index=222,
         timestamp=ts_sec_to_ms(transaction.timestamp),
         location=Location.ETHEREUM,
@@ -419,7 +419,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         rotki.data.db.add_to_ignored_action_ids(
             write_cursor=cursor,
             action_type=ActionType.EVM_TRANSACTION,
-            identifiers=[f'{entries[0].location.to_chain_id()}{entries[0].serialized_event_identifier}'],  # noqa: E501
+            identifiers=[f'{entries[0].event_identifier}'],
         )
 
     response = requests.post(
@@ -438,7 +438,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         assert event['has_details'] is False
 
         # check that the only ignored event is the one that we have set
-        if event['entry']['event_identifier'] == entries[0].serialized_event_identifier:
+        if event['entry']['event_identifier'] == entries[0].event_identifier:
             assert event['ignored_in_accounting'] is True
         else:
             assert event['ignored_in_accounting'] is False

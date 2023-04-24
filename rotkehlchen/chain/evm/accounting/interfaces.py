@@ -84,7 +84,7 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
         if events_to_consume is None:
             log.debug(
                 f'Could not find the number of events to consume for a {event.counterparty} '
-                f'deposit/withdrawal transaction {event.serialized_event_identifier}',
+                f'deposit/withdrawal transaction {event.tx_hash.hex()}',
             )
             return
 
@@ -109,5 +109,5 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
                 taxable=False,  # Deposits and withdrawals are not taxable
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                extra_data={'tx_hash': next_event.serialized_event_identifier},
+                extra_data={'tx_hash': next_event.tx_hash.hex()},
             )

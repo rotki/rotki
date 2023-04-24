@@ -89,7 +89,7 @@ def test_votium_claim(database, ethereum_inquirer, eth_transactions):
     assert len(events) == 2
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -104,7 +104,7 @@ def test_votium_claim(database, ethereum_inquirer, eth_transactions):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=351,
             timestamp=timestamp,
             location=Location.ETHEREUM,

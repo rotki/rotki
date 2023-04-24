@@ -18,13 +18,7 @@ from rotkehlchen.tests.utils.ethereum import (
     wait_until_all_nodes_connected,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import (
-    ChainID,
-    EvmTransaction,
-    SupportedBlockchain,
-    deserialize_evm_tx_hash,
-    make_evm_tx_hash,
-)
+from rotkehlchen.types import ChainID, EvmTransaction, SupportedBlockchain, deserialize_evm_tx_hash
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
@@ -139,7 +133,7 @@ def test_get_transaction_by_hash(ethereum_inquirer, call_order, ethereum_manager
         call_order=call_order,
     )
     expected_tx = EvmTransaction(
-        tx_hash=make_evm_tx_hash(b'[\x18\x0e=\xcc\x19\xcd)\xc9\x18\xb9\x8c\x87o\x199>\x07\xb7L\x07\xfdr\x81\x02\xebbA\xdb<-\\'),  # noqa: E501
+        tx_hash=deserialize_evm_tx_hash(b'[\x18\x0e=\xcc\x19\xcd)\xc9\x18\xb9\x8c\x87o\x199>\x07\xb7L\x07\xfdr\x81\x02\xebbA\xdb<-\\'),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
         timestamp=1633128954,
         block_number=13336285,

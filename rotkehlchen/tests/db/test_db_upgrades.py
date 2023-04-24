@@ -26,7 +26,7 @@ from rotkehlchen.tests.utils.database import (
     mock_dbhandler_add_globaldb_assetids,
     mock_dbhandler_update_owned_assets,
 )
-from rotkehlchen.types import Location, make_evm_tx_hash
+from rotkehlchen.types import Location, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.misc import ts_now
@@ -66,7 +66,7 @@ def assert_tx_hash_is_bytes(
                 raw_event_identifier=_new[1],
             )
         else:
-            _new[tx_hash_index] = make_evm_tx_hash(_new[tx_hash_index]).hex()  # noqa: 501 pylint: disable=no-member
+            _new[tx_hash_index] = deserialize_evm_tx_hash(_new[tx_hash_index]).hex()  # noqa: 501 pylint: disable=no-member
         assert _old == _new
 
 
@@ -1391,8 +1391,9 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     new_evm_info = cursor.execute('SELECT * FROM evm_events_info;').fetchall()
     assert len(new_evm_info) == len(custom_events)
     for entry in custom_events:
-        assert (entry[0], 1, *entry[1:12]) in new_history_events
-        assert (entry[0], entry[12], None, None, entry[13]) in new_evm_info
+        prefix = '10x' if entry[4] == 'f' else '100x'  # chain id prefix depending on location
+        assert (entry[0], 1, prefix + entry[1].hex(), *entry[2:12]) in new_history_events
+        assert (entry[0], entry[1], entry[12], None, None, entry[13]) in new_evm_info
 
     new_ens_mappings = cursor.execute('SELECT * FROM ens_mappings').fetchall()
     expected_ens_mappings = [(*mapping, 0) for mapping in old_ens_mappings]

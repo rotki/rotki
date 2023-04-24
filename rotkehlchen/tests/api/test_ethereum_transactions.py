@@ -57,7 +57,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
-    make_evm_tx_hash,
+    deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
@@ -402,7 +402,7 @@ def test_query_transactions(rotkehlchen_api_server):
             events = dbevents.get_history_events(
                 cursor=cursor,
                 filter_query=EvmEventFilterQuery.make(
-                    event_identifiers=[TXHASH_HEX_TO_BYTES[tx_hash_hex]],
+                    tx_hashes=[TXHASH_HEX_TO_BYTES[tx_hash_hex]],
                     limit_to_entry_type=True,
                 ),
                 has_premium=True,  # for this function we don't limit. We only limit txs.
@@ -433,7 +433,7 @@ def test_query_transactions(rotkehlchen_api_server):
             events = dbevents.get_history_events(
                 cursor=cursor,
                 filter_query=EvmEventFilterQuery.make(
-                    event_identifiers=[TXHASH_HEX_TO_BYTES[tx_hash_hex]],
+                    tx_hashes=[TXHASH_HEX_TO_BYTES[tx_hash_hex]],
                     limit_to_entry_type=True,
                 ),
                 has_premium=True,  # for this function we don't limit. We only limit txs.
@@ -699,7 +699,7 @@ def test_query_transactions_over_limit(
     db = rotki.data.db
     all_transactions_num = FREE_ETH_TX_LIMIT + 50
     transactions = [EvmTransaction(
-        tx_hash=make_evm_tx_hash(x.to_bytes(2, byteorder='little')),
+        tx_hash=deserialize_evm_tx_hash(x.to_bytes(2, byteorder='little')),
         chain_id=ChainID.ETHEREUM,
         timestamp=x,
         block_number=x,
@@ -713,7 +713,7 @@ def test_query_transactions_over_limit(
         nonce=x,
     ) for x in range(FREE_ETH_TX_LIMIT - 10)]
     extra_transactions = [EvmTransaction(
-        tx_hash=make_evm_tx_hash((x + 500).to_bytes(2, byteorder='little')),
+        tx_hash=deserialize_evm_tx_hash((x + 500).to_bytes(2, byteorder='little')),
         chain_id=ChainID.ETHEREUM,
         timestamp=x,
         block_number=x,
@@ -773,7 +773,7 @@ def test_query_transactions_from_to_address(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
     transactions = [EvmTransaction(
-        tx_hash=make_evm_tx_hash(b'1'),
+        tx_hash=deserialize_evm_tx_hash(b'1'),
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -786,7 +786,7 @@ def test_query_transactions_from_to_address(
         input_data=b'',
         nonce=0,
     ), EvmTransaction(
-        tx_hash=make_evm_tx_hash(b'2'),
+        tx_hash=deserialize_evm_tx_hash(b'2'),
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -799,7 +799,7 @@ def test_query_transactions_from_to_address(
         input_data=b'',
         nonce=1,
     ), EvmTransaction(
-        tx_hash=make_evm_tx_hash(b'3'),
+        tx_hash=deserialize_evm_tx_hash(b'3'),
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -854,7 +854,7 @@ def test_query_transactions_removed_address(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
     transactions = [EvmTransaction(
-        tx_hash=make_evm_tx_hash(b'1'),
+        tx_hash=deserialize_evm_tx_hash(b'1'),
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -867,7 +867,7 @@ def test_query_transactions_removed_address(
         input_data=b'',
         nonce=0,
     ), EvmTransaction(
-        tx_hash=make_evm_tx_hash(b'2'),
+        tx_hash=deserialize_evm_tx_hash(b'2'),
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -880,7 +880,7 @@ def test_query_transactions_removed_address(
         input_data=b'',
         nonce=1,
     ), EvmTransaction(  # should remain after deleting account[0]
-        tx_hash=make_evm_tx_hash(b'3'),
+        tx_hash=deserialize_evm_tx_hash(b'3'),
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -893,7 +893,7 @@ def test_query_transactions_removed_address(
         input_data=b'',
         nonce=55,
     ), EvmTransaction(  # should remain after deleting account[0]
-        tx_hash=make_evm_tx_hash(b'4'),
+        tx_hash=deserialize_evm_tx_hash(b'4'),
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -906,7 +906,7 @@ def test_query_transactions_removed_address(
         input_data=b'',
         nonce=0,
     ), EvmTransaction(  # should remain after deleting account[0]
-        tx_hash=make_evm_tx_hash(b'5'),
+        tx_hash=deserialize_evm_tx_hash(b'5'),
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -1091,7 +1091,7 @@ def test_query_transactions_check_decoded_events(
             'balance': {'amount': '0.00863351371344', 'usd_value': '0'},
             'counterparty': CPT_GAS,
             'address': None,
-            'event_identifier': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',  # noqa: E501
+            'event_identifier': '10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',  # noqa: E501
             'event_subtype': 'fee',
             'event_type': 'spend',
             'location': 'ethereum',
@@ -1100,6 +1100,7 @@ def test_query_transactions_check_decoded_events(
             'product': None,
             'sequence_index': 0,
             'timestamp': 1642802807,
+            'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
         },
         'customized': False,
         'has_details': False,
@@ -1111,7 +1112,7 @@ def test_query_transactions_check_decoded_events(
             'balance': {'amount': '0.096809163374771208', 'usd_value': '0'},
             'counterparty': None,
             'address': '0xA090e606E30bD747d4E6245a1517EbE430F0057e',
-            'event_identifier': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',  # noqa: E501
+            'event_identifier': '10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',  # noqa: E501
             'event_subtype': None,
             'event_type': 'spend',
             'location': 'ethereum',
@@ -1120,6 +1121,7 @@ def test_query_transactions_check_decoded_events(
             'product': None,
             'sequence_index': 1,
             'timestamp': 1642802807,
+            'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
         },
         'customized': False,
         'has_details': False,
@@ -1133,7 +1135,7 @@ def test_query_transactions_check_decoded_events(
             'address': None,
             'balance': {'amount': '0.017690836625228792', 'usd_value': '0'},
             'counterparty': CPT_GAS,
-            'event_identifier': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',  # noqa: E501
+            'event_identifier': '10x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',  # noqa: E501
             'event_subtype': 'fee',
             'event_type': 'spend',
             'location': 'ethereum',
@@ -1142,6 +1144,7 @@ def test_query_transactions_check_decoded_events(
             'product': None,
             'sequence_index': 0,
             'timestamp': 1642802735,
+            'tx_hash': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
         },
         'customized': False,
         'has_details': False,
@@ -1153,7 +1156,7 @@ def test_query_transactions_check_decoded_events(
             'address': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
             'balance': {'amount': '1166', 'usd_value': '0'},
             'counterparty': None,
-            'event_identifier': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',  # noqa: E501
+            'event_identifier': '10x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',  # noqa: E501
             'event_subtype': None,
             'event_type': 'spend',
             'location': 'ethereum',
@@ -1162,6 +1165,7 @@ def test_query_transactions_check_decoded_events(
             'product': None,
             'sequence_index': 308,
             'timestamp': 1642802735,
+            'tx_hash': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
         },
         'customized': False,
         'has_details': False,
@@ -1175,7 +1179,7 @@ def test_query_transactions_check_decoded_events(
             'address': '0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
             'balance': {'amount': '0.125', 'usd_value': '0'},
             'counterparty': None,
-            'event_identifier': '0x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',  # noqa: E501
+            'event_identifier': '10x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',  # noqa: E501
             'event_subtype': None,
             'event_type': 'receive',
             'location': 'ethereum',
@@ -1184,6 +1188,7 @@ def test_query_transactions_check_decoded_events(
             'product': None,
             'sequence_index': 0,
             'timestamp': 1642802651,
+            'tx_hash': '0x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',
         },
         'customized': False,
         'has_details': False,
@@ -1197,7 +1202,7 @@ def test_query_transactions_check_decoded_events(
             'address': '0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5',
             'balance': {'amount': '1166', 'usd_value': '0'},
             'counterparty': None,
-            'event_identifier': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',  # noqa: E501
+            'event_identifier': '10xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',  # noqa: E501
             'event_subtype': None,
             'event_type': 'receive',
             'location': 'ethereum',
@@ -1206,6 +1211,7 @@ def test_query_transactions_check_decoded_events(
             'product': None,
             'sequence_index': 385,
             'timestamp': 1642802286,
+            'tx_hash': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
         },
         'customized': False,
         'has_details': False,
@@ -1223,7 +1229,7 @@ def test_query_transactions_check_decoded_events(
     tx2_events[1]['customized'] = True
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-        json={key: value for key, value in event.items() if key != 'extra_data'},
+        json={key: value for key, value in event.items() if key not in ('extra_data', 'event_identifier')},  # noqa: E501
     )
     assert_simple_ok_response(response)
 
@@ -1233,7 +1239,7 @@ def test_query_transactions_check_decoded_events(
             'address': '0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5',
             'balance': {'amount': '1', 'usd_value': '1500.1'},
             'counterparty': CPT_CURVE,
-            'event_identifier': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',  # noqa: E501
+            'event_identifier': '10xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',  # noqa: E501
             'event_subtype': 'deposit asset',
             'event_type': 'spend',
             'location': 'ethereum',
@@ -1242,6 +1248,7 @@ def test_query_transactions_check_decoded_events(
             'product': 'pool',
             'sequence_index': 1,
             'timestamp': 1642802286,
+            'tx_hash': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
         },
         'customized': True,
         'has_details': False,
@@ -1249,7 +1256,7 @@ def test_query_transactions_check_decoded_events(
     })
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-        json={key: value for key, value in tx4_events[0]['entry'].items() if key != 'extra_data'},
+        json={key: value for key, value in tx4_events[0]['entry'].items() if key not in ('extra_data', 'event_identifier')},  # noqa: E501
     )
     result = assert_proper_response_with_result(response)
     tx4_events[0]['entry']['identifier'] = result['identifier']
@@ -1544,7 +1551,7 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer'):
             rotkehlchen_api_server,
             'historyeventresource',
         ),
-        json={'event_identifiers': [tx_str]},
+        json={'tx_hashes': [tx_str]},
     )
     result = assert_proper_response_with_result(response)
     assert result['entries'][0]['entry']['asset'] == A_ETH
@@ -1576,7 +1583,7 @@ def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> N
         events = dbevents.get_history_events(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
-                event_identifiers=[transactions[0].tx_hash],
+                tx_hashes=[transactions[0].tx_hash],
                 limit_to_entry_type=True,
             ),
             has_premium=True,
@@ -1585,7 +1592,7 @@ def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> N
         events = dbevents.get_history_events(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
-                event_identifiers=[transactions[1].tx_hash],
+                tx_hashes=[transactions[1].tx_hash],
                 limit_to_entry_type=True,
             ),
             has_premium=True,
@@ -1637,7 +1644,7 @@ def test_decoding_missing_transactions_by_address(rotkehlchen_api_server: 'APISe
         events = dbevents.get_history_events(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
-                event_identifiers=[transactions[0].tx_hash],
+                tx_hashes=[transactions[0].tx_hash],
                 limit_to_entry_type=True,
             ),
             has_premium=True,
@@ -1646,7 +1653,7 @@ def test_decoding_missing_transactions_by_address(rotkehlchen_api_server: 'APISe
         events = dbevents.get_history_events(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
-                event_identifiers=[transactions[1].tx_hash],
+                tx_hashes=[transactions[1].tx_hash],
                 limit_to_entry_type=True,
             ),
             has_premium=True,
@@ -1655,7 +1662,7 @@ def test_decoding_missing_transactions_by_address(rotkehlchen_api_server: 'APISe
         events = dbevents.get_history_events(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
-                event_identifiers=[transactions[2].tx_hash],
+                tx_hashes=[transactions[2].tx_hash],
                 limit_to_entry_type=True,
             ),
             has_premium=True,

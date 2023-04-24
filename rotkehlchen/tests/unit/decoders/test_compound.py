@@ -42,7 +42,7 @@ def test_compound_ether_deposit(database, ethereum_inquirer):
     timestamp = TimestampMS(1598639099000)
     expected_events = [
         EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -54,7 +54,7 @@ def test_compound_ether_deposit(database, ethereum_inquirer):
             notes='Burned 0.014122318 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -67,7 +67,7 @@ def test_compound_ether_deposit(database, ethereum_inquirer):
             counterparty=CPT_COMPOUND,
             address=string_to_evm_address('0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'),
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=33,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -98,7 +98,7 @@ def test_compound_ether_withdraw(database, ethereum_inquirer):
     timestamp = TimestampMS(1598813490000)
     expected_events = [
         EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -110,7 +110,7 @@ def test_compound_ether_withdraw(database, ethereum_inquirer):
             notes='Burned 0.02858544 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -123,7 +123,7 @@ def test_compound_ether_withdraw(database, ethereum_inquirer):
             counterparty=CPT_COMPOUND,
             address=string_to_evm_address('0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'),
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=50,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -160,7 +160,7 @@ def test_compound_deposit_with_comp_claim(
     interest = FVal('0.076123031460129653')
     expected_events = [
         EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -172,7 +172,7 @@ def test_compound_deposit_with_comp_claim(
             notes='Burned 0.00945248 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=241,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -185,7 +185,7 @@ def test_compound_deposit_with_comp_claim(
             counterparty=CPT_COMPOUND,
             address=string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B'),
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=243,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -198,7 +198,7 @@ def test_compound_deposit_with_comp_claim(
             counterparty=CPT_COMPOUND,
             address=string_to_evm_address('0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643'),
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=250,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -230,7 +230,7 @@ def test_compound_multiple_comp_claim(database, ethereum_inquirer):
     )
     expected_events = [
         EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -242,7 +242,7 @@ def test_compound_multiple_comp_claim(database, ethereum_inquirer):
             notes='Burned 0.074799254 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=25,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -255,7 +255,7 @@ def test_compound_multiple_comp_claim(database, ethereum_inquirer):
             counterparty=CPT_COMPOUND,
             address=string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B'),
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=29,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -268,7 +268,7 @@ def test_compound_multiple_comp_claim(database, ethereum_inquirer):
             counterparty=CPT_COMPOUND,
             address=string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B'),
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=36,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -281,7 +281,7 @@ def test_compound_multiple_comp_claim(database, ethereum_inquirer):
             counterparty=CPT_COMPOUND,
             address=string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B'),
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=39,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -294,7 +294,7 @@ def test_compound_multiple_comp_claim(database, ethereum_inquirer):
             counterparty=CPT_COMPOUND,
             address=string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B'),
         ), EvmEvent(  # this appeared as Receive at time of writing the test
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=44,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -327,7 +327,7 @@ def test_compound_borrow(
     )
     expected_events = [
         EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1578114925000),
             location=Location.ETHEREUM,
@@ -339,7 +339,7 @@ def test_compound_borrow(
             notes='Burned 0.002977007 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=9,
             timestamp=TimestampMS(1578114925000),
             location=Location.ETHEREUM,
@@ -373,7 +373,7 @@ def test_compound_payback(
     )
     expected_events = [
         EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1605818798000),
             location=Location.ETHEREUM,
@@ -385,7 +385,7 @@ def test_compound_payback(
             notes='Burned 0.0037086 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=246,
             timestamp=TimestampMS(1605818798000),
             location=Location.ETHEREUM,
@@ -398,7 +398,7 @@ def test_compound_payback(
             counterparty=CPT_COMPOUND,
             address=string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B'),
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=248,
             timestamp=TimestampMS(1605818798000),
             location=Location.ETHEREUM,
@@ -432,7 +432,7 @@ def test_compound_borrow_eth(
     )
     expected_events = [
         EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1581618106000),
             location=Location.ETHEREUM,
@@ -444,7 +444,7 @@ def test_compound_borrow_eth(
             notes='Burned 0.001882176 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1581618106000),
             location=Location.ETHEREUM,
@@ -478,7 +478,7 @@ def test_compound_repays_eth(
     )
     expected_events = [
         EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1590532744000),
             location=Location.ETHEREUM,
@@ -490,7 +490,7 @@ def test_compound_repays_eth(
             notes='Burned 0.003931524 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1590532744000),
             location=Location.ETHEREUM,

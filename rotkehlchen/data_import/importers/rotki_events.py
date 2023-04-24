@@ -53,7 +53,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
             if csv_row['Fee Currency'] and fee is not None else None
         )
         history_event = HistoryEvent(
-            event_identifier=HistoryEvent.deserialize_event_identifier(identifier),
+            event_identifier=identifier,
             sequence_index=sequence_index,
             timestamp=timestamp,
             location=location,
@@ -69,7 +69,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
         events.append(history_event)
         if fee != ZERO and fee_currency is not None:
             fee_event = HistoryEvent(
-                event_identifier=HistoryEvent.deserialize_event_identifier(identifier),
+                event_identifier=identifier,
                 sequence_index=sequence_index + 1,
                 timestamp=timestamp,
                 location=location,

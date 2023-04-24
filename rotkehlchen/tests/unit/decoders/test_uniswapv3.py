@@ -119,7 +119,7 @@ def test_uniswap_v3_swap(database, ethereum_inquirer, eth_transactions):
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -134,7 +134,7 @@ def test_uniswap_v3_swap(database, ethereum_inquirer, eth_transactions):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -147,7 +147,7 @@ def test_uniswap_v3_swap(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xE592427A0AEce92De3Edee1F18E0157C05861564'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -252,7 +252,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_inquirer, eth_transa
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -264,7 +264,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_inquirer, eth_transa
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -277,7 +277,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_inquirer, eth_transa
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=2,
             timestamp=Timestamp(1646375440000),
             location=Location.ETHEREUM,
@@ -463,7 +463,7 @@ def test_uniswap_v3_swap_by_aggregator(database, ethereum_inquirer, eth_transact
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1669210175000),
             location=Location.ETHEREUM,
@@ -475,7 +475,7 @@ def test_uniswap_v3_swap_by_aggregator(database, ethereum_inquirer, eth_transact
             notes='Receive 0.738572737905232914 ETH from 0x9008D19f58AAbD9eD0D60971565AA8510560ab41',  # noqa: E501
             address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=251,
             timestamp=TimestampMS(1669210175000),
             location=Location.ETHEREUM,
@@ -487,7 +487,7 @@ def test_uniswap_v3_swap_by_aggregator(database, ethereum_inquirer, eth_transact
             notes='Send 214.201817170016947233 EUL from 0xdD84Ce1aDcb3A4908Db61A1dFA3353C3974c5a2B to 0x9008D19f58AAbD9eD0D60971565AA8510560ab41',  # noqa: E501
             address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=253,
             timestamp=TimestampMS(1669210175000),
             location=Location.ETHEREUM,
@@ -517,7 +517,7 @@ def test_swap_eth_to_tokens(database, ethereum_inquirer, ethereum_accounts):
     )
     assert events == [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1641528717000),
             location=Location.ETHEREUM,
@@ -529,7 +529,7 @@ def test_swap_eth_to_tokens(database, ethereum_inquirer, ethereum_accounts):
             notes='Burned 0.082968903798164815 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1641528717000),
             location=Location.ETHEREUM,
@@ -542,7 +542,7 @@ def test_swap_eth_to_tokens(database, ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1641528717000),
             location=Location.ETHEREUM,
@@ -571,7 +571,7 @@ def test_swap_eth_to_tokens_refund(database, ethereum_inquirer, ethereum_account
     )
     assert events == [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1669924223000),
             location=Location.ETHEREUM,
@@ -583,7 +583,7 @@ def test_swap_eth_to_tokens_refund(database, ethereum_inquirer, ethereum_account
             notes='Burned 0.00142634334688392 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1669924223000),
             location=Location.ETHEREUM,
@@ -596,7 +596,7 @@ def test_swap_eth_to_tokens_refund(database, ethereum_inquirer, ethereum_account
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1669924223000),
             location=Location.ETHEREUM,
@@ -625,7 +625,7 @@ def test_swap_tokens_to_eth(database, ethereum_inquirer, ethereum_accounts):
     )
     assert events == [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1655541881000),
             location=Location.ETHEREUM,
@@ -637,7 +637,7 @@ def test_swap_tokens_to_eth(database, ethereum_inquirer, ethereum_accounts):
             notes='Burned 0.03490929635453643 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1655541881000),
             location=Location.ETHEREUM,
@@ -650,7 +650,7 @@ def test_swap_tokens_to_eth(database, ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1655541881000),
             location=Location.ETHEREUM,
@@ -679,7 +679,7 @@ def test_swap_tokens_to_tokens_single_receipt(database, ethereum_inquirer, ether
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1643060358000),
             location=Location.ETHEREUM,
@@ -691,7 +691,7 @@ def test_swap_tokens_to_tokens_single_receipt(database, ethereum_inquirer, ether
             notes='Burned 0.074007294410979132 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1643060358000),
             location=Location.ETHEREUM,
@@ -704,7 +704,7 @@ def test_swap_tokens_to_tokens_single_receipt(database, ethereum_inquirer, ether
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1643060358000),
             location=Location.ETHEREUM,
@@ -734,7 +734,7 @@ def test_swap_tokens_to_tokens_multiple_receipts(database, ethereum_inquirer, et
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1658331886000),
             location=Location.ETHEREUM,
@@ -746,7 +746,7 @@ def test_swap_tokens_to_tokens_multiple_receipts(database, ethereum_inquirer, et
             notes='Burned 0.049823244141159502 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1658331886000),
             location=Location.ETHEREUM,
@@ -759,7 +759,7 @@ def test_swap_tokens_to_tokens_multiple_receipts(database, ethereum_inquirer, et
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1658331886000),
             location=Location.ETHEREUM,
@@ -913,7 +913,7 @@ def test_uniswap_v3_remove_liquidity(database, ethereum_inquirer, eth_transactio
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1672413263000),
             location=Location.ETHEREUM,
@@ -925,7 +925,7 @@ def test_uniswap_v3_remove_liquidity(database, ethereum_inquirer, eth_transactio
             notes='Burned 0.004505819651212348 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1672413263000),
             location=Location.ETHEREUM,
@@ -938,7 +938,7 @@ def test_uniswap_v3_remove_liquidity(database, ethereum_inquirer, eth_transactio
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=56,
             timestamp=TimestampMS(1672413263000),
             location=Location.ETHEREUM,
@@ -1053,7 +1053,7 @@ def test_uniswap_v3_add_liquidity(database, ethereum_inquirer, eth_transactions)
     assert len(events) == 4
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1672409279000),
             location=Location.ETHEREUM,
@@ -1065,7 +1065,7 @@ def test_uniswap_v3_add_liquidity(database, ethereum_inquirer, eth_transactions)
             notes='Burned 0.005657780314871785 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=308,
             timestamp=TimestampMS(1672409279000),
             location=Location.ETHEREUM,
@@ -1078,7 +1078,7 @@ def test_uniswap_v3_add_liquidity(database, ethereum_inquirer, eth_transactions)
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=309,
             timestamp=TimestampMS(1672409279000),
             location=Location.ETHEREUM,
@@ -1091,7 +1091,7 @@ def test_uniswap_v3_add_liquidity(database, ethereum_inquirer, eth_transactions)
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=311,
             timestamp=TimestampMS(1672409279000),
             location=Location.ETHEREUM,

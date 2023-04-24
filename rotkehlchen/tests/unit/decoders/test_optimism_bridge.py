@@ -29,7 +29,7 @@ def test_deposit_erc20(database, ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1674055295000),
             location=Location.ETHEREUM,
@@ -41,7 +41,7 @@ def test_deposit_erc20(database, ethereum_inquirer, ethereum_accounts):
             notes='Burned 0.00465973024452012 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=202,
             timestamp=TimestampMS(1674055295000),
             location=Location.ETHEREUM,
@@ -72,7 +72,7 @@ def test_deposit_eth(database, ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1674057215000),
             location=Location.ETHEREUM,
@@ -84,7 +84,7 @@ def test_deposit_eth(database, ethereum_inquirer, ethereum_accounts):
             notes='Burned 0.006541751818933373 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1674057215000),
             location=Location.ETHEREUM,
@@ -115,7 +115,7 @@ def test_receive_erc20_on_optimism(database, optimism_inquirer, optimism_account
     user_address = optimism_accounts[0]
     assert events == [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1674055897000),
             location=Location.OPTIMISM,
@@ -146,7 +146,7 @@ def test_receive_eth_on_optimism(database, optimism_inquirer, optimism_accounts)
     user_address = optimism_accounts[0]
     assert events == [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1674120410000),
             location=Location.OPTIMISM,
@@ -177,7 +177,7 @@ def test_withdraw_erc20(database, optimism_inquirer, optimism_accounts):
     user_address = optimism_accounts[0]
     assert events == [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1673522839000),
             location=Location.OPTIMISM,
@@ -189,7 +189,7 @@ def test_withdraw_erc20(database, optimism_inquirer, optimism_accounts):
             notes='Burned 0.0000001197 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1673522839000),
             location=Location.OPTIMISM,
@@ -220,7 +220,7 @@ def test_withdraw_eth(database, optimism_inquirer, optimism_accounts):
     user_address = optimism_accounts[0]
     assert events == [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1673253269000),
             location=Location.OPTIMISM,
@@ -232,7 +232,7 @@ def test_withdraw_eth(database, optimism_inquirer, optimism_accounts):
             notes='Burned 0.000000115426 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1673253269000),
             location=Location.OPTIMISM,
@@ -263,7 +263,7 @@ def test_claim_erc20_on_ethereum(database, ethereum_inquirer, ethereum_accounts)
     user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1674128075000),
             location=Location.ETHEREUM,
@@ -275,7 +275,7 @@ def test_claim_erc20_on_ethereum(database, ethereum_inquirer, ethereum_accounts)
             notes='Burned 0.01405791999714114 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=121,
             timestamp=TimestampMS(1674128075000),
             location=Location.ETHEREUM,
@@ -306,7 +306,7 @@ def test_claim_eth_on_ethereum(database, ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1674127139000),
             location=Location.ETHEREUM,
@@ -318,7 +318,7 @@ def test_claim_eth_on_ethereum(database, ethereum_inquirer, ethereum_accounts):
             notes='Burned 0.012214330132870492 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1674127139000),
             location=Location.ETHEREUM,

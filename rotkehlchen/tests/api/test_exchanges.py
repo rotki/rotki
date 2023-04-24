@@ -7,9 +7,9 @@ from urllib.parse import urlencode
 
 import pytest
 import requests
+
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryEvent
-
 from rotkehlchen.accounting.structures.types import (
     ActionType,
     HistoryEventSubType,
@@ -1025,7 +1025,7 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
 
     # test event to check that editing an exchange with history events edits the location label
     test_event = HistoryEvent(
-        event_identifier=b'STARK-STARK-STARK',
+        event_identifier='STARK-STARK-STARK',
         sequence_index=0,
         timestamp=TimestampMS(1673146287380),
         location=Location.KRAKEN,

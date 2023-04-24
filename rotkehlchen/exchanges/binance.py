@@ -708,7 +708,7 @@ class Binance(ExchangeInterface):
                         usd_value = ZERO
 
                     event = HistoryEvent(
-                        event_identifier=uuid4().bytes,
+                        event_identifier=uuid4().hex,
                         sequence_index=0,  # since event_identifier is always different
                         timestamp=timestamp,
                         location=self.location,

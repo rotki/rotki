@@ -814,7 +814,7 @@ def mock_history_processing(
             assert asset_movements[12].category == AssetMovementCategory.WITHDRAWAL
             assert asset_movements[12].asset == A_BTC
 
-        tx_events = [x for x in events if isinstance(x, EvmEvent) and x.serialized_event_identifier.startswith('0x')]  # noqa: E501
+        tx_events = [x for x in events if isinstance(x, EvmEvent)]
         gas_in_eth = FVal('14.36963')
         assert len(tx_events) == 6
         assert tx_events[0].location_label == ETH_ADDRESS1

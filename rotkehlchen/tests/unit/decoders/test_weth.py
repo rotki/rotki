@@ -34,7 +34,7 @@ def test_weth_deposit(database, ethereum_inquirer):
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -49,7 +49,7 @@ def test_weth_deposit(database, ethereum_inquirer):
             notes='Burned 0.00057313513694104 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -65,7 +65,7 @@ def test_weth_deposit(database, ethereum_inquirer):
             counterparty=CPT_WETH,
             address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -103,7 +103,7 @@ def test_weth_withdrawal(database, ethereum_inquirer):
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -118,7 +118,7 @@ def test_weth_withdrawal(database, ethereum_inquirer):
             notes='Burned 0.00062372398538032 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -131,7 +131,7 @@ def test_weth_withdrawal(database, ethereum_inquirer):
             counterparty=CPT_WETH,
             address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -166,7 +166,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
     assert len(events) == 4
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -178,7 +178,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
             notes='Burned 0.004777703202235758 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -191,7 +191,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=187,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -214,7 +214,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
         evm_inquirer=ethereum_inquirer,
     )
     assert events[3] == EvmEvent(
-        event_identifier=evmhash,
+        tx_hash=evmhash,
         sequence_index=191,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -248,7 +248,7 @@ def test_weth_interaction_with_protocols_withdrawal(database, ethereum_inquirer)
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timesatmp,
             location=Location.ETHEREUM,
@@ -260,7 +260,7 @@ def test_weth_interaction_with_protocols_withdrawal(database, ethereum_inquirer)
             notes='Burned 0.011940359686863452 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=EvmEvent.deserialize_event_identifier(
+            tx_hash=deserialize_evm_tx_hash(
                 '0x4a811e8cfa58cb5bd57d92d62e1f01c8578859705243fe69c6bd9e59f3dcd167',
             ),
             sequence_index=1,
@@ -275,7 +275,7 @@ def test_weth_interaction_with_protocols_withdrawal(database, ethereum_inquirer)
             counterparty=CPT_UNISWAP_V3,
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=244,
             timestamp=timesatmp,
             location=Location.ETHEREUM,
@@ -310,7 +310,7 @@ def test_weth_interaction_errors(database, ethereum_inquirer):
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -322,7 +322,7 @@ def test_weth_interaction_errors(database, ethereum_inquirer):
             notes='Burned 0.003535483550478045 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -334,7 +334,7 @@ def test_weth_interaction_errors(database, ethereum_inquirer):
             notes='Send 0.06693824468797216 ETH to 0xe66B31678d6C16E9ebf358268a790B763C133750',
             address=string_to_evm_address('0xe66B31678d6C16E9ebf358268a790B763C133750'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             timestamp=timestamp,
             sequence_index=181,
             location=Location.ETHEREUM,

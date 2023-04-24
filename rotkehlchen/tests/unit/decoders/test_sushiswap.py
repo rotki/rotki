@@ -104,7 +104,7 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
 
     expected_events = [
         EvmEvent(
-            event_identifier=EvmEvent.deserialize_event_identifier(tx_hex),
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -119,7 +119,7 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=EvmEvent.deserialize_event_identifier(tx_hex),
+            tx_hash=evmhash,
             sequence_index=307,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -132,7 +132,7 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_SUSHISWAP_V2,
             address=string_to_evm_address('0x33F6DDAEa2a8a54062E021873bCaEE006CdF4007'),
         ), EvmEvent(
-            event_identifier=EvmEvent.deserialize_event_identifier(tx_hex),
+            tx_hash=evmhash,
             sequence_index=309,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -294,7 +294,7 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
     assert len(events) == 4
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1672888271000),
             location=Location.ETHEREUM,
@@ -306,7 +306,7 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
             notes='Burned 0.006668386 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1672888271000),
             location=Location.ETHEREUM,
@@ -319,7 +319,7 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
             counterparty=CPT_SUSHISWAP_V2,
             address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=23,
             timestamp=TimestampMS(1672888271000),
             location=Location.ETHEREUM,
@@ -332,7 +332,7 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
             counterparty=CPT_SUSHISWAP_V2,
             address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=30,
             timestamp=TimestampMS(1672888271000),
             location=Location.ETHEREUM,
@@ -463,7 +463,7 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
     assert len(events) == 4
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -475,7 +475,7 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
             notes='Burned 0.0030789891485573 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -488,7 +488,7 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
             counterparty=CPT_SUSHISWAP_V2,
             address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=218,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -501,7 +501,7 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
             counterparty=CPT_SUSHISWAP_V2,
             address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=222,
             timestamp=timestamp,
             location=Location.ETHEREUM,

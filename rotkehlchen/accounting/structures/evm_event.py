@@ -20,12 +20,15 @@ from rotkehlchen.accounting.structures.types import (
 )
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_optional
-from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS
-from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.misc import is_valid_ethereum_tx_hash
+from rotkehlchen.types import (
+    ChecksumEvmAddress,
+    EVMTxHash,
+    Location,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 if TYPE_CHECKING:
@@ -81,7 +84,7 @@ class EvmEvent(HistoryBaseEntry):
 
     def __init__(
             self,
-            event_identifier: bytes,
+            tx_hash: EVMTxHash,
             sequence_index: int,
             timestamp: TimestampMS,
             location: Location,
@@ -96,9 +99,14 @@ class EvmEvent(HistoryBaseEntry):
             product: Optional[EvmProduct] = None,
             address: Optional[ChecksumEvmAddress] = None,
             extra_data: Optional[dict[str, Any]] = None,
+            event_identifier: Optional[str] = None,
     ) -> None:
+        if event_identifier is None:
+            calculated_event_identifier = f'{location.to_chain_id()}{tx_hash.hex()}'
+        else:
+            calculated_event_identifier = event_identifier
         super().__init__(
-            event_identifier=event_identifier,
+            event_identifier=calculated_event_identifier,
             sequence_index=sequence_index,
             timestamp=timestamp,
             location=location,
@@ -111,6 +119,7 @@ class EvmEvent(HistoryBaseEntry):
             identifier=identifier,
         )
         self.address = address
+        self.tx_hash = tx_hash
         self.counterparty = counterparty
         self.product = product
         self.extra_data = extra_data
@@ -121,6 +130,7 @@ class EvmEvent(HistoryBaseEntry):
         return (
             base_tuple,
             (
+                self.tx_hash,
                 self.counterparty,
                 self.product.serialize() if self.product is not None else None,
                 self.address,
@@ -130,6 +140,7 @@ class EvmEvent(HistoryBaseEntry):
 
     def serialize(self) -> dict[str, Any]:
         return super().serialize() | {
+            'tx_hash': self.tx_hash.hex(),
             'counterparty': self.counterparty,
             'product': self.product.serialize() if self.product is not None else None,
             'address': self.address,
@@ -153,9 +164,9 @@ class EvmEvent(HistoryBaseEntry):
     def deserialize_from_db(cls: type['EvmEvent'], entry: tuple) -> 'EvmEvent':
         entry = cast(EVM_EVENT_DB_TUPLE_READ, entry)
         extra_data = None
-        if entry[15] is not None:
+        if entry[16] is not None:
             try:
-                extra_data = json.loads(entry[15])
+                extra_data = json.loads(entry[16])
             except json.JSONDecodeError as e:
                 log.debug(
                     f'Failed to read extra_data when reading EvmEvent entry '
@@ -176,25 +187,12 @@ class EvmEvent(HistoryBaseEntry):
             notes=entry[9],
             event_type=HistoryEventType.deserialize(entry[10]),
             event_subtype=HistoryEventSubType.deserialize(entry[11]),
-            counterparty=entry[12],
-            product=EvmProduct.deserialize(entry[13]) if entry[13] is not None else None,
-            address=deserialize_optional(input_val=entry[14], fn=string_to_evm_address),
+            tx_hash=deserialize_evm_tx_hash(entry[12]),
+            counterparty=entry[13],
+            product=EvmProduct.deserialize(entry[14]) if entry[14] is not None else None,
+            address=deserialize_optional(input_val=entry[15], fn=string_to_evm_address),
             extra_data=extra_data,
         )
-
-    @property
-    def serialized_event_identifier(self) -> str:
-        hex_representation = self.event_identifier.hex()
-        if hex_representation.startswith('0x') is True:
-            return hex_representation
-        return '0x' + hex_representation
-
-    @classmethod
-    def deserialize_event_identifier(cls: type['EvmEvent'], val: str) -> bytes:
-        if is_valid_ethereum_tx_hash(val) is False:
-            raise DeserializationError(f'{val} was expected to be an evm tx hash string')
-
-        return hexstring_to_bytes(val)
 
     def has_details(self) -> bool:
         if self.extra_data is None:
@@ -213,6 +211,7 @@ class EvmEvent(HistoryBaseEntry):
         base_data = cls._deserialize_base_history_data(data)
         return cls(
             **base_data,
+            tx_hash=deserialize_evm_tx_hash(data['tx_hash']),
             address=deserialize_optional(data['address'], string_to_evm_address),
             counterparty=deserialize_optional(data['counterparty'], str),
             product=deserialize_optional(data['product'], EvmProduct.deserialize),
@@ -233,6 +232,7 @@ class EvmEvent(HistoryBaseEntry):
         return (
             HistoryBaseEntry.__eq__(self, other) is True and
             self.counterparty == other.counterparty and
+            self.tx_hash == other.tx_hash and
             self.product == other.product and
             self.address == other.address and
             self.extra_data == other.extra_data
@@ -240,6 +240,7 @@ class EvmEvent(HistoryBaseEntry):
 
     def __repr__(self) -> str:
         fields = self._history_base_entry_repr_fields() + [
+            f'{self.tx_hash=}',
             f'{self.counterparty=}',
             f'{self.product=}',
             f'{self.address=}',
@@ -254,10 +255,8 @@ class EvmEvent(HistoryBaseEntry):
         return AccountingEventType.TRANSACTION_EVENT
 
     def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
-        serialized_event_identifier = self.serialized_event_identifier
         ignored_ids = ignored_ids_mapping.get(ActionType.EVM_TRANSACTION, set())
-        result = f'{self.location.to_chain_id()}{serialized_event_identifier}' in ignored_ids
-        return result
+        return self.event_identifier in ignored_ids
 
     def process(
             self,

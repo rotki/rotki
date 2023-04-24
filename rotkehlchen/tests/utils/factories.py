@@ -23,6 +23,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTokenKind,
     EvmTransaction,
+    EVMTxHash,
     Fee,
     Location,
     Price,
@@ -30,7 +31,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
     TradeType,
-    make_evm_tx_hash,
+    deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -76,6 +77,10 @@ def make_evm_address() -> ChecksumEvmAddress:
     return to_checksum_address('0x' + make_random_bytes(20).hex())
 
 
+def make_evm_tx_hash() -> EVMTxHash:
+    return deserialize_evm_tx_hash(make_random_bytes(32))
+
+
 def make_ethereum_transaction(
         tx_hash: Optional[bytes] = None,
         timestamp: Optional[Timestamp] = None,
@@ -84,7 +89,7 @@ def make_ethereum_transaction(
         tx_hash = make_random_bytes(42)
     timestamp = timestamp if timestamp is not None else Timestamp(0)
     return EvmTransaction(
-        tx_hash=make_evm_tx_hash(tx_hash),
+        tx_hash=deserialize_evm_tx_hash(tx_hash),
         chain_id=ChainID.ETHEREUM,
         timestamp=timestamp,
         block_number=0,
@@ -128,7 +133,7 @@ def make_ethereum_event(
     if tx_hash is None:
         tx_hash = make_random_bytes(32)
     return EvmEvent(
-        event_identifier=tx_hash,
+        tx_hash=deserialize_evm_tx_hash(tx_hash),
         sequence_index=index,
         location_label=location_label,
         identifier=index,

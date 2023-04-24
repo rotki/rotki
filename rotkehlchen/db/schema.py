@@ -607,7 +607,7 @@ DB_CREATE_HISTORY_EVENTS = """
 CREATE TABLE IF NOT EXISTS history_events (
     identifier INTEGER NOT NULL PRIMARY KEY,
     entry_type INTEGER NOT NULL,
-    event_identifier BLOB NOT NULL,
+    event_identifier TEXT NOT NULL,
     sequence_index INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
     location TEXT NOT NULL,
@@ -628,6 +628,7 @@ CREATE TABLE IF NOT EXISTS history_events (
 DB_CREATE_EVM_EVENTS_INFO = """
 CREATE TABLE IF NOT EXISTS evm_events_info(
     identifier INTEGER PRIMARY KEY,
+    tx_hash BLOB NOT NULL,
     counterparty TEXT,
     product TEXT,
     address TEXT,

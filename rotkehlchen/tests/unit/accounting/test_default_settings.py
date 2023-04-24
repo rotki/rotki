@@ -22,11 +22,11 @@ from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.factories import make_evm_address, make_random_bytes
-from rotkehlchen.types import Location, Price, Timestamp, TimestampMS, make_evm_tx_hash
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.types import Location, Price, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
-EXAMPLE_EVM_HASH = make_evm_tx_hash(make_random_bytes(32))
+EXAMPLE_EVM_HASH = make_evm_tx_hash()
 EXAMPLE_TX_HASH_HEX = EXAMPLE_EVM_HASH.hex()  # pylint: disable=no-member  # EvmTxHash does have hex() member  # noqa: E501
 EXAMPLE_ADDRESS = make_evm_address()
 
@@ -99,7 +99,7 @@ def _gain_one_ether(
 ) -> None:
     """Helper function to gain 1 ETH, so that spending events have something to spend"""
     eth_gain_event = EvmEvent(
-        event_identifier=EXAMPLE_EVM_HASH,
+        tx_hash=EXAMPLE_EVM_HASH,
         sequence_index=0,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,
@@ -120,7 +120,7 @@ def _gain_one_ether(
 def test_accounting_no_settings(accounting_pot: 'AccountingPot'):
     """Test that if there are no settings provided, the event is not taken into account"""
     event = EvmEvent(
-        event_identifier=EXAMPLE_EVM_HASH,
+        tx_hash=EXAMPLE_EVM_HASH,
         sequence_index=0,
         timestamp=TimestampMS(0),
         location=Location.ETHEREUM,
@@ -201,7 +201,7 @@ def test_accounting_spend_settings(
 ):
     _gain_one_ether(transactions=accounting_pot.transactions)
     spend_event = EvmEvent(
-        event_identifier=EXAMPLE_EVM_HASH,
+        tx_hash=EXAMPLE_EVM_HASH,
         sequence_index=0,
         timestamp=TIMESTAMP_2_MS,
         location=Location.ETHEREUM,
@@ -273,7 +273,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
     """
     _gain_one_ether(transactions=accounting_pot.transactions)
     swap_spend_event = EvmEvent(
-        event_identifier=EXAMPLE_EVM_HASH,
+        tx_hash=EXAMPLE_EVM_HASH,
         sequence_index=1,
         timestamp=TIMESTAMP_2_MS,
         location=Location.ETHEREUM,
@@ -286,7 +286,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
         counterparty=counterparty,
     )
     swap_receive_event = EvmEvent(
-        event_identifier=EXAMPLE_EVM_HASH,
+        tx_hash=EXAMPLE_EVM_HASH,
         sequence_index=2,
         timestamp=TIMESTAMP_2_MS,
         location=Location.ETHEREUM,

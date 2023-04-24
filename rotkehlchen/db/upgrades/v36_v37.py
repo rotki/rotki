@@ -10,7 +10,7 @@ from rotkehlchen.db.constants import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location
+from rotkehlchen.types import EVM_LOCATIONS, Location, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -48,9 +48,11 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
 
 def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection') -> None:
     """
-    1. Rewrite the DB schema of the history events to have subtype as non Optional
-    2. Delete counterparty and extra_data fields
-    3. Add `entry_type` column that helps determine types of events.
+    1. Reset all decoded events
+    2. Rewrite the DB schema of the history events to have subtype as non Optional
+    3. Delete counterparty and extra_data fields
+    4. Add `entry_type` column that helps determine types of events.
+    5. Turn event_identifier to a string
 
     Also turn all null subtype entries to have subtype none
     """
@@ -60,7 +62,7 @@ def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection'
     write_cursor.execute("""CREATE TABLE IF NOT EXISTS history_events_copy (
     identifier INTEGER NOT NULL PRIMARY KEY,
     entry_type INTEGER NOT NULL,
-    event_identifier BLOB NOT NULL,
+    event_identifier TEXT NOT NULL,
     sequence_index INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
     location TEXT NOT NULL,
@@ -80,25 +82,37 @@ def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection'
         read_cursor.execute('SELECT * from history_events')
         for entry in read_cursor:
             location = Location.deserialize_from_db(entry[4])
-            event_identifier = entry[1]
-            if location == Location.KRAKEN or event_identifier.startswith(b'rotki_events'):  # This is the rule at 1.27.1   # noqa: E501
+            if isinstance(entry[1], str):
+                event_identifier = entry[1]
+            else:  # is an EVM transaction event
+                if location not in EVM_LOCATIONS:
+                    # data is somehow wrong. Let's try to fix location
+                    chain_id = write_cursor.execute('SELECT chain_id from evm_transactions WHERE tx_hash=?', (entry[1],)).fetchone()  # noqa: E501
+                    if chain_id is not None:
+                        location = Location.from_chain_id(chain_id)
+                    else:  # could not find tx_hash. Let's just default to ethereum
+                        location = Location.ETHEREUM
+
+                event_identifier = f'{location.to_chain_id()}{deserialize_evm_tx_hash(entry[1]).hex()}'  # noqa: E501 # pylint: disable=no-member
+
+            if location == Location.KRAKEN or event_identifier.startswith('rotki_events'):  # This is the rule at 1.27.1   # noqa: E501
                 entry_type = 0  # Pure history base entry
             else:
                 entry_type = 1  # An evm event
             if entry[11] is None:
-                new_entries.append([entry[0], entry_type, *entry[1:11], 'none'])  # turn NULL values to text `none`  # noqa: E501
+                new_entries.append([entry[0], entry_type, event_identifier, *entry[2:11], 'none'])  # turn NULL values to text `none`  # noqa: E501
             else:
-                new_entries.append([entry[0], entry_type, *entry[1:12]])  # Don't change NON-NULL values  # noqa: E501
+                new_entries.append([entry[0], entry_type, event_identifier, *entry[2:12]])  # Don't change NON-NULL values  # noqa: E501
 
             if entry_type == 1:
-                extra_evm_info_entries.append((entry[0],) + entry[12:])
+                extra_evm_info_entries.append((entry[0], entry[1]) + entry[12:])
 
     # add all non-evm entries to the new table (no data lost)
     write_cursor.executemany('INSERT INTO history_events_copy VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', new_entries)  # noqa: E501
     for entry in extra_evm_info_entries:
         write_cursor.execute(
-            'INSERT INTO evm_events_info VALUES(?, ?, ?, ?, ?)',
-            (entry[0], entry[1], None, None, entry[2]),
+            'INSERT INTO evm_events_info VALUES(?, ?, ?, ?, ?, ?)',
+            (entry[0], entry[1], entry[2], None, None, entry[3]),
         )
 
     write_cursor.switch_foreign_keys('OFF')  # need FK off or history_events_mappings get deleted
@@ -120,6 +134,7 @@ def _create_new_tables(write_cursor: 'DBCursor') -> None:
     write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS evm_events_info(
             identifier INTEGER PRIMARY KEY,
+            tx_hash BLOB NOT NULL,
             counterparty TEXT,
             product TEXT,
             address TEXT,

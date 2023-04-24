@@ -17,7 +17,7 @@ from rotkehlchen.types import (
     EvmTransaction,
     SupportedBlockchain,
     Timestamp,
-    make_evm_tx_hash,
+    deserialize_evm_tx_hash,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -30,7 +30,7 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True)
-    tx2_hash = make_evm_tx_hash(b'.h\xdd\x82\x85\x94\xeaq\xfe\n\xfc\xcf\xadwH\xc9\x0f\xfc\xd0\xf1\xad\xd4M\r$\x9b\xf7\x98\x87\xda\x93\x18')  # noqa: E501
+    tx2_hash = deserialize_evm_tx_hash(b'.h\xdd\x82\x85\x94\xeaq\xfe\n\xfc\xcf\xadwH\xc9\x0f\xfc\xd0\xf1\xad\xd4M\r$\x9b\xf7\x98\x87\xda\x93\x18')  # noqa: E501
     with data.db.user_write() as cursor:
         data.db.add_blockchain_accounts(
             write_cursor=cursor,
@@ -42,7 +42,7 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
         )
 
     tx1 = EvmTransaction(
-        tx_hash=make_evm_tx_hash(b'1'),
+        tx_hash=deserialize_evm_tx_hash(b'1'),
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1451606400),
         block_number=1,
@@ -70,7 +70,7 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
         nonce=1,
     )
     tx3 = EvmTransaction(
-        tx_hash=make_evm_tx_hash(b'3'),
+        tx_hash=deserialize_evm_tx_hash(b'3'),
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1452806400),
         block_number=5,
@@ -149,7 +149,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         )
 
     tx1 = EvmTransaction(
-        tx_hash=make_evm_tx_hash(b'1'),
+        tx_hash=deserialize_evm_tx_hash(b'1'),
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1451606400),
         block_number=1,
@@ -163,7 +163,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         nonce=1,
     )
     tx2 = EvmTransaction(
-        tx_hash=make_evm_tx_hash(b'2'),
+        tx_hash=deserialize_evm_tx_hash(b'2'),
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1451706400),
         block_number=3,
@@ -177,7 +177,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         nonce=1,
     )
     tx3 = EvmTransaction(
-        tx_hash=make_evm_tx_hash(b'3'),
+        tx_hash=deserialize_evm_tx_hash(b'3'),
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1452806400),
         block_number=5,
@@ -191,7 +191,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         nonce=3,
     )
     tx4 = EvmTransaction(
-        tx_hash=make_evm_tx_hash(b'4'),
+        tx_hash=deserialize_evm_tx_hash(b'4'),
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1628064001),
         block_number=6,
@@ -205,7 +205,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         nonce=55,
     )
     tx5 = EvmTransaction(
-        tx_hash=make_evm_tx_hash(b'5'),
+        tx_hash=deserialize_evm_tx_hash(b'5'),
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1629064001),
         block_number=7,
@@ -219,7 +219,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         nonce=55,
     )
     internal_tx1 = EvmInternalTransaction(
-        parent_tx_hash=make_evm_tx_hash(b'3'),
+        parent_tx_hash=deserialize_evm_tx_hash(b'3'),
         chain_id=ChainID.ETHEREUM,
         trace_id=1,
         timestamp=Timestamp(1452806400),
@@ -229,7 +229,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         value=0,
     )
     internal_tx2 = EvmInternalTransaction(
-        parent_tx_hash=make_evm_tx_hash(b'5'),
+        parent_tx_hash=deserialize_evm_tx_hash(b'5'),
         chain_id=ChainID.ETHEREUM,
         trace_id=21,
         timestamp=Timestamp(1629064001),
@@ -239,7 +239,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         value=0,
     )
     internal_tx3 = EvmInternalTransaction(
-        parent_tx_hash=make_evm_tx_hash(b'4'),
+        parent_tx_hash=deserialize_evm_tx_hash(b'4'),
         chain_id=ChainID.ETHEREUM,
         trace_id=25,
         timestamp=Timestamp(1628064001),
@@ -249,7 +249,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         value=10,
     )
     internal_tx4 = EvmInternalTransaction(
-        parent_tx_hash=make_evm_tx_hash(b'4'),
+        parent_tx_hash=deserialize_evm_tx_hash(b'4'),
         chain_id=ChainID.ETHEREUM,
         trace_id=26,
         timestamp=Timestamp(1628064001),

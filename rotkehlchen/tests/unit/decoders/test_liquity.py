@@ -111,7 +111,7 @@ def test_liquity_trove_adjust(database, ethereum_inquirer, eth_transactions):
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -126,7 +126,7 @@ def test_liquity_trove_adjust(database, ethereum_inquirer, eth_transactions):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -139,7 +139,7 @@ def test_liquity_trove_adjust(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_LIQUITY,
             address=string_to_evm_address('0x24179cd81c9e782a4096035f7ec97fb8b783e007'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=100,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -229,7 +229,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_inquirer, eth_transaction
     assert len(events) == 2
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -244,7 +244,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_inquirer, eth_transaction
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=208,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -344,7 +344,7 @@ def test_liquity_trove_remove_eth(database, ethereum_inquirer, eth_transactions)
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -359,7 +359,7 @@ def test_liquity_trove_remove_eth(database, ethereum_inquirer, eth_transactions)
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -440,7 +440,7 @@ def test_liquity_pool_deposit(database, ethereum_inquirer, eth_transactions):
     assert len(events) == 2
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -455,7 +455,7 @@ def test_liquity_pool_deposit(database, ethereum_inquirer, eth_transactions):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=908,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -568,7 +568,7 @@ def test_liquity_pool_remove_deposits(database, ethereum_inquirer, eth_transacti
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -583,7 +583,7 @@ def test_liquity_pool_remove_deposits(database, ethereum_inquirer, eth_transacti
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -596,7 +596,7 @@ def test_liquity_pool_remove_deposits(database, ethereum_inquirer, eth_transacti
             counterparty=CPT_LIQUITY,
             address=string_to_evm_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=135,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -716,7 +716,7 @@ def test_increase_liquity_staking(database, ethereum_inquirer, eth_transactions)
     assert len(events) == 4
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -731,7 +731,7 @@ def test_increase_liquity_staking(database, ethereum_inquirer, eth_transactions)
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -744,7 +744,7 @@ def test_increase_liquity_staking(database, ethereum_inquirer, eth_transactions)
             counterparty=CPT_LIQUITY,
             address=string_to_evm_address('0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=177,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -758,7 +758,7 @@ def test_increase_liquity_staking(database, ethereum_inquirer, eth_transactions)
             address=string_to_evm_address('0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d'),
             extra_data={LIQUITY_STAKING_DETAILS: {'staked_amount': '171.95999999999998', 'asset': A_LQTY}},  # noqa: E501
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=180,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -878,7 +878,7 @@ def test_remove_liquity_staking(database, ethereum_inquirer, eth_transactions):
     assert len(events) == 4
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -893,7 +893,7 @@ def test_remove_liquity_staking(database, ethereum_inquirer, eth_transactions):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -906,7 +906,7 @@ def test_remove_liquity_staking(database, ethereum_inquirer, eth_transactions):
             address=string_to_evm_address('0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d'),
             counterparty=CPT_LIQUITY,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=119,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -920,7 +920,7 @@ def test_remove_liquity_staking(database, ethereum_inquirer, eth_transactions):
             address=string_to_evm_address('0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d'),
             extra_data={LIQUITY_STAKING_DETAILS: {'staked_amount': '0', 'asset': A_LQTY}},
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=122,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -948,7 +948,7 @@ def test_stability_pool_withdrawal(database, ethereum_inquirer, ethereum_account
     )
     expected_events = [
         EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1677402143000),
             location=Location.ETHEREUM,
@@ -960,7 +960,7 @@ def test_stability_pool_withdrawal(database, ethereum_inquirer, ethereum_account
             notes='Burned 0.00719440411023624 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=191,
             timestamp=TimestampMS(1677402143000),
             location=Location.ETHEREUM,
@@ -973,7 +973,7 @@ def test_stability_pool_withdrawal(database, ethereum_inquirer, ethereum_account
             counterparty=CPT_LIQUITY,
             address=string_to_evm_address('0xD8c9D9071123a059C6E0A945cF0e0c82b508d816'),
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=195,
             timestamp=TimestampMS(1677402143000),
             location=Location.ETHEREUM,
@@ -1001,7 +1001,7 @@ def test_ds_proxy_liquity_deposit(database, ethereum_inquirer, ethereum_accounts
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1664055431000),
             location=Location.ETHEREUM,
@@ -1013,7 +1013,7 @@ def test_ds_proxy_liquity_deposit(database, ethereum_inquirer, ethereum_accounts
             notes='Burned 0.002962168608405875 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=291,
             timestamp=TimestampMS(1664055431000),
             location=Location.ETHEREUM,
@@ -1026,7 +1026,7 @@ def test_ds_proxy_liquity_deposit(database, ethereum_inquirer, ethereum_accounts
             counterparty=CPT_LIQUITY,
             address=string_to_evm_address('0x7815beb98a927565eA43b5854644392F21dA0021'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=292,
             timestamp=TimestampMS(1664055431000),
             location=Location.ETHEREUM,
@@ -1054,7 +1054,7 @@ def test_ds_proxy_liquity_withdraw(database, ethereum_inquirer, ethereum_account
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1665138455000),
             location=Location.ETHEREUM,
@@ -1066,7 +1066,7 @@ def test_ds_proxy_liquity_withdraw(database, ethereum_inquirer, ethereum_account
             notes='Burned 0.002590429704686116 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1665138455000),
             location=Location.ETHEREUM,
@@ -1079,7 +1079,7 @@ def test_ds_proxy_liquity_withdraw(database, ethereum_inquirer, ethereum_account
             counterparty=CPT_LIQUITY,
             address=string_to_evm_address('0x7815beb98a927565eA43b5854644392F21dA0021'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=245,
             timestamp=TimestampMS(1665138455000),
             location=Location.ETHEREUM,
@@ -1092,7 +1092,7 @@ def test_ds_proxy_liquity_withdraw(database, ethereum_inquirer, ethereum_account
             counterparty=CPT_LIQUITY,
             address=string_to_evm_address('0x7815beb98a927565eA43b5854644392F21dA0021'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=247,
             timestamp=TimestampMS(1665138455000),
             location=Location.ETHEREUM,
@@ -1121,7 +1121,7 @@ def test_ds_proxy_liquity_staking(database, ethereum_inquirer, ethereum_accounts
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1679936291000),
             location=Location.ETHEREUM,
@@ -1134,7 +1134,7 @@ def test_ds_proxy_liquity_staking(database, ethereum_inquirer, ethereum_accounts
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1679936291000),
             location=Location.ETHEREUM,
@@ -1147,7 +1147,7 @@ def test_ds_proxy_liquity_staking(database, ethereum_inquirer, ethereum_accounts
             counterparty=CPT_LIQUITY,
             address=string_to_evm_address('0x31E45D87D9549DCc5cc28925238b7e329719C8fB'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=196,
             timestamp=TimestampMS(1679936291000),
             location=Location.ETHEREUM,
@@ -1166,7 +1166,7 @@ def test_ds_proxy_liquity_staking(database, ethereum_inquirer, ethereum_accounts
                 },
             },
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=197,
             timestamp=TimestampMS(1679936291000),
             location=Location.ETHEREUM,
@@ -1178,7 +1178,7 @@ def test_ds_proxy_liquity_staking(database, ethereum_inquirer, ethereum_accounts
             notes='Revoke LQTY spending approval of 0xEa00FC641a817e5F3eded4743aac7AB08dbf74b0 by 0x31E45D87D9549DCc5cc28925238b7e329719C8fB',  # noqa: E501
             address=string_to_evm_address('0x31E45D87D9549DCc5cc28925238b7e329719C8fB'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=206,
             timestamp=TimestampMS(1679936291000),
             location=Location.ETHEREUM,

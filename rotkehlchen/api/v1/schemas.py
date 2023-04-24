@@ -75,6 +75,7 @@ from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     DEFAULT_ADDRESS_NAME_PRIORITY,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
+    EVM_LOCATIONS,
     NON_EVM_CHAINS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_SUBSTRATE_CHAINS,
@@ -96,7 +97,6 @@ from rotkehlchen.types import (
     Timestamp,
     TradeType,
     UserNote,
-    deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import create_order_by_rules_list, ts_now
@@ -611,6 +611,7 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
     asset = AssetField(expected_type=CryptoAsset, load_default=None)
 
     # EvmEvent only
+    tx_hashes = DelimitedOrNormalList(EVMTransactionHashField(), load_default=None)
     counterparties = DelimitedOrNormalList(fields.String(), load_default=None)
     products = DelimitedOrNormalList(SerializableEnumField(enum_class=EvmProduct), load_default=None)  # noqa: E501
 
@@ -634,7 +635,7 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
                 field_name='order_by_attributes',
             )
 
-        for attribute in ('counterparties', 'products', 'event_types', 'event_subtypes'):
+        for attribute in ('counterparties', 'products', 'event_types', 'event_subtypes', 'event_identifiers', 'tx_hashes'):  # noqa: E501
             value = data[attribute]
             if value is not None and len(value) == 0:
                 raise ValidationError(
@@ -652,21 +653,6 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
         # of history events and staking events we want to use histoy event filters
         should_query_evm_event = any(data[x] is not None for x in ('products', 'counterparties'))
 
-        event_identifiers = None
-        if data['event_identifiers'] is not None:
-            event_identifiers = []
-            try:  # encode to bytes since this is how event identifiers are in the DB
-                for identifier in data['event_identifiers']:
-                    if identifier.startswith('0x'):
-                        event_identifiers.append(deserialize_evm_tx_hash(identifier))
-                    else:
-                        event_identifiers.append(identifier.encode())
-            except (UnicodeEncodeError, AttributeError, DeserializationError) as e:
-                raise ValidationError(
-                    message=f'Invalid event identifier given: {str(e)}',
-                    field_name='event_identifiers',
-                ) from e
-
         common_arguments = {
             'order_by_rules': create_order_by_rules_list(
                 data=data,  # descending timestamp and ascending sequence index
@@ -678,7 +664,7 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
             'from_ts': data['from_timestamp'],
             'to_ts': data['to_timestamp'],
             'exclude_ignored_assets': data['exclude_ignored_assets'],
-            'event_identifiers': event_identifiers,
+            'event_identifiers': data['event_identifiers'],
             'location_labels': data['location_labels'],
             'assets': [data['asset']] if data['asset'] is not None else None,
             'event_types': data['event_types'],
@@ -689,6 +675,7 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
         if should_query_evm_event:
             filter_query = EvmEventFilterQuery.make(
                 **common_arguments,
+                tx_hashes=data['tx_hashes'],
                 products=data['products'],
                 counterparties=data['counterparties'],
             )
@@ -703,7 +690,7 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
 
 class EvmEventSchema(Schema):
     """Schema used when adding a new event in the EVM transactions view"""
-    event_identifier = fields.String(required=True)
+    tx_hash = EVMTransactionHashField(required=True)
     sequence_index = fields.Integer(required=True)
     # Timestamp coming in from the API is in seconds, in contrast to what we save in the struct
     timestamp = TimestampField(ts_multiplier=1000, required=True)
@@ -731,7 +718,13 @@ class EvmEventSchema(Schema):
     ) -> dict[str, Any]:
         if data.get('event_subtype', None) is None:
             data['event_subtype'] = HistoryEventSubType.NONE
-        data['event_identifier'] = EvmEvent.deserialize_event_identifier(data['event_identifier'])  # noqa: E501
+
+        if data['location'] not in EVM_LOCATIONS:
+            raise ValidationError(
+                message=f'EVM event location needs to be one of {EVM_LOCATIONS}',
+                field_name='location',
+            )
+
         return {'event': EvmEvent(**data)}
 
 

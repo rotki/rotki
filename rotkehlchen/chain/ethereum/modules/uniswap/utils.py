@@ -315,7 +315,7 @@ def decode_basic_uniswap_info(
             # If what described in the comment above is not met then it is an error.
             log.error(
                 f'Found unexpected event {event.serialize()} during decoding a uniswap swap '
-                f'in transaction {event.event_identifier.hex()}',
+                f'in transaction {event.tx_hash.hex()}',
             )
             break
 

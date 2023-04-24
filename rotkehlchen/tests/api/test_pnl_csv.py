@@ -177,7 +177,7 @@ def test_encoding(
         rotki.events_historian,
         'get_history',
         lambda start_ts, end_ts, has_premium: ('', [EvmEvent(
-            event_identifier=GENESIS_HASH,
+            tx_hash=GENESIS_HASH,
             sequence_index=0,
             timestamp=TimestampMS(1569924574000),
             location=Location.ETHEREUM,

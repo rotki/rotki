@@ -26,7 +26,7 @@ def test_swap_token_to_token(database, ethereum_inquirer, ethereum_accounts):
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=4,
             timestamp=TimestampMS(1676976635000),
             location=Location.ETHEREUM,
@@ -39,7 +39,7 @@ def test_swap_token_to_token(database, ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=34,
             timestamp=TimestampMS(1676976635000),
             location=Location.ETHEREUM,
@@ -69,7 +69,7 @@ def test_swap_token_to_eth(database, ethereum_inquirer, ethereum_accounts):
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1676976635000),
             location=Location.ETHEREUM,
@@ -82,7 +82,7 @@ def test_swap_token_to_eth(database, ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=10,
             timestamp=TimestampMS(1676976635000),
             location=Location.ETHEREUM,
@@ -112,7 +112,7 @@ def test_swap_eth_to_token(database, ethereum_inquirer, ethereum_accounts):
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1676987243000),
             location=Location.ETHEREUM,
@@ -125,7 +125,7 @@ def test_swap_eth_to_token(database, ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=321,
             timestamp=TimestampMS(1676987243000),
             location=Location.ETHEREUM,
@@ -162,7 +162,7 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1676976635000),
             location=Location.ETHEREUM,
@@ -175,7 +175,7 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1676976635000),
             location=Location.ETHEREUM,
@@ -188,7 +188,7 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=8,
             timestamp=TimestampMS(1676976635000),
             location=Location.ETHEREUM,
@@ -201,7 +201,7 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=9,
             timestamp=TimestampMS(1676976635000),
             location=Location.ETHEREUM,
@@ -214,7 +214,7 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_COWSWAP,
             address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=37,
             timestamp=TimestampMS(1676976635000),
             location=Location.ETHEREUM,
@@ -243,7 +243,7 @@ def test_place_eth_order(database, ethereum_inquirer, ethereum_accounts):
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1676987159000),
             location=Location.ETHEREUM,
@@ -255,7 +255,7 @@ def test_place_eth_order(database, ethereum_inquirer, ethereum_accounts):
             notes='Burned 0.001768460133875456 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1676987159000),
             location=Location.ETHEREUM,
@@ -285,7 +285,7 @@ def test_invalidate_eth_order(database, ethereum_inquirer, ethereum_accounts):
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1677040511000),
             location=Location.ETHEREUM,
@@ -297,7 +297,7 @@ def test_invalidate_eth_order(database, ethereum_inquirer, ethereum_accounts):
             notes='Burned 0.001171136978414093 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1677040511000),
             location=Location.ETHEREUM,
@@ -327,7 +327,7 @@ def test_refund_eth_order(database, ethereum_inquirer, ethereum_accounts):
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1677055175000),
             location=Location.ETHEREUM,

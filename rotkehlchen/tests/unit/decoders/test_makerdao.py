@@ -11,7 +11,6 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, deserialize_evm_tx_hash
-from rotkehlchen.utils.hexbytes import HexBytes
 
 
 @pytest.mark.vcr()
@@ -32,7 +31,7 @@ def test_makerdao_simple_transaction(
     )
     assert events == [
         EvmEvent(
-            event_identifier=HexBytes('0x95de47059bcc084ebb8bdd60f48fbcf05619c2af84bf612fdc27a6bbf9b5097e'),  # noqa: E501
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=1593572988000,
             location=Location.ETHEREUM,
@@ -46,7 +45,7 @@ def test_makerdao_simple_transaction(
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            event_identifier=HexBytes('0x95de47059bcc084ebb8bdd60f48fbcf05619c2af84bf612fdc27a6bbf9b5097e'),  # noqa: E501
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=1593572988000,
             location=Location.ETHEREUM,

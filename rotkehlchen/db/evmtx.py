@@ -23,7 +23,6 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
     deserialize_evm_tx_hash,
-    make_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import hexstr_to_int
@@ -152,7 +151,7 @@ class DBEvmTx():
         transactions = []
         for result in results:
             tx = EvmInternalTransaction(
-                parent_tx_hash=make_evm_tx_hash(result[0]),
+                parent_tx_hash=deserialize_evm_tx_hash(result[0]),
                 chain_id=ChainID.deserialize_from_db(result[1]),
                 trace_id=result[2],
                 timestamp=result[3],
@@ -190,7 +189,7 @@ class DBEvmTx():
         for result in results:
             try:
                 tx = EvmTransaction(
-                    tx_hash=make_evm_tx_hash(result[0]),
+                    tx_hash=deserialize_evm_tx_hash(result[0]),
                     chain_id=ChainID.deserialize_from_db(result[1]),
                     timestamp=deserialize_timestamp(result[2]),
                     block_number=result[3],
@@ -306,7 +305,7 @@ class DBEvmTx():
 
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(querystr, bindings)
-            return [make_evm_tx_hash(x[0]) for x in cursor]
+            return [deserialize_evm_tx_hash(x[0]) for x in cursor]
 
     def count_hashes_not_decoded(
             self,
@@ -455,7 +454,8 @@ class DBEvmTx():
         """Delete all of the particular evm chain transactions related data
         to the given address from the DB.
 
-        So transactions, receipts, logs and decoded events
+        So transactions, receipts, logs and decoded events, except for those
+        whose events are customized.
         """
         dbevents = DBHistoryEvents(self.db)
         chain_id = chain.to_chain_id()
@@ -475,7 +475,7 @@ class DBEvmTx():
             ')',
             (address, chain_id_serialized, address, chain_id_serialized),
         )
-        tx_hashes = [make_evm_tx_hash(x[0]) for x in result]
+        tx_hashes = [deserialize_evm_tx_hash(x[0]) for x in result]
         if len(tx_hashes) == 0:
             # Need to handle the genesis tx separately since our single genesis tx contains
             # multiple genesis transactions from multiple addresses.
@@ -492,11 +492,14 @@ class DBEvmTx():
             chain_id=chain_id,  # type: ignore[arg-type] # comes from SUPPORTED_EVM_CHAINS
         )
         write_cursor.execute(  # delete genesis tx events related to the provided address
-            'DELETE FROM history_events WHERE event_identifier=? AND location_label=?',
+            'DELETE FROM history_events WHERE identifier IN ('
+            'SELECT H.identifier from history_events H INNER JOIN evm_events_info E '
+            'ON H.identifier=E.identifier WHERE E.tx_hash=? AND H.location_label=?)',
             (GENESIS_HASH, address),
         )
         genesis_events_count = write_cursor.execute(
-            'SELECT COUNT (*) FROM history_events WHERE event_identifier=?',
+            'SELECT COUNT (*) FROM history_events H INNER JOIN evm_events_info E'
+            ' WHERE H.identifier=E.identifier and E.tx_hash=?',
             (GENESIS_HASH,),
         ).fetchone()[0]
         if genesis_events_count == 0:
@@ -506,7 +509,7 @@ class DBEvmTx():
         # Now delete all relevant transactions. By deleting all relevant transactions all tables
         # are cleared thanks to cascading (except for history_events which was cleared above)
         write_cursor.executemany(
-            'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=? AND tx_hash NOT IN (SELECT event_identifier FROM history_events)',  # noqa: E501
+            'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=? AND tx_hash NOT IN (SELECT tx_hash FROM evm_events_info)',  # noqa: E501
             [(x, chain_id_serialized) for x in tx_hashes],
         )
         # Delete all remaining evm_tx_mappings so decoding can happen again for customized events

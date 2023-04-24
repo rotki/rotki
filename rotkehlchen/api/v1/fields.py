@@ -51,7 +51,7 @@ from rotkehlchen.types import (
     Price,
     SupportedBlockchain,
     Timestamp,
-    make_evm_tx_hash,
+    deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
@@ -567,7 +567,7 @@ class EVMTransactionHashField(fields.Field):
         if length != 32:
             raise ValidationError(f'Transaction hashes should be 32 bytes in length. Given {length=}')  # noqa: E501
 
-        return make_evm_tx_hash(txhash)
+        return deserialize_evm_tx_hash(txhash)
 
 
 class AssetTypeField(fields.Field):

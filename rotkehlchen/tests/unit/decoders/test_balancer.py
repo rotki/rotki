@@ -101,7 +101,7 @@ def test_balancer_v2_swap(database, ethereum_manager, eth_transactions):
 
     assert events == [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -115,7 +115,7 @@ def test_balancer_v2_swap(database, ethereum_manager, eth_transactions):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -130,7 +130,7 @@ def test_balancer_v2_swap(database, ethereum_manager, eth_transactions):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=100,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -234,7 +234,7 @@ def test_balancer_v1_join(database, ethereum_manager, eth_transactions):
 
     assert events == [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -248,7 +248,7 @@ def test_balancer_v1_join(database, ethereum_manager, eth_transactions):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=328,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -263,7 +263,7 @@ def test_balancer_v1_join(database, ethereum_manager, eth_transactions):
             identifier=None,
             extra_data={'deposit_events_num': 1},
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=335,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -377,7 +377,7 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
 
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -391,7 +391,7 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=91,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -406,7 +406,7 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
             identifier=None,
             extra_data={'withdrawal_events_num': 2},
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=95,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -421,7 +421,7 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=97,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -453,7 +453,7 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
     )
     expected_events = [
         EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1593186380000),
             location=Location.ETHEREUM,
@@ -467,7 +467,7 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=131,
             timestamp=TimestampMS(1593186380000),
             location=Location.ETHEREUM,
@@ -482,7 +482,7 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             extra_data={'deposit_events_num': 4},
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=132,
             timestamp=TimestampMS(1593186380000),
             location=Location.ETHEREUM,
@@ -497,7 +497,7 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             extra_data=None,
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=134,
             timestamp=TimestampMS(1593186380000),
             location=Location.ETHEREUM,
@@ -512,7 +512,7 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             extra_data=None,
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=144,
             timestamp=TimestampMS(1593186380000),
             location=Location.ETHEREUM,
@@ -527,7 +527,7 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             extra_data=None,
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=145,
             timestamp=TimestampMS(1593186380000),
             location=Location.ETHEREUM,
@@ -542,7 +542,7 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             extra_data=None,
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=146,
             timestamp=TimestampMS(1593186380000),
             location=Location.ETHEREUM,
