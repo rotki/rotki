@@ -8,7 +8,7 @@ from rotkehlchen.db.constants import (
     HISTORY_MAPPING_STATE_DECODED,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, make_evm_tx_hash
+from rotkehlchen.types import ChainID, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.data_migrations.progress import MigrationProgressHandler
@@ -81,7 +81,7 @@ def data_migration_9(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressH
             else:  # unexpected -- skip entry from editing
                 log.error(
                     f'Found unexpected chain id {chain_id} in the DB for transaction '
-                    f'{make_evm_tx_hash(tx_hash).hex()}',  # pylint: disable=no-member
+                    f'{deserialize_evm_tx_hash(tx_hash).hex()}',  # pylint: disable=no-member
                 )
                 continue
 

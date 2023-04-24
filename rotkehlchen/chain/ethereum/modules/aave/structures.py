@@ -7,7 +7,7 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_optional_to_fval
-from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp, make_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp, deserialize_evm_tx_hash
 
 AAVE_EVENT_TYPE = Literal['deposit', 'withdrawal', 'interest', 'borrow', 'repay', 'liquidation']
 AAVE_EVENT_DB_TUPLE = tuple[
@@ -198,7 +198,7 @@ def aave_event_from_db(event_tuple: AAVE_EVENT_DB_TUPLE) -> AaveEvent:
     event_type = event_tuple[1]
     block_number = event_tuple[2]
     timestamp = Timestamp(event_tuple[3])
-    tx_hash = make_evm_tx_hash(event_tuple[4])
+    tx_hash = deserialize_evm_tx_hash(event_tuple[4])
     log_index = event_tuple[5]
     asset2 = None
     if event_tuple[9] is not None:

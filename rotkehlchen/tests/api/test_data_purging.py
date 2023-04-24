@@ -10,14 +10,8 @@ from rotkehlchen.tests.utils.exchanges import (
     check_saved_events_for_exchange,
     mock_exchange_data_in_db,
 )
-from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import (
-    ChainID,
-    EvmTransaction,
-    Location,
-    SupportedBlockchain,
-    make_evm_tx_hash,
-)
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.types import ChainID, EvmTransaction, Location, SupportedBlockchain
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
@@ -68,7 +62,7 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
         db.add_evm_transactions(
             write_cursor,
             [EvmTransaction(
-                tx_hash=make_evm_tx_hash(b''),
+                tx_hash=make_evm_tx_hash(),
                 chain_id=ChainID.ETHEREUM,
                 timestamp=1,
                 block_number=1,

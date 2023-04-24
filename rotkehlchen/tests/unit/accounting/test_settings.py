@@ -26,6 +26,7 @@ from rotkehlchen.types import (
     Price,
     Timestamp,
     TradeType,
+    deserialize_evm_tx_hash,
 )
 
 history5 = history1 + [Trade(
@@ -96,7 +97,7 @@ def test_big_taxfree_period(accountant, google_service):
 @pytest.mark.parametrize('db_settings', [{'include_gas_costs': True}, {'include_gas_costs': False}])  # noqa: E501
 def test_include_gas_costs(accountant, google_service):
     addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
-    tx_hash = '0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a'
+    tx_hash = deserialize_evm_tx_hash('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     history = [
         Trade(
             timestamp=1539388574,
@@ -110,7 +111,7 @@ def test_include_gas_costs(accountant, google_service):
             fee_currency=None,
             link=None,
         ), EvmEvent(
-            event_identifier=EvmEvent.deserialize_event_identifier(tx_hash),
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=1569924574000,
             location=Location.ETHEREUM,

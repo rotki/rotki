@@ -23,7 +23,7 @@ from rotkehlchen.types import (
     EVMTxHash,
     Price,
     Timestamp,
-    make_evm_tx_hash,
+    deserialize_evm_tx_hash,
 )
 
 logger = logging.getLogger(__name__)
@@ -186,7 +186,7 @@ class LiquidityPoolEvent(NamedTuple):
         event_type = EventType.deserialize_from_db(event_tuple[4])
         token0 = deserialize_ethereum_token_from_db(identifier=event_tuple[6])
         token1 = deserialize_ethereum_token_from_db(identifier=event_tuple[7])
-        tx_hash = make_evm_tx_hash(event_tuple[0])
+        tx_hash = deserialize_evm_tx_hash(event_tuple[0])
 
         return cls(
             tx_hash=tx_hash,

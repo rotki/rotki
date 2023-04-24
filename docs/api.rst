@@ -4889,8 +4889,9 @@ Dealing with History Events
    :reqjson list location: An optional location name to filter events only for that location.
    :reqjson list[string] location_labels: A list of location labels to optionally filter by. Location label is a string field that allows to provide more information about the location. When we use this structure in blockchains, it is used to specify the user address. For exchange events it's the exchange name assigned by the user.
    :reqjson string asset: The asset to optionally filter by.
-   :reqjson list counterparties: An optional list of counterparties to filter by. List of strings.
-   :reqjson list products: An optional list of product type to filter by. List of strings. This makes it an EVMEVent query.
+   :reqjson list[string] tx_hashes: An optional list of transaction hashes to filter for. This will make it an EVM event query.
+   :reqjson list counterparties: An optional list of counterparties to filter by. List of strings. This will make it an EVM event query.
+   :reqjson list products: An optional list of product type to filter by. List of strings. This makes it an EVMEVent query. This will make it an EVM event query.
 
    **Example Response**:
 
@@ -4958,7 +4959,7 @@ Dealing with History Events
 
 .. http:put:: /api/(version)/history/events
 
-   Doing a PUT on this endpoint can add a new history event base entry to rotki. For each entry evm chain also has to be specified. The unique identifier for the entry is returned as success.
+   Doing a PUT on this endpoint can add a new evm event to rotki. For each entry evm chain also has to be specified. The unique identifier for the entry is returned as success.
 
    **Example Request**:
 
@@ -4969,7 +4970,7 @@ Dealing with History Events
       Content-Type: application/json;charset=UTF-8
 
       {
-          "event_identifier": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
+          "tx_hash": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
           "sequence_index": 162,
           "timestamp": 1569924574,
           "location": "ethereum",
@@ -4984,7 +4985,7 @@ Dealing with History Events
 
    .. _history_base_entry_schema_section:
 
-   :reqjson string event_identifier: This is an identifier that could be common between multiple history base entries so that entries identifying a single event can be grouped. For ethereum transactions for example it's the transaction hash.
+   :reqjson string tx_hash: This is the transaction hash of the evm event
    :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
    :reqjson int timestamp: The timestamp of the entry
    :reqjson string location: The location of the entry. Such as "ethereum", "optimism", etc.

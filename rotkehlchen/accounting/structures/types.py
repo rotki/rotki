@@ -6,6 +6,7 @@ from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 EVM_EVENT_FIELDS = tuple[
+    bytes,          # tx_hash
     Optional[str],  # counterparty
     Optional[str],  # product
     Optional[str],  # address
@@ -13,6 +14,7 @@ EVM_EVENT_FIELDS = tuple[
 ]
 
 EVM_EVENT_FIELDS_NO_EXTRA_DATA = tuple[
+    bytes,          # tx_hash
     Optional[str],  # counterparty
     Optional[str],  # product
     Optional[str],  # address
@@ -23,7 +25,7 @@ EVM_EVENT_FIELDS_COUNT = len(get_args(EVM_EVENT_FIELDS))
 
 EVM_EVENT_DB_TUPLE_READ = tuple[
     int,            # identifier
-    bytes,          # event_identifier
+    str,            # event_identifier
     int,            # sequence_index
     int,            # timestamp
     str,            # location
@@ -34,6 +36,7 @@ EVM_EVENT_DB_TUPLE_READ = tuple[
     Optional[str],  # notes
     str,            # type
     str,            # subtype
+    bytes,          # tx_hash
     str,            # address
     Optional[str],  # counterparty
     Optional[str],  # product

@@ -29,7 +29,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
     )
     assert events == [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1674558203000),
             location=Location.ETHEREUM,
@@ -41,7 +41,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
             notes='Burned 0.000788637337054068 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1674558203000),
             location=Location.ETHEREUM,

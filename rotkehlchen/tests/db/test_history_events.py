@@ -6,7 +6,8 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.filtering import EvmEventFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.types import ChainID, EVMTxHash, Location, TimestampMS
+from rotkehlchen.tests.utils.factories import make_evm_tx_hash
+from rotkehlchen.types import ChainID, Location, TimestampMS, deserialize_evm_tx_hash
 
 
 def test_get_customized_event_identifiers(database):
@@ -15,7 +16,7 @@ def test_get_customized_event_identifiers(database):
         db.add_history_event(
             write_cursor=write_cursor,
             event=HistoryEvent(
-                event_identifier=EVMTxHash('0x75ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),  # noqa: E501
+                event_identifier=deserialize_evm_tx_hash('0x75ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),  # noqa: E501
                 sequence_index=1,
                 timestamp=TimestampMS(1),
                 location=Location.ETHEREUM,
@@ -30,7 +31,7 @@ def test_get_customized_event_identifiers(database):
             write_cursor=write_cursor,
             history=[
                 HistoryEvent(
-                    event_identifier=EVMTxHash('0x15ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),  # noqa: E501
+                    event_identifier=deserialize_evm_tx_hash('0x15ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),  # noqa: E501
                     sequence_index=1,
                     timestamp=TimestampMS(1),
                     location=Location.OPTIMISM,
@@ -39,7 +40,7 @@ def test_get_customized_event_identifiers(database):
                     asset=A_ETH,
                     balance=Balance(1),
                 ), HistoryEvent(
-                    event_identifier=EVMTxHash('0x25ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),  # noqa: E501
+                    event_identifier=deserialize_evm_tx_hash('0x25ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),  # noqa: E501
                     sequence_index=1,
                     timestamp=TimestampMS(2),
                     location=Location.OPTIMISM,
@@ -53,7 +54,7 @@ def test_get_customized_event_identifiers(database):
         db.add_history_event(
             write_cursor=write_cursor,
             event=HistoryEvent(
-                event_identifier=EVMTxHash('0x35ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),  # noqa: E501
+                event_identifier=deserialize_evm_tx_hash('0x35ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),  # noqa: E501
                 sequence_index=1,
                 timestamp=TimestampMS(3),
                 location=Location.OPTIMISM,
@@ -74,16 +75,16 @@ def test_get_customized_event_identifiers(database):
 def test_read_write_events_from_db(database):
     db = DBHistoryEvents(database)
     history_data = {  # mapping of identifier to unique data
-        1: (b'TEST1', TimestampMS(1), 1),
-        2: (b'TEST2', TimestampMS(2), 2),
-        3: (b'TEST3', TimestampMS(3), 3),
+        1: ('TEST1', TimestampMS(1), 1),
+        2: ('TEST2', TimestampMS(2), 2),
+        3: ('TEST3', TimestampMS(3), 3),
     }
 
     evm_data = {  # mapping of identifier to unique data
-        4: (EVMTxHash('0x75ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'), TimestampMS(4), 4, 'gas', EvmProduct.POOL, '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5'),  # noqa: E501
-        5: (EVMTxHash('0x12ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c302627f7'), TimestampMS(5), 5, 'liquity', EvmProduct.STAKING, '0x85222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5'),  # noqa: E501
-        6: (EVMTxHash('0x12cefa8e258c08fc2724c1286da0426cb6e488df208a9ec269108430c302627f7'), TimestampMS(6), 6, 'aave', EvmProduct.POOL, '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe4'),  # noqa: E501
-        7: (EVMTxHash('0x1acefa8e258c08fc2724c1286da0426cb6e8f2df208a9ec269108430c302627f7'), TimestampMS(7), 7, 'compound', EvmProduct.POOL, '0x19222290DD7278Aa3Ddd389Cc1E1d165CC4BAf34'),  # noqa: E501
+        4: (make_evm_tx_hash(), TimestampMS(4), 4, 'gas', EvmProduct.POOL, '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5'),  # noqa: E501
+        5: (make_evm_tx_hash(), TimestampMS(5), 5, 'liquity', EvmProduct.STAKING, '0x85222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5'),  # noqa: E501
+        6: (make_evm_tx_hash(), TimestampMS(6), 6, 'aave', EvmProduct.POOL, '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe4'),  # noqa: E501
+        7: (make_evm_tx_hash(), TimestampMS(7), 7, 'compound', EvmProduct.POOL, '0x19222290DD7278Aa3Ddd389Cc1E1d165CC4BAf34'),  # noqa: E501
     }
 
     with db.db.user_write() as write_cursor:
@@ -105,7 +106,7 @@ def test_read_write_events_from_db(database):
             db.add_history_event(
                 write_cursor=write_cursor,
                 event=EvmEvent(
-                    event_identifier=entry[0],
+                    tx_hash=entry[0],
                     sequence_index=1,
                     timestamp=entry[1],
                     location=Location.ETHEREUM,
@@ -147,7 +148,7 @@ def test_read_write_events_from_db(database):
                     data_entry = evm_data[event.identifier]
                     expected_event = EvmEvent(
                         identifier=event.identifier,
-                        event_identifier=data_entry[0],
+                        tx_hash=data_entry[0],
                         sequence_index=1,
                         timestamp=data_entry[1],
                         location=Location.ETHEREUM,

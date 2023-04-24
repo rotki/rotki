@@ -132,7 +132,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                     assert len(events) == 2
                     assert_events_equal(events[0], EvmEvent(
                         # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
-                        event_identifier=approve_tx_hash,
+                        tx_hash=approve_tx_hash,
                         sequence_index=0,
                         timestamp=1569924574000,
                         location=Location.ETHEREUM,
@@ -147,7 +147,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                     ))
                     assert_events_equal(events[1], EvmEvent(
                         # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
-                        event_identifier=approve_tx_hash,
+                        tx_hash=approve_tx_hash,
                         sequence_index=163,
                         timestamp=1569924574000,
                         location=Location.ETHEREUM,
@@ -232,7 +232,7 @@ def test_genesis_remove_address(
         with database.conn.read_ctx() as cursor:
             events = dbevents.get_history_events(
                 cursor=cursor,
-                filter_query=EvmEventFilterQuery.make(event_identifiers=[GENESIS_HASH]),
+                filter_query=EvmEventFilterQuery.make(tx_hashes=[GENESIS_HASH]),
                 has_premium=True,
             )
 

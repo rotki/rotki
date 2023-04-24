@@ -57,7 +57,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
                 asset=event.asset,
                 amount=loss,
                 taxable=True,
-                extra_data={'tx_hash': event.serialized_event_identifier},
+                extra_data={'tx_hash': event.tx_hash.hex()},
             )
             self.assets_borrowed[key] = ZERO
 
@@ -92,7 +92,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
                 asset=event.asset,
                 amount=gain,
                 taxable=True,
-                extra_data={'tx_hash': event.serialized_event_identifier},
+                extra_data={'tx_hash': event.tx_hash.hex()},
             )
             self.assets_borrowed[key] = ZERO
 

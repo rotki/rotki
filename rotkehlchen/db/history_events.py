@@ -23,6 +23,7 @@ from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
     EVM_EVENT_JOIN,
     EthBlockEventFilterQuery,
+    EthStakingEventFilterQuery,
     EthWithdrawalFilterQuery,
     EvmEventFilterQuery,
     HistoryBaseEntryFilterQuery,
@@ -53,8 +54,8 @@ log = RotkehlchenLogsAdapter(logger)
 HISTORY_BASE_ENTRY_FIELDS = 'entry_type, history_events.identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype '  # noqa: E501
 HISTORY_BASE_ENTRY_LENGTH = 12
 
-EVM_EVENT_FIELDS = 'counterparty, product, address, extra_data'
-EVM_FIELD_LENGTH = 4
+EVM_EVENT_FIELDS = 'tx_hash, counterparty, product, address, extra_data'
+EVM_FIELD_LENGTH = 5
 
 ETH_STAKING_EVENT_FIELDS = 'validator_index, is_exit_or_blocknumber'
 ETH_STAKING_FIELD_LENGTH = 2
@@ -115,8 +116,8 @@ class DBHistoryEvents():
         identifier = write_cursor.lastrowid
         if isinstance(event, EvmEvent):
             write_cursor.execute(
-                'INSERT OR IGNORE INTO evm_events_info(identifier, counterparty, product,'
-                'address, extra_data) VALUES (?, ?, ?, ?, ?)',
+                'INSERT OR IGNORE INTO evm_events_info(identifier, tx_hash, counterparty, product,'
+                'address, extra_data) VALUES (?, ?, ?, ?, ?, ?)',
                 (identifier, *db_tuples[1]),
             )
         elif isinstance(event, EthStakingEvent):
@@ -166,15 +167,20 @@ class DBHistoryEvents():
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 msg = (
-                    f'Tried to edit event to have event_identifier {event.serialized_event_identifier} '  # noqa: 501
+                    f'Tried to edit event to have event_identifier {event.event_identifier} '  # noqa: 501
                     f'and sequence_index {event.sequence_index} but it already exists'
                 )
                 return False, msg
 
             if isinstance(event, EvmEvent):
                 cursor.execute(
-                    'UPDATE evm_events_info SET counterparty=?, product=?, address=? WHERE identifier=?',    # noqa: E501
+                    'UPDATE evm_events_info SET tx_hash=?, counterparty=?, product=?, address=? WHERE identifier=?',    # noqa: E501
                     (*db_tuples[1][:-1], event.identifier),  # -1 is without extra data
+                )
+            elif isinstance(event, EthStakingEvent):
+                cursor.execute(
+                    'UPDATE eth_staking_events_info SET validator_index=?, is_exit_or_blocknumber=? WHERE identifier=?',  # noqa: E501
+                    (*db_tuples[1], event.identifier),
                 )
 
             if cursor.rowcount != 1:
@@ -233,13 +239,13 @@ class DBHistoryEvents():
         are customized"""
         customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, chain_id=chain_id)  # noqa: E501
         length = len(customized_event_ids)
-        querystr = 'DELETE FROM history_events WHERE event_identifier=?'
+        querystr = f'DELETE FROM history_events WHERE identifier IN (SELECT H.identifier from history_events H INNER JOIN evm_events_info E ON H.identifier=E.identifier AND E.tx_hash IN ({", ".join(["?"] * len(tx_hashes))}))'  # noqa: E501
         if length != 0:
             querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
-            bindings = [(x, *customized_event_ids) for x in tx_hashes]
+            bindings = [*tx_hashes, *customized_event_ids]
         else:
-            bindings = [(x,) for x in tx_hashes]
-        write_cursor.executemany(querystr, bindings)
+            bindings = tx_hashes  # type: ignore  # different type of elements in the list
+        write_cursor.execute(querystr, bindings)
 
     def get_customized_event_identifiers(
             self,
@@ -270,14 +276,14 @@ class DBHistoryEvents():
         return [x[0] for x in cursor]
 
     def get_evm_event_by_identifier(self, identifier: int) -> Optional['EvmEvent']:
-        """Returns the history event with the given identifier"""
+        """Returns the EVM event with the given identifier"""
         with self.db.conn.read_ctx() as cursor:
             event_data = cursor.execute(
                 f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {EVM_EVENT_JOIN} WHERE history_events.identifier=? AND entry_type=?',  # noqa: E501
                 (identifier, HistoryBaseEntryType.EVM_EVENT.value),
             ).fetchone()
             if event_data is None:
-                log.debug(f'Didnt find event with identifier {identifier}')
+                log.debug(f'Didnt find evm event with identifier {identifier}')
                 return None
 
         try:
@@ -310,17 +316,17 @@ class DBHistoryEvents():
     def get_history_events(
             self,
             cursor: 'DBCursor',
-            filter_query: EthWithdrawalFilterQuery,
+            filter_query: EthStakingEventFilterQuery,
             has_premium: bool,
-    ) -> list['EvmEvent']:
+    ) -> list['EthStakingEvent']:
         ...
 
     def get_history_events(
             self,
             cursor: 'DBCursor',
-            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthWithdrawalFilterQuery],  # noqa: E501
+            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthStakingEventFilterQuery],  # noqa: E501
             has_premium: bool,
-    ) -> Union[list['HistoryEvent'], list['EvmEvent']]:
+    ) -> Union[list['HistoryEvent'], list['EvmEvent'], list['EthStakingEvent']]:
         """
         Get history events using the provided query filter
         """
@@ -368,17 +374,17 @@ class DBHistoryEvents():
     def get_specific_history_events_and_limit_info(
             self,
             cursor: 'DBCursor',
-            filter_query: EthWithdrawalFilterQuery,
+            filter_query: EthStakingEventFilterQuery,
             has_premium: bool,
-    ) -> tuple[list[EthWithdrawalEvent], int]:
+    ) -> tuple[list[EthStakingEvent], int]:
         ...
 
     def get_specific_history_events_and_limit_info(
             self,
             cursor: 'DBCursor',
-            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthWithdrawalFilterQuery],  # noqa: E501
+            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthStakingEventFilterQuery],  # noqa: E501
             has_premium: bool,
-    ) -> tuple[Union[list[HistoryEvent], list[EvmEvent], list[EthWithdrawalEvent]], int]:
+    ) -> tuple[Union[list[HistoryEvent], list[EvmEvent], list[EthStakingEvent]], int]:
         """Gets all history events for the specific type, based on the filter query.
 
         Also returns how many are the total found for the filter
@@ -461,7 +467,10 @@ class DBHistoryEvents():
                 deserialized_event: Union[HistoryEvent, EvmEvent, EthWithdrawalEvent, EthBlockEvent]  # noqa: E501
                 # Deserialize event depending on its type
                 if entry_type == HistoryBaseEntryType.EVM_EVENT:
-                    data = entry[data_start_idx:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1] + entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + 1]  # noqa: E501
+                    data = (
+                        entry[data_start_idx:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1] +
+                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + 1]    # noqa: E501
+                    )
                     deserialized_event = EvmEvent.deserialize_from_db(data)
                 elif entry_type in (
                         HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT,

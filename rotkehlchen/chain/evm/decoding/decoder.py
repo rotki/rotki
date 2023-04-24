@@ -516,7 +516,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     events = self.dbevents.get_history_events(
                         cursor=cursor,
                         filter_query=EvmEventFilterQuery.make(
-                            event_identifiers=[transaction.tx_hash],
+                            tx_hashes=[transaction.tx_hash],
                         ),
                         has_premium=True,  # for this function we don't limit anything
                     )

@@ -117,7 +117,7 @@ def test_pnl_processing_with_eth2_staking_setting(accountant, db_settings):
             end_amount=FVal('32.045'),
             pnl=FVal('-0.005'),  # -0.005 * 469.82 + 0.005 * 469.82 - 0.005*449.68 = -2.2484
         ), HistoryEvent(
-            event_identifier=HistoryEvent.deserialize_event_identifier('XXX'),
+            event_identifier='XXX',
             sequence_index=0,
             timestamp=1625001464000,  # ETH price: 1837.31 ETH/EUR
             location=Location.KRAKEN,
@@ -131,7 +131,7 @@ def test_pnl_processing_with_eth2_staking_setting(accountant, db_settings):
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,  # 0.0000541090 * 1837.31 = 0.09941500679
         ), HistoryEvent(
-            event_identifier=HistoryEvent.deserialize_event_identifier('XXX'),
+            event_identifier='XXX',
             sequence_index=0,
             timestamp=1640493374000,  # ETH price: 4072.51 ETH/EUR
             location=Location.KRAKEN,

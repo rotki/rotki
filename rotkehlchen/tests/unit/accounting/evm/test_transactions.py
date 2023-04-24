@@ -20,7 +20,7 @@ from rotkehlchen.tests.utils.accounting import accounting_history_process, check
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.types import Location, Timestamp, deserialize_evm_tx_hash
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -29,10 +29,10 @@ def test_receiving_value_from_tx(accountant, google_service):
     Test that receiving a transaction that provides value works fine
     """
     addr2 = make_evm_address()
-    tx_hash = EvmEvent.deserialize_event_identifier('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     history = [
         EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=1569924574000,
             location=Location.ETHEREUM,
@@ -63,7 +63,7 @@ def test_gas_fees_after_year(accountant, google_service):
     Test that for an expense like gas fees after year the "selling" part is tax free
     PnL, and the expense part is taxable pnl.
     """
-    tx_hash = EvmEvent.deserialize_event_identifier('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     history = [
         LedgerAction(
             identifier=0,
@@ -77,7 +77,7 @@ def test_gas_fees_after_year(accountant, google_service):
             link=None,
             notes='',
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=1640493374000,  # 4072.51 EUR/ETH
             location=Location.ETHEREUM,
@@ -113,11 +113,11 @@ def test_ignoring_transaction_from_accounting(accountant, google_service, databa
     But just to test that chain is taken into account during ignoring
     """
     addr2 = make_evm_address()
-    tx_hash = EvmEvent.deserialize_event_identifier('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     history = [
         EvmEvent(
             identifier=1,
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=1569924574000,
             location=Location.OPTIMISM,
@@ -130,7 +130,7 @@ def test_ignoring_transaction_from_accounting(accountant, google_service, databa
             address=addr2,
         ), EvmEvent(
             identifier=2,
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=1569924574000,
             location=Location.ETHEREUM,
@@ -146,7 +146,7 @@ def test_ignoring_transaction_from_accounting(accountant, google_service, databa
         database.add_to_ignored_action_ids(
             write_cursor=write_cursor,
             action_type=ActionType.EVM_TRANSACTION,
-            identifiers=['100x' + tx_hash.hex()],
+            identifiers=['10' + tx_hash.hex()],  # pylint: disable=no-member
         )
     events = accounting_history_process(
         accountant,

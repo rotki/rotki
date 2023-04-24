@@ -882,7 +882,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             location_labels: Optional[list[str]] = None,
             ignored_ids: Optional[list[str]] = None,
             null_columns: Optional[list[str]] = None,
-            event_identifiers: Optional[list[bytes]] = None,
+            event_identifiers: Optional[list[str]] = None,
             exclude_ignored_assets: bool = False,
             limit_to_entry_type: bool = False,
     ) -> T_HistoryFilterQuery:
@@ -957,7 +957,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             )
         if event_identifiers is not None:
             filters.append(
-                DBMultiBytesFilter(
+                DBMultiStringFilter(
                     and_op=True,
                     column='event_identifier',
                     values=event_identifiers,
@@ -1030,9 +1030,10 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             location_labels: Optional[list[str]] = None,
             ignored_ids: Optional[list[str]] = None,
             null_columns: Optional[list[str]] = None,
-            event_identifiers: Optional[list[bytes]] = None,
+            event_identifiers: Optional[list[str]] = None,
             exclude_ignored_assets: bool = False,
             limit_to_entry_type: bool = False,
+            tx_hashes: Optional[list[EVMTxHash]] = None,
             counterparties: Optional[list[str]] = None,
             products: Optional[list[EvmProduct]] = None,
     ) -> 'EvmEventFilterQuery':
@@ -1071,6 +1072,14 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
                 operator='IN',
             ))
 
+        if tx_hashes is not None:
+            filter_query.filters.append(DBMultiBytesFilter(
+                and_op=True,
+                column='tx_hash',
+                values=tx_hashes,  # type: ignore  # EVMTxHash is equal to bytes
+                operator='IN',
+            ))
+
         return filter_query
 
     @staticmethod
@@ -1105,7 +1114,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta)
             location_labels: Optional[list[str]] = None,
             ignored_ids: Optional[list[str]] = None,
             null_columns: Optional[list[str]] = None,
-            event_identifiers: Optional[list[bytes]] = None,
+            event_identifiers: Optional[list[str]] = None,
             exclude_ignored_assets: bool = False,
             limit_to_entry_type: bool = False,
             validator_indices: Optional[list[int]] = None,

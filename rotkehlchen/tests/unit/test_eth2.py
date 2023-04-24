@@ -29,7 +29,7 @@ from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Eth2PubKey, Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now, ts_now_in_ms
@@ -660,11 +660,13 @@ def test_deposits_pubkey_re(eth2: 'Eth2', database):
     dbevents = DBHistoryEvents(database)
     pubkey1 = Eth2PubKey('0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda')  # noqa: E501
     pubkey2 = Eth2PubKey('0x96dab7564980306b3052649e523747fb613ebf91308a788350bbd16435f55f8d3a7090a2ec73fe636eed66ada6e52ad5')  # noqa: E501
+    tx_hash1 = make_evm_tx_hash()
+    tx_hash2 = make_evm_tx_hash()
     with database.user_write() as cursor:
         dbevents.add_history_events(
             write_cursor=cursor,
             history=[EvmEvent(
-                event_identifier=b'1',
+                tx_hash=tx_hash1,
                 sequence_index=0,
                 timestamp=TimestampMS(1),
                 location=Location.ETHEREUM,
@@ -676,7 +678,7 @@ def test_deposits_pubkey_re(eth2: 'Eth2', database):
                 notes=f'Deposit 32 ETH to validator with pubkey {pubkey1}. Deposit index: 519464. Withdrawal credentials: 0x00c5af874f28011e2f559e1214131da5f11b12845921b0d8e436f0cd37d683a8',  # noqa: E501
                 counterparty=CPT_ETH2,
             ), EvmEvent(
-                event_identifier=b'1',
+                tx_hash=tx_hash1,
                 sequence_index=1,
                 timestamp=TimestampMS(2),
                 location=Location.ETHEREUM,
@@ -687,7 +689,7 @@ def test_deposits_pubkey_re(eth2: 'Eth2', database):
                 notes='Some fees',
                 counterparty=CPT_GAS,
             ), EvmEvent(
-                event_identifier=b'2',
+                tx_hash=tx_hash2,
                 sequence_index=0,
                 timestamp=TimestampMS(3),
                 location=Location.ETHEREUM,

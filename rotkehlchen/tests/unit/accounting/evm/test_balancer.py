@@ -14,20 +14,20 @@ from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.factories import make_evm_address, make_random_bytes
-from rotkehlchen.types import Location, Price, Timestamp, make_evm_tx_hash
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.types import Location, Price, Timestamp
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 TIMESTAMP_1_SECS = Timestamp(15931863800)
 TIMESTAMP_1_MS = ts_sec_to_ms(TIMESTAMP_1_SECS)
 
 
-EVM_HASH = make_evm_tx_hash(make_random_bytes(32))
+EVM_HASH = make_evm_tx_hash()
 USER_ADDRESS = make_evm_address()
 
 DEPOSIT_ENTRIES = [
     EvmEvent(
-        event_identifier=EVM_HASH,
+        tx_hash=EVM_HASH,
         sequence_index=0,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,
@@ -41,7 +41,7 @@ DEPOSIT_ENTRIES = [
         identifier=None,
         extra_data=None,
     ), EvmEvent(
-        event_identifier=EVM_HASH,
+        tx_hash=EVM_HASH,
         sequence_index=131,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,
@@ -55,7 +55,7 @@ DEPOSIT_ENTRIES = [
         identifier=None,
         extra_data={'deposit_events_num': 4},
     ), EvmEvent(
-        event_identifier=EVM_HASH,
+        tx_hash=EVM_HASH,
         sequence_index=132,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,
@@ -69,7 +69,7 @@ DEPOSIT_ENTRIES = [
         identifier=None,
         extra_data=None,
     ), EvmEvent(
-        event_identifier=EVM_HASH,
+        tx_hash=EVM_HASH,
         sequence_index=134,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,
@@ -83,7 +83,7 @@ DEPOSIT_ENTRIES = [
         identifier=None,
         extra_data=None,
     ), EvmEvent(
-        event_identifier=EVM_HASH,
+        tx_hash=EVM_HASH,
         sequence_index=144,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,
@@ -97,7 +97,7 @@ DEPOSIT_ENTRIES = [
         identifier=None,
         extra_data=None,
     ), EvmEvent(
-        event_identifier=EVM_HASH,
+        tx_hash=EVM_HASH,
         sequence_index=145,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,
@@ -111,7 +111,7 @@ DEPOSIT_ENTRIES = [
         identifier=None,
         extra_data=None,
     ), EvmEvent(
-        event_identifier=EVM_HASH,
+        tx_hash=EVM_HASH,
         sequence_index=146,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,

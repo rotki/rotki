@@ -34,7 +34,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 HISTORY_EVENT_DB_TUPLE_READ = tuple[
     int,            # identifier
-    bytes,          # event_identifier
+    str,          # event_identifier
     int,            # sequence_index
     int,            # timestamp
     str,            # location
@@ -49,7 +49,7 @@ HISTORY_EVENT_DB_TUPLE_READ = tuple[
 
 HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
     int,            # entry type
-    bytes,          # event_identifier
+    str,          # event_identifier
     int,            # sequence_index
     int,            # timestamp
     str,            # location
@@ -72,7 +72,7 @@ class HistoryBaseEntryType(Enum):
 
 
 class HistoryBaseEntryData(TypedDict):
-    event_identifier: bytes
+    event_identifier: str
     sequence_index: int
     timestamp: TimestampMS
     location: Location
@@ -96,7 +96,7 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
 
     def __init__(
             self,
-            event_identifier: bytes,
+            event_identifier: str,
             sequence_index: int,
             timestamp: TimestampMS,
             location: Location,
@@ -193,24 +193,11 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
         - UnknownAsset
         """
 
-    @property
-    @abstractmethod
-    def serialized_event_identifier(self) -> str:
-        """Returns a string representation of the event identifier depending on event entry"""
-
-    @classmethod
-    @abstractmethod
-    def deserialize_event_identifier(cls, val: str) -> bytes:
-        """Takes any arbitrary string and turns it into a bytes event_identifier.
-
-        May raise DeserializationError
-        """
-
     def serialize(self) -> dict[str, Any]:
         """Serialize the event alone for api"""
         return {
             'identifier': self.identifier,
-            'event_identifier': self.serialized_event_identifier,
+            'event_identifier': self.event_identifier,
             'sequence_index': self.sequence_index,
             'timestamp': ts_ms_to_sec(self.timestamp),  # serialize to api in seconds MS
             'location': str(self.location),
@@ -250,7 +237,7 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             - UnknownAsset
         """
         return HistoryBaseEntryData(
-            event_identifier=cls.deserialize_event_identifier(data['event_identifier']),
+            event_identifier=data['event_identifier'],
             sequence_index=data['sequence_index'],
             timestamp=ts_sec_to_ms(deserialize_timestamp(data['timestamp'])),
             location=Location.deserialize(data['location']),
@@ -318,7 +305,7 @@ class HistoryEvent(HistoryBaseEntry):
 
     def __init__(
             self,
-            event_identifier: bytes,
+            event_identifier: str,
             sequence_index: int,
             timestamp: TimestampMS,
             location: Location,
@@ -375,14 +362,6 @@ class HistoryEvent(HistoryBaseEntry):
             event_type=HistoryEventType.deserialize(entry[10]),
             event_subtype=HistoryEventSubType.deserialize(entry[11]),
         )
-
-    @property
-    def serialized_event_identifier(self) -> str:
-        return self.event_identifier.decode()
-
-    @classmethod
-    def deserialize_event_identifier(cls: type['HistoryEvent'], val: str) -> bytes:
-        return val.encode()
 
     @classmethod
     def deserialize(cls: type['HistoryEvent'], data: dict[str, Any]) -> 'HistoryEvent':

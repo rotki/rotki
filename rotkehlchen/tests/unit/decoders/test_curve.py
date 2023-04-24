@@ -109,7 +109,7 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
     timestamp = TimestampMS(1650276061000)
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -124,7 +124,7 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=371,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -138,7 +138,7 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
             address=ZERO_ADDRESS,
             extra_data={'deposit_events_num': 2},
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=372,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -151,7 +151,7 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xDeBF20617708857ebe4F679508E7b7863a8A8EeE'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=384,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -252,7 +252,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
     timestamp = TimestampMS(1650276061000)
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -267,7 +267,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -281,7 +281,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             address=ZERO_ADDRESS,
             extra_data={'deposit_events_num': 2},
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -294,7 +294,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=414,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -307,7 +307,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=415,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -405,7 +405,7 @@ def test_curve_remove_liquidity(database, ethereum_transaction_decoder):
     timestamp = TimestampMS(1650276061000)
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -420,7 +420,7 @@ def test_curve_remove_liquidity(database, ethereum_transaction_decoder):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=507,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -434,7 +434,7 @@ def test_curve_remove_liquidity(database, ethereum_transaction_decoder):
             address=ZERO_ADDRESS,
             extra_data={'withdrawal_events_num': 1},
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=508,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -524,7 +524,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
     timestamp = TimestampMS(1650276061000)
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -539,7 +539,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -553,7 +553,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
             address=ZERO_ADDRESS,
             extra_data={'withdrawal_events_num': 1},
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=193,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -693,7 +693,7 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
     timestamp = TimestampMS(1650276061000)
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -708,7 +708,7 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=2184,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -722,7 +722,7 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
             extra_data={'withdrawal_events_num': 1},
             address=string_to_evm_address('0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=2190,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -752,7 +752,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1675186487000),
             location=Location.ETHEREUM,
@@ -764,7 +764,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             notes='Burned 0.011180845456491718 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=76,
             timestamp=TimestampMS(1675186487000),
             location=Location.ETHEREUM,
@@ -778,7 +778,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             address=ZERO_ADDRESS,
             extra_data={'deposit_events_num': 1},
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=80,
             timestamp=TimestampMS(1675186487000),
             location=Location.ETHEREUM,
@@ -808,7 +808,7 @@ def test_gauge_deposit(ethereum_transaction_decoder, ethereum_accounts):
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1679313731000),
             location=Location.ETHEREUM,
@@ -820,7 +820,7 @@ def test_gauge_deposit(ethereum_transaction_decoder, ethereum_accounts):
             notes='Burned 0.007333038632457846 ETH for gas',
             counterparty='gas',
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=200,
             timestamp=TimestampMS(1679313731000),
             location=Location.ETHEREUM,
@@ -851,7 +851,7 @@ def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts):
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1679346575000),
             location=Location.ETHEREUM,
@@ -864,7 +864,7 @@ def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts):
             counterparty='gas',
             address=None,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=43,
             timestamp=TimestampMS(1679346575000),
             location=Location.ETHEREUM,
@@ -895,7 +895,7 @@ def test_gauge_claim_rewards(ethereum_transaction_decoder, ethereum_accounts):
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1679342423000),
             location=Location.ETHEREUM,
@@ -908,7 +908,7 @@ def test_gauge_claim_rewards(ethereum_transaction_decoder, ethereum_accounts):
             counterparty='gas',
             address=None,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=112,
             timestamp=TimestampMS(1679342423000),
             location=Location.ETHEREUM,
@@ -939,7 +939,7 @@ def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accou
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1679546783000),
             location=Location.ETHEREUM,
@@ -952,7 +952,7 @@ def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accou
             counterparty='gas',
             address=None,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=172,
             timestamp=TimestampMS(1679546783000),
             location=Location.ETHEREUM,
@@ -965,7 +965,7 @@ def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accou
             counterparty='curve',
             address=string_to_evm_address('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=173,
             timestamp=TimestampMS(1679546783000),
             location=Location.ETHEREUM,
@@ -996,7 +996,7 @@ def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_account
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1679225231000),
             location=Location.ETHEREUM,
@@ -1009,7 +1009,7 @@ def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_account
             counterparty='gas',
             address=None,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1679225231000),
             location=Location.ETHEREUM,
@@ -1022,7 +1022,7 @@ def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_account
             counterparty='curve',
             address=string_to_evm_address('0xA96A65c051bF88B4095Ee1f2451C2A9d43F53Ae2'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=57,
             timestamp=TimestampMS(1679225231000),
             location=Location.ETHEREUM,
@@ -1053,7 +1053,7 @@ def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1679482763000),
             location=Location.ETHEREUM,
@@ -1066,7 +1066,7 @@ def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_
             counterparty='gas',
             address=None,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=106,
             timestamp=TimestampMS(1679482763000),
             location=Location.ETHEREUM,
@@ -1079,7 +1079,7 @@ def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_
             counterparty='curve',
             address=string_to_evm_address('0x8038C01A0390a8c547446a0b2c18fc9aEFEcc10c'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=110,
             timestamp=TimestampMS(1679482763000),
             location=Location.ETHEREUM,
@@ -1110,7 +1110,7 @@ def test_curve_swap_router(ethereum_transaction_decoder, ethereum_accounts):
     )
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1679550275000),
             location=Location.ETHEREUM,
@@ -1123,7 +1123,7 @@ def test_curve_swap_router(ethereum_transaction_decoder, ethereum_accounts):
             counterparty='gas',
             address=None,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1679550275000),
             location=Location.ETHEREUM,
@@ -1136,7 +1136,7 @@ def test_curve_swap_router(ethereum_transaction_decoder, ethereum_accounts):
             counterparty='curve',
             address=string_to_evm_address('0x99a58482BD75cbab83b27EC03CA68fF489b5788f'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=37,
             timestamp=TimestampMS(1679550275000),
             location=Location.ETHEREUM,
@@ -1168,7 +1168,7 @@ def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_account
     timestamp = TimestampMS(Timestamp(1674470159000))
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1180,7 +1180,7 @@ def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_account
             counterparty=CPT_GAS,
             notes='Burned 0.005672980418415474 ETH for gas',
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=78,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1194,7 +1194,7 @@ def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_account
             address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
             extra_data={'deposit_events_num': 1},
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=85,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1226,7 +1226,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
     timestamp = TimestampMS(Timestamp(1676708639000))
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1238,7 +1238,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             notes='Burned 0.009847222 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=224,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1252,7 +1252,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             extra_data={'withdrawal_events_num': 4},
             address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=234,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1265,7 +1265,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=235,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1278,7 +1278,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=236,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1291,7 +1291,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=237,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1323,7 +1323,7 @@ def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts):
     timestamp = TimestampMS(1680503171000)
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1335,7 +1335,7 @@ def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts):
             counterparty=CPT_GAS,
             notes='Burned 0.006158572854866488 ETH for gas',
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=66,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1349,7 +1349,7 @@ def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts):
             address=string_to_evm_address('0x0000000000000000000000000000000000000000'),
             extra_data={'deposit_events_num': 1},
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=71,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1381,7 +1381,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts)
     timestamp = TimestampMS(1680390095000)
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1393,7 +1393,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts)
             notes='Burned 0.007508781310937599 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=39,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1407,7 +1407,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts)
             extra_data={'withdrawal_events_num': 4},
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=49,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1420,7 +1420,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts)
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=50,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1433,7 +1433,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts)
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=51,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -1446,7 +1446,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts)
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=52,
             timestamp=timestamp,
             location=Location.ETHEREUM,

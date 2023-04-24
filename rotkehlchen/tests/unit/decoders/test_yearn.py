@@ -102,7 +102,7 @@ def test_deposit_yearn_v2(database, ethereum_inquirer, eth_transactions):
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -117,7 +117,7 @@ def test_deposit_yearn_v2(database, ethereum_inquirer, eth_transactions):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=121,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -130,7 +130,7 @@ def test_deposit_yearn_v2(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_YEARN_V2,
             address=string_to_evm_address('0xdb25cA703181E7484a155DD612b06f57E12Be5F0'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=155,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -213,7 +213,7 @@ def test_withdraw_yearn_v2(database, ethereum_inquirer, eth_transactions):
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -228,7 +228,7 @@ def test_withdraw_yearn_v2(database, ethereum_inquirer, eth_transactions):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=79,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -241,7 +241,7 @@ def test_withdraw_yearn_v2(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_YEARN_V2,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=80,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -324,7 +324,7 @@ def test_deposit_yearn_v1(database, ethereum_inquirer, eth_transactions):
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -339,7 +339,7 @@ def test_deposit_yearn_v1(database, ethereum_inquirer, eth_transactions):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=290,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -352,7 +352,7 @@ def test_deposit_yearn_v1(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_YEARN_V1,
             address=string_to_evm_address('0x5334e150B938dd2b6bd040D9c4a03Cff0cED3765'),
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=291,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -435,7 +435,7 @@ def test_withdraw_yearn_v1(database, ethereum_inquirer, eth_transactions):
     assert len(events) == 3
     expected_events = [
         EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=0,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -450,7 +450,7 @@ def test_withdraw_yearn_v1(database, ethereum_inquirer, eth_transactions):
             notes='Burned 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=79,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
@@ -463,7 +463,7 @@ def test_withdraw_yearn_v1(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_YEARN_V1,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            event_identifier=evmhash,
+            tx_hash=evmhash,
             sequence_index=80,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,

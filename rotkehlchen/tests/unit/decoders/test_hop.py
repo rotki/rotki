@@ -28,7 +28,7 @@ def test_hop_l2_deposit(database, ethereum_inquirer):
     timestamp = TimestampMS(1653219722000)
     expected_events = [
         EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -40,7 +40,7 @@ def test_hop_l2_deposit(database, ethereum_inquirer):
             notes='Burned 0.001964214783875487 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -70,7 +70,7 @@ def test_hop_optimism_eth_receive(database, optimism_inquirer):
     )
     expected_events = [
         EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1653220466000),
             location=Location.OPTIMISM,
@@ -104,7 +104,7 @@ def test_hop_optimism_eth_receive_no_event(database, optimism_inquirer, optimism
     user_address = optimism_accounts[0]
     expected_events = [
         EvmEvent(
-            event_identifier=tx_hash,
+            tx_hash=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1666977475000),
             location=Location.OPTIMISM,

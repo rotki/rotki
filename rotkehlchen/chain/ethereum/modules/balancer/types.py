@@ -21,7 +21,7 @@ from rotkehlchen.types import (
     EVMTxHash,
     Price,
     Timestamp,
-    make_evm_tx_hash,
+    deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
@@ -231,7 +231,7 @@ class BalancerEvent(NamedTuple):
             if item is not None
         ]
         return cls(
-            tx_hash=make_evm_tx_hash(event_tuple[0]),
+            tx_hash=deserialize_evm_tx_hash(event_tuple[0]),
             log_index=event_tuple[1],
             address=string_to_evm_address(event_tuple[2]),
             timestamp=deserialize_timestamp(event_tuple[3]),

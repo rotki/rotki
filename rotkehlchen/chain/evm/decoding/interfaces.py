@@ -78,7 +78,7 @@ class DecoderInterface(metaclass=ABCMeta):
         self.msg_aggregator.add_error(
             f'Could not identify asset {event.asset} decoding ethereum event in {counterparty}. '
             f'Make sure that it has all the required properties (name, symbol and decimals) and '
-            f'try to decode the event again {event.event_identifier.hex()}.',
+            f'try to decode the event again {event.tx_hash.hex()}.',
         )
 
     def possible_events(self) -> DecoderEventMappingType:

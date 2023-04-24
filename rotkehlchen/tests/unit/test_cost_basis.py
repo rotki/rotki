@@ -22,7 +22,7 @@ from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
-from rotkehlchen.tests.utils.factories import make_evm_address, make_random_bytes
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     AssetAmount,
     CostBasisMethod,
@@ -31,7 +31,6 @@ from rotkehlchen.types import (
     Price,
     Timestamp,
     TradeType,
-    make_evm_tx_hash,
 )
 
 EXAMPLE_TIMESTAMP = Timestamp(1675483017)
@@ -981,7 +980,7 @@ def test_swaps_taxability(accountant, taxable):
     transactions_accountant._process_tx_swap(
         timestamp=1469020840,
         out_event=EvmEvent(
-            event_identifier=make_evm_tx_hash(make_random_bytes(42)),
+            tx_hash=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=Timestamp(1469020840),
             location=Location.ETHEREUM,
@@ -994,7 +993,7 @@ def test_swaps_taxability(accountant, taxable):
             counterparty=CPT_UNISWAP_V2,
         ),
         in_event=EvmEvent(
-            event_identifier=make_evm_tx_hash(make_random_bytes(42)),
+            tx_hash=make_evm_tx_hash(),
             sequence_index=2,
             timestamp=Timestamp(1469020840),
             location=Location.ETHEREUM,

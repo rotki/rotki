@@ -1562,7 +1562,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
     expected_history_events = [
         HistoryEvent(
             identifier=1,
-            event_identifier=b'1xyz',  # placeholder as this field is randomly generated on import
+            event_identifier='1xyz',  # placeholder as this field is randomly generated on import
             sequence_index=0,
             timestamp=TimestampMS(1658912400000),
             location=Location.KUCOIN,
@@ -1576,7 +1576,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
             notes='Deposit EUR to Kucoin',
         ), HistoryEvent(
             identifier=2,
-            event_identifier=b'2xyz',  # placeholder as this field is randomly generated on import
+            event_identifier='2xyz',  # placeholder as this field is randomly generated on import
             sequence_index=1,
             timestamp=TimestampMS(1658998800000),
             location=Location.BINANCE,
@@ -1590,7 +1590,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
             notes='',
         ), HistoryEvent(
             identifier=3,
-            event_identifier=b'2xyz',  # placeholder as this field is randomly generated on import
+            event_identifier='2xyz',  # placeholder as this field is randomly generated on import
             sequence_index=2,
             timestamp=TimestampMS(1658998800000),
             location=Location.BINANCE,
@@ -1604,7 +1604,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
             notes='',
         ), HistoryEvent(
             identifier=4,
-            event_identifier=b'3xyz',  # placeholder as this field is randomly generated on import
+            event_identifier='3xyz',  # placeholder as this field is randomly generated on import
             sequence_index=2,
             timestamp=TimestampMS(1659085200000),
             location=Location.KRAKEN,
@@ -1618,7 +1618,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
             notes='',
         ), HistoryEvent(
             identifier=5,
-            event_identifier=b'5xyz',  # placeholder as this field is randomly generated on import
+            event_identifier='5xyz',  # placeholder as this field is randomly generated on import
             sequence_index=4,
             timestamp=TimestampMS(1659430800000),
             location=Location.COINBASE,
