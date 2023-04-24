@@ -641,7 +641,7 @@ DB_CREATE_ETH_STAKING_EVENTS_INFO = """
 CREATE TABLE IF NOT EXISTS eth_staking_events_info(
     identifier INTEGER PRIMARY KEY,
     validator_index INTEGER NOT NULL,
-    is_exit INTEGER NOT NULL CHECK (is_exit IN (0, 1)),
+    is_exit_or_blocknumber INTEGER NOT NULL,
     FOREIGN KEY(identifier) REFERENCES history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE
 );
 """  # noqa: E501
@@ -740,22 +740,6 @@ CREATE TABLE IF NOT EXISTS user_notes(
     location TEXT NOT NULL,
     last_update_timestamp INTEGER NOT NULL,
     is_pinned INTEGER NOT NULL CHECK (is_pinned IN (0, 1))
-);
-"""
-
-# producer_fee_recipient can be missing and it's as reported by relays if a relay is used
-# mev_reward can be ZERO if no relay is used (so producer_fee_recipient is NULL too)
-# In any case those are numbers reported by the relays and are not always accurate
-# Have seen blocks with wrong numbers and also blocks where mev reward is reported
-# but not paid out
-DB_CREATE_BLOCKS_PRODUCED = """
-CREATE TABLE IF NOT EXISTS blocks_produced(
-    block_number INTEGER NOT NULL PRIMARY KEY
-    validator_index NOT NULL,
-    fee_recipient TEXT NOT NULL,
-    block_reward  TEXT NOT NULL,
-    producer_fee_recipient TEXT,
-    mev_reward TEXT
 );
 """
 

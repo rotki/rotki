@@ -9,7 +9,11 @@ from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntryType,
     HistoryEvent,
 )
-from rotkehlchen.accounting.structures.eth2 import EthWithdrawalEvent
+from rotkehlchen.accounting.structures.eth2 import (
+    EthBlockEvent,
+    EthStakingEvent,
+    EthWithdrawalEvent,
+)
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
@@ -18,6 +22,7 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_
 from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
     EVM_EVENT_JOIN,
+    EthBlockEventFilterQuery,
     EthWithdrawalFilterQuery,
     EvmEventFilterQuery,
     HistoryBaseEntryFilterQuery,
@@ -51,8 +56,8 @@ HISTORY_BASE_ENTRY_LENGTH = 12
 EVM_EVENT_FIELDS = 'counterparty, product, address, extra_data'
 EVM_FIELD_LENGTH = 4
 
-ETH_WITHDRAWAL_EVENT_FIELDS = 'validator_index, is_exit'
-ETH_WITHDRAWAL_FIELD_LENGTH = 2
+ETH_STAKING_EVENT_FIELDS = 'validator_index, is_exit_or_blocknumber'
+ETH_STAKING_FIELD_LENGTH = 2
 
 
 def _event_select_and_deserialize_fn(filter_query: HistoryBaseEntryFilterQuery) -> tuple[str, Callable]:  # noqa: E501
@@ -62,8 +67,11 @@ def _event_select_and_deserialize_fn(filter_query: HistoryBaseEntryFilterQuery) 
         select = f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {filter_query.get_join_query()}'  # noqa: E501
         deserialize_fn = EvmEvent.deserialize_from_db
     elif isinstance(filter_query, EthWithdrawalFilterQuery):
-        select = f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {ETH_WITHDRAWAL_EVENT_FIELDS} {filter_query.get_join_query()}'  # noqa: E501
+        select = f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {filter_query.get_join_query()}'  # noqa: E501
         deserialize_fn = EthWithdrawalEvent.deserialize_from_db
+    elif isinstance(filter_query, EthBlockEventFilterQuery):
+        select = f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {filter_query.get_join_query()}'  # noqa: E501
+        deserialize_fn = EthBlockEvent.deserialize_from_db
     else:  # HistoryEventFilterQuery
         select = f'SELECT {HISTORY_BASE_ENTRY_FIELDS} {filter_query.get_join_query()}'
         deserialize_fn = HistoryEvent.deserialize_from_db
@@ -111,10 +119,10 @@ class DBHistoryEvents():
                 'address, extra_data) VALUES (?, ?, ?, ?, ?)',
                 (identifier, *db_tuples[1]),
             )
-        elif isinstance(event, EthWithdrawalEvent):
+        elif isinstance(event, EthStakingEvent):
             write_cursor.execute(
                 'INSERT OR IGNORE INTO eth_staking_events_info(identifier, validator_index, '
-                'is_exit) VALUES (?, ?, ?)',
+                'is_exit_or_blocknumber) VALUES (?, ?, ?)',
                 (identifier, *db_tuples[1]),
             )
 
@@ -439,30 +447,38 @@ class DBHistoryEvents():
             type_idx = 1
 
         if has_premium is True:
-            base_query = f'{base_prefix} {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_WITHDRAWAL_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
+            base_query = f'{base_prefix} {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
         else:
-            base_query = f'{base_prefix} * FROM (SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_WITHDRAWAL_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
+            base_query = f'{base_prefix} * FROM (SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
             bindings.insert(0, FREE_HISTORY_EVENTS_LIMIT)
 
         cursor.execute(base_query + prepared_query, bindings)
         output: Union[list[HistoryBaseEntry], list[tuple[int, HistoryBaseEntry]]] = []  # type: ignore  # noqa: E501
         data_start_idx = type_idx + 1
         for entry in cursor:
+            entry_type = HistoryBaseEntryType(entry[type_idx])
             try:
-                deserialized_event: Union[HistoryEvent, EvmEvent, EthWithdrawalEvent]
+                deserialized_event: Union[HistoryEvent, EvmEvent, EthWithdrawalEvent, EthBlockEvent]  # noqa: E501
                 # Deserialize event depending on its type
-                if HistoryBaseEntryType(entry[type_idx]) == HistoryBaseEntryType.EVM_EVENT:
+                if entry_type == HistoryBaseEntryType.EVM_EVENT:
                     data = entry[data_start_idx:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1] + entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + 1]  # noqa: E501
                     deserialized_event = EvmEvent.deserialize_from_db(data)
-                elif HistoryBaseEntryType(entry[type_idx]) == HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT:  # noqa: E501
+                elif entry_type in (
+                        HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT,
+                        HistoryBaseEntryType.ETH_BLOCK_EVENT,
+                ):
                     data = (
                         entry[data_start_idx:data_start_idx + 1] +
                         entry[data_start_idx + 3:data_start_idx + 4] +
                         entry[data_start_idx + 5:data_start_idx + 6] +
                         entry[data_start_idx + 7:data_start_idx + 9] +
-                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + ETH_WITHDRAWAL_FIELD_LENGTH + 1]  # noqa: E501
+                        entry[data_start_idx + 11:data_start_idx + 12] +
+                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + ETH_STAKING_FIELD_LENGTH + 1]  # noqa: E501
                     )
-                    deserialized_event = EthWithdrawalEvent.deserialize_from_db(data)
+                    if entry_type == HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT:
+                        deserialized_event = EthWithdrawalEvent.deserialize_from_db(data)
+                    else:
+                        deserialized_event = EthBlockEvent.deserialize_from_db(data)
                 else:
                     data = entry[data_start_idx:HISTORY_BASE_ENTRY_LENGTH + 1]
                     deserialized_event = HistoryEvent.deserialize_from_db(entry[data_start_idx:])

@@ -5105,7 +5105,7 @@ Querying online events
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/history/events/pull HTTP/1.1
+      POST /api/1/history/events/query HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -5123,7 +5123,7 @@ Querying online events
     .. sourcecode:: http
 
         HTTP/1.1 200 OK
-        Content-Type: application/zip
+        Content-Type: application/json
 
         {
             "result": True,

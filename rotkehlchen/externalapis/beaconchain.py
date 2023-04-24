@@ -7,20 +7,17 @@ import gevent
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.accounting.structures.eth2 import EthBlockEvent
 from rotkehlchen.chain.ethereum.modules.eth2.constants import LAST_PRODUCED_BLOCKS_QUERY_TS
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID, ValidatorPerformance
-from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.timing import DEFAULT_CONNECT_TIMEOUT, QUERY_RETRY_TIMES
-from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_VALIDATOR_INDEX
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_fval
-from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, ExternalService, Location, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, ExternalService, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, get_chunks, set_user_agent, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -90,15 +87,17 @@ class BeaconChain(ExternalServiceWithApiKey):
         else:
             query_str = f'{self.url}{module}/{encoded_args}/{endpoint}'
 
-        if extra_args is not None:
-            query_str += urlencode(extra_args)
-
         api_key = self._get_api_key()
         if api_key is not None:
-            query_str += f'?apikey={api_key}'
+            if extra_args is None:
+                extra_args = {}
+            extra_args['apikey'] = api_key
+
+        if extra_args is not None:
+            query_str += f'?{urlencode(extra_args)}'
+
         times = QUERY_RETRY_TIMES
         backoff_in_seconds = 10
-
         log.debug(f'Querying beaconcha.in API for {query_str}')
         while True:
             try:
@@ -286,7 +285,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         - The producer_fee_recipient can be missing. This only exists if the block is
         produced via a relay and is the "reported" recipient of the mev reward by
         the relay. Reported is important here and relays can lie and also make mistakes.
-        - The mev_reward can me ZERO and it's what goes to the producer_fee_recipient as reported
+        - The mev_reward can be ZERO and it's what goes to the producer_fee_recipient as reported
         by the relay. It can also be wrong due to misreporting by the relay.
 
         May raise:
@@ -300,14 +299,13 @@ class BeaconChain(ExternalServiceWithApiKey):
             limit=50,
         )
         dbevents = DBHistoryEvents(self.db)
-        block_data = []
 
         try:
             for entry in data:
                 blocknumber = int(entry['blockNumber'])
                 with self.db.conn.read_ctx() as cursor:
                     cursor.execute(
-                        'SELECT COUNT(*) from blocks_produced WHERE block_number IS ?',
+                        'SELECT COUNT(*) from eth_staking_events_info WHERE is_exit_or_blocknumber IS ?',  # noqa: E501
                         (blocknumber,),
                     )
                     if cursor.fetchone()[0] != 0:
@@ -317,49 +315,36 @@ class BeaconChain(ExternalServiceWithApiKey):
                 block_reward = from_wei(deserialize_fval(entry['blockReward'], 'block_reward', 'beaconcha.in produced blocks'))  # noqa: E501
                 mev_reward = from_wei(deserialize_fval(entry['blockMevReward'], 'mev_reward', 'beaconcha.in produced blocks'))  # noqa: E501
 
-                fee_recipient = deserialize_evm_address(entry['fee_recipient'])
+                fee_recipient = deserialize_evm_address(entry['feeRecipient'])
                 proposer_index = entry['posConsensus']['proposerIndex']
 
-                # evm_1 stands for ethereum. Chain type + chain id
-                event_identifier = f'evm_1_block_{blocknumber}'.encode()
-                event = HistoryEvent(
-                    event_identifier=event_identifier,
-                    sequence_index=0,
+                block_event = EthBlockEvent(
+                    validator_index=proposer_index,
                     timestamp=timestamp,
-                    location=Location.ETHEREUM,
-                    location_label=fee_recipient,
-                    event_type=HistoryEventType.STAKING,
-                    event_subtype=HistoryEventSubType.BLOCK_PRODUCTION,
-                    asset=A_ETH,
                     balance=Balance(amount=block_reward),
-                    notes=f'Validator {proposer_index} produced block {blocknumber} with {block_reward} ETH going to {fee_recipient}',  # noqa: E501
+                    fee_recipient=fee_recipient,
+                    block_number=blocknumber,
+                    is_mev_reward=False,
                 )
-
+                mev_event = None
                 producer_fee_recipient = None
-                if 'relay' in entry:
-                    producer_fee_recipient = deserialize_evm_address(entry['relay']['producerFeeRecipient'])  # noqa: E501
 
-                block_data.append((
-                    blocknumber, proposer_index, fee_recipient,
-                    str(block_reward), producer_fee_recipient, str(mev_reward),
-                ))
+                if entry.get('relay') is not None:
+                    producer_fee_recipient = deserialize_evm_address(entry['relay']['producerFeeRecipient'])  # noqa: E501
+                    mev_event = EthBlockEvent(
+                        validator_index=proposer_index,
+                        timestamp=timestamp,
+                        balance=Balance(amount=mev_reward),
+                        fee_recipient=producer_fee_recipient,
+                        block_number=blocknumber,
+                        is_mev_reward=True,
+                    )
+                with self.db.user_write() as write_cursor:
+                    dbevents.add_history_event(write_cursor=write_cursor, event=block_event)
+                    if mev_event is not None:
+                        dbevents.add_history_event(write_cursor=write_cursor, event=mev_event)
 
             with self.db.user_write() as write_cursor:
-                dbevents.add_history_event(
-                    write_cursor,
-                    event,
-                    mapping_values={HISTORY_MAPPING_KEY_VALIDATOR_INDEX: proposer_index},
-                )
-                write_cursor.execute(
-                    'INSERT OR IGNORE INTO blocks_produced('
-                    'block_number, validator_index, fee_recipient, '
-                    'block_reward, producer_fee_recipient, mev_reward'
-                    ') VALUES (?, ?, ?, ?, ?, ?)',
-                    (
-                        blocknumber, proposer_index, fee_recipient,
-                        str(block_reward), producer_fee_recipient, str(mev_reward),
-                    ),
-                )
                 self.db.update_used_query_range(
                     write_cursor=write_cursor,
                     name=LAST_PRODUCED_BLOCKS_QUERY_TS,
