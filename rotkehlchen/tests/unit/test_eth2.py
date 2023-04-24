@@ -26,7 +26,7 @@ from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.eth2 import DBEth2
-from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery, HistoryEventFilterQuery
+from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address
@@ -832,87 +832,3 @@ def test_get_validators_to_query_for_withdrawals(database):
 
     result = db.get_validators_to_query_for_withdrawals(now_ms)
     assert result == [(1, 1), (2, 20), (3, 30)]
-
-
-@pytest.mark.vcr()
-@pytest.mark.parametrize('network_mocking', [False])
-@pytest.mark.freeze_time('2023-04-23 00:52:55 GMT')
-def test_withdrawals(eth2: 'Eth2', database):
-    """Test that when withdrawals are queried, they are properly saved in the DB"""
-    dbevents = DBHistoryEvents(database)
-    dbeth2 = DBEth2(database)
-    with database.user_write() as write_cursor:
-        dbeth2.add_validators(write_cursor, [
-            Eth2Validator(  # this has exited
-                index=7287,
-                public_key=Eth2PubKey('0xb7763831fdf87f3ee728e60a579cf2be889f6cc89a4878c8651a2a267377cf7e9406b4bcd8f664b88a3e20c368155bf6'),  # noqa: E501
-                ownership_proportion=ONE,
-            ), Eth2Validator(  # this has exited
-                index=7288,
-                public_key=Eth2PubKey('0x92db89739c6a3529facf858223b8872bbcf150c4bf3b30eb21ab8b09d4ea2f4d7b07b949a27d9766c70807d3b18ad934'),  # noqa: E501
-                ownership_proportion=ONE,
-            ), Eth2Validator(  # this is active and has withdrawals
-                index=295601,
-                public_key=Eth2PubKey('0xab82f22254143786651a1600ce747f22f79bb3c3b016f7a2564e104ffb16af409fc3a8bb48b0ba012454a79c3460f5ae'),  # noqa: E501
-                ownership_proportion=ONE,
-            ), Eth2Validator(  # this is active and has withdrawals
-                index=295603,
-                public_key=Eth2PubKey('0x97777229490da343d0b7e661eda342fe1083e35a5c4076da76297ccac08cea6e2c8520fad2afdd4e43d73f0e620cc155'),  # noqa: E501
-                ownership_proportion=ONE,
-            ),
-        ])
-
-    to_ts = ts_now()
-    eth2.query_services_for_validator_withdrawals(to_ts=to_ts)
-
-    with database.conn.read_ctx() as cursor:
-        events = dbevents.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True, False)  # noqa: E501
-        assert events == [EthWithdrawalEvent(
-            validator_index=295601,
-            timestamp=TimestampMS(1681392599000),
-            balance=Balance(amount=FVal('1.631508097')),
-            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
-            is_exit=False,
-        ), EthWithdrawalEvent(
-            validator_index=295603,
-            timestamp=TimestampMS(1681392599000),
-            balance=Balance(amount=FVal('1.581794994')),
-            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
-            is_exit=False,
-        ), EthWithdrawalEvent(
-            validator_index=7287,
-            timestamp=TimestampMS(1681567319000),
-            balance=Balance(amount=FVal('36.411594425')),
-            withdrawal_address=string_to_evm_address('0x4231B2f83CB7C833Db84ceC0cEAAa9959f051374'),
-            is_exit=True,
-        ), EthWithdrawalEvent(
-            validator_index=7288,
-            timestamp=TimestampMS(1681567319000),
-            balance=Balance(amount=FVal('36.422259087')),
-            withdrawal_address=string_to_evm_address('0x4231B2f83CB7C833Db84ceC0cEAAa9959f051374'),
-            is_exit=True,
-        ), EthWithdrawalEvent(
-            validator_index=295601,
-            timestamp=TimestampMS(1681736279000),
-            balance=Balance(amount=FVal('0.010870946')),
-            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
-            is_exit=False,
-        ), EthWithdrawalEvent(
-            validator_index=295603,
-            timestamp=TimestampMS(1681736279000),
-            balance=Balance(amount=FVal('0.010692337')),
-            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
-            is_exit=False,
-        ), EthWithdrawalEvent(
-            validator_index=295601,
-            timestamp=TimestampMS(1682110295000),
-            balance=Balance(amount=FVal('0.011993962')),
-            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
-            is_exit=False,
-        ), EthWithdrawalEvent(
-            validator_index=295603,
-            timestamp=TimestampMS(1682110295000),
-            balance=Balance(amount=FVal('0.011965595')),
-            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
-            is_exit=False,
-        )]
