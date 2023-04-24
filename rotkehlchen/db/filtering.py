@@ -36,7 +36,7 @@ ALL_EVENTS_DATA_JOIN = """FROM history_events
 LEFT JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier
 LEFT JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier """  # noqa: E501
 EVM_EVENT_JOIN = 'FROM history_events INNER JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier '  # noqa: E501
-ETH_WITHDRAWAL_EVENT_JOIN = 'FROM history_events INNER JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier '  # noqa: E501
+ETH_STAKING_EVENT_JOIN = 'FROM history_events INNER JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier '  # noqa: E501
 
 
 T = TypeVar('T')
@@ -1086,7 +1086,8 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
         return HistoryBaseEntryType.EVM_EVENT
 
 
-class EthWithdrawalFilterQuery(HistoryBaseEntryFilterQuery):
+class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta):
+
     @classmethod
     def make(
             cls,
@@ -1108,7 +1109,7 @@ class EthWithdrawalFilterQuery(HistoryBaseEntryFilterQuery):
             exclude_ignored_assets: bool = False,
             limit_to_entry_type: bool = False,
             validator_indices: Optional[list[int]] = None,
-    ) -> 'EthWithdrawalFilterQuery':
+    ) -> 'EthStakingEventFilterQuery':
         filter_query = super().make(
             and_op=and_op,
             order_by_rules=order_by_rules,
@@ -1140,15 +1141,23 @@ class EthWithdrawalFilterQuery(HistoryBaseEntryFilterQuery):
 
     @staticmethod
     def get_join_query() -> str:
-        return ETH_WITHDRAWAL_EVENT_JOIN
+        return ETH_STAKING_EVENT_JOIN
 
     @staticmethod
     def get_count_query() -> str:
-        return f'SELECT COUNT(*) {ETH_WITHDRAWAL_EVENT_JOIN}'
+        return f'SELECT COUNT(*) {ETH_STAKING_EVENT_JOIN}'
 
     @staticmethod
     def get_entry_type() -> HistoryBaseEntryType:
         return HistoryBaseEntryType.EVM_EVENT
+
+
+class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
+    pass
+
+
+class EthBlockEventFilterQuery(EthStakingEventFilterQuery):
+    pass
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)

@@ -68,6 +68,7 @@ class HistoryBaseEntryType(Enum):
     BASE_ENTRY = auto()
     EVM_EVENT = auto()
     ETH_WITHDRAWAL_EVENT = auto()
+    ETH_BLOCK_EVENT = auto()
 
 
 class HistoryBaseEntryData(TypedDict):
