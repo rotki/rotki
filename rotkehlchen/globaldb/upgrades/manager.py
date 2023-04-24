@@ -1,6 +1,7 @@
 import logging
 import shutil
 import sqlite3
+import traceback
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -89,12 +90,13 @@ def maybe_upgrade_globaldb(
         try:
             upgrade.function(connection)
         except BaseException as e:
-            # Problem .. restore DB backup and bail out
+            # Problem .. restore DB backup, log all info and bail out
             error_message = (
                 f'Failed at global DB upgrade from version {upgrade.from_version} to '
                 f'{to_version}: {str(e)}'
             )
-            log.error(error_message)
+            stacktrace = traceback.format_exc()
+            log.error(f'{error_message}\n{stacktrace}')
             shutil.copyfile(tmp_db_path, global_dir / db_filename)
             raise ValueError(error_message) from e
 

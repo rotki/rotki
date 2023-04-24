@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+import traceback
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Optional
 
@@ -195,12 +196,13 @@ class DBUpgradeManager():
                 kwargs = upgrade.kwargs if upgrade.kwargs is not None else {}
                 upgrade.function(db=self.db, progress_handler=progress_handler, **kwargs)
             except BaseException as e:
-                # Problem .. restore DB backup and bail out
+                # Problem .. restore DB backup, log all info and bail out
                 error_message = (
                     f'Failed at database upgrade from version {upgrade.from_version} to '
                     f'{to_version}: {str(e)}'
                 )
-                log.error(error_message)
+                stacktrace = traceback.format_exc()
+                log.error(f'{error_message}\n{stacktrace}')
                 shutil.copyfile(
                     tmp_db_path,
                     os.path.join(self.db.user_data_dir, 'rotkehlchen.db'),
