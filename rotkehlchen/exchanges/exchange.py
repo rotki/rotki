@@ -1,4 +1,5 @@
 import logging
+from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import requests
@@ -43,6 +44,27 @@ ExchangeHistoryFailCallback = Callable[[str], None]
 ExchangeHistoryNewStepCallback = Callable[[str], None]
 
 
+class ExchangeWithExtras:
+    """
+    An interface for exchanges that have extra properties that can be edited.
+    Note: it should be used only together with ExchangeInterface to have db, name and location.
+    """
+    db: 'DBHandler'
+    name: str
+    location: Location
+
+    @abstractmethod
+    def edit_exchange_extras(self, extras: dict) -> tuple[bool, str]:
+        """
+        Subclasses implement this method to accept extra properties such as kraken account type.
+        """
+
+    def reset_to_db_extras(self) -> None:
+        """Resets the exchange extras to the ones saved in the DB"""
+        extras = self.db.get_exchange_credentials_extras(location=self.location, name=self.name)
+        self.edit_exchange_extras(extras)
+
+
 class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
 
     def __init__(
@@ -78,7 +100,6 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 location=self.location,
                 name=self.name,
             )
-        assert self.location in credentials_in_db and len(credentials_in_db[self.location]) == 1
         credentials = credentials_in_db[self.location][0]
         ftx_subaccount = self.db.get_ftx_subaccount(self.name) if self.location in (Location.FTX, Location.FTXUS) else None  # noqa: E501
         self.edit_exchange_credentials(ExchangeAuthCredentials(
@@ -87,11 +108,6 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             passphrase=credentials.passphrase,
             ftx_subaccount=ftx_subaccount,
         ))
-
-    def reset_to_db_extras(self) -> None:
-        """Resets the exchange extras to the ones saved in the DB"""
-        extras = self.db.get_exchange_credentials_extras(location=self.location, name=self.name)
-        self.edit_exchange_extras(extras)
 
     def location_id(self) -> ExchangeLocationID:
         """Returns unique location identifier for this exchange object (name + location)"""
@@ -109,10 +125,6 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             self.secret = credentials.api_secret
 
         return credentials.api_key is not None or credentials.api_secret is not None or credentials.passphrase is not None  # noqa: E501
-
-    def edit_exchange_extras(self, extras: dict) -> tuple[bool, str]:  # pylint: disable=unused-argument  # noqa: E501
-        """Subclasses may implement this method to accept extra properties"""
-        return True, ''
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """Returns the balances held in the exchange in the following format:

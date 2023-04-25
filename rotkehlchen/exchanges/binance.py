@@ -35,7 +35,11 @@ from rotkehlchen.exchanges.data_structures import (
     Trade,
     TradeType,
 )
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    ExchangeWithExtras,
+)
 from rotkehlchen.exchanges.utils import (
     deserialize_asset_movement_address,
     get_key_if_has_val,
@@ -181,7 +185,7 @@ def trade_from_binance(
     )
 
 
-class Binance(ExchangeInterface):
+class Binance(ExchangeInterface, ExchangeWithExtras):
     """This class supports:
       - Binance: when instantiated with default uri, equals BINANCE_BASE_URL.
       - Binance US: when instantiated with uri equals BINANCEUS_BASE_URL.

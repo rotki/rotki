@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY, KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
-from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithExtras
 from rotkehlchen.exchanges.ftx import FTX_BASE_URL, FTXUS_BASE_URL
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -111,14 +111,15 @@ class ExchangeManager():
                 exchangeobj.reset_to_db_credentials()
                 return False, f'New credentials are invalid. {msg}'
 
-        # Then edit extra properties
-        success, msg = exchangeobj.edit_exchange_extras({
-            KRAKEN_ACCOUNT_TYPE_KEY: kraken_account_type,
-            BINANCE_MARKETS_KEY: binance_selected_trade_pairs,
-        })
-        if success is False:
-            exchangeobj.reset_to_db_credentials()
-            return False, f'Failed to edit exchange extras. {msg}'
+        # Then edit extra properties if needed
+        if isinstance(exchangeobj, ExchangeWithExtras):
+            success, msg = exchangeobj.edit_exchange_extras({
+                KRAKEN_ACCOUNT_TYPE_KEY: kraken_account_type,
+                BINANCE_MARKETS_KEY: binance_selected_trade_pairs,
+            })
+            if success is False:
+                exchangeobj.reset_to_db_credentials()
+                return False, f'Failed to edit exchange extras. {msg}'
 
         try:
             with self.database.user_write() as cursor:
@@ -136,7 +137,8 @@ class ExchangeManager():
                 )
         except InputError as e:
             exchangeobj.reset_to_db_credentials()  # DB is already rolled back at this point
-            exchangeobj.reset_to_db_extras()
+            if isinstance(exchangeobj, ExchangeWithExtras):
+                exchangeobj.reset_to_db_extras()
             return False, f"Couldn't update exchange properties in the DB. {str(e)}"
 
         # Finally edit the name of the exchange object
