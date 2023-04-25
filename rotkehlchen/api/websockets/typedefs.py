@@ -44,3 +44,10 @@ class HistoryEventsStep(Enum):
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member
+
+
+class HistoryEventsQueryType(Enum):
+    HISTORY_QUERY = auto()
+
+    def __str__(self) -> str:
+        return self.name.lower()  # pylint: disable=no-member

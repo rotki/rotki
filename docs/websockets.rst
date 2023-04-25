@@ -206,7 +206,7 @@ Having API keys for some services (such as etherscan) is crucial for rotki to wo
 Query new history events
 =========================
 
-In addition to history from evm transactions we need to query events from exchanges that support this kind of events. The backend will emit a ws message as the following when a query start for such exchange.
+In addition to history from evm transactions we need to query events from exchanges, eth staking events etc. The backend will emit a ws message as the following when such a query starts.
 
 ::
 
@@ -215,16 +215,18 @@ In addition to history from evm transactions we need to query events from exchan
         "data": {
             "status": "querying_events_started",
             "location": "kraken",
+            "event_type": "history_query",
             "name": "My kraken exchange"
         }
     }
 
 
-- ``status``: Can be either `querying_events_started`, `querying_events_finished`, `querying_events_status_update`. Each pair of events is triggered per exchange instance.
-- ``location``: Exchange location triggering the event.
-- ``name``: Name of the exchange instance that is being queried.
+- ``status``: Can be either `querying_events_started`, `querying_events_finished`, `querying_events_status_update`. Each pair of events is triggered per exchange instance if the location is an exchange.
+- ``event_type``: Labels the type of events being queried. Valid values are: ``history_query``.
+- ``location``(Optional): When the same ``event_type`` can be queried in multiple locations this helps to differentiate them.
+- ``name``(Optional): If multiple appearences of the same location are possible it will differentiate each one of them.
 
-Finally the backend provides more granular information to know what interval of time is getting queried.
+Finally the backend provides more granular information to know what interval of time is getting queried for certain locations.
 
 ::
 
@@ -233,11 +235,14 @@ Finally the backend provides more granular information to know what interval of 
         "data": {
             "status": "history_event_status",
             "location": "kraken",
+            "event_type": "history_query",
             "name": "My kraken exchange",
             'period': [0, 1682100570]
         }
     }
 
-- ``location``: Exchange location triggering the event.
-- ``name``: Name of the exchange instance that is being queried.
+
+- ``event_type``: Labels the type of events being queried. Valid values are: ``history_query``.
+- ``location``(Optional): When the same ``event_type`` can be queried in multiple locations this helps to differentiate them.
+- ``name``(Optional): If multiple appearences of the same location are possible it will differentiate each one of them.
 - ``period``: Time range that is being queried.
