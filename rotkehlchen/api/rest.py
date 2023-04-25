@@ -3533,7 +3533,7 @@ class RestAPI():
             self.rotkehlchen.exchange_manager.query_history_events()
             return OK_RESULT
 
-        # else we query eth2 events
+        # else we query eth staking events
         eth2 = self.rotkehlchen.chains_aggregator.get_module('eth2')
         if eth2 is None:
             return wrap_in_fail_result(

@@ -245,7 +245,9 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         )
 
     def query_history_events(self) -> None:
-        """Query and store in the database history events from the current exchange instance"""
+        """Query history events from the current exchange
+        instance and store them in the database
+        """
         return None
 
     @protect_with_lock()

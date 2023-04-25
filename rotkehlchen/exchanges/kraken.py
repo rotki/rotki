@@ -23,7 +23,11 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.api.websockets.typedefs import HistoryEventsStep, WSMessageType
+from rotkehlchen.api.websockets.typedefs import (
+    HistoryEventsQueryType,
+    HistoryEventsStep,
+    WSMessageType,
+)
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
@@ -296,7 +300,6 @@ class Kraken(ExchangeInterface):
         self.call_counter = 0
         self.last_query_ts = 0
         self.history_events_db = DBHistoryEvents(self.db)
-        self.supports_history_events = True
 
     def set_account_type(self, account_type: Optional[KrakenAccountType]) -> None:
         if account_type is None:
@@ -1092,6 +1095,7 @@ class Kraken(ExchangeInterface):
                 data={
                     'status': str(HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE),
                     'location': str(self.location),
+                    'event_type': str(HistoryEventsQueryType.HISTORY_QUERY),
                     'name': self.name,
                     'period': [query_start_ts, query_end_ts],
                 },
@@ -1167,10 +1171,12 @@ class Kraken(ExchangeInterface):
             data={
                 'status': str(HistoryEventsStep.QUERYING_EVENTS_STARTED),
                 'location': str(self.location),
+                'event_type': str(HistoryEventsQueryType.HISTORY_QUERY),
                 'name': self.name,
             },
         )
         with self.db.conn.read_ctx() as cursor:
+            # We give the full range but internally it queries only for the missing time ranges
             self.query_kraken_ledgers(
                 cursor=cursor,
                 start_ts=Timestamp(0),
@@ -1181,6 +1187,7 @@ class Kraken(ExchangeInterface):
             data={
                 'status': str(HistoryEventsStep.QUERYING_EVENTS_FINISHED),
                 'location': str(self.location),
+                'event_type': str(HistoryEventsQueryType.HISTORY_QUERY),
                 'name': self.name,
             },
         )
