@@ -2,7 +2,7 @@
 import { SupportedExchange } from '@/types/exchanges';
 import { Section } from '@/types/status';
 
-const { shouldShowLoadingScreen } = useStatusStore();
+const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 const { load, $reset } = useKrakenStakingStore();
 
 const { connectedExchanges } = storeToRefs(useExchangesStore());
@@ -30,8 +30,11 @@ watch(isKrakenConnected, async isKrakenConnected => {
 });
 
 const loading = shouldShowLoadingScreen(Section.STAKING_KRAKEN);
+const refreshing = isLoading(Section.STAKING_KRAKEN);
 
 const { t } = useI18n();
+
+const refresh = () => load(true);
 </script>
 
 <template>
@@ -83,6 +86,15 @@ const { t } = useI18n();
       </template>
     </progress-screen>
     <div v-else>
+      <v-row justify="end">
+        <v-col cols="auto">
+          <refresh-button
+            :tooltip="t('kraken_staking_events.refresh_tooltip')"
+            :loading="refreshing"
+            @refresh="refresh"
+          />
+        </v-col>
+      </v-row>
       <kraken-staking />
     </div>
   </div>

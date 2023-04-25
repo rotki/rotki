@@ -20,7 +20,6 @@ const defaultEventState = (): KrakenStakingEvents => ({
   entriesTotal: 0,
   entriesFound: 0,
   entriesLimit: 0,
-  events: [],
   received: [],
   totalUsdValue: Zero
 });

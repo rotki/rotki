@@ -1387,7 +1387,6 @@
     "deposits": "存款",
     "description": "描述",
     "details": "细节",
-    "event": "事件",
     "events": "事件",
     "here": "这儿",
     "ignored_in_accounting": "在会计中忽略",
@@ -2513,15 +2512,11 @@
       "type": "按质押事件的类型过滤"
     },
     "refresh_tooltip": "刷新您的 Kraken 质押事件",
-    "titles": "Kraken 质押活动",
     "types": {
       "receive_staked_asset": "接收质押资产",
       "stake_asset": "质押资产",
       "staking_reward": "质押奖励",
       "unstake_asset": "取消抵押资产"
-    },
-    "upgrade": {
-      "label": "质押事件"
     }
   },
   "kraken_staking_overview": {

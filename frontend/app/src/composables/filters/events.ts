@@ -33,7 +33,10 @@ export type Matcher = SearchMatcher<
 >;
 export type Filters = MatchedKeyword<HistoryEventFilterValueKeys>;
 
-export const useHistoryEventFilter = (disableProtocols: boolean) => {
+export const useHistoryEventFilter = (disabled: {
+  protocols?: boolean;
+  locations?: boolean;
+}) => {
   const filters: Ref<Filters> = ref({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
@@ -81,26 +84,27 @@ export const useHistoryEventFilter = (disableProtocols: boolean) => {
       }
     ];
 
-    if (!disableProtocols) {
-      data.push(
-        {
-          key: HistoryEventFilterKeys.PROTOCOL,
-          keyValue: HistoryEventFilterValueKeys.PROTOCOL,
-          description: tc('transactions.filter.protocol'),
-          multiple: true,
-          string: true,
-          suggestions: () => get(counterparties),
-          validate: (protocol: string) => !!protocol
-        },
-        {
+    if (!disabled?.protocols) {
+      data.push({
+        key: HistoryEventFilterKeys.PROTOCOL,
+        keyValue: HistoryEventFilterValueKeys.PROTOCOL,
+        description: tc('transactions.filter.protocol'),
+        multiple: true,
+        string: true,
+        suggestions: () => get(counterparties),
+        validate: (protocol: string) => !!protocol
+      });
+
+      if (!disabled?.locations) {
+        data.push({
           key: HistoryEventFilterKeys.LOCATION,
           keyValue: HistoryEventFilterValueKeys.LOCATION,
           description: tc('transactions.filter.location'),
           string: true,
           suggestions: () => get(associatedLocations),
           validate: location => !!location
-        }
-      );
+        });
+      }
     }
 
     return data;

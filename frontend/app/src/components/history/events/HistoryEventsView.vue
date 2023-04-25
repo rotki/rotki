@@ -26,6 +26,7 @@ import type { Filters, Matcher } from '@/composables/filters/events';
 
 const props = withDefaults(
   defineProps<{
+    location?: string;
     protocols?: string[];
     eventTypes?: string[];
     eventSubTypes?: string[];
@@ -36,6 +37,7 @@ const props = withDefaults(
     onlyChains?: Blockchain[];
   }>(),
   {
+    location: undefined,
     protocols: () => [],
     eventTypes: () => [],
     eventSubTypes: () => [],
@@ -50,6 +52,7 @@ const props = withDefaults(
 const { tc } = useI18n();
 
 const {
+  location,
   protocols,
   useExternalAccountFilter,
   externalAccountFilter,
@@ -144,7 +147,11 @@ const {
 >(
   null,
   mainPage,
-  () => useHistoryEventFilter(get(protocols).length > 0),
+  () =>
+    useHistoryEventFilter({
+      protocols: get(protocols).length > 0,
+      locations: !!get(location)
+    }),
   fetchHistoryEvents,
   {
     onUpdateFilters(query) {
@@ -170,6 +177,10 @@ const {
       };
 
       const accounts = get(usedAccounts);
+
+      if (isDefined(location)) {
+        params.location = get(location);
+      }
 
       if (accounts.length > 0) {
         const firstAccount = accounts[0];

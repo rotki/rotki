@@ -34,7 +34,6 @@ export const KrakenStakingEvents = z.object({
   entriesFound: z.number().nonnegative(),
   entriesLimit: z.number().min(-1),
   entriesTotal: z.number().nonnegative(),
-  events: z.array(KrakenStakingEvent),
   received: z.array(ReceivedAmount),
   totalUsdValue: NumericString
 });

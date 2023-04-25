@@ -7,7 +7,7 @@ withDefaults(
     primaryValue: string;
     secondaryValue: string;
     label: { primary?: string; secondary?: string };
-    errorMessages: {
+    errorMessages?: {
       primary?: Record<string, string | string[]>;
       secondary?: Record<string, string | string[]>;
     };

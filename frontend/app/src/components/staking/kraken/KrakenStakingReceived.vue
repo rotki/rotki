@@ -1,14 +1,10 @@
 <script setup lang="ts">
 import { type Balance } from '@rotki/common';
-import { type PropType } from 'vue';
 import { type ReceivedAmount } from '@/types/staking';
 
-defineProps({
-  received: {
-    required: true,
-    type: Array as PropType<ReceivedAmount[]>
-  }
-});
+defineProps<{
+  received: ReceivedAmount[];
+}>();
 
 const { prices } = storeToRefs(useBalancePricesStore());
 const current = ref(true);

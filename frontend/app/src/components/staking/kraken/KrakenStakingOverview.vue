@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { type PropType } from 'vue';
+import { type BigNumber } from '@rotki/common';
 import { type ReceivedAmount } from '@/types/staking';
 
-const props = defineProps({
-  totalUsd: { required: true, type: BigNumber },
-  earned: { required: true, type: Array as PropType<ReceivedAmount[]> }
-});
+const props = defineProps<{
+  totalUsd: BigNumber;
+  earned: ReceivedAmount[];
+}>();
 
 const { earned } = toRefs(props);
 const { prices } = storeToRefs(useBalancePricesStore());

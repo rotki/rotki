@@ -87,7 +87,7 @@ describe('composables::history/filter-paginate', () => {
         protocols: get(protocols),
         eventTypes: get(eventTypes),
         eventSubtypes: get(eventSubTypes),
-        evmChain: 'ethereum',
+        location: 'ethereum',
         locationLabels: get(accounts)[0].address
       })
     );
@@ -115,7 +115,7 @@ describe('composables::history/filter-paginate', () => {
       >(
         locationOverview,
         mainPage,
-        () => useHistoryEventFilter(get(protocols).length > 0),
+        () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
         fetchHistoryEvents,
         {
           onUpdateFilters,
@@ -151,7 +151,7 @@ describe('composables::history/filter-paginate', () => {
       >(
         locationOverview,
         mainPage,
-        () => useHistoryEventFilter(get(protocols).length > 0),
+        () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
         fetchHistoryEvents,
         {
           onUpdateFilters,
@@ -183,7 +183,7 @@ describe('composables::history/filter-paginate', () => {
       >(
         locationOverview,
         mainPage,
-        () => useHistoryEventFilter(get(protocols).length > 0),
+        () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
         fetchHistoryEvents,
         {
           onUpdateFilters,
@@ -208,7 +208,7 @@ describe('composables::history/filter-paginate', () => {
       assertType<number>(get(state).found);
 
       expect(get(pageParams).locationLabels).toEqual(get(accounts)[0].address);
-      expect(get(pageParams).evmChain).toEqual('ethereum');
+      expect(get(pageParams).location).toEqual('ethereum');
 
       expect(get(state).data).toHaveLength(6);
       expect(get(state).found).toEqual(6);
@@ -235,7 +235,7 @@ describe('composables::history/filter-paginate', () => {
       >(
         locationOverview,
         mainPage,
-        () => useHistoryEventFilter(get(protocols).length > 0),
+        () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
         fetchHistoryEvents,
         {
           onUpdateFilters,
