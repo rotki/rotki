@@ -8,7 +8,7 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
   const { assetMapping } = useAssetInfoApi();
 
   const { cache, isPending, retrieve, reset } = useItemCache<AssetInfo>(
-    async keys => {
+    async (keys: string[]) => {
       const response = await assetMapping(keys);
       return function* () {
         for (const key of keys) {
