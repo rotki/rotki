@@ -56,6 +56,7 @@ def entry_to_input_dict(
     else:
         serialized.pop('identifier')  # there is `identifier`: `None` which we have to remove
     serialized.pop('event_identifier')
+    serialized.pop('entry_type')
     return serialized
 
 

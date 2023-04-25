@@ -98,6 +98,10 @@ class EthWithdrawalEvent(EthStakingEvent):
             notes=f'Withdrew {balance.amount} ETH from validator {validator_index}',
         )
 
+    @property
+    def entry_type(self) -> HistoryBaseEntryType:
+        return HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT
+
     def __repr__(self) -> str:
         return f'EthWithdrawalEvent({self.validator_index=}, {self.timestamp=}, is_exit={self.is_exit_or_blocknumber})'  # noqa: E501
 
@@ -214,6 +218,10 @@ class EthBlockEvent(EthStakingEvent):
             is_exit_or_blocknumber=block_number,
             notes=f'Validator {validator_index} produced block {block_number} with {balance.amount} ETH going to {fee_recipient} as the {name}',  # noqa: E501
         )
+
+    @property
+    def entry_type(self) -> HistoryBaseEntryType:
+        return HistoryBaseEntryType.ETH_BLOCK_EVENT
 
     def __repr__(self) -> str:
         return f'EthBlockEvent({self.validator_index=}, {self.timestamp=}, block_number={self.is_exit_or_blocknumber}, {self.event_subtype=})'  # noqa: E501

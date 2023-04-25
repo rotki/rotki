@@ -1009,7 +1009,7 @@ class HistoryEventFilterQuery(HistoryBaseEntryFilterQuery):
 
     @staticmethod
     def get_entry_type() -> HistoryBaseEntryType:
-        return HistoryBaseEntryType.BASE_ENTRY
+        return HistoryBaseEntryType.HISTORY_EVENT
 
 
 class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):

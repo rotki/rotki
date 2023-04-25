@@ -65,10 +65,14 @@ HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
 
 class HistoryBaseEntryType(Enum):
     """Type of a history entry. Value(int) is written/read into/from the DB"""
-    BASE_ENTRY = auto()
+    HISTORY_EVENT = auto()
     EVM_EVENT = auto()
     ETH_WITHDRAWAL_EVENT = auto()
     ETH_BLOCK_EVENT = auto()
+
+    def serialize_for_api(self) -> str:
+        """Serializes the entry type for use in the API"""
+        return ' '.join(word.lower() for word in self.name.split('_'))  # pylint: disable=no-member
 
 
 class HistoryBaseEntryData(TypedDict):
@@ -193,10 +197,16 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
         - UnknownAsset
         """
 
+    @property
+    @abstractmethod
+    def entry_type(self) -> HistoryBaseEntryType:
+        """The event category for this event"""
+
     def serialize(self) -> dict[str, Any]:
         """Serialize the event alone for api"""
         return {
             'identifier': self.identifier,
+            'entry_type': self.entry_type.serialize_for_api(),
             'event_identifier': self.event_identifier,
             'sequence_index': self.sequence_index,
             'timestamp': ts_ms_to_sec(self.timestamp),  # serialize to api in seconds MS
@@ -331,11 +341,15 @@ class HistoryEvent(HistoryBaseEntry):
             identifier=identifier,
         )
 
+    @property
+    def entry_type(self) -> HistoryBaseEntryType:
+        return HistoryBaseEntryType.HISTORY_EVENT
+
     def __repr__(self) -> str:
         return f'HistoryEvent({", ".join(self._history_base_entry_repr_fields())})'
 
     def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE]:
-        return (self._serialize_base_tuple_for_db(HistoryBaseEntryType.BASE_ENTRY),)
+        return (self._serialize_base_tuple_for_db(HistoryBaseEntryType.HISTORY_EVENT),)
 
     @classmethod
     def deserialize_from_db(
