@@ -1,29 +1,40 @@
 <script setup lang="ts">
-const props = defineProps({
-  component: { required: false, type: String, default: 'div' },
-  height: { required: false, type: String, default: 'auto' },
-  width: { required: false, type: String, default: 'auto' },
-  circle: { required: false, type: Boolean, default: false },
-  padding: { required: false, type: String, default: '2px' }
-});
+const props = withDefaults(
+  defineProps<{
+    tag?: string;
+    height?: string;
+    width?: string;
+    circle?: boolean;
+    padding?: string;
+  }>(),
+  {
+    tag: 'div',
+    height: 'auto',
+    width: 'auto',
+    circle: false,
+    padding: '2px'
+  }
+);
 
 const { dark } = useTheme();
 
 const { circle, padding } = toRefs(props);
 
 const radius = computed(() => (get(circle) ? '50%' : '4px'));
+const attrs = useAttrs();
 </script>
 <template>
   <component
-    :is="component"
+    :is="tag"
     class="wrapper"
     :class="{ 'wrapper--inverted': dark }"
-    v-bind="$attrs"
+    v-bind="attrs"
     :style="{ width, height }"
   >
     <slot />
   </component>
 </template>
+
 <style scoped lang="scss">
 .wrapper {
   padding: v-bind(padding);

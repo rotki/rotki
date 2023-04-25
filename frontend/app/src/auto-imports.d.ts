@@ -231,13 +231,12 @@ declare global {
   const toProfitLossModel: typeof import('./utils/defi/index')['toProfitLossModel']
   const toRaw: typeof import('vue')['toRaw']
   const toReactive: typeof import('@vueuse/core')['toReactive']
-  const toRef: typeof import('@vueuse/core')['toRef']
+  const toRef: typeof import('vue')['toRef']
   const toRefs: typeof import('vue')['toRefs']
   const toSentenceCase: typeof import('./utils/text')['toSentenceCase']
   const toSortedAssetBalanceArray: typeof import('./utils/balances')['toSortedAssetBalanceArray']
   const toSortedAssetBalanceWithPrice: typeof import('./utils/balances')['toSortedAssetBalanceWithPrice']
   const toUnit: typeof import('./utils/calculation')['toUnit']
-  const toValue: typeof import('@vueuse/core')['toValue']
   const totalCollateral: typeof import('./utils/total-collateral')['totalCollateral']
   const transformEntryWithMeta: typeof import('./utils/history')['transformEntryWithMeta']
   const triggerRef: typeof import('vue')['triggerRef']
@@ -876,13 +875,12 @@ declare module 'vue' {
     readonly toProfitLossModel: UnwrapRef<typeof import('./utils/defi/index')['toProfitLossModel']>
     readonly toRaw: UnwrapRef<typeof import('vue')['toRaw']>
     readonly toReactive: UnwrapRef<typeof import('@vueuse/core')['toReactive']>
-    readonly toRef: UnwrapRef<typeof import('@vueuse/core')['toRef']>
+    readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
     readonly toSentenceCase: UnwrapRef<typeof import('./utils/text')['toSentenceCase']>
     readonly toSortedAssetBalanceArray: UnwrapRef<typeof import('./utils/balances')['toSortedAssetBalanceArray']>
     readonly toSortedAssetBalanceWithPrice: UnwrapRef<typeof import('./utils/balances')['toSortedAssetBalanceWithPrice']>
     readonly toUnit: UnwrapRef<typeof import('./utils/calculation')['toUnit']>
-    readonly toValue: UnwrapRef<typeof import('@vueuse/core')['toValue']>
     readonly totalCollateral: UnwrapRef<typeof import('./utils/total-collateral')['totalCollateral']>
     readonly transformEntryWithMeta: UnwrapRef<typeof import('./utils/history')['transformEntryWithMeta']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>

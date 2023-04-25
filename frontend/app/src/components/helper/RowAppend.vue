@@ -14,7 +14,8 @@ const props = defineProps({
   rightPatchColspan: { required: false, type: [Number, String], default: 0 }
 });
 
-const { className, isMobile } = toRefs(props);
+const { className, isMobile, leftPatchColspan, rightPatchColspan } =
+  toRefs(props);
 
 const slots = useSlots();
 
@@ -31,10 +32,14 @@ const formattedClassName = computed(() => {
     ...propClassName
   };
 });
+
+const leftColspan = useToNumber(leftPatchColspan);
+const rightColspan = useToNumber(rightPatchColspan);
 </script>
+
 <template>
   <tr class="font-weight-medium append-row" :class="formattedClassName">
-    <td v-if="leftPatchColspan >= 1 && !isMobile" :colspan="leftPatchColspan" />
+    <td v-if="leftColspan >= 1 && !isMobile" :colspan="leftColspan" />
     <td :colspan="labelColspan" :class="{ 'd-flex align-center': isMobile }">
       {{ label }}
     </td>
@@ -46,10 +51,7 @@ const formattedClassName = computed(() => {
     >
       <slot />
     </td>
-    <td
-      v-if="rightPatchColspan >= 1 && !isMobile"
-      :colspan="rightPatchColspan"
-    />
+    <td v-if="rightColspan >= 1 && !isMobile" :colspan="rightColspan" />
   </tr>
 </template>
 <style scoped lang="scss">

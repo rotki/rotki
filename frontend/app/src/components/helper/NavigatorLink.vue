@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type RawLocation } from 'vue-router';
 
-const props = defineProps({
-  component: { required: false, type: String, default: 'span' },
-  enabled: { required: false, type: Boolean, default: true },
-  to: { required: true, type: Object as PropType<RawLocation> }
-});
+const props = withDefaults(
+  defineProps<{
+    tag?: string;
+    enabled?: boolean;
+    to: RawLocation;
+  }>(),
+  {
+    tag: 'span',
+    enabled: true
+  }
+);
 
 const { enabled, to } = toRefs(props);
 const router = useRouter();
@@ -16,12 +21,16 @@ const navigate = async () => {
     await router.push(to.value);
   }
 };
+
+const attrs = useAttrs();
+const css = useCssModule();
 </script>
+
 <template>
   <component
-    :is="component"
-    :class="{ [$style.link]: enabled }"
-    v-bind="$attrs"
+    :is="tag"
+    :class="{ [css.link]: enabled }"
+    v-bind="attrs"
     @click="navigate"
   >
     <slot />
