@@ -42,7 +42,11 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeInterface,
+    ExchangeQueryBalances,
+    ExchangeWithExtras,
+)
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -278,7 +282,7 @@ class KrakenAccountType(SerializableEnumMixin):
 DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
 
 
-class Kraken(ExchangeInterface):
+class Kraken(ExchangeInterface, ExchangeWithExtras):
     def __init__(
             self,
             name: str,
