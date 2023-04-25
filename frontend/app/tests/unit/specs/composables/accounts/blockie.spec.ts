@@ -1,13 +1,13 @@
-import { createBlockie } from '@/utils/blockie';
+import { createPinia, setActivePinia } from 'pinia';
 
 describe('composables::accounts/blockie', () => {
+  setActivePinia(createPinia());
   const { cache, getBlockie } = useBlockie();
   let firstBlockie = '';
   const address = '0x790b4086d106eafd913e71843aed987efe291c92';
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.resetAllMocks();
   });
 
   it('should create new blockie', () => {

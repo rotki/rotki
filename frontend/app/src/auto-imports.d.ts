@@ -430,7 +430,7 @@ declare global {
   const useIntersectionObserver: typeof import('@vueuse/core')['useIntersectionObserver']
   const useInterval: typeof import('@vueuse/core')['useInterval']
   const useIntervalFn: typeof import('@vueuse/core')['useIntervalFn']
-  const useItemCache: typeof import('./composables/useItemCache')['useItemCache']
+  const useItemCache: typeof import('./composables/item-cache')['useItemCache']
   const useKeyModifier: typeof import('@vueuse/core')['useKeyModifier']
   const useKrakenApi: typeof import('./composables/api/staking/kraken')['useKrakenApi']
   const useKrakenStakingEventTypes: typeof import('./composables/staking/kraken-events')['useKrakenStakingEventTypes']
@@ -1074,7 +1074,7 @@ declare module 'vue' {
     readonly useIntersectionObserver: UnwrapRef<typeof import('@vueuse/core')['useIntersectionObserver']>
     readonly useInterval: UnwrapRef<typeof import('@vueuse/core')['useInterval']>
     readonly useIntervalFn: UnwrapRef<typeof import('@vueuse/core')['useIntervalFn']>
-    readonly useItemCache: UnwrapRef<typeof import('./composables/useItemCache')['useItemCache']>
+    readonly useItemCache: UnwrapRef<typeof import('./composables/item-cache')['useItemCache']>
     readonly useKeyModifier: UnwrapRef<typeof import('@vueuse/core')['useKeyModifier']>
     readonly useKrakenApi: UnwrapRef<typeof import('./composables/api/staking/kraken')['useKrakenApi']>
     readonly useKrakenStakingEventTypes: UnwrapRef<typeof import('./composables/staking/kraken-events')['useKrakenStakingEventTypes']>

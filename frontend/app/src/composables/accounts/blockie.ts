@@ -3,9 +3,13 @@ const CACHE_SIZE = 100;
 export const useBlockie = createSharedComposable(() => {
   const cache: Map<string, string> = new Map();
 
+  const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
+
   const put = (address: string, image: string) => {
-    if (cache.size === CACHE_SIZE) {
-      logger.debug(`Hit cache size of ${CACHE_SIZE} going to evict items`);
+    const cacheSize = Math.max(CACHE_SIZE, 3 * get(itemsPerPage));
+
+    if (cache.size === cacheSize) {
+      logger.debug(`Hit cache size of ${cacheSize} going to evict items`);
       const removeKey = cache.keys().next().value;
       cache.delete(removeKey);
     }

@@ -30,8 +30,10 @@ const css = useCssModule();
 
 <template>
   <div :class="css.wrapper">
-    <v-img :src="getBlockie(address)" />
-    <v-img v-if="avatarUrl" :class="css.avatar" :src="avatarUrl" />
+    <v-lazy>
+      <v-img :src="getBlockie(address)" />
+      <v-img v-if="avatarUrl" :class="css.avatar" :src="avatarUrl" />
+    </v-lazy>
   </div>
 </template>
 <style lang="scss" module>
