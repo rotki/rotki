@@ -47,10 +47,10 @@ const {
   validatorIndex
 } = toRefs(props);
 
-const formatNotes: ComputedRef<NoteFormat[]> = computed(() => {
-  const { assetSymbol } = useAssetInfoRetrieval();
+const { assetSymbol } = useAssetInfoRetrieval();
 
-  const asset = get(assetSymbol(get(assetId)));
+const formatNotes: ComputedRef<NoteFormat[]> = computed(() => {
+  const asset = get(assetSymbol(assetId));
 
   const notesVal = get(notes);
   if (!notesVal) {

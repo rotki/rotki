@@ -1,24 +1,16 @@
 <script setup lang="ts">
-import { type ComputedRef } from 'vue';
 import { type SupportedExchange } from '@/types/exchanges';
-import { type TradeLocationData } from '@/types/history/trade/location';
 
 const props = defineProps<{
   exchange: SupportedExchange;
 }>();
 
 const { exchange } = toRefs(props);
-const { getLocation } = useLocations();
+const { locationData } = useLocations();
 
-const location: ComputedRef<TradeLocationData | undefined> = computed(() =>
-  getLocation(exchange)
-);
-
-const name = computed<string>(
-  () => get(location)?.name ?? toSentenceCase(get(exchange))
-);
-
-const image = computed<string>(() => get(location)?.image ?? '');
+const location = locationData(exchange);
+const name = useRefMap(location, ({ name }) => name);
+const image = useRefMap(location, ({ image }) => image);
 </script>
 
 <template>

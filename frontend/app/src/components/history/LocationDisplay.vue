@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
-import {
-  type TradeLocation,
-  type TradeLocationData
-} from '@/types/history/trade/location';
+import { type TradeLocation } from '@/types/history/trade/location';
 
 const props = withDefaults(
   defineProps<{
@@ -23,11 +20,8 @@ const props = withDefaults(
 
 const { identifier, detailPath } = toRefs(props);
 
-const { getLocation } = useLocations();
-
-const location: ComputedRef<TradeLocationData> = computed(() =>
-  getLocation(identifier)
-);
+const { locationData } = useLocations();
+const location = locationData(identifier);
 
 const route = computed<{ path: string }>(() => {
   if (get(detailPath)) {

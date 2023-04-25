@@ -1,4 +1,4 @@
-import { type Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import { type MaybeRef } from '@vueuse/core';
 import { getIdentifierFromSymbolMap } from '@rotki/common/lib/data';
 import {
@@ -16,35 +16,32 @@ export const useLocations = createSharedComposable(() => {
 
   const tradeLocations: Ref<TradeLocationData[]> = ref([]);
 
+  const mapData = (
+    locations: Record<string, Omit<ActionDataEntry, 'identifier'>>
+  ) =>
+    Object.entries(locations).map(([identifier, item]) => {
+      const name = item.label
+        ? item.label
+        : tc(`backend_mappings.trade_location.${identifier}`)?.toString() ||
+          toSentenceCase(identifier);
+
+      const mapped = {
+        identifier,
+        ...item,
+        name
+      };
+
+      if (item.image) {
+        mapped.image = `./assets/images/protocols/${item.image}`;
+      }
+
+      return mapped;
+    });
+
   const fetchAllTradeLocations = async () => {
     const data = await fetchAllLocations();
 
-    set(
-      tradeLocations,
-      Object.entries(data.locations).map(
-        ([identifier, item]: [
-          identifier: string,
-          item: Omit<ActionDataEntry, 'identifier'>
-        ]) => {
-          const name = item.label
-            ? item.label
-            : tc(`backend_mappings.trade_location.${identifier}`)?.toString() ||
-              toSentenceCase(identifier);
-
-          const mapped = {
-            identifier,
-            ...item,
-            name
-          };
-
-          if (item.image) {
-            mapped.image = `./assets/images/protocols/${item.image}`;
-          }
-
-          return mapped;
-        }
-      )
-    );
+    set(tradeLocations, mapData(data.locations));
   };
 
   const exchangeName = (location: MaybeRef<TradeLocation>): string => {
@@ -59,7 +56,7 @@ export const useLocations = createSharedComposable(() => {
   const { getAssetImageUrl } = useAssetIcon();
   const { getChainInfoById } = useSupportedChains();
 
-  const getLocation = (identifier: MaybeRef<string>): TradeLocationData => {
+  const getLocationData = (identifier: MaybeRef<string>): TradeLocationData => {
     const id = get(identifier);
     if (isBlockchain(id)) {
       const assetId = getIdentifierFromSymbolMap(id);
@@ -80,10 +77,16 @@ export const useLocations = createSharedComposable(() => {
     return locationFound;
   };
 
+  const locationData = (
+    identifier: MaybeRef<TradeLocation>
+  ): ComputedRef<TradeLocationData> =>
+    computed(() => getLocationData(get(identifier)));
+
   return {
     tradeLocations,
     exchangeName,
-    getLocation,
-    fetchAllTradeLocations
+    getLocationData,
+    fetchAllTradeLocations,
+    locationData
   };
 });

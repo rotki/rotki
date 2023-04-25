@@ -1,5 +1,4 @@
 import { Section, Status } from '@/types/status';
-import { useLocations } from '@/composables/locations';
 
 export const useDataLoader = () => {
   const { shouldFetchData } = storeToRefs(useSessionAuthStore());
@@ -8,7 +7,6 @@ export const useDataLoader = () => {
   const { fetchIgnoredAssets } = useIgnoredAssetsStore();
   const { fetchNetValue } = useStatisticsStore();
   const { fetchAllTradeLocations } = useLocations();
-
   const { fetch, refreshPrices } = useBalances();
 
   const refreshData = async (): Promise<void> => {

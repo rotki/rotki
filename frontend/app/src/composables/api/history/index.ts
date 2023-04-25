@@ -9,6 +9,10 @@ import { type TradeLocation } from '@/types/history/trade/location';
 import { ReportProgress } from '@/types/reports';
 import { type ActionDataEntry } from '@/types/action';
 
+interface AllLocationResponse {
+  locations: Record<string, Omit<ActionDataEntry, 'identifier'>>;
+}
+
 export const useHistoryApi = () => {
   const getProgress = async (): Promise<ReportProgress> => {
     const response = await api.instance.get<ActionResult<ReportProgress>>(
@@ -32,9 +36,6 @@ export const useHistoryApi = () => {
     return handleResponse(response);
   };
 
-  interface AllLocationResponse {
-    locations: Record<string, Omit<ActionDataEntry, 'identifier'>>;
-  }
   const fetchAllLocations = async (): Promise<AllLocationResponse> => {
     const response = await api.instance.get<ActionResult<AllLocationResponse>>(
       '/locations/all',

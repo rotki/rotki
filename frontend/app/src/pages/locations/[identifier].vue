@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { type TradeLocationData } from '@/types/history/trade/location';
-
 defineOptions({
   name: 'LocationBreakdown'
 });
@@ -11,11 +9,8 @@ const props = defineProps<{
 
 const { identifier } = toRefs(props);
 
-const { getLocation } = useLocations();
-
-const location: ComputedRef<TradeLocationData> = computed(() =>
-  getLocation(identifier)
-);
+const { locationData } = useLocations();
+const location = locationData(identifier);
 </script>
 <template>
   <v-container class="pb-12">

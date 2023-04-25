@@ -40,10 +40,10 @@ const isBinance = computed(() => {
   );
 });
 
-const { getLocation } = useLocations();
+const { getLocationData } = useLocations();
 
 const suggestedName = function (exchange: SupportedExchange): string {
-  const location = getLocation(exchange);
+  const location = getLocationData(exchange);
   const nonce = get(getExchangeNonce(exchange));
   return location ? `${location.name} ${nonce}` : '';
 };
