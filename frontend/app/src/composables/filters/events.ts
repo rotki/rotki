@@ -33,10 +33,10 @@ export type Matcher = SearchMatcher<
 >;
 export type Filters = MatchedKeyword<HistoryEventFilterValueKeys>;
 
-export const useHistoryEventFilter = (
-  disableProtocols: boolean,
-  disableLocations = false
-) => {
+export const useHistoryEventFilter = (disabled: {
+  protocols?: boolean;
+  locations?: boolean;
+}) => {
   const filters: Ref<Filters> = ref({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
@@ -84,7 +84,7 @@ export const useHistoryEventFilter = (
       }
     ];
 
-    if (!disableProtocols) {
+    if (!disabled?.protocols) {
       data.push({
         key: HistoryEventFilterKeys.PROTOCOL,
         keyValue: HistoryEventFilterValueKeys.PROTOCOL,
@@ -95,7 +95,7 @@ export const useHistoryEventFilter = (
         validate: (protocol: string) => !!protocol
       });
 
-      if (!disableLocations) {
+      if (!disabled?.locations) {
         data.push({
           key: HistoryEventFilterKeys.LOCATION,
           keyValue: HistoryEventFilterValueKeys.LOCATION,

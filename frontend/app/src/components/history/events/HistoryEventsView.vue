@@ -37,7 +37,7 @@ const props = withDefaults(
     onlyChains?: Blockchain[];
   }>(),
   {
-    location: '',
+    location: undefined,
     protocols: () => [],
     eventTypes: () => [],
     eventSubTypes: () => [],
@@ -147,7 +147,11 @@ const {
 >(
   null,
   mainPage,
-  () => useHistoryEventFilter(get(protocols).length > 0, !!get(location)),
+  () =>
+    useHistoryEventFilter({
+      protocols: get(protocols).length > 0,
+      locations: !!get(location)
+    }),
   fetchHistoryEvents,
   {
     onUpdateFilters(query) {
@@ -173,10 +177,9 @@ const {
       };
 
       const accounts = get(usedAccounts);
-      const locationVal = get(location);
 
-      if (locationVal) {
-        params.location = locationVal;
+      if (isDefined(location)) {
+        params.location = get(location);
       }
 
       if (accounts.length > 0) {

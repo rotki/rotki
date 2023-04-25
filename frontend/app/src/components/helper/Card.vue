@@ -8,15 +8,13 @@ const props = withDefaults(
     noRadiusBottom?: boolean;
     fullHeight?: boolean;
     flat?: boolean;
-    loading?: boolean;
   }>(),
   {
     outlinedBody: false,
     contained: false,
     noRadiusBottom: false,
     fullHeight: false,
-    flat: false,
-    loading: false
+    flat: false
   }
 );
 
@@ -50,7 +48,6 @@ const bodyStyle = computed(() => {
 
 <template>
   <v-card
-    :loading="loading"
     v-bind="rootAttrs"
     :flat="flat"
     :class="{

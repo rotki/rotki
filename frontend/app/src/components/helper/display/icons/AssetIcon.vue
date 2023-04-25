@@ -143,7 +143,7 @@ watch([symbol, changeable, identifier], (curr, prev) => {
               v-on="on"
             >
               <div :class="css.wrapper">
-                <div v-if="pending" class="black--text">
+                <div v-if="!currency && pending" class="black--text">
                   <token-placeholder :size="size" />
                 </div>
                 <generated-icon

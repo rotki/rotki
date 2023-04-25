@@ -2,16 +2,10 @@
 import { type BigNumber } from '@rotki/common';
 import { type ReceivedAmount } from '@/types/staking';
 
-const props = withDefaults(
-  defineProps<{
-    totalUsd: BigNumber;
-    earned: ReceivedAmount[];
-    loading?: boolean;
-  }>(),
-  {
-    loading: false
-  }
-);
+const props = defineProps<{
+  totalUsd: BigNumber;
+  earned: ReceivedAmount[];
+}>();
 
 const { earned } = toRefs(props);
 const { prices } = storeToRefs(useBalancePricesStore());
@@ -39,7 +33,7 @@ const totalUsdCurrent = computed<BigNumber>(() => {
 const { t } = useI18n();
 </script>
 <template>
-  <card full-height :loading="loading">
+  <card full-height>
     <template #title>{{ t('kraken_staking_overview.title') }}</template>
     <v-row class="pt-1 pb-4">
       <v-col>
