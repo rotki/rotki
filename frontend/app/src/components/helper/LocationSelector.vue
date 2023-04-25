@@ -32,7 +32,7 @@ const { items, excludes } = toRefs(props);
 
 const change = (_value: string) => emit('change', _value);
 
-const { tradeLocations } = useTradeLocations();
+const { tradeLocations } = useLocations();
 
 const locations = computed<TradeLocationData[]>(() => {
   const itemsVal = get(items);

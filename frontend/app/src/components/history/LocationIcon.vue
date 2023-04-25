@@ -29,17 +29,12 @@ const iconStyle = computed(() => ({
   >
     <adaptive-wrapper tag="span">
       <v-img
-        v-if="item.imageIcon"
+        v-if="item.image"
         :width="size"
         contain
         position="center"
         :max-height="size"
-        :src="item.icon"
-      />
-      <component
-        :is="item.component"
-        v-else-if="typeof item.component !== 'undefined'"
-        :width="size"
+        :src="item.image"
       />
       <v-icon v-else color="accent" :style="iconStyle">
         {{ item.icon }}

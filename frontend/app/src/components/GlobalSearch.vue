@@ -43,7 +43,7 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { connectedExchanges } = storeToRefs(useExchangesStore());
 const { balances } = useAggregatedBalances();
 const { balancesByLocation } = useBalancesBreakdown();
-const { getLocation } = useLocationInfo();
+const { getLocationData } = useLocations();
 const { assetSearch } = useAssetInfoApi();
 const { dark } = useTheme();
 
@@ -251,7 +251,7 @@ const getExchanges = (keyword: string): SearchItemWithoutValue[] => {
       const name = exchange.name;
 
       return {
-        location: getLocation(identifier),
+        location: getLocationData(identifier),
         route: `${Routes.ACCOUNTS_BALANCES_EXCHANGE.route}/${identifier}`,
         texts: [
           Routes.ACCOUNTS_BALANCES.text,
@@ -351,7 +351,7 @@ const getLocations = (keyword: string) => {
   ).map(identifier => {
     const total = locationBalances?.[identifier] ?? undefined;
 
-    const location: TradeLocationData = getLocation(identifier);
+    const location: TradeLocationData = getLocationData(identifier);
 
     return {
       route: Routes.LOCATIONS.route.replace(':identifier', location.identifier),

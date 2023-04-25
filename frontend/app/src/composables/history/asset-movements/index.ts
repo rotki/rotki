@@ -16,7 +16,7 @@ export const useAssetMovements = () => {
   const locationsStore = useHistoryStore();
   const { associatedLocations } = storeToRefs(locationsStore);
   const { fetchAssociatedLocations } = locationsStore;
-  const { exchangeName } = useTradeLocations();
+  const { exchangeName } = useLocations();
   const { awaitTask } = useTaskStore();
   const { tc } = useI18n();
   const { notify } = useNotificationsStore();

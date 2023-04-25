@@ -6,7 +6,7 @@ export const useDataLoader = () => {
   const { fetchTags } = useTagStore();
   const { fetchIgnoredAssets } = useIgnoredAssetsStore();
   const { fetchNetValue } = useStatisticsStore();
-
+  const { fetchAllTradeLocations } = useLocations();
   const { fetch, refreshPrices } = useBalances();
 
   const refreshData = async (): Promise<void> => {
@@ -22,7 +22,8 @@ export const useDataLoader = () => {
   };
 
   const load = async (): Promise<void> => {
-    await fetchTags();
+    startPromise(fetchTags());
+    startPromise(fetchAllTradeLocations());
 
     if (get(shouldFetchData)) {
       startPromise(refreshData());

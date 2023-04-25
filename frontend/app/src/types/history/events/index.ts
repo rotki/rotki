@@ -87,7 +87,9 @@ export const HistoryEvent = z.object({
   notes: z.string().nullish(),
   counterparty: z.string().nullish(),
   product: z.string().nullish(),
-  address: z.string().nullish()
+  address: z.string().nullish(),
+  isExit: z.boolean().optional(),
+  validatorIndex: z.number().optional()
 });
 export type HistoryEvent = z.infer<typeof HistoryEvent>;
 

@@ -3,6 +3,10 @@ import { type ComputedRef } from 'vue';
 import { Routes } from '@/router/routes';
 import { type SelectedReport } from '@/types/reports';
 
+defineOptions({
+  name: 'ReportDetail'
+});
+
 const loading = ref(true);
 const refreshing = ref(false);
 const reportsStore = useReportsStore();

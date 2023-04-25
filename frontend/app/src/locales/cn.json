@@ -1139,6 +1139,13 @@
         "unknown": "未知",
         "withdraw": "撤回"
       }
+    },
+    "trade_location": {
+      "banks": "银行",
+      "commodities": "商品",
+      "equities": "股票",
+      "external": "外部",
+      "real_estate": "房地产"
     }
   },
   "backend_settings": {
@@ -3792,13 +3799,6 @@
   },
   "trade_history": {
     "loading": "正在加载您的交易，请稍候..."
-  },
-  "trade_location": {
-    "banks": "银行",
-    "commodities": "商品",
-    "equities": "股票",
-    "external": "外部",
-    "real_estate": "房地产"
   },
   "transactions": {
     "actions": {

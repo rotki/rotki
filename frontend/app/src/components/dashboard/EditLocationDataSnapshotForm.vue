@@ -42,8 +42,6 @@ const updateForm = (partial: Partial<LocationDataSnapshotPayload>) => {
   });
 };
 
-const getLocation = (location: any) => location as string;
-
 const rules = {
   location: {
     required: helpers.withMessage(
@@ -81,7 +79,7 @@ watch(v$, ({ $invalid }) => {
         outlined
         :label="tc('common.location')"
         :error-messages="v$.location.$errors.map(e => e.$message)"
-        @input="updateForm({ location: getLocation($event) })"
+        @input="updateForm({ location: $event })"
       />
     </div>
     <div class="mb-4">

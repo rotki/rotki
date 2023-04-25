@@ -88,12 +88,13 @@ const purge = async (source: PurgeParams) => {
 };
 
 const { tc } = useI18n();
-const { tradeLocations } = useTradeLocations();
+const { tradeLocations } = useLocations();
 
 const text = (source: Purgeable) => {
   const location = get(tradeLocations).find(
     ({ identifier }) => identifier === source
   );
+
   if (location) {
     return tc('purge_selector.exchange', 0, {
       name: location.name
