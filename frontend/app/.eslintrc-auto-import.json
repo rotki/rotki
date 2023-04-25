@@ -240,7 +240,6 @@
     "toSortedAssetBalanceArray": true,
     "toSortedAssetBalanceWithPrice": true,
     "toUnit": true,
-    "toValue": true,
     "totalCollateral": true,
     "transformEntryWithMeta": true,
     "triggerRef": true,

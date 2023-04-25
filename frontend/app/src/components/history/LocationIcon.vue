@@ -27,7 +27,7 @@ const iconStyle = computed(() => ({
       'py-4': !noPadding
     }"
   >
-    <adaptive-wrapper component="span">
+    <adaptive-wrapper tag="span">
       <v-img
         v-if="item.imageIcon"
         :width="size"

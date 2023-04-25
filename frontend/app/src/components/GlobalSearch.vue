@@ -498,7 +498,7 @@ onBeforeMount(async () => {
               size="30px"
               :identifier="item.asset"
             />
-            <adaptive-wrapper v-else component="span">
+            <adaptive-wrapper v-else tag="span">
               <location-icon
                 v-if="item.location"
                 icon
