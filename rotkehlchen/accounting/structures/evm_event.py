@@ -124,6 +124,10 @@ class EvmEvent(HistoryBaseEntry):
         self.product = product
         self.extra_data = extra_data
 
+    @property
+    def entry_type(self) -> HistoryBaseEntryType:
+        return HistoryBaseEntryType.EVM_EVENT
+
     def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE, EVM_EVENT_FIELDS]:
         base_tuple = self._serialize_base_tuple_for_db(HistoryBaseEntryType.EVM_EVENT)
         extra_data = json.dumps(self.extra_data) if self.extra_data else None

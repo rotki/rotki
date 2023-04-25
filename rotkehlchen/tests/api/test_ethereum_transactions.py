@@ -1087,6 +1087,7 @@ def test_query_transactions_check_decoded_events(
     tx1_events = [{
         'entry': {
             'identifier': 4,
+            'entry_type': 'evm event',
             'asset': 'ETH',
             'balance': {'amount': '0.00863351371344', 'usd_value': '0'},
             'counterparty': CPT_GAS,
@@ -1108,6 +1109,7 @@ def test_query_transactions_check_decoded_events(
     }, {
         'entry': {
             'identifier': 5,
+            'entry_type': 'evm event',
             'asset': 'ETH',
             'balance': {'amount': '0.096809163374771208', 'usd_value': '0'},
             'counterparty': None,
@@ -1131,6 +1133,7 @@ def test_query_transactions_check_decoded_events(
     tx2_events = [{
         'entry': {
             'identifier': 1,
+            'entry_type': 'evm event',
             'asset': 'ETH',
             'address': None,
             'balance': {'amount': '0.017690836625228792', 'usd_value': '0'},
@@ -1152,6 +1155,7 @@ def test_query_transactions_check_decoded_events(
     }, {
         'entry': {
             'identifier': 2,
+            'entry_type': 'evm event',
             'asset': A_USDT.identifier,
             'address': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
             'balance': {'amount': '1166', 'usd_value': '0'},
@@ -1175,6 +1179,7 @@ def test_query_transactions_check_decoded_events(
     tx3_events = [{
         'entry': {
             'identifier': 3,
+            'entry_type': 'evm event',
             'asset': 'ETH',
             'address': '0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
             'balance': {'amount': '0.125', 'usd_value': '0'},
@@ -1198,6 +1203,7 @@ def test_query_transactions_check_decoded_events(
     tx4_events = [{
         'entry': {
             'identifier': 6,
+            'entry_type': 'evm event',
             'asset': A_USDT.identifier,
             'address': '0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5',
             'balance': {'amount': '1166', 'usd_value': '0'},
@@ -1229,12 +1235,13 @@ def test_query_transactions_check_decoded_events(
     tx2_events[1]['customized'] = True
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-        json={key: value for key, value in event.items() if key not in ('extra_data', 'event_identifier')},  # noqa: E501
+        json={key: value for key, value in event.items() if key not in ('extra_data', 'event_identifier', 'entry_type')},  # noqa: E501
     )
     assert_simple_ok_response(response)
 
     tx4_events.insert(0, {
         'entry': {
+            'entry_type': 'evm event',
             'asset': 'ETH',
             'address': '0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5',
             'balance': {'amount': '1', 'usd_value': '1500.1'},
@@ -1256,7 +1263,7 @@ def test_query_transactions_check_decoded_events(
     })
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-        json={key: value for key, value in tx4_events[0]['entry'].items() if key not in ('extra_data', 'event_identifier')},  # noqa: E501
+        json={key: value for key, value in tx4_events[0]['entry'].items() if key not in ('extra_data', 'event_identifier', 'entry_type')},  # noqa: E501
     )
     result = assert_proper_response_with_result(response)
     tx4_events[0]['entry']['identifier'] = result['identifier']
