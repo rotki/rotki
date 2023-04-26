@@ -52,6 +52,7 @@ export const usePaginationFilters = <
       key?: keyof T;
       ascending?: boolean[];
     };
+    sectionHash?: string;
   } = {}
 ) => {
   const router = useRouter();
@@ -72,7 +73,8 @@ export const usePaginationFilters = <
     defaultCollection,
     extraParams,
     customPageParams,
-    defaultSortBy
+    defaultSortBy,
+    sectionHash
   } = options;
 
   const { filters, matchers, updateFilter, RouteFilterSchema } = filterSchema();
@@ -250,7 +252,7 @@ export const usePaginationFilters = <
         // prevent pushing same route
         return;
       }
-      await router.push({ query });
+      await router.push({ query, hash: sectionHash });
       set(userAction, false);
     }
 
