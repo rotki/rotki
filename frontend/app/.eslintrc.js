@@ -17,7 +17,9 @@ module.exports = {
           '/backend_mappings.*/',
           '/notification_messages.missing_api_key.*/',
           '/premium_components.*/',
-          '/transactions.query_status.*/'
+          '/transactions.query_status.*/',
+          '/transactions.query_status_events.*/',
+          '/transactions.events.headers.*/'
         ]
       }
     ],

@@ -1,7 +1,10 @@
 import { type MaybeRef } from '@vueuse/core';
 import { type HistoryEventTypeData } from '@/types/history/events/event-type';
 import { type ActionDataEntry } from '@/types/action';
-import { type HistoryEventEntry } from '@/types/history/events';
+import {
+  type EthDepositEvent,
+  type EvmHistoryEvent
+} from '@/types/history/events';
 
 export const useHistoryEventMappings = createSharedComposable(() => {
   const { getTransactionTypeMappings, getHistoryEventCounterpartiesData } =
@@ -172,7 +175,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   const { scrambleData, scrambleHex } = useScramble();
 
   const getEventCounterpartyData = (
-    event: MaybeRef<HistoryEventEntry>
+    event: MaybeRef<EvmHistoryEvent | EthDepositEvent>
   ): ComputedRef<ActionDataEntry | null> =>
     computed(() => {
       const { counterparty, address } = get(event);

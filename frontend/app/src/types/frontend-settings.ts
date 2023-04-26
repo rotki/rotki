@@ -35,7 +35,8 @@ export type ProfitLossTimeframe = z.infer<typeof ProfitLossTimeframe>;
 
 const ExplorerEndpoints = z.object({
   transaction: z.string().optional(),
-  address: z.string().optional()
+  address: z.string().optional(),
+  block: z.string().optional()
 });
 
 const ExplorersSettings = z.object({

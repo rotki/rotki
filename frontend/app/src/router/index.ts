@@ -450,8 +450,11 @@ const router = new Router({
     } else if (savedPosition) {
       return savedPosition;
     }
-    document.body.scrollTo(0, 0);
-    return { x: 0, y: 0 };
+
+    if (from.path !== to.path) {
+      document.body.scrollTo(0, 0);
+      return { x: 0, y: 0 };
+    }
   },
   routes
 });

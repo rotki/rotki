@@ -23,22 +23,15 @@ const navigate = async () => {
 };
 
 const attrs = useAttrs();
-const css = useCssModule();
 </script>
 
 <template>
   <component
     :is="tag"
-    :class="{ [css.link]: enabled }"
+    :class="{ 'cursor-pointer': enabled }"
     v-bind="attrs"
     @click="navigate()"
   >
     <slot />
   </component>
 </template>
-
-<style module lang="scss">
-.link {
-  cursor: pointer;
-}
-</style>

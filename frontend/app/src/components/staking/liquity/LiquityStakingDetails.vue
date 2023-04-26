@@ -10,6 +10,7 @@ import {
 } from '@rotki/common/lib/liquity';
 import { type ComputedRef, type Ref } from 'vue';
 import { type AssetBalance, type Balance } from '@rotki/common';
+import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { Section } from '@/types/status';
 
 const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
@@ -346,6 +347,7 @@ const css = useCssModule();
       :protocols="['liquity']"
       :external-account-filter="selectedAccounts"
       :only-chains="chains"
+      :entry-types="[HistoryEventEntryType.EVM_EVENT]"
     />
   </div>
 </template>

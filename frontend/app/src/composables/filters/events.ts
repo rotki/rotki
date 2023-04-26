@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { type MaybeRef } from '@vueuse/core';
 import {
   type MatchedKeyword,
   type SearchMatcher,
@@ -8,6 +10,12 @@ import {
   dateSerializer,
   dateValidator
 } from '@/types/filtering';
+import {
+  isEthBlockEventType,
+  isEthDepositEventType,
+  isEvmEventType,
+  isWithdrawalEventType
+} from '@/utils/history/events';
 
 enum HistoryEventFilterKeys {
   START = 'start',
@@ -15,7 +23,10 @@ enum HistoryEventFilterKeys {
   ASSET = 'asset',
   PROTOCOL = 'protocol',
   EVENT_TYPE = 'event_type',
-  LOCATION = 'location'
+  LOCATION = 'location',
+  ENTRY_TYPE = 'entry_type',
+  TX_HASHES = 'tx_hash',
+  VALIDATOR_INDICES = 'validator_index'
 }
 
 enum HistoryEventFilterValueKeys {
@@ -24,7 +35,10 @@ enum HistoryEventFilterValueKeys {
   ASSET = 'asset',
   PROTOCOL = 'counterparties',
   EVENT_TYPE = 'eventTypes',
-  LOCATION = 'location'
+  LOCATION = 'location',
+  ENTRY_TYPE = 'entryTypes',
+  TX_HASHES = 'tx_hashes',
+  VALIDATOR_INDICES = 'validator_indices'
 }
 
 export type Matcher = SearchMatcher<
@@ -33,10 +47,13 @@ export type Matcher = SearchMatcher<
 >;
 export type Filters = MatchedKeyword<HistoryEventFilterValueKeys>;
 
-export const useHistoryEventFilter = (disabled: {
-  protocols?: boolean;
-  locations?: boolean;
-}) => {
+export const useHistoryEventFilter = (
+  disabled: {
+    protocols?: boolean;
+    locations?: boolean;
+  },
+  entryTypes?: MaybeRef<HistoryEventEntryType[]>
+) => {
   const filters: Ref<Filters> = ref({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
@@ -84,7 +101,23 @@ export const useHistoryEventFilter = (disabled: {
       }
     ];
 
-    if (!disabled?.protocols) {
+    const entryTypesVal = get(entryTypes);
+    const evmOrEthDepositEventsIncluded =
+      !entryTypesVal ||
+      entryTypesVal.some(
+        type => isEvmEventType(type) || isEthDepositEventType(type)
+      );
+
+    const eventsWithValidatorIndexIncluded =
+      !entryTypesVal ||
+      entryTypesVal.some(
+        type =>
+          isWithdrawalEventType(type) ||
+          isEthBlockEventType(type) ||
+          isEthDepositEventType(type)
+      );
+
+    if (!disabled?.protocols && evmOrEthDepositEventsIncluded) {
       data.push({
         key: HistoryEventFilterKeys.PROTOCOL,
         keyValue: HistoryEventFilterValueKeys.PROTOCOL,
@@ -94,17 +127,54 @@ export const useHistoryEventFilter = (disabled: {
         suggestions: () => get(counterparties),
         validate: (protocol: string) => !!protocol
       });
+    }
 
-      if (!disabled?.locations) {
-        data.push({
-          key: HistoryEventFilterKeys.LOCATION,
-          keyValue: HistoryEventFilterValueKeys.LOCATION,
-          description: tc('transactions.filter.location'),
-          string: true,
-          suggestions: () => get(associatedLocations),
-          validate: location => !!location
-        });
-      }
+    if (!disabled?.locations) {
+      data.push({
+        key: HistoryEventFilterKeys.LOCATION,
+        keyValue: HistoryEventFilterValueKeys.LOCATION,
+        description: tc('transactions.filter.location'),
+        string: true,
+        suggestions: () => get(associatedLocations),
+        validate: location => !!location
+      });
+    }
+
+    if (!entryTypesVal || entryTypesVal.length > 0) {
+      data.push({
+        key: HistoryEventFilterKeys.ENTRY_TYPE,
+        keyValue: HistoryEventFilterValueKeys.ENTRY_TYPE,
+        description: tc('transactions.filter.entry_type'),
+        string: true,
+        multiple: true,
+        suggestions: () =>
+          entryTypesVal ?? Object.values(HistoryEventEntryType),
+        validate: (type: string) => !!type
+      });
+    }
+
+    if (evmOrEthDepositEventsIncluded) {
+      data.push({
+        key: HistoryEventFilterKeys.TX_HASHES,
+        keyValue: HistoryEventFilterValueKeys.TX_HASHES,
+        description: tc('transactions.filter.tx_hash'),
+        string: true,
+        multiple: true,
+        suggestions: () => [],
+        validate: (txHash: string) => isValidTxHash(txHash)
+      });
+    }
+
+    if (eventsWithValidatorIndexIncluded) {
+      data.push({
+        key: HistoryEventFilterKeys.VALIDATOR_INDICES,
+        keyValue: HistoryEventFilterValueKeys.VALIDATOR_INDICES,
+        description: tc('transactions.filter.validator_index'),
+        string: true,
+        multiple: true,
+        suggestions: () => [],
+        validate: (validatorIndex: string) => !!validatorIndex
+      });
     }
 
     return data;
@@ -117,16 +187,21 @@ export const useHistoryEventFilter = (disabled: {
   };
 
   const OptionalString = z.string().optional();
+  const OptionalMultipleString = z
+    .array(z.string())
+    .or(z.string())
+    .transform(val => (Array.isArray(val) ? val : [val]))
+    .optional();
+
   const RouteFilterSchema = z.object({
     [HistoryEventFilterValueKeys.START]: OptionalString,
     [HistoryEventFilterValueKeys.END]: OptionalString,
     [HistoryEventFilterValueKeys.ASSET]: OptionalString,
-    [HistoryEventFilterValueKeys.PROTOCOL]: z
-      .array(z.string())
-      .or(z.string())
-      .transform(val => (Array.isArray(val) ? val : [val]))
-      .optional(),
-    [HistoryEventFilterValueKeys.LOCATION]: OptionalString
+    [HistoryEventFilterValueKeys.PROTOCOL]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.LOCATION]: OptionalString,
+    [HistoryEventFilterValueKeys.ENTRY_TYPE]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.TX_HASHES]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString
   });
 
   return {

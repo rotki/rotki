@@ -2,6 +2,7 @@
 import { type AssetBalance, type BigNumber } from '@rotki/common';
 import { type ComputedRef, type PropType } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type LiquityLoan } from '@/types/defi/liquity';
 
 const props = defineProps({
@@ -70,6 +71,7 @@ const chain = Blockchain.ETH;
           :protocols="['liquity']"
           :external-account-filter="[{ chain, address: loan.owner }]"
           :only-chains="[chain]"
+          :entry-types="[HistoryEventEntryType.EVM_EVENT]"
         />
       </div>
     </v-col>

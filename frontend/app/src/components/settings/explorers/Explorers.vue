@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { explorerUrls } from '@/types/asset/asset-urls';
+import { type ExplorerUrls, explorerUrls } from '@/types/asset/asset-urls';
 
 const additional = ['ETC'] as const;
 const supportedExplorers = [...Object.values(Blockchain), ...additional];
@@ -11,21 +11,38 @@ const { explorers } = storeToRefs(store);
 
 const address = ref<string>('');
 const tx = ref<string>('');
+const block = ref<string>('');
 
-const txUrl = computed<string>(() => {
-  const setting = get(explorers)[get(selection)];
-  return setting?.transaction ?? explorerUrls[get(selection)].transaction;
+const defaultUrls: ComputedRef<ExplorerUrls> = computed(
+  () => explorerUrls[get(selection)]
+);
+
+const userUrls = computed(() => {
+  const userExplorers = get(explorers);
+  const chain = get(selection);
+  return userExplorers[chain];
 });
 
-const addressUrl = computed<string>(() => {
-  const setting = get(explorers)[get(selection)];
-  return setting?.address ?? explorerUrls[get(selection)].address;
-});
+const addressUrl = useValueOrDefault(
+  useRefMap(userUrls, setting => setting?.address),
+  useRefMap(defaultUrls, ({ address }) => address || null)
+);
+
+const txUrl = useValueOrDefault(
+  useRefMap(userUrls, setting => setting?.transaction),
+  useRefMap(defaultUrls, ({ transaction }) => transaction || null)
+);
+
+const blockUrl = useValueOrDefault(
+  useRefMap(userUrls, setting => setting?.block),
+  useRefMap(defaultUrls, ({ block }) => block || null)
+);
 
 const onChange = () => {
-  const setting = get(explorers)[get(selection)];
+  const setting = get(userUrls);
   set(address, setting?.address ?? '');
   set(tx, setting?.transaction ?? '');
+  set(block, setting?.block ?? '');
 };
 
 onMounted(() => {
@@ -35,17 +52,16 @@ onMounted(() => {
 const isValid = (entry: string | null): boolean =>
   !entry ? false : entry.length > 0;
 
-const saveAddress = async (newAddress?: string) => {
-  set(address, newAddress ?? '');
-  const setting = get(explorers)[get(selection)];
+const save = async (type: keyof ExplorerUrls, newValue?: string) => {
+  const setting = get(userUrls);
 
   const updated = {
     ...setting,
-    address: newAddress
+    [type]: newValue
   };
 
-  if (!newAddress) {
-    delete updated.address;
+  if (!newValue) {
+    delete updated[type];
   }
 
   await store.updateSetting({
@@ -56,24 +72,16 @@ const saveAddress = async (newAddress?: string) => {
   });
 };
 
+const saveAddress = async (newAddress?: string) => {
+  await save('address', newAddress);
+};
+
 const saveTransaction = async (newTransaction?: string) => {
-  const setting = get(explorers)[get(selection)];
+  await save('transaction', newTransaction);
+};
 
-  const updated = {
-    ...setting,
-    transaction: newTransaction
-  };
-
-  if (!newTransaction) {
-    delete updated.transaction;
-  }
-
-  await store.updateSetting({
-    explorers: {
-      ...get(explorers),
-      [get(selection)]: updated
-    }
-  });
+const saveBlock = async (newBlock?: string) => {
+  await save('block', newBlock);
 };
 
 const { t } = useI18n();
@@ -128,6 +136,7 @@ const { t } = useI18n();
       </template>
     </v-text-field>
     <v-text-field
+      v-if="txUrl"
       v-model="tx"
       outlined
       clearable
@@ -143,6 +152,28 @@ const { t } = useI18n();
           :disabled="!isValid(tx)"
           class="mt-n2"
           @click="saveTransaction(tx)"
+        >
+          <v-icon>mdi-content-save</v-icon>
+        </v-btn>
+      </template>
+    </v-text-field>
+    <v-text-field
+      v-if="blockUrl"
+      v-model="block"
+      outlined
+      clearable
+      :label="t('explorers.block')"
+      :hint="t('explorers.block_url', { blockUrl })"
+      :placeholder="blockUrl"
+      persistent-hint
+      @click:clear="saveBlock()"
+    >
+      <template #append-outer>
+        <v-btn
+          icon
+          :disabled="!isValid(block)"
+          class="mt-n2"
+          @click="saveBlock(block)"
         >
           <v-icon>mdi-content-save</v-icon>
         </v-btn>

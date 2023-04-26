@@ -190,7 +190,11 @@ const ignoreTokens = async (identifiers?: string[]) => {
         </div>
 
         <div v-if="item.seenTxHash">
-          <hash-link tx :text="item.seenTxHash" :chain="item.evmChain" />
+          <hash-link
+            type="transaction"
+            :text="item.seenTxHash"
+            :chain="item.evmChain"
+          />
         </div>
       </template>
 

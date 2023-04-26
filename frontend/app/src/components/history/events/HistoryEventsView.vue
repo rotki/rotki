@@ -7,11 +7,14 @@ import {
 import isEqual from 'lodash/isEqual';
 import { type DataTableHeader } from 'vuetify';
 import { not } from '@vueuse/math';
+import { type HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { type ComputedRef } from 'vue';
 import { type Collection } from '@/types/collection';
 import { SavedFilterLocation } from '@/types/filtering';
 import { IgnoreActionType } from '@/types/history/ignored';
 import {
   type EvmChainAndTxHash,
+  type EvmHistoryEvent,
   type HistoryEvent,
   type HistoryEventEntry,
   type HistoryEventRequestPayload
@@ -20,8 +23,8 @@ import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { type Writeable } from '@/types';
-import { isValidTxHash } from '@/utils/text';
-import { toEvmChainAndTxHash } from '@/utils/history';
+import { isEvmEventType } from '@/utils/history/events';
+import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
 import type { Filters, Matcher } from '@/composables/filters/events';
 
 const props = withDefaults(
@@ -30,6 +33,7 @@ const props = withDefaults(
     protocols?: string[];
     eventTypes?: string[];
     eventSubTypes?: string[];
+    entryTypes?: HistoryEventEntryType[];
     externalAccountFilter?: Account[];
     useExternalAccountFilter?: boolean;
     sectionTitle?: string;
@@ -41,6 +45,7 @@ const props = withDefaults(
     protocols: () => [],
     eventTypes: () => [],
     eventSubTypes: () => [],
+    entryTypes: undefined,
     externalAccountFilter: () => [],
     useExternalAccountFilter: false,
     sectionTitle: '',
@@ -54,6 +59,7 @@ const { tc } = useI18n();
 const {
   location,
   protocols,
+  entryTypes,
   useExternalAccountFilter,
   externalAccountFilter,
   sectionTitle,
@@ -63,8 +69,8 @@ const {
   onlyChains
 } = toRefs(props);
 
-const editableItem: Ref<HistoryEventEntry | null> = ref(null);
-const selectedTransaction: Ref<HistoryEventEntry | null> = ref(null);
+const editableItem: Ref<EvmHistoryEvent | null> = ref(null);
+const selectedTransaction: Ref<EvmHistoryEvent | null> = ref(null);
 const eventToDelete: Ref<HistoryEventEntry | null> = ref(null);
 const transactionToIgnore: Ref<HistoryEventEntry | null> = ref(null);
 const confirmationTitle: Ref<string> = ref('');
@@ -97,12 +103,14 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   {
     text: tc('transactions.events.headers.event_identifier'),
     value: 'txHash',
-    sortable: false
+    sortable: false,
+    width: '60%'
   },
   {
     text: tc('common.datetime'),
     value: 'timestamp',
-    cellClass: 'text-no-wrap'
+    cellClass: 'text-no-wrap',
+    align: 'end'
   },
   {
     text: '',
@@ -148,10 +156,13 @@ const {
   null,
   mainPage,
   () =>
-    useHistoryEventFilter({
-      protocols: get(protocols).length > 0,
-      locations: !!get(location)
-    }),
+    useHistoryEventFilter(
+      {
+        protocols: get(protocols).length > 0,
+        locations: !!get(location)
+      },
+      entryTypes
+    ),
   fetchHistoryEvents,
   {
     onUpdateFilters(query) {
@@ -180,6 +191,10 @@ const {
 
       if (isDefined(location)) {
         params.location = get(location);
+      }
+
+      if (isDefined(entryTypes)) {
+        params.entryTypes = get(entryTypes);
       }
 
       if (accounts.length > 0) {
@@ -230,14 +245,11 @@ const onFilterAccountsChanged = (acc: Account<BlockchainSelection>[]) => {
   set(accounts, acc.length > 0 ? [acc[0]] : []);
 };
 
-const redecodeEvents = async (all = false) => {
-  const txHashes = all
-    ? null
-    : get(data).map(item => toEvmChainAndTxHash(item));
-  await fetchTransactionEvents(txHashes, true);
+const redecodeAllEvmEvents = async () => {
+  await fetchTransactionEvents(null, true);
 };
 
-const forceRedecodeTxEvents = async (data: EvmChainAndTxHash) => {
+const forceRedecodeEvmEvents = async (data: EvmChainAndTxHash) => {
   await fetchTransactionEvents([data], true);
 };
 
@@ -255,13 +267,13 @@ const toggleIgnore = async (item: HistoryEventEntry) => {
   await ignore(!item.ignoredInAccounting);
 };
 
-const addEvent = (tx: HistoryEventEntry) => {
+const addEvent = (tx: EvmHistoryEvent) => {
   set(selectedTransaction, tx);
   set(editableItem, null);
   set(openDialog, true);
 };
 
-const editEventHandler = (event: HistoryEventEntry, tx: HistoryEventEntry) => {
+const editEventHandler = (event: EvmHistoryEvent, tx: EvmHistoryEvent) => {
   set(selectedTransaction, tx);
   set(editableItem, event);
   set(openDialog, true);
@@ -358,14 +370,20 @@ const { isLoading: isSectionLoading } = useStatusStore();
 const sectionLoading = isSectionLoading(Section.TX);
 
 const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
+const onlineHistoryEventsLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
 const { isAllFinished: isQueryingTxsFinished } = toRefs(
   useTxQueryStatusStore()
+);
+const { isAllFinished: isQueryingOnlineEventsFinished } = toRefs(
+  useEventsQueryStatusStore()
 );
 
 const shouldFetchEventsRegularly = logicOr(
   sectionLoading,
   not(isQueryingTxsFinished),
-  eventTaskLoading
+  not(isQueryingOnlineEventsFinished),
+  eventTaskLoading,
+  onlineHistoryEventsLoading
 );
 
 const anyLoading = logicOr(
@@ -406,13 +424,17 @@ const showDeleteConfirmation = () => {
   );
 };
 
-const { txEvmChains, getEvmChainName, getChain } = useSupportedChains();
+const { txEvmChains, getEvmChainName } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
 
 onMounted(async () => {
   await fetchData();
-  await refreshTransactions(get(onlyChains));
+  refresh();
 });
+
+const refresh = (userInitiated = false) => {
+  startPromise(refreshTransactions(get(onlyChains), userInitiated));
+};
 
 onUnmounted(() => {
   pause();
@@ -435,9 +457,21 @@ const fetchDataAndRefreshEvents = async (
 ) => {
   await fetchData();
   if (reDecodeEvents) {
-    await forceRedecodeTxEvents(data);
+    await forceRedecodeEvmEvents(data);
   }
 };
+
+const includeEvmEvents: ComputedRef<boolean> = useEmptyOrSome(
+  entryTypes,
+  type => isEvmEventType(type)
+);
+
+const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
+  entryTypes,
+  type => isOnlineHistoryEventType(type)
+);
+
+const { locationData } = useLocations();
 </script>
 
 <template>
@@ -458,9 +492,9 @@ const fetchDataAndRefreshEvents = async (
       </v-btn>
       <template #title>
         <refresh-button
-          :loading="sectionLoading"
+          :loading="sectionLoading || onlineHistoryEventsLoading"
           :tooltip="tc('transactions.refresh_tooltip')"
-          @refresh="refreshTransactions(onlyChains, true)"
+          @refresh="refresh(true)"
         />
         {{ usedTitle }}
       </template>
@@ -468,26 +502,18 @@ const fetchDataAndRefreshEvents = async (
         <v-row>
           <v-col cols="12" md="7">
             <v-row>
-              <v-col cols="auto">
-                <v-menu offset-y>
-                  <template #activator="{ on }">
-                    <v-btn color="primary" depressed height="40px" v-on="on">
-                      {{ tc('transactions.redecode_events.title') }}
-                    </v-btn>
-                  </template>
-                  <v-list>
-                    <v-list-item link @click="redecodeEvents()">
-                      <v-list-item-title>
-                        {{ tc('transactions.redecode_events.this_page') }}
-                      </v-list-item-title>
-                    </v-list-item>
-                    <v-list-item link @click="redecodeEvents(true)">
-                      <v-list-item-title>
-                        {{ tc('transactions.redecode_events.all') }}
-                      </v-list-item-title>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
+              <v-col v-if="includeEvmEvents" cols="auto">
+                <v-btn
+                  color="primary"
+                  depressed
+                  height="40px"
+                  small
+                  :disabled="anyLoading"
+                  :loading="eventTaskLoading"
+                  @click="redecodeAllEvmEvents()"
+                >
+                  {{ tc('transactions.redecode_events.title') }}
+                </v-btn>
               </v-col>
               <v-col v-if="!useExternalAccountFilter">
                 <div>
@@ -545,7 +571,7 @@ const fetchDataAndRefreshEvents = async (
             @update:options="setOptions($event)"
           >
             <template #item.ignoredInAccounting="{ item, isMobile }">
-              <div v-if="item.tx?.ignoredInAccounting" class="pl-4">
+              <div v-if="item.ignoredInAccounting" class="pl-4">
                 <badge-display v-if="isMobile" color="grey">
                   <v-icon small> mdi-eye-off</v-icon>
                   <span class="ml-2">
@@ -565,81 +591,35 @@ const fetchDataAndRefreshEvents = async (
               </div>
             </template>
             <template #item.txHash="{ item }">
-              <div class="d-flex">
-                <div class="mr-2">
-                  <adaptive-wrapper>
-                    <evm-chain-icon size="20" tooltip :chain="item.location" />
-                  </adaptive-wrapper>
+              <v-lazy>
+                <div class="d-flex align-center">
+                  <div class="mr-2">
+                    <location-icon
+                      icon
+                      no-padding
+                      :item="locationData(item.location)"
+                      size="20px"
+                    />
+                  </div>
+                  <history-events-identifier :event="item" />
                 </div>
-                <hash-link
-                  :no-link="!isValidTxHash(item.eventIdentifier)"
-                  :text="item.eventIdentifier"
-                  :truncate-length="8"
-                  :full-address="$vuetify.breakpoint.lgAndUp"
-                  :chain="getChain(item.location)"
-                  tx
-                />
-              </div>
+              </v-lazy>
             </template>
             <template #item.timestamp="{ item }">
-              <date-display :timestamp="item.timestamp" />
+              <v-lazy>
+                <date-display :timestamp="item.timestamp" />
+              </v-lazy>
             </template>
             <template #item.action="{ item }">
-              <div class="d-flex align-center">
-                <v-menu
-                  transition="slide-y-transition"
-                  max-width="250px"
-                  offset-y
-                >
-                  <template #activator="{ on }">
-                    <v-btn class="ml-1" icon v-on="on">
-                      <v-icon>mdi-dots-vertical</v-icon>
-                    </v-btn>
-                  </template>
-                  <v-list>
-                    <v-list-item link @click="addEvent(item)">
-                      <v-list-item-icon class="mr-4">
-                        <v-icon>mdi-plus</v-icon>
-                      </v-list-item-icon>
-                      <v-list-item-content>
-                        {{ tc('transactions.actions.add_event') }}
-                      </v-list-item-content>
-                    </v-list-item>
-                    <v-list-item
-                      v-if="isValidTxHash(item.eventIdentifier)"
-                      link
-                      @click="toggleIgnore(item)"
-                    >
-                      <v-list-item-icon class="mr-4">
-                        <v-icon v-if="item.ignoredInAccounting">
-                          mdi-eye
-                        </v-icon>
-                        <v-icon v-else> mdi-eye-off</v-icon>
-                      </v-list-item-icon>
-                      <v-list-item-content>
-                        {{
-                          item.ignoredInAccounting
-                            ? tc('transactions.unignore')
-                            : tc('transactions.ignore')
-                        }}
-                      </v-list-item-content>
-                    </v-list-item>
-                    <v-list-item
-                      v-if="isValidTxHash(item.eventIdentifier)"
-                      link
-                      :disabled="eventTaskLoading"
-                      @click="forceRedecodeTxEvents(toEvmChainAndTxHash(item))"
-                    >
-                      <v-list-item-icon class="mr-4">
-                        <v-icon>mdi-database-refresh</v-icon>
-                      </v-list-item-icon>
-                      <v-list-item-content>
-                        {{ tc('transactions.actions.redecode_events') }}
-                      </v-list-item-content>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
-              </div>
+              <v-lazy>
+                <history-events-action
+                  :event="item"
+                  :loading="eventTaskLoading"
+                  @add-event="addEvent($event)"
+                  @toggle-ignore="toggleIgnore($event)"
+                  @redecode="forceRedecodeEvmEvents($event)"
+                />
+              </v-lazy>
             </template>
             <template #expanded-item="{ headers, item }">
               <history-events-list
@@ -654,7 +634,13 @@ const fetchDataAndRefreshEvents = async (
             </template>
             <template #body.prepend="{ headers }">
               <transaction-query-status
+                v-if="includeEvmEvents"
                 :only-chains="onlyChains"
+                :colspan="headers.length"
+              />
+              <history-events-query-status
+                v-if="includeOnlineEvents"
+                :locations="location ? [location] : []"
                 :colspan="headers.length"
               />
               <upgrade-row

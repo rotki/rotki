@@ -20,6 +20,7 @@ const props = withDefaults(
     buttons?: boolean;
     small?: boolean;
     truncateLength?: number;
+    type?: keyof ExplorerUrls;
   }>(),
   {
     showIcon: true,
@@ -32,11 +33,12 @@ const props = withDefaults(
     tx: false,
     buttons: false,
     small: false,
-    truncateLength: 4
+    truncateLength: 4,
+    type: 'address'
   }
 );
 
-const { text, baseUrl, chain, tx } = toRefs(props);
+const { text, baseUrl, chain, type } = toRefs(props);
 const { scrambleData, shouldShowAmount, scrambleHex } = useScramble();
 
 const { explorers } = storeToRefs(useFrontendSettingsStore());
@@ -45,7 +47,7 @@ const { dark } = useTheme();
 const { addressNameSelector } = useAddressesNamesStore();
 
 const aliasName = computed<string | null>(() => {
-  if (get(scrambleData) || get(tx)) {
+  if (get(scrambleData) || get(type) !== 'address') {
     return null;
   }
 
@@ -67,19 +69,17 @@ const base = computed<string>(() => {
   }
 
   const defaultSetting: ExplorerUrls = explorerUrls[get(chain)];
-  let formattedBaseUrl = '';
+  let formattedBaseUrl: string | undefined = undefined;
+  const typeVal = get(type);
+
   if (get(chain) === 'zksync') {
-    formattedBaseUrl = get(tx)
-      ? defaultSetting.transaction
-      : defaultSetting.address;
+    formattedBaseUrl = defaultSetting[typeVal];
   } else {
     const explorersSetting =
       get(explorers)[get(chain) as Exclude<Chains, 'zksync'>];
 
     if (explorersSetting || defaultSetting) {
-      formattedBaseUrl = get(tx)
-        ? explorersSetting?.transaction ?? defaultSetting.transaction
-        : explorersSetting?.address ?? defaultSetting.address;
+      formattedBaseUrl = explorersSetting?.[typeVal] ?? defaultSetting[typeVal];
     }
   }
 
@@ -110,7 +110,7 @@ const { href, onLinkClick } = useLinks(url);
 <template>
   <div class="d-flex flex-row shrink align-center">
     <span>
-      <v-avatar v-if="showIcon && !tx" size="22" class="mr-2">
+      <v-avatar v-if="showIcon && type === 'address'" size="22" class="mr-2">
         <ens-avatar :address="displayText" />
       </v-avatar>
     </span>

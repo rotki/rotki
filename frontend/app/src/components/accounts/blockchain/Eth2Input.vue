@@ -99,7 +99,7 @@ watch(
         outlined
         type="number"
         :disabled="disabled"
-        :label="tc('eth2_input.validator_index')"
+        :label="tc('common.validator_index')"
         :error-messages="toMessages(v$.validatorIndex)"
         @blur="v$.validatorIndex.$touch()"
       />

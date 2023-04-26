@@ -377,13 +377,10 @@ const css = useCssModule();
 
 .display {
   display: inline-block;
+  cursor: pointer;
 
   span {
     display: inline-block;
-  }
-
-  &:hover {
-    cursor: pointer;
   }
 }
 

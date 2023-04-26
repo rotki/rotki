@@ -140,6 +140,7 @@ onMounted(() => {
     <v-sheet v-if="evmChain && !accountToEdit" outlined rounded>
       <v-checkbox
         v-model="allEvmChains"
+        :disabled="loading"
         class="py-4 px-4 my-0"
         :label="tc('address_account_form.label')"
         persistent-hint

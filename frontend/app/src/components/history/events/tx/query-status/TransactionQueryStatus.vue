@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type Blockchain } from '@rotki/common/lib/blockchain';
-import { type EvmTransactionQueryData } from '@/types/websocket-messages';
 
 const props = withDefaults(
   defineProps<{
@@ -17,23 +16,11 @@ const { onlyChains } = toRefs(props);
 const openStatusDropdown = ref<boolean>(false);
 
 const store = useTxQueryStatusStore();
-const { queryStatus, isAllFinished, length } = toRefs(store);
+const { isAllFinished } = toRefs(store);
+
+const { sortedQueryStatus, length } = useTransactionQueryStatus(onlyChains);
 
 const { isStatusFinished, resetQueryStatus } = store;
-
-const { getChain } = useSupportedChains();
-
-const sortedQueryStatus = computed<EvmTransactionQueryData[]>(() => {
-  const chains = get(onlyChains);
-  const statuses = Object.values(get(queryStatus)).filter(
-    status => chains.length === 0 || chains.includes(getChain(status.evmChain))
-  );
-
-  return statuses.sort(
-    (a: EvmTransactionQueryData, b: EvmTransactionQueryData) =>
-      (isStatusFinished(a) ? 1 : 0) - (isStatusFinished(b) ? 1 : 0)
-  );
-});
 
 const css = useCssModule();
 </script>
@@ -74,7 +61,7 @@ const css = useCssModule();
                 mdi-check-circle
               </v-icon>
             </div>
-            <transaction-query-status-current />
+            <transaction-query-status-current :only-chains="onlyChains" />
           </div>
           <div
             v-for="item in sortedQueryStatus"
@@ -103,7 +90,7 @@ const css = useCssModule();
           </div>
         </div>
         <v-spacer />
-        <transaction-query-status-dialog />
+        <transaction-query-status-dialog :only-chains="onlyChains" />
       </div>
     </td>
   </tr>

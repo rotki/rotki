@@ -31,9 +31,27 @@ export type EvmTransactionsQueryStatus =
 export const EvmTransactionQueryData = z
   .object({
     status: z.nativeEnum(EvmTransactionsQueryStatus),
-    period: z.array(z.number())
+    period: z.tuple([z.number(), z.number()])
   })
   .merge(EvmChainAddress);
+
+export const HistoryEventsQueryStatus = {
+  QUERYING_EVENTS_STARTED: 'querying_events_started',
+  QUERYING_EVENTS_STATUS_UPDATE: 'querying_events_status_update',
+  QUERYING_EVENTS_FINISHED: 'querying_events_finished'
+} as const;
+
+export type HistoryEventsQueryStatus =
+  (typeof HistoryEventsQueryStatus)[keyof typeof HistoryEventsQueryStatus];
+
+export const HistoryEventsQueryData = z.object({
+  status: z.nativeEnum(HistoryEventsQueryStatus),
+  period: z.tuple([z.number(), z.number()]).optional(),
+  location: z.string(),
+  name: z.string(),
+  eventType: z.string()
+});
+export type HistoryEventsQueryData = z.infer<typeof HistoryEventsQueryData>;
 
 export type BalanceSnapshotError = z.infer<typeof BalanceSnapshotError>;
 export type EvmTransactionQueryData = z.infer<typeof EvmTransactionQueryData>;
@@ -92,6 +110,7 @@ export const SocketMessageType = {
   LEGACY: 'legacy',
   BALANCES_SNAPSHOT_ERROR: 'balance_snapshot_error',
   EVM_TRANSACTION_STATUS: 'evm_transaction_status',
+  HISTORY_EVENTS_STATUS: 'history_events_status',
   PREMIUM_STATUS_UPDATE: 'premium_status_update',
   DB_UPGRADE_STATUS: 'db_upgrade_status',
   DATA_MIGRATION_STATUS: 'data_migration_status',
@@ -121,6 +140,11 @@ const BalancesSnapshotErrorMessage = z.object({
 const EvmTransactionStatusMessage = z.object({
   type: z.literal(SocketMessageType.EVM_TRANSACTION_STATUS),
   data: EvmTransactionQueryData
+});
+
+const HistoryEventsStatusMessage = z.object({
+  type: z.literal(SocketMessageType.HISTORY_EVENTS_STATUS),
+  data: HistoryEventsQueryData
 });
 
 const PremiumStatusUpdateMessage = z.object({
@@ -158,6 +182,7 @@ export const WebsocketMessage = UnknownWebsocketMessage.or(
 )
   .or(BalancesSnapshotErrorMessage)
   .or(EvmTransactionStatusMessage)
+  .or(HistoryEventsStatusMessage)
   .or(PremiumStatusUpdateMessage)
   .or(DbUpgradeStatusMessage)
   .or(DataMigrationStatusMessage)

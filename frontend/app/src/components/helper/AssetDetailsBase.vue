@@ -51,7 +51,7 @@ const loading: ComputedRef<boolean> = computed(() =>
 <template>
   <list-item
     v-bind="rootAttrs"
-    :class="opensDetails ? 'asset-details-base--link' : null"
+    :class="opensDetails ? 'cursor-pointer' : null"
     :dense="dense"
     :loading="loading"
     :title="asset.isCustomAsset ? name : symbol"
@@ -79,11 +79,3 @@ const loading: ComputedRef<boolean> = computed(() =>
     </template>
   </list-item>
 </template>
-
-<style scoped lang="scss">
-.asset-details-base {
-  &--link {
-    cursor: pointer;
-  }
-}
-</style>

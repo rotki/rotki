@@ -33,15 +33,21 @@ const props = withDefaults(
 const rootAttrs = useAttrs();
 const rootListeners = useListeners();
 const frontendSettingsStore = useFrontendSettingsStore();
-const { itemsPerPage } = storeToRefs(frontendSettingsStore);
+const { itemsPerPage: itemsPerPageFromFrontendSetting } = storeToRefs(
+  frontendSettingsStore
+);
 const { container, options } = toRefs(props);
 
 const tableRef = ref<any>(null);
 const currentPage = ref<number>(1);
 const { footerProps } = useFooterProps();
 
+const itemsPerPageUsed = computed(
+  () => get(options)?.itemsPerPage ?? get(itemsPerPageFromFrontendSetting)
+);
+
 const onItemsPerPageChange = async (newValue: number) => {
-  if (get(itemsPerPage) === newValue) {
+  if (get(itemsPerPageUsed) === newValue) {
     return;
   }
 
@@ -83,7 +89,7 @@ const pageSelectorData = (props: {
   itemsLength: number;
 }) => {
   const itemsLength = props.itemsLength;
-  const perPage = get(itemsPerPage);
+  const perPage = get(itemsPerPageUsed);
   const totalPage = Math.ceil(itemsLength / perPage);
 
   return new Array(totalPage).fill(0).map((item, index) => ({
@@ -124,7 +130,7 @@ onMounted(() => {
     :expanded="expanded"
     :footer-props="footerProps"
     :page.sync="currentPage"
-    :items-per-page="itemsPerPage"
+    :items-per-page="itemsPerPageUsed"
     :hide-default-footer="hideDefaultFooter"
     :loading="loading"
     :loading-text="loadingText"
@@ -159,7 +165,7 @@ onMounted(() => {
           v-model="currentPage"
           auto
           hide-details
-          :disabled="footerPageTextProps.itemsLength <= itemsPerPage"
+          :disabled="footerPageTextProps.itemsLength <= itemsPerPageUsed"
           :items="pageSelectorData(footerPageTextProps)"
           item-value="value"
           item-text="text"
@@ -189,7 +195,7 @@ onMounted(() => {
               v-model="currentPage"
               auto
               hide-details
-              :disabled="footerPageTextProps.itemsLength <= itemsPerPage"
+              :disabled="footerPageTextProps.itemsLength <= itemsPerPageUsed"
               :items="pageSelectorData(footerPageTextProps)"
               item-value="value"
               item-text="text"

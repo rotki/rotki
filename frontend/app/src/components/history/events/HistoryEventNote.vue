@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type ComputedRef } from 'vue';
+import { type NoteFormat, NoteType } from '@/composables/history/events/notes';
 
 const props = withDefaults(
   defineProps<{
@@ -10,6 +12,7 @@ const props = withDefaults(
     chain?: Blockchain;
     noTxHash?: boolean;
     validatorIndex?: number | null;
+    blockNumber?: number | null;
   }>(),
   {
     notes: '',
@@ -17,160 +20,52 @@ const props = withDefaults(
     asset: '',
     chain: Blockchain.ETH,
     noTxHash: false,
-    validatorIndex: null
+    validatorIndex: null,
+    blockNumber: null
   }
 );
 
-enum NoteType {
-  ADDRESS = 'address',
-  TX = 'tx',
-  AMOUNT = 'amount',
-  WORD = 'word',
-  URL = 'url'
-}
+const { notes, amount, asset, noTxHash, validatorIndex, blockNumber } =
+  toRefs(props);
 
-interface NoteFormat {
-  type: NoteType;
-  word?: string;
-  address?: string;
-  amount?: BigNumber;
-  asset?: string;
-  url?: string;
-  chain?: Blockchain;
-}
+const { formatNotes } = useHistoryEventNote();
 
-const {
+const formattedNotes: ComputedRef<NoteFormat[]> = formatNotes({
   notes,
   amount,
-  asset: assetId,
+  assetId: asset,
   noTxHash,
-  validatorIndex
-} = toRefs(props);
-
-const { assetSymbol } = useAssetInfoRetrieval();
-
-const formatNotes: ComputedRef<NoteFormat[]> = computed(() => {
-  const asset = get(assetSymbol(assetId));
-
-  const notesVal = get(notes);
-  if (!notesVal) {
-    return [];
-  }
-
-  const formats: NoteFormat[] = [];
-  let skip = false;
-
-  // label each word from notes whether it is an address or not
-  const words = notesVal.split(/\s/);
-
-  words.forEach((word, index) => {
-    if (skip) {
-      skip = false;
-      return;
-    }
-
-    // Check if the word is ETH address
-    if (isValidEthAddress(word)) {
-      formats.push({ type: NoteType.ADDRESS, address: word });
-      return;
-    }
-
-    // Check if the word is Tx Hash
-    if (isValidTxHash(word) && !noTxHash) {
-      formats.push({ type: NoteType.TX, address: word });
-      return;
-    }
-
-    // Check if the word is ETH2 Validator Index
-    if (get(validatorIndex)?.toString() === word) {
-      formats.push({
-        type: NoteType.ADDRESS,
-        address: word,
-        chain: Blockchain.ETH2
-      });
-      return;
-    }
-
-    const amountVal = get(amount);
-
-    const isAmount =
-      amountVal &&
-      !isNaN(Number.parseFloat(word)) &&
-      bigNumberify(word).eq(amountVal) &&
-      amountVal.gt(0) &&
-      index < words.length - 1 &&
-      words[index + 1] === asset;
-
-    if (isAmount) {
-      formats.push({ type: NoteType.AMOUNT, amount: amountVal, asset });
-      skip = true;
-      return;
-    }
-
-    // Check if the word is Markdown link format
-    const markdownLinkRegex = /^\[(.+)]\((<?https?:\/\/.+>?)\)$/;
-    const markdownLinkMatch = word.match(markdownLinkRegex);
-
-    if (markdownLinkMatch) {
-      const text = markdownLinkMatch[1];
-      let url = markdownLinkMatch[2];
-
-      if (text && url) {
-        url = url.replace(/^<+/, '').replace(/>+$/, '');
-
-        formats.push({
-          type: NoteType.URL,
-          word: text,
-          url
-        });
-
-        return;
-      }
-    }
-
-    // Check if the word is URL
-    const urlRegex = /^(https?:\/\/.+)$/;
-
-    if (urlRegex.test(word)) {
-      formats.push({
-        type: NoteType.URL,
-        word,
-        url: word
-      });
-
-      return;
-    }
-
-    formats.push({ type: NoteType.WORD, word });
-  });
-
-  return formats;
+  validatorIndex,
+  blockNumber
 });
+
+const css = useCssModule();
 </script>
 
 <template>
   <div>
-    <template v-for="(note, index) in formatNotes">
+    <template v-for="(note, index) in formattedNotes">
       <span
-        v-if="note.type === 'address' || note.type === 'tx'"
+        v-if="note.showHashLink"
         :key="index"
-        :class="$style.address"
+        :class="css.address"
         class="d-inline-flex"
       >
         <hash-link
           :class="{
-            [$style['address__content']]: true,
-            'pl-2': note.type === 'tx'
+            [css['address__content']]: true,
+            'pl-2': !note.showIcon
           }"
           :text="note.address"
-          :tx="note.type === 'tx'"
+          :type="note.type"
           :chain="note.chain ?? chain"
+          :show-icon="!!note.showIcon"
         />
       </span>
-      <span v-else-if="note.type === 'amount'" :key="index">
+      <span v-else-if="note.type === NoteType.AMOUNT" :key="index">
         <amount-display :asset="note.asset" :value="note.amount" />
       </span>
-      <span v-else-if="note.type === 'url' && note.url" :key="index">
+      <span v-else-if="note.type === NoteType.URL && note.url" :key="index">
         <external-link :url="note.url">{{ note.word }}</external-link>
       </span>
       <span v-else :key="index">

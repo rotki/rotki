@@ -26,13 +26,20 @@ const avatarUrl: ComputedRef<string | null> = computed(() => {
 
 const { getBlockie } = useBlockie();
 const css = useCssModule();
+
+const success: Ref<boolean> = ref(false);
 </script>
 
 <template>
-  <v-lazy>
-    <div :class="css.wrapper">
-      <v-img :src="getBlockie(address)" />
-      <v-img v-if="avatarUrl" :class="css.avatar" :src="avatarUrl" />
+  <v-lazy :class="css.wrapper">
+    <div>
+      <v-img v-if="!success" :src="getBlockie(address)" />
+      <v-img
+        v-if="avatarUrl"
+        :class="css.avatar"
+        :src="avatarUrl"
+        @load="success = true"
+      />
     </div>
   </v-lazy>
 </template>

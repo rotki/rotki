@@ -7,9 +7,9 @@ import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { type Writeable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
+  type EvmHistoryEvent,
   type HistoryEvent,
-  type HistoryEventEntry,
-  type NewHistoryEvent
+  type NewEvmHistoryEventPayload
 } from '@/types/history/events';
 import { TaskType } from '@/types/task-type';
 import { toMessages } from '@/utils/validation-errors';
@@ -18,8 +18,8 @@ import { type ActionDataEntry } from '@/types/action';
 const props = withDefaults(
   defineProps<{
     value?: boolean;
-    edit?: HistoryEvent | null;
-    transaction: HistoryEventEntry;
+    edit?: EvmHistoryEvent | null;
+    transaction: EvmHistoryEvent;
   }>(),
   {
     value: false,
@@ -201,12 +201,14 @@ const { editTransactionEvent, addTransactionEvent } = useHistoryEvents();
 const save = async (): Promise<boolean> => {
   const timestamp = convertToTimestamp(get(datetime));
   const assetVal = get(asset);
+  const { address, product, txHash } = get(transaction);
 
-  const transactionEventPayload: Writeable<NewHistoryEvent> = {
-    eventIdentifier: get(eventIdentifier),
+  const transactionEventPayload: Writeable<NewEvmHistoryEventPayload> = {
+    address,
+    product,
+    txHash,
     sequenceIndex: get(sequenceIndex) || '0',
     timestamp,
-    location: get(location),
     eventType: get(eventType),
     eventSubtype: get(eventSubtype),
     asset: assetVal,
@@ -214,9 +216,10 @@ const save = async (): Promise<boolean> => {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
       usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue)
     },
-    locationLabel: get(locationLabel) || undefined,
-    notes: get(notes) || undefined,
-    counterparty: get(counterparty) || undefined
+    location: get(location),
+    locationLabel: get(locationLabel) || null,
+    notes: get(notes) || null,
+    counterparty: get(counterparty) || null
   };
 
   if (get(isCurrentCurrencyUsd)) {
@@ -394,14 +397,6 @@ watch(amount, () => {
   }
 });
 
-const eventIdentifier: ComputedRef<string> = computed(
-  () => get(transaction).eventIdentifier
-);
-
-const isTx: ComputedRef<boolean> = computed(() =>
-  isValidTxHash(get(eventIdentifier))
-);
-
 watch(transaction, transaction => {
   set(location, transaction.location || get(lastLocation));
 });
@@ -458,6 +453,8 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
       subTypeMapping.includes(data.identifier)
     );
   });
+
+const evmEvent = isEvmEventRef(transaction);
 </script>
 
 <template>
@@ -472,7 +469,7 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
           v-model="location"
           required
           outlined
-          :disabled="isTx"
+          :disabled="evmEvent"
           data-cy="location"
           :label="t('common.location')"
           :error-messages="toMessages(v$.location)"
@@ -622,6 +619,7 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
       <v-col cols="12" md="4">
         <v-text-field
           v-model="locationLabel"
+          :disabled="evmEvent"
           outlined
           data-cy="locationLabel"
           :label="t('transactions.events.form.location_label.label')"
