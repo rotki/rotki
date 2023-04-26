@@ -403,7 +403,6 @@ def test_query_transactions(rotkehlchen_api_server):
                 cursor=cursor,
                 filter_query=EvmEventFilterQuery.make(
                     tx_hashes=[TXHASH_HEX_TO_BYTES[tx_hash_hex]],
-                    limit_to_entry_type=True,
                 ),
                 has_premium=True,  # for this function we don't limit. We only limit txs.
             )
@@ -434,7 +433,6 @@ def test_query_transactions(rotkehlchen_api_server):
                 cursor=cursor,
                 filter_query=EvmEventFilterQuery.make(
                     tx_hashes=[TXHASH_HEX_TO_BYTES[tx_hash_hex]],
-                    limit_to_entry_type=True,
                 ),
                 has_premium=True,  # for this function we don't limit. We only limit txs.
             )
@@ -1292,7 +1290,7 @@ def test_query_transactions_check_decoded_events(
                 ('history_events_mappings', 2),
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
-        customized_events = dbevents.get_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True)  # noqa: E501
+        customized_events = dbevents.get_history_events(cursor, EvmEventFilterQuery.make(), True)  # noqa: E501
 
     assert customized_events[0].serialize() == tx4_events[0]['entry']  # pylint: disable=unsubscriptable-object  # noqa: E501
     assert customized_events[1].serialize() == tx2_events[1]['entry']  # pylint: disable=unsubscriptable-object  # noqa: E501
@@ -1323,7 +1321,7 @@ def test_query_transactions_check_decoded_events(
                 'history_events_mappings',
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == 0
-        assert dbevents.get_history_events(cursor, EvmEventFilterQuery.make(limit_to_entry_type=True), True) == []  # noqa: E501
+        assert dbevents.get_history_events(cursor, EvmEventFilterQuery.make(), True) == []  # noqa: E501
 
 
 @pytest.mark.parametrize('should_mock_price_queries', [True])
@@ -1379,7 +1377,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         )
         assert_error_response(
             response=response,
-            contained_in_msg=f'{{"{attribute}": ["{attribute} have to be either not passed or contain at least one item"]}}',  # noqa: E501
+            contained_in_msg=f'{{"{attribute}": ["List cant be empty"]}}',
         )
 
     returned_events = query_events(
@@ -1591,7 +1589,6 @@ def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> N
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
                 tx_hashes=[transactions[0].tx_hash],
-                limit_to_entry_type=True,
             ),
             has_premium=True,
         )
@@ -1600,7 +1597,6 @@ def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> N
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
                 tx_hashes=[transactions[1].tx_hash],
-                limit_to_entry_type=True,
             ),
             has_premium=True,
         )
@@ -1652,7 +1648,6 @@ def test_decoding_missing_transactions_by_address(rotkehlchen_api_server: 'APISe
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
                 tx_hashes=[transactions[0].tx_hash],
-                limit_to_entry_type=True,
             ),
             has_premium=True,
         )
@@ -1661,7 +1656,6 @@ def test_decoding_missing_transactions_by_address(rotkehlchen_api_server: 'APISe
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
                 tx_hashes=[transactions[1].tx_hash],
-                limit_to_entry_type=True,
             ),
             has_premium=True,
         )
@@ -1670,7 +1664,6 @@ def test_decoding_missing_transactions_by_address(rotkehlchen_api_server: 'APISe
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
                 tx_hashes=[transactions[2].tx_hash],
-                limit_to_entry_type=True,
             ),
             has_premium=True,
         )

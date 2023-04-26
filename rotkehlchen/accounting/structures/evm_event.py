@@ -29,7 +29,7 @@ from rotkehlchen.types import (
     TimestampMS,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
@@ -48,7 +48,7 @@ ALL_DETAILS_KEYS = {
 }
 
 
-class EvmProduct(SerializableEnumMixin):
+class EvmProduct(SerializableEnumNameMixin):
     """The type of EVM product we interact with"""
     POOL = auto()
     STAKING = auto()

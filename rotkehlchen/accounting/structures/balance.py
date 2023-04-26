@@ -7,13 +7,13 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.misc import combine_dicts
-from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
+from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
 
 
-class BalanceType(DBEnumMixIn):
+class BalanceType(DBCharEnumMixIn):
     ASSET = 1
     LIABILITY = 2
 

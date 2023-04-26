@@ -883,8 +883,8 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             ignored_ids: Optional[list[str]] = None,
             null_columns: Optional[list[str]] = None,
             event_identifiers: Optional[list[str]] = None,
+            entry_types: Optional[list[HistoryBaseEntryType]] = None,
             exclude_ignored_assets: bool = False,
-            limit_to_entry_type: bool = False,
     ) -> T_HistoryFilterQuery:
         if order_by_rules is None:
             order_by_rules = [('timestamp', True), ('sequence_index', True)]
@@ -909,6 +909,13 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
                         values=[asset.identifier for asset in assets],
                     ),
                 )
+        if entry_types is not None:
+            filters.append(DBMultiIntegerFilter(
+                and_op=True,
+                column='entry_type',
+                values=[x.value for x in entry_types],
+                operator='IN',
+            ))
         if event_types is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,
@@ -965,11 +972,6 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             )
         if exclude_ignored_assets is True:
             filters.append(DBIgnoredAssetsFilter(and_op=True, asset_key='asset'))
-        if limit_to_entry_type is True:
-            entry_type = cls.get_entry_type()
-            filters.append(
-                DBEqualsFilter(and_op=True, column='entry_type', value=entry_type.value),
-            )
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -991,13 +993,9 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
     def get_count_query() -> str:
         """Returns the count query needed for this particular type of history event filter"""
 
-    @staticmethod
-    @abstractmethod
-    def get_entry_type() -> HistoryBaseEntryType:
-        """Returns the associated entry type with this filter"""
-
 
 class HistoryEventFilterQuery(HistoryBaseEntryFilterQuery):
+    """This is the event query for all types of events"""
 
     @staticmethod
     def get_join_query() -> str:
@@ -1006,10 +1004,6 @@ class HistoryEventFilterQuery(HistoryBaseEntryFilterQuery):
     @staticmethod
     def get_count_query() -> str:
         return 'SELECT COUNT(*) FROM history_events '
-
-    @staticmethod
-    def get_entry_type() -> HistoryBaseEntryType:
-        return HistoryBaseEntryType.HISTORY_EVENT
 
 
 class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
@@ -1031,12 +1025,15 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             ignored_ids: Optional[list[str]] = None,
             null_columns: Optional[list[str]] = None,
             event_identifiers: Optional[list[str]] = None,
+            entry_types: Optional[list[HistoryBaseEntryType]] = None,
             exclude_ignored_assets: bool = False,
-            limit_to_entry_type: bool = False,
             tx_hashes: Optional[list[EVMTxHash]] = None,
             counterparties: Optional[list[str]] = None,
             products: Optional[list[EvmProduct]] = None,
     ) -> 'EvmEventFilterQuery':
+        if entry_types is None:
+            entry_types = [HistoryBaseEntryType.EVM_EVENT]
+
         filter_query = super().make(
             and_op=and_op,
             order_by_rules=order_by_rules,
@@ -1053,8 +1050,8 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             event_identifiers=event_identifiers,
+            entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
-            limit_to_entry_type=limit_to_entry_type,
         )
         if counterparties is not None:
             filter_query.filters.append(DBMultiStringFilter(
@@ -1090,10 +1087,6 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
     def get_count_query() -> str:
         return f'SELECT COUNT(*) {EVM_EVENT_JOIN}'
 
-    @staticmethod
-    def get_entry_type() -> HistoryBaseEntryType:
-        return HistoryBaseEntryType.EVM_EVENT
-
 
 class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta):
 
@@ -1115,10 +1108,13 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta)
             ignored_ids: Optional[list[str]] = None,
             null_columns: Optional[list[str]] = None,
             event_identifiers: Optional[list[str]] = None,
+            entry_types: Optional[list[HistoryBaseEntryType]] = None,
             exclude_ignored_assets: bool = False,
-            limit_to_entry_type: bool = False,
             validator_indices: Optional[list[int]] = None,
     ) -> 'EthStakingEventFilterQuery':
+        if entry_types is None:
+            entry_types = [HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT, HistoryBaseEntryType.ETH_BLOCK_EVENT]  # noqa: E501
+
         filter_query = super().make(
             and_op=and_op,
             order_by_rules=order_by_rules,
@@ -1135,8 +1131,8 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta)
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             event_identifiers=event_identifiers,
+            entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
-            limit_to_entry_type=limit_to_entry_type,
         )
         if validator_indices is not None:
             filter_query.filters.append(DBMultiIntegerFilter(
@@ -1155,10 +1151,6 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta)
     @staticmethod
     def get_count_query() -> str:
         return f'SELECT COUNT(*) {ETH_STAKING_EVENT_JOIN}'
-
-    @staticmethod
-    def get_entry_type() -> HistoryBaseEntryType:
-        return HistoryBaseEntryType.EVM_EVENT
 
 
 class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):

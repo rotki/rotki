@@ -23,7 +23,7 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 # TODO: improve the prefixes annotation and amend their usage in balancer.py
 BALANCER_EVENTS_PREFIX = 'balancer_events'
@@ -81,12 +81,12 @@ class ProtocolBalance(NamedTuple):
     unknown_tokens: set[EvmToken]
 
 
-class BalancerInvestEventType(SerializableEnumMixin):
+class BalancerInvestEventType(SerializableEnumNameMixin):
     ADD_LIQUIDITY = 1
     REMOVE_LIQUIDITY = 2
 
 
-class BalancerBPTEventType(SerializableEnumMixin):
+class BalancerBPTEventType(SerializableEnumNameMixin):
     MINT = 1
     BURN = 2
 

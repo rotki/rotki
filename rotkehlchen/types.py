@@ -15,14 +15,16 @@ from typing import (
 
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes as Web3HexBytes
-from rotkehlchen.errors.misc import InputError
 
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.hexbytes import HexBytes
-from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
-from rotkehlchen.utils.mixins.serializableenumvalue import SerializableEnumValueMixin
+from rotkehlchen.utils.mixins.enums import (
+    DBCharEnumMixIn,
+    SerializableEnumNameMixin,
+    SerializableEnumValueMixin,
+)
 
 from rotkehlchen.chain.substrate.types import SubstrateAddress  # isort:skip
 
@@ -110,7 +112,7 @@ T_HexColorCode = str
 HexColorCode = NewType('HexColorCode', T_HexColorCode)
 
 
-class ExternalService(SerializableEnumMixin):
+class ExternalService(SerializableEnumNameMixin):
     ETHERSCAN = 0
     CRYPTOCOMPARE = 1
     BEACONCHAIN = 2
@@ -195,11 +197,11 @@ TradeID = NewType('TradeID', T_TradeID)
 
 
 class ChainID(Enum):
-    """This class maps each EVM chain to their chain id. This is used to correctly idenity EVM
+    """This class maps each EVM chain to their chain id. This is used to correctly identify EVM
     assets and use it where these ids are needed.
 
     This enum implements custom serialization/deserialization so it does not inherit from the
-    SerializableEnumMixin since it differs from the rest being an int value enum. TODO: Fix types.
+    DBIntEnumMixIn since it may differ a bit. TODO: Try it
     """
     ETHEREUM = 1
     OPTIMISM = 10
@@ -491,7 +493,7 @@ CHAINID_TO_SUPPORTED_BLOCKCHAIN = {
 NON_EVM_CHAINS = set(SupportedBlockchain) - set(SUPPORTED_BLOCKCHAIN_TO_CHAINID.keys())
 
 
-class TradeType(DBEnumMixIn):
+class TradeType(DBCharEnumMixIn):
     BUY = 1
     SELL = 2
     SETTLEMENT_BUY = 3
@@ -522,7 +524,7 @@ class TradeType(DBEnumMixIn):
         )
 
 
-class Location(DBEnumMixIn):
+class Location(DBCharEnumMixIn):
     """Supported Locations"""
     EXTERNAL = 1
     KRAKEN = 2
@@ -606,7 +608,7 @@ class LocationDetails(NamedTuple):
         raise InputError('Location details has neither an icon nor an image')
 
 
-class AssetMovementCategory(DBEnumMixIn):
+class AssetMovementCategory(DBCharEnumMixIn):
     """Supported Asset Movement Types so far only deposit and withdrawals"""
     DEPOSIT = 1
     WITHDRAWAL = 2
@@ -675,7 +677,7 @@ class EnsMapping(NamedTuple):
     last_update: Timestamp = Timestamp(0)
 
 
-class CostBasisMethod(SerializableEnumMixin):
+class CostBasisMethod(SerializableEnumNameMixin):
     FIFO = auto()
     LIFO = auto()
     HIFO = auto()
@@ -722,7 +724,7 @@ class ChainAddress(OptionalChainAddress):
     blockchain: SupportedBlockchain
 
 
-class AddressbookType(SerializableEnumMixin):
+class AddressbookType(SerializableEnumNameMixin):
     GLOBAL = 1
     PRIVATE = 2
 
@@ -777,7 +779,7 @@ class UserNote(NamedTuple):
         )
 
 
-class EvmTokenKind(DBEnumMixIn):
+class EvmTokenKind(DBCharEnumMixIn):
     ERC20 = auto()
     ERC721 = auto()
     UNKNOWN = auto()
@@ -798,7 +800,7 @@ class GeneralCacheType(Enum):
         return self.name
 
 
-class OracleSource(SerializableEnumMixin):
+class OracleSource(SerializableEnumNameMixin):
     """
     Abstraction to represent a variable that could be either HistoricalPriceOracle
     or CurrentPriceOracle. Can't have any member since you can't override them later
@@ -832,7 +834,7 @@ DecoderEventMappingType = dict[
 ]
 
 
-class HistoryEventQueryType(SerializableEnumMixin):
+class HistoryEventQueryType(SerializableEnumNameMixin):
     """Locations to query for history events"""
     ETH_WITHDRAWALS = auto()
     BLOCK_PRODUCTIONS = auto()

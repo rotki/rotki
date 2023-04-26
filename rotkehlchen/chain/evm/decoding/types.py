@@ -1,7 +1,7 @@
 from enum import auto
 from typing import Literal, NamedTuple, Optional
 
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 
 class CounterpartyDetails(NamedTuple):
@@ -16,7 +16,7 @@ class EventCategoryDetails(NamedTuple):
     color: Optional[Literal['green', 'red']] = None
 
 
-class EventCategory(SerializableEnumMixin):
+class EventCategory(SerializableEnumNameMixin):
     """
     User friendly categories to classify combinations of event type and event subtype
     """

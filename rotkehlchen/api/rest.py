@@ -25,7 +25,7 @@ from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS
 from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.accounting.structures.base import StakingEvent
+from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, StakingEvent
 from rotkehlchen.accounting.structures.types import (
     ActionType,
     HistoryEventSubType,
@@ -442,11 +442,6 @@ class RestAPI():
 
     @async_api_call()
     def get_exchange_rates(self, given_currencies: list[AssetWithOracles]) -> dict[str, Any]:
-        if len(given_currencies) == 0:
-            return wrap_in_fail_result(
-                message='Empty list of currencies provided',
-                status_code=HTTPStatus.BAD_REQUEST,
-            )
         currencies = given_currencies
         fiat_currencies: list[FiatAsset] = []
         asset_rates = {}
@@ -2844,8 +2839,7 @@ class RestAPI():
                 if entry['tx_hashes'] is not None and task_manager is not None:
                     # Trigger the task to query the missing prices for the decoded events
                     events_filter = EvmEventFilterQuery.make(
-                        event_identifiers=[event.event_identifier for event in decoded_events],
-                        limit_to_entry_type=True,
+                        tx_hashes=[event.tx_hash for event in decoded_events],
                     )
                     entries = task_manager.get_base_entries_missing_prices(events_filter)
                     task_manager.query_missing_prices_of_base_entries(
@@ -4121,7 +4115,7 @@ class RestAPI():
             event_types=event_types,
             event_subtypes=event_subtypes,
             exclude_subtypes=exclude_subtypes,
-            limit_to_entry_type=True,
+            entry_types=[HistoryBaseEntryType.HISTORY_EVENT],
         )
 
         message = ''

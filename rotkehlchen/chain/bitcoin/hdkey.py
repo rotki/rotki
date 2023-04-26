@@ -21,7 +21,7 @@ from rotkehlchen.chain.bitcoin.utils import (
 from rotkehlchen.errors.misc import XPUBError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.types import BTCAddress
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 COMPRESSED_PUBKEY = True
 
@@ -32,7 +32,7 @@ class PrefixParsingResult(NamedTuple):
     hint: str
 
 
-class XpubType(SerializableEnumMixin):
+class XpubType(SerializableEnumNameMixin):
     P2PKH = auto()          # lecacy/xpub
     P2SH_P2WPKH = auto()    # segwit/ypub
     WPKH = auto()           # native segwit/zpub

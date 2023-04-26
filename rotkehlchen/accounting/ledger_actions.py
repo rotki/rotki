@@ -14,7 +14,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
 )
 from rotkehlchen.types import AssetAmount, Location, Price, Timestamp
-from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
+from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class LedgerActionType(DBEnumMixIn):
+class LedgerActionType(DBCharEnumMixIn):
     INCOME = 1
     EXPENSE = 2
     LOSS = 3

@@ -20,7 +20,7 @@ from rotkehlchen.config import default_data_directory
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging
 from rotkehlchen.tests.utils.args import default_args
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -34,7 +34,7 @@ TESTS_ROOT_DIR = Path(__file__).parent
 SUBPROCESS_TIMEOUT = 30
 
 
-class TestEnvironment(SerializableEnumMixin):
+class TestEnvironment(SerializableEnumNameMixin):
     __test__ = False  # tell pytest not to collect this class
 
     STANDARD = auto()  # test during normal development

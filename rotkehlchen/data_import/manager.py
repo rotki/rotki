@@ -14,10 +14,10 @@ from rotkehlchen.data_import.importers.shapeshift_trades import ShapeshiftTrades
 from rotkehlchen.data_import.importers.uphold_transactions import UpholdTransactionsImporter
 from rotkehlchen.data_import.utils import BaseExchangeImporter
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 
-class DataImportSource(SerializableEnumMixin):
+class DataImportSource(SerializableEnumNameMixin):
     COINTRACKING = 1
     CRYPTOCOM = 2
     BLOCKFI_TRANSACTIONS = 3

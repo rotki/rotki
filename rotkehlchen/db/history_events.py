@@ -567,7 +567,7 @@ class DBHistoryEvents():
         Get missing prices for history base entries based on filter query
         """
         query, bindings = filter_query.prepare()
-        query = 'SELECT identifier, amount, asset, timestamp FROM history_events ' + query
+        query = f'SELECT history_events.identifier, amount, asset, timestamp {ALL_EVENTS_DATA_JOIN}' + query  # noqa: E501
         result = []
         cursor = self.db.conn.cursor()
         cursor.execute(query, bindings)
