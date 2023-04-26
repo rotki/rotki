@@ -7,7 +7,7 @@ import gevent
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.eth2 import EthWithdrawalEvent
+from rotkehlchen.accounting.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
@@ -485,6 +485,39 @@ class Eth2(EthereumModule):
                     ownership_proportion=ownership_proportion,
                 ),
             ])
+
+    def combine_block_with_tx_events(self) -> None:
+        """Get all mev reward block production events and combine them with the
+        transaction events if they can be found"""
+        with self.database.conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT B_H.identifier, B_T.block_number, B_H.notes FROM evm_transactions B_T '
+                'LEFT JOIN evm_events_info B_E '
+                'ON B_T.tx_hash=B_E.tx_hash LEFT JOIN history_events B_H '
+                'ON B_E.identifier=B_H.identifier WHERE '
+                'B_H.asset="ETH" AND B_H.type="receive" AND B_H.subtype="none" '
+                'AND B_T.block_number=('
+                'SELECT A_S.is_exit_or_blocknumber '
+                'FROM history_events A_H LEFT JOIN eth_staking_events_info A_S '
+                'ON A_H.identifier=A_S.identifier WHERE A_H.subtype="mev reward" AND '
+                'A_S.is_exit_or_blocknumber=B_T.block_number AND '
+                'A_H.amount=B_H.amount AND A_H.location_label=B_H.location_label)',
+            )
+            result = cursor.fetchall()
+
+        changes = []
+        for entry in result:
+            changes.append((
+                EthBlockEvent.form_event_identifier(entry[1]),
+                2,
+                f'{entry[2]} as mev reward for block {entry[1]}',
+                entry[0],
+            ))
+        with self.database.user_write() as write_cursor:
+            write_cursor.executemany(
+                'UPDATE history_events SET event_identifier=?, sequence_index=?, notes=? WHERE identifier=?',  # noqa: E501
+                changes,
+            )
 
     # -- Methods following the EthereumModule interface -- #
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:

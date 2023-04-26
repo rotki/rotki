@@ -3542,8 +3542,10 @@ class RestAPI():
             eth2.query_services_for_validator_withdrawals(to_ts=ts_now())
         else:  # block production
             with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-                indices = cursor.execute('SELECT validator_index FROM eth2_validators').fetchall()
-            eth2.beaconchain.get_and_store_produced_blocks(indices)
+                indices = cursor.execute('SELECT validator_index FROM eth2_validators').fetchone()
+            if indices is not None:
+                eth2.beaconchain.get_and_store_produced_blocks(indices)
+                eth2.combine_block_with_tx_events()
 
         return OK_RESULT
 

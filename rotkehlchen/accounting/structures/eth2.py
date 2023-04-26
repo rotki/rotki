@@ -53,6 +53,7 @@ class EthStakingEvent(HistoryBaseEntry, metaclass=ABCMeta):
         self.validator_index = validator_index
         self.is_exit_or_blocknumber = is_exit_or_blocknumber
         super().__init__(
+            identifier=identifier,
             event_identifier=event_identifier,
             sequence_index=sequence_index,
             timestamp=timestamp,
@@ -86,6 +87,7 @@ class EthWithdrawalEvent(EthStakingEvent):
             identifier: Optional[int] = None,
     ) -> None:
         super().__init__(
+            identifier=identifier,
             event_identifier=f'eth2_withdrawal_{validator_index}_{timestamp}',
             sequence_index=0,
             timestamp=timestamp,
@@ -207,7 +209,8 @@ class EthBlockEvent(EthStakingEvent):
             name = 'block reward'
 
         super().__init__(
-            event_identifier=f'evm_1_block_{block_number}',
+            identifier=identifier,
+            event_identifier=self.form_event_identifier(block_number),
             sequence_index=sequence_index,
             timestamp=timestamp,
             event_type=HistoryEventType.STAKING,
@@ -218,6 +221,10 @@ class EthBlockEvent(EthStakingEvent):
             is_exit_or_blocknumber=block_number,
             notes=f'Validator {validator_index} produced block {block_number} with {balance.amount} ETH going to {fee_recipient} as the {name}',  # noqa: E501
         )
+
+    @staticmethod
+    def form_event_identifier(block_number: int) -> str:
+        return f'evm_1_block_{block_number}'
 
     @property
     def entry_type(self) -> HistoryBaseEntryType:

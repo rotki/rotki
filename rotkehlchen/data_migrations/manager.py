@@ -67,8 +67,8 @@ class DataMigrationManager:
                 if self._perform_migration(migration) is False:
                     break  # a migration failed -- no point continuing
 
-                current_migration += 1
                 log.debug(f'Successfuly applied migration {current_migration}')
+                current_migration += 1
                 with self.rotki.data.db.user_write() as write_cursor:
                     write_cursor.execute(
                         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
