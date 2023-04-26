@@ -737,7 +737,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     assert FVal(totals['assets']['ETH2']['amount']) >= 2 * base_amount + amount_proportion
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('network_mocking', [False])

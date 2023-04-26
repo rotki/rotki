@@ -48,48 +48,56 @@ def test_withdrawals(eth2: 'Eth2', database):
     with database.conn.read_ctx() as cursor:
         events = dbevents.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True, False)  # noqa: E501
         assert events == [EthWithdrawalEvent(
+            identifier=5,
             validator_index=295601,
             timestamp=TimestampMS(1681392599000),
             balance=Balance(amount=FVal('1.631508097')),
             withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
             is_exit=False,
         ), EthWithdrawalEvent(
+            identifier=8,
             validator_index=295603,
             timestamp=TimestampMS(1681392599000),
             balance=Balance(amount=FVal('1.581794994')),
             withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
             is_exit=False,
         ), EthWithdrawalEvent(
+            identifier=1,
             validator_index=7287,
             timestamp=TimestampMS(1681567319000),
             balance=Balance(amount=FVal('36.411594425')),
             withdrawal_address=string_to_evm_address('0x4231B2f83CB7C833Db84ceC0cEAAa9959f051374'),
             is_exit=True,
         ), EthWithdrawalEvent(
+            identifier=2,
             validator_index=7288,
             timestamp=TimestampMS(1681567319000),
             balance=Balance(amount=FVal('36.422259087')),
             withdrawal_address=string_to_evm_address('0x4231B2f83CB7C833Db84ceC0cEAAa9959f051374'),
             is_exit=True,
         ), EthWithdrawalEvent(
+            identifier=4,
             validator_index=295601,
             timestamp=TimestampMS(1681736279000),
             balance=Balance(amount=FVal('0.010870946')),
             withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
             is_exit=False,
         ), EthWithdrawalEvent(
+            identifier=7,
             validator_index=295603,
             timestamp=TimestampMS(1681736279000),
             balance=Balance(amount=FVal('0.010692337')),
             withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
             is_exit=False,
         ), EthWithdrawalEvent(
+            identifier=3,
             validator_index=295601,
             timestamp=TimestampMS(1682110295000),
             balance=Balance(amount=FVal('0.011993962')),
             withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
             is_exit=False,
         ), EthWithdrawalEvent(
+            identifier=6,
             validator_index=295603,
             timestamp=TimestampMS(1682110295000),
             balance=Balance(amount=FVal('0.011965595')),
@@ -129,6 +137,7 @@ def test_block_production(eth2: 'Eth2', database):
         events = dbevents.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True, False)  # noqa: E501
 
     assert events == [EthBlockEvent(
+        identifier=12,
         validator_index=vindex1,
         timestamp=TimestampMS(1666693607000),
         balance=Balance(FVal('0.126419309459217215')),
@@ -136,6 +145,7 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=15824493,
         is_mev_reward=False,
     ), EthBlockEvent(
+        identifier=13,
         validator_index=vindex1,
         timestamp=TimestampMS(1666693607000),
         balance=Balance(FVal('0.126458404824519798')),
@@ -143,6 +153,7 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=15824493,
         is_mev_reward=True,
     ), EthBlockEvent(
+        identifier=10,
         validator_index=vindex1,
         timestamp=TimestampMS(1668068651000),
         balance=Balance(FVal('0.095134860916352597')),
@@ -150,6 +161,7 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=15938405,
         is_mev_reward=False,
     ), EthBlockEvent(
+        identifier=11,
         validator_index=vindex1,
         timestamp=TimestampMS(1668068651000),
         balance=Balance(FVal('0.109978419256414016')),
@@ -157,6 +169,7 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=15938405,
         is_mev_reward=True,
     ), EthBlockEvent(
+        identifier=9,
         validator_index=vindex2,
         timestamp=TimestampMS(1670267915000),
         balance=Balance(FVal('0.025900962606266958')),
@@ -164,6 +177,7 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=16120623,
         is_mev_reward=False,
     ), EthBlockEvent(
+        identifier=8,
         validator_index=vindex2,
         timestamp=TimestampMS(1671379127000),
         balance=Balance(FVal('0.02290370247079784')),
@@ -171,6 +185,7 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=16212625,
         is_mev_reward=False,
     ), EthBlockEvent(
+        identifier=7,
         validator_index=vindex2,
         timestamp=TimestampMS(1674734363000),
         balance=Balance(FVal('0.012922327272245232')),
@@ -178,6 +193,7 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=16490846,
         is_mev_reward=False,
     ), EthBlockEvent(
+        identifier=6,
         validator_index=vindex2,
         timestamp=TimestampMS(1675143275000),
         balance=Balance(FVal('0.016091543022603308')),
@@ -185,6 +201,7 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=16524748,
         is_mev_reward=False,
     ), EthBlockEvent(
+        identifier=4,
         validator_index=vindex1,
         timestamp=TimestampMS(1675926299000),
         balance=Balance(FVal('0.156090536122554115')),
@@ -192,6 +209,7 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=16589592,
         is_mev_reward=False,
     ), EthBlockEvent(
+        identifier=5,
         validator_index=vindex1,
         timestamp=TimestampMS(1675926299000),
         balance=Balance(FVal('0.155599501480976115')),
@@ -199,6 +217,7 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=16589592,
         is_mev_reward=True,
     ), EthBlockEvent(
+        identifier=3,
         validator_index=vindex2,
         timestamp=TimestampMS(1676596919000),
         balance=Balance(FVal('0.004759289463309382')),
@@ -206,6 +225,7 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=16645139,
         is_mev_reward=False,
     ), EthBlockEvent(
+        identifier=1,
         validator_index=vindex1,
         timestamp=TimestampMS(1681593839000),
         balance=Balance(FVal('0.013231650982632651')),
@@ -213,6 +233,7 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=17055026,
         is_mev_reward=False,
     ), EthBlockEvent(
+        identifier=2,
         validator_index=vindex1,
         timestamp=TimestampMS(1681593839000),
         balance=Balance(FVal('0.013233591104431482')),

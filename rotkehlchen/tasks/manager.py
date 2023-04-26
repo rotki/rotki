@@ -62,6 +62,8 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import ts_now
 
+from .events import LAST_EVENTS_PROCESSING_TASK_TS, process_events
+
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
@@ -163,6 +165,7 @@ class TaskManager():
             self._maybe_update_ilk_cache,
             self._maybe_query_produced_blocks,
             self._maybe_query_withdrawals,
+            self._maybe_run_events_processing,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -629,6 +632,23 @@ class TaskManager():
             exception_is_error=True,
             method=eth2.query_services_for_validator_withdrawals,
             to_ts=now,
+        )]
+
+    def _maybe_run_events_processing(self) -> Optional[list[gevent.Greenlet]]:
+        """Schedules the events processing task which may combine/edit events"""
+        now = ts_now()
+        with self.database.conn.read_ctx() as cursor:
+            result = self.database.get_used_query_range(cursor, LAST_EVENTS_PROCESSING_TASK_TS)
+            if result is not None and now - result[1] <= HOUR_IN_SECONDS:
+                return None
+
+        task_name = 'Periodically process events'
+        log.debug(f'Scheduling task to {task_name}')
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name=task_name,
+            exception_is_error=True,
+            method=process_events,
         )]
 
     def _maybe_update_curve_pools(self) -> Optional[list[gevent.Greenlet]]:
