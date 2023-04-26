@@ -9,9 +9,10 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryEvent
-from rotkehlchen.accounting.structures.eth2 import EthWithdrawalEvent
+from rotkehlchen.accounting.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator, ValidatorDailyStats
@@ -26,12 +27,22 @@ from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.eth2 import DBEth2
-from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
+from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Eth2PubKey, Location, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    ChainID,
+    Eth2PubKey,
+    EvmTransaction,
+    Location,
+    SupportedBlockchain,
+    Timestamp,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.misc import ts_now, ts_now_in_ms
 
 if TYPE_CHECKING:
@@ -834,3 +845,97 @@ def test_get_validators_to_query_for_withdrawals(database):
 
     result = db.get_validators_to_query_for_withdrawals(now_ms)
     assert result == [(1, 1), (2, 20), (3, 30)]
+
+
+def test_combine_block_with_tx_events(eth2, database):
+    """Small unit test to see the logic of the DB query to detect and modify eth2
+    mev reward events works"""
+    dbevents = DBHistoryEvents(database)
+    dbeth2 = DBEth2(database)
+    dbevmtx = DBEvmTx(database)
+    vindex1 = 45555
+    vindex1_address = string_to_evm_address('0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b')
+    mev_builder_address = string_to_evm_address('0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990')
+    block_number = 15824493
+    tx_hash = deserialize_evm_tx_hash('0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804')  # noqa: E501
+    mev_reward = FVal('0.126458404824519798')
+    timestampms = TimestampMS(1666693607000)
+
+    with database.user_write() as write_cursor:
+        dbeth2.add_validators(write_cursor, [
+            Eth2Validator(
+                index=vindex1,
+                public_key=Eth2PubKey('0xadd9843b2eb53ccaf5afb52abcc0a1322308832065v6fdfb162360ca53a71ebf8775dbebd0f1f1bf6c3e823d4bf2815f7'),  # noqa: E501
+                ownership_proportion=ONE,
+            ),
+        ])
+        database.add_blockchain_accounts(write_cursor, [BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=vindex1_address)])  # noqa: E501
+
+        dbevmtx.add_evm_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[EvmTransaction(
+                tx_hash=tx_hash,
+                chain_id=ChainID.ETHEREUM,
+                timestamp=Timestamp(1666693607),
+                block_number=block_number,
+                from_address=mev_builder_address,
+                to_address=vindex1_address,
+                value=126458404824519798,
+                gas=27500,
+                gas_price=9213569214,
+                gas_used=0,  # irrelevant
+                input_data=b'',  # irrelevant
+                nonce=16239,
+            )],
+            relevant_address=vindex1_address,
+        )
+
+        dbevents.add_history_events(write_cursor, [
+            EthBlockEvent(
+                validator_index=vindex1,
+                timestamp=timestampms,
+                balance=Balance(FVal('0.126419309459217215')),
+                fee_recipient=mev_builder_address,
+                block_number=block_number,
+                is_mev_reward=False,
+            ), EthBlockEvent(
+                validator_index=vindex1,
+                timestamp=timestampms,
+                balance=Balance(mev_reward),
+                fee_recipient=vindex1_address,
+                block_number=block_number,
+                is_mev_reward=True,
+            ), EvmEvent(
+                tx_hash=tx_hash,
+                sequence_index=0,
+                timestamp=timestampms,
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                balance=Balance(mev_reward),
+                location_label=vindex1_address,
+                notes=f'Received {mev_reward} ETH from {mev_builder_address}',
+            ),
+        ])
+
+    eth2.combine_block_with_tx_events()
+
+    with database.conn.read_ctx() as cursor:
+        events = dbevents.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True, False)  # noqa: E501
+
+    modified_event = EvmEvent(
+        identifier=3,
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestampms,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        balance=Balance(mev_reward),
+        location_label=vindex1_address,
+        notes=f'Received {mev_reward} ETH from {mev_builder_address} as mev reward for block {block_number}',  # noqa: E501
+        event_identifier=EthBlockEvent.form_event_identifier(block_number),
+    )
+    assert modified_event == events[2]  # pylint: disable=unsubscriptable-object

@@ -157,17 +157,6 @@ def deserialize_evm_tx_hash(val: Union[Web3HexBytes, bytearray, bytes, str]) -> 
     return EVMTxHash(HexBytes(val))
 
 
-def make_evm_tx_hash(val: bytes) -> EVMTxHash:
-    """Super lightweight wrapper initialize an EVMTxHash from bytes
-
-    No deserialization happens here
-
-    NB: Does not actually check that it's 32 bytes. This should happen at reading
-    data from outside such as in the marshmallow field validation
-    """
-    return EVMTxHash(HexBytes(val))
-
-
 T_BTCAddress = str
 BTCAddress = NewType('BTCAddress', T_BTCAddress)
 

@@ -20,7 +20,9 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
     wait_for_async_task_with_result,
 )
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
+from rotkehlchen.types import deserialize_evm_tx_hash
 
 
 @pytest.mark.skipif(
@@ -733,3 +735,100 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     assert len(totals['assets']) == 1
     assert len(totals['liabilities']) == 0
     assert FVal(totals['assets']['ETH2']['amount']) >= 2 * base_amount + amount_proportion
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
+@pytest.mark.freeze_time('2023-04-26 12:38:23 GMT')
+def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_server):
+    """Tests that combining mev rewards with block production events is seen by the API"""
+    vindex1 = 45555
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    tx_hash = deserialize_evm_tx_hash('0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804')  # noqa: E501
+    block_number = 15824493
+    mev_reward = '0.126458404824519798'
+
+    # add validator data and query transaction and decode events for a single MEV reward
+    response = requests.put(
+        url=api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ), json={'validator_index': vindex1},
+    )
+    assert_simple_ok_response(response)
+    _, _ = get_decoded_events_of_transaction(
+        evm_inquirer=rotki.chains_aggregator.ethereum.node_inquirer,
+        database=rotki.data.db,
+        tx_hash=tx_hash,
+    )
+
+    # query block production events. This also runs the combining code
+    response = requests.post(
+        url=api_url_for(
+            rotkehlchen_api_server,
+            'eventsonlinequeryresource',
+        ), json={'query_type': 'block_productions'},
+    )
+    assert_simple_ok_response(response)
+
+    # query rotki events and check they are as expected
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ),
+        json={'group_by_event_ids': True},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == result['entries_found'] == result['entries_total'] == 4
+    event_identifier = None
+    for entry in result['entries']:
+        if entry['entry']['block_number'] == block_number:
+            assert entry['grouped_events_num'] == 3
+            event_identifier = entry['entry']['event_identifier']
+        else:
+            assert entry['grouped_events_num'] == 2
+
+    # now query the events of the combined group
+    assert event_identifier is not None
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ),
+        json={'group_by_event_ids': False, 'event_identifiers': [event_identifier]},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == result['entries_found'] == 3
+    assert result['entries_total'] == 9
+    for outter_entry in result['entries']:
+        entry = outter_entry['entry']
+        if entry['sequence_index'] == 0:
+            assert entry['identifier'] == 8
+            assert entry['event_identifier'] == event_identifier
+            assert entry['entry_type'] == 'eth block event'
+            assert entry['event_type'] == 'staking'
+            assert entry['event_subtype'] == 'block production'
+            assert entry['validator_index'] == vindex1
+            assert entry['balance']['amount'] == '0.126419309459217215'
+        elif entry['sequence_index'] == 1:
+            assert entry['identifier'] == 9
+            assert entry['event_identifier'] == event_identifier
+            assert entry['entry_type'] == 'eth block event'
+            assert entry['event_type'] == 'staking'
+            assert entry['event_subtype'] == 'mev reward'
+            assert entry['validator_index'] == vindex1
+            assert entry['balance']['amount'] == mev_reward
+        elif entry['sequence_index'] == 2:
+            assert entry['identifier'] == 1
+            assert entry['event_identifier'] == event_identifier
+            assert entry['entry_type'] == 'evm event'
+            assert entry['balance']['amount'] == mev_reward
+            assert entry['tx_hash'] == tx_hash.hex()  # pylint: disable=no-member
+            assert entry['notes'] == f'Receive {mev_reward} ETH from 0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990 as mev reward for block {block_number}'  # noqa: E501
+        else:
+            raise AssertionError('Should not get to this sequence index')
