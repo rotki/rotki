@@ -74,12 +74,15 @@ export const useTaskStore = defineStore('tasks', () => {
     update[task.id] = task;
     set(tasks, { ...get(tasks), ...update });
   };
+
   const lock = (taskId: number): void => {
     set(locked, [...get(locked), taskId]);
   };
+
   const unlock = (taskId: number): void => {
     set(locked, unlockTask(locked, taskId));
   };
+
   const remove = (taskId: number): void => {
     const remainingTasks = { ...get(tasks) };
     delete remainingTasks[taskId];
@@ -123,11 +126,11 @@ export const useTaskStore = defineStore('tasks', () => {
 
   const taskList = computed(() => toArray(get(tasks)));
 
-  function addTask<M extends TaskMeta>(
+  const addTask = <M extends TaskMeta>(
     id: number,
     type: TaskType,
     meta: M
-  ): void {
+  ): void => {
     assert(
       !(id === null || id === undefined),
       `missing id for ${TaskType[type]} with ${JSON.stringify(meta)}`
@@ -139,14 +142,14 @@ export const useTaskStore = defineStore('tasks', () => {
       meta,
       time: dayjs().valueOf()
     });
-  }
+  };
 
-  async function awaitTask<R, M extends TaskMeta>(
+  const awaitTask = async <R, M extends TaskMeta>(
     id: number,
     type: TaskType,
     meta: M,
     nonUnique = false
-  ): Promise<TaskResponse<R, M>> {
+  ): Promise<TaskResponse<R, M>> => {
     addTask(id, type, meta);
 
     return new Promise<TaskResponse<R, M>>((resolve, reject) => {
@@ -159,7 +162,8 @@ export const useTaskStore = defineStore('tasks', () => {
             let errorMessage: string;
             if (message) {
               errorMessage = message;
-              if (checkIfDevelopment()) {
+              /* c8 ignore next 5 */
+              if (checkIfDevelopment() && !import.meta.env.VITE_TEST) {
                 errorMessage += `::dev_only_msg_part:: task_id: ${id}, task_type: ${
                   TaskType[type]
                 }, meta: ${JSON.stringify(meta)}`;
@@ -179,26 +183,33 @@ export const useTaskStore = defineStore('tasks', () => {
         nonUnique ? id.toString() : undefined
       );
     });
-  }
+  };
 
-  function filterOutUnprocessable(taskIds: number[]): number[] {
+  const filterTasks = (
+    taskIds: number[]
+  ): {
+    ready: number[];
+    unknown: number[];
+  } => {
     const lockedTasks = get(locked);
     const pendingTasks = get(tasks);
-    return taskIds.filter(
-      id =>
-        !lockedTasks.includes(id) &&
-        pendingTasks[id] &&
-        pendingTasks[id].id !== null
-    );
-  }
+    return {
+      ready: taskIds.filter(
+        id =>
+          !lockedTasks.includes(id) &&
+          pendingTasks[id] &&
+          pendingTasks[id].id !== null
+      ),
+      unknown: taskIds.filter(
+        id => !lockedTasks.includes(id) && !pendingTasks[id]
+      )
+    };
+  };
 
-  async function handleTasks(
-    ids: number[]
-  ): Promise<PromiseSettledResult<void>[]> {
-    return Promise.allSettled(ids.map(id => processTask(get(tasks)[id])));
-  }
-
-  function handleResult(result: ActionResult<any>, task: Task<TaskMeta>): void {
+  const handleResult = (
+    result: ActionResult<any>,
+    task: Task<TaskMeta>
+  ): void => {
     if (task.meta.ignoreResult) {
       remove(task.id);
       return;
@@ -206,27 +217,19 @@ export const useTaskStore = defineStore('tasks', () => {
 
     const handler = handlers[task.type] ?? handlers[`${task.type}-${task.id}`];
 
-    if (!handler) {
+    if (handler) {
+      handler(result, task.meta);
+      /* c8 ignore next 5 */
+    } else {
       logger.warn(
         `missing handler for ${TaskType[task.type]} with id ${task.id}`
       );
-      remove(task.id);
-      return;
     }
 
-    try {
-      handler(result, task.meta);
-    } catch (e: any) {
-      handler(error(task, e.message), task.meta);
-      logger.error(
-        `Error while running task ${TaskType[task.type]} with id ${task.id}`,
-        e
-      );
-    }
     remove(task.id);
-  }
+  };
 
-  async function processTask(task: Task<TaskMeta>): Promise<void> {
+  const processTask = async (task: Task<TaskMeta>): Promise<void> => {
     lock(task.id);
 
     try {
@@ -243,7 +246,27 @@ export const useTaskStore = defineStore('tasks', () => {
       }
     }
     unlock(task.id);
-  }
+  };
+
+  const handleTasks = async (
+    ids: number[]
+  ): Promise<PromiseSettledResult<void>[]> => {
+    const taskMap = get(tasks);
+    return Promise.allSettled(ids.map(id => processTask(taskMap[id])));
+  };
+
+  const consumeUnknownTasks = async (ids: number[]): Promise<void> => {
+    if (ids.length === 0) {
+      return;
+    }
+    logger.warn(
+      `the following task ids where not known to the frontend ${ids.join(', ')}`
+    );
+
+    for (const id of ids) {
+      await api.queryTaskResult(id);
+    }
+  };
 
   const monitor = async (): Promise<void> => {
     if (!get(hasRunningTasks) || isRunning) {
@@ -253,7 +276,9 @@ export const useTaskStore = defineStore('tasks', () => {
     isRunning = true;
     try {
       const { completed } = await api.queryTasks();
-      await handleTasks(filterOutUnprocessable(completed));
+      const { ready, unknown } = filterTasks(completed);
+      await handleTasks(ready);
+      await consumeUnknownTasks(unknown);
     } catch (e: any) {
       logger.error(e);
     }
@@ -267,8 +292,6 @@ export const useTaskStore = defineStore('tasks', () => {
     locked,
     add,
     remove,
-    lock,
-    unlock,
     isTaskRunning,
     hasRunningTasks,
     metadata,
