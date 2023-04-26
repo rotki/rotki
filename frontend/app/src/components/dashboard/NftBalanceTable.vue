@@ -35,7 +35,7 @@ const {
   setOptions
 } = usePaginationFilters<NonFungibleBalance>(
   null,
-  true,
+  false,
   useEmptyFilter,
   fetchNonFungibleBalances,
   {
@@ -46,8 +46,7 @@ const {
     defaultSortBy: {
       key: 'name',
       ascending: [true]
-    },
-    sectionHash: '#nft-balance-table-section'
+    }
   }
 );
 
