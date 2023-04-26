@@ -8,11 +8,9 @@ import { type NonFungibleBalance } from '@/types/nfbalances';
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
 
-const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>('exclude');
+const ignoredAssetsHandling: IgnoredAssetsHandlingType = 'exclude';
 
-const extraParams = computed(() => ({
-  ignoredAssetsHandling: get(ignoredAssetsHandling)
-}));
+const extraParams = computed(() => ({ ignoredAssetsHandling }));
 
 const nonFungibleRoute = Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE;
 
@@ -39,9 +37,6 @@ const {
   useEmptyFilter,
   fetchNonFungibleBalances,
   {
-    onUpdateFilters() {
-      set(ignoredAssetsHandling, 'exclude');
-    },
     extraParams,
     defaultSortBy: {
       key: 'name',
