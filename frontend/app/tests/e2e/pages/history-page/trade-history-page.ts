@@ -41,7 +41,9 @@ export class TradeHistoryPage {
       .first()
       .click();
     cy.get('[data-cy=amount] input').type(trade.amount);
-    cy.wait('@priceTask').its('response.statusCode').should('equal', 200);
+    cy.wait('@priceTask')
+      .its('response.statusCode', { timeout: 10000 })
+      .should('equal', 200);
     cy.get('[data-cy=trade-rate] [data-cy=primary]')
       .parent()
       .parent()

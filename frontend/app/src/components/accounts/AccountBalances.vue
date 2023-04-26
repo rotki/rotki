@@ -7,6 +7,8 @@ import {
   type BlockchainAccountWithBalance,
   type XpubPayload
 } from '@/types/blockchain/accounts';
+import { Section } from '@/types/status';
+import { chainSection } from '@/types/blockchain';
 
 const props = withDefaults(
   defineProps<{
@@ -24,7 +26,7 @@ const emit = defineEmits<{
   (e: 'edit-account', account: BlockchainAccountWithBalance): void;
 }>();
 
-const { blockchain } = toRefs(props);
+const { blockchain, loopring } = toRefs(props);
 
 const selectedAddresses = ref<string[]>([]);
 const visibleTags = ref<string[]>([]);
@@ -32,14 +34,10 @@ const editedAccount = ref<string>('');
 const balanceTable = ref<any>(null);
 
 const { isTaskRunning } = useTaskStore();
-const { refreshBlockchainBalances } = useRefresh(blockchain);
+const { handleBlockchainRefresh } = useRefresh(blockchain);
 const { detectTokensOfAllAddresses, detectingTokens } =
   useTokenDetection(blockchain);
 const { show } = useConfirmStore();
-
-const redetectAllTokens = async () => {
-  await detectTokensOfAllAddresses();
-};
 
 const { tc } = useI18n();
 
@@ -51,7 +49,7 @@ const hasTokenDetection = computed<boolean>(() =>
 
 const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 
-const isLoading = computed<boolean>(() => {
+const isAnyBalancesFetching = computed<boolean>(() => {
   if (!get(isEth2)) {
     return get(isQueryingBlockchain);
   }
@@ -65,6 +63,13 @@ const operationRunning = computed<boolean>(
     get(isTaskRunning(TaskType.ADD_ACCOUNT)) ||
     get(isTaskRunning(TaskType.REMOVE_ACCOUNT))
 );
+
+const section = computed<Section>(() =>
+  get(loopring) ? Section.L2_LOOPRING_BALANCES : chainSection[get(blockchain)]
+);
+
+const { isLoading } = useStatusStore();
+const isSectionLoading = isLoading(get(section));
 
 const editAccount = (account: BlockchainAccountWithBalance) => {
   set(editedAccount, account.address);
@@ -129,10 +134,17 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
         <v-col cols="auto">
           <refresh-button
             class="account-balances__refresh"
-            :loading="isLoading"
+            :loading="isSectionLoading || detectingTokens"
             :tooltip="tc('account_balances.refresh_tooltip', 0, { blockchain })"
-            @refresh="refreshBlockchainBalances"
+            @refresh="handleBlockchainRefresh"
           />
+        </v-col>
+        <v-col cols="auto">
+          <summary-card-refresh-menu v-if="hasTokenDetection">
+            <template #refreshMenu>
+              <blockchain-balance-refresh-behaviour-menu />
+            </template>
+          </summary-card-refresh-menu>
         </v-col>
         <v-col class="ps-2">
           <card-title>{{ title }}</card-title>
@@ -151,7 +163,7 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
                   text
                   outlined
                   :disabled="
-                    isLoading ||
+                    isAnyBalancesFetching ||
                     operationRunning ||
                     selectedAddresses.length === 0
                   "
@@ -171,9 +183,9 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
                 text
                 outlined
                 :loading="detectingTokens"
-                :disabled="detectingTokens || isLoading"
+                :disabled="detectingTokens || isSectionLoading"
                 v-on="on"
-                @click="redetectAllTokens"
+                @click="detectTokensOfAllAddresses"
               >
                 <v-icon class="mr-2">mdi-refresh</v-icon>
                 {{ tc('account_balances.detect_tokens.tooltip.redetect') }}

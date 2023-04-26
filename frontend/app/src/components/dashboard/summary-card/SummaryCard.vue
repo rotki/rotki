@@ -39,13 +39,25 @@ const slots = useSlots();
         </navigator-link>
       </card-title>
       <v-spacer />
-      <div>
-        <summary-card-refresh-menu
-          :name="name"
-          :can-refresh="canRefresh"
-          :is-loading="isLoading"
-          @refresh="refresh(name)"
-        >
+      <div class="d-flex align-center">
+        <v-tooltip v-if="canRefresh" bottom max-width="300px">
+          <template #activator="{ on: tooltipOn }">
+            <v-btn
+              icon
+              small
+              :disabled="isLoading"
+              color="primary"
+              @click="refresh(name)"
+              v-on="tooltipOn"
+            >
+              <v-icon small color="primary">mdi-refresh</v-icon>
+            </v-btn>
+          </template>
+          <span>
+            {{ t('summary_card.refresh_tooltip', { name }) }}
+          </span>
+        </v-tooltip>
+        <summary-card-refresh-menu>
           <template v-if="slots.refreshMenu" #refreshMenu>
             <slot name="refreshMenu" />
           </template>

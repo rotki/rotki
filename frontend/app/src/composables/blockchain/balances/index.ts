@@ -23,13 +23,14 @@ export const useBlockchainBalances = () => {
 
   const fetch = async (
     blockchain: Blockchain,
-    ignoreCache = false
+    ignoreCache = false,
+    force = false
   ): Promise<void> => {
     const { loading, setStatus, resetStatus, isFirstLoad } = useStatusUpdater(
       chainSection[blockchain]
     );
 
-    if (loading()) {
+    if (loading() && !force) {
       return;
     }
 
@@ -72,7 +73,8 @@ export const useBlockchainBalances = () => {
   const fetchBlockchainBalances = async (
     payload: BlockchainBalancePayload = {
       ignoreCache: false
-    }
+    },
+    force = false
   ): Promise<void> => {
     const { blockchain, ignoreCache } = payload;
 
@@ -84,7 +86,9 @@ export const useBlockchainBalances = () => {
     }
 
     try {
-      await Promise.allSettled(chains.map(chain => fetch(chain, ignoreCache)));
+      await Promise.allSettled(
+        chains.map(chain => fetch(chain, ignoreCache, force))
+      );
     } catch (e: any) {
       logger.error(e);
       const message = tc('actions.balances.blockchain.error.description', 0, {
