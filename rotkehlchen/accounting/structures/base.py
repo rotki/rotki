@@ -2,7 +2,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 from collections.abc import Iterator
 from dataclasses import dataclass
-from enum import Enum, auto
+from enum import auto
 from typing import TYPE_CHECKING, Any, Optional, TypedDict, TypeVar
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
@@ -21,6 +21,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec, ts_sec_to_ms
+from rotkehlchen.utils.mixins.enums import DBIntEnumMixIn
 
 from .balance import Balance
 
@@ -63,16 +64,12 @@ HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
 ]
 
 
-class HistoryBaseEntryType(Enum):
+class HistoryBaseEntryType(DBIntEnumMixIn):
     """Type of a history entry. Value(int) is written/read into/from the DB"""
     HISTORY_EVENT = auto()
     EVM_EVENT = auto()
     ETH_WITHDRAWAL_EVENT = auto()
     ETH_BLOCK_EVENT = auto()
-
-    def serialize_for_api(self) -> str:
-        """Serializes the entry type for use in the API"""
-        return ' '.join(word.lower() for word in self.name.split('_'))  # pylint: disable=no-member
 
 
 class HistoryBaseEntryData(TypedDict):
@@ -206,7 +203,7 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
         """Serialize the event alone for api"""
         return {
             'identifier': self.identifier,
-            'entry_type': self.entry_type.serialize_for_api(),
+            'entry_type': self.entry_type.serialize(),
             'event_identifier': self.event_identifier,
             'sequence_index': self.sequence_index,
             'timestamp': ts_ms_to_sec(self.timestamp),  # serialize to api in seconds MS

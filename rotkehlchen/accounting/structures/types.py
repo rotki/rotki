@@ -2,8 +2,7 @@ from enum import auto
 from typing import Optional, get_args
 
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn, SerializableEnumNameMixin
 
 EVM_EVENT_FIELDS = tuple[
     bytes,          # tx_hash
@@ -44,7 +43,7 @@ EVM_EVENT_DB_TUPLE_READ = tuple[
 ]
 
 
-class ActionType(DBEnumMixIn):
+class ActionType(DBCharEnumMixIn):
     TRADE = 1
     ASSET_MOVEMENT = 2
     EVM_TRANSACTION = 3
@@ -61,7 +60,7 @@ class ActionType(DBEnumMixIn):
             raise DeserializationError(f'Failed to deserialize {cls.__name__} value {value}') from e  # noqa: E501
 
 
-class HistoryEventType(SerializableEnumMixin):
+class HistoryEventType(SerializableEnumNameMixin):
     TRADE = 0
     STAKING = auto()
     DEPOSIT = auto()
@@ -79,7 +78,7 @@ class HistoryEventType(SerializableEnumMixin):
     RENEW = auto()
 
 
-class HistoryEventSubType(SerializableEnumMixin):
+class HistoryEventSubType(SerializableEnumNameMixin):
     REWARD = 0
     DEPOSIT_ASSET = auto()  # deposit asset in a contract, for staking etc.
     REMOVE_ASSET = auto()  # remove asset from a contract. from staking etc.

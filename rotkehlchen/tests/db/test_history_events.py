@@ -1,5 +1,5 @@
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, HistoryEvent
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.constants.assets import A_ETH
@@ -121,15 +121,15 @@ def test_read_write_events_from_db(database):
             )
 
     with db.db.conn.read_ctx() as cursor:
-        for query_fn, filter_query, limit_to_entry_type in (
-                (db.get_all_history_events, HistoryEventFilterQuery, False),
-                (db.get_history_events, HistoryEventFilterQuery, True),
-                (db.get_history_events, EvmEventFilterQuery, True),
+        for query_fn, filter_query, entry_types in (
+                (db.get_all_history_events, HistoryEventFilterQuery, None),
+                (db.get_history_events, HistoryEventFilterQuery, [HistoryBaseEntryType.HISTORY_EVENT]),  # noqa: E501
+                (db.get_history_events, EvmEventFilterQuery, [HistoryBaseEntryType.EVM_EVENT]),  # noqa: E501
         ):
             if query_fn == db.get_all_history_events:
-                all_events = query_fn(cursor, filter_query.make(limit_to_entry_type=limit_to_entry_type), True, False)  # noqa: E501
+                all_events = query_fn(cursor, filter_query.make(entry_types=entry_types), True, False)  # noqa: E501
             else:
-                all_events = query_fn(cursor, filter_query.make(limit_to_entry_type=limit_to_entry_type), True)  # noqa: E501
+                all_events = query_fn(cursor, filter_query.make(entry_types=entry_types), True)  # noqa: E501
             for event in all_events:
                 if isinstance(event, HistoryEvent):
                     data_entry = history_data[event.identifier]

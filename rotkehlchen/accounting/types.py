@@ -7,11 +7,11 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Timestamp
-from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
+from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 
-class SchemaEventType(DBEnumMixIn):
+class SchemaEventType(DBCharEnumMixIn):
     """Supported Event Type schemas
 
     Keeping it as this for now since we may experiment with a different schemas

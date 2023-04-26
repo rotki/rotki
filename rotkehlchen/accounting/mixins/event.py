@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.types import Timestamp
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.accounting.structures.types import ActionType
 
 
-class AccountingEventType(SerializableEnumMixin):
+class AccountingEventType(SerializableEnumNameMixin):
     TRADE = auto()
     FEE = auto()
     ASSET_MOVEMENT = auto()

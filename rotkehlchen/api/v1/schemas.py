@@ -11,6 +11,7 @@ from marshmallow.exceptions import ValidationError
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
+from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import (
     ActionType,
@@ -100,7 +101,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import create_order_by_rules_list, ts_now
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 from .fields import (
     AmountField,
@@ -523,7 +524,7 @@ class BaseStakingQuerySchema(
             event_subtypes=query_event_subtypes,
             exclude_subtypes=exclude_event_subtypes,
             assets=asset_list,
-            limit_to_entry_type=True,
+            entry_types=[HistoryBaseEntryType.HISTORY_EVENT],
         )
 
         value_filter = HistoryEventFilterQuery.make(
@@ -536,7 +537,7 @@ class BaseStakingQuerySchema(
             event_subtypes=value_event_subtypes,
             order_by_rules=None,
             assets=asset_list,
-            limit_to_entry_type=True,
+            entry_types=[HistoryBaseEntryType.HISTORY_EVENT],
         )
 
         return {
@@ -609,6 +610,10 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
     location = SerializableEnumField(Location, load_default=None)
     location_labels = DelimitedOrNormalList(fields.String(), load_default=None)
     asset = AssetField(expected_type=CryptoAsset, load_default=None)
+    entry_types = DelimitedOrNormalList(
+        SerializableEnumField(enum_class=HistoryBaseEntryType),
+        load_default=None,
+    )
 
     # EvmEvent only
     tx_hashes = DelimitedOrNormalList(EVMTransactionHashField(), load_default=None)
@@ -635,14 +640,6 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
                 field_name='order_by_attributes',
             )
 
-        for attribute in ('counterparties', 'products', 'event_types', 'event_subtypes', 'event_identifiers', 'tx_hashes'):  # noqa: E501
-            value = data[attribute]
-            if value is not None and len(value) == 0:
-                raise ValidationError(
-                    message=f'{attribute} have to be either not passed or contain at least one item',  # noqa: E501
-                    field_name=attribute,
-                )
-
     @post_load
     def make_history_event_filter(
             self,
@@ -661,6 +658,7 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
             ),
             'limit': data['limit'],
             'offset': data['offset'],
+            'entry_types': data['entry_types'],
             'from_ts': data['from_timestamp'],
             'to_ts': data['to_timestamp'],
             'exclude_ignored_assets': data['exclude_ignored_assets'],
@@ -1983,7 +1981,7 @@ class CryptoAssetSchema(BaseCryptoAssetSchema):
         _validate_single_oracle_id(data, 'cryptocompare', self.cryptocompare_obj)
 
 
-class IgnoredAssetsHandling(SerializableEnumMixin):
+class IgnoredAssetsHandling(SerializableEnumNameMixin):
     NONE = auto()
     EXCLUDE = auto()
     SHOW_ONLY = auto()

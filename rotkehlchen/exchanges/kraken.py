@@ -19,6 +19,7 @@ from requests import Response
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import (
+    HistoryBaseEntryType,
     HistoryEvent,
     HistoryEventSubType,
     HistoryEventType,
@@ -69,8 +70,8 @@ from rotkehlchen.types import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import pairwise, ts_ms_to_sec, ts_now
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
+from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -273,7 +274,7 @@ def _check_and_get_response(response: Response, method: str) -> Union[str, dict]
     return result
 
 
-class KrakenAccountType(SerializableEnumMixin):
+class KrakenAccountType(SerializableEnumNameMixin):
     STARTER = 0
     INTERMEDIATE = 1
     PRO = 2
@@ -681,7 +682,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 ],
                 location=Location.KRAKEN,
                 location_labels=[self.name],
-                limit_to_entry_type=True,
+                entry_types=[HistoryBaseEntryType.HISTORY_EVENT],
             )
             trades_raw = self.history_events_db.get_history_events(
                 cursor=cursor,
@@ -727,7 +728,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 ],
                 location=Location.KRAKEN,
                 location_labels=[self.name],
-                limit_to_entry_type=True,
+                entry_types=[HistoryBaseEntryType.HISTORY_EVENT],
             )
             events = self.history_events_db.get_history_events(
                 cursor=cursor,

@@ -2,13 +2,13 @@ from enum import auto
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.opensea import NFT
 
 
-class NftLpHandling(SerializableEnumMixin):
+class NftLpHandling(SerializableEnumNameMixin):
     ALL_NFTS = auto()
     ONLY_LPS = auto()
     EXCLUDE_LPS = auto()

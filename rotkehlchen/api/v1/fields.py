@@ -54,7 +54,13 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+from rotkehlchen.utils.mixins.enums import (
+    DBCharEnumMixIn,
+    DBIntEnumMixIn,
+    SerializableEnumIntValueMixin,
+    SerializableEnumMixin,
+    SerializableEnumNameMixin,
+)
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -66,6 +72,8 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
     Essentially accepting either a delimited string or a list-like object
 
     We introduce it due to them implementing https://github.com/marshmallow-code/webargs/issues/423
+
+    We also enforce the len(list) != 0 rule here.
     """
 
     def __init__(
@@ -100,6 +108,10 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
             )
         except AttributeError as e:
             raise self.make_error('invalid') from e
+
+        if len(value) == 0:
+            raise ValidationError('List cant be empty')
+
         # purposefully skip the superclass here
         return fields.List._deserialize(self, ret, attr, data, **kwargs)  # pylint: disable=bad-super-call  # noqa: E501
 
@@ -336,8 +348,13 @@ class BlockchainField(fields.Field):
 
 
 class SerializableEnumField(fields.Field):
-
-    def __init__(self, enum_class: type[SerializableEnumMixin], **kwargs: Any) -> None:
+    """A field that takes an enum following the SerializableEnumMixin interface
+    """
+    def __init__(self, enum_class: Union[type[SerializableEnumNameMixin], type[SerializableEnumIntValueMixin], type[DBCharEnumMixIn], type[DBIntEnumMixIn]], **kwargs: Any) -> None:  # noqa: E501
+        """We give all possible types as unions instead of just type[SerializableEnumMixin]
+        due to this bug https://github.com/python/mypy/issues/4717
+        Normally it should have sufficed to give just the former.
+        """
         self.enum_class = enum_class
         super().__init__(**kwargs)
 

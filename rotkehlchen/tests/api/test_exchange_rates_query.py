@@ -23,7 +23,7 @@ def test_querying_exchange_rates(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Empty list of currencies provided',
+        contained_in_msg='"currencies": ["List cant be empty"]',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

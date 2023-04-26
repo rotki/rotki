@@ -1,13 +1,13 @@
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from rotkehlchen.types import ChainID, EvmTokenKind
-from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
+from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 
 if TYPE_CHECKING:
     from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 
-class AssetType(DBEnumMixIn):
+class AssetType(DBCharEnumMixIn):
     FIAT = 1
     OWN_CHAIN = 2
     EVM_TOKEN = 3

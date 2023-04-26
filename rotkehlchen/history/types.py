@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, NamedTuple, Union
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.types import OracleSource, Price, Timestamp
-from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
+from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 
 from .deserialization import deserialize_price
 
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 HistoricalPriceOracleInstance = Union['Coingecko', 'Cryptocompare', 'ManualPriceOracle', 'Defillama']  # noqa: E501
 
 
-class HistoricalPriceOracle(DBEnumMixIn, OracleSource):
+class HistoricalPriceOracle(DBCharEnumMixIn, OracleSource):
     """Supported oracles for querying historical prices"""
     MANUAL = 1
     COINGECKO = 2
