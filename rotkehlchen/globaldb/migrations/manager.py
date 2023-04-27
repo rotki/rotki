@@ -1,5 +1,6 @@
 import logging
 import sqlite3
+import traceback
 from typing import TYPE_CHECKING, Callable, NamedTuple
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -40,8 +41,9 @@ def maybe_apply_globaldb_migrations(connection: 'DBConnection') -> None:
             try:
                 migration.function(connection)
             except BaseException as e:
+                stacktrace = traceback.format_exc()
                 error = f'Failed to run globaldb soft data migration to version {migration.version} due to {str(e)}'  # noqa: E501
-                log.error(error)
+                log.error(f'{error}\n{stacktrace}')
                 break
 
             current_migration += 1
