@@ -16,9 +16,16 @@ const noTokens = (): EthDetectedTokensInfo => ({
   timestamp: null
 });
 
+type Tokens = Record<TokenChains, EvmTokensRecord>;
+
+const defaultTokens = (): Tokens => ({
+  ETH: {},
+  OPTIMISM: {}
+});
+
 export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
-  const ethTokens: Ref<EvmTokensRecord> = ref({});
-  const optimismTokens: Ref<EvmTokensRecord> = ref({});
+  const tokensState: Ref<Tokens> = ref(defaultTokens());
+
   const shouldRefreshBalances: Ref<boolean> = ref(true);
 
   const { isAssetIgnored } = useIgnoredAssetsStore();
@@ -40,14 +47,13 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   };
 
   const setState = (chain: TokenChains, data: EvmTokensRecord) => {
-    const states = {
-      [Blockchain.ETH]: ethTokens,
-      [Blockchain.OPTIMISM]: optimismTokens
-    };
-
-    set(states[chain], {
-      ...get(states[chain]),
-      ...data
+    const tokensVal = { ...get(tokensState) };
+    set(tokensState, {
+      ...tokensVal,
+      [chain]: {
+        ...tokensVal[chain],
+        ...data
+      }
     });
   };
 
@@ -102,9 +108,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
       if (!isTokenChain(blockchain)) {
         return noTokens();
       }
-      const sourceTokens =
-        blockchain === Blockchain.OPTIMISM ? optimismTokens : ethTokens;
-      const detected = get(sourceTokens);
+      const detected = get(tokensState)[blockchain];
       const addr = get(address);
       const info = (addr && detected?.[addr]) || null;
       if (!info) {
@@ -143,13 +147,10 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   });
   watch(isEthDetecting, async (isDetecting, wasDetecting) => {
     if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
-      await fetchBlockchainBalances(
-        {
-          blockchain: Blockchain.ETH,
-          ignoreCache: true
-        },
-        true
-      );
+      await fetchBlockchainBalances({
+        blockchain: Blockchain.ETH,
+        ignoreCache: true
+      });
     }
   });
 
@@ -158,13 +159,10 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   });
   watch(isOptimismDetecting, async (isDetecting, wasDetecting) => {
     if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
-      await fetchBlockchainBalances(
-        {
-          blockchain: Blockchain.OPTIMISM,
-          ignoreCache: true
-        },
-        true
-      );
+      await fetchBlockchainBalances({
+        blockchain: Blockchain.OPTIMISM,
+        ignoreCache: true
+      });
     }
   });
 
