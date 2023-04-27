@@ -82,10 +82,10 @@ class EventsHistorian:
         self.dateformat = db_settings.date_display_format
         self.datelocaltime = db_settings.display_date_in_localtime
 
-    def _increase_progress(self, step: int, total_steps: int) -> int:
+    def _increase_progress(self, step: int, total_steps: int, step_by: int = 1) -> int:
         """Counts the progress for querying history. When transmitted to the frontend
         this accounts for 50% of the PnL process"""
-        step += 1
+        step += step_by
         self.progress = FVal(step / total_steps) * 100
         return step
 
@@ -346,7 +346,6 @@ class EventsHistorian:
             self.processing_state_name = state_name
 
         for exchange in self.exchange_manager.iterate_exchanges():
-            step_before = step
             self.processing_state_name = f'Querying {exchange.name} exchange history'
             exchange.query_history_with_callbacks(
                 # We need to have history of exchanges since before the range
@@ -355,8 +354,8 @@ class EventsHistorian:
                 fail_callback=fail_history_cb,
                 new_step_data=(new_step_cb, exchange.name),
             )
-            step = self._increase_progress(step, total_steps)
-            step = step_before + STEPS_PER_CEX  # Make sure remote failures don't throw steps off
+            # each exchange instance executes STEPS_PER_CEX steps out of the total_steps
+            step = self._increase_progress(step, total_steps, step_by=STEPS_PER_CEX)
 
         # Query all trades, asset movements and margin positions from the DB for all
         # possible locations.

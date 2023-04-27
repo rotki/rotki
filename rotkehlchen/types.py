@@ -576,7 +576,7 @@ class Location(DBCharEnumMixIn):
     def to_chain_id(self) -> int:
         """EVMLocation to chain id
 
-        Dealing directly with ints since it's only used in one place and helps with import hell
+        Dealing directly with ints since it's used as integers mostly and helps with import hell
         """
         assert self in EVM_LOCATIONS
         if self == Location.ETHEREUM:
