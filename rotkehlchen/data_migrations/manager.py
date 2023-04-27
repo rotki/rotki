@@ -1,4 +1,5 @@
 import logging
+import traceback
 from typing import TYPE_CHECKING, Callable, NamedTuple
 
 from rotkehlchen.data_migrations.migrations.migration_1 import data_migration_1
@@ -71,8 +72,10 @@ class DataMigrationManager:
         try:
             migration.function(self.rotki, self.progress_handler)
         except BaseException as e:
+            stacktrace = traceback.format_exc()
             error = f'Failed to run soft data migration to version {migration.version} due to {str(e)}'  # noqa: E501
             self.rotki.msg_aggregator.add_error(error)
+            log.error(f'{error}\n{stacktrace}')
             return False
 
         return True
