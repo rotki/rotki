@@ -37,15 +37,17 @@ export const useRefresh = (blockchain?: MaybeRef<Blockchain>) => {
   const handleBlockchainRefresh = async () => {
     const chain = get(blockchain);
     const behaviour = get(blockchainRefreshButtonBehaviour);
-    if (
-      !chain &&
-      behaviour === BlockchainRefreshButtonBehaviour.REDETECT_TOKENS
-    ) {
+    if (behaviour === BlockchainRefreshButtonBehaviour.REDETECT_TOKENS) {
+      const promises = [];
+      if (!chain || chain === Blockchain.ETH) {
+        promises.push(detectTokensOfAllEthAddresses());
+      }
+      if (!chain || chain === Blockchain.OPTIMISM) {
+        promises.push(detectTokensOfAllOptimismAddresses());
+      }
+
       set(shouldRefreshBalances, false);
-      await Promise.all([
-        detectTokensOfAllEthAddresses(),
-        detectTokensOfAllOptimismAddresses()
-      ]);
+      await Promise.all(promises);
       set(shouldRefreshBalances, true);
     }
 
@@ -62,6 +64,7 @@ export const useRefresh = (blockchain?: MaybeRef<Blockchain>) => {
 
   return {
     refreshBlockchainBalances,
+    handleBlockchainRefresh,
     refreshBalance
   };
 };

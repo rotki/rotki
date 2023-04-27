@@ -21,17 +21,13 @@ export const useBlockchainBalances = () => {
   const { fetchEnsNames } = useAddressesNamesStore();
   const { tc } = useI18n();
 
-  const fetch = async (
+  const handleFetch = async (
     blockchain: Blockchain,
     ignoreCache = false
   ): Promise<void> => {
-    const { loading, setStatus, resetStatus, isFirstLoad } = useStatusUpdater(
+    const { setStatus, resetStatus, isFirstLoad } = useStatusUpdater(
       chainSection[blockchain]
     );
-
-    if (loading()) {
-      return;
-    }
 
     try {
       setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING);
@@ -69,22 +65,43 @@ export const useBlockchainBalances = () => {
     }
   };
 
+  const fetch = async (
+    blockchain: Blockchain,
+    ignoreCache = false,
+    periodic = false
+  ): Promise<void> => {
+    const { isLoading } = useStatusStore();
+    const loading = isLoading(chainSection[blockchain]);
+
+    const call = () => handleFetch(blockchain, ignoreCache);
+
+    if (get(loading)) {
+      if (periodic) {
+        return;
+      }
+
+      await until(loading).toBe(false);
+    }
+
+    await call();
+  };
+
   const fetchBlockchainBalances = async (
     payload: BlockchainBalancePayload = {
       ignoreCache: false
-    }
+    },
+    periodic = false
   ): Promise<void> => {
     const { blockchain, ignoreCache } = payload;
 
-    const chains: Blockchain[] = [];
-    if (!blockchain) {
-      chains.push(...Object.values(Blockchain));
-    } else {
-      chains.push(blockchain);
-    }
+    const chains: Blockchain[] = blockchain
+      ? [blockchain]
+      : Object.values(Blockchain);
 
     try {
-      await Promise.allSettled(chains.map(chain => fetch(chain, ignoreCache)));
+      await Promise.allSettled(
+        chains.map(chain => fetch(chain, ignoreCache, periodic))
+      );
     } catch (e: any) {
       logger.error(e);
       const message = tc('actions.balances.blockchain.error.description', 0, {

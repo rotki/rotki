@@ -11,17 +11,23 @@ defineProps({
     type: Object as PropType<VueConstructor>,
     default: null
   },
-  active: { required: false, type: Boolean, default: false }
+  active: { required: false, type: Boolean, default: false },
+  subMenu: { required: false, type: Boolean, default: false }
 });
 
 const { dark } = useTheme();
+
+const css = useCssModule();
 </script>
 
 <template>
   <div class="d-flex flex-grow-1">
     <v-tooltip v-if="showTooltips" right>
       <template #activator="{ on }">
-        <v-list-item-icon class="my-3 mr-4" v-on="on">
+        <v-list-item-icon
+          :class="subMenu ? 'my-2 mr-2' : 'my-3 mr-3'"
+          v-on="on"
+        >
           <v-img
             v-if="image"
             contain
@@ -29,8 +35,8 @@ const { dark } = useTheme();
             :src="image"
             class="nav-icon"
             :class="{
-              [$style.image]: true,
-              [$style['image--inverted']]: dark
+              [css.image]: true,
+              [css['image--inverted']]: dark
             }"
           />
           <component
@@ -43,7 +49,7 @@ const { dark } = useTheme();
       </template>
       <span>{{ text }}</span>
     </v-tooltip>
-    <v-list-item-icon v-else class="my-3 mr-4">
+    <v-list-item-icon v-else :class="subMenu ? 'my-2 mr-2' : 'my-3 mr-3'">
       <v-img
         v-if="image"
         contain
@@ -51,8 +57,8 @@ const { dark } = useTheme();
         :src="image"
         class="nav-icon"
         :class="{
-          [$style.image]: true,
-          [$style['image--inverted']]: dark
+          [css.image]: true,
+          [css['image--inverted']]: dark
         }"
       />
       <component
@@ -62,8 +68,10 @@ const { dark } = useTheme();
       />
       <v-icon v-else>{{ icon }}</v-icon>
     </v-list-item-icon>
-    <v-list-item-content class="d-flex flex-grow-1">
-      <v-list-item-title>{{ text }}</v-list-item-title>
+    <v-list-item-content class="d-flex flex-grow-1 py-0">
+      <v-list-item-title :class="{ [css.small]: subMenu }">
+        {{ text }}
+      </v-list-item-title>
     </v-list-item-content>
   </div>
 </template>
@@ -77,5 +85,9 @@ const { dark } = useTheme();
     opacity: 1;
     filter: brightness(0) invert(100%);
   }
+}
+
+.small {
+  font-size: 0.875rem;
 }
 </style>

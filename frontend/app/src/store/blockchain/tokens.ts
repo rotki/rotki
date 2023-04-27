@@ -16,9 +16,16 @@ const noTokens = (): EthDetectedTokensInfo => ({
   timestamp: null
 });
 
+type Tokens = Record<TokenChains, EvmTokensRecord>;
+
+const defaultTokens = (): Tokens => ({
+  ETH: {},
+  OPTIMISM: {}
+});
+
 export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
-  const ethTokens: Ref<EvmTokensRecord> = ref({});
-  const optimismTokens: Ref<EvmTokensRecord> = ref({});
+  const tokensState: Ref<Tokens> = ref(defaultTokens());
+
   const shouldRefreshBalances: Ref<boolean> = ref(true);
 
   const { isAssetIgnored } = useIgnoredAssetsStore();
@@ -37,6 +44,17 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     await Promise.allSettled(
       addresses.map(address => fetchDetectedTokens(chain, address))
     );
+  };
+
+  const setState = (chain: TokenChains, data: EvmTokensRecord) => {
+    const tokensVal = { ...get(tokensState) };
+    set(tokensState, {
+      ...tokensVal,
+      [chain]: {
+        ...tokensVal[chain],
+        ...data
+      }
+    });
   };
 
   const fetchDetectedTokens = async (
@@ -64,21 +82,17 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
           chain
         };
 
-        await awaitTask<EvmTokensRecord, TaskMeta>(
+        const { result } = await awaitTask<EvmTokensRecord, TaskMeta>(
           taskId,
           taskType,
           taskMeta,
           true
         );
 
-        await fetchDetectedTokens(chain);
+        setState(chain, result);
       } else {
-        const tokens = await fetchDetectedTokensCaller(chain, null);
-        if (chain === Blockchain.ETH) {
-          set(ethTokens, tokens);
-        } else {
-          set(optimismTokens, tokens);
-        }
+        const result = await fetchDetectedTokensCaller(chain, null);
+        setState(chain, result);
       }
     } catch (e) {
       logger.error(e);
@@ -94,9 +108,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
       if (!isTokenChain(blockchain)) {
         return noTokens();
       }
-      const sourceTokens =
-        blockchain === Blockchain.OPTIMISM ? optimismTokens : ethTokens;
-      const detected = get(sourceTokens);
+      const detected = get(tokensState)[blockchain];
       const addr = get(address);
       const info = (addr && detected?.[addr]) || null;
       if (!info) {
@@ -128,15 +140,11 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   });
 
   const { isTaskRunning } = useTaskStore();
+  const { fetchBlockchainBalances } = useBlockchainBalances();
+
   const isEthDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
     chain: Blockchain.ETH
   });
-  const isOptimismDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-    chain: Blockchain.OPTIMISM
-  });
-
-  const { fetchBlockchainBalances } = useBlockchainBalances();
-
   watch(isEthDetecting, async (isDetecting, wasDetecting) => {
     if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
       await fetchBlockchainBalances({
@@ -146,6 +154,9 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     }
   });
 
+  const isOptimismDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
+    chain: Blockchain.OPTIMISM
+  });
   watch(isOptimismDetecting, async (isDetecting, wasDetecting) => {
     if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
       await fetchBlockchainBalances({

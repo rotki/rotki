@@ -29,12 +29,12 @@ const css = useCssModule();
 </script>
 
 <template>
-  <div :class="css.wrapper">
-    <v-lazy>
+  <v-lazy>
+    <div :class="css.wrapper">
       <v-img :src="getBlockie(address)" />
       <v-img v-if="avatarUrl" :class="css.avatar" :src="avatarUrl" />
-    </v-lazy>
-  </div>
+    </div>
+  </v-lazy>
 </template>
 <style lang="scss" module>
 .wrapper {

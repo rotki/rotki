@@ -179,11 +179,7 @@ const navItems: MenuItem[] = [
               :icon-component="navItem.component"
             />
           </v-list-item>
-          <v-list-group
-            v-else-if="navItem.type === 'group'"
-            :key="i"
-            class="mb-2"
-          >
+          <v-list-group v-else-if="navItem.type === 'group'" :key="i">
             <template #activator>
               <navigation-menu-item
                 :show-tooltips="isMini"
@@ -213,6 +209,7 @@ const navItems: MenuItem[] = [
                     :image="subNavItem.image"
                     :icon-component="subNavItem.component"
                     :active="active"
+                    sub-menu
                   />
                 </template>
               </v-list-item>
@@ -221,7 +218,7 @@ const navItems: MenuItem[] = [
           <v-divider
             v-else-if="navItem.type === 'divider'"
             :key="i"
-            class="mb-2"
+            class="my-2"
           />
         </template>
       </v-list-item-group>
@@ -231,12 +228,9 @@ const navItems: MenuItem[] = [
 
 <style scoped lang="scss">
 :deep(.v-list-item) {
-  border-radius: 0.5rem;
+  border-radius: 0.25rem;
   padding: 0 0.75rem;
-
-  &:before {
-    border-radius: 0.5rem;
-  }
+  margin-bottom: 0 !important;
 }
 
 .navigation-menu {
@@ -244,6 +238,7 @@ const navItems: MenuItem[] = [
     &--active {
       background-color: var(--v-primary-base);
       color: white !important;
+      font-weight: bold;
 
       :deep(.nav-icon) {
         opacity: 1 !important;
@@ -269,11 +264,17 @@ const navItems: MenuItem[] = [
 }
 
 .navigation-submenu {
-  padding-left: 1rem;
+  :deep(.v-list-item) {
+    padding-left: 3rem;
+    min-height: 0;
+  }
 
   &--mini {
-    padding-left: 0;
     background: var(--v-rotki-light-grey-darken1);
+
+    :deep(.v-list-item) {
+      padding-left: 1.5rem;
+    }
   }
 }
 

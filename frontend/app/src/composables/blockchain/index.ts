@@ -56,7 +56,10 @@ export const useBlockchains = () => {
     await Promise.allSettled(promises);
   };
 
-  const refreshAccounts = async (blockchain?: MaybeRef<Blockchain>) => {
+  const refreshAccounts = async (
+    blockchain?: MaybeRef<Blockchain>,
+    periodic = false
+  ) => {
     const chain = get(blockchain);
     await fetchAccounts(chain);
 
@@ -64,10 +67,13 @@ export const useBlockchains = () => {
     const isEth2 = chain === Blockchain.ETH2;
 
     const pending: Promise<any>[] = [
-      fetchBlockchainBalances({
-        blockchain: chain,
-        ignoreCache: isEth2
-      })
+      fetchBlockchainBalances(
+        {
+          blockchain: chain,
+          ignoreCache: isEth2
+        },
+        periodic
+      )
     ];
 
     if (isEth || !chain) {
