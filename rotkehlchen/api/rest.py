@@ -93,12 +93,14 @@ from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.ens import DBEns
+from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
+    EthStakingEventFilterQuery,
     EvmEventFilterQuery,
     EvmTransactionsFilterQuery,
     HistoryBaseEntryFilterQuery,
@@ -2139,19 +2141,46 @@ class RestAPI():
         )
 
     @async_api_call()
-    def get_eth2_stake_details(self) -> dict[str, Any]:
+    def get_eth2_stake_details(
+            self,
+            addresses: set[ChecksumEvmAddress],
+            validator_indices: set[int],
+            ignore_cache: bool,
+    ) -> dict[str, Any]:
         try:
-            result = self.rotkehlchen.chains_aggregator.get_eth2_staking_details()
+            result = self.rotkehlchen.chains_aggregator.get_eth2_staking_details(ignore_cache=ignore_cache)  # noqa: E501
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
         except ModuleInactive as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+
+        if len(addresses) != 0 or len(validator_indices) != 0:
+            result = [entry for entry in result if entry.validator_index in validator_indices or entry.eth1_depositor in addresses]  # noqa: E501
 
         current_usd_price = Inquirer().find_usd_price(A_ETH)
         return {
             'result': process_result_list([x.serialize(current_usd_price) for x in result]),
             'message': '',
         }
+
+    def get_eth2_stake_stats(
+            self,
+            withdrawals_filter_query: EthStakingEventFilterQuery,
+            execution_filter_query: EthStakingEventFilterQuery,
+    ) -> Response:
+        dbeth2 = DBEth2(self.rotkehlchen.data.db)
+        withdrawn_amount, execution_layer_rewards = dbeth2.get_validators_profit(
+            withdrawals_filter_query=withdrawals_filter_query,
+            execution_filter_query=execution_filter_query,
+        )
+        result = _wrap_in_ok_result({
+            'withdrawn_consensus_layer_rewards': str(withdrawn_amount),
+            'execution_layer_rewards': str(execution_layer_rewards),
+        })
+        return api_response(
+            result=result,
+            status_code=HTTPStatus.OK,
+        )
 
     @async_api_call()
     def get_eth2_daily_stats(

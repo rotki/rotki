@@ -176,10 +176,7 @@ class Eth2(EthereumModule):
 
         return balance_mapping
 
-    def get_details(
-            self,
-            addresses: list[ChecksumEvmAddress],
-    ) -> list[ValidatorDetails]:
+    def get_details(self, addresses: list[ChecksumEvmAddress]) -> list[ValidatorDetails]:
         """Go through the list of eth1 addresses and find all eth2 validators associated
         with them along with their details.
 

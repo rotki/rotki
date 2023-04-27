@@ -67,6 +67,8 @@ from rotkehlchen.api.v1.schemas import (
     Eth2ValidatorDeleteSchema,
     Eth2ValidatorPatchSchema,
     Eth2ValidatorPutSchema,
+    EthStakingHistoryStatsDetails,
+    EthStakingHistoryStatsProfit,
     EventDetailsQuerySchema,
     EventsOnlineQuerySchema,
     EvmAccountsPutSchema,
@@ -173,6 +175,7 @@ from rotkehlchen.db.filtering import (
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
+    EthStakingEventFilterQuery,
     EvmTransactionsFilterQuery,
     HistoryBaseEntryFilterQuery,
     LedgerActionsFilterQuery,
@@ -621,7 +624,7 @@ class RpcNodesResource(BaseMethodView):
     @use_kwargs(delete_schema, location='json_and_query_and_view_args')
     def delete(
             self,
-            blockchain: SupportedBlockchain,  # pylint: disable=unused-argument
+            blockchain: SupportedBlockchain,
             identifier: int,
     ) -> Response:
         return self.rest_api.delete_rpc_node(identifier=identifier, blockchain=blockchain)
@@ -1815,13 +1818,42 @@ class Eth2ValidatorsResource(BaseMethodView):
 
 
 class Eth2StakeDetailsResource(BaseMethodView):
+    put_schema = EthStakingHistoryStatsDetails()
 
-    get_schema = AsyncQueryArgumentSchema()
+    def make_post_schema(self) -> EthStakingHistoryStatsProfit:
+        return EthStakingHistoryStatsProfit(
+            chains_aggregator=self.rest_api.rotkehlchen.chains_aggregator,
+        )
 
     @require_premium_user(active_check=False)
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_eth2_stake_details(async_query=async_query)
+    @resource_parser.use_kwargs(make_post_schema, location='json_and_query')
+    def post(
+            self,
+            withdrawals_filter_query: 'EthStakingEventFilterQuery',
+            execution_filter_query: 'EthStakingEventFilterQuery',
+    ) -> Response:
+        return self.rest_api.get_eth2_stake_stats(
+            withdrawals_filter_query=withdrawals_filter_query,
+            execution_filter_query=execution_filter_query,
+        )
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(put_schema, location='json_and_query')
+    def put(
+            self,
+            addresses: Optional[list[ChecksumEvmAddress]],
+            validator_indices: Optional[list[int]],
+            ignore_cache: bool,
+            async_query: bool,
+    ) -> Response:
+        addresses_set = set(addresses) if addresses is not None else {}
+        indices_set = set(validator_indices) if validator_indices is not None else {}
+        return self.rest_api.get_eth2_stake_details(
+            addresses=addresses_set,
+            validator_indices=indices_set,
+            ignore_cache=ignore_cache,
+            async_query=async_query,
+        )
 
 
 class DefiBalancesResource(BaseMethodView):
