@@ -80,23 +80,8 @@ class DBEth2():
             try:
                 with self.db.user_write() as write_cursor:
                     write_cursor.execute(
-                        'INSERT INTO eth2_daily_staking_details('
-                        '    validator_index,'
-                        '    timestamp,'
-                        '    start_usd_price,'
-                        '    end_usd_price,'
-                        '    pnl,'
-                        '    start_amount,'
-                        '    end_amount,'
-                        '    missed_attestations,'
-                        '    orphaned_attestations,'
-                        '    proposed_blocks,'
-                        '    missed_blocks,'
-                        '    orphaned_blocks,'
-                        '    included_attester_slashings,'
-                        '    proposer_attester_slashings,'
-                        '    deposits_number,'
-                        '    amount_deposited) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                        'INSERT INTO eth2_daily_staking_details(validator_index, timestamp, pnl) '
+                        'VALUES(?,?,?)',
                         entry.to_db_tuple(),
                     )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
@@ -109,33 +94,25 @@ class DBEth2():
             self,
             cursor: 'DBCursor',
             filter_query: 'Eth2DailyStatsFilterQuery',
-    ) -> tuple[list[ValidatorDailyStats], int, FVal, FVal]:
+    ) -> tuple[list[ValidatorDailyStats], int, FVal]:
         """Gets all eth2 daily stats for the query from the DB
 
         Returns a tuple with the following in order:
          - A list of the daily stats
          - how many are the total found for the filter
          - What is the PnL in ETH for the filter
-         - What is the sum of the usd_value of the PnL counting price at the time of each entry
         """
         stats = self.get_validator_daily_stats(cursor, filter_query=filter_query)
         query, bindings = filter_query.prepare(with_pagination=False)
-        query = (
-            'SELECT COUNT(*), SUM(CAST(pnl AS REAL)), '
-            'SUM(CAST(pnl AS REAL) * '
-            '((CAST(start_usd_price AS REAL) + CAST(end_usd_price AS REAL)) / 2)) '
-            'from eth2_daily_staking_details ' + query
-        )
+        query = 'SELECT COUNT(*), SUM(CAST(pnl AS REAL)) from eth2_daily_staking_details ' + query
         result = cursor.execute(query, bindings).fetchone()
 
         try:
             pnl = FVal(result[1])
-            usd_value_sum = FVal(result[2])
         except ValueError:
             pnl = ZERO
-            usd_value_sum = ZERO
 
-        return stats, result[0], pnl, usd_value_sum
+        return stats, result[0], pnl
 
     def get_validator_daily_stats(
             self,

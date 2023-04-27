@@ -75,26 +75,18 @@ def test_eth2_staking(accountant, google_service):
         ValidatorDailyStats(
             validator_index=1,
             timestamp=1607727600,  # ETH price: 449.68 ETH/EUR
-            start_amount=FVal('32'),
-            end_amount=FVal('32.05'),
             pnl=FVal('0.05'),  # 0.05 * 449.68 = 22.484
         ), ValidatorDailyStats(
             validator_index=1,
             timestamp=1607814000,  # ETH price: 469.82 ETH/EUR
-            start_amount=FVal('32.05'),
-            end_amount=FVal('32.045'),
             pnl=FVal('-0.005'),  # -0.005 * 469.82 + 0.005 * 469.82 - 0.005*449.68 = -2.2484
         ), ValidatorDailyStats(
             validator_index=1,
             timestamp=1607900400,  # ETH price: 486.57 ETH/EUR
-            start_amount=FVal('32.045'),
-            end_amount=FVal('32.085'),
             pnl=FVal('0.04'),  # 0.04 * 486.57 = 19.4628
         ), ValidatorDailyStats(
             validator_index=2,
             timestamp=1607900400,
-            start_amount=FVal('32'),
-            end_amount=FVal('32.045'),
             pnl=FVal('0.045'),  # 0.045 * 486.57 = 21.89565
         ),
     ]

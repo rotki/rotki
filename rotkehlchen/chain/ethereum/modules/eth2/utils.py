@@ -8,13 +8,11 @@ import gevent
 import requests
 from bs4 import BeautifulSoup, SoupStrainer
 
-from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE, ZERO
-from rotkehlchen.constants.timing import DAY_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.beaconchain import BEACONCHAIN_ROOT_URL
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_evm_address,
@@ -22,7 +20,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_int_from_str,
 )
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import create_timestamp, ts_now
 
 from .structures import ValidatorDailyStats
@@ -188,7 +185,6 @@ def scrape_validator_withdrawals(
 def scrape_validator_daily_stats(
         validator_index: int,
         last_known_timestamp: Timestamp,
-        msg_aggregator: MessagesAggregator,
 ) -> list[ValidatorDailyStats]:
     """Scrapes the website of beaconcha.in and parses the data directly out of the data table.
 
@@ -217,17 +213,6 @@ def scrape_validator_daily_stats(
 
     timestamp = Timestamp(0)
     pnl = ZERO
-    start_amount = ZERO
-    end_amount = ZERO
-    missed_attestations = 0
-    orphaned_attestations = 0
-    proposed_blocks = 0
-    missed_blocks = 0
-    orphaned_blocks = 0
-    included_attester_slashings = 0
-    proposer_attester_slashings = 0
-    deposits_number = 0
-    amount_deposited = ZERO
     column_pos = 1
     stats: list[ValidatorDailyStats] = []
     while tr is not None:
@@ -256,68 +241,13 @@ def scrape_validator_daily_stats(
                 if pnl > ONE and timestamp == DAY_AFTER_ETH2_GENESIS:
                     pnl -= INITIAL_ETH_DEPOSIT
 
-                column_pos += 1
-            elif column_pos == 3:
-                start_amount = _parse_fval(column.string, 'start amount')
-                column_pos += 1
-            elif column_pos == 4:
-                end_amount = _parse_fval(column.string, 'end amount')
-                column_pos += 1
-            elif column_pos == 5:
-                missed_attestations = _parse_int(column.string, 'missed attestations')
-                column_pos += 1
-            elif column_pos == 6:
-                orphaned_attestations = _parse_int(column.string, 'orphaned attestations')
-                column_pos += 1
-            elif column_pos == 7:
-                proposed_blocks = _parse_int(column.string, 'proposed blocks')
-                column_pos += 1
-            elif column_pos == 8:
-                missed_blocks = _parse_int(column.string, 'missed blocks')
-                column_pos += 1
-            elif column_pos == 9:
-                orphaned_blocks = _parse_int(column.string, 'orphaned blocks')
-                column_pos += 1
-            elif column_pos == 10:
-                included_attester_slashings = _parse_int(column.string, 'included attester slashings')  # noqa: E501
-                column_pos += 1
-            elif column_pos == 11:
-                proposer_attester_slashings = _parse_int(column.string, 'proposer attester slashings')  # noqa: E501
-                column_pos += 1
-            elif column_pos == 12:
-                deposits_number = _parse_int(column.string, 'deposits number')
-                column_pos += 1
-            elif column_pos == 13:
-                amount_deposited = _parse_fval(column.string, 'amount deposited')
-                column_pos += 1
+                break
 
         column_pos = 1
-        prices = [
-            query_usd_price_zero_if_error(
-                A_ETH,
-                time=time,
-                location='eth2 staking daily stats',
-                msg_aggregator=msg_aggregator,
-            )
-            for time in (timestamp, Timestamp(timestamp + DAY_IN_SECONDS))
-        ]
         stats.append(ValidatorDailyStats(
             validator_index=validator_index,
             timestamp=timestamp,
-            start_usd_price=prices[0],
-            end_usd_price=prices[1],
             pnl=pnl,
-            start_amount=start_amount,
-            end_amount=end_amount,
-            missed_attestations=missed_attestations,
-            orphaned_attestations=orphaned_attestations,
-            proposed_blocks=proposed_blocks,
-            missed_blocks=missed_blocks,
-            orphaned_blocks=orphaned_blocks,
-            included_attester_slashings=included_attester_slashings,
-            proposer_attester_slashings=proposer_attester_slashings,
-            deposits_number=deposits_number,
-            amount_deposited=amount_deposited,
         ))
         tr = tr.find_next_sibling()
 

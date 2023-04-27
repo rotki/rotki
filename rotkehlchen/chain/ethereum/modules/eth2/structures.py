@@ -1,4 +1,3 @@
-import decimal
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
@@ -6,11 +5,13 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
-from rotkehlchen.constants.assets import A_ETH, A_ETH2
+from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
-from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Location, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Location, Price, Timestamp
 from rotkehlchen.utils.misc import from_gwei
 
 if TYPE_CHECKING:
@@ -63,20 +64,7 @@ class Eth2Validator:
 ValidatorDailyStatsDBTuple = tuple[
     int,  # validator index
     int,  # timestamp
-    str,  # usd_price_start
-    str,  # usd_price_end
     str,  # pnl_amount
-    str,  # start_balance
-    str,  # end_balance
-    int,  # missed_attestations
-    int,  # orphaned_attestations
-    int,  # proposed_blocks
-    int,  # missed_blocks
-    int,  # orphaned_blocks
-    int,  # included_attester_slashings
-    int,  # proposer_attester_slashings
-    int,  # deposits_number
-    str,  # amount_deposited
 ]
 
 
@@ -84,20 +72,7 @@ ValidatorDailyStatsDBTuple = tuple[
 class ValidatorDailyStats(AccountingEventMixin):
     validator_index: int  # keeping the index here so it can be shown in accounting
     timestamp: Timestamp
-    start_usd_price: FVal = ZERO
-    end_usd_price: FVal = ZERO
-    pnl: FVal = ZERO
-    start_amount: FVal = ZERO
-    end_amount: FVal = ZERO
-    missed_attestations: int = 0
-    orphaned_attestations: int = 0
-    proposed_blocks: int = 0
-    missed_blocks: int = 0
-    orphaned_blocks: int = 0
-    included_attester_slashings: int = 0
-    proposer_attester_slashings: int = 0
-    deposits_number: int = 0
-    amount_deposited: FVal = ZERO
+    pnl: FVal = ZERO  # Value in ETH
     ownership_percentage: FVal = ONE  # customized by get_eth2_history_events
 
     def __str__(self) -> str:
@@ -105,51 +80,25 @@ class ValidatorDailyStats(AccountingEventMixin):
 
     @property
     def pnl_balance(self) -> Balance:
-        usd_price = (self.start_usd_price + self.end_usd_price) / 2
+        try:
+            usd_price = PriceHistorian().query_historical_price(
+                from_asset=A_ETH,
+                to_asset=A_USD,
+                timestamp=self.timestamp,
+            )
+        except NoPriceForGivenTimestamp:
+            usd_price = Price(ZERO)
+
         return Balance(
             amount=self.pnl,
             usd_value=self.pnl * usd_price,
-        )
-
-    @property
-    def start_balance(self) -> Balance:
-        return Balance(
-            amount=self.start_amount,
-            usd_value=self.start_amount * self.start_usd_price,
-        )
-
-    @property
-    def end_balance(self) -> Balance:
-        return Balance(
-            amount=self.end_amount,
-            usd_value=self.end_amount * self.end_usd_price,
-        )
-
-    @property
-    def deposited_balance(self) -> Balance:
-        return Balance(
-            amount=self.amount_deposited,
-            usd_value=self.amount_deposited * self.start_usd_price,
         )
 
     def to_db_tuple(self) -> ValidatorDailyStatsDBTuple:
         return (
             self.validator_index,
             self.timestamp,
-            str(self.start_usd_price),
-            str(self.end_usd_price),
             str(self.pnl),
-            str(self.start_amount),
-            str(self.end_amount),
-            self.missed_attestations,
-            self.orphaned_attestations,
-            self.proposed_blocks,
-            self.missed_blocks,
-            self.orphaned_blocks,
-            self.included_attester_slashings,
-            self.proposer_attester_slashings,
-            self.deposits_number,
-            str(self.amount_deposited),
         )
 
     @classmethod
@@ -157,20 +106,7 @@ class ValidatorDailyStats(AccountingEventMixin):
         return cls(
             validator_index=entry[0],
             timestamp=Timestamp(entry[1]),
-            start_usd_price=FVal(entry[2]),
-            end_usd_price=FVal(entry[3]),
-            pnl=FVal(entry[4]),
-            start_amount=FVal(entry[5]),
-            end_amount=FVal(entry[6]),
-            missed_attestations=entry[7],
-            orphaned_attestations=entry[8],
-            proposed_blocks=entry[9],
-            missed_blocks=entry[10],
-            orphaned_blocks=entry[11],
-            included_attester_slashings=entry[12],
-            proposer_attester_slashings=entry[13],
-            deposits_number=entry[14],
-            amount_deposited=FVal(entry[15]),
+            pnl=FVal(entry[2]),
         )
 
     def serialize(self) -> dict[str, Any]:
@@ -178,17 +114,6 @@ class ValidatorDailyStats(AccountingEventMixin):
             'validator_index': self.validator_index,
             'timestamp': self.timestamp,
             'pnl': self.pnl_balance.serialize(),
-            'start_balance': self.start_balance.serialize(),
-            'end_balance': self.end_balance.serialize(),
-            'missed_attestations': self.missed_attestations,
-            'orphaned_attestations': self.orphaned_attestations,
-            'proposed_blocks': self.proposed_blocks,
-            'missed_blocks': self.missed_blocks,
-            'orphaned_blocks': self.orphaned_blocks,
-            'included_attester_slashings': self.included_attester_slashings,
-            'proposer_attester_slashings': self.proposer_attester_slashings,
-            'deposits_number': self.deposits_number,
-            'deposited_balance': self.deposited_balance.serialize(),
         }
 
     @classmethod
@@ -199,45 +124,12 @@ class ValidatorDailyStats(AccountingEventMixin):
             - KeyError
             - ValueError
         """
-        try:
-            start_usd_price = FVal(data['start_balance']['usd_value']) / FVal(data['start_balance']['amount'])  # noqa: 501
-        except (decimal.DivisionByZero, decimal.InvalidOperation):
-            start_usd_price = ZERO
-        try:
-            end_usd_price = FVal(data['end_balance']['usd_value']) / FVal(data['end_balance']['amount'])  # noqa: 501
-        except (decimal.DivisionByZero, decimal.InvalidOperation):
-            end_usd_price = ZERO
         return cls(
             validator_index=int(data['validator_index']),
             timestamp=deserialize_timestamp(data['timestamp']),
-            start_usd_price=start_usd_price,
-            end_usd_price=end_usd_price,
             pnl=deserialize_fval(
                 value=data['pnl']['amount'],
                 name='pnl',
-                location='eth2 structure',
-            ),
-            start_amount=deserialize_fval(
-                value=data['start_balance']['amount'],
-                name='start_amount',
-                location='eth2 structure',
-            ),
-            end_amount=deserialize_fval(
-                value=data['end_balance']['amount'],
-                name='end_amount',
-                location='eth2 structure',
-            ),
-            missed_attestations=int(data['missed_attestations']),
-            orphaned_attestations=int(data['orphaned_attestations']),
-            proposed_blocks=int(data['proposed_blocks']),
-            missed_blocks=int(data['missed_blocks']),
-            orphaned_blocks=int(data['orphaned_blocks']),
-            included_attester_slashings=int(data['included_attester_slashings']),
-            proposer_attester_slashings=int(data['proposer_attester_slashings']),
-            deposits_number=int(data['deposits_number']),
-            amount_deposited=deserialize_fval(
-                value=data['deposited_balance']['amount'],
-                name='amount_deposited',
                 location='eth2 structure',
             ),
             ownership_percentage=ZERO,
@@ -265,7 +157,7 @@ class ValidatorDailyStats(AccountingEventMixin):
             accounting: 'AccountingPot',
             events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
     ) -> int:
-        amount = self.pnl_balance.amount
+        amount = self.pnl
         if amount == ZERO:
             return 1
 
@@ -275,7 +167,7 @@ class ValidatorDailyStats(AccountingEventMixin):
             return 1
 
         method: Literal['acquisition', 'spend']
-        if self.pnl_balance.amount > ZERO:
+        if self.pnl > ZERO:
             method = 'acquisition'
         else:
             method = 'spend'

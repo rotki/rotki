@@ -8663,7 +8663,7 @@ Getting Eth2 Staking daily stats
    :reqjson bool only_cache: If true then only the daily stats in the DB are queried.
    :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson list[string] order_by_attributes: Optional. This is the list of attributes of the eth2_daily_staking_details table by which to order the results. If none is given 'timestamp' is assumed. Valid values are: ['timestamp', 'validator_index', 'start_usd_price', 'end_usd_price', 'pnl', 'start_amount', 'end_amount', 'missed_attestations', 'orphaned_attestations', 'proposed_blocks', 'missed_blocks', 'orphaned_blocks', 'included_attester_slashings', 'proposer_attester_slashings', 'deposits_number', 'amount_deposited'].
+   :reqjson list[string] order_by_attributes: Optional. This is the list of attributes of the eth2_daily_staking_details table by which to order the results. If none is given 'timestamp' is assumed. Valid values are: ['timestamp', 'validator_index', 'pnl'].
    :reqjson list[bool] ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
    :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
@@ -8682,35 +8682,17 @@ Getting Eth2 Staking daily stats
                   "validator_index": 15,
                   "timestamp": 1613952000,
                   "pnl": {"amount": "0.007", "usd_value": "70"},
-                  "start_balance": {"amount": "32.69", "usd_value": "32690"},
-                  "end_balance": {"amount": "32.7", "usd_value": "32700"},
-                  "missed_attestations": 1,
-                  "orphaned_attestations": 0,
-                  "proposed_blocks": 1,
-                  "missed_blocks": 0,
-                  "orphaned_blocks": 0,
-                  "included_attester_slashings": 0,
-                  "proposer_attester_slashings": 0,
-                  "deposits_number": 1,
-                  "deposited_balance": {"amount": "32", "usd_value": "32000"}
               }, {
                   "validator_index": 43567,
                   "timestamp": 1613865600,
                   "pnl": {"amount": "-0.0066", "usd_value": "-6.6"},
-                  "start_balance": {"amount": "32.69", "usd_value": "32690"},
-                  "end_balance": {"amount": "32.7", "usd_value": "32700"},
-                  "missed_attestations": 0,
-                  "orphaned_attestations": 0,
-                  "proposed_blocks": 0,
-                  "missed_blocks": 1,
-                  "orphaned_blocks": 0,
-                  "included_attester_slashings": 0,
-                  "proposer_attester_slashings": 0,
-                  "deposits_number": 0,
-                  "amount_deposited": {"amount": "0", "usd_value": "0"},
               }],
               "entries_found": 95,
-              "entries_total": 1000
+              "entries_total": 1000,
+              "sum_pnl": {
+                "amount": "0.0014",
+                "usd_value": "63.4"
+              }
          },
         "message": "",
       }
@@ -8720,17 +8702,6 @@ Getting Eth2 Staking daily stats
    :resjson eth_depositor string: The eth1 address that made the deposit for the validator.
    :resjson timestamp int: The timestamp of the start of the day in GMT for which this entry is.
    :resjson pnl object: The amount of ETH gained or lost in that day along with its usd value. Average price of the day is taken.
-   :resjson start_balance object: The amount of ETH the day started with along with its usd value.
-   :resjson end_balance object: The amount of ETH the day ended with along with its usd value.
-   :resjson missed_attestations int: The number of attestations the validator missed during the day.
-   :resjson orphaned_attestations int: The number of attestations the validator orphaned during the day.
-   :resjson proposed_blocks int: The number of blocks the validator proposed during the day.
-   :resjson missed_blocks int: The number of blocks the validator missed during the day.
-   :resjson orphaned_blocks int: The number of blocks the validator proposed during the day but they got orphaned.
-   :resjson included_attester_slashings int: The number of included attester slashins the validator had inside the day.
-   :resjson proposer_attester_slashings int: The number of proposer attester slashins the validator had inside the day.
-   :resjson deposits_number int: The number of deposits from the eth1 chain the validator had inside the day.
-   :resjson deposited_balance object: The amount deposited from the eth1 chain for the validator inside the day along with its usd value.
    :resjson string sum_pnl: The sum of PnL in ETH for the current filter. Ignores pagination.
    :resjson string sum_usd_value: The sum of usd value of ETH PnL for the current filter. Ignores pagination.
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.

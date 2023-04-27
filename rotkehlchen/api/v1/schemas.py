@@ -2546,20 +2546,7 @@ class Eth2DailyStatsSchema(
             None,
             'timestamp',
             'validator_index',
-            'start_usd_price',
-            'end_usd_price',
             'pnl',
-            'start_amount',
-            'end_amount',
-            'missed_attestations',
-            'orphaned_attestations',
-            'proposed_blocks',
-            'missed_blocks',
-            'orphaned_blocks',
-            'included_attester_slashings',
-            'proposer_attester_slashings',
-            'deposits_number',
-            'amount_deposited',
         }
         if (
             data['order_by_attributes'] is not None and

@@ -307,7 +307,6 @@ class Eth2(EthereumModule):
     def _query_services_for_validator_daily_stats(
             self,
             to_ts: Timestamp,
-            msg_aggregator: MessagesAggregator,
     ) -> None:
         """Goes through all saved validators and sees which need to have their stats requeried"""
         now = ts_now()
@@ -319,7 +318,6 @@ class Eth2(EthereumModule):
             new_stats = scrape_validator_daily_stats(
                 validator_index=validator_index,
                 last_known_timestamp=last_ts,
-                msg_aggregator=msg_aggregator,
             )
             self.validator_stats_queried += 1
             self.last_stats_query_ts = now
@@ -393,8 +391,7 @@ class Eth2(EthereumModule):
             cursor: 'DBCursor',
             filter_query: 'Eth2DailyStatsFilterQuery',
             only_cache: bool,
-            msg_aggregator: MessagesAggregator,
-    ) -> tuple[list[ValidatorDailyStats], int, FVal, FVal]:
+    ) -> tuple[list[ValidatorDailyStats], int, FVal]:
         """Gets the daily stats eth2 validators depending on the given filter.
 
         This won't detect new validators
@@ -405,10 +402,7 @@ class Eth2(EthereumModule):
         - RemoteError due to problems with beaconcha.in
         """
         if only_cache is False:
-            self._query_services_for_validator_daily_stats(
-                to_ts=filter_query.to_ts,
-                msg_aggregator=msg_aggregator,
-            )
+            self._query_services_for_validator_daily_stats(to_ts=filter_query.to_ts)
 
         dbeth2 = DBEth2(self.database)
         return dbeth2.get_validator_daily_stats_and_limit_info(cursor, filter_query=filter_query)

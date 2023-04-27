@@ -583,21 +583,8 @@ CREATE TABLE IF NOT EXISTS eth2_validators (
 DB_CREATE_ETH2_DAILY_STAKING_DETAILS = """
 CREATE TABLE IF NOT EXISTS eth2_daily_staking_details (
     validator_index INTEGER NOT NULL,
-    timestamp integer NOT NULL,
-    start_usd_price TEXT NOT NULL,
-    end_usd_price TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
     pnl TEXT NOT NULL,
-    start_amount TEXT NOT NULL,
-    end_amount TEXT NOT NULL,
-    missed_attestations INTEGER,
-    orphaned_attestations INTEGER,
-    proposed_blocks INTEGER,
-    missed_blocks INTEGER,
-    orphaned_blocks INTEGER,
-    included_attester_slashings INTEGER,
-    proposer_attester_slashings INTEGER,
-    deposits_number INTEGER,
-    amount_deposited TEXT,
     FOREIGN KEY(validator_index) REFERENCES eth2_validators(validator_index) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (validator_index, timestamp)
 );
