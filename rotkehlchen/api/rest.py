@@ -21,7 +21,12 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from web3.exceptions import BadFunctionCallOutput
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
+from rotkehlchen.accounting.constants import (
+    DEFAULT_EVENT_CATEGORY_MAPPINGS,
+    EVENT_CATEGORY_DETAILS,
+    FREE_PNL_EVENTS_LIMIT,
+    FREE_REPORTS_LOOKUP_LIMIT,
+)
 from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
@@ -60,10 +65,6 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LI
 from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as get_liquity_stats
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
-from rotkehlchen.chain.evm.decoding.constants import (
-    DEFAULT_EVENT_CATEGORY_MAPPINGS,
-    EVENT_CATEGORY_DETAILS,
-)
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import WeightedNode
@@ -157,6 +158,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
+    EVM_LOCATIONS,
     SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
@@ -3568,11 +3570,8 @@ class RestAPI():
                 group_by='event_identifier' if group_by_event_ids else None,
             )
             location = filter_query.location
-            chain_id = None
-            if location == Location.ETHEREUM:  # todo: this should prolly become a function
-                chain_id = ChainID.ETHEREUM
-            elif location == Location.OPTIMISM:
-                chain_id = ChainID.OPTIMISM
+            chain_id = ChainID(Location.to_chain_id(location)) if location in EVM_LOCATIONS else None  # noqa: E501
+
             customized_event_ids = dbevents.get_customized_event_identifiers(
                 cursor=cursor,
                 chain_id=chain_id,  # type: ignore

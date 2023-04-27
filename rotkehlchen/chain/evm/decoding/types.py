@@ -45,3 +45,5 @@ class EventCategory(SerializableEnumNameMixin):
     CANCEL_ORDER = auto()
     REFUND = auto()
     FEE = auto()
+    MEV_REWARD = auto()
+    CREATE_BLOCK = auto()
