@@ -51,6 +51,7 @@ from rotkehlchen.db.filtering import (
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
+    EthStakingEventFilterQuery,
     EvmEventFilterQuery,
     EvmTransactionsFilterQuery,
     HistoryEventFilterQuery,
@@ -620,6 +621,9 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
     counterparties = DelimitedOrNormalList(fields.String(), load_default=None)
     products = DelimitedOrNormalList(SerializableEnumField(enum_class=EvmProduct), load_default=None)  # noqa: E501
 
+    # EthStakingEvent only
+    validator_indices = DelimitedOrNormalList(fields.Integer(), load_default=None)
+
     @validates_schema
     def validate_history_event_schema(
             self,
@@ -646,10 +650,8 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        # product and counterparty are the only fields unique for evm transactions. In the case
-        # of history events and staking events we want to use histoy event filters
-        should_query_evm_event = any(data[x] is not None for x in ('products', 'counterparties'))
-
+        should_query_evm_event = any(data[x] is not None for x in ('products', 'counterparties', 'tx_hashes'))  # noqa: E501
+        should_query_eth_staking_event = data['validator_indices'] is not None
         common_arguments = {
             'order_by_rules': create_order_by_rules_list(
                 data=data,  # descending timestamp and ascending sequence index
@@ -669,13 +671,18 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
             'event_subtypes': data['event_subtypes'],
             'location': data['location'],
         }
-        filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery]
+        filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthStakingEventFilterQuery]  # noqa: E501
         if should_query_evm_event:
             filter_query = EvmEventFilterQuery.make(
                 **common_arguments,
                 tx_hashes=data['tx_hashes'],
                 products=data['products'],
                 counterparties=data['counterparties'],
+            )
+        elif should_query_eth_staking_event:
+            filter_query = EthStakingEventFilterQuery.make(
+                **common_arguments,
+                validator_indices=data['validator_indices'],
             )
         else:
             filter_query = HistoryEventFilterQuery.make(**common_arguments)

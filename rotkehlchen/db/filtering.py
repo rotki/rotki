@@ -1088,7 +1088,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
         return f'SELECT COUNT(*) {EVM_EVENT_JOIN}'
 
 
-class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta):
+class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery):
 
     @classmethod
     def make(
