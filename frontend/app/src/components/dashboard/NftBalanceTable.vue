@@ -1,19 +1,16 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import dropRight from 'lodash/dropRight';
-import { type ComputedRef, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import { type MaybeRef } from '@vueuse/core';
+import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { Routes } from '@/router/routes';
 import { DashboardTableType } from '@/types/frontend-settings';
-import {
-  type NonFungibleBalance,
-  type NonFungibleBalancesRequestPayload
-} from '@/types/nfbalances';
+import { type NonFungibleBalance } from '@/types/nfbalances';
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
-import { type TablePagination } from '@/types/pagination';
-import { type Collection } from '@/types/collection';
+
+const ignoredAssetsHandling: IgnoredAssetsHandlingType = 'exclude';
+
+const extraParams = computed(() => ({ ignoredAssetsHandling }));
 
 const nonFungibleRoute = Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE;
 
@@ -26,6 +23,27 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { tc } = useI18n();
 
 const group = DashboardTableType.NFT;
+
+const {
+  state: balances,
+  isLoading,
+  options,
+  fetchData,
+  setPage,
+  setOptions
+} = usePaginationFilters<NonFungibleBalance>(
+  null,
+  false,
+  useEmptyFilter,
+  fetchNonFungibleBalances,
+  {
+    extraParams,
+    defaultSortBy: {
+      key: 'name',
+      ascending: [true]
+    }
+  }
+);
 
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
@@ -97,57 +115,7 @@ const { dashboardTablesVisibleColumns } = storeToRefs(
   useFrontendSettingsStore()
 );
 
-const {
-  isLoading,
-  state: balances,
-  execute
-} = useAsyncState<
-  Collection<NonFungibleBalance>,
-  MaybeRef<NonFungibleBalancesRequestPayload>[]
->(args => fetchNonFungibleBalances(args), defaultCollectionState(), {
-  immediate: false,
-  resetOnExecute: false,
-  delay: 0
-});
-
 const { totalUsdValue } = getCollectionData<NonFungibleBalance>(balances);
-
-const options: Ref<TablePagination<NonFungibleBalance>> = ref(
-  defaultOptions('name')
-);
-
-const pageParams: ComputedRef<NonFungibleBalancesRequestPayload> = computed(
-  () => {
-    const { itemsPerPage, page, sortBy, sortDesc } = get(options);
-    const offset = (page - 1) * itemsPerPage;
-
-    return {
-      ignoredAssetsHandling: 'exclude',
-      limit: itemsPerPage,
-      offset,
-      orderByAttributes: sortBy?.length > 0 ? sortBy : ['name'],
-      ascending:
-        sortDesc && sortDesc.length > 1
-          ? dropRight(sortDesc).map(bool => !bool)
-          : [true]
-    };
-  }
-);
-
-const fetchData = async (): Promise<void> => {
-  await execute(0, pageParams);
-};
-
-const userAction: Ref<boolean> = ref(false);
-const setPage = (page: number) => {
-  set(userAction, true);
-  set(options, { ...get(options), page });
-};
-
-const setOptions = (newOptions: TablePagination<NonFungibleBalance>) => {
-  set(userAction, true);
-  set(options, newOptions);
-};
 
 onMounted(async () => {
   await fetchData();
@@ -201,7 +169,7 @@ watch(loading, async (isLoading, wasLoading) => {
       />
     </template>
 
-    <collection-handler :collection="balances" @set-page="setPage">
+    <collection-handler :collection="balances" @set-page="setPage($event)">
       <template #default="{ data, itemLength }">
         <data-table
           :headers="tableHeaders"

@@ -437,8 +437,12 @@ const router = new Router({
     if (to.hash) {
       setTimeout(() => {
         const element = document.getElementById(to.hash.replace(/#/, ''));
-        if (element && element.scrollIntoView) {
-          element.scrollIntoView({ block: 'end', behavior: 'smooth' });
+        if (element?.scrollIntoView) {
+          element.scrollIntoView({
+            block: 'start',
+            inline: 'nearest',
+            behavior: 'smooth'
+          });
         }
       }, 500);
 

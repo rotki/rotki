@@ -186,6 +186,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
       />
       <nft-balance-table
         v-if="nftEnabled"
+        id="nft-balance-table-section"
         data-cy="nft-balance-table"
         class="mt-8"
       />
