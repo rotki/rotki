@@ -1,4 +1,3 @@
-import json
 import operator
 from contextlib import ExitStack
 from pathlib import Path
@@ -21,11 +20,10 @@ from rotkehlchen.icons import IconManager
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import ChecksumEvmAddress, Location, SupportedBlockchain, TradeType
+from rotkehlchen.types import ChecksumEvmAddress, Location, TradeType
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
-    from rotkehlchen.rotkehlchen import Rotkehlchen
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
@@ -180,88 +178,13 @@ def test_migration_3(database, data_dir):
 
     migration_patch = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=MIGRATION_LIST[2:],
+        new=[MIGRATION_LIST[2]],
     )
     with migration_patch:
         DataMigrationManager(rotki).maybe_migrate_data()
 
     assert btc_iconpath.is_file() is False
     assert eth_iconpath.is_file() is False
-
-
-@pytest.mark.parametrize('data_migration_version', [3])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-def test_migration_4(database, blockchain):
-    """
-    Test that the fourth data migration for rotki works. This migration adds the ethereum nodes
-    that will be used as open nodes to the database.
-    """
-    rotki = MockRotkiForMigrations(database)
-    rotki.chains_aggregator = blockchain
-    migration_patch = patch(
-        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=MIGRATION_LIST[3:],
-    )
-    # Manually insert the old rpc setting in the table
-    with database.user_write() as cursor:
-        cursor.execute(
-            'INSERT INTO settings(name, value) VALUES ("eth_rpc_endpoint", "https://localhost:5222");',  # noqa: E501
-        )
-    with migration_patch:
-        DataMigrationManager(rotki).maybe_migrate_data()
-    dir_path = Path(__file__).resolve().parent.parent.parent
-    with database.conn.read_ctx() as cursor:
-        cursor.execute(
-            'SELECT * from settings where name=?', ('eth_rpc_endpoint',),
-        )
-        assert cursor.fetchone() is None, 'Setting should have been deleted'
-
-    with open(dir_path / 'data' / 'nodes.json') as f:
-        nodes = json.loads(f.read())
-        rpc_nodes = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM)
-        rpc_nodes += database.get_rpc_nodes(blockchain=SupportedBlockchain.OPTIMISM)
-        assert len(rpc_nodes) >= len(nodes) + 1
-        owned_index = -1
-        for node in nodes:
-            for idx, rpc_node in enumerate(rpc_nodes):
-                if rpc_node.node_info.name == node['name']:
-                    assert rpc_node.node_info.endpoint == node['endpoint']
-                    assert rpc_node.active == node['active']
-                    assert rpc_node.node_info.owned == node['owned']
-                    continue
-                if rpc_node.node_info.owned is True:
-                    owned_index = idx
-
-        assert len(rpc_nodes) >= 5
-        assert rpc_nodes[owned_index].node_info.owned is True
-        assert rpc_nodes[owned_index].node_info.endpoint == 'https://localhost:5222'
-
-
-@pytest.mark.parametrize('data_migration_version', [3])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-def test_migration_4_no_own_endpoint(database, blockchain):
-    """
-    Test that the fourth data migration for rotki works when there is no custom node
-    """
-    rotki = MockRotkiForMigrations(database)
-    rotki.chains_aggregator = blockchain
-    migration_patch = patch(
-        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=MIGRATION_LIST[3:],
-    )
-    with migration_patch:
-        DataMigrationManager(rotki).maybe_migrate_data()
-    dir_path = Path(__file__).resolve().parent.parent.parent
-    with database.conn.read_ctx() as cursor:
-        cursor.execute(
-            'SELECT * from settings where name=?', ('eth_rpc_endpoint',),
-        )
-        assert cursor.fetchone() is None, 'Setting should have been deleted'
-    rpc_nodes = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM)
-    rpc_nodes += database.get_rpc_nodes(blockchain=SupportedBlockchain.OPTIMISM)
-    with open(dir_path / 'data' / 'nodes.json') as f:
-        nodes = json.loads(f.read())
-        assert len(rpc_nodes) >= len(nodes)
 
 
 @pytest.mark.parametrize('data_migration_version', [4])
@@ -277,7 +200,7 @@ def test_migration_5(database, data_dir):
     rotki.icon_manager = icon_manager
     migration_patch = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=MIGRATION_LIST[4:],
+        new=[MIGRATION_LIST[3]],
     )
     # Create some fake icon files
     icons_path = icon_manager.icons_dir
@@ -298,147 +221,6 @@ def test_migration_5(database, data_dir):
     assert Path(icons_path, '_ceth_0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9_small.png').exists() is False  # noqa: E501
 
 
-def _get_nodes():
-    """Reads old (as of 1.26.1) and new nodes from json files and returns them
-
-    These tests ignore any non ETHEREUM nodes
-    """
-    dir_path = Path(__file__).resolve().parent.parent.parent
-    with open(dir_path / 'data' / 'nodes_as_of_1-26-1.json') as f:
-        old_nodes_info = json.loads(f.read())
-    old_nodes = [
-        [node['name'], node['endpoint'], node['owned'], str(node['weight']), node['active'], node['blockchain']]  # noqa: E501
-        for node in old_nodes_info
-    ]
-    with open(dir_path / 'data' / 'nodes.json') as f:
-        new_nodes_info = json.loads(f.read())
-    new_nodes = {
-        (node['name'], node['endpoint'], node['owned'], str(node['weight']), node['blockchain'])  # noqa: E501
-        for node in new_nodes_info if node['blockchain'] == 'ETH'
-    }
-    return old_nodes, new_nodes
-
-
-def _write_nodes_and_migrate(
-        database: 'DBHandler',
-        rotki: 'Rotkehlchen',
-        nodes_to_write: list[tuple[str, str, bool, str, bool, str]],
-) -> list[tuple[str, str, bool, str, bool, str]]:
-    """
-    Writes the given nodes to the DB and applies 6th migration.
-    Returns nodes from the DB after the migration.
-    """
-    with database.user_write() as write_cursor:
-        write_cursor.executemany(
-            'INSERT INTO rpc_nodes (name, endpoint, owned, weight, active, blockchain) VALUES (?, ?, ?, ?, ?, ?)',  # noqa: E501
-            nodes_to_write,
-        )
-    migration_patch = patch(
-        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=[MIGRATION_LIST[5]],
-    )
-    with migration_patch:
-        DataMigrationManager(rotki).maybe_migrate_data()
-
-    # Now nodes should be the new defaults
-    with database.conn.read_ctx() as cursor:
-        nodes_in_db = cursor.execute('SELECT name, endpoint, owned, weight, blockchain FROM rpc_nodes').fetchall()  # noqa: E501
-
-    return nodes_in_db
-
-
-@pytest.mark.parametrize('data_migration_version', [5])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-@pytest.mark.parametrize('new_db_unlock_actions', [None])
-def test_migration_6_default_rpc_nodes(database):
-    """
-    Test that the sixth data migration works when the user has not customized the nodes.
-    """
-    rotki = MockRotkiForMigrations(database)
-    old_nodes, new_nodes = _get_nodes()
-    nodes_in_db = _write_nodes_and_migrate(database, rotki, old_nodes)
-
-    # Now nodes should be the new defaults
-    assert set(nodes_in_db) == new_nodes
-    assert FVal(sum(FVal(node[3]) for node in nodes_in_db)) == ONE
-
-
-@pytest.mark.parametrize('data_migration_version', [5])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-@pytest.mark.parametrize('new_db_unlock_actions', [None])
-def test_migration_6_customized_rpc_nodes(database):
-    """
-    Test that the sixth data migration works when the user has customized the rpc nodes.
-    """
-    rotki = MockRotkiForMigrations(database)
-    old_nodes, _ = _get_nodes()
-    old_nodes[-1][0] = 'Renamed cloudflare'  # customize a node
-    # Also add a new node
-    old_nodes.append(('flashbots', 'https://rpc.flashbots.net/', False, '0.1', True, 'ETH'))
-
-    nodes_in_db = _write_nodes_and_migrate(database, rotki, old_nodes)
-
-    # Create the expected list of nodes. Check that the customized node is still there, all dead
-    # nodes were removed and that the nodes were reweighed properly.
-    expected_nodes = {
-        ('etherscan', '', False, '0.6', 'ETH'),
-        ('Renamed cloudflare', 'https://cloudflare-eth.com/', False, '0.2', 'ETH'),
-        ('flashbots', 'https://rpc.flashbots.net/', False, '0.2', 'ETH'),
-    }
-
-    assert set(nodes_in_db) == expected_nodes
-
-
-@pytest.mark.parametrize('data_migration_version', [5])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-@pytest.mark.parametrize('new_db_unlock_actions', [None])
-def test_migration_6_own_node(database):
-    """
-    Test that the sixth data migration works when user has no customized nodes but has
-    an own node set.
-    """
-    rotki = MockRotkiForMigrations(database)
-    old_nodes, new_nodes = _get_nodes()
-    # Add an owned node
-    old_nodes.append(('Owned node', 'http://localhost:8045', True, '1', True, 'ETH'))
-
-    nodes_in_db = _write_nodes_and_migrate(database, rotki, old_nodes)
-    # Create the expected list of nodes. Check that the owned node is still there and that the
-    # defaults were replaced.
-    expected_nodes = {*new_nodes, ('Owned node', 'http://localhost:8045', True, '1', 'ETH')}
-    assert set(nodes_in_db) == expected_nodes
-
-
-@pytest.mark.parametrize('data_migration_version', [6])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-def test_migration_7_nodes(database, blockchain, greenlet_manager):
-    """
-    Test that the seventh data migration works adding llamanode to the list of eth nodes.
-    """
-    rotki = MockRotkiForMigrations(database)
-    rotki.chains_aggregator = blockchain
-    migrate_mock = patch(
-        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=MIGRATION_LIST[3:7],
-    )
-    with migrate_mock:
-        DataMigrationManager(rotki).maybe_migrate_data()
-
-    # check that the task to connect the ethereum node is spawned
-    expected_greenlet_name = 'Attempt connection to LlamaNodes ethereum node'
-    assert any(expected_greenlet_name in greenlet.task_name for greenlet in greenlet_manager.greenlets) is True  # noqa: E501
-
-    nodes = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM)
-    # check that weight is correct for nodes
-    assert sum(node.weight for node in nodes) == ONE
-    llama_node_in_db = False
-    for node in nodes:
-        if node.node_info.endpoint == 'https://eth.llamarpc.com':
-            llama_node_in_db = True
-            break
-    assert llama_node_in_db is True
-
-
 @pytest.mark.parametrize('data_migration_version', [7])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address(), make_evm_address(), make_evm_address(), make_evm_address()]])  # noqa: E501
@@ -454,7 +236,7 @@ def test_migration_8(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     migration_patch = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=[MIGRATION_LIST[7]],
+        new=[MIGRATION_LIST[4]],
     )
     avalanche_addresses = [ethereum_accounts[1], ethereum_accounts[3]]
     optimism_addresses = [ethereum_accounts[2], ethereum_accounts[3]]

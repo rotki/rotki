@@ -4,10 +4,7 @@ from typing import TYPE_CHECKING, Callable, NamedTuple
 from rotkehlchen.data_migrations.migrations.migration_1 import data_migration_1
 from rotkehlchen.data_migrations.migrations.migration_2 import data_migration_2
 from rotkehlchen.data_migrations.migrations.migration_3 import data_migration_3
-from rotkehlchen.data_migrations.migrations.migration_4 import data_migration_4
 from rotkehlchen.data_migrations.migrations.migration_5 import data_migration_5
-from rotkehlchen.data_migrations.migrations.migration_6 import data_migration_6
-from rotkehlchen.data_migrations.migrations.migration_7 import data_migration_7
 from rotkehlchen.data_migrations.migrations.migration_8 import data_migration_8
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -29,10 +26,7 @@ MIGRATION_LIST = [
     MigrationRecord(version=1, function=data_migration_1),
     MigrationRecord(version=2, function=data_migration_2),
     MigrationRecord(version=3, function=data_migration_3),
-    MigrationRecord(version=4, function=data_migration_4),
     MigrationRecord(version=5, function=data_migration_5),
-    MigrationRecord(version=6, function=data_migration_6),
-    MigrationRecord(version=7, function=data_migration_7),
     MigrationRecord(version=8, function=data_migration_8),
 ]
 LAST_DATA_MIGRATION = 9  # not taking length since, we have removed migrations
