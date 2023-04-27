@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -22,9 +22,6 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_
 from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
     EVM_EVENT_JOIN,
-    EthBlockEventFilterQuery,
-    EthStakingEventFilterQuery,
-    EthWithdrawalFilterQuery,
     EvmEventFilterQuery,
     HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
@@ -59,25 +56,6 @@ EVM_FIELD_LENGTH = 5
 
 ETH_STAKING_EVENT_FIELDS = 'validator_index, is_exit_or_blocknumber'
 ETH_STAKING_FIELD_LENGTH = 2
-
-
-def _event_select_and_deserialize_fn(filter_query: HistoryBaseEntryFilterQuery) -> tuple[str, Callable]:  # noqa: E501
-    """Get the event select query and its deserialize function depending on type"""
-    deserialize_fn: Callable
-    if isinstance(filter_query, EvmEventFilterQuery):
-        select = f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS} {filter_query.get_join_query()}'  # noqa: E501
-        deserialize_fn = EvmEvent.deserialize_from_db
-    elif isinstance(filter_query, EthWithdrawalFilterQuery):
-        select = f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {filter_query.get_join_query()}'  # noqa: E501
-        deserialize_fn = EthWithdrawalEvent.deserialize_from_db
-    elif isinstance(filter_query, EthBlockEventFilterQuery):
-        select = f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {filter_query.get_join_query()}'  # noqa: E501
-        deserialize_fn = EthBlockEvent.deserialize_from_db
-    else:  # HistoryEventFilterQuery
-        select = f'SELECT {HISTORY_BASE_ENTRY_FIELDS} {filter_query.get_join_query()}'
-        deserialize_fn = HistoryEvent.deserialize_from_db
-
-    return select, deserialize_fn
 
 
 class DBHistoryEvents():
@@ -235,7 +213,7 @@ class DBHistoryEvents():
             tx_hashes: list[EVMTxHash],
             chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     ) -> None:
-        """Delete all relevant (by event_identifier) history events except those that
+        """Delete all relevant (by transaction hash) history events except those that
         are customized"""
         customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, chain_id=chain_id)  # noqa: E501
         length = len(customized_event_ids)
@@ -300,143 +278,66 @@ class DBHistoryEvents():
             cursor: 'DBCursor',
             filter_query: HistoryEventFilterQuery,
             has_premium: bool,
-    ) -> list[HistoryEvent]:
-        ...
-
-    @overload
-    def get_history_events(
-            self,
-            cursor: 'DBCursor',
-            filter_query: EvmEventFilterQuery,
-            has_premium: bool,
-    ) -> list['EvmEvent']:
-        ...
-
-    @overload
-    def get_history_events(
-            self,
-            cursor: 'DBCursor',
-            filter_query: EthStakingEventFilterQuery,
-            has_premium: bool,
-    ) -> list['EthStakingEvent']:
-        ...
-
-    def get_history_events(
-            self,
-            cursor: 'DBCursor',
-            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthStakingEventFilterQuery],  # noqa: E501
-            has_premium: bool,
-    ) -> Union[list['HistoryEvent'], list['EvmEvent'], list['EthStakingEvent']]:
-        """
-        Get history events using the provided query filter
-        """
-        query, bindings = filter_query.prepare()
-
-        select, deserialize_fn = _event_select_and_deserialize_fn(filter_query)
-        if has_premium is True:
-            base_query = select
-        else:
-            base_query = f'SELECT * FROM ({select} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
-            bindings.insert(0, FREE_HISTORY_EVENTS_LIMIT)
-
-        cursor.execute(base_query + query, bindings)
-        output = []
-        for entry in cursor:
-            try:
-                deserialized_event = deserialize_fn(entry[1:])
-            except (DeserializationError, UnknownAsset) as e:
-                log.debug(f'Failed to deserialize history event {entry} due to {str(e)}')
-                continue
-
-            output.append(deserialized_event)
-
-        return output
-
-    @overload
-    def get_specific_history_events_and_limit_info(
-            self,
-            cursor: 'DBCursor',
-            filter_query: HistoryEventFilterQuery,
-            has_premium: bool,
-    ) -> tuple[list[HistoryEvent], int]:
-        ...
-
-    @overload
-    def get_specific_history_events_and_limit_info(
-            self,
-            cursor: 'DBCursor',
-            filter_query: EvmEventFilterQuery,
-            has_premium: bool,
-    ) -> tuple[list[EvmEvent], int]:
-        ...
-
-    @overload
-    def get_specific_history_events_and_limit_info(
-            self,
-            cursor: 'DBCursor',
-            filter_query: EthStakingEventFilterQuery,
-            has_premium: bool,
-    ) -> tuple[list[EthStakingEvent], int]:
-        ...
-
-    def get_specific_history_events_and_limit_info(
-            self,
-            cursor: 'DBCursor',
-            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthStakingEventFilterQuery],  # noqa: E501
-            has_premium: bool,
-    ) -> tuple[Union[list[HistoryEvent], list[EvmEvent], list[EthStakingEvent]], int]:
-        """Gets all history events for the specific type, based on the filter query.
-
-        Also returns how many are the total found for the filter
-        """
-        events = self.get_history_events(
-            cursor=cursor,
-            filter_query=filter_query,
-            has_premium=has_premium,
-        )
-        count = self.get_history_events_count(cursor=cursor, query_filter=filter_query)
-        return events, count
-
-    @overload
-    def get_all_history_events(
-            self,
-            cursor: 'DBCursor',
-            filter_query: HistoryBaseEntryFilterQuery,
-            has_premium: bool,
-            group_by_event_ids: Literal[False],
-    ) -> list[HistoryBaseEntry]:
-        ...
-
-    @overload
-    def get_all_history_events(
-            self,
-            cursor: 'DBCursor',
-            filter_query: HistoryBaseEntryFilterQuery,
-            has_premium: bool,
             group_by_event_ids: Literal[True],
     ) -> list[tuple[int, HistoryBaseEntry]]:
         ...
 
     @overload
-    def get_all_history_events(
+    def get_history_events(
             self,
             cursor: 'DBCursor',
-            filter_query: HistoryBaseEntryFilterQuery,
+            filter_query: HistoryEventFilterQuery,
             has_premium: bool,
-            group_by_event_ids: bool,
-    ) -> Union[list[tuple[int, HistoryBaseEntry]], list[HistoryBaseEntry]]:
+            group_by_event_ids: Literal[False] = ...,
+    ) -> list[HistoryBaseEntry]:
+        ...
+
+    @overload
+    def get_history_events(
+            self,
+            cursor: 'DBCursor',
+            filter_query: EvmEventFilterQuery,
+            has_premium: bool,
+            group_by_event_ids: Literal[True],
+    ) -> list[tuple[int, EvmEvent]]:
+        ...
+
+    @overload
+    def get_history_events(
+            self,
+            cursor: 'DBCursor',
+            filter_query: EvmEventFilterQuery,
+            has_premium: bool,
+            group_by_event_ids: Literal[False] = ...,
+    ) -> list[EvmEvent]:
+        ...
+
+    @overload
+    def get_history_events(
+            self,
+            cursor: 'DBCursor',
+            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery],
+            has_premium: bool,
+            group_by_event_ids: bool = False,
+    ) -> Union[
+        list[tuple[int, HistoryBaseEntry]], list[HistoryBaseEntry],
+        list[tuple[int, EvmEvent]], list[EvmEvent],
+    ]:
         """
         This fallback is needed due to
         https://github.com/python/mypy/issues/6113#issuecomment-869828434
         """
 
-    def get_all_history_events(
+    def get_history_events(
             self,
             cursor: 'DBCursor',
-            filter_query: HistoryBaseEntryFilterQuery,
+            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery],
             has_premium: bool,
-            group_by_event_ids: bool,
-    ) -> Union[list[HistoryBaseEntry], list[tuple[int, HistoryBaseEntry]]]:
+            group_by_event_ids: bool = False,
+    ) -> Union[
+        list[tuple[int, HistoryBaseEntry]], list[HistoryBaseEntry],
+        list[tuple[int, EvmEvent]], list[EvmEvent],
+    ]:
         """Get all events from the DB, deserialized depending on the event type
 
         TODO: Think if we should change the way we query this. As events get more complicated
@@ -503,7 +404,7 @@ class DBHistoryEvents():
         return output
 
     @overload
-    def get_all_history_events_and_limit_info(
+    def get_history_events_and_limit_info(
             self,
             cursor: 'DBCursor',
             filter_query: HistoryBaseEntryFilterQuery,
@@ -513,40 +414,40 @@ class DBHistoryEvents():
         ...
 
     @overload
-    def get_all_history_events_and_limit_info(
+    def get_history_events_and_limit_info(
             self,
             cursor: 'DBCursor',
             filter_query: HistoryBaseEntryFilterQuery,
             has_premium: bool,
-            group_by_event_ids: Literal[False],
+            group_by_event_ids: Literal[False] = ...,
     ) -> tuple[list[HistoryBaseEntry], int]:
         ...
 
     @overload
-    def get_all_history_events_and_limit_info(
+    def get_history_events_and_limit_info(
             self,
             cursor: 'DBCursor',
             filter_query: HistoryBaseEntryFilterQuery,
             has_premium: bool,
-            group_by_event_ids: bool,
+            group_by_event_ids: bool = False,
     ) -> tuple[Union[list[tuple[int, HistoryBaseEntry]], list[HistoryBaseEntry]], int]:
         """
         This fallback is needed due to
         https://github.com/python/mypy/issues/6113#issuecomment-869828434
         """
 
-    def get_all_history_events_and_limit_info(
+    def get_history_events_and_limit_info(
             self,
             cursor: 'DBCursor',
             filter_query: 'HistoryBaseEntryFilterQuery',
             has_premium: bool,
-            group_by_event_ids: bool,
+            group_by_event_ids: bool = False,
     ) -> tuple[Union[list[tuple[int, HistoryBaseEntry]], list[HistoryBaseEntry]], int]:
         """Gets all history events for all types, based on the filter query.
 
         Also returns how many are the total found for the filter
         """
-        events = self.get_all_history_events(
+        events = self.get_history_events(  # type: ignore  # is due to HistoryBaseEntryFilterQuery not possible to be overloaded in get_history_events  # noqa: E501
             cursor=cursor,
             filter_query=filter_query,
             has_premium=has_premium,

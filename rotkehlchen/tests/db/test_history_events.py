@@ -121,15 +121,12 @@ def test_read_write_events_from_db(database):
             )
 
     with db.db.conn.read_ctx() as cursor:
-        for query_fn, filter_query, entry_types in (
-                (db.get_all_history_events, HistoryEventFilterQuery, None),
-                (db.get_history_events, HistoryEventFilterQuery, [HistoryBaseEntryType.HISTORY_EVENT]),  # noqa: E501
-                (db.get_history_events, EvmEventFilterQuery, [HistoryBaseEntryType.EVM_EVENT]),  # noqa: E501
+        for filter_query, entry_types in (
+                (HistoryEventFilterQuery, None),
+                (HistoryEventFilterQuery, [HistoryBaseEntryType.HISTORY_EVENT]),
+                (EvmEventFilterQuery, [HistoryBaseEntryType.EVM_EVENT]),
         ):
-            if query_fn == db.get_all_history_events:
-                all_events = query_fn(cursor, filter_query.make(entry_types=entry_types), True, False)  # noqa: E501
-            else:
-                all_events = query_fn(cursor, filter_query.make(entry_types=entry_types), True)  # noqa: E501
+            all_events = db.get_history_events(cursor, filter_query.make(entry_types=entry_types), True, False)  # noqa: E501
             for event in all_events:
                 if isinstance(event, HistoryEvent):
                     data_entry = history_data[event.identifier]

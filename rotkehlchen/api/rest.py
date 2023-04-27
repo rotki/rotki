@@ -3558,7 +3558,7 @@ class RestAPI():
             entries_limit = - 1
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            events_result, entries_found = dbevents.get_all_history_events_and_limit_info(
+            events_result, entries_found = dbevents.get_history_events_and_limit_info(
                 cursor=cursor,
                 filter_query=filter_query,
                 has_premium=has_premium,

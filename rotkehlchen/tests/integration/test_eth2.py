@@ -46,7 +46,12 @@ def test_withdrawals(eth2: 'Eth2', database):
     eth2.query_services_for_validator_withdrawals(to_ts=to_ts)
 
     with database.conn.read_ctx() as cursor:
-        events = dbevents.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True, False)  # noqa: E501
+        events = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+            group_by_event_ids=False,
+        )
         assert events == [EthWithdrawalEvent(
             identifier=5,
             validator_index=295601,
@@ -134,7 +139,12 @@ def test_block_production(eth2: 'Eth2', database):
     eth2.beaconchain.get_and_store_produced_blocks([vindex1, vindex2])
 
     with database.conn.read_ctx() as cursor:
-        events = dbevents.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True, False)  # noqa: E501
+        events = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+            group_by_event_ids=False,
+        )
 
     assert events == [EthBlockEvent(
         identifier=12,
