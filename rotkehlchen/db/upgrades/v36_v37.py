@@ -213,13 +213,41 @@ def _fix_kraken_eth2_events(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _fix_kraken_eth2_events')
 
 
+def trim_daily_stats(write_cursor: 'DBCursor') -> None:
+    """Decreases the amount of data in the daily stats table"""
+    table_exists = write_cursor.execute(
+        'SELECT COUNT(*) FROM sqlite_master '
+        'WHERE type="table" AND name="eth2_daily_staking_details"',
+    ).fetchone()[0] == 1
+    table_to_create = 'eth2_daily_staking_details'
+    if table_exists is True:
+        table_to_create += '_new'
+    write_cursor.execute(f"""
+    CREATE TABLE IF NOT EXISTS {table_to_create} (
+        validator_index INTEGER NOT NULL,
+        timestamp integer NOT NULL,
+        pnl TEXT NOT NULL,
+        FOREIGN KEY(validator_index) REFERENCES eth2_validators(validator_index) ON UPDATE CASCADE ON DELETE CASCADE,
+        PRIMARY KEY (validator_index, timestamp)
+    );""")  # noqa: E501
+    if table_exists is True:
+        write_cursor.execute(
+            'INSERT INTO eth2_daily_staking_details_new SELECT validator_index, timestamp, pnl '
+            'FROM eth2_daily_staking_details',
+        )
+        write_cursor.execute('DROP TABLE eth2_daily_staking_details')
+        write_cursor.execute(
+            'ALTER TABLE eth2_daily_staking_details_new RENAME TO eth2_daily_staking_details',
+        )
+
+
 def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v36 to v37. This was in v1.28.0 release.
 
         - Replace null history event subtype
     """
     log.debug('Entered userdb v36->v37 upgrade')
-    progress_handler.set_total_steps(5)
+    progress_handler.set_total_steps(6)
     with db.user_write() as write_cursor:
         _create_new_tables(write_cursor)
         progress_handler.new_step()
@@ -230,6 +258,8 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _delete_old_tables(write_cursor)
         progress_handler.new_step()
         _fix_kraken_eth2_events(write_cursor)
+        progress_handler.new_step()
+        trim_daily_stats(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finished userdb v36->v36 upgrade')

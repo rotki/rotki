@@ -107,14 +107,10 @@ def test_pnl_processing_with_eth2_staking_setting(accountant, db_settings):
         ValidatorDailyStats(
             validator_index=1,
             timestamp=1607727600,  # ETH price: 449.68 ETH/EUR
-            start_amount=FVal('32'),
-            end_amount=FVal('32.05'),
             pnl=FVal('0.05'),  # 0.05 * 449.68 = 22.484
         ), ValidatorDailyStats(
             validator_index=1,
             timestamp=1607814000,  # ETH price: 469.82 ETH/EUR
-            start_amount=FVal('32.05'),
-            end_amount=FVal('32.045'),
             pnl=FVal('-0.005'),  # -0.005 * 469.82 + 0.005 * 469.82 - 0.005*449.68 = -2.2484
         ), HistoryEvent(
             event_identifier='XXX',

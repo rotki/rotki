@@ -47,7 +47,6 @@ from rotkehlchen.utils.misc import ts_now, ts_now_in_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.history.price import PriceHistorian
-    from rotkehlchen.user_messages import MessagesAggregator
 
 ADDR1 = string_to_evm_address('0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397')
 ADDR2 = string_to_evm_address('0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19')
@@ -73,21 +72,11 @@ def test_get_validators_to_query_for_stats(database):
     db.add_validator_daily_stats([ValidatorDailyStats(
         validator_index=1,
         timestamp=1607126400,
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=ZERO,
-        end_amount=FVal(32),
-        deposits_number=1,
-        amount_deposited=FVal(32),
     ), ValidatorDailyStats(
         validator_index=1,
         timestamp=1607212800,
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=FVal(32),
-        end_amount=FVal(32),
     )])
     assert db.get_validators_to_query_for_stats(now) == [(1, 1607212800)]
 
@@ -95,13 +84,7 @@ def test_get_validators_to_query_for_stats(database):
     db.add_validator_daily_stats([ValidatorDailyStats(
         validator_index=1,
         timestamp=now - 3600,
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=ZERO,
-        end_amount=FVal(32),
-        deposits_number=1,
-        amount_deposited=FVal(32),
     )])
     assert db.get_validators_to_query_for_stats(now) == []
 
@@ -115,37 +98,19 @@ def test_get_validators_to_query_for_stats(database):
     db.add_validator_daily_stats([ValidatorDailyStats(
         validator_index=3,
         timestamp=1607126400,
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=ZERO,
-        end_amount=FVal(32),
-        deposits_number=1,
-        amount_deposited=FVal(32),
     ), ValidatorDailyStats(
         validator_index=3,
         timestamp=1617512800,
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=FVal(32),
-        end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=4,
         timestamp=1617512800,
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=FVal(32),
-        end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=4,
         timestamp=now - 7200,
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=FVal(32),
-        end_amount=FVal(32),
     )])
     assert db.get_validators_to_query_for_stats(now) == [(2, 0), (3, 1617512800)]
     assert db.get_validators_to_query_for_stats(1617512800 + DAY_IN_SECONDS * 2 + 2) == [(2, 0), (3, 1617512800)]  # noqa: E501
@@ -177,266 +142,139 @@ def mock_scrape_validator_daily_stats(network_mocking: bool):
 
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
-def test_validator_daily_stats(network_mocking, price_historian, function_scope_messages_aggregator):  # pylint: disable=unused-argument  # noqa: E501
+def test_validator_daily_stats(network_mocking, price_historian):  # pylint: disable=unused-argument  # noqa: E501
     validator_index = 33710
 
     with mock_scrape_validator_daily_stats(network_mocking):
         stats = scrape_validator_daily_stats(
             validator_index=validator_index,
             last_known_timestamp=0,
-            msg_aggregator=function_scope_messages_aggregator,
         )
 
     assert len(stats) >= 81
     expected_stats = [ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1607126400,    # 2020/12/05
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=ZERO,
-        end_amount=FVal(32),
-        deposits_number=1,
-        amount_deposited=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1607212800,    # 2020/12/06
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=FVal(32),
-        end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1607299200,    # 2020/12/07
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=FVal(32),
-        end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1607385600,  # 2020/12/08
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=FVal(32),
-        end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1607472000,  # 2020/12/09
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=FVal(32),
-        end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1607558400,  # 2020/12/10
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=FVal(32),
-        end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1607644800,  # 2020/12/11
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=FVal(32),
-        end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1607731200,  # 2020/12/12
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=FVal(32),
-        end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1607817600,  # 2020/12/13
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=FVal(32),
-        end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1607904000,  # 2020/12/14
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_amount=FVal(32),
-        end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1607990400,  # 2020/12/15
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('0.0119'),
-        start_amount=FVal(32),
-        end_amount=FVal('32.0119'),
-        proposed_blocks=1,
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1608076800,  # 2020/12/16
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('0.01318'),
-        start_amount=FVal('32.0119'),
-        end_amount=FVal('32.02508'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1608163200,  # 2020/12/17
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('-0.00006'),
-        start_amount=FVal('32.02508'),
-        end_amount=FVal('32.02503'),
-        missed_attestations=126,
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1608249600,  # 2020/12/18
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('0.01286'),
-        start_amount=FVal('32.02503'),
-        end_amount=FVal('32.03789'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1608336000,  # 2020/12/19
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('0.01267'),
-        start_amount=FVal('32.03789'),
-        end_amount=FVal('32.05056'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1608422400,  # 2020/12/20
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('0.01442'),
-        start_amount=FVal('32.05056'),
-        end_amount=FVal('32.06499'),
-        missed_attestations=1,
-        proposed_blocks=1,
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1608508800,  # 2020/12/21
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('0.01237'),
-        start_amount=FVal('32.06499'),
-        end_amount=FVal('32.07736'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1608595200,  # 2020/12/22
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('0.01213'),
-        start_amount=FVal('32.07736'),
-        end_amount=FVal('32.08949'),
-        missed_attestations=1,
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1608681600,  # 2020/12/23
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('0.012'),
-        start_amount=FVal('32.08949'),
-        end_amount=FVal('32.10148'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1608768000,  # 2020/12/24
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('0.01194'),
-        start_amount=FVal('32.10148'),
-        end_amount=FVal('32.11342'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1608854400,  # 2020/12/25
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('0.01174'),
-        start_amount=FVal('32.11342'),
-        end_amount=FVal('32.12517'),
     )]
     stats.reverse()
     assert stats[:len(expected_stats)] == expected_stats
 
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
-def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unused-argument  # noqa: E501
-        network_mocking,
-        price_historian,
-        function_scope_messages_aggregator,
-):
+def test_validator_daily_stats_with_last_known_timestamp(network_mocking, price_historian):  # pylint: disable=unused-argument  # noqa: E501
     validator_index = 33710
     with mock_scrape_validator_daily_stats(network_mocking):
         stats = scrape_validator_daily_stats(
             validator_index=validator_index,
             last_known_timestamp=1613520000,
-            msg_aggregator=function_scope_messages_aggregator,
         )
 
     assert len(stats) >= 6
     expected_stats = [ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1613606400,    # 2021/02/18
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('0.00784'),
-        start_amount=FVal('32.6608'),
-        end_amount=FVal('32.66863'),
-        missed_attestations=1,
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1613692800,    # 2021/02/19
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('0.00683'),
-        start_amount=FVal('32.66863'),
-        end_amount=FVal('32.67547'),
-        missed_attestations=19,
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1613779200,    # 2021/02/20
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('0.00798'),
-        start_amount=FVal('32.67547'),
-        end_amount=FVal('32.68345'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1613865600,    # 2021/02/21
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('0.01114'),
-        start_amount=FVal('32.68345'),
-        end_amount=FVal('32.69459'),
-        missed_attestations=3,
-        proposed_blocks=1,
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1613952000,    # 2021/02/22
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('0.00782'),
-        start_amount=FVal('32.69459'),
-        end_amount=FVal('32.70241'),
-        missed_attestations=1,
     ), ValidatorDailyStats(
         validator_index=validator_index,
         timestamp=1614038400,    # 2021/02/23
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
         pnl=FVal('0.00772'),
-        start_amount=FVal('32.70241'),
-        end_amount=FVal('32.71013'),
-        missed_attestations=1,
     )]
 
     stats.reverse()
@@ -444,10 +282,9 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
 
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
-def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-argument  # noqa: E501
+def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-argument
         price_historian,
         database,
-        function_scope_messages_aggregator,
         eth2,
         network_mocking,
 ):
@@ -470,11 +307,10 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             to_ts=1614038500,
         )
         with database.conn.read_ctx() as cursor:
-            stats, filter_total_found, sum_pnl, sum_usd_value = eth2.get_validator_daily_stats(
+            stats, filter_total_found, sum_pnl = eth2.get_validator_daily_stats(
                 cursor=cursor,
                 filter_query=filter_query,
                 only_cache=False,
-                msg_aggregator=function_scope_messages_aggregator,
             )
 
         assert stats_call.call_count == 1
@@ -483,70 +319,38 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
         expected_stats = [ValidatorDailyStats(
             validator_index=validator_index,
             timestamp=1613606400,    # 2021/02/18
-            start_usd_price=FVal(1.55),
-            end_usd_price=FVal(1.55),
             pnl=FVal('0.00784'),
-            start_amount=FVal('32.6608'),
-            end_amount=FVal('32.66863'),
-            missed_attestations=1,
         ), ValidatorDailyStats(
             validator_index=validator_index,
             timestamp=1613692800,    # 2021/02/19
-            start_usd_price=FVal(1.55),
-            end_usd_price=FVal(1.55),
             pnl=FVal('0.00683'),
-            start_amount=FVal('32.66863'),
-            end_amount=FVal('32.67547'),
-            missed_attestations=19,
         ), ValidatorDailyStats(
             validator_index=validator_index,
             timestamp=1613779200,    # 2021/02/20
-            start_usd_price=FVal(1.55),
-            end_usd_price=FVal(1.55),
             pnl=FVal('0.00798'),
-            start_amount=FVal('32.67547'),
-            end_amount=FVal('32.68345'),
         ), ValidatorDailyStats(
             validator_index=validator_index,
             timestamp=1613865600,    # 2021/02/21
-            start_usd_price=FVal(1.55),
-            end_usd_price=FVal(1.55),
             pnl=FVal('0.01114'),
-            start_amount=FVal('32.68345'),
-            end_amount=FVal('32.69459'),
-            missed_attestations=3,
-            proposed_blocks=1,
         ), ValidatorDailyStats(
             validator_index=validator_index,
             timestamp=1613952000,    # 2021/02/22
-            start_usd_price=FVal(1.55),
-            end_usd_price=FVal(1.55),
             pnl=FVal('0.00782'),
-            start_amount=FVal('32.69459'),
-            end_amount=FVal('32.70241'),
-            missed_attestations=1,
         ), ValidatorDailyStats(
             validator_index=validator_index,
             timestamp=1614038400,    # 2021/02/23
-            start_usd_price=FVal(1.55),
-            end_usd_price=FVal(1.55),
             pnl=FVal('0.00772'),
-            start_amount=FVal('32.70241'),
-            end_amount=FVal('32.71013'),
-            missed_attestations=1,
         )]
         # TODO: doesn't seem to be related to the refactoring. Need to check.
         assert stats[:len(expected_stats)] == expected_stats
         assert sum_pnl >= sum(x.pnl for x in expected_stats)
-        assert sum_usd_value >= sum(x.pnl * ((x.start_usd_price + x.end_usd_price) / 2) for x in expected_stats)  # noqa: E501
 
         with database.conn.read_ctx() as cursor:
             # Make sure that calling it again does not make an external call
-            stats, filter_total_found, _, _ = eth2.get_validator_daily_stats(
+            stats, filter_total_found, _ = eth2.get_validator_daily_stats(
                 cursor=cursor,
                 filter_query=filter_query,
                 only_cache=False,
-                msg_aggregator=function_scope_messages_aggregator,
             )
         assert stats_call.call_count == 1
         assert stats[:len(expected_stats)] == expected_stats
@@ -557,21 +361,19 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             ownership_proportion=FVal(0.45),
         )
         with database.conn.read_ctx() as cursor:
-            stats, filter_total_found, _, _ = eth2.get_validator_daily_stats(
+            stats, filter_total_found, _ = eth2.get_validator_daily_stats(
                 cursor=cursor,
                 filter_query=filter_query,
                 only_cache=False,
-                msg_aggregator=function_scope_messages_aggregator,
             )
         last_stat = stats[:len(expected_stats)][-1]
-        assert last_stat.pnl_balance.amount == expected_stats[-1].pnl_balance.amount * FVal(0.45)  # noqa: E501
+        assert last_stat.pnl == expected_stats[-1].pnl * FVal(0.45)
 
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
 def test_validator_daily_stats_with_genesis_event(
         network_mocking: bool,
         price_historian: 'PriceHistorian',  # pylint: disable=unused-argument
-        function_scope_messages_aggregator: 'MessagesAggregator',
 ) -> None:
     """
     Test that if profit returned by beaconchain on genesis is > 32 ETH the app
@@ -583,29 +385,17 @@ def test_validator_daily_stats_with_genesis_event(
         stats = scrape_validator_daily_stats(
             validator_index=validator_index,
             last_known_timestamp=Timestamp(0),
-            msg_aggregator=function_scope_messages_aggregator,
         )
     assert stats == [
         ValidatorDailyStats(
             validator_index=999,
             timestamp=DAY_AFTER_ETH2_GENESIS,
-            start_amount=FVal('0'),
-            end_amount=FVal('32.01201'),
             pnl=FVal('0.01201'),
-            start_usd_price=FVal(1.55),
-            end_usd_price=FVal(1.55),
-            missed_attestations=2,
             ownership_percentage=ONE,
         ), ValidatorDailyStats(
             validator_index=999,
             timestamp=Timestamp(1606694400),
-            start_amount=ZERO,
-            end_amount=ZERO,
             pnl=ZERO,
-            amount_deposited=FVal(32),
-            deposits_number=1,
-            start_usd_price=FVal(1.55),
-            end_usd_price=FVal(1.55),
             ownership_percentage=ONE,
         ),
     ]
@@ -613,13 +403,12 @@ def test_validator_daily_stats_with_genesis_event(
 
 @pytest.mark.skipif('CI' in os.environ, reason='do not run this in CI as it spams')
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
-def test_scrape_genesis_validator_stats_all(price_historian, function_scope_messages_aggregator):  # noqa: E501 # pylint: disable=unused-argument
+def test_scrape_genesis_validator_stats_all(price_historian):  # pylint: disable=unused-argument
     """A test to see that the scraper of daily stats goes to the very first day of
     genesis for old validators despite UI actually showing pages"""
     stats = scrape_validator_daily_stats(
         validator_index=1,
         last_known_timestamp=Timestamp(0),
-        msg_aggregator=function_scope_messages_aggregator,
     )
     assert len(stats) >= 861
     assert stats[-1].timestamp == 1606694400

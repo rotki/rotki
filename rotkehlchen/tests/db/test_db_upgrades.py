@@ -1357,7 +1357,10 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     # check that there are two kraken events and one of them has incorrect information
     cursor.execute('SELECT amount, asset FROM history_events WHERE event_identifier IN (?, ?)', ('KRAKEN-ETH2-EVENT', 'KRAKEN-ETH-EVENT-STAKING'))  # noqa: E501
     assert cursor.fetchall() == [('0.0000355988', 'ETH'), ('-0.0032936117', 'ETH2')]
-
+    assert cursor.execute('SELECT * FROM eth2_daily_staking_details').fetchall() == [
+        (12345, 1682519933, '1000.0', '1001.0', '0.00001', '32.0', '32.00001', None, None, None, None, None, None, None, None, None),  # noqa: E501
+        (67890, 1682519934, '1200.5', '1200.6', '0.00003', '32.01', '32.01003', None, None, None, None, None, None, None, None, None),  # noqa: E501
+    ]
     db_v36.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -1412,6 +1415,9 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     ]
     cursor.execute('SELECT * FROM history_events WHERE identifier=?', (176,))
     assert cursor.fetchone() == (176, 0, 'KRAKEN-ETH2-EVENT', 0, 1681826144996, 'B', 'kraken', 'ETH2', '0.0032936117', '6.930681228076', 'Automatic virtual conversion of staked ETH rewards to ETH', 'informational', 'none')  # noqa: E501
+    assert cursor.execute(
+        'SELECT * FROM eth2_daily_staking_details',
+    ).fetchall() == [(12345, 1682519933, '0.00001'), (67890, 1682519934, '0.00003')]
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

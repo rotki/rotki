@@ -43,27 +43,7 @@
         "amount": "0.00496",
         "usd_value": "16.52580240"
       },
-      "start_balance": {
-        "amount": "32.1",
-        "usd_value": "103633.566"
-      },
-      "end_balance": {
-        "amount": "32.1",
-        "usd_value": "110268.957"
-      },
-      "missed_attestations": 2,
-      "orphaned_attestations": 0,
-      "proposed_blocks": 0,
-      "missed_blocks": 0,
-      "accounting_event_type": "staking",
-      "orphaned_blocks": 0,
-      "included_attester_slashings": 0,
-      "proposer_attester_slashings": 0,
-      "deposits_number": 0,
-      "deposited_balance": {
-        "amount": "0",
-        "usd_value": "0.00"
-      }
+      "accounting_event_type": "staking"
     },
     {
       "validator_index": 207580,
@@ -72,27 +52,7 @@
         "amount": "0.00505",
         "usd_value": "18.34248375"
       },
-      "accounting_event_type": "staking",
-      "start_balance": {
-        "amount": "32.1",
-        "usd_value": "110268.957"
-      },
-      "end_balance": {
-        "amount": "32.11",
-        "usd_value": "122954.9698"
-      },
-      "missed_attestations": 0,
-      "orphaned_attestations": 0,
-      "proposed_blocks": 0,
-      "missed_blocks": 0,
-      "orphaned_blocks": 0,
-      "included_attester_slashings": 0,
-      "proposer_attester_slashings": 0,
-      "deposits_number": 0,
-      "deposited_balance": {
-        "amount": "0",
-        "usd_value": "0.00"
-      }
+      "accounting_event_type": "staking"
     },
     {
       "validator_index": 207580,
@@ -101,27 +61,7 @@
         "amount": "0.00499",
         "usd_value": "19.0041156"
       },
-      "accounting_event_type": "staking",
-      "start_balance": {
-        "amount": "32.11",
-        "usd_value": "122954.9698"
-      },
-      "end_balance": {
-        "amount": "32.11",
-        "usd_value": "121623.047"
-      },
-      "missed_attestations": 2,
-      "orphaned_attestations": 0,
-      "proposed_blocks": 0,
-      "missed_blocks": 0,
-      "orphaned_blocks": 0,
-      "included_attester_slashings": 0,
-      "proposer_attester_slashings": 0,
-      "deposits_number": 0,
-      "deposited_balance": {
-        "amount": "0",
-        "usd_value": "0.00"
-      }
+      "accounting_event_type": "staking"
     },
     {
       "validator_index": 207580,
@@ -130,27 +70,7 @@
         "amount": "0.00498",
         "usd_value": "19.24145010"
       },
-      "start_balance": {
-        "amount": "32.11",
-        "usd_value": "121623.047"
-      },
-      "end_balance": {
-        "amount": "32.12",
-        "usd_value": "126546.0548"
-      },
-      "missed_attestations": 1,
-      "accounting_event_type": "staking",
-      "orphaned_attestations": 0,
-      "proposed_blocks": 0,
-      "missed_blocks": 0,
-      "orphaned_blocks": 0,
-      "included_attester_slashings": 0,
-      "proposer_attester_slashings": 0,
-      "deposits_number": 0,
-      "deposited_balance": {
-        "amount": "0",
-        "usd_value": "0.0"
-      }
+      "accounting_event_type": "staking"
     },
     {
       "validator_index": 207580,
@@ -159,27 +79,7 @@
         "amount": "0.00504",
         "usd_value": "19.7235360"
       },
-      "start_balance": {
-        "amount": "32.12",
-        "usd_value": "126546.0548"
-      },
-      "end_balance": {
-        "amount": "32.12",
-        "usd_value": "124850.7612"
-      },
-      "missed_attestations": 0,
-      "orphaned_attestations": 0,
-      "proposed_blocks": 0,
-      "accounting_event_type": "staking",
-      "missed_blocks": 0,
-      "orphaned_blocks": 0,
-      "included_attester_slashings": 0,
-      "proposer_attester_slashings": 0,
-      "deposits_number": 0,
-      "deposited_balance": {
-        "amount": "0",
-        "usd_value": "0.00"
-      }
+      "accounting_event_type": "staking"
     },
     {
       "validator_index": 207580,
@@ -188,27 +88,7 @@
         "amount": "0.00501",
         "usd_value": "19.6375467"
       },
-      "start_balance": {
-        "amount": "32.12",
-        "usd_value": "124850.7612"
-      },
-      "end_balance": {
-        "amount": "32.13",
-        "usd_value": "126988.3629"
-      },
-      "missed_attestations": 1,
-      "orphaned_attestations": 0,
-      "proposed_blocks": 0,
-      "missed_blocks": 0,
-      "orphaned_blocks": 0,
-      "included_attester_slashings": 0,
-      "proposer_attester_slashings": 0,
-      "accounting_event_type": "staking",
-      "deposits_number": 0,
-      "deposited_balance": {
-        "amount": "0",
-        "usd_value": "0.00"
-      }
+      "accounting_event_type": "staking"
     },
     {
       "validator_index": 207580,
@@ -217,27 +97,7 @@
         "amount": "0.00492",
         "usd_value": "19.38659580"
       },
-      "start_balance": {
-        "amount": "32.13",
-        "usd_value": "126988.3629"
-      },
-      "end_balance": {
-        "amount": "32.13",
-        "usd_value": "126219.492"
-      },
-      "missed_attestations": 0,
-      "accounting_event_type": "staking",
-      "orphaned_attestations": 0,
-      "proposed_blocks": 0,
-      "missed_blocks": 0,
-      "orphaned_blocks": 0,
-      "included_attester_slashings": 0,
-      "proposer_attester_slashings": 0,
-      "deposits_number": 0,
-      "deposited_balance": {
-        "amount": "0",
-        "usd_value": "0.00"
-      }
+      "accounting_event_type": "staking"
     },
     {
       "timestamp": 1643182009,
@@ -322,27 +182,7 @@
         "amount": "0.00332",
         "usd_value": "10.57677300"
       },
-      "start_balance": {
-        "amount": "0",
-        "usd_value": "0.00"
-      },
-      "end_balance": {
-        "amount": "0",
-        "usd_value": "0.00"
-      },
-      "missed_attestations": 0,
-      "orphaned_attestations": 0,
-      "proposed_blocks": 0,
-      "missed_blocks": 0,
-      "accounting_event_type": "staking",
-      "orphaned_blocks": 0,
-      "included_attester_slashings": 0,
-      "proposer_attester_slashings": 0,
-      "deposits_number": 1,
-      "deposited_balance": {
-        "amount": "32.0000",
-        "usd_value": "97513.280000"
-      }
+      "accounting_event_type": "staking"
     }
   ],
   "settings": {

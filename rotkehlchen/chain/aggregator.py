@@ -1100,7 +1100,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self,
             filter_query: Eth2DailyStatsFilterQuery,
             only_cache: bool,
-    ) -> tuple[list['ValidatorDailyStats'], int, FVal, FVal]:
+    ) -> tuple[list['ValidatorDailyStats'], int, Balance]:
         """May raise:
         - ModuleInactive if eth2 module is not activated
         """
@@ -1108,12 +1108,15 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if eth2 is None:
             raise ModuleInactive('Cant query eth2 daily stats details since eth2 module is not active')  # noqa: E501
         with self.database.conn.read_ctx() as cursor:
-            return eth2.get_validator_daily_stats(
+            daily_stats, total_found, eth_pnl = eth2.get_validator_daily_stats(
                 cursor=cursor,
                 filter_query=filter_query,
                 only_cache=only_cache,
-                msg_aggregator=self.msg_aggregator,
             )
+            sum_usd_value = ZERO
+            for stats_entry in daily_stats:
+                sum_usd_value += stats_entry.pnl_balance.usd_value
+            return daily_stats, total_found, Balance(amount=eth_pnl, usd_value=sum_usd_value)
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -1142,14 +1145,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         }
         # And now get all daily stats and create defi events for them
         with self.database.conn.read_ctx() as cursor:
-            stats, _, _, _ = eth2.get_validator_daily_stats(
+            stats, _, _ = eth2.get_validator_daily_stats(
                 cursor=cursor,
                 filter_query=Eth2DailyStatsFilterQuery.make(from_ts=from_timestamp, to_ts=to_timestamp),  # noqa: E501
                 only_cache=False,
-                msg_aggregator=self.msg_aggregator,
             )
         for stats_entry in stats:
-            if stats_entry.pnl_balance.amount == ZERO:
+            if stats_entry.pnl == ZERO:
                 continue
 
             # Take into account the validator ownership proportion if is not 100%
