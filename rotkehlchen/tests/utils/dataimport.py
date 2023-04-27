@@ -1,6 +1,6 @@
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.converters import asset_from_binance, asset_from_cryptocom
@@ -1654,8 +1654,8 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
 
 
 def assert_is_equal_history_event(
-        actual: HistoryEvent,
-        expected: HistoryEvent,
+        actual: HistoryBaseEntry,
+        expected: HistoryBaseEntry,
 ) -> None:
     """Compares two `HistoryEvent` objects omitting the `event_identifier` as its
     generated randomly upon import."""

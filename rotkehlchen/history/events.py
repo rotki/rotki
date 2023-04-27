@@ -302,12 +302,12 @@ class EventsHistorian:
 
         db = DBHistoryEvents(self.db)
         has_premium = self.chains_aggregator.premium is not None
-        events, filter_total_found = db.get_specific_history_events_and_limit_info(
+        events, filter_total_found = db.get_history_events_and_limit_info(
             cursor=cursor,
             filter_query=filter_query,
             has_premium=has_premium,
         )
-        return events, filter_total_found
+        return events, filter_total_found  # type: ignore  # event is guaranteed HistoryEvent
 
     def get_history(
             self,
@@ -443,7 +443,7 @@ class EventsHistorian:
         # Include all base history entries
         history_events_db = DBHistoryEvents(self.db)
         with self.db.conn.read_ctx() as cursor:
-            base_entries = history_events_db.get_all_history_events(
+            base_entries = history_events_db.get_history_events(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
                     # We need to have history since before the range

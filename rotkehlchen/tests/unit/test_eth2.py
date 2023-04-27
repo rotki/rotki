@@ -922,7 +922,12 @@ def test_combine_block_with_tx_events(eth2, database):
     eth2.combine_block_with_tx_events()
 
     with database.conn.read_ctx() as cursor:
-        events = dbevents.get_all_history_events(cursor, HistoryEventFilterQuery.make(), True, False)  # noqa: E501
+        events = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+            group_by_event_ids=False,
+        )
 
     modified_event = EvmEvent(
         identifier=3,
