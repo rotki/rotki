@@ -53,6 +53,7 @@ from rotkehlchen.errors.misc import (
     InputError,
     ModuleInactive,
     ModuleInitializationFailure,
+    RemoteError,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
@@ -1283,15 +1284,19 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         active_chains = []
         for chain in chains:
             chain_manager = self.get_chain_manager(chain)
-            if chain == SupportedBlockchain.AVALANCHE:
-                # just check balance and nonce in avalanche
-                has_activity = (
-                    chain_manager.w3.eth.get_transaction_count(address) != 0 or
-                    chain_manager.get_avax_balance(address) != ZERO
-                )
-                if has_activity is False:
+            try:
+                if chain == SupportedBlockchain.AVALANCHE:
+                    # just check balance and nonce in avalanche
+                    has_activity = (
+                        chain_manager.w3.eth.get_transaction_count(address) != 0 or
+                        chain_manager.get_avax_balance(address) != ZERO
+                    )
+                    if has_activity is False:
+                        continue
+                elif chain_manager.node_inquirer.etherscan.has_activity(address) is False:  # noqa: E501
                     continue
-            elif chain_manager.node_inquirer.etherscan.has_activity(address) is False:  # noqa: E501
+            except RemoteError as e:
+                log.error(f'{str(e)} when checking if {address} is active at {chain}')
                 continue
 
             active_chains.append(chain)
@@ -1317,6 +1322,9 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 )
             except InputError:
                 log.debug(f'Not adding {address} to {chain} since it already exists')
+                continue
+            except RemoteError as e:
+                log.error(f'Not adding {address} to {chain} due to {str(e)}')
                 continue
 
             added_chains.append(chain)
@@ -1348,6 +1356,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         """Adds each account for all evm chain if it is not a contract in ethereum mainnet.
 
         Returns a list of tuples of the address and the chain it was added in.
+
+        May raise:
+        - RemoteError if an external service such as etherscan is queried and there
+        is a problem with its query.
         """
         added_accounts: list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]] = []
         # Distinguish between contracts and EOAs
