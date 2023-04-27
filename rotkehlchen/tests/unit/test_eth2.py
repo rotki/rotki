@@ -1,7 +1,7 @@
 import os
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -16,6 +16,7 @@ from rotkehlchen.accounting.structures.eth2 import (
 )
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.api.v1.schemas import EthStakingHistoryStatsProfit
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
 from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
@@ -638,6 +639,119 @@ def test_get_validators_to_query_for_withdrawals(database):
 
     result = db.get_validators_to_query_for_withdrawals(now_ms)
     assert result == [(1, 1), (2, 20), (3, 30)]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b', '0xF4fEae08C1Fa864B64024238E33Bfb4A3Ea7741d']])  # noqa: E501
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+def test_eth_validator_stat_calculation(database, blockchain):
+    """Test that filter works correctly and obtains stats for eth staking events"""
+    dbevents = DBHistoryEvents(database)
+    dbeth2 = DBEth2(database)
+    vindex1 = 45555
+    vindex1_address = string_to_evm_address('0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b')
+    vindex2 = 114543
+    vindex2_address = string_to_evm_address('0xF4fEae08C1Fa864B64024238E33Bfb4A3Ea7741d')
+    mev_builder_address = string_to_evm_address('0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990')
+    block_number = 15824493
+    tx_hash = deserialize_evm_tx_hash('0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804')  # noqa: E501
+    # tx_hash_2 doesn't exist. Only here for testing
+    tx_hash_2 = deserialize_evm_tx_hash('0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df805')  # noqa: E501
+    block_reward_1 = FVal('0.2')
+    block_reward_2 = FVal('0.3')
+    no_mev_block_reward_2 = FVal('0.8')
+    mev_reward_1 = FVal('4')
+    mev_reward_2 = FVal('3')
+    withdrawal_1 = FVal('5')
+    timestampms = TimestampMS(1666693607000)
+
+    with database.user_write() as write_cursor:
+        dbevents.add_history_events(write_cursor, [
+            EthBlockEvent(
+                validator_index=vindex1,
+                timestamp=timestampms,
+                balance=Balance(block_reward_1),
+                fee_recipient=mev_builder_address,
+                block_number=block_number,
+                is_mev_reward=False,
+            ), EthBlockEvent(
+                validator_index=vindex1,
+                timestamp=timestampms,
+                balance=Balance(mev_reward_1),
+                fee_recipient=vindex1_address,
+                block_number=block_number,
+                is_mev_reward=True,
+            ), EthBlockEvent(
+                validator_index=vindex2,
+                timestamp=timestampms,
+                balance=Balance(block_reward_2),
+                fee_recipient=mev_builder_address,
+                block_number=block_number + 1,
+                is_mev_reward=False,
+            ), EthBlockEvent(
+                validator_index=vindex2,
+                timestamp=timestampms,
+                balance=Balance(mev_reward_2),
+                fee_recipient=vindex2_address,
+                block_number=block_number + 1,
+                is_mev_reward=True,
+            ), EvmEvent(
+                tx_hash=tx_hash,
+                sequence_index=0,
+                timestamp=timestampms,
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                balance=Balance(mev_reward_1),
+                location_label=vindex1_address,
+                notes=f'Received {mev_reward_1} ETH from {mev_builder_address}',
+            ), EvmEvent(
+                tx_hash=tx_hash_2,
+                sequence_index=0,
+                timestamp=timestampms,
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                balance=Balance(mev_reward_2),
+                location_label=vindex2_address,
+                notes=f'Received {mev_reward_2} ETH from {mev_builder_address}',
+            ), EthWithdrawalEvent(
+                validator_index=vindex1,
+                timestamp=timestampms,
+                balance=Balance(withdrawal_1),
+                withdrawal_address=vindex1_address,
+                is_exit=False,
+            ),
+            EthBlockEvent(
+                identifier=8,
+                validator_index=vindex2,
+                timestamp=TimestampMS(1671379127000),
+                balance=Balance(no_mev_block_reward_2),
+                fee_recipient=vindex2_address,
+                block_number=16212625,
+                is_mev_reward=False,
+            ),
+        ])
+
+    schema = EthStakingHistoryStatsProfit(chains_aggregator=blockchain)
+
+    def _process_data(data: dict[str, Any]) -> dict[str, Any]:
+        """Extract filters from marshmallow schema"""
+        arguments = schema.load(data)
+        return {
+            'withdrawals_filter_query': arguments['withdrawals_filter_query'],
+            'execution_filter_query': arguments['execution_filter_query'],
+        }
+
+    # test a normal query
+    assert dbeth2.get_validators_profit(**_process_data({})) == (withdrawal_1, mev_reward_1 + mev_reward_2 + no_mev_block_reward_2)  # noqa: E501
+    # test filter by address
+    assert dbeth2.get_validators_profit(**_process_data({'addresses': [vindex1_address]})) == (withdrawal_1, mev_reward_1)  # noqa: E501
+    # test filter by validator index
+    assert dbeth2.get_validators_profit(**_process_data({'validator_indices': [vindex1]})) == (withdrawal_1, mev_reward_1)  # noqa: E501
+    # test filter by address with block without mev rewards
+    assert dbeth2.get_validators_profit(**_process_data({'validator_indices': [vindex2]})) == (ZERO, mev_reward_2 + no_mev_block_reward_2)  # noqa: E501
 
 
 def test_combine_block_with_tx_events(eth2, database):

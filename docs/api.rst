@@ -8581,9 +8581,9 @@ Getting Loopring balances
 Getting Eth2 Staking details
 ==============================
 
-.. http:get:: /api/(version)/blockchains/ETH2/stake/details
+.. http:PUT:: /api/(version)/blockchains/ETH2/stake/details
 
-   Doing a GET on the ETH2 stake details endpoint will return detailed information about your ETH2 staking activity.
+   Doing a PUT on the ETH2 stake details endpoint will return detailed information about your ETH2 staking activity and information about the earned ETH as part of withdrawals, mev rewards and new blocks.
 
    .. note::
       This endpoint is only available for premium users
@@ -8591,14 +8591,21 @@ Getting Eth2 Staking details
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
+
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH2/stake/details HTTP/1.1
+      PUT /api/1/blockchains/ETH2/stake/details HTTP/1.1
       Host: localhost:5042
 
-   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+      {'validator_indices': [1111]}
+
+      :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not.
+      :reqjson bool ignore_cache: If true then cached information from beaconchain is ignored and queried again.
+      :reqjson list[string] addresses: A list of location labels to optionally filter by. Is an EVM address and is used to filter the validator details.
+      :reqjson list[int] validator_indices: An optional list of validator indices to filter by.
+
 
    **Example Response**:
 
@@ -8638,11 +8645,11 @@ Getting Eth2 Staking details
               "performance_1m": {"amount": "0", "usd_value": "0"},
               "performance_1y": {"amount": "0", "usd_value": "0"},
               "performance_total": {"amount": "42.5", "usd_value": "43500"}
-          }],
+        }],
         "message": "",
       }
 
-   :resjson result list: The result of the Eth2 staking details for all of the user's accounts. It's a list of details per validator. Important thing to note here is that if all performance entries are 0 then this means that the validator is not active yet and is still waiting in the deposit queue.
+   :resjson details list: The result of the Eth2 staking details for all of the user's accounts. It's a list of details per validator. Important thing to note here is that if all performance entries are 0 then this means that the validator is not active yet and is still waiting in the deposit queue.
 
    :resjson eth_depositor [optional]string: The eth1 address that made the deposit for the validator. Can be missing if we can't find it yet.
    :resjson index int: The Eth2 validator index.
@@ -8658,6 +8665,53 @@ Getting Eth2 Staking details
    :statuscode 409: User is not logged in. Or eth2 module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+
+.. http:POST:: /api/(version)/blockchains/ETH2/stake/details
+
+   Doing a POST on the ETH2 stake details endpoint will query the database for information about earned ETH as part of withdrawals, mev rewards and new blocks.
+
+   .. note::
+      This endpoint is only available for premium users
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/blockchains/ETH2/stake/details HTTP/1.1
+      Host: localhost:5042
+
+      {'validator_indices': [1111]}
+
+      :reqjson int from_timestamp: The timestamp from which to start querying. Default is 0.
+      :reqjson int to_timestamp: The timestamp until which to query. Default is now.
+      :reqjson list[string] addresses: A list of location labels to optionally filter by. Is a list of EVM addresses and is used to filter the rewards.
+      :reqjson list[int] validator_indices: An optional list of validator indices to filter by.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "withdrawn_consensus_layer_rewards": "4.2",
+          "execution_layer_rewards": "3.7",
+        },
+        "message": "",
+      }
+
+   :resjson withdrawn_consensus_layer_rewards string: Amount of ETH collected as withdrawals from the beacon chain for the given filter.
+   :resjson execution_layer_rewards string: Amount of ETH earned as part of MEV rewards and new blocks created for the given filter.
+
+   :statuscode 200: Stats correctly queried.
+   :statuscode 409: User is not logged in. Or eth2 module is not activated.
+   :statuscode 500: Internal rotki error.
+
 
 Getting Eth2 Staking daily stats
 =====================================

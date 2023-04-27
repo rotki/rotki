@@ -41,6 +41,17 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_accounts):
     """This test uses real data and queries the eth2 details, deposits and daily stats"""
+    # first check that the endpoint for profit can be correctly queried
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2stakedetailsresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert FVal(result['withdrawn_consensus_layer_rewards']) == ZERO
+    assert FVal(result['execution_layer_rewards']) == ZERO
+
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
@@ -51,11 +62,11 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     )
     with ExitStack() as stack:
         setup.enter_blockchain_patches(stack)
-        response = requests.get(
+        response = requests.put(
             api_url_for(
                 rotkehlchen_api_server,
                 'eth2stakedetailsresource',
-            ), json={'async_query': async_query},
+            ), json={'async_query': async_query, 'ignore_cache': True},
         )
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -106,25 +117,24 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     assert len(errors) == 0
 
     # Now query eth2 details also including manually input validators to see they work
-    with ExitStack() as stack:
-        setup.enter_blockchain_patches(stack)
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server,
-                'eth2stakedetailsresource',
-            ), json={'async_query': async_query},
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2stakedetailsresource',
+        ), json={'async_query': async_query, 'ignore_cache': True},
+    )
+
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(
+            rotkehlchen_api_server,
+            task_id,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 5,
         )
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task(
-                rotkehlchen_api_server,
-                task_id,
-                timeout=ASYNC_TASK_WAIT_TIMEOUT * 5,
-            )
-            assert outcome['message'] == ''
-            details = outcome['result']
-        else:
-            details = assert_proper_response_with_result(response)
+        assert outcome['message'] == ''
+        details = outcome['result']
+    else:
+        details = assert_proper_response_with_result(response)
 
     # The 2 new validators along with their depositor details should be there
     assert len(details) >= 6
@@ -135,6 +145,26 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     assert details[2]['index'] == new_index_1
     # TODO: This used to be 0xc2288B408Dc872A1546F13E6eBFA9c94998316a2 but now without queried events we got nothing: # noqa: E501
     assert details[2]['eth1_depositor'] is None
+
+    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = rotki.msg_aggregator.consume_errors()
+    assert len(warnings) == 0
+    assert len(errors) == 0
+
+    # Now query eth2 details using filters
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2stakedetailsresource',
+        ), json={
+            'async_query': async_query,
+            'ignore_cache': False,
+            'validator_indices': [new_index_1],
+        },
+    )
+    details = assert_proper_response_with_result(response)
+    assert len(details) == 1
+    assert details[0]['index'] == new_index_1
 
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
@@ -153,8 +183,8 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     total_stats = len(result['entries'])
     assert total_stats == result['entries_total']
     assert total_stats == result['entries_found']
-    full_sum_pnl = FVal(result['sum_pnl'])
-    full_sum_usd_value = FVal(result['sum_usd_value'])
+    full_sum_pnl = FVal(result['sum_pnl']['amount'])
+    full_sum_usd_value = FVal(result['sum_pnl']['usd_value'])
     calculated_sum_pnl = ZERO
     calculated_sum_usd_value = ZERO
     for entry in result['entries']:
@@ -192,8 +222,8 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     assert result['entries_total'] == total_stats
     assert result['entries_found'] <= total_stats
     assert len(result['entries']) == result['entries_found']
-    full_sum_pnl = FVal(result['sum_pnl'])
-    full_sum_usd_value = FVal(result['sum_usd_value'])
+    full_sum_pnl = FVal(result['sum_pnl']['amount'])
+    full_sum_usd_value = FVal(result['sum_pnl']['usd_value'])
     calculated_sum_pnl = ZERO
     calculated_sum_usd_value = ZERO
     next_page_times = []
@@ -225,8 +255,6 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     result = assert_proper_response_with_result(response)
     assert result['entries_total'] == total_stats
     assert result['entries_found'] <= total_stats
-    assert FVal(result['sum_pnl']) == full_sum_pnl, 'pagination should show same sum'
-    assert FVal(result['sum_usd_value']) == full_sum_usd_value, 'pagination should show same sum'
     assert len(result['entries']) == 5
     for idx, entry in enumerate(result['entries']):
         assert entry['validator_index'] in queried_validators
@@ -323,7 +351,7 @@ def test_query_eth2_inactive(rotkehlchen_api_server, ethereum_accounts):
     )
     with ExitStack() as stack:
         setup.enter_blockchain_patches(stack)
-        response = requests.get(
+        response = requests.put(
             api_url_for(
                 rotkehlchen_api_server,
                 'eth2stakedetailsresource',

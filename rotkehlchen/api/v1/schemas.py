@@ -30,7 +30,6 @@ from rotkehlchen.assets.asset import (
 )
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.bitcoin.bch.utils import validate_bch_address_input
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
@@ -139,6 +138,7 @@ from .fields import (
 from .types import EvmPendingTransactionDecodingApiData
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -3130,3 +3130,57 @@ class ClearAvatarsCacheSchema(Schema):
         fields.String(required=True, validate=lambda x: x.endswith('.eth')),
         load_default=None,
     )
+
+
+class EthStakingHistoryStats(Schema):
+    """Schema for querying ethereum staking history stats"""
+    addresses = DelimitedOrNormalList(EvmAddressField, load_default=None)
+    validator_indices = DelimitedOrNormalList(fields.Integer(), load_default=None)
+
+
+class EthStakingHistoryStatsProfit(EthStakingHistoryStats):
+    """Schema for querying ethereum staking history stats"""
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
+
+    def __init__(self, chains_aggregator: 'ChainsAggregator') -> None:
+        super().__init__()
+        self.chains_aggregator = chains_aggregator
+
+    @post_load
+    def make_history_event_filter(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        if (addresses := data['addresses']) is None:
+            addresses = self.chains_aggregator.queried_addresses_for_module('eth2')
+
+        common_arguments = {
+            'from_ts': data['from_timestamp'],
+            'to_ts': data['to_timestamp'],
+            'location_labels': addresses,
+            'validator_indices': data['validator_indices'],
+        }
+
+        withdrawals_filter_query = EthStakingEventFilterQuery.make(
+            **common_arguments,
+            event_types=[HistoryEventType.STAKING],
+            event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
+            entry_types=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT],
+        )
+        execution_filter_query = EthStakingEventFilterQuery.make(
+            **common_arguments,
+            event_types=[HistoryEventType.STAKING],
+            event_subtypes=[HistoryEventSubType.BLOCK_PRODUCTION, HistoryEventSubType.MEV_REWARD],
+            entry_types=[HistoryBaseEntryType.ETH_BLOCK_EVENT],
+        )
+
+        return {
+            'withdrawals_filter_query': withdrawals_filter_query,
+            'execution_filter_query': execution_filter_query,
+        }
+
+
+class EthStakingHistoryStatsDetails(EthStakingHistoryStats, AsyncIgnoreCacheQueryArgumentSchema):
+    """Schema for querying ethereum staking history details"""

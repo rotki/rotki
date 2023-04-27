@@ -7,6 +7,7 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator, ValidatorDailyStats
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.db.filtering import ETH_STAKING_EVENT_JOIN, EthStakingEventFilterQuery
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -200,3 +201,29 @@ class DBEth2():
                     f'Tried to delete eth2 validator with {field} '
                     f'{input_tuple[0]} from the DB but it did not exist',
                 )
+
+    @staticmethod
+    def _validator_stats_process_queries(
+            cursor: 'DBCursor',
+            filter_query: EthStakingEventFilterQuery,
+    ) -> FVal:
+        """Execute DB query and extract numerical value after using filter_query"""
+        base_query = 'SELECT SUM(CAST(amount AS REAL)) ' + ETH_STAKING_EVENT_JOIN
+        query, bindings = filter_query.prepare(with_pagination=False)
+        cursor.execute(base_query + query, bindings)
+        if (amount := cursor.fetchone()[0]) is not None:
+            return FVal(amount)
+
+        return ZERO
+
+    def get_validators_profit(
+            self,
+            withdrawals_filter_query: EthStakingEventFilterQuery,
+            execution_filter_query: EthStakingEventFilterQuery,
+    ) -> tuple[FVal, FVal]:
+        """Query profit as sum of withdrawn ETH and rewards for block production and mev"""
+        with self.db.conn.read_ctx() as cursor:
+            withdrawals_amount = self._validator_stats_process_queries(cursor=cursor, filter_query=withdrawals_filter_query)  # noqa: E501
+            execution_rewards_amount = self._validator_stats_process_queries(cursor=cursor, filter_query=execution_filter_query)  # noqa: E501
+
+        return withdrawals_amount, execution_rewards_amount
