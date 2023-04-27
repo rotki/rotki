@@ -832,3 +832,18 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
             assert entry['notes'] == f'Receive {mev_reward} ETH from 0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990 as mev reward for block {block_number}'  # noqa: E501
         else:
             raise AssertionError('Should not get to this sequence index')
+
+    # Also check that querying by validator indices work
+    assert event_identifier is not None
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ),
+        json={'validator_indices': [vindex1, 42]},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 8
+    for entry in result['entries']:
+        assert entry['entry']['entry_type'] == 'eth block event'
+        assert entry['entry']['validator_index'] == vindex1
