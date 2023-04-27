@@ -511,11 +511,15 @@ class Eth2(EthereumModule):
                 EthBlockEvent.form_event_identifier(entry[1]),
                 2,
                 f'{entry[2]} as mev reward for block {entry[1]}',
+                HistoryEventType.STAKING.serialize(),
+                HistoryEventSubType.MEV_REWARD.serialize(),
                 entry[0],
             ))
         with self.database.user_write() as write_cursor:
             write_cursor.executemany(
-                'UPDATE history_events SET event_identifier=?, sequence_index=?, notes=? WHERE identifier=?',  # noqa: E501
+                'UPDATE history_events '
+                'SET event_identifier=?, sequence_index=?, notes=?, type=?, subtype=?'
+                'WHERE identifier=?',
                 changes,
             )
 
