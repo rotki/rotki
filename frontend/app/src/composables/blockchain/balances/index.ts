@@ -94,12 +94,9 @@ export const useBlockchainBalances = () => {
   ): Promise<void> => {
     const { blockchain, ignoreCache } = payload;
 
-    const chains: Blockchain[] = [];
-    if (!blockchain) {
-      chains.push(...Object.values(Blockchain));
-    } else {
-      chains.push(blockchain);
-    }
+    const chains: Blockchain[] = blockchain
+      ? [blockchain]
+      : Object.values(Blockchain);
 
     try {
       await Promise.allSettled(

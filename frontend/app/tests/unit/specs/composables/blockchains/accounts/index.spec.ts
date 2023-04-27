@@ -4,7 +4,6 @@ import {
   type BasicBlockchainAccountPayload,
   type BlockchainAccountPayload
 } from '@/types/blockchain/accounts';
-import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
 
 vi.mock('@/composables/api/blockchain/accounts', () => ({
   useBlockchainAccountsApi: vi.fn().mockReturnValue({
