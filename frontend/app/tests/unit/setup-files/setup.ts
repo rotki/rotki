@@ -63,6 +63,14 @@ beforeAll(() => {
     };
   });
 
+  vi.mock('@/store/websocket', () => ({
+    useWebsocketStore: () => ({
+      connected: ref(false),
+      connect: vi.fn(),
+      disconnect: vi.fn()
+    })
+  }));
+
   vi.mock('@/utils/blockie', () => ({
     createBlockie: vi
       .fn()

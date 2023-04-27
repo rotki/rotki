@@ -75,7 +75,6 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           flags: frontend_integration
-          working-directory: ./frontend/app
           env_vars: GROUP
       - name: Upload screenshots
         uses: actions/upload-artifact@v3
