@@ -304,6 +304,7 @@ class SubstrateManager():
                 WebSocketException,
                 gevent.Timeout,
                 BlockNotFound,
+                AttributeError,  # happens in substrate library when timeout occurs some times
         ) as e:
             msg = str(e)
             if isinstance(e, gevent.Timeout):
