@@ -649,6 +649,8 @@ class TaskManager():
             task_name=task_name,
             exception_is_error=True,
             method=process_events,
+            chains_aggregator=self.chains_aggregator,
+            database=self.database,
         )]
 
     def _maybe_update_curve_pools(self) -> Optional[list[gevent.Greenlet]]:
