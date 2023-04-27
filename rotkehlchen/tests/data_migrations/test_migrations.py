@@ -514,56 +514,6 @@ def test_migration_8(
             assert_progress_message(msg, i, None)
 
 
-@pytest.mark.parametrize('use_custom_database', ['data_migration_9.db'])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-# make sure fixtures does not modify DB last_data_migration
-@pytest.mark.parametrize('data_migration_version', [None])
-def test_migration_9(database) -> None:
-    """This is a multifaceted test that tests multiple things:
-
-    1. Makes sure that if a new account was created with 1.27.0 and is opened later
-    with 1.27.1 it runs migration 9.
-    2. Make sure that migration 9 works properly
-    """
-    rotki = MockRotkiForMigrations(database)
-    # Check DB before migration
-    with rotki.data.db.conn.read_ctx() as cursor:
-        cursor.execute('SELECT COUNT(*) from location WHERE location IN ("f", "g") ')
-        assert cursor.fetchone()[0] == 0
-        cursor.execute('SELECT COUNT(*) from history_events')
-        total_history_events = cursor.fetchone()[0]
-        assert total_history_events == 242
-        cursor.execute('SELECT location from history_events')
-        assert all([x[0] == 'J'] for x in cursor)
-        cursor.execute('SELECT COUNT(*) from history_events_mappings WHERE name="chain_id"')
-        assert cursor.fetchone()[0] == total_history_events
-        cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty="curve"')
-        curve_events = cursor.fetchone()[0]
-        assert curve_events == 5
-
-    migration_patch = patch(
-        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=[MIGRATION_LIST[8]],
-    )
-    with migration_patch:
-        DataMigrationManager(rotki).maybe_migrate_data()  # type: ignore  # it's a mock
-
-    # And now assert migration worked fine
-    errors = rotki.msg_aggregator.consume_errors()
-    warnings = rotki.msg_aggregator.consume_warnings()
-    assert len(errors) == 0
-    assert len(warnings) == 0
-    with rotki.data.db.conn.read_ctx() as cursor:
-        cursor.execute('SELECT COUNT(*) from location WHERE location IN ("f", "g") ')
-        assert cursor.fetchone()[0] == 2
-        cursor.execute('SELECT COUNT(*) from history_events')
-        assert cursor.fetchone()[0] == total_history_events - curve_events
-        cursor.execute('SELECT location from history_events')
-        assert all([x[0] in ('f', 'g')] for x in cursor)
-        cursor.execute('SELECT COUNT(*) from history_events_mappings WHERE name="chain_id"')
-        assert cursor.fetchone()[0] == 0
-
-
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 # make sure fixtures does not modify DB last_data_migration
 @pytest.mark.parametrize('data_migration_version', [None])
