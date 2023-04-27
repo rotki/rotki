@@ -1,29 +1,14 @@
 import { PiniaVuePlugin } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
-import { setupServer } from 'msw/node';
 import { mockT, mockTc } from '../i18n';
-import tradeHandlers from './handlers/trades';
-import assetMovementHandlers from './handlers/asset-movements';
-import ledgerActionHandlers from './handlers/ledger-actions';
-import historyEventsHandlers from './handlers/history-events';
-import nfts from './handlers/nfts';
-import binanceSavings from './handlers/binance-savings';
-
-const server = setupServer(
-  ...tradeHandlers,
-  ...assetMovementHandlers,
-  ...ledgerActionHandlers,
-  ...historyEventsHandlers,
-  ...nfts,
-  ...binanceSavings
-);
+import { server } from './server';
 
 beforeAll(() => {
   Vue.use(Vuetify);
   Vue.use(PiniaVuePlugin);
   server.listen({
-    onUnhandledRequest: 'bypass'
+    onUnhandledRequest: 'warn'
   });
 
   vi.mock('@/composables/api/assets/info', () => ({
