@@ -764,17 +764,17 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
             'eth2validatorsresource',
         ), json={'validator_index': vindex1},
     )
+    assert_simple_ok_response(response)
     response = requests.put(
         url=api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
         ), json={'validator_index': vindex2},
     )
+    assert_simple_ok_response(response)
 
     with rotki.data.db.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM eth2_validators').fetchone() == (2,)
-
-    assert_simple_ok_response(response)
     _, _ = get_decoded_events_of_transaction(
         evm_inquirer=rotki.chains_aggregator.ethereum.node_inquirer,
         database=rotki.data.db,
