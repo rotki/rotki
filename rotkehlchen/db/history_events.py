@@ -11,6 +11,7 @@ from rotkehlchen.accounting.structures.base import (
 )
 from rotkehlchen.accounting.structures.eth2 import (
     EthBlockEvent,
+    EthDepositEvent,
     EthStakingEvent,
     EthWithdrawalEvent,
 )
@@ -22,6 +23,7 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_
 from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
     EVM_EVENT_JOIN,
+    EthDepositEventFilterQuery,
     EvmEventFilterQuery,
     HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
@@ -93,16 +95,17 @@ class DBHistoryEvents():
 
         identifier = write_cursor.lastrowid
         if isinstance(event, EvmEvent):
-            write_cursor.execute(
+            write_cursor.execute(  # this also writes for eth deposit events
                 'INSERT OR IGNORE INTO evm_events_info(identifier, tx_hash, counterparty, product,'
                 'address, extra_data) VALUES (?, ?, ?, ?, ?, ?)',
                 (identifier, *db_tuples[1]),
             )
-        elif isinstance(event, EthStakingEvent):
+        if isinstance(event, EthStakingEvent):
+            idx = 2 if isinstance(event, EthDepositEvent) else 2
             write_cursor.execute(
                 'INSERT OR IGNORE INTO eth_staking_events_info(identifier, validator_index, '
                 'is_exit_or_blocknumber) VALUES (?, ?, ?)',
-                (identifier, *db_tuples[1]),
+                (identifier, *db_tuples[idx]),
             )
 
         if mapping_values is not None:
@@ -293,6 +296,26 @@ class DBHistoryEvents():
         ...
 
     @overload
+    def get_history_events(  # type: ignore  # cant match since EthDepositEvent is EvmEvent
+            self,  # no idea how to properly type this situation with overloads here
+            cursor: 'DBCursor',
+            filter_query: EthDepositEventFilterQuery,
+            has_premium: bool,
+            group_by_event_ids: Literal[True],
+    ) -> list[tuple[int, EthDepositEvent]]:
+        ...
+
+    @overload
+    def get_history_events(  # type: ignore  # cant match since EthDepositEvent is EvmEvent
+            self,  # no idea how to properly type this situation with overloads here
+            cursor: 'DBCursor',
+            filter_query: EthDepositEventFilterQuery,
+            has_premium: bool,
+            group_by_event_ids: Literal[False] = ...,
+    ) -> list[EthDepositEvent]:
+        ...
+
+    @overload
     def get_history_events(
             self,
             cursor: 'DBCursor',
@@ -316,12 +339,13 @@ class DBHistoryEvents():
     def get_history_events(
             self,
             cursor: 'DBCursor',
-            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery],
+            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthDepositEventFilterQuery],  # noqa: E501
             has_premium: bool,
             group_by_event_ids: bool = False,
     ) -> Union[
         list[tuple[int, HistoryBaseEntry]], list[HistoryBaseEntry],
         list[tuple[int, EvmEvent]], list[EvmEvent],
+        list[tuple[int, EthDepositEvent]], list[EthDepositEvent],
     ]:
         """
         This fallback is needed due to
@@ -331,20 +355,18 @@ class DBHistoryEvents():
     def get_history_events(
             self,
             cursor: 'DBCursor',
-            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery],
+            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthDepositEventFilterQuery],  # noqa: E501
             has_premium: bool,
             group_by_event_ids: bool = False,
     ) -> Union[
         list[tuple[int, HistoryBaseEntry]], list[HistoryBaseEntry],
         list[tuple[int, EvmEvent]], list[EvmEvent],
+        list[tuple[int, EthDepositEvent]], list[EthDepositEvent],
     ]:
         """Get all events from the DB, deserialized depending on the event type
 
-        TODO: Think if we should change the way we query this. As events get more complicated
-        I am not sure if we should include all fields in the query. A different approach would be
-        to include only the base events and any field whose event type is in the filter.
-        And then either query more data in the for loop or query them all before for the
-        type and event identifier combination.
+        TODO: To not query all columns with all joins for all cases, we perhaps can
+        peek on the entry type of the filter and adjust the SELECT fields accordingly?
         """
         prepared_query, bindings = filter_query.prepare(with_group_by=group_by_event_ids)
         base_prefix = 'SELECT '
@@ -389,6 +411,17 @@ class DBHistoryEvents():
                         deserialized_event = EthWithdrawalEvent.deserialize_from_db(data)
                     else:
                         deserialized_event = EthBlockEvent.deserialize_from_db(data)
+
+                elif entry_type == HistoryBaseEntryType.ETH_DEPOSIT_EVENT:
+                    data = (
+                        entry[data_start_idx:data_start_idx + 4] +
+                        entry[data_start_idx + 5:data_start_idx + 6] +
+                        entry[data_start_idx + 7:data_start_idx + 9] +
+                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1] +  # noqa: E501
+                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + 1]  # noqa: E501
+                    )
+                    deserialized_event = EthDepositEvent.deserialize_from_db(data)
+
                 else:
                     data = entry[data_start_idx:HISTORY_BASE_ENTRY_LENGTH + 1]
                     deserialized_event = HistoryEvent.deserialize_from_db(entry[data_start_idx:])

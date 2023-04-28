@@ -13,6 +13,7 @@ from rotkehlchen.accounting.structures.types import (
 )
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants.assets import A_ETH2
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -35,7 +36,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 HISTORY_EVENT_DB_TUPLE_READ = tuple[
     int,            # identifier
-    str,          # event_identifier
+    str,            # event_identifier
     int,            # sequence_index
     int,            # timestamp
     str,            # location
@@ -50,7 +51,7 @@ HISTORY_EVENT_DB_TUPLE_READ = tuple[
 
 HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
     int,            # entry type
-    str,          # event_identifier
+    str,            # event_identifier
     int,            # sequence_index
     int,            # timestamp
     str,            # location
@@ -65,11 +66,15 @@ HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
 
 
 class HistoryBaseEntryType(DBIntEnumMixIn):
-    """Type of a history entry. Value(int) is written/read into/from the DB"""
+    """Type of a history entry. Value(int) is written/read into/from the DB
+
+    Order matters here as the value is written in the DB, and the value is an int.
+    """
     HISTORY_EVENT = auto()
     EVM_EVENT = auto()
     ETH_WITHDRAWAL_EVENT = auto()
     ETH_BLOCK_EVENT = auto()
+    ETH_DEPOSIT_EVENT = auto()
 
 
 class HistoryBaseEntryData(TypedDict):
@@ -240,33 +245,35 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
 
         May raise:
             - DeserializationError
-            - KeyError
             - UnknownAsset
         """
-        return HistoryBaseEntryData(
-            event_identifier=data['event_identifier'],
-            sequence_index=data['sequence_index'],
-            timestamp=ts_sec_to_ms(deserialize_timestamp(data['timestamp'])),
-            location=Location.deserialize(data['location']),
-            event_type=HistoryEventType.deserialize(data['event_type']),
-            event_subtype=HistoryEventSubType.deserialize(data['event_subtype']) if data['event_subtype'] is not None else HistoryEventSubType.NONE,  # noqa: 501
-            location_label=deserialize_optional(data['location_label'], str),
-            notes=deserialize_optional(data['notes'], str),
-            identifier=deserialize_optional(data['identifier'], int),
-            asset=Asset(data['asset']).check_existence(),
-            balance=Balance(
-                amount=deserialize_fval(
-                    value=data['balance']['amount'],
-                    name='balance amount',
-                    location='history base entry',
+        try:
+            return HistoryBaseEntryData(
+                event_identifier=data['event_identifier'],
+                sequence_index=data['sequence_index'],
+                timestamp=ts_sec_to_ms(deserialize_timestamp(data['timestamp'])),
+                location=Location.deserialize(data['location']),
+                event_type=HistoryEventType.deserialize(data['event_type']),
+                event_subtype=HistoryEventSubType.deserialize(data['event_subtype']) if data['event_subtype'] is not None else HistoryEventSubType.NONE,  # noqa: 501
+                location_label=deserialize_optional(data['location_label'], str),
+                notes=deserialize_optional(data['notes'], str),
+                identifier=deserialize_optional(data['identifier'], int),
+                asset=Asset(data['asset']).check_existence(),
+                balance=Balance(
+                    amount=deserialize_fval(
+                        value=data['balance']['amount'],
+                        name='balance amount',
+                        location='history base entry',
+                    ),
+                    usd_value=deserialize_fval(
+                        value=data['balance']['usd_value'],
+                        name='balance usd value',
+                        location='history base entry',
+                    ),
                 ),
-                usd_value=deserialize_fval(
-                    value=data['balance']['usd_value'],
-                    name='balance usd value',
-                    location='history base entry',
-                ),
-            ),
-        )
+            )
+        except KeyError as e:
+            raise DeserializationError(f'Did not find key {str(e)} in event data') from e
 
     @classmethod
     @abstractmethod

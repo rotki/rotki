@@ -8,5 +8,6 @@ LAST_PRODUCED_BLOCKS_QUERY_TS = 'last_produced_blocks_query_ts'
 LAST_WITHDRAWALS_QUERY_TS = 'last_withdrawals_query_ts'
 
 FREE_VALIDATORS_LIMIT = 4
+UNKNOWN_VALIDATOR_INDEX = -1
 
 CPT_ETH2 = 'eth2'

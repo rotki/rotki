@@ -4887,7 +4887,7 @@ Dealing with History Events
    :reqjson list[string] event_subtypes: An optional list of event subtypes by which to filter the decoded events.
    :reqjson list location: An optional location name to filter events only for that location.
    :reqjson list[string] location_labels: A list of location labels to optionally filter by. Location label is a string field that allows to provide more information about the location. When we use this structure in blockchains, it is used to specify the user address. For exchange events it's the exchange name assigned by the user.
-   :reqjson list[string] entry_types: A list of entry types to optionally filter by. Entry type is the event category and defines the schema. Possible values are: ``"history event"``, ``"evm event"``, ``"eth withdrawal event"``, ``"eth block event"``.
+   :reqjson list[string] entry_types: A list of entry types to optionally filter by. Entry type is the event category and defines the schema. Possible values are: ``"history event"``, ``"evm event"``, ``"eth withdrawal event"``, ``"eth block event"``, ``"eth deposit event"``.
    :reqjson string asset: The asset to optionally filter by.
    :reqjson list[string] tx_hashes: An optional list of transaction hashes to filter for. This will make it an EVM event query.
    :reqjson list[string] counterparties: An optional list of counterparties to filter by. List of strings. This will make it an EVM event query.
@@ -4991,6 +4991,30 @@ Dealing with History Events
                   "ignored_in_accounting": false,
                   "has_details": false,
                   "grouped_events_num": 2
+              },  {
+                  "entry": {
+                      "identifier": 5,
+		      "entry_type": "eth deposit event",
+                      "asset": "ETH",
+                      "balance": {"amount": "32", "usd_value": "0"},
+                      "counterparty": "eth2",
+                      "event_identifier": "10x2c822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+                      "event_subtype": "deposit asset",
+                      "event_type": "staking",
+                      "location": "ethereum",
+                      "location_label": "0xA215887E2CEC81434C16D587709f64603b39b545",
+                      "notes": "Deposit 32 ETH to validator 4242",
+                      "sequence_index": 15,
+                      "timestamp": 1642802807,
+		      "tx_hash": "0x2c822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+		      "address": "0x00000000219ab540356cBB839Cbe05303d7705Fa",
+		      "product": "staking",
+		      "validator_index": 4242
+                  },
+                  "customized": false,
+                  "ignored_in_accounting": false,
+                  "has_details": false,
+                  "grouped_events_num": 3
               }],
              "entries_found": 95,
              "entries_limit": 500,
@@ -5001,7 +5025,7 @@ Dealing with History Events
 
    :resjson list decoded_events: A list of history events. Each event is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not. Each entry also has a `has_details` flag. If `has_details` is true, then it is possible to call /history/events/details endpoint to retrieve some extra information about the event. Also each entry has a `customized` flag denoting if the event has been customized/added by the user. Finally if `group_by_event_ids` is true, each entry contains `grouped_events_num` which is an integer with the amount of events under the common event identifier. The consumer has to query this endpoint again with `group_by_event_ids` set to false and with the `event_identifiers` filter set to the identifier of the events having more than 1 event. Finally `ignored_in_accounting` is set to `true` when the user has marked this event as ignored. Following are all possible entries depending on entry type.
    :resjson string identifier: Common key. This is the identifier of a single event.
-   :resjson string entry_type: Common key. This identifies the category of the event and determines the schema. Possible values are: ``"history event"``, ``"evm event"``, ``"eth withdrawal event"``, ``"eth block event"``.
+   :resjson string entry_type: Common key. This identifies the category of the event and determines the schema. Possible values are: ``"history event"``, ``"evm event"``, ``"eth withdrawal event"``, ``"eth block event"``, ``"eth deposit event"``.
    :resjson string event_identifier: Common key. An event identifier grouping multiple events under a common group. This is how we group transaction events under a transaction, staking related events under block production etc.
    :resjson int sequence_index: Common key. This is an index that tries to provide the order of history entries for a single event_identifier.
    :resjson int timestamp: Common key. The timestamp of the entry
@@ -5012,11 +5036,11 @@ Dealing with History Events
    :resjson string event_subtype: Common key. The subtype of the event. Valid values are retrieved from the backend.
    :resjson string location_label: Common key. The location_label of the event. This means different things depending on event category. For evm events it's the initiating address. For withdrawal events the recipient address. For block production events the fee recipient.
    :resjson string notes: Common key. String description of the event.
-   :resjson string tx_hash: Evm event key. The transaction hash of the event as a hex string.
-   :resjson string counterparty: Evm event key. The counterparty of the event. This is most of the times a protocol such as uniswap, but can also be an exchange name such as kraken. Possible values are requested by the backend.
-   :resjson string product: Evm event key. This is the product type with which the event interacts. Such as pool, staking contract etc. Possible values are requested by the backend.
-   :resjson string address: Evm event key. This is the address of the contract the event interacts with if there is one.
-   :resjson int validator_index: Eth staking (withdrawal + block production) key. The index of the validator related to the event.
+   :resjson string tx_hash: Evm event & eth deposit key. The transaction hash of the event as a hex string.
+   :resjson string counterparty: Evm event & eth deposit key. The counterparty of the event. This is most of the times a protocol such as uniswap, but can also be an exchange name such as kraken. Possible values are requested by the backend.
+   :resjson string product: Evm event & eth deposit key. This is the product type with which the event interacts. Such as pool, staking contract etc. Possible values are requested by the backend.
+   :resjson string address: Evm event & eth deposit key. This is the address of the contract the event interacts with if there is one.
+   :resjson int validator_index: Eth staking (withdrawal + block production + eth deposit) key. The index of the validator related to the event.
    :resjson bool is_exit: Eth withdrawal event key. A boolean denoting if the withdrawal is a full exit or not.
    :resjson int block_number: Eth block event key. An integer representing the number of the block for which the event is made.
 

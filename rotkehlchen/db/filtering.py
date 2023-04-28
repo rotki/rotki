@@ -37,6 +37,7 @@ LEFT JOIN evm_events_info ON history_events.identifier=evm_events_info.identifie
 LEFT JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier """  # noqa: E501
 EVM_EVENT_JOIN = 'FROM history_events INNER JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier '  # noqa: E501
 ETH_STAKING_EVENT_JOIN = 'FROM history_events INNER JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier '  # noqa: E501
+ETH_DEPOSIT_EVENT_JOIN = ALL_EVENTS_DATA_JOIN
 
 
 T = TypeVar('T')
@@ -1113,7 +1114,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery):
             validator_indices: Optional[list[int]] = None,
     ) -> 'EthStakingEventFilterQuery':
         if entry_types is None:
-            entry_types = [HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT, HistoryBaseEntryType.ETH_BLOCK_EVENT]  # noqa: E501
+            entry_types = [HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT, HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_DEPOSIT_EVENT]  # noqa: E501
 
         filter_query = super().make(
             and_op=and_op,
@@ -1159,6 +1160,72 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
 
 class EthBlockEventFilterQuery(EthStakingEventFilterQuery):
     pass
+
+
+class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery):
+    @classmethod
+    def make(  # type: ignore  # it is expected to be incompatible with supertype
+            cls,
+            and_op: bool = True,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+            assets: Optional[tuple[Asset, ...]] = None,
+            event_types: Optional[list[HistoryEventType]] = None,
+            event_subtypes: Optional[list[HistoryEventSubType]] = None,
+            exclude_subtypes: Optional[list[HistoryEventSubType]] = None,
+            location: Optional[Location] = None,
+            location_labels: Optional[list[str]] = None,
+            ignored_ids: Optional[list[str]] = None,
+            null_columns: Optional[list[str]] = None,
+            event_identifiers: Optional[list[str]] = None,
+            entry_types: Optional[list[HistoryBaseEntryType]] = None,
+            exclude_ignored_assets: bool = False,
+            tx_hashes: Optional[list[EVMTxHash]] = None,
+            validator_indices: Optional[list[int]] = None,
+    ) -> 'EthDepositEventFilterQuery':
+        if entry_types is None:
+            entry_types = [HistoryBaseEntryType.ETH_DEPOSIT_EVENT]
+
+        filter_query = EvmEventFilterQuery.make(
+            and_op=and_op,
+            order_by_rules=order_by_rules,
+            limit=limit,
+            offset=offset,
+            from_ts=from_ts,
+            to_ts=to_ts,
+            assets=assets,
+            event_types=event_types,
+            event_subtypes=event_subtypes,
+            exclude_subtypes=exclude_subtypes,
+            location=location,
+            location_labels=location_labels,
+            ignored_ids=ignored_ids,
+            null_columns=null_columns,
+            event_identifiers=event_identifiers,
+            entry_types=entry_types,
+            exclude_ignored_assets=exclude_ignored_assets,
+            tx_hashes=tx_hashes,
+        )
+        if validator_indices is not None:
+            filter_query.filters.append(DBMultiIntegerFilter(
+                and_op=True,
+                column='validator_index',
+                values=validator_indices,
+                operator='IN',
+            ))
+
+        return filter_query  # type: ignore  # we are creating an EthDepositEventFilterQuery
+
+    @staticmethod
+    def get_join_query() -> str:
+        return ETH_DEPOSIT_EVENT_JOIN
+
+    @staticmethod
+    def get_count_query() -> str:
+        return f'SELECT COUNT(*) {ETH_DEPOSIT_EVENT_JOIN}'
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
