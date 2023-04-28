@@ -233,6 +233,21 @@ class BeaconChain(ExternalServiceWithApiKey):
 
         return data
 
+    def get_validator_data(
+            self,
+            indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
+    ) -> list[dict[str, Any]]:
+        """Returns data for the given validators
+
+        Essentially calls:
+        https://beaconcha.in/api/v1/docs/index.html#/Validator/get_api_v1_validator__indexOrPubkey_
+        """
+        return self._query_chunked_endpoint(
+            indices_or_pubkeys=indices_or_pubkeys,
+            module='validator',
+            endpoint=None,
+        )
+
     def get_performance(
             self,
             indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],

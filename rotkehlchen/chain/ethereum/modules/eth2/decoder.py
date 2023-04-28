@@ -3,6 +3,7 @@ from typing import Any
 
 from eth_utils import encode_hex
 
+from rotkehlchen.accounting.structures.eth2 import EthDepositEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
 from rotkehlchen.chain.ethereum.modules.curve.decoder import DEFAULT_DECODING_OUTPUT
@@ -10,11 +11,13 @@ from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType, Eth2PubKey
 from rotkehlchen.utils.misc import from_gwei, hex_or_bytes_to_int
 
-from .constants import CPT_ETH2
+from .constants import CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
 
 DEPOSIT_EVENT = b'd\x9b\xbcb\xd0\xe3\x13B\xaf\xeaN\\\xd8-@I\xe7\xe1\xee\x91/\xc0\x88\x9a\xa7\x90\x80;\xe3\x908\xc5'  # noqa: E501
 
@@ -28,24 +31,54 @@ class Eth2Decoder(DecoderInterface):
         if context.tx_log.topics[0] != DEPOSIT_EVENT:
             return DEFAULT_DECODING_OUTPUT
 
-        pubkey = encode_hex(context.tx_log.data[192:240])
-        withdrawal_credentials = encode_hex(context.tx_log.data[288:320])
+        public_key = Eth2PubKey(encode_hex(context.tx_log.data[192:240]))
         amount = from_gwei(hex_or_bytes_to_int(context.tx_log.data[352:360], byteorder='little'))
-        deposit_index = hex_or_bytes_to_int(context.tx_log.data[544:552 + 8], byteorder='little')  # is not same as validator index  # noqa: E501
-        for event in context.decoded_events:
+
+        validator_index = UNKNOWN_VALIDATOR_INDEX
+        with self.base.database.conn.read_ctx() as cursor:
+            result = cursor.execute(
+                'SELECT validator_index FROM eth2_validators WHERE public_key=?',
+                (public_key,),
+            ).fetchone()
+            if result is not None:
+                validator_index = result[0]
+            else:  # We ask beaconchain. Instead of pushing it to decoders, recreating here
+                # this is not good practise since if it shares any backoff logic it breaks,
+                # but yoloing it since it's a single query that won't happen often
+                # and the alternative of pushing beaconchain as an argument across all
+                # decoders seems wrong, dirty and breaking abstraction
+                try:
+                    beaconchain = BeaconChain(self.base.database, self.msg_aggregator)
+                except RemoteError as e:
+                    log.error(f'Failed to query validator index for {public_key} due to {str(e)}')
+                else:
+                    result = beaconchain.get_validator_data([public_key])
+                    validator_index = result[0]['validatorindex']
+                    if not isinstance(validator_index, int) or validator_index < 0:
+                        validator_index = UNKNOWN_VALIDATOR_INDEX
+
+        for idx, event in enumerate(context.decoded_events):
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == A_ETH and
                 event.balance.amount == amount
             ):
-                event.event_type = HistoryEventType.STAKING
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.counterparty = CPT_ETH2
-                # Hacky: If this ever changes update the RE in modules/eth2/eth2.py
-                event.notes = f'Deposit {amount} ETH to validator with pubkey {pubkey}. Deposit index: {deposit_index}. Withdrawal credentials: {withdrawal_credentials}'  # noqa: E501
-                event.extra_data = {'withdrawal_credentials': withdrawal_credentials}
+                replace_event_idx = idx
+                break
+        else:  # loop did not encounter a break - index not found
+            log.error(f'While decoding ETH deposit event {context.transaction.tx_hash.hex()} for public key {public_key} could not find the send event')  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
 
+        old_event = context.decoded_events[replace_event_idx]
+        context.decoded_events[replace_event_idx] = EthDepositEvent(
+            tx_hash=context.transaction.tx_hash,
+            validator_index=validator_index,
+            sequence_index=old_event.sequence_index,
+            timestamp=old_event.timestamp,
+            balance=old_event.balance,
+            depositor=old_event.location_label,  # type: ignore  # it's an address
+        )
         return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods

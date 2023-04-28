@@ -8,11 +8,20 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
+from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_fval
-from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS
+from rotkehlchen.types import (
+    ChecksumEvmAddress,
+    EVMTxHash,
+    Location,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 
 from .balance import Balance
+from .evm_event import EvmProduct
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
@@ -20,6 +29,7 @@ if TYPE_CHECKING:
 from rotkehlchen.constants.assets import A_ETH
 
 from .base import HISTORY_EVENT_DB_TUPLE_WRITE, HistoryBaseEntry, HistoryBaseEntryType
+from .evm_event import EVM_EVENT_FIELDS, EvmEvent
 
 ETH_STAKING_EVENT_DB_TUPLE_READ = tuple[
     int,            # identifier
@@ -30,6 +40,18 @@ ETH_STAKING_EVENT_DB_TUPLE_READ = tuple[
     str,            # event_subtype
     int,            # validator_index
     int,            # is_exit_or_blocknumber
+]
+
+EVM_DEPOSIT_EVENT_DB_TUPLE_READ = tuple[
+    int,            # identifier
+    str,            # event_identifier
+    int,            # sequence_index
+    int,            # timestamp
+    str,            # depositor
+    str,            # amount
+    str,            # usd value
+    bytes,          # tx_hash
+    int,            # validator_index
 ]
 
 
@@ -338,3 +360,113 @@ class EthBlockEvent(EthStakingEvent):
                 consumed += event_seq1.process(accounting, events_iterator)
 
         return consumed
+
+
+class EthDepositEvent(EvmEvent, EthStakingEvent):
+    """An ETH deposit event"""
+
+    def __init__(
+            self,
+            tx_hash: EVMTxHash,
+            validator_index: int,
+            sequence_index: int,
+            timestamp: TimestampMS,
+            balance: Balance,
+            depositor: ChecksumEvmAddress,
+            identifier: Optional[int] = None,
+            event_identifier: Optional[str] = None,
+    ) -> None:
+        suffix = f'{validator_index}' if validator_index != UNKNOWN_VALIDATOR_INDEX else 'with a not yet known validator index'  # noqa: E501
+        super().__init__(  # super should call evm event
+            tx_hash=tx_hash,
+            sequence_index=sequence_index,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_ETH,
+            balance=balance,
+            location_label=depositor,
+            notes=f'Deposit {balance.amount} ETH to validator {suffix}',
+            counterparty=CPT_ETH2,
+            product=EvmProduct.STAKING,
+            address=ETH2_DEPOSIT_ADDRESS,
+            identifier=identifier,
+            event_identifier=event_identifier,
+        )  # for EthStakingEvent, just do manually to not reassign all common ones
+        self.validator_index = validator_index
+        self.is_exit_or_blocknumber = 0
+
+    @property
+    def entry_type(self) -> HistoryBaseEntryType:
+        return HistoryBaseEntryType.ETH_DEPOSIT_EVENT
+
+    def __repr__(self) -> str:
+        return f'EthDepositEvent({self.validator_index=}, {self.timestamp=}, {self.tx_hash=})'  # noqa: E501
+
+    def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE, EVM_EVENT_FIELDS, tuple[int, int]]:  # type: ignore  # does not match EvmEvent supertype, but yeah it would not make sense to  # noqa: E501
+        base_tuple, evm_tuple = self._serialize_evm_event_tuple_for_db(HistoryBaseEntryType.ETH_DEPOSIT_EVENT)  # noqa: E501
+        return (base_tuple, evm_tuple, (self.validator_index, 0))
+
+    def serialize(self) -> dict[str, Any]:
+        return super().serialize() | {'validator_index': self.validator_index}
+
+    @classmethod
+    def deserialize_from_db(cls: type['EthDepositEvent'], entry: tuple) -> 'EthDepositEvent':
+        entry = cast(EVM_DEPOSIT_EVENT_DB_TUPLE_READ, entry)
+        amount = deserialize_fval(entry[5], 'amount', 'eth deposit event')
+        usd_value = deserialize_fval(entry[6], 'usd_value', 'eth deposit event')
+        return cls(
+            tx_hash=deserialize_evm_tx_hash(entry[7]),
+            validator_index=entry[8],
+            sequence_index=entry[2],
+            timestamp=TimestampMS(entry[3]),
+            balance=Balance(amount, usd_value),
+            depositor=entry[4],  # type: ignore  # exists for these events
+            identifier=entry[0],
+            event_identifier=entry[1],
+        )
+
+    @classmethod
+    def deserialize(cls: type['EthDepositEvent'], data: dict[str, Any]) -> 'EthDepositEvent':
+        base_data = cls._deserialize_base_history_data(data)
+
+        try:
+            tx_hash = deserialize_evm_tx_hash(data['tx_hash'])
+            validator_index = data['validator_index']
+        except KeyError as e:
+            raise DeserializationError(f'Could not find key {str(e)} for EthDepositEvent') from e
+
+        if not isinstance(validator_index, int):
+            raise DeserializationError(f'Found non-int validator index {validator_index}')
+
+        if base_data['location_label'] is None:
+            raise DeserializationError('Did not provide location_label (depositor) address for Eth Deposit event')  # noqa: E501
+
+        return cls(
+            tx_hash=tx_hash,
+            validator_index=validator_index,
+            sequence_index=base_data['sequence_index'],
+            timestamp=base_data['timestamp'],
+            balance=base_data['balance'],
+            depositor=deserialize_evm_address(base_data['location_label']),
+            identifier=base_data['identifier'],
+            event_identifier=base_data['event_identifier'],
+        )
+
+    # -- Methods of AccountingEventMixin
+
+    @staticmethod
+    def get_accounting_event_type() -> AccountingEventType:
+        return AccountingEventType.HISTORY_EVENT
+
+    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
+        return False  # TODO: Same question on ignoring as general HistoryEvent
+
+    def process(
+            self,
+            accounting: 'AccountingPot',
+            events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
+    ) -> int:
+        """ETH staking deposits are not taxable"""
+        return 1

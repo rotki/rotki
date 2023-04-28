@@ -2,7 +2,7 @@ import json
 import logging
 from collections.abc import Iterator
 from enum import auto
-from typing import TYPE_CHECKING, Any, Final, Optional, cast
+from typing import TYPE_CHECKING, Any, Final, Literal, Optional, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
@@ -20,6 +20,7 @@ from rotkehlchen.accounting.structures.types import (
 )
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_optional
 from rotkehlchen.types import (
@@ -105,7 +106,8 @@ class EvmEvent(HistoryBaseEntry):
             calculated_event_identifier = f'{location.to_chain_id()}{tx_hash.hex()}'
         else:
             calculated_event_identifier = event_identifier
-        super().__init__(
+        HistoryBaseEntry.__init__(  # explicitly calling constructor due to some events having
+            self=self,  # diamond shaped inheritance. Which calls unexpected super()
             event_identifier=calculated_event_identifier,
             sequence_index=sequence_index,
             timestamp=timestamp,
@@ -128,8 +130,11 @@ class EvmEvent(HistoryBaseEntry):
     def entry_type(self) -> HistoryBaseEntryType:
         return HistoryBaseEntryType.EVM_EVENT
 
-    def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE, EVM_EVENT_FIELDS]:
-        base_tuple = self._serialize_base_tuple_for_db(HistoryBaseEntryType.EVM_EVENT)
+    def _serialize_evm_event_tuple_for_db(
+            self,
+            entry_type: Literal[HistoryBaseEntryType.EVM_EVENT, HistoryBaseEntryType.ETH_DEPOSIT_EVENT],  # noqa: E501
+    ) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE, EVM_EVENT_FIELDS]:
+        base_tuple = self._serialize_base_tuple_for_db(entry_type)
         extra_data = json.dumps(self.extra_data) if self.extra_data else None
         return (
             base_tuple,
@@ -141,6 +146,9 @@ class EvmEvent(HistoryBaseEntry):
                 extra_data,
             ),
         )
+
+    def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE, EVM_EVENT_FIELDS]:
+        return self._serialize_evm_event_tuple_for_db(HistoryBaseEntryType.EVM_EVENT)
 
     def serialize(self) -> dict[str, Any]:
         return super().serialize() | {
@@ -213,13 +221,16 @@ class EvmEvent(HistoryBaseEntry):
     @classmethod
     def deserialize(cls: type['EvmEvent'], data: dict[str, Any]) -> 'EvmEvent':
         base_data = cls._deserialize_base_history_data(data)
-        return cls(
-            **base_data,
-            tx_hash=deserialize_evm_tx_hash(data['tx_hash']),
-            address=deserialize_optional(data['address'], string_to_evm_address),
-            counterparty=deserialize_optional(data['counterparty'], str),
-            product=deserialize_optional(data['product'], EvmProduct.deserialize),
-        )
+        try:
+            return cls(
+                **base_data,
+                tx_hash=deserialize_evm_tx_hash(data['tx_hash']),
+                address=deserialize_optional(data['address'], string_to_evm_address),
+                counterparty=deserialize_optional(data['counterparty'], str),
+                product=deserialize_optional(data['product'], EvmProduct.deserialize),
+            )
+        except KeyError as e:
+            raise DeserializationError(f'Did not find key {str(e)} in Evm Event data') from e
 
     def get_type_identifier(self, include_counterparty: bool = True) -> str:
         """

@@ -341,11 +341,7 @@ class Eth2(EthereumModule):
 
         # first get all validator indices to see which validators have exited and when
         validator_indices = {x[0] for x in result}
-        data = self.beaconchain._query_chunked_endpoint(
-            indices_or_pubkeys=list(validator_indices),
-            module='validator',
-            endpoint=None,
-        )
+        data = self.beaconchain.get_validator_data(indices_or_pubkeys=list(validator_indices))
         exit_epoch = {}
         now = ts_now()
         for validator_entry in data:
