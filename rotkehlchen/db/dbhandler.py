@@ -980,11 +980,19 @@ class DBHandler:
 
         return Timestamp(int(result[0])), Timestamp(int(result[1]))
 
-    def delete_used_query_range_for_exchange(self, write_cursor: 'DBCursor', location: Location) -> None:  # noqa: E501
+    def delete_used_query_range_for_exchange(
+            self,
+            write_cursor: 'DBCursor',
+            location: Location,
+            exchange_name: Optional[str] = None,
+    ) -> None:
         """Delete the query ranges for the given exchange name"""
+        names_to_delete = f'{str(location)}\\_%'
+        if exchange_name is not None:
+            names_to_delete += f'\\_{exchange_name}'
         write_cursor.execute(
             'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-            (f'{str(location)}\\_%', '\\'),
+            (names_to_delete, '\\'),
         )
 
     def purge_exchange_data(self, write_cursor: 'DBCursor', location: Location) -> None:
@@ -1559,7 +1567,7 @@ class DBHandler:
                 # from the possible new pairs
                 write_cursor.execute(
                     'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-                    (f'{str(location)}\\_trades_%', '\\'),
+                    (f'{str(location)}\\_trades\\_{name}', '\\'),
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501

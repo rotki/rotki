@@ -401,7 +401,12 @@ def test_remove_exchange(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
     # Setup coinbase exchange
-    data = {'location': 'coinbase', 'name': 'foo', 'api_key': 'ddddd', 'api_secret': 'fffffff'}
+    data = {
+        'location': 'coinbase',
+        'name': 'Coinbase 1',
+        'api_key': 'ddddd',
+        'api_secret': 'fffffff',
+    }
     with mock_validate_api_key_success(Location.COINBASE):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
@@ -410,25 +415,28 @@ def test_remove_exchange(rotkehlchen_api_server):
     # and check it's registered
     response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
     result = assert_proper_response_with_result(response)
-    assert result == [{'location': 'coinbase', 'name': 'foo'}]
+    assert result == [{'location': 'coinbase', 'name': 'Coinbase 1'}]
 
     # Add query ranges to see that they also get deleted when removing the exchange
     cursor = db.conn.cursor()
     cursor.executemany(
         'INSERT OR REPLACE INTO used_query_ranges(name, start_ts, end_ts) VALUES (?, ?, ?)',
-        [('coinbasepro_trades', 0, 1579564096),
-         ('coinbasepro_margins', 0, 1579564096),
-         ('coinbasepro_asset_movements', 0, 1579564096),
-         ('coinbase_trades', 0, 1579564096),
-         ('coinbase_margins', 0, 1579564096),
-         ('coinbase_asset_movements', 0, 1579564096),
-         ('binance_trades', 0, 1579564096),
-         ('binance_margins', 0, 1579564096),
-         ('binance_asset_movements', 0, 1579564096)],
+        [('coinbasepro_trades_CoinbasePro 1', 0, 1579564096),
+         ('coinbasepro_margins_CoinbasePro 1', 0, 1579564096),
+         ('coinbasepro_asset_movements_CoinbasePro 1', 0, 1579564096),
+         ('coinbase_trades_Coinbase 1', 0, 1579564096),
+         ('coinbase_margins_Coinbase 1', 0, 1579564096),
+         ('coinbase_asset_movements_Coinbase 1', 0, 1579564096),
+         ('coinbase_trades_Coinbase 2', 0, 1579564096),
+         ('coinbase_margins_Coinbase 2', 0, 1579564096),
+         ('coinbase_asset_movements_Coinbase 2', 0, 1579564096),
+         ('binance_trades_Binance 1', 0, 1579564096),
+         ('binance_margins_Binance 1', 0, 1579564096),
+         ('binance_asset_movements_Binance 1', 0, 1579564096)],
     )
 
     # Now remove the registered coinbase exchange
-    data = {'location': 'coinbase', 'name': 'foo'}
+    data = {'location': 'coinbase', 'name': 'Coinbase 1'}
     response = requests.delete(api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data)
     assert_simple_ok_response(response)
     # and check that it's not registered anymore
@@ -441,9 +449,9 @@ def test_remove_exchange(rotkehlchen_api_server):
     count = 0
     for entry in result:
         count += 1
-        msg = 'only binance or coinbasepro query ranges should remain'
-        assert 'binance' in entry[0] or 'coinbasepro' in entry[0], msg
-    assert count == 6, 'only 6 query ranges should remain in the DB'
+        msg = 'only binance or coinbasepro or Coinbase 2 query ranges should remain'
+        assert 'binance' in entry[0] or 'coinbasepro' in entry[0] or 'Coinbase 2' in entry[0], msg
+    assert count == 9, 'only 9 query ranges should remain in the DB'
 
     # now try to remove a non-registered exchange
     data = {'location': 'binance', 'name': 'my_binance'}
