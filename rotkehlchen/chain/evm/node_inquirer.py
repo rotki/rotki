@@ -432,7 +432,10 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                     'may be incorrect.',
                 )
 
-            is_pruned, is_archive = self.determine_capabilities(web3)
+            if node.endpoint.endswith('llamarpc.com'):  # temporary. Seems to sometimes switch
+                is_pruned, is_archive = True, False  # between pruned and non-pruned nodes
+            else:
+                is_pruned, is_archive = self.determine_capabilities(web3)
             log.info(f'Connected {self.chain_name} node {node} at {rpc_endpoint}')
             self.web3_mapping[node] = Web3Node(
                 web3_instance=web3,
