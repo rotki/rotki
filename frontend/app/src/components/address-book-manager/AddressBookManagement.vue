@@ -118,6 +118,7 @@ const save = async () => {
 
 const css = useCssModule();
 </script>
+
 <template>
   <v-container>
     <v-row justify="space-between" align="center" no-gutters>
@@ -218,7 +219,7 @@ const css = useCssModule();
           : tc('address_book.dialog.add_title')
       "
       :action-disabled="!valid"
-      @confirm="save"
+      @confirm="save()"
       @cancel="hideForm()"
     >
       <address-book-form

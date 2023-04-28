@@ -9,6 +9,7 @@ defineProps({
   }
 });
 </script>
+
 <template>
   <v-row>
     <v-col>

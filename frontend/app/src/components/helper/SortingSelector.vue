@@ -38,7 +38,7 @@ const { t } = useI18n();
             icon
             v-bind="attrs"
             color="primary"
-            @click="updateSortDesc"
+            @click="updateSortDesc()"
             v-on="on"
           >
             <v-icon v-if="sortDescending">mdi-sort-descending</v-icon>
@@ -65,7 +65,7 @@ const { t } = useI18n();
         dense
         outlined
         :items="sortProperties"
-        @input="updateSortBy"
+        @input="updateSortBy($event)"
       />
     </div>
   </div>

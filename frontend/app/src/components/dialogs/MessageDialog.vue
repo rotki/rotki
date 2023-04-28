@@ -29,9 +29,9 @@ const { t } = useI18n();
       max-width="500"
       class="message-dialog"
       persistent
-      @close="dismiss"
-      @keydown.esc="dismiss"
-      @keydown.enter="dismiss"
+      @close="dismiss()"
+      @keydown.esc="dismiss()"
+      @keydown.enter="dismiss()"
     >
       <v-card>
         <v-card-title

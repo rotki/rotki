@@ -59,6 +59,7 @@ const subtitle: ComputedRef<string> = computed(() =>
     : tc('ledger_actions.dialog.add.subtitle')
 );
 </script>
+
 <template>
   <big-dialog
     :display="value"

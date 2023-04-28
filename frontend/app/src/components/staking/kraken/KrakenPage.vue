@@ -91,7 +91,7 @@ const refresh = () => load(true);
           <refresh-button
             :tooltip="t('kraken_staking_events.refresh_tooltip')"
             :loading="refreshing"
-            @refresh="refresh"
+            @refresh="refresh()"
           />
         </v-col>
       </v-row>

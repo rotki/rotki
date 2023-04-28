@@ -36,6 +36,7 @@ const css = useCssModule();
     </div>
   </v-lazy>
 </template>
+
 <style lang="scss" module>
 .wrapper {
   position: relative;

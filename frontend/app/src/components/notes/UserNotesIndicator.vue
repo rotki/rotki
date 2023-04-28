@@ -17,7 +17,7 @@ const toggleVisibility = () => {
   <menu-tooltip-button
     :tooltip="tc('notes_menu.tooltip')"
     class-name="secondary--text text--lighten-4"
-    @click="toggleVisibility"
+    @click="toggleVisibility()"
   >
     <v-icon :class="visible ? 'help--visible' : null"> mdi-note-text </v-icon>
   </menu-tooltip-button>

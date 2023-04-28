@@ -21,7 +21,7 @@ const { href, onLinkClick } = useLinks(url);
         :href="href"
         target="_blank"
         v-on="on"
-        @click="onLinkClick"
+        @click="onLinkClick()"
       >
         <v-icon :small="small">mdi-help-circle</v-icon>
       </v-btn>

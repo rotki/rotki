@@ -35,8 +35,8 @@ const { t } = useI18n();
   <v-dialog
     :value="true"
     max-width="550px"
-    @close="close"
-    @click:outside="close"
+    @close="close()"
+    @click:outside="close()"
   >
     <card>
       <template #title>{{ t('non_fungible_balances.edit.title') }}</template>
@@ -47,14 +47,14 @@ const { t } = useI18n();
         :label="t('common.price')"
         outlined
         single-line
-        @keypress.enter="save"
+        @keypress.enter="save()"
       />
       <template #buttons>
         <v-spacer />
-        <v-btn depressed @click="close">
+        <v-btn depressed @click="close()">
           {{ t('common.actions.cancel') }}
         </v-btn>
-        <v-btn depressed color="primary" :disabled="!valid" @click="save">
+        <v-btn depressed color="primary" :disabled="!valid" @click="save()">
           {{ t('common.actions.save') }}
         </v-btn>
       </template>

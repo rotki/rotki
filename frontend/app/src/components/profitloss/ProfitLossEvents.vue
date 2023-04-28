@@ -305,6 +305,7 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
     </data-table>
   </card>
 </template>
+
 <style module lang="scss">
 .group {
   height: 100%;

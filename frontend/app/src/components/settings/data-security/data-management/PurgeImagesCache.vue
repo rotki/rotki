@@ -168,6 +168,7 @@ const css = useCssModule();
     <action-status-indicator v-if="status" :status="status" />
   </div>
 </template>
+
 <style module lang="scss">
 .ens-input {
   :global {

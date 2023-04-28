@@ -140,7 +140,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
                   class="mt-3"
                   :disabled="!selection"
                   v-on="on"
-                  @click="addItem"
+                  @click="addItem()"
                 >
                   <v-icon>mdi-plus</v-icon>
                 </v-btn>

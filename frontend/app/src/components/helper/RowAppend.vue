@@ -54,6 +54,7 @@ const rightColspan = useToNumber(rightPatchColspan);
     <td v-if="rightColspan >= 1 && !isMobile" :colspan="rightColspan" />
   </tr>
 </template>
+
 <style scoped lang="scss">
 .append {
   &-row {

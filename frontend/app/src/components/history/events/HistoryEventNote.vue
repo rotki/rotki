@@ -147,6 +147,7 @@ const formatNotes: ComputedRef<NoteFormat[]> = computed(() => {
   return formats;
 });
 </script>
+
 <template>
   <div>
     <template v-for="(note, index) in formatNotes">
@@ -178,6 +179,7 @@ const formatNotes: ComputedRef<NoteFormat[]> = computed(() => {
     </template>
   </div>
 </template>
+
 <style lang="scss" module>
 .address {
   vertical-align: middle;

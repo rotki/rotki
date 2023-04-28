@@ -50,7 +50,7 @@ const description = (directive: string): string => {
 </script>
 
 <template>
-  <v-dialog v-if="value" :value="value" max-width="500" @input="input">
+  <v-dialog v-if="value" :value="value" max-width="500" @input="input($event)">
     <card>
       <template #title>{{ t('date_format_help.title') }}</template>
       <template #subtitle>{{ t('date_format_help.subtitle') }}</template>

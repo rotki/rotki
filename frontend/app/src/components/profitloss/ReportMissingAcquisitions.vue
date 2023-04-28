@@ -148,6 +148,7 @@ const addLedgerAction = (item: MissingAcquisition) => {
 
 const isIgnored = (asset: string) => get(isAssetIgnored(asset));
 </script>
+
 <template>
   <div>
     <data-table

@@ -48,12 +48,13 @@ const onVisibleColumnsChange = async (visibleColumns: TableColumn[]) => {
   await store.updateSetting(payload);
 };
 </script>
+
 <template>
   <v-list>
     <v-list-item-group
       :value="currentVisibleColumns"
       multiple
-      @change="onVisibleColumnsChange"
+      @change="onVisibleColumnsChange($event)"
     >
       <template v-for="(item, i) in availableColumns">
         <v-list-item :key="i" :value="item.value">

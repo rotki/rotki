@@ -9,6 +9,7 @@ defineProps({
 
 const assetPadding = 1;
 </script>
+
 <template>
   <div class="defi-asset d-flex flex-row align-center">
     <asset-icon

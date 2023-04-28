@@ -19,7 +19,7 @@ const navigateToDetails = async () => {
 </script>
 
 <template>
-  <v-btn :icon="icon" :text="text" @click="navigateToDetails">
+  <v-btn :icon="icon" :text="text" @click="navigateToDetails()">
     <slot />
   </v-btn>
 </template>

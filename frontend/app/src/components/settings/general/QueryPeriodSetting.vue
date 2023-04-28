@@ -54,8 +54,8 @@ onMounted(() => {
       frontend-setting
       :transform="transform"
       :error-message="tc('frontend_settings.validation.periodic_query.error')"
-      @updated="restart"
-      @finished="resetQueryPeriod"
+      @updated="restart()"
+      @finished="resetQueryPeriod()"
     >
       <v-text-field
         v-model="queryPeriod"

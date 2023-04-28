@@ -82,7 +82,7 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
             class="text-caption text-lowercase"
             color="accent"
             :disabled="notifications.length === 0"
-            @click="showConfirmation"
+            @click="showConfirmation()"
           >
             {{ t('notification_sidebar.clear_tooltip') }}
           </v-btn>

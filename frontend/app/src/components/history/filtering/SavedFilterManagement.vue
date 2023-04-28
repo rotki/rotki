@@ -86,7 +86,7 @@ const css = useCssModule();
           class="mr-2"
           :disabled="selection.length === 0"
           v-on="on"
-          @click="addToSavedFilter"
+          @click="addToSavedFilter()"
         >
           <v-icon>mdi-content-save-plus</v-icon>
         </v-btn>

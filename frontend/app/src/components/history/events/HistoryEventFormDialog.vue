@@ -56,6 +56,7 @@ const title: ComputedRef<string> = computed(() =>
     : tc('transactions.events.dialog.add.title')
 );
 </script>
+
 <template>
   <big-dialog
     :display="value"

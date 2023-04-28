@@ -22,6 +22,7 @@ const reset = () => {
   emit('reset', get(resetSelection));
 };
 </script>
+
 <template>
   <confirmable-reset
     v-if="premium"

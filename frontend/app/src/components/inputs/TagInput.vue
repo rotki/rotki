@@ -129,7 +129,7 @@ const values = computed<Tag[]>(() =>
       :menu-props="{ closeOnContentClick: true }"
       item-value="name"
       multiple
-      @input="input"
+      @input="input($event)"
     >
       <template #no-data>
         <v-list-item>
@@ -154,7 +154,7 @@ const values = computed<Tag[]>(() =>
           :text-color="`#${item.foregroundColor}`"
           close
           @click:close="remove(item.name)"
-          @click="select"
+          @click="select($event)"
         >
           {{ item.name }}
         </v-chip>

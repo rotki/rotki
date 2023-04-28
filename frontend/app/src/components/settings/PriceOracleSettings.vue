@@ -81,14 +81,14 @@ const { t } = useI18n();
         <settings-option
           #default="{ error, success, update }"
           setting="currentPriceOracles"
-          @finished="resetCurrentPriceOracles"
+          @finished="resetCurrentPriceOracles()"
         >
           <prioritized-list
             :value="currentOracles"
             :all-items="availableCurrentOracles()"
             :status="{ error, success }"
             :item-data-name="t('price_oracle_settings.data_name').toString()"
-            @input="update"
+            @input="update($event)"
           >
             <template #title>
               {{ t('price_oracle_settings.latest_prices') }}
@@ -101,14 +101,14 @@ const { t } = useI18n();
         <settings-option
           #default="{ error, success, update }"
           setting="historicalPriceOracles"
-          @finished="resetHistoricalPriceOracles"
+          @finished="resetHistoricalPriceOracles()"
         >
           <prioritized-list
             :value="historicOracles"
             :all-items="availableHistoricOracles()"
             :status="{ error, success }"
             :item-data-name="'price oracle'"
-            @input="update"
+            @input="update($event)"
           >
             <template #title>
               {{ t('price_oracle_settings.historic_prices') }}

@@ -51,7 +51,7 @@ const { dark } = useTheme();
       depressed
       :color="dark ? null : 'grey lighten-3 grey--text text--darken-2'"
       class="text-decoration-none"
-      @click="openWatcherDialog"
+      @click="openWatcherDialog()"
     >
       <v-icon x-small left>mdi-bell-outline</v-icon>
       <span v-if="watchers.length > 0" class="text-caption">

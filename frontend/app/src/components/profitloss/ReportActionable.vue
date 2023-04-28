@@ -38,6 +38,7 @@ const actionableItemsLength = computed(() => {
 
 const { tc } = useI18n();
 </script>
+
 <template>
   <div v-if="actionableItemsLength" class="d-flex">
     <v-dialog v-model="mainDialogOpen" max-width="1000">
@@ -55,7 +56,7 @@ const { tc } = useI18n();
         v-if="mainDialogOpen"
         :report="report"
         @set-dialog="mainDialogOpen = $event"
-        @regenerate="regenerateReport"
+        @regenerate="regenerateReport()"
       />
     </v-dialog>
   </div>

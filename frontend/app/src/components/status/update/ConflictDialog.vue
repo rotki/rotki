@@ -193,7 +193,7 @@ const cancel = () => {
       <template #buttons>
         <v-row no-gutters justify="end">
           <v-col cols="auto">
-            <v-btn text @click="cancel">
+            <v-btn text @click="cancel()">
               {{ tc('common.actions.cancel') }}
             </v-btn>
           </v-col>

@@ -23,6 +23,7 @@ const { circle, padding } = toRefs(props);
 const radius = computed(() => (get(circle) ? '50%' : '4px'));
 const attrs = useAttrs();
 </script>
+
 <template>
   <component
     :is="tag"

@@ -226,7 +226,7 @@ const showMassDeleteConfirmation = () => {
         <refresh-button
           :loading="loading"
           :tooltip="tc('database_manager.refresh_tooltip')"
-          @refresh="loadInfo"
+          @refresh="loadInfo()"
         />
       </template>
       <database-backups
@@ -234,8 +234,8 @@ const showMassDeleteConfirmation = () => {
         :items="backups"
         :directory="directory"
         :selected="selected"
-        @change="onSelectedChange"
-        @remove="remove"
+        @change="onSelectedChange($event)"
+        @remove="remove($event)"
       />
       <template #buttons>
         <v-btn
@@ -243,7 +243,7 @@ const showMassDeleteConfirmation = () => {
           color="primary"
           :disabled="saving"
           :loading="saving"
-          @click="backup"
+          @click="backup()"
         >
           {{ t('backup_manager.backup_button') }}
         </v-btn>
@@ -251,7 +251,7 @@ const showMassDeleteConfirmation = () => {
           v-if="selected.length > 0"
           depressed
           color="error"
-          @click="showMassDeleteConfirmation"
+          @click="showMassDeleteConfirmation()"
         >
           {{ t('backup_manager.delete_selected') }}
         </v-btn>

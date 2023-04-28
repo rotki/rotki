@@ -26,6 +26,7 @@ const input = (event: any) => {
 
 const { t } = useI18n();
 </script>
+
 <template>
   <v-sheet outlined class="pa-4" rounded>
     <div class="text-subtitle-2 mb-3">
@@ -41,7 +42,7 @@ const { t } = useI18n();
         :hide-details="!!value"
         :hint="t('dashboard.snapshot.edit.dialog.balances.hints.location')"
         :label="t('common.location')"
-        @input="input"
+        @input="input($event)"
       />
     </div>
     <div v-if="previewLocationBalance" class="mt-4">

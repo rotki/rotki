@@ -104,6 +104,7 @@ watch(locationName, locationName => {
     />
   </v-navigation-drawer>
 </template>
+
 <style lang="scss" scoped>
 .user-notes-sidebar {
   top: 64px !important;

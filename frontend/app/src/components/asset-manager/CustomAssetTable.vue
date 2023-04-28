@@ -92,7 +92,7 @@ const getAsset = (item: CustomAsset) => ({
             :matches="filters"
             :matchers="matchers"
             data-cy="asset_table_filter"
-            @update:matches="updateFilter"
+            @update:matches="updateFilter($event)"
           />
         </v-col>
       </v-row>
@@ -105,7 +105,7 @@ const getAsset = (item: CustomAsset) => ({
       dark
       color="primary"
       data-cy="add-manual-asset"
-      @click="add"
+      @click="add()"
     >
       <v-icon> mdi-plus </v-icon>
     </v-btn>
@@ -121,7 +121,7 @@ const getAsset = (item: CustomAsset) => ({
       class="custom-assets-table"
       :sort-desc="false"
       :server-items-length="serverItemLength"
-      @update:options="updatePagination"
+      @update:options="updatePagination($event)"
     >
       <template #item.name="{ item }">
         <asset-details-base

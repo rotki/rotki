@@ -56,7 +56,7 @@ const loading: ComputedRef<boolean> = computed(() =>
     :loading="loading"
     :title="asset.isCustomAsset ? name : symbol"
     :subtitle="asset.isCustomAsset ? asset.customAssetType : name"
-    @click="navigate"
+    @click="navigate()"
   >
     <template #icon>
       <v-img

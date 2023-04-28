@@ -13,6 +13,7 @@ defineProps({
 
 const { availableTags } = storeToRefs(useTagStore());
 </script>
+
 <template>
   <span
     v-if="tags"

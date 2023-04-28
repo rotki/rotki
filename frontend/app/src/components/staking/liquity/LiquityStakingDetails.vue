@@ -318,7 +318,7 @@ const css = useCssModule();
         <refresh-button
           :tooltip="tc('liquity_staking_details.refresh_tooltip')"
           :loading="loading"
-          @refresh="refresh"
+          @refresh="refresh()"
         />
       </v-col>
     </v-row>
@@ -349,6 +349,7 @@ const css = useCssModule();
     />
   </div>
 </template>
+
 <style lang="scss" module>
 .proxies {
   &-wrapper {

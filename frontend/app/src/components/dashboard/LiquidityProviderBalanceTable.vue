@@ -157,6 +157,7 @@ watch(premium, async (curr, prev) => {
 
 const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
 </script>
+
 <template>
   <dashboard-expandable-table v-if="balances.length > 0 || loading">
     <template #title>

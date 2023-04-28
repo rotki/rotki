@@ -179,6 +179,7 @@ watch([symbol, changeable, identifier], (curr, prev) => {
     </adaptive-wrapper>
   </div>
 </template>
+
 <style module lang="scss">
 .circle {
   border-radius: 50%;

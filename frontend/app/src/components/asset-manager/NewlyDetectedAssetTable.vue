@@ -98,6 +98,7 @@ const ignoreTokens = async (identifiers?: string[]) => {
   }
 };
 </script>
+
 <template>
   <card outlined-body>
     <template #title>
@@ -109,7 +110,7 @@ const ignoreTokens = async (identifiers?: string[]) => {
     <template #actions>
       <div class="d-flex align-center">
         <div class="mr-8">
-          <v-btn outlined @click="selectDeselectAllTokens">
+          <v-btn outlined @click="selectDeselectAllTokens()">
             <v-icon>mdi-checkbox-multiple-marked-outline</v-icon>
             <span class="ml-2">
               {{ tc('asset_table.newly_detected.select_deselect_all_tokens') }}
@@ -139,7 +140,7 @@ const ignoreTokens = async (identifiers?: string[]) => {
               color="green"
               class="mr-4"
               :disabled="selected.length === 0"
-              @click="() => removeTokens()"
+              @click="removeTokens()"
               v-on="on"
             >
               <v-icon> mdi-check </v-icon>
@@ -155,7 +156,7 @@ const ignoreTokens = async (identifiers?: string[]) => {
               fab
               outlined
               :disabled="selected.length === 0"
-              @click="() => ignoreTokens()"
+              @click="ignoreTokens()"
               v-on="on"
             >
               <v-icon>mdi-eye-off</v-icon>

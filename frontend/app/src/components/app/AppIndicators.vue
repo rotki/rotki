@@ -49,6 +49,7 @@ const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar } =
     </div>
   </fragment>
 </template>
+
 <style module lang="scss">
 .language {
   width: 110px;

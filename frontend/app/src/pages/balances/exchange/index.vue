@@ -100,7 +100,7 @@ const isBinance = computed(() => {
         class="exchange-balances__refresh"
         :loading="isExchangeLoading"
         :tooltip="tc('exchange_balances.refresh_tooltip')"
-        @refresh="refreshExchangeBalances"
+        @refresh="refreshExchangeBalances()"
       />
       {{ tc('exchange_balances.title') }}
     </template>
@@ -133,7 +133,7 @@ const isBinance = computed(() => {
           hide-details
           :label="tc('exchange_balances.select_exchange')"
           class="exchange-balances__content__select"
-          @change="openExchangeDetails"
+          @change="openExchangeDetails()"
         >
           <template #selection="{ item }">
             <exchange-amount-row

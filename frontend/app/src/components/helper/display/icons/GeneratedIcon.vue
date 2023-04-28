@@ -79,6 +79,7 @@ const textColor = computed<string>(
     </span>
   </span>
 </template>
+
 <style scoped lang="scss">
 .generated-icon {
   border: 1px solid black;

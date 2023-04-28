@@ -136,7 +136,7 @@ const threshold = [1];
       :balances="manualBalances"
       :loading="loading"
       @edit="edit($event)"
-      @refresh="refresh"
+      @refresh="refresh()"
     />
     <manual-balance-table
       v-intersect="{
@@ -151,7 +151,7 @@ const threshold = [1];
       :balances="manualLiabilities"
       :loading="loading"
       @edit="edit($event)"
-      @refresh="refresh"
+      @refresh="refresh()"
     />
     <big-dialog
       :display="openDialog"

@@ -2,6 +2,7 @@
 const { t } = useI18n();
 const { isPackaged, premiumURL, navigateToPremium } = useInterop();
 </script>
+
 <template>
   <v-tooltip top>
     <template #activator="{ on }">

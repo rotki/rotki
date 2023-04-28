@@ -56,7 +56,7 @@ const contentStyle = computed(() => {
     max-width="900px"
     @click:outside="cancel()"
     @keydown.esc.stop="cancel()"
-    @input="cancel"
+    @input="cancel()"
   >
     <v-card class="big-dialog" data-cy="bottom-dialog">
       <v-card-title>

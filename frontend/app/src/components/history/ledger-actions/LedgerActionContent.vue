@@ -254,7 +254,7 @@ watch(loading, async (isLoading, wasLoading) => {
               <v-col cols="auto">
                 <ignore-buttons
                   :disabled="selected.length === 0 || loading"
-                  @ignore="ignore"
+                  @ignore="ignore($event)"
                 />
               </v-col>
               <v-col>
@@ -263,7 +263,7 @@ watch(loading, async (isLoading, wasLoading) => {
                   outlined
                   color="red"
                   :disabled="selected.length === 0"
-                  @click="massDelete"
+                  @click="massDelete()"
                 >
                   <v-icon> mdi-delete-outline </v-icon>
                 </v-btn>

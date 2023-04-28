@@ -44,7 +44,7 @@ onMounted(() => {
     :transform="transform"
     :error-message="errorMessage"
     :success-message="successMessage"
-    @finished="resetFloatingPrecision"
+    @finished="resetFloatingPrecision()"
   >
     <v-text-field
       v-model="floatingPrecision"

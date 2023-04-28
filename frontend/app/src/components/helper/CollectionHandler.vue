@@ -28,6 +28,7 @@ watch([data, found, itemsPerPage], ([data, found, itemsPerPage]) => {
 
 const { showUpgradeRow, itemLength } = setupEntryLimit(limit, found, total);
 </script>
+
 <template>
   <div>
     <slot

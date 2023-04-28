@@ -15,6 +15,7 @@ const input = () => {
 
 const { tc } = useI18n();
 </script>
+
 <template>
   <card outlined :class="css.collapsed">
     <v-row no-gutters align="center">
@@ -28,7 +29,7 @@ const { tc } = useI18n();
       </v-col>
 
       <v-col cols="auto">
-        <v-btn icon small @click="input">
+        <v-btn icon small @click="input()">
           <v-icon v-if="value">mdi-chevron-up</v-icon>
           <v-icon v-else>mdi-chevron-down</v-icon>
         </v-btn>
@@ -36,6 +37,7 @@ const { tc } = useI18n();
     </v-row>
   </card>
 </template>
+
 <style module lang="scss">
 .collapsed {
   margin-left: 8px;

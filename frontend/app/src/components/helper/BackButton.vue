@@ -36,6 +36,7 @@ const goBack = () => {
 
 const { t } = useI18n();
 </script>
+
 <template>
   <v-tooltip v-if="canNavigateBack || page" open-delay="400" top>
     <template #activator="{ on, attrs }">
@@ -53,6 +54,7 @@ const { t } = useI18n();
   </v-tooltip>
   <div v-else class="back-button__placeholder" />
 </template>
+
 <style scoped lang="scss">
 .back-button {
   &__button,

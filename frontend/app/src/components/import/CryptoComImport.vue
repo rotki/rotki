@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { t } = useI18n();
 </script>
+
 <template>
   <import-source source="cryptocom">
     <i18n tag="span" path="import_data.cryptocom.note">

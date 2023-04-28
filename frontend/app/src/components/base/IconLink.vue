@@ -33,7 +33,7 @@ const { href, onLinkClick } = useLinks(url);
         :href="href"
         target="_blank"
         v-on="on"
-        @click="onLinkClick"
+        @click="onLinkClick()"
       >
         <span v-if="text" class="mr-2"> {{ text }}</span>
         <v-icon :small="true"> mdi-launch </v-icon>

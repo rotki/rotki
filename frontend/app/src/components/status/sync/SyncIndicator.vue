@@ -161,6 +161,7 @@ const importSnapshot = async () => {
   set(locationDataSnapshotFile, null);
 };
 </script>
+
 <template>
   <fragment>
     <v-menu
@@ -331,7 +332,7 @@ const importSnapshot = async () => {
                         color="primary"
                         :disabled="!importFilesCompleted"
                         :loading="importSnapshotLoading"
-                        @click="importSnapshot"
+                        @click="importSnapshot()"
                       >
                         {{ t('common.actions.import') }}
                       </v-btn>
@@ -361,8 +362,8 @@ const importSnapshot = async () => {
       "
       :loading="isSyncing"
       :secondary-action="tc('common.actions.cancel')"
-      @cancel="cancel"
-      @confirm="performSync"
+      @cancel="cancel()"
+      @confirm="performSync()"
     >
       <div
         v-if="isDownload"

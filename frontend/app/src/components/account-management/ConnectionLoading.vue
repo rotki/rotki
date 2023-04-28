@@ -2,6 +2,7 @@
 defineProps<{ connected: boolean }>();
 const { t } = useI18n();
 </script>
+
 <template>
   <card v-if="!connected" flat>
     <v-row class="my-6">

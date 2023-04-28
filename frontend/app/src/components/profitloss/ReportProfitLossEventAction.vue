@@ -89,7 +89,7 @@ const updatePrice = async () => {
         </v-btn>
       </template>
       <v-list>
-        <v-list-item link @click="openEditHistoricPriceDialog">
+        <v-list-item link @click="openEditHistoricPriceDialog()">
           <v-list-item-icon class="mr-4">
             <v-icon>mdi-pencil</v-icon>
           </v-list-item-icon>
@@ -159,7 +159,7 @@ const updatePrice = async () => {
           <v-btn depressed @click="showDialog = false">
             {{ tc('common.actions.cancel') }}
           </v-btn>
-          <v-btn color="primary" @click="updatePrice">
+          <v-btn color="primary" @click="updatePrice()">
             {{ tc('price_form.update_price') }}
           </v-btn>
         </template>

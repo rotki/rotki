@@ -2,6 +2,7 @@
 const { href, onLinkClick } = useLinks();
 const { t } = useI18n();
 </script>
+
 <template>
   <v-tooltip bottom>
     <template #activator="{ on }">
@@ -13,7 +14,7 @@ const { t } = useI18n();
           class="secondary--text text--lighten-4"
           :href="href"
           v-on="on"
-          @click="onLinkClick"
+          @click="onLinkClick()"
         >
           <v-icon>mdi-white-balance-sunny</v-icon>
         </v-btn>

@@ -92,7 +92,7 @@ watch(v$, ({ $invalid }) => {
       <v-switch
         :label="tc('premium_credentials.restore_synced_database')"
         :value="syncDatabase"
-        @change="updateSyncDatabase"
+        @change="updateSyncDatabase($event)"
       />
 
       <revealable-input
@@ -102,8 +102,8 @@ watch(v$, ({ $invalid }) => {
         class="premium-settings__fields__api-key"
         :error-messages="v$.apiKey.$errors.map(e => e.$message)"
         :label="tc('premium_credentials.label_api_key')"
-        @input="updateApiKey"
-        @paste="onApiKeyPaste"
+        @input="updateApiKey($event)"
+        @paste="onApiKeyPaste($event)"
       />
       <revealable-input
         outlined
@@ -113,8 +113,8 @@ watch(v$, ({ $invalid }) => {
         prepend-icon="mdi-lock"
         :label="tc('premium_credentials.label_api_secret')"
         :error-messages="v$.apiSecret.$errors.map(e => e.$message)"
-        @input="updateApiSecret"
-        @paste="onApiSecretPaste"
+        @input="updateApiSecret($event)"
+        @paste="onApiSecretPaste($event)"
       />
     </div>
   </div>

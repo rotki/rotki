@@ -15,7 +15,7 @@ const { t } = useI18n();
     #default="{ error, success, update }"
     setting="nftsInNetValue"
     frontend-setting
-    @finished="fetchNetValue"
+    @finished="fetchNetValue()"
   >
     <v-switch
       v-model="includeNfts"
@@ -25,7 +25,7 @@ const { t } = useI18n();
       persistent-hint
       :success-messages="success"
       :error-messages="error"
-      @change="update"
+      @change="update($event)"
     />
   </settings-option>
 </template>

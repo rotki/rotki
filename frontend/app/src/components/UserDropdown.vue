@@ -77,7 +77,7 @@ const { darkModeEnabled } = useDarkMode();
         <v-list-item
           v-if="xsOnly"
           key="privacy-mode"
-          @click="togglePrivacyMode"
+          @click="togglePrivacyMode()"
         >
           <v-list-item-avatar>
             <v-icon color="primary"> {{ privacyModeIcon }}</v-icon>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { t } = useI18n();
 </script>
+
 <template>
   <div class="privacy-notice">
     <v-alert
@@ -14,6 +15,7 @@ const { t } = useI18n();
     </v-alert>
   </div>
 </template>
+
 <style scoped lang="scss">
 .privacy-notice {
   z-index: 4;

@@ -12,6 +12,7 @@ const { identifier } = toRefs(props);
 const { locationData } = useLocations();
 const location = locationData(identifier);
 </script>
+
 <template>
   <v-container class="pb-12">
     <v-row align="center" class="mt-12">

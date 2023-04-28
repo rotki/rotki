@@ -45,7 +45,10 @@ const css = useCssModule();
 <template>
   <v-row>
     <v-col cols="12" md="6">
-      <ignore-buttons :disabled="selected.length === 0" @ignore="massIgnore" />
+      <ignore-buttons
+        :disabled="selected.length === 0"
+        @ignore="massIgnore($event)"
+      />
       <div v-if="selected.length > 0" class="mt-2 ms-1">
         {{ tc('asset_table.selected', 0, { count: selected.length }) }}
         <v-btn small text @click="updateSelected([])">
@@ -74,7 +77,7 @@ const css = useCssModule();
               class="mt-0"
               data-cy="asset-filter-ignored"
               hide-details
-              @change="updateIgnoredAssetsHandling"
+              @change="updateIgnoredAssetsHandling($event)"
             >
               <v-radio value="none" :label="tc('asset_table.show_all')" />
               <v-radio

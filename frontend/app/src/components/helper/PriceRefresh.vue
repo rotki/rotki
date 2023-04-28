@@ -46,7 +46,7 @@ const disabled: ComputedRef<boolean> = computed(
     color="primary"
     :loading="refreshing"
     :disabled="disabled"
-    @click="refresh"
+    @click="refresh()"
   >
     <v-icon left>mdi-refresh</v-icon>
     {{ t('price_refresh.button') }}

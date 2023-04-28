@@ -24,7 +24,7 @@
     "dev:web": "node scripts/start-dev.js --web"
   },
   "devDependencies": {
-    "@rotki/eslint-config": "1.0.4",
+    "@rotki/eslint-config": "1.0.6",
     "argparse": "2.0.1",
     "dotenv": "14.3.2",
     "eslint": "8.39.0",

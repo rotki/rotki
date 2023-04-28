@@ -67,6 +67,7 @@ const change = async () => {
   }
 };
 </script>
+
 <template>
   <card>
     <template #title>{{ tc('change_password.title') }}</template>

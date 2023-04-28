@@ -49,6 +49,7 @@ const multiple = computed<boolean>(() => get(assets).length > 2);
 
 const css = useCssModule();
 </script>
+
 <template>
   <div class="d-flex">
     <div class="d-flex align-center">

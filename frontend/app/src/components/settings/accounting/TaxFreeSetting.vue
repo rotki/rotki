@@ -87,7 +87,7 @@ onMounted(() => {
       setting="taxfreeAfterPeriod"
       :transform="getTaxFreePeriod"
       :success-message="switchSuccess"
-      @finished="resetTaxFreePeriod"
+      @finished="resetTaxFreePeriod()"
     >
       <v-switch
         v-model="taxFreePeriod"
@@ -96,7 +96,7 @@ onMounted(() => {
         :error-messages="error"
         :label="tc('accounting_settings.labels.tax_free')"
         color="primary"
-        @change="update"
+        @change="update($event)"
       />
     </settings-option>
 
@@ -105,7 +105,7 @@ onMounted(() => {
       setting="taxfreeAfterPeriod"
       :transform="getPeriod"
       :success-message="numberSuccess"
-      @finished="resetTaxFreePeriod"
+      @finished="resetTaxFreePeriod()"
     >
       <v-text-field
         v-model="taxFreeAfterPeriod"

@@ -103,7 +103,7 @@ const { t } = useI18n();
     item-text="name"
     item-value="identifier"
     class="module-selector"
-    @input="update"
+    @input="update($event)"
   >
     <template #selection="data">
       <v-chip

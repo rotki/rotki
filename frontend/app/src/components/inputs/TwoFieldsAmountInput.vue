@@ -55,6 +55,7 @@ const updateSecondaryValue = (value: string) => {
   emit('update:secondary-value', value);
 };
 </script>
+
 <template>
   <div
     class="wrapper d-flex"
@@ -76,7 +77,7 @@ const updateSecondaryValue = (value: string) => {
       :label="label.primary"
       :error-messages="errorMessages.primary"
       :loading="!reversed && loading"
-      @input="updatePrimaryValue"
+      @input="updatePrimaryValue($event)"
     />
 
     <amount-input
@@ -92,7 +93,7 @@ const updateSecondaryValue = (value: string) => {
       :label="label.secondary"
       :error-messages="errorMessages.secondary"
       :loading="reversed && loading"
-      @input="updateSecondaryValue"
+      @input="updateSecondaryValue($event)"
     />
 
     <v-btn
@@ -102,12 +103,13 @@ const updateSecondaryValue = (value: string) => {
       dark
       color="primary"
       data-cy="grouped-amount-input__swap-button"
-      @click="reverse"
+      @click="reverse()"
     >
       <v-icon>mdi-swap-vertical</v-icon>
     </v-btn>
   </div>
 </template>
+
 <style scoped lang="scss">
 .wrapper {
   position: relative;

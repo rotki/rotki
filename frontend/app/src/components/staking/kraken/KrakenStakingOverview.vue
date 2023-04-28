@@ -32,6 +32,7 @@ const totalUsdCurrent = computed<BigNumber>(() => {
 
 const { t } = useI18n();
 </script>
+
 <template>
   <card full-height>
     <template #title>{{ t('kraken_staking_overview.title') }}</template>

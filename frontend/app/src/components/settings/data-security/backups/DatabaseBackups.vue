@@ -105,7 +105,7 @@ const showDeleteConfirmation = (item: UserDbBackup & { index: number }) => {
       :single-select="false"
       :headers="tableHeaders"
       :loading="loading"
-      @input="onSelectedChange"
+      @input="onSelectedChange($event)"
     >
       <template #item.time="{ item }">
         <date-display :timestamp="item.time" />

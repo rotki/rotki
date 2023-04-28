@@ -24,6 +24,7 @@ const loadingData = computed<boolean>(
     get(isTaskRunning(TaskType.QUERY_BALANCES))
 );
 </script>
+
 <template>
   <card v-if="loadingData || locationBreakdown.length > 0" outlined-body>
     <template #title> {{ t('common.assets') }} </template>

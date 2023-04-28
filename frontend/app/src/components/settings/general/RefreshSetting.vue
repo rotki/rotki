@@ -63,7 +63,7 @@ onMounted(() => {
           :error-message="
             tc('frontend_settings.validation.refresh_period.error')
           "
-          @finished="resetRefreshPeriod"
+          @finished="resetRefreshPeriod()"
         >
           <v-text-field
             v-model="refreshPeriod"
@@ -92,13 +92,13 @@ onMounted(() => {
           :error-message="
             tc('frontend_settings.validation.refresh_period.error')
           "
-          @finished="resetRefreshPeriod"
+          @finished="resetRefreshPeriod()"
         >
           <v-switch
             v-model="refreshEnabled"
             class="mt-3"
             :label="tc('frontend_settings.label.refresh_enabled')"
-            @change="update"
+            @change="update($event)"
           />
         </settings-option>
       </v-col>

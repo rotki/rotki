@@ -57,7 +57,7 @@ const { t } = useI18n();
         hide-selected
         item-value="address"
         chips
-        @input="input"
+        @input="input($event)"
       >
         <template #selection="data">
           <v-chip

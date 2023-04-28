@@ -386,6 +386,7 @@ const tableRef = ref<any>(null);
 
 const tableContainer = computed(() => get(tableRef)?.$el);
 </script>
+
 <template>
   <div>
     <v-row class="pa-4">
@@ -458,7 +459,7 @@ const tableContainer = computed(() => get(tableRef)?.$el);
         </div>
       </div>
       <v-spacer />
-      <v-btn text color="primary" class="mr-4" @click="add">
+      <v-btn text color="primary" class="mr-4" @click="add()">
         <v-icon class="mr-2">mdi-plus</v-icon>
         <span>
           {{ tc('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
@@ -478,8 +479,8 @@ const tableContainer = computed(() => get(tableRef)?.$el);
       "
       :primary-action="tc('common.actions.save')"
       :action-disabled="loading || !valid"
-      @confirm="save"
-      @cancel="clearEditDialog"
+      @confirm="save()"
+      @cancel="clearEditDialog()"
     >
       <edit-balances-snapshot-form
         v-if="form"
@@ -488,14 +489,14 @@ const tableContainer = computed(() => get(tableRef)?.$el);
         :form="form"
         :preview-location-balance="previewLocationBalance"
         :locations="indexToEdit !== null ? existingLocations : []"
-        @update:form="updateForm"
-        @update:asset="checkAssetExist"
+        @update:form="updateForm($event)"
+        @update:asset="checkAssetExist($event)"
       />
 
       <confirm-snapshot-conflict-replacement-dialog
         :snapshot="conflictedBalanceSnapshot"
-        @cancel="cancelConvertToEdit"
-        @confirm="convertToEdit"
+        @cancel="cancelConvertToEdit()"
+        @confirm="convertToEdit()"
       />
     </big-dialog>
 
@@ -506,8 +507,8 @@ const tableContainer = computed(() => get(tableRef)?.$el);
         tc('dashboard.snapshot.edit.dialog.balances.delete_confirmation')
       "
       max-width="700"
-      @cancel="clearDeleteDialog"
-      @confirm="confirmDelete"
+      @cancel="clearDeleteDialog()"
+      @confirm="confirmDelete()"
     >
       <div class="mt-4">
         <edit-balances-snapshot-location-selector

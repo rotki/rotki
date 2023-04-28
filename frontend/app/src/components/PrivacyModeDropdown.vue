@@ -38,7 +38,7 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
         <menu-tooltip-button
           :tooltip="tc('user_dropdown.change_privacy_mode.label')"
           class-name="privacy-mode-dropdown secondary--text text--lighten-4"
-          @click="togglePrivacyMode"
+          @click="togglePrivacyMode()"
         >
           <v-icon>{{ privacyModeIcon }}</v-icon>
         </menu-tooltip-button>
@@ -73,6 +73,7 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
     </v-menu>
   </div>
 </template>
+
 <style scoped lang="scss">
 .privacy-mode-dropdown {
   position: relative;

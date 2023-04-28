@@ -38,6 +38,7 @@ const rootAttrs = useAttrs();
 const rootListeners = useListeners();
 const slots = useSlots();
 </script>
+
 <template>
   <v-combobox
     :value="value"
@@ -45,7 +46,7 @@ const slots = useSlots();
     :search-input.sync="search"
     :items="filteredItems"
     v-on="rootListeners"
-    @input="input"
+    @input="input($event)"
   >
     <!-- Pass on all named slots -->
     <slot v-for="slot in Object.keys(slots)" :slot="slot" :name="slot" />

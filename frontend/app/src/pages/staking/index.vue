@@ -87,7 +87,7 @@ onBeforeMount(async () => {
           :items="staking"
           :label="tc('staking_page.dropdown_label')"
           item-value="id"
-          @change="updateLocation"
+          @change="updateLocation($event)"
         >
           <template v-for="slot in ['item', 'selection']" #[slot]="data">
             <v-row v-if="data.item" :key="slot" align="center">

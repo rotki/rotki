@@ -214,7 +214,7 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
               />
             </v-col>
             <v-col cols="auto" class="pb-10 pr-8">
-              <v-btn icon large @click="clearFilter">
+              <v-btn icon large @click="clearFilter()">
                 <v-icon>mdi-close</v-icon>
               </v-btn>
             </v-col>

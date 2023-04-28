@@ -293,7 +293,7 @@ watch(matches, matches => {
       prepend-inner-icon="mdi-filter-variant"
       :search-input.sync="search"
       @input="updateMatches($event)"
-      @keydown.enter="applySuggestion"
+      @keydown.enter="applySuggestion()"
       @keydown.up.prevent
       @keydown.up="moveSuggestion(true)"
       @keydown.down.prevent

@@ -162,7 +162,7 @@ watch(errorMessages, errors => {
           :error-messages="toMessages(v$.xpub)"
           :disabled="disabled"
           @blur="v$.xpub.$touch()"
-          @paste="onPasteXpub"
+          @paste="onPasteXpub($event)"
         >
           <template #append-outer>
             <v-tooltip open-delay="400" top>

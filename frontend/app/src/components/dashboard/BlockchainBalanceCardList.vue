@@ -90,6 +90,7 @@ const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
     </v-list>
   </fragment>
 </template>
+
 <style scoped lang="scss">
 .blockchain-balance-box {
   &__icon {

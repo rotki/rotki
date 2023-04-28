@@ -30,6 +30,7 @@ const identifier = computed<string>(() => {
   return identifier;
 });
 </script>
+
 <template>
   <div class="d-flex flex-row align-center">
     <v-img

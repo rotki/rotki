@@ -2,6 +2,7 @@
 const { t } = useI18n();
 const css = useCssModule();
 </script>
+
 <template>
   <card outlined :class="css.card">
     <v-row no-gutters align="center">
@@ -16,6 +17,7 @@ const css = useCssModule();
     </v-row>
   </card>
 </template>
+
 <style module lang="scss">
 .card {
   font-size: 16px;

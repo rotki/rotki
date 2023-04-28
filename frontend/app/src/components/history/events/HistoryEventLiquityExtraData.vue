@@ -50,6 +50,7 @@ const stakingDetail: ComputedRef<AssetBalance | null> = computed(() => {
 const css = useCssModule();
 const { tc } = useI18n();
 </script>
+
 <template>
   <div
     v-if="stakingDetail || loading"

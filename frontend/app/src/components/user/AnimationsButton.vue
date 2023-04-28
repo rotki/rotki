@@ -13,7 +13,7 @@ const { animationEnabled, toggleAnimation } = useAnimation();
         color="primary"
         v-bind="attrs"
         v-on="on"
-        @click="toggleAnimation"
+        @click="toggleAnimation()"
       >
         <v-icon v-if="animationEnabled">mdi-pause</v-icon>
         <v-icon v-else>mdi-play</v-icon>

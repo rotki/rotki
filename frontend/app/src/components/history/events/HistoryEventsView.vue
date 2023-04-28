@@ -500,7 +500,7 @@ const fetchDataAndRefreshEvents = async (
                     no-padding
                     multichain
                     flat
-                    @input="onFilterAccountsChanged"
+                    @input="onFilterAccountsChanged($event)"
                   />
                 </div>
               </v-col>
@@ -519,7 +519,10 @@ const fetchDataAndRefreshEvents = async (
         </v-row>
       </template>
 
-      <collection-handler :collection="eventsHeader" @set-page="setPage">
+      <collection-handler
+        :collection="eventsHeader"
+        @set-page="setPage($event)"
+      >
         <template
           #default="{
             data: eventsData,
@@ -646,7 +649,7 @@ const fetchDataAndRefreshEvents = async (
                 :show-event-detail="protocols.length > 0"
                 :loading="sectionLoading || eventTaskLoading"
                 @edit:event="editEventHandler($event, item)"
-                @delete:event="promptForDelete"
+                @delete:event="promptForDelete($event)"
               />
             </template>
             <template #body.prepend="{ headers }">
@@ -684,6 +687,7 @@ const fetchDataAndRefreshEvents = async (
     />
   </div>
 </template>
+
 <style module lang="scss">
 .table {
   :global {

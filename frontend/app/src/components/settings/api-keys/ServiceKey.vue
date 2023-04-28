@@ -96,7 +96,7 @@ watch(value, () => {
             :disabled="!editMode"
             :label="label"
             @input="currentValue = $event"
-            @paste="onPaste"
+            @paste="onPaste($event)"
           />
         </v-col>
         <v-col cols="auto">

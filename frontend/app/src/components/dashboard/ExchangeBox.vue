@@ -37,6 +37,7 @@ const { exchangeName } = useLocations();
     </v-list-item-content>
   </v-list-item>
 </template>
+
 <style scoped lang="scss">
 .exchange-box {
   &__icon {

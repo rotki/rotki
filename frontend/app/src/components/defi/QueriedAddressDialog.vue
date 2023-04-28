@@ -85,8 +85,8 @@ const close = () => {
   <v-dialog
     :value="true"
     max-width="450px"
-    @click:outside="close"
-    @close="close"
+    @click:outside="close()"
+    @close="close()"
   >
     <card outlined-body>
       <template #title>{{ tc('queried_address_dialog.title') }}</template>
@@ -115,7 +115,7 @@ const close = () => {
               icon
               color="primary"
               :disabled="selectedAccounts === null"
-              @click="addAddress"
+              @click="addAddress()"
             >
               <v-icon>mdi-plus</v-icon>
             </v-btn>
@@ -123,7 +123,7 @@ const close = () => {
         </v-row>
       </template>
       <template #details>
-        <v-btn icon @click="close">
+        <v-btn icon @click="close()">
           <v-icon>mdi-close</v-icon>
         </v-btn>
       </template>

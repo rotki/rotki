@@ -7,6 +7,7 @@ const { detectEvmAccounts } = useBlockchains();
 
 const { tc } = useI18n();
 </script>
+
 <template>
   <v-tooltip right max-width="300">
     <template #activator="{ on }">
@@ -16,7 +17,7 @@ const { tc } = useI18n();
         :loading="isEvmAccountsDetecting"
         :disabled="isEvmAccountsDetecting"
         v-on="on"
-        @click="detectEvmAccounts"
+        @click="detectEvmAccounts()"
       >
         {{ tc('blockchain_balances.evm_detection.title') }}
       </v-btn>

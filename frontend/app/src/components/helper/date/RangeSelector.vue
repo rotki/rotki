@@ -103,8 +103,8 @@ watch(v$, ({ $invalid }) => {
     <report-period-selector
       :year="year"
       :quarter="quarter"
-      @update:period="onPeriodChange"
-      @update:selection="onChanged"
+      @update:period="onPeriodChange($event)"
+      @update:selection="onChanged($event)"
     />
     <v-row v-if="custom">
       <v-col cols="12" md="6">

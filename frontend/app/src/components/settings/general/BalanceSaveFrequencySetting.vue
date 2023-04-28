@@ -52,7 +52,7 @@ onMounted(() => {
     :transform="transform"
     :error-message="tc('general_settings.validation.balance_frequency.error')"
     :success-message="successMessage"
-    @finished="resetBalanceSaveFrequency"
+    @finished="resetBalanceSaveFrequency()"
   >
     <v-text-field
       v-model="balanceSaveFrequency"

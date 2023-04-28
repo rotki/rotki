@@ -54,7 +54,7 @@ const { tc } = useI18n();
       </template>
     </progress-screen>
     <div v-else>
-      <liquity-staking-details @refresh="fetch">
+      <liquity-staking-details @refresh="fetch($event)">
         <template #modules>
           <active-modules :modules="modules" />
         </template>

@@ -43,6 +43,7 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     </v-list-item-content>
   </v-list-item>
 </template>
+
 <style scoped lang="scss">
 .manual-balance-box {
   &__icon {

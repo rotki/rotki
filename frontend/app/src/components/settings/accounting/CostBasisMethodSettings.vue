@@ -33,6 +33,7 @@ const { costBasisMethodData } = useCostBasisMethod();
     </template>
   </v-select>
 </template>
+
 <style module lang="scss">
 .title {
   text-transform: uppercase;

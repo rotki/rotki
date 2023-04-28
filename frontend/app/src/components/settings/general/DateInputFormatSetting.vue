@@ -50,7 +50,7 @@ onMounted(() => {
     frontend-setting
     :error-message="tc('general_settings.validation.date_input_format.error')"
     :success-message="successMessage"
-    @finished="resetDateInputFormat"
+    @finished="resetDateInputFormat()"
   >
     <date-input-format-selector
       v-model="dateInputFormat"

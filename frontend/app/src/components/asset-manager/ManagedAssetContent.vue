@@ -195,7 +195,7 @@ watch(identifier, async assetId => {
     <refresh-header
       :title="tc('asset_management.managed.title')"
       :loading="loading"
-      @refresh="fetchData"
+      @refresh="fetchData()"
     />
 
     <v-row class="mt-2" justify="space-between">
@@ -237,7 +237,7 @@ watch(identifier, async assetId => {
       :expanded="expanded"
       :selected="selected"
       :options="options"
-      @refresh="fetchData"
+      @refresh="fetchData()"
       @add="add()"
       @edit="edit($event)"
       @delete-asset="showDeleteConfirmation($event)"

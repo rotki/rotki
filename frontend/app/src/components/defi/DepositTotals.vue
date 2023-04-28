@@ -23,6 +23,7 @@ const premium = usePremium();
 
 const { t } = useI18n();
 </script>
+
 <template>
   <v-row class="mt-8" no-gutters>
     <v-col cols="12">

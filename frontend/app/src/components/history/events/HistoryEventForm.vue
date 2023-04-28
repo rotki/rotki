@@ -459,6 +459,7 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
     );
   });
 </script>
+
 <template>
   <v-form
     :value="value"

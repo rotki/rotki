@@ -131,7 +131,7 @@ onMounted(() => {
     :options="options"
     v-on="rootListeners"
     @update:items-per-page="onItemsPerPageChange($event)"
-    @update:page="scrollToTop"
+    @update:page="scrollToTop()"
   >
     <!-- Pass on all scoped slots -->
     <template
@@ -179,7 +179,7 @@ onMounted(() => {
         v-bind="footerProps"
         :pagination="pagination"
         :options="opt"
-        @update:options="updateOptions"
+        @update:options="updateOptions($event)"
       >
         <template #page-text="footerPageTextProps">
           <div class="d-flex align-center items-page-select">

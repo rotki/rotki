@@ -140,9 +140,9 @@ defineExpose({ removeFile });
         class="file-upload__drop"
         :class="active ? 'file-upload__drop--active' : null"
         @dragover.prevent
-        @drop="onDrop"
-        @dragenter="onEnter"
-        @dragleave="onLeave"
+        @drop="onDrop($event)"
+        @dragenter="onEnter($event)"
+        @dragleave="onLeave($event)"
       >
         <div
           v-if="error"
@@ -174,7 +174,7 @@ defineExpose({ removeFile });
             type="file"
             :accept="fileFilter"
             hidden
-            @change="onSelect"
+            @change="onSelect($event)"
           />
           <div class="mt-2 text-center">
             <div v-if="file">
@@ -196,7 +196,7 @@ defineExpose({ removeFile });
                   small
                   text
                   outlined
-                  @click="clickSelect"
+                  @click="clickSelect()"
                 >
                   {{ tc('file_upload.change_file') }}
                 </v-btn>
@@ -213,7 +213,7 @@ defineExpose({ removeFile });
                   small
                   text
                   outlined
-                  @click="clickSelect"
+                  @click="clickSelect()"
                 >
                   {{ tc('file_upload.select_file') }}
                 </v-btn>

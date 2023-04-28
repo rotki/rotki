@@ -10,6 +10,7 @@ defineProps({
   tooltip: { required: false, type: String, default: '' }
 });
 </script>
+
 <template>
   <v-row align="center">
     <v-col cols="auto">

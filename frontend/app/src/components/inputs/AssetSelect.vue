@@ -190,8 +190,8 @@ const listeners = useListeners();
     no-filter
     :class="outlined ? 'asset-select--outlined' : null"
     v-on="listeners"
-    @input="input"
-    @blur="blur"
+    @input="input($event)"
+    @blur="blur()"
   >
     <template #selection="{ item }">
       <template v-if="item && item.identifier">

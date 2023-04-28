@@ -43,21 +43,21 @@ onMounted(() => {
     frontend-setting
     :success-message="successMessage"
     :error-message="tc('frontend_settings.validation.timeframe.error')"
-    @finished="resetTimeframeSetting"
+    @finished="resetTimeframeSetting()"
   >
     <settings-option
       #default="{ update: updateVisibleTimeframes }"
       setting="visibleTimeframes"
       frontend-setting
-      @finished="resetVisibleTimeframes"
+      @finished="resetVisibleTimeframes()"
     >
       <time-frame-settings
         :message="{ error, success }"
         :value="defaultGraphTimeframe"
         :visible-timeframes="visibleTimeframes"
         :current-session-timeframe="currentSessionTimeframe"
-        @timeframe-change="updateTimeframeSetting"
-        @visible-timeframes-change="updateVisibleTimeframes"
+        @timeframe-change="updateTimeframeSetting($event)"
+        @visible-timeframes-change="updateVisibleTimeframes($event)"
       />
     </settings-option>
   </settings-option>

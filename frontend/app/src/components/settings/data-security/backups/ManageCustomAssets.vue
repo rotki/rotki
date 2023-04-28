@@ -61,7 +61,7 @@ const { t } = useI18n();
         {{ exportError }}
       </v-alert>
       <div class="d-flex flex-row align-center mt-4">
-        <v-btn color="primary" :loading="downloading" @click="exportZip">
+        <v-btn color="primary" :loading="downloading" @click="exportZip()">
           {{ t('manage_user_assets.export.button') }}
         </v-btn>
         <v-icon v-if="downloaded" class="ms-4" color="success">
@@ -92,7 +92,7 @@ const { t } = useI18n();
         class="mt-4"
         :disabled="importDisabled"
         :loading="uploading"
-        @click="importZip"
+        @click="importZip()"
       >
         {{ t('common.actions.import') }}
       </v-btn>

@@ -4,6 +4,7 @@ onUnmounted(() => {
   reportStore.$reset();
 });
 </script>
+
 <template>
   <router-view />
 </template>

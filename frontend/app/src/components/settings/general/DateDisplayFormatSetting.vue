@@ -60,7 +60,7 @@ onMounted(() => {
         tc('general_settings.validation.date_display_format.error')
       "
       :success-message="successMessage"
-      @finished="resetDateDisplayFormat"
+      @finished="resetDateDisplayFormat()"
     >
       <v-text-field
         v-model="dateDisplayFormat"

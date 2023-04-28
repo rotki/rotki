@@ -2,6 +2,7 @@
 const emit = defineEmits<{ (e: 'click'): void }>();
 const { t } = useI18n();
 </script>
+
 <template>
   <div class="mt-n2">
     <v-tooltip top max-width="200">

@@ -33,6 +33,6 @@ const input = (value: BalanceType) => {
     :value="value"
     :items="balanceTypes"
     v-bind="$attrs"
-    @input="input"
+    @input="input($event)"
   />
 </template>

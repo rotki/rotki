@@ -67,7 +67,7 @@ const { t } = useI18n();
             class="ml-6"
             color="primary"
             :loading="updating"
-            @click="update"
+            @click="update()"
           >
             {{ t('common.actions.update') }}
           </v-btn>

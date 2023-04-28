@@ -24,7 +24,7 @@ onMounted(() => {
       :label="tc('frontend_settings.label.animations')"
       :success-messages="success"
       :error-messages="error"
-      @change="update"
+      @change="update($event)"
     />
   </settings-option>
 </template>

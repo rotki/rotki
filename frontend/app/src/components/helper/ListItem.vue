@@ -60,7 +60,7 @@ const click = () => emit('click');
       [css.wrapper]: true,
       [css.dense]: dense
     }"
-    @click="click"
+    @click="click()"
   >
     <slot name="icon" :class="css.icon" />
     <span v-if="showDetails" :class="css.details">

@@ -166,6 +166,7 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
   set(refreshing, false);
 };
 </script>
+
 <template>
   <div>
     <data-table
@@ -231,7 +232,7 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
                       height="100%"
                       color="primary"
                       v-on="on"
-                      @click="() => refreshHistoricalPrice(item)"
+                      @click="refreshHistoricalPrice(item)"
                     >
                       <v-icon>mdi-refresh</v-icon>
                     </v-btn>

@@ -641,9 +641,9 @@ onBeforeUnmount(() => {
     <div :class="$style.canvas">
       <canvas
         :id="chartId"
-        @mousedown="canvasMouseDown"
-        @mouseup="canvasMouseUp"
-        @dblclick.stop="resetZoom"
+        @mousedown="canvasMouseDown($event)"
+        @mouseup="canvasMouseUp($event)"
+        @dblclick.stop="resetZoom()"
       />
       <graph-tooltip-wrapper :tooltip-option="tooltipDisplayOption">
         <template #content>
@@ -669,7 +669,7 @@ onBeforeUnmount(() => {
       ref="rangeRef"
       :class="$style.range"
       @mousemove="rangeButtonMouseMove($event)"
-      @dblclick="resetZoom"
+      @dblclick="resetZoom()"
     >
       <canvas :id="rangeId" />
 

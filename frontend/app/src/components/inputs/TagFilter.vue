@@ -48,7 +48,7 @@ const remove = (tag: string) => {
     multiple
     clearable
     :hide-details="hideDetails"
-    @input="input"
+    @input="input($event)"
     @click:clear="input([])"
   >
     <template #selection="{ item, selected, select }">
@@ -61,7 +61,7 @@ const remove = (tag: string) => {
         :text-color="`#${item.foregroundColor}`"
         close
         @click:close="remove(item.name)"
-        @click="select"
+        @click="select($event)"
       >
         {{ item.name }}
       </v-chip>
