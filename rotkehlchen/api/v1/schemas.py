@@ -30,6 +30,7 @@ from rotkehlchen.assets.asset import (
 )
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.bitcoin.bch.utils import validate_bch_address_input
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
@@ -2989,9 +2990,10 @@ class NFTFilterQuerySchema(
     collection_name = fields.String(load_default=None)
     ignored_assets_handling = SerializableEnumField(enum_class=IgnoredAssetsHandling, load_default=IgnoredAssetsHandling.NONE)  # noqa: E501
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, chains_aggregator: 'ChainsAggregator') -> None:
         super().__init__()
-        self.db = db
+        self.chains_aggregator = chains_aggregator
+        self.db = chains_aggregator.database
 
     @post_load
     def make_nft_filter_query(
@@ -3006,6 +3008,7 @@ class NFTFilterQuerySchema(
             elif data['ignored_assets_handling'] == IgnoredAssetsHandling.SHOW_ONLY:
                 ignored_assets_filter_params = ('IN', self.db.get_ignored_asset_ids(cursor))
 
+        owner_addresses = self.chains_aggregator.queried_addresses_for_module('nfts') if data['owner_addresses'] is None else data['owner_addresses']  # noqa: E501
         filter_query = NFTFilterQuery.make(
             order_by_rules=create_order_by_rules_list(
                 data=data,
@@ -3013,7 +3016,7 @@ class NFTFilterQuerySchema(
             ),
             limit=data['limit'],
             offset=data['offset'],
-            owner_addresses=data['owner_addresses'],
+            owner_addresses=owner_addresses,
             name=data['name'],
             collection_name=data['collection_name'],
             ignored_assets_filter_params=ignored_assets_filter_params,
