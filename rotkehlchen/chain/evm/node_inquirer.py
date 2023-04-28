@@ -732,7 +732,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             call_order=call_order if call_order is not None else self.default_call_order(),
             tx_hash=tx_hash,
         )
-        assert tx_receipt, 'tx receipt should exist'
+        assert tx_receipt, f'tx receipt should exist for tx hash {tx_hash.hex()}'
         return tx_receipt
 
     def _get_transaction_by_hash(
