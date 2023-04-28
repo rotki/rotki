@@ -15,6 +15,7 @@ from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import NFTLiquidityPool
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.externalapis.opensea import NFT, Collection
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.conftest import TestEnvironment, requires_env
@@ -37,6 +38,42 @@ NFT_ID_FOR_TEST_ACC4 = '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040
 NFT_ID_FOR_TEST_ACC5 = '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_73552724610198397480670284492690114609730214421511097849210414928326607694469'  # noqa: E501
 NFT_ID_FOR_TEST_ACC6_1 = '_nft_0xc36442b4a4522e871399cd717abdd847ab11fe88_360680'
 NFT_ID_FOR_TEST_ACC6_2 = '_nft_0xc36442b4a4522e871399cd717abdd847ab11fe88_360762'
+
+TEST_NFT_NEBOLAX_ETH = NFT(
+    token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_73552724610198397480670284492690114609730214421511097849210414928326607694469',  # noqa: E501
+    background_color=None,
+    image_url='https://openseauserdata.com/files/8fd18b22e4c81aff3998956e7a712d93.svg',
+    name='nebolax.eth',
+    external_link='https://app.ens.domains/name/nebolax.eth',
+    permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/73552724610198397480670284492690114609730214421511097849210414928326607694469',  # noqa: E501
+    price_eth=FVal(0.0012),
+    price_usd=FVal(1.2379458),
+    collection=Collection(
+        name='ENS: Ethereum Name Service',
+        banner_image=None,
+        description='Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.',  # noqa: E501
+        large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',  # noqa: E501
+        floor_price=FVal(0.00098),
+    ),
+)
+
+TEST_NFT_YABIR_ETH = NFT(
+    token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041',  # noqa: E501
+    background_color=None,
+    image_url='https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg',
+    name='yabir.eth',
+    external_link='https://app.ens.domains/name/yabir.eth',
+    permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/26612040215479394739615825115912800930061094786769410446114278812336794170041',  # noqa: E501
+    price_eth=FVal(0.00098),
+    price_usd=FVal(1.2379458),
+    collection=Collection(
+        name='ENS: Ethereum Name Service',
+        banner_image=None,
+        description='Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.',  # noqa: E501
+        large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',  # noqa: E501
+        floor_price=FVal(0.00098),
+    ),
+)
 
 
 @requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
@@ -335,44 +372,8 @@ def test_edit_delete_nft(rotkehlchen_api_server):
     """Check that ignoring NFTs work as expected"""
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     nft_map = {
-        TEST_ACC4: [
-            NFT(
-                token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041',  # noqa: E501
-                background_color=None,
-                image_url='https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg',  # noqa: E501
-                name='yabir.eth',
-                external_link='https://app.ens.domains/name/yabir.eth',
-                permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/26612040215479394739615825115912800930061094786769410446114278812336794170041',  # noqa: E501
-                price_eth=FVal(0.0006899),
-                price_usd=FVal(1.32),
-                collection=Collection(
-                    name='ENS: Ethereum Name Service',
-                    banner_image='',
-                    description='Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.',  # noqa: E501
-                    large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',  # noqa: E501
-                    floor_price=FVal(0.0006899),
-                ),
-            ),
-        ],
-        TEST_ACC5: [
-            NFT(
-                token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_73552724610198397480670284492690114609730214421511097849210414928326607694469',  # noqa: E501
-                background_color=None,
-                image_url='https://openseauserdata.com/files/8fd18b22e4c81aff3998956e7a712d93.svg',
-                name='nebolax.eth',
-                external_link='https://app.ens.domains/name/nebolax.eth',
-                permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/73552724610198397480670284492690114609730214421511097849210414928326607694469',  # noqa: E501
-                price_eth=FVal(0.0012),
-                price_usd=FVal(2.65),
-                collection=Collection(
-                    name='ENS: Ethereum Name Service',
-                    banner_image='',
-                    description='Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.',  # noqa: E501
-                    large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',  # noqa: E501
-                    floor_price=FVal(0.0006899),
-                ),
-            ),
-        ],
+        TEST_ACC4: [TEST_NFT_YABIR_ETH],
+        TEST_ACC5: [TEST_NFT_NEBOLAX_ETH],
     }
 
     def mock_get_all_nft_data(addresses, **kwargs):  # pylint: disable=unused-argument
@@ -418,13 +419,13 @@ def test_edit_delete_nft(rotkehlchen_api_server):
             external_link='https://app.ens.domains/name/nebolax.eth',
             permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/73552724610198397480670284492690114609730214421511097849210414928326607694469',  # noqa: E501
             price_eth=FVal(0.5),
-            price_usd=FVal(553.7),
+            price_usd=FVal(1.2379458),
             collection=Collection(
                 name='ENS: Ethereum Name Service',
-                banner_image='',
+                banner_image=None,
                 description='Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.',  # noqa: E501
                 large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',  # noqa: E501
-                floor_price=FVal(0.0006899),
+                floor_price=FVal(0.00098),
             ),
         )
         response = requests.get(
@@ -480,25 +481,7 @@ def test_nfts_ignoring_works(rotkehlchen_api_server, endpoint):
     """Check that ignoring NFTs work as expected"""
     def mock_get_all_nft_data(addresses, **kwargs):  # pylint: disable=unused-argument
         nft_map = {
-            '0xc37b40ABdB939635068d3c5f13E7faF686F03B65': [
-                NFT(
-                    token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041',  # noqa: E501
-                    background_color=None,
-                    image_url='https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg',  # noqa: E501
-                    name='yabir.eth',
-                    external_link='https://app.ens.domains/name/yabir.eth',
-                    permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/26612040215479394739615825115912800930061094786769410446114278812336794170041',  # noqa: E501
-                    price_eth=FVal(0.0006899),
-                    price_usd=FVal(1.056568052),
-                    collection=Collection(
-                        name='ENS: Ethereum Name Service',
-                        banner_image='',
-                        description='Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.',  # noqa: E501
-                        large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',  # noqa: E501
-                        floor_price=FVal(0.0006899),
-                    ),
-                ),
-            ],
+            '0xc37b40ABdB939635068d3c5f13E7faF686F03B65': [TEST_NFT_YABIR_ETH],
         }
         return nft_map, 1
 
@@ -731,44 +714,8 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
     """
     def mock_get_all_nft_data(_addresses, **_kwargs) -> tuple[dict[str, Any], int]:
         data = {
-            '0x4bBa290826C253BD854121346c370a9886d1bC26': [
-                NFT(
-                    token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_73552724610198397480670284492690114609730214421511097849210414928326607694469',  # noqa: E501
-                    background_color=None,
-                    image_url='https://openseauserdata.com/files/8fd18b22e4c81aff3998956e7a712d93.svg',  # noqa: E501
-                    name='nebolax.eth',
-                    external_link='https://app.ens.domains/name/nebolax.eth',
-                    permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/73552724610198397480670284492690114609730214421511097849210414928326607694469',  # noqa: E501
-                    price_eth=FVal(0.00098),
-                    price_usd=FVal(1.2379458),
-                    collection=Collection(
-                        name='ENS: Ethereum Name Service',
-                        banner_image=None,
-                        description='Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.',  # noqa: E501
-                        large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',  # noqa: E501
-                        floor_price=FVal(0.00098),
-                    ),
-                ),
-            ],
-            '0xc37b40ABdB939635068d3c5f13E7faF686F03B65': [
-                NFT(
-                    token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041',  # noqa: E501
-                    background_color=None,
-                    image_url='https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg',  # noqa: E501
-                    name='yabir.eth',
-                    external_link='https://app.ens.domains/name/yabir.eth',
-                    permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/26612040215479394739615825115912800930061094786769410446114278812336794170041',  # noqa: E501
-                    price_eth=FVal(0.00098),
-                    price_usd=FVal(1.2379458),
-                    collection=Collection(
-                        name='ENS: Ethereum Name Service',
-                        banner_image=None,
-                        description='Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.',  # noqa: E501
-                        large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',  # noqa: E501
-                        floor_price=FVal(0.00098),
-                    ),
-                ),
-            ],
+            '0x4bBa290826C253BD854121346c370a9886d1bC26': [TEST_NFT_NEBOLAX_ETH],
+            '0xc37b40ABdB939635068d3c5f13E7faF686F03B65': [TEST_NFT_YABIR_ETH],
             '0x3e649c5Eac6BBEE8a4F2A2945b50d8e582faB3bf': [
                 NFT(
                     token_identifier='_nft_0xc36442b4a4522e871399cd717abdd847ab11fe88_360762',
@@ -948,3 +895,49 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
     ))
     result = assert_proper_response_with_result(response)
     assert len(result) == 4
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC4, TEST_ACC5]])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('ethereum_modules', [['nfts']])
+def test_customized_queried_addresses(rotkehlchen_api_server):
+    """
+    Test that if queried addresses are customized for nfts module, then from /nfts/balances only
+    NFTs of those addresses are returned"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    def mock_get_all_nft_data(_addresses, **_kwargs) -> tuple[dict[str, Any], int]:
+        data = {
+            TEST_ACC5: [TEST_NFT_NEBOLAX_ETH],
+            TEST_ACC4: [TEST_NFT_YABIR_ETH],
+        }
+        return data, 2
+
+    get_all_nft_data_patch = patch('rotkehlchen.chain.ethereum.modules.nft.nfts.Nfts._get_all_nft_data', side_effect=mock_get_all_nft_data)  # noqa: E501
+
+    with get_all_nft_data_patch:
+        response = requests.get(  # Populate the NFTs
+            api_url_for(
+                rotkehlchen_api_server,
+                'nftsbalanceresource',
+            ),
+            json={'async_query': False, 'ignore_cache': True},
+        )
+        result = assert_proper_response_with_result(response)
+        assert result['entries_found'] == 2
+
+    # Make NFTs queried for only one of the addresses
+    QueriedAddresses(rotki.data.db).add_queried_address_for_module(
+        module='nfts',
+        address=TEST_ACC5,
+    )
+    response = requests.get(  # Now we should get the NFTs only for TEST_ACC5 address
+        api_url_for(
+            rotkehlchen_api_server,
+            'nftsbalanceresource',
+        ),
+        json={'async_query': False, 'ignore_cache': False},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries'].keys() == {TEST_ACC5}, 'There should be no NFTs for TEST_ACC_4'
+    assert len(result['entries'][TEST_ACC5]) == 1

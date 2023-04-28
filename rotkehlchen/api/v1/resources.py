@@ -2495,9 +2495,7 @@ class NFTSResource(BaseMethodView):
 
 class NFTSBalanceResource(BaseMethodView):
     def make_get_schema(self) -> NFTFilterQuerySchema:
-        return NFTFilterQuerySchema(
-            db=self.rest_api.rotkehlchen.data.db,
-        )
+        return NFTFilterQuerySchema(chains_aggregator=self.rest_api.rotkehlchen.chains_aggregator)
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_get_schema, location='json_and_query')

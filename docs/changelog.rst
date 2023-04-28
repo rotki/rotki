@@ -41,6 +41,7 @@ Changelog
 * :bug:`-` Fixed an issue where reports couldn't be exported if there was special characters in notes or assets and the user locale was not compatible.
 * :bug:`-` When users edit exchange credentials, if new credentials are invalid, the old passphrase will now be kept.
 * :bug:`5934` When an exchange account is deleted from rotki and there are still more tracked accounts on the same exchange, events will no longer be re-queried for those remaining accounts.
+* :bug:`-` Users will now see the correct set of NFTs if they customized the list of addresses queried for the NFT module.
 
 * :release:`1.27.1 <2023-02-24>`
 * :feature:`-` Transactions involving Sai CDP migration to Dai CDP are now properly decoded.
