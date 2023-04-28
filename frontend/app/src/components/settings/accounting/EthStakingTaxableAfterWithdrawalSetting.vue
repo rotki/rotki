@@ -38,7 +38,7 @@ const getSuccessMessage = (enabled: boolean) =>
         tc('accounting_settings.labels.eth_staking_taxable_after_withdrawal')
       "
       color="primary"
-      @change="update"
+      @change="update($event)"
     />
   </settings-option>
 </template>

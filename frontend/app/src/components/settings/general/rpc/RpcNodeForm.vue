@@ -140,6 +140,7 @@ watch(state, state => {
     />
   </form>
 </template>
+
 <style lang="scss" module>
 .input {
   width: 100px;

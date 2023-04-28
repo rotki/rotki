@@ -16,6 +16,7 @@ const { tc } = useI18n();
 const { isLoading } = useStatusStore();
 const loading = isLoading(Section.DEFI_LIQUITY_STAKING_POOLS);
 </script>
+
 <template>
   <card :loading="loading">
     <template #title>

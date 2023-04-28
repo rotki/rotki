@@ -31,11 +31,12 @@ const css = useCssModule();
     :is="tag"
     :class="{ [css.link]: enabled }"
     v-bind="attrs"
-    @click="navigate"
+    @click="navigate()"
   >
     <slot />
   </component>
 </template>
+
 <style module lang="scss">
 .link {
   cursor: pointer;

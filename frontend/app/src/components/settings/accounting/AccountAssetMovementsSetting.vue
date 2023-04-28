@@ -26,7 +26,7 @@ const { tc } = useI18n();
       :error-messages="error"
       :label="tc('accounting_settings.labels.account_for_assets_movements')"
       color="primary"
-      @change="update"
+      @change="update($event)"
     />
   </settings-option>
 </template>

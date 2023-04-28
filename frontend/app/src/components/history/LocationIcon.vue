@@ -18,6 +18,7 @@ const iconStyle = computed(() => ({
   fontSize: get(size)
 }));
 </script>
+
 <template>
   <span
     class="d-flex align-center"

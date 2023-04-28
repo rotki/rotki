@@ -56,7 +56,7 @@ const { t } = useI18n();
 <template>
   <v-row align="center">
     <v-col cols="auto">
-      <v-btn icon :disabled="value === 1" @click="previousPage">
+      <v-btn icon :disabled="value === 1" @click="previousPage()">
         <v-icon>mdi-chevron-left</v-icon>
       </v-btn>
     </v-col>
@@ -76,13 +76,13 @@ const { t } = useI18n();
           dense
           hide-no-data
           outlined
-          @change="newPage"
+          @change="newPage($event)"
         />
       </div>
     </v-col>
     <v-col cols="auto">{{ t('pagination.of', { length }) }}</v-col>
     <v-col cols="auto">
-      <v-btn icon :disabled="value === length" @click="nextPage">
+      <v-btn icon :disabled="value === length" @click="nextPage()">
         <v-icon>mdi-chevron-right</v-icon>
       </v-btn>
     </v-col>

@@ -28,7 +28,7 @@ onMounted(() => {
       :error-messages="error"
       :label="tc('accounting_settings.labels.calculate_past_cost_basis')"
       color="primary"
-      @change="update"
+      @change="update($event)"
     />
   </settings-option>
 </template>

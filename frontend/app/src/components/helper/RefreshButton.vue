@@ -10,6 +10,7 @@ const refresh = () => {
   emit('refresh');
 };
 </script>
+
 <template>
   <v-tooltip top>
     <template #activator="{ on, attrs }">
@@ -20,7 +21,7 @@ const refresh = () => {
         depressed
         :disabled="loading"
         v-bind="attrs"
-        @click="refresh"
+        @click="refresh()"
         v-on="on"
       >
         <v-progress-circular

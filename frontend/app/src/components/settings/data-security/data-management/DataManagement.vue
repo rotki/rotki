@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { tc } = useI18n();
 </script>
+
 <template>
   <setting-category>
     <template #title>

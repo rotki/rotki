@@ -55,7 +55,7 @@ const { t } = useI18n();
     <settings-option
       #default="{ error, success, update }"
       setting="addressNamePriority"
-      @finished="finishEditing"
+      @finished="finishEditing()"
     >
       <prioritized-list
         :value="currentAddressNamePriorities"
@@ -66,7 +66,7 @@ const { t } = useI18n();
         :disable-add="true"
         :disable-delete="true"
         :status="{ error, success }"
-        @input="update"
+        @input="update($event)"
       />
     </settings-option>
   </div>

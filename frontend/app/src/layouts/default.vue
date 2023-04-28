@@ -13,7 +13,10 @@ onMounted(async () => await load());
 <template>
   <app-host>
     <app-messages>
-      <theme-checker v-if="showComponents" @update:dark-mode="updateDarkMode" />
+      <theme-checker
+        v-if="showComponents"
+        @update:dark-mode="updateDarkMode($event)"
+      />
       <app-update-popup />
       <app-core />
     </app-messages>

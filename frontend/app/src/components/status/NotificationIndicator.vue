@@ -28,7 +28,7 @@ const { tc } = useI18n();
     <menu-tooltip-button
       :tooltip="tc('notification_indicator.tooltip')"
       class-name="secondary--text text--lighten-4"
-      @click="click"
+      @click="click()"
     >
       <v-icon
         v-if="!hasRunningTasks"

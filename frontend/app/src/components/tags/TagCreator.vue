@@ -73,7 +73,7 @@ const randomize = () => {
             text
             class="tag-creator__random"
             v-on="on"
-            @click="randomize"
+            @click="randomize()"
           >
             <v-icon color="primary">mdi-refresh</v-icon>
           </v-btn>
@@ -158,7 +158,7 @@ const randomize = () => {
           class="mr-4"
           width="100"
           depressed
-          @click="cancel"
+          @click="cancel()"
         >
           {{ t('common.actions.cancel') }}
         </v-btn>
@@ -168,7 +168,7 @@ const randomize = () => {
           depressed
           color="primary"
           :disabled="v$.$invalid"
-          @click="save"
+          @click="save()"
         >
           {{ t('common.actions.save') }}
         </v-btn>

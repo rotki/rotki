@@ -283,7 +283,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
         />
       </v-col>
     </v-row>
-    <v-form :value="value" class="pt-2" @input="input">
+    <v-form :value="value" class="pt-2" @input="input($event)">
       <v-row>
         <v-col cols="12">
           <v-select

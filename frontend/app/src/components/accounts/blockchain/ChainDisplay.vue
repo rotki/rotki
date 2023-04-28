@@ -19,6 +19,7 @@ const name = computed(() => {
   return get(getChainInfoById(chainVal))?.name || chainVal;
 });
 </script>
+
 <template>
   <list-item :dense="dense" :title="chain" :subtitle="dense ? '' : name">
     <template #icon>

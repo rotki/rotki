@@ -162,7 +162,7 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
         <v-switch
           v-if="!isRotkiCustomImport"
           :value="dateInputFormat !== null"
-          @change="changeShouldCustomDateFormat"
+          @change="changeShouldCustomDateFormat()"
         >
           <template #label>
             {{ t('file_upload.date_input_format.switch_label') }}
@@ -208,7 +208,7 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
             block
             data-cy="button-import"
             :disabled="v$.$invalid || !file || loading"
-            @click="uploadFile"
+            @click="uploadFile()"
           >
             {{ t('common.actions.import') }}
           </v-btn>

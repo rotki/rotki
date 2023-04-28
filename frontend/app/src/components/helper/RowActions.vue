@@ -27,7 +27,7 @@ const deleteClick = () => emit('delete-click');
           class="mx-1 actions__edit"
           data-cy="row-edit"
           v-on="on"
-          @click="editClick"
+          @click="editClick()"
         >
           <v-icon small> mdi-pencil-outline </v-icon>
         </v-btn>
@@ -43,7 +43,7 @@ const deleteClick = () => emit('delete-click');
           class="mx-1 actions__delete"
           data-cy="row-delete"
           v-on="on"
-          @click="deleteClick"
+          @click="deleteClick()"
         >
           <v-icon small> mdi-delete-outline </v-icon>
         </v-btn>

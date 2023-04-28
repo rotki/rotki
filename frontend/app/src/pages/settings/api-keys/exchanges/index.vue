@@ -259,8 +259,8 @@ const showRemoveConfirmation = (item: Exchange) => {
       :secondary-action="tc('common.actions.cancel')"
       :action-disabled="!valid || pending"
       :loading="pending"
-      @confirm="setup"
-      @cancel="cancel"
+      @confirm="setup()"
+      @cancel="cancel()"
     >
       <exchange-keys-form
         v-model="valid"

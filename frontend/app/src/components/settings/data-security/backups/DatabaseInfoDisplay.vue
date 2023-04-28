@@ -28,6 +28,7 @@ defineProps({
 
 const { t } = useI18n();
 </script>
+
 <template>
   <card>
     <template #title>{{ t('database_info_display.title') }}</template>
@@ -80,6 +81,7 @@ const { t } = useI18n();
     </v-row>
   </card>
 </template>
+
 <style module lang="scss">
 .label {
   font-weight: 600;

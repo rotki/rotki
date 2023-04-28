@@ -358,6 +358,7 @@ const css = useCssModule();
     </div>
   </card>
 </template>
+
 <style lang="scss" module>
 .large {
   font-size: 1.2rem;

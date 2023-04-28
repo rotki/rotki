@@ -22,7 +22,7 @@ const { tc } = useI18n();
       :label="tc('general_settings.labels.treat_eth2_as_eth')"
       :success-messages="success"
       :error-messages="error"
-      @change="update"
+      @change="update($event)"
     />
   </settings-option>
 </template>

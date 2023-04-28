@@ -133,12 +133,12 @@ onMounted(async () => {
 
     <template #action="{ attrs }">
       <div v-if="error">
-        <v-btn text v-bind="attrs" @click="dismiss">
+        <v-btn text v-bind="attrs" @click="dismiss()">
           {{ tc('common.actions.dismiss') }}
         </v-btn>
       </div>
       <div v-else-if="!downloading && !restarting">
-        <v-btn text v-bind="attrs" @click="dismiss">
+        <v-btn text v-bind="attrs" @click="dismiss()">
           {{ tc('common.actions.cancel') }}
         </v-btn>
         <v-btn
@@ -146,17 +146,18 @@ onMounted(async () => {
           color="primary"
           text
           v-bind="attrs"
-          @click="update"
+          @click="update()"
         >
           {{ tc('common.actions.update') }}
         </v-btn>
-        <v-btn v-else color="primary" text v-bind="attrs" @click="install">
+        <v-btn v-else color="primary" text v-bind="attrs" @click="install()">
           {{ tc('common.actions.install') }}
         </v-btn>
       </div>
     </template>
   </v-snackbar>
 </template>
+
 <style scoped lang="scss">
 .update-popup {
   /* stylelint-disable selector-class-pattern,selector-nested-pattern */

@@ -36,6 +36,7 @@ const transactionId = computed<string>(() => {
   return transactionId.startsWith('0x') ? transactionId : `0x${transactionId}`;
 });
 </script>
+
 <template>
   <span class="d-flex flex-column pt-1">
     <span v-if="item.address" class="d-flex flex-row">

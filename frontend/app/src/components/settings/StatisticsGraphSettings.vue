@@ -84,7 +84,7 @@ watch(multiplierSetting, value => set(multiplier, value.toString()));
           depressed
           color="primary"
           :disabled="invalid"
-          @click="updateSetting"
+          @click="updateSetting()"
         >
           {{ tc('common.actions.save') }}
         </v-btn>

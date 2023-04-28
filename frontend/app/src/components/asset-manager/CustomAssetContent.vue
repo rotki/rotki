@@ -166,7 +166,7 @@ watch(identifier, assetId => {
     <refresh-header
       :title="tc('asset_management.custom.title')"
       :loading="loading"
-      @refresh="refresh"
+      @refresh="refresh()"
     />
     <custom-asset-table
       class="mt-12"

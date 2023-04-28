@@ -3,6 +3,7 @@ const expanded = ref<boolean>(true);
 
 const panel = computed<number>(() => (get(expanded) ? 0 : -1));
 </script>
+
 <template>
   <card :class="{ 'pb-4': expanded }">
     <template #title>
@@ -42,6 +43,7 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
     </template>
   </card>
 </template>
+
 <style scoped lang="scss">
 :deep(.v-expansion-panel) {
   &::before {

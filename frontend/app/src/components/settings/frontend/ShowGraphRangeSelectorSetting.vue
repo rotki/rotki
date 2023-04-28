@@ -23,7 +23,7 @@ const { t } = useI18n();
       :label="t('frontend_settings.label.show_graph_range_selector')"
       :success-messages="success"
       :error-messages="error"
-      @change="update"
+      @change="update($event)"
     />
   </settings-option>
 </template>

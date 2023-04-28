@@ -71,7 +71,7 @@ onMounted(() => {
         :error-message="
           tc('general_settings.validation.version_update_check_frequency.error')
         "
-        @finished="resetVersionUpdateCheckFrequency"
+        @finished="resetVersionUpdateCheckFrequency()"
       >
         <v-text-field
           v-model="versionUpdateCheckFrequency"
@@ -87,7 +87,7 @@ onMounted(() => {
           :error-messages="
             error || v$.versionUpdateCheckFrequency.$errors.map(e => e.$message)
           "
-          @change="update"
+          @change="update($event)"
         />
       </settings-option>
     </v-col>
@@ -97,7 +97,7 @@ onMounted(() => {
         setting="versionUpdateCheckFrequency"
         frontend-setting
         :transform="switchTransform"
-        @finished="resetVersionUpdateCheckFrequency"
+        @finished="resetVersionUpdateCheckFrequency()"
       >
         <v-switch
           v-model="versionUpdateCheckEnabled"

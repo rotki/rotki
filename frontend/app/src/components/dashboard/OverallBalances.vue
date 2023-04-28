@@ -173,7 +173,7 @@ const chartSectionHeight = computed<string>(() => {
         <timeframe-selector
           :value="timeframe"
           :visible-timeframes="visibleTimeframes"
-          @input="setTimeframe"
+          @input="setTimeframe($event)"
         />
       </v-col>
       <v-col cols="12" md="6" lg="7" class="d-flex">
@@ -201,6 +201,7 @@ const chartSectionHeight = computed<string>(() => {
     </v-row>
   </v-card>
 </template>
+
 <style scoped lang="scss">
 .overall-balances {
   &__balance {

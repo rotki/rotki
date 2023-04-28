@@ -70,6 +70,7 @@ watch(v$, ({ $invalid }) => {
   input(!$invalid);
 });
 </script>
+
 <template>
   <v-form :value="value" class="pt-4">
     <div class="mb-4">

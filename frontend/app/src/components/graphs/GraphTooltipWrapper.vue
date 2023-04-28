@@ -12,6 +12,7 @@ defineProps({
 
 const { dark } = useTheme();
 </script>
+
 <template>
   <div
     v-if="tooltipOption"
@@ -31,6 +32,7 @@ const { dark } = useTheme();
     <slot name="content" />
   </div>
 </template>
+
 <style module lang="scss">
 .tooltip {
   position: absolute;

@@ -130,6 +130,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 
 const { showDeleteConfirmation } = addressBookDeletion(location);
 </script>
+
 <template>
   <div>
     <data-table

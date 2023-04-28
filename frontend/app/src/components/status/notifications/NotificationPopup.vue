@@ -83,6 +83,7 @@ const { t } = useI18n();
     </v-tooltip>
   </v-snackbar>
 </template>
+
 <style module lang="scss">
 .popup {
   :global {

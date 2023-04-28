@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@rotki/common": "workspace:*",
-    "@rotki/eslint-config-ts": "1.0.4",
+    "@rotki/eslint-config-ts": "1.0.6",
     "@vuelidate/core": "2.0.2",
     "@vuelidate/validators": "2.0.2",
     "@vueuse/core": "10.1.0",

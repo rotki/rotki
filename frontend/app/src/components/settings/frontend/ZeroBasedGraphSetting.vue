@@ -23,7 +23,7 @@ const { t } = useI18n();
       persistent-hint
       :success-messages="success"
       :error-messages="error"
-      @change="update"
+      @change="update($event)"
     />
   </settings-option>
 </template>

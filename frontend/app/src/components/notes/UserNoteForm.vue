@@ -39,6 +39,7 @@ watch(v$, ({ $invalid }) => {
   emit('valid', !$invalid);
 });
 </script>
+
 <template>
   <v-form :value="!v$.$invalid" class="pt-2">
     <div>

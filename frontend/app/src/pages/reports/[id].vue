@@ -127,10 +127,10 @@ const regenerateReport = async () => {
         <report-actionable
           :report="selectedReport"
           :initial-open="initialOpenReportActionable"
-          @regenerate="regenerateReport"
+          @regenerate="regenerateReport()"
         />
       </template>
-      <v-btn class="ml-2" color="primary" text @click="regenerateReport">
+      <v-btn class="ml-2" color="primary" text @click="regenerateReport()">
         <v-icon class="mr-2">mdi-refresh</v-icon>
         {{ tc('profit_loss_report.actionable.actions.regenerate_report') }}
       </v-btn>
@@ -145,7 +145,7 @@ const regenerateReport = async () => {
       class="mt-8"
       :report="selectedReport"
       :refreshing="refreshing"
-      @update:page="onPage"
+      @update:page="onPage($event)"
     />
   </v-container>
 </template>

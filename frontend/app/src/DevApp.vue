@@ -6,6 +6,7 @@ const reset = () => {
 
 const resetState = 'Reset State ->';
 </script>
+
 <template>
   <v-app id="rotki">
     <v-app-bar app fixed>

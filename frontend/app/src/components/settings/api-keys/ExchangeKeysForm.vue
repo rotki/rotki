@@ -220,7 +220,13 @@ watch(v$, ({ $invalid }) => {
       {{ tc('exchange_settings.keys') }}
       <v-tooltip top open-delay="400">
         <template #activator="{ on, attrs }">
-          <v-btn icon v-bind="attrs" class="ml-4" v-on="on" @click="toggleEdit">
+          <v-btn
+            icon
+            v-bind="attrs"
+            class="ml-4"
+            v-on="on"
+            @click="toggleEdit()"
+          >
             <v-icon v-if="!editKeys">mdi-pencil-outline</v-icon>
             <v-icon v-else>mdi-close</v-icon>
           </v-btn>
@@ -245,7 +251,7 @@ watch(v$, ({ $invalid }) => {
         data-cy="api-key"
         :label="tc('exchange_settings.inputs.api_key')"
         @input="onUpdateExchange({ ...exchange, apiKey: $event })"
-        @paste="onApiKeyPaste"
+        @paste="onApiKeyPaste($event)"
       />
 
       <revealable-input
@@ -259,7 +265,7 @@ watch(v$, ({ $invalid }) => {
         prepend-icon="mdi-lock"
         :label="tc('exchange_settings.inputs.api_secret')"
         @input="onUpdateExchange({ ...exchange, apiSecret: $event })"
-        @paste="onApiSecretPaste"
+        @paste="onApiSecretPaste($event)"
       />
 
       <revealable-input

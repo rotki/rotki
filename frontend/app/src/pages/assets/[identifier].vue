@@ -105,7 +105,7 @@ const collectionBalance: ComputedRef<AssetBalanceWithPrice[]> = computed(() => {
             <div class="text-subtitle-2">{{ t('assets.ignore') }}</div>
           </v-col>
           <v-col>
-            <v-switch :input-value="isIgnored" @change="toggleIgnoreAsset" />
+            <v-switch :input-value="isIgnored" @change="toggleIgnoreAsset()" />
           </v-col>
         </v-row>
       </v-col>

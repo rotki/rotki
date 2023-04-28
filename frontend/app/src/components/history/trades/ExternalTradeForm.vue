@@ -482,7 +482,7 @@ onMounted(() => {
               :label="t('external_trade_form.fee.label')"
               :hint="t('external_trade_form.fee.hint')"
               :error-messages="toMessages(v$.fee)"
-              @input="triggerFeeValidator"
+              @input="triggerFeeValidator()"
             />
           </v-col>
           <v-col cols="12" md="6">
@@ -496,7 +496,7 @@ onMounted(() => {
               :hint="t('external_trade_form.fee_currency.hint')"
               :required="!!fee"
               :error-messages="toMessages(v$.feeCurrency)"
-              @input="triggerFeeValidator"
+              @input="triggerFeeValidator()"
             />
           </v-col>
         </v-row>

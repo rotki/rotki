@@ -152,7 +152,7 @@ watch(loading, async (isLoading, wasLoading) => {
         <v-col cols="12" sm="6">
           <ignore-buttons
             :disabled="selected.length === 0 || loading"
-            @ignore="ignore"
+            @ignore="ignore($event)"
           />
           <div v-if="selected.length > 0" class="mt-2 ms-1">
             {{

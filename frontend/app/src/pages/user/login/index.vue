@@ -30,7 +30,7 @@ const navigate = async () => {
     <div v-if="checkForAssetUpdate">
       <asset-update
         headless
-        @skip="navigate"
+        @skip="navigate()"
         @complete="checkForAssetUpdate = false"
       />
     </div>

@@ -451,6 +451,7 @@ onBeforeMount(async () => {
   });
 });
 </script>
+
 <template>
   <v-dialog
     v-model="open"
@@ -489,7 +490,7 @@ onBeforeMount(async () => {
         prepend-inner-icon="mdi-magnify"
         append-icon=""
         :placeholder="tc('global_search.search_placeholder')"
-        @input="change"
+        @input="change($event)"
       >
         <template #item="{ item }">
           <div class="d-flex align-center text-body-2 fill-width">
@@ -565,6 +566,7 @@ onBeforeMount(async () => {
     </div>
   </v-dialog>
 </template>
+
 <style module lang="scss">
 .dialog {
   margin-top: 200px;

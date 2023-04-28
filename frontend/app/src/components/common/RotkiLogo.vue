@@ -22,6 +22,7 @@ defineProps({
 const error: Ref<boolean> = ref(false);
 const success: Ref<boolean> = ref(false);
 </script>
+
 <template>
   <div>
     <v-img

@@ -107,6 +107,7 @@ const updateAsset = (asset: string) => {
   emit('update:asset', asset);
 };
 </script>
+
 <template>
   <v-form :value="value" class="pt-4">
     <div>
@@ -144,7 +145,7 @@ const updateAsset = (asset: string) => {
         :enable-association="false"
         :error-messages="v$.assetIdentifier.$errors.map(e => e.$message)"
         @input="updateForm({ assetIdentifier: $event })"
-        @change="updateAsset"
+        @change="updateAsset($event)"
       />
       <v-text-field
         v-if="assetType === 'nft'"

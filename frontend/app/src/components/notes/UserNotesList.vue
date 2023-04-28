@@ -190,6 +190,7 @@ onMounted(async () => {
   await fetchNotes(true);
 });
 </script>
+
 <template>
   <fragment>
     <div class="pa-4 pb-0">
@@ -201,7 +202,7 @@ onMounted(async () => {
           small
           depressed
           :disabled="showUpgradeRow"
-          @click="addNote"
+          @click="addNote()"
         >
           <v-icon>mdi-plus</v-icon>
         </v-btn>
@@ -276,11 +277,11 @@ onMounted(async () => {
                   {{ tc('notes_menu.delete_confirmation') }}
                 </div>
                 <div>
-                  <v-btn icon small @click="clearDeleteDialog">
+                  <v-btn icon small @click="clearDeleteDialog()">
                     <v-icon small color="red">mdi-close</v-icon>
                   </v-btn>
 
-                  <v-btn icon small @click="confirmDelete">
+                  <v-btn icon small @click="confirmDelete()">
                     <v-icon small color="green">mdi-check</v-icon>
                   </v-btn>
                 </div>
@@ -313,7 +314,7 @@ onMounted(async () => {
             <v-pagination
               :value="page"
               :length="totalPage"
-              @input="changePage"
+              @input="changePage($event)"
             />
           </div>
         </div>
@@ -330,13 +331,14 @@ onMounted(async () => {
           : tc('notes_menu.dialog.add_title')
       "
       :action-disabled="!valid"
-      @confirm="save"
-      @cancel="resetForm"
+      @confirm="save()"
+      @cancel="resetForm()"
     >
       <user-note-form v-model="form" @valid="valid = $event" />
     </big-dialog>
   </fragment>
 </template>
+
 <style lang="scss" scoped>
 .note {
   &__wrapper {

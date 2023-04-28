@@ -198,6 +198,7 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
   );
 };
 </script>
+
 <template>
   <div>
     <data-table
@@ -233,7 +234,7 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
         </div>
       </div>
       <v-spacer />
-      <v-btn text color="primary" class="mr-4" @click="add">
+      <v-btn text color="primary" class="mr-4" @click="add()">
         <v-icon class="mr-2">mdi-plus</v-icon>
         <span>
           {{ tc('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
@@ -258,19 +259,20 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
       "
       :primary-action="tc('common.actions.save')"
       :action-disabled="loading || !valid"
-      @confirm="save"
-      @cancel="clearEditDialog"
+      @confirm="save()"
+      @cancel="clearEditDialog()"
     >
       <edit-location-data-snapshot-form
         v-if="form"
         v-model="valid"
         :form="form"
         :excluded-locations="excludedLocations"
-        @update:form="updateForm"
+        @update:form="updateForm($event)"
       />
     </big-dialog>
   </div>
 </template>
+
 <style module lang="scss">
 .asset {
   max-width: 640px;

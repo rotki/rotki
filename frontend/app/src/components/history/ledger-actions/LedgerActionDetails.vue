@@ -20,6 +20,7 @@ const { t } = useI18n();
 const link = computed(() => get(item).link || '');
 const { href, hasLink, onLinkClick } = useLinks(link);
 </script>
+
 <template>
   <table-expand-container visible :colspan="span">
     <template #title>

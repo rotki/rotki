@@ -24,7 +24,7 @@ const { tc } = useI18n();
       color="primary"
       :success-messages="success"
       :error-messages="error"
-      @change="update"
+      @change="update($event)"
     />
   </settings-option>
 </template>

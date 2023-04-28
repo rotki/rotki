@@ -136,7 +136,7 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
             class="account-balances__refresh"
             :loading="isSectionLoading || detectingTokens"
             :tooltip="tc('account_balances.refresh_tooltip', 0, { blockchain })"
-            @refresh="handleBlockchainRefresh"
+            @refresh="handleBlockchainRefresh()"
           />
         </v-col>
         <v-col cols="auto">
@@ -185,7 +185,7 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
                 :loading="detectingTokens"
                 :disabled="detectingTokens || isSectionLoading"
                 v-on="on"
-                @click="detectTokensOfAllAddresses"
+                @click="detectTokensOfAllAddresses()"
               >
                 <v-icon class="mr-2">mdi-refresh</v-icon>
                 {{ tc('account_balances.detect_tokens.tooltip.redetect') }}

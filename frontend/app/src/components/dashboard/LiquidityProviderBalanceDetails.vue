@@ -71,6 +71,7 @@ const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] =>
     usdValue: item.userBalance.usdValue
   }));
 </script>
+
 <template>
   <table-expand-container visible :colspan="span" :padded="false">
     <data-table

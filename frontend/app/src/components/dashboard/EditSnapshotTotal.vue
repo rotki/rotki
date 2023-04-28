@@ -180,6 +180,7 @@ const suggestionsLabel = computed(() => ({
   )
 }));
 </script>
+
 <template>
   <div>
     <div class="py-10 d-flex flex-column align-center">
@@ -242,13 +243,14 @@ const suggestionsLabel = computed(() => ({
         <v-icon>mdi-chevron-left</v-icon>
         {{ tc('common.actions.back') }}
       </v-btn>
-      <v-btn color="primary" :disabled="v$.$invalid" @click="save">
+      <v-btn color="primary" :disabled="v$.$invalid" @click="save()">
         {{ tc('common.actions.finish') }}
         <v-icon>mdi-chevron-right</v-icon>
       </v-btn>
     </v-sheet>
   </div>
 </template>
+
 <style module lang="scss">
 .wrapper {
   width: 350px;

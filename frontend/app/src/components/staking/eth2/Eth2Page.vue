@@ -79,8 +79,8 @@ const { t, tc } = useI18n();
       :eth2-stats="stats"
       :eth2-stats-loading="eth2StatsLoading"
       :ownership="ownership"
-      @refresh="refresh"
-      @update:stats-pagination="updatePagination"
+      @refresh="refresh()"
+      @update:stats-pagination="updatePagination($event)"
     >
       <template #selection>
         <v-row>

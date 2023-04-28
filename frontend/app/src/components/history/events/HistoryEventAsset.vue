@@ -30,6 +30,7 @@ const eventAsset = computed(() => get(event).asset);
 const symbol = assetSymbol(eventAsset);
 const extraDataPanel: Ref<number[]> = ref([]);
 </script>
+
 <template>
   <div>
     <div class="py-2 d-flex align-center">

@@ -88,7 +88,7 @@ const isDevelopment = checkIfDevelopment();
                 </v-btn>
               </template>
               <v-list>
-                <v-list-item link @click="exportReportData">
+                <v-list-item link @click="exportReportData()">
                   <v-list-item-title>
                     <div class="d-flex align-center">
                       <v-icon class="mr-2">mdi-export</v-icon>
@@ -98,7 +98,7 @@ const isDevelopment = checkIfDevelopment();
                     </div>
                   </v-list-item-title>
                 </v-list-item>
-                <v-list-item link @click="importReportData">
+                <v-list-item link @click="importReportData()">
                   <v-list-item-title>
                     <div class="d-flex align-center">
                       <v-icon class="mr-2">mdi-import</v-icon>
@@ -116,7 +116,7 @@ const isDevelopment = checkIfDevelopment();
               depressed
               large
               class="px-4 ml-4"
-              @click="exportReportData"
+              @click="exportReportData()"
             >
               <v-icon class="mr-2">mdi-export</v-icon>
               {{ t('profit_loss_reports.debug.export_data') }}

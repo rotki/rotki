@@ -147,8 +147,9 @@ const showDeleteConfirmation = () => {
   );
 };
 </script>
+
 <template>
-  <v-dialog :value="value" max-width="600" @input="updateVisibility">
+  <v-dialog :value="value" max-width="600" @input="updateVisibility($event)">
     <card>
       <template #title>
         {{ t('dashboard.snapshot.export_database_snapshot') }}
@@ -179,12 +180,12 @@ const showDeleteConfirmation = () => {
           <v-icon class="mr-2">mdi-pencil-outline</v-icon>
           {{ t('common.actions.edit') }}
         </v-btn>
-        <v-btn color="error" @click="showDeleteConfirmation">
+        <v-btn color="error" @click="showDeleteConfirmation()">
           <v-icon class="mr-2">mdi-delete-outline</v-icon>
           {{ t('common.actions.delete') }}
         </v-btn>
         <v-spacer />
-        <v-btn color="primary" @click="exportSnapshot">
+        <v-btn color="primary" @click="exportSnapshot()">
           <v-icon class="mr-2">mdi-download</v-icon>
           {{ t('common.actions.download') }}
         </v-btn>
@@ -194,7 +195,7 @@ const showDeleteConfirmation = () => {
       v-if="editMode"
       :timestamp="timestamp"
       @close="editMode = false"
-      @finish="finish"
+      @finish="finish()"
     />
   </v-dialog>
 </template>

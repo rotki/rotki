@@ -34,7 +34,7 @@ const { t } = useI18n();
             </p>
           </card>
           <div class="pb-4">
-            <v-btn text class="defi-wizard__use-default" @click="done">
+            <v-btn text class="defi-wizard__use-default" @click="done()">
               {{ t('defi_wizard.steps.setup.used_default') }}
             </v-btn>
             <v-btn

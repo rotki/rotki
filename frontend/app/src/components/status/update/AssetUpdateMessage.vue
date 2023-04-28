@@ -101,7 +101,7 @@ const { tc } = useI18n();
             :min="versions.local"
             :max="versions.remote"
             :label="tc('asset_update.up_to_version')"
-            @change="onChange"
+            @change="onChange($event)"
           />
         </v-col>
       </v-col>

@@ -18,7 +18,7 @@ const { loading } = useAccountLoading();
     :secondary-action="tc('common.actions.cancel')"
     :action-disabled="!valid || loading"
     :loading="loading"
-    @confirm="save"
+    @confirm="save()"
     @cancel="clearDialog()"
   >
     <account-form :context="context" data-cy="blockchain-balance-form" />

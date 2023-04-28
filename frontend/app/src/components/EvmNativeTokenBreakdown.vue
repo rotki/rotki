@@ -63,6 +63,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   }
 ]);
 </script>
+
 <template>
   <v-sheet outlined>
     <data-table

@@ -84,7 +84,7 @@ const v$ = useVuelidate(
 </script>
 
 <template>
-  <v-dialog :value="value" max-width="500" persistent @input="input">
+  <v-dialog :value="value" max-width="500" persistent @input="input($event)">
     <card>
       <template #title>{{ t('merge_dialog.title') }}</template>
       <template #subtitle>{{ t('merge_dialog.subtitle') }}</template>
@@ -122,7 +122,7 @@ const v$ = useVuelidate(
           :disabled="pending"
           persistent-hint
           :hint="t('merge_dialog.source_hint')"
-          @focus="clearErrors"
+          @focus="clearErrors()"
           @blur="v$.source.$touch()"
         />
         <v-row align="center" justify="center" class="my-4">
@@ -136,7 +136,7 @@ const v$ = useVuelidate(
           :error-messages="toMessages(v$.target)"
           :label="tc('merge_dialog.target.label')"
           :disabled="pending"
-          @focus="clearErrors"
+          @focus="clearErrors()"
           @blur="v$.target.$touch()"
         />
       </v-form>

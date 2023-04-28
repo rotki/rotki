@@ -19,7 +19,7 @@ const toggleVisibility = () => {
     v-if="pinned"
     :tooltip="tc('pinned.tooltip')"
     class-name="secondary--text text--lighten-4"
-    @click="toggleVisibility"
+    @click="toggleVisibility()"
   >
     <v-badge color="primary" dot>
       <v-icon class="pinned" :class="{ 'pinned--visible': visible }">

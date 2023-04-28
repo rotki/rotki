@@ -15,6 +15,7 @@ const info = computed<AssetPriceInfo>(() =>
 
 const { t } = useI18n();
 </script>
+
 <template>
   <v-row>
     <v-col>

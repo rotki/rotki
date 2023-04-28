@@ -169,8 +169,8 @@ const progress = computed(() => reportsStore.progress);
   <v-container>
     <report-generator
       v-show="!isRunning && !reportError.message"
-      @generate="generate"
-      @export-data="exportData"
+      @generate="generate($event)"
+      @export-data="exportData($event)"
       @import-data="importDataDialog = true"
     />
     <error-screen
@@ -219,7 +219,7 @@ const progress = computed(() => reportsStore.progress);
               color="primary"
               :disabled="!reportDebugData"
               :loading="importDataLoading"
-              @click="importData"
+              @click="importData()"
             >
               {{ tc('common.actions.import') }}
             </v-btn>

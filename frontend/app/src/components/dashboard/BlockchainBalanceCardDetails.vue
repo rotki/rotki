@@ -46,6 +46,7 @@ defineProps({
     </v-list-item-content>
   </v-list-item>
 </template>
+
 <style scoped lang="scss">
 .blockchain-balance-box {
   &__icon {

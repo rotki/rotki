@@ -126,7 +126,12 @@ const deleteToken = (address: string) => {
           :label="tc('underlying_token_manager.labels.weight')"
         >
           <template #append-outer>
-            <v-btn icon :disabled="v$.$invalid" class="mt-n2" @click="addToken">
+            <v-btn
+              icon
+              :disabled="v$.$invalid"
+              class="mt-n2"
+              @click="addToken()"
+            >
               <v-icon>mdi-plus</v-icon>
             </v-btn>
           </template>

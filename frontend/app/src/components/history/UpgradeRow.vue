@@ -13,6 +13,7 @@ const { tc } = useI18n();
 const { premiumURL } = useInterop();
 const { currentBreakpoint } = useTheme();
 </script>
+
 <template>
   <tr class="tr">
     <td

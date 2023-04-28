@@ -72,6 +72,7 @@ defineExpose({
   saveIcon
 });
 </script>
+
 <template>
   <div>
     <v-row>
@@ -87,7 +88,7 @@ defineExpose({
                 color="primary"
                 :loading="refreshIconLoading"
                 v-on="on"
-                @click="refreshIcon"
+                @click="refreshIcon()"
               >
                 <v-icon>mdi-refresh</v-icon>
               </v-btn>

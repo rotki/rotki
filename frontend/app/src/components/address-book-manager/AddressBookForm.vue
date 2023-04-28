@@ -110,7 +110,7 @@ const { getBlockie } = useBlockie();
           class="mt-0"
           :input-value="enableForAllChains"
           :label="t('address_book.form.labels.for_all_chain')"
-          @change="updateAllChainsState"
+          @change="updateAllChainsState($event)"
         />
       </div>
       <div>

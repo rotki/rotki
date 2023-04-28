@@ -37,12 +37,13 @@ const sortedQueryStatus = computed<EvmTransactionQueryData[]>(() => {
 
 const css = useCssModule();
 </script>
+
 <template>
   <tr v-if="length > 0" :class="css.tr">
     <td :colspan="colspan" class="py-2">
       <div class="d-flex">
         <div v-if="isAllFinished" class="pr-2">
-          <v-btn icon @click="resetQueryStatus">
+          <v-btn icon @click="resetQueryStatus()">
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </div>
@@ -107,6 +108,7 @@ const css = useCssModule();
     </td>
   </tr>
 </template>
+
 <style module lang="scss">
 .tr {
   background: transparent !important;

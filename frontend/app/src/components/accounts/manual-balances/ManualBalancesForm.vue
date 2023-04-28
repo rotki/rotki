@@ -286,7 +286,7 @@ defineExpose({
               class="mt-1 py-6"
               :disabled="pending"
               v-on="on"
-              @click="openCustomAssetForm"
+              @click="openCustomAssetForm()"
             >
               <div class="d-flex">
                 <v-icon large>mdi-pencil-circle-outline</v-icon>

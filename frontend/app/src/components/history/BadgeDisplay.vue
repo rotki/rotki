@@ -8,6 +8,7 @@ defineProps({
   color: { required: false, type: String, default: 'grey-darken' }
 });
 </script>
+
 <template>
   <v-chip
     small

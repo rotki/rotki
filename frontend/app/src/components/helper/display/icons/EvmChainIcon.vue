@@ -26,6 +26,7 @@ const chainData = computed(() => {
 
 const css = useCssModule();
 </script>
+
 <template>
   <v-tooltip v-if="chainData" top :disabled="!tooltip">
     <template #activator="{ on }">
@@ -43,6 +44,7 @@ const css = useCssModule();
     <span>{{ chainData.label }}</span>
   </v-tooltip>
 </template>
+
 <style lang="scss" module>
 .circle {
   border-radius: 50%;

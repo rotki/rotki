@@ -62,6 +62,7 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
 
 const { tc } = useI18n();
 </script>
+
 <template>
   <td v-if="!group" class="font-weight-medium" colspan="5" :class="mobileClass">
     {{ tc('account_group_header.standalone') }}
@@ -163,6 +164,7 @@ const { tc } = useI18n();
     </td>
   </fragment>
 </template>
+
 <style scoped lang="scss">
 .blur-content {
   filter: blur(0.75em);

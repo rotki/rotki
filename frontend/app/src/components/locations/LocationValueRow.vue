@@ -17,6 +17,7 @@ const totalValue = computed<BigNumber>(() => {
   return locations?.[identifier.value] ?? Zero;
 });
 </script>
+
 <template>
   <v-row>
     <v-col cols="4">

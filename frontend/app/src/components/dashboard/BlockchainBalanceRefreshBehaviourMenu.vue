@@ -27,7 +27,7 @@ const css = useCssModule();
           :value="blockchainRefreshButtonBehaviour"
           class="mt-0"
           hide-details
-          @change="update"
+          @change="update($event)"
         >
           <v-radio
             :value="BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES"

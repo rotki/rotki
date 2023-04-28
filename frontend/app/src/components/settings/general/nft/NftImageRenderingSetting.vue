@@ -90,6 +90,7 @@ const css = useCssModule();
 const warningUrl =
   'https://medium.com/@alxlpsc/critical-privacy-vulnerability-getting-exposed-by-metamask-693c63c2ce94';
 </script>
+
 <template>
   <div>
     <div>
@@ -162,12 +163,12 @@ const warningUrl =
             clearable
             multiple
             :disabled="renderAllNftImages"
-            @change="onChange"
+            @change="onChange($event)"
           />
         </settings-option>
       </v-col>
       <v-col cols="auto">
-        <v-btn class="mt-2" icon :disabled="!changed" @click="confirmUpdated">
+        <v-btn class="mt-2" icon :disabled="!changed" @click="confirmUpdated()">
           <v-icon>mdi-content-save</v-icon>
         </v-btn>
       </v-col>
@@ -185,8 +186,8 @@ const warningUrl =
         )
       "
       max-width="700"
-      @cancel="reset"
-      @confirm="updateWhitelist"
+      @cancel="reset()"
+      @confirm="updateWhitelist()"
     >
       <v-sheet outlined class="pa-4 mt-4" rounded>
         <ul>

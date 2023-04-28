@@ -83,7 +83,7 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
       {{ tc('tag_manager.title') }}
     </template>
     <template v-if="dialog" #details>
-      <v-btn class="tag-manager__close" icon text @click="close">
+      <v-btn class="tag-manager__close" icon text @click="close()">
         <v-icon>mdi-close</v-icon>
       </v-btn>
     </template>
@@ -94,8 +94,8 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
       :tag="tag"
       :edit-mode="editMode"
       @changed="onChange($event)"
-      @cancel="cancel"
-      @save="save"
+      @cancel="cancel()"
+      @save="save($event)"
     />
 
     <v-divider />

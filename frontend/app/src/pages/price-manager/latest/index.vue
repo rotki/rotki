@@ -82,6 +82,7 @@ onMounted(async () => {
   }
 });
 </script>
+
 <template>
   <v-container>
     <v-row justify="space-between" align="center" no-gutters>

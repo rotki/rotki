@@ -35,7 +35,7 @@ const getErrorMessage = (method: string) =>
       :error-messages="error"
       :label="tc('accounting_settings.labels.cost_basis_method')"
       color="primary"
-      @change="update"
+      @change="update($event)"
     />
   </settings-option>
 </template>

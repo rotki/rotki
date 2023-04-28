@@ -137,7 +137,7 @@ const showDeleteConfirmation = () => {
           :disabled="premium && !edit"
           :error-messages="errorMessages"
           :label="tc('premium_settings.fields.api_key')"
-          @paste="onApiKeyPaste"
+          @paste="onApiKeyPaste($event)"
         />
         <revealable-input
           v-model="apiSecret"
@@ -146,7 +146,7 @@ const showDeleteConfirmation = () => {
           prepend-icon="mdi-lock"
           :disabled="premium && !edit"
           :label="tc('premium_settings.fields.api_secret')"
-          @paste="onApiSecretPaste"
+          @paste="onApiSecretPaste($event)"
         />
         <div v-if="premium" class="premium-settings__premium-active">
           <v-icon color="success">mdi-check-circle</v-icon>
@@ -177,7 +177,7 @@ const showDeleteConfirmation = () => {
                 outlined
                 color="primary"
                 type="submit"
-                @click="showDeleteConfirmation"
+                @click="showDeleteConfirmation()"
               >
                 {{ t('premium_settings.actions.delete') }}
               </v-btn>

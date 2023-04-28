@@ -43,6 +43,7 @@ const totalInterestOwed = computed(() => {
 });
 const dai: string = assetSymbolToIdentifierMap.DAI;
 </script>
+
 <template>
   <stat-card :title="tc('loan_liquidation.title')" :class="$style.liquidation">
     <div class="pb-5" :class="$style.upper">

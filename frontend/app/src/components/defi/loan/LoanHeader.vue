@@ -8,6 +8,7 @@ defineProps({
 
 const { t } = useI18n();
 </script>
+
 <template>
   <v-row>
     <v-col>

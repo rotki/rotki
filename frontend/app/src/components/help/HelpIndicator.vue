@@ -17,7 +17,7 @@ const toggleVisibility = () => {
   <menu-tooltip-button
     :tooltip="tc('help_sidebar.tooltip')"
     class-name="secondary--text text--lighten-4"
-    @click="toggleVisibility"
+    @click="toggleVisibility()"
   >
     <v-icon :class="visible ? 'help--visible' : null"> mdi-help-circle </v-icon>
   </menu-tooltip-button>

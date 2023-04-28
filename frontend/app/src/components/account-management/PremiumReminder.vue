@@ -21,6 +21,7 @@ onBeforeUnmount(() => {
 
 const { t } = useI18n();
 </script>
+
 <template>
   <card flat data-cy="premium-reminder">
     <template #title>

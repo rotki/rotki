@@ -150,11 +150,12 @@ const updateAndComplete = (event: LocationDataSnapshot[]) => {
   finish();
 };
 </script>
+
 <template>
   <v-dialog persistent :value="true" :max-width="1400">
     <v-card elevation="0">
       <v-toolbar dark color="primary">
-        <v-btn icon dark @click="close">
+        <v-btn icon dark @click="close()">
           <v-icon>mdi-close</v-icon>
         </v-btn>
 
@@ -185,7 +186,7 @@ const updateAndComplete = (event: LocationDataSnapshot[]) => {
                 v-model="snapshotData"
                 :timestamp="timestamp"
                 @update:step="step = $event"
-                @input="save"
+                @input="save()"
               />
             </v-stepper-content>
             <v-stepper-content :step="2" class="pa-0">
@@ -223,6 +224,7 @@ const updateAndComplete = (event: LocationDataSnapshot[]) => {
     </v-card>
   </v-dialog>
 </template>
+
 <style module lang="scss">
 .asset-select {
   max-width: 640px;

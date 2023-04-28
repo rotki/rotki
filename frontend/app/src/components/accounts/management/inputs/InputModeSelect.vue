@@ -116,7 +116,7 @@ const { isPackaged } = useInterop();
                 </template>
 
                 <template #copy>
-                  <a href="#" @click="copyPageUrl">
+                  <a href="#" @click="copyPageUrl()">
                     {{
                       t(
                         'input_mode_select.metamask_import.missing_tooltip.copy_url'

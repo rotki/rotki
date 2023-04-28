@@ -133,7 +133,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
             :is-loading="isManualBalancesLoading"
             can-refresh
             :navigates-to="Routes.ACCOUNTS_BALANCES_MANUAL"
-            @refresh="fetchManualBalances"
+            @refresh="fetchManualBalances()"
           >
             <div v-if="manualBalanceByLocation.length === 0">
               <v-card-actions class="px-4">

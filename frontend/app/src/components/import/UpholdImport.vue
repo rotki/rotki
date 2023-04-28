@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { t } = useI18n();
 </script>
+
 <template>
   <import-source source="uphold_transactions">
     <template #upload-title>

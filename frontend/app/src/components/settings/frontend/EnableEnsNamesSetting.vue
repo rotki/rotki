@@ -22,7 +22,7 @@ const { tc } = useI18n();
       :label="tc('frontend_settings.label.enable_alias_names')"
       :success-messages="success"
       :error-messages="error"
-      @change="update"
+      @change="update($event)"
     />
   </settings-option>
 </template>

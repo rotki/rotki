@@ -48,6 +48,7 @@ const { t } = useI18n();
     <frontend-settings />
   </div>
 </template>
+
 <style scoped lang="scss">
 .general-settings {
   &__currency-list {

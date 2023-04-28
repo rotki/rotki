@@ -173,7 +173,7 @@ const showDeleteConfirmation = (item: ManualPrice) => {
         <refresh-button
           :loading="loading"
           :tooltip="tc('price_table.refresh_tooltip')"
-          @refresh="refresh"
+          @refresh="refresh()"
         />
         <div>
           {{ tc('price_table.latest.title') }}

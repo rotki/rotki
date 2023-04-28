@@ -116,6 +116,7 @@ const fallbackData = computed(() => {
   };
 });
 </script>
+
 <template>
   <div>
     <div class="d-flex align-center overflow-hidden">

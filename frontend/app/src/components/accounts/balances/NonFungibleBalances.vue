@@ -332,6 +332,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
     />
   </card>
 </template>
+
 <style scoped lang="scss">
 .non-fungible-balances {
   &__item {

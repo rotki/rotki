@@ -16,6 +16,7 @@ const percentage = computed(() => {
 
 const { t } = useI18n();
 </script>
+
 <template>
   <full-size-content>
     <div :class="$style.content">
@@ -68,6 +69,7 @@ const { t } = useI18n();
     </div>
   </full-size-content>
 </template>
+
 <style module lang="scss">
 .indeterminate {
   display: flex;

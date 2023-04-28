@@ -253,6 +253,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
   }
 };
 </script>
+
 <template>
   <v-slide-y-transition>
     <div class="login">
@@ -363,7 +364,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
                     :label="tc('login.custom_backend.label')"
                     :placeholder="tc('login.custom_backend.placeholder')"
                     :hint="tc('login.custom_backend.hint')"
-                    @keypress.enter="saveCustomBackend"
+                    @keypress.enter="saveCustomBackend()"
                   />
                 </v-col>
                 <v-col cols="auto" class="pb-7">
@@ -462,7 +463,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
                     v-if="isLoggedInError"
                     depressed
                     color="primary"
-                    @click="logout"
+                    @click="logout()"
                   >
                     {{ tc('login.logout') }}
                   </v-btn>

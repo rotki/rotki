@@ -22,6 +22,7 @@ const getFlagEmoji = (code: string) => {
 
 const css = useCssModule();
 </script>
+
 <template>
   <div class="d-flex align-center">
     <div class="ml-1 d-flex align-center">

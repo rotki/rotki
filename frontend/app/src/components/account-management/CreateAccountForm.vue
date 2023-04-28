@@ -314,7 +314,7 @@ const back = () => {
                 depressed
                 :disabled="loading"
                 outlined
-                @click="back"
+                @click="back()"
               >
                 {{ tc('common.actions.back') }}
               </v-btn>
@@ -361,7 +361,7 @@ const back = () => {
                 depressed
                 :disabled="loading"
                 outlined
-                @click="back"
+                @click="back()"
               >
                 {{ tc('common.actions.back') }}
               </v-btn>

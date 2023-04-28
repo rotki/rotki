@@ -154,6 +154,7 @@ const close = () => {
   }
 };
 </script>
+
 <template>
   <div>
     <v-card elevation="0">
@@ -163,7 +164,7 @@ const close = () => {
         :height="isPinned ? 40 : 'auto'"
         :class="{ [$style['pinned__toolbar']]: isPinned }"
       >
-        <v-btn v-if="!isPinned" icon dark @click="close">
+        <v-btn v-if="!isPinned" icon dark @click="close()">
           <v-icon>mdi-close</v-icon>
         </v-btn>
 
@@ -381,11 +382,11 @@ const close = () => {
           <v-btn
             v-if="filledMissingPrices"
             color="primary"
-            @click="regenerateReport"
+            @click="regenerateReport()"
           >
             {{ tc('profit_loss_report.actionable.actions.regenerate_report') }}
           </v-btn>
-          <v-btn v-else color="primary" @click="ignoreIssues">
+          <v-btn v-else color="primary" @click="ignoreIssues()">
             {{ tc('common.actions.yes') }}
           </v-btn>
         </template>
@@ -393,6 +394,7 @@ const close = () => {
     </v-dialog>
   </div>
 </template>
+
 <style module lang="scss">
 .pinned {
   &__toolbar {

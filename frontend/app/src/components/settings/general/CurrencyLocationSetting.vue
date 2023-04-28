@@ -31,7 +31,7 @@ onMounted(() => {
       row
       :success-messages="success"
       :error-messages="error"
-      @change="update"
+      @change="update($event)"
     >
       <v-radio
         :label="tc('general_settings.amount.label.location_before')"

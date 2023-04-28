@@ -28,7 +28,7 @@ const css = useCssModule();
         :label="t('frontend_settings.label.scramble')"
         :success-messages="success"
         :error-messages="error"
-        @change="update"
+        @change="update($event)"
       />
     </settings-option>
     <settings-option
@@ -47,12 +47,13 @@ const css = useCssModule();
           :disabled="!scrambleData"
           :success-messages="success"
           :error-messages="error"
-          @change="update"
+          @change="update($event)"
         />
       </div>
     </settings-option>
   </div>
 </template>
+
 <style module lang="scss">
 .multiplier {
   max-width: 520px;

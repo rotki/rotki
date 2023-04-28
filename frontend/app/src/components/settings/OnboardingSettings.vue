@@ -338,10 +338,14 @@ watch(defaultArguments, args => {
       "
       :label="tc('backend_settings.settings.data_directory.label')"
       readonly
-      @click="selectDataDirectory"
+      @click="selectDataDirectory()"
     >
       <template #append>
-        <v-btn icon :disabled="!userDataDirectory" @click="selectDataDirectory">
+        <v-btn
+          icon
+          :disabled="!userDataDirectory"
+          @click="selectDataDirectory()"
+        >
           <v-icon>mdi-folder</v-icon>
         </v-btn>
       </template>
@@ -360,10 +364,10 @@ watch(defaultArguments, args => {
         outlined
         :label="tc('backend_settings.settings.log_directory.label')"
         readonly
-        @click="selectLogsDirectory"
+        @click="selectLogsDirectory()"
       >
         <template #append>
-          <v-btn icon @click="selectLogsDirectory">
+          <v-btn icon @click="selectLogsDirectory()">
             <v-icon>mdi-folder</v-icon>
           </v-btn>
         </template>
@@ -497,7 +501,7 @@ watch(defaultArguments, args => {
       <v-btn depressed @click="dismiss()">
         {{ tc('common.actions.cancel') }}
       </v-btn>
-      <v-btn depressed @click="showResetConfirmation">
+      <v-btn depressed @click="showResetConfirmation()">
         {{ tc('backend_settings.actions.reset') }}
       </v-btn>
       <v-btn

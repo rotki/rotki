@@ -94,7 +94,7 @@ const { t } = useI18n();
       outlined
       :items="supportedExplorers"
       :label="t('explorers.chain_selector')"
-      @change="onChange"
+      @change="onChange()"
     >
       <template #item="{ item }">
         <chain-display v-if="!additional.includes(item)" :chain="item" />

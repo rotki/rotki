@@ -15,6 +15,7 @@ defineProps({
 
 const { t } = useI18n();
 </script>
+
 <template>
   <table-expand-container visible :colspan="span">
     <template #title>
@@ -26,6 +27,7 @@ const { t } = useI18n();
     </div>
   </table-expand-container>
 </template>
+
 <style module lang="scss">
 .empty {
   height: 100px;

@@ -44,7 +44,7 @@ const input = (value: string | null) => {
     :outlined="outlined"
     single-line
     v-on="rootListeners"
-    @input="input"
+    @input="input($event)"
   >
     <template #append>
       <v-icon v-if="revealed" tabindex="-1" @click="revealed = !revealed">

@@ -24,6 +24,7 @@ const component: ComputedRef<any> = computed(() => {
   return null;
 });
 </script>
+
 <template>
   <v-navigation-drawer
     class="pinned-sidebar"

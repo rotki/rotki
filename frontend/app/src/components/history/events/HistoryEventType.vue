@@ -24,6 +24,7 @@ const isTx: ComputedRef<boolean> = computed(() =>
 const { t } = useI18n();
 const imagePath = '/assets/images/protocols/';
 </script>
+
 <template>
   <div class="d-flex align-center text-left">
     <v-badge v-if="counterparty || event.address" avatar overlap color="white">

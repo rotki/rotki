@@ -182,7 +182,7 @@ const massIgnore = async (ignored: boolean) => {
         <v-col cols="12" md="4">
           <ignore-buttons
             :disabled="selected.length === 0"
-            @ignore="massIgnore"
+            @ignore="massIgnore($event)"
           />
           <div v-if="selected.length > 0" class="mt-2 ms-1">
             {{ tc('asset_table.selected', 0, { count: selected.length }) }}
@@ -227,7 +227,7 @@ const massIgnore = async (ignored: boolean) => {
                   :value="ignoredAssetsHandling"
                   class="mt-0"
                   data-cy="asset-filter-ignored"
-                  @change="updateIgnoredAssetsHandling"
+                  @change="updateIgnoredAssetsHandling($event)"
                 >
                   <v-radio value="none" :label="tc('asset_table.show_all')" />
                   <v-radio
@@ -252,12 +252,12 @@ const massIgnore = async (ignored: boolean) => {
             :matches="filters"
             :matchers="matchers"
             data-cy="asset_table_filter"
-            @update:matches="updateFilter"
+            @update:matches="updateFilter($event)"
           />
         </v-col>
       </v-row>
     </template>
-    <v-btn absolute fab top right dark color="primary" @click="add">
+    <v-btn absolute fab top right dark color="primary" @click="add()">
       <v-icon> mdi-plus </v-icon>
     </v-btn>
     <data-table
@@ -274,8 +274,8 @@ const massIgnore = async (ignored: boolean) => {
       :server-items-length="serverItemLength"
       :single-select="false"
       show-select
-      @update:options="updatePagination"
-      @input="updateSelected"
+      @update:options="updatePagination($event)"
+      @input="updateSelected($event)"
     >
       <template #item.symbol="{ item }">
         <asset-details-base

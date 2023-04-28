@@ -10,6 +10,7 @@ defineProps({
   item: { required: true, type: Object as PropType<Item> }
 });
 </script>
+
 <template>
   <span v-bind="$attrs" class="d-flex flex-row align-center">
     <v-img

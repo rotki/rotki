@@ -64,7 +64,7 @@ const locations = computed<TradeLocationData[]>(() => {
     item-value="identifier"
     item-text="name"
     auto-select-first
-    @input="change"
+    @input="change($event)"
     v-on="listeners"
   >
     <template #item="{ item, attrs, on }">

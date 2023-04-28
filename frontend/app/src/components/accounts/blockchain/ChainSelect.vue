@@ -63,7 +63,7 @@ const { t } = useI18n();
     :disabled="disabled"
     :dense="dense"
     v-bind="rootAttrs"
-    @change="updateBlockchain"
+    @change="updateBlockchain($event)"
   >
     <template #selection="{ item }">
       <chain-display :chain="item" :dense="dense" />

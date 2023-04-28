@@ -101,7 +101,7 @@ const protocols = computed<Protocol[]>(() => {
         item-text="name"
         item-value="identifier"
         class="defi-protocol-selector"
-        @input="input"
+        @input="input($event)"
       >
         <template #selection="{ attrs, item }">
           <defi-protocol-details v-bind="attrs" :item="item" />

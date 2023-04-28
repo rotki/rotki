@@ -108,7 +108,7 @@ const rules = [
         :error-messages="errorMessages"
         autocomplete="off"
         :disabled="disabled"
-        @paste="onPasteAddress"
+        @paste="onPasteAddress($event)"
       />
       <v-textarea
         v-else
@@ -118,7 +118,7 @@ const rules = [
         :error-messages="errorMessages"
         :hint="t('account_form.labels.addresses_hint')"
         :label="t('account_form.labels.addresses')"
-        @paste="onPasteMulti"
+        @paste="onPasteMulti($event)"
       />
       <v-row v-if="multiple" no-gutters>
         <v-col>
