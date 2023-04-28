@@ -153,15 +153,17 @@ class ExchangeManager():
         if exchanges_list is None:
             return False, f'{str(location)} exchange {name} is not registered'
 
-        last_in_location = len(exchanges_list) == 1
-        if last_in_location is True:
+        if len(exchanges_list) == 1:  # if is last exchange of this location
             self.connected_exchanges.pop(location)
         else:
             self.connected_exchanges[location] = [x for x in exchanges_list if x.name != name]
         with self.database.user_write() as write_cursor:  # Also remove it from the db
             self.database.remove_exchange(write_cursor=write_cursor, name=name, location=location)  # noqa: E501
-            if last_in_location is True:
-                self.database.delete_used_query_range_for_exchange(write_cursor=write_cursor, location=location)  # noqa: E501
+            self.database.delete_used_query_range_for_exchange(
+                write_cursor=write_cursor,
+                location=location,
+                exchange_name=name,
+            )
         return True, ''
 
     def delete_all_exchanges(self) -> None:
