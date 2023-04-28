@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.exchanges.ftx import Ftx
+from rotkehlchen.exchanges.binance import Binance
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.types import ApiKey, ApiSecret, ExchangeApiCredentials, Location
@@ -22,40 +22,38 @@ def test_exchanges_filtering(database, exchange_manager, function_scope_messages
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
     )
-    ftx1 = Ftx(
-        name='mockftx_1',
+    binance1 = Binance(
+        name='mockbinance_1',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
-        ftx_subaccount=None,
     )
-    ftx2 = Ftx(
-        name='mockftx_2',
+    binance2 = Binance(
+        name='mockbinance_2',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
-        ftx_subaccount=None,
     )
 
     exchange_manager.initialize_exchanges({}, database)
     exchange_manager.connected_exchanges[Location.KRAKEN].append(kraken1)
     exchange_manager.connected_exchanges[Location.KRAKEN].append(kraken2)
-    exchange_manager.connected_exchanges[Location.FTX].append(ftx1)
-    exchange_manager.connected_exchanges[Location.FTX].append(ftx2)
-    assert set(exchange_manager.iterate_exchanges()) == {kraken1, kraken2, ftx1, ftx2}
+    exchange_manager.connected_exchanges[Location.BINANCE].append(binance1)
+    exchange_manager.connected_exchanges[Location.BINANCE].append(binance2)
+    assert set(exchange_manager.iterate_exchanges()) == {kraken1, kraken2, binance1, binance2}
 
     with database.user_write() as cursor:
         database.set_settings(cursor, ModifiableDBSettings(
             non_syncing_exchanges=[kraken1.location_id(), kraken2.location_id()],
         ))
-        assert set(exchange_manager.iterate_exchanges()) == {ftx1, ftx2}
+        assert set(exchange_manager.iterate_exchanges()) == {binance1, binance2}
 
         database.set_settings(cursor, ModifiableDBSettings(
-            non_syncing_exchanges=[ftx1.location_id()],
+            non_syncing_exchanges=[binance1.location_id()],
         ))
-        assert set(exchange_manager.iterate_exchanges()) == {ftx2, kraken1, kraken2}
+        assert set(exchange_manager.iterate_exchanges()) == {binance2, kraken1, kraken2}
 
 
 TEST_CREDENTIALS_1 = ExchangeApiCredentials(
@@ -133,7 +131,6 @@ def test_change_credentials(rotkehlchen_api_server) -> None:
             passphrase=TEST_CREDENTIALS_2.passphrase,
             kraken_account_type=None,
             binance_selected_trade_pairs=None,
-            ftx_subaccount=None,
         )
         assert success is False, 'Should not have been able to change credentials'
         with rotki.data.db.conn.read_ctx() as cursor:
@@ -154,7 +151,6 @@ def test_change_credentials(rotkehlchen_api_server) -> None:
             passphrase=TEST_CREDENTIALS_3.passphrase,
             kraken_account_type=None,
             binance_selected_trade_pairs=None,
-            ftx_subaccount=None,
         )
         assert success is True, 'Should have been able to change credentials'
         with rotki.data.db.conn.read_ctx() as cursor:

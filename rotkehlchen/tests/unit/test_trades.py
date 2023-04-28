@@ -131,7 +131,7 @@ def test_serialize_deserialize_trade():
 
 
 @pytest.mark.parametrize('db_settings', [
-    {'non_syncing_exchanges': [ExchangeLocationID(name='FTX', location=Location.FTX)]}])
+    {'non_syncing_exchanges': [ExchangeLocationID(name='Binance', location=Location.BINANCE)]}])
 def test_query_trade_history_online_but_exchange_excluded(events_historian):
     """Test that if an online refresh of trades for an exchange is requested,
     that exchange is not connected, but is also at the excluded exchanges we
@@ -142,7 +142,7 @@ def test_query_trade_history_online_but_exchange_excluded(events_historian):
 
     with patch_latest_trades as latest_trades_mock, patch_iterate_exchanges as iterate_exchanges_mock:  # noqa: E501
         events_historian.query_trades(
-            filter_query=TradesFilterQuery.make(location=Location.FTX),
+            filter_query=TradesFilterQuery.make(location=Location.BINANCE),
             only_cache=False,
         )
 

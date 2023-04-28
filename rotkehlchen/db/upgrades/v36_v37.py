@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import TYPE_CHECKING
 
@@ -241,13 +242,47 @@ def trim_daily_stats(write_cursor: 'DBCursor') -> None:
         )
 
 
+def remove_ftx_data(write_cursor: 'DBCursor') -> None:
+    """Removes FTX-related settings from the DB"""
+    write_cursor.execute(
+        'DELETE FROM user_credentials WHERE location IN (?, ?)',
+        (Location.FTX.serialize_for_db(), Location.FTXUS.serialize_for_db()),
+    )
+    write_cursor.execute(
+        'DELETE FROM user_credentials_mappings WHERE credential_location IN (?, ?)',
+        (Location.FTX.serialize_for_db(), Location.FTXUS.serialize_for_db()),
+    )
+    write_cursor.execute(
+        'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+        (f'{str(Location.FTX)}\\_%', '\\'),
+    )
+    write_cursor.execute(
+        'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+        (f'{str(Location.FTXUS)}\\_%', '\\'),
+    )
+    non_syncing_exchanges_in_db = write_cursor.execute(
+        'SELECT value FROM settings WHERE name="non_syncing_exchanges"',
+    ).fetchone()
+    if non_syncing_exchanges_in_db is not None:
+        non_syncing_exchanges = json.loads(non_syncing_exchanges_in_db[0])
+        new_values = []
+        for entry in non_syncing_exchanges:
+            if entry['location'] not in (Location.FTX.serialize(), Location.FTXUS.serialize()):
+                new_values.append(entry)
+
+        write_cursor.execute(
+            'UPDATE settings SET value=? WHERE name="non_syncing_exchanges"',
+            (json.dumps(new_values),),
+        )
+
+
 def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v36 to v37. This was in v1.28.0 release.
 
         - Replace null history event subtype
     """
     log.debug('Entered userdb v36->v37 upgrade')
-    progress_handler.set_total_steps(6)
+    progress_handler.set_total_steps(7)
     with db.user_write() as write_cursor:
         _create_new_tables(write_cursor)
         progress_handler.new_step()
@@ -260,6 +295,8 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _fix_kraken_eth2_events(write_cursor)
         progress_handler.new_step()
         trim_daily_stats(write_cursor)
+        progress_handler.new_step()
+        remove_ftx_data(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finished userdb v36->v36 upgrade')

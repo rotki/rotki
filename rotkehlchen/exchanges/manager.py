@@ -9,7 +9,6 @@ from rotkehlchen.db.constants import BINANCE_MARKETS_KEY, KRAKEN_ACCOUNT_TYPE_KE
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithExtras
-from rotkehlchen.exchanges.ftx import FTX_BASE_URL, FTXUS_BASE_URL
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ApiKey,
@@ -40,8 +39,6 @@ class ExchangeManager():
     def _get_exchange_module_name(location: Location) -> str:
         if location == Location.BINANCEUS:
             return str(Location.BINANCE)
-        if location == Location.FTXUS:
-            return str(Location.FTX)
 
         return str(location)
 
@@ -83,7 +80,6 @@ class ExchangeManager():
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             binance_selected_trade_pairs: Optional[list[str]],
-            ftx_subaccount: Optional[str],
     ) -> tuple[bool, str]:
         """Edits both the exchange object and the database entry
 
@@ -98,7 +94,6 @@ class ExchangeManager():
             api_key=api_key,
             api_secret=api_secret,
             passphrase=passphrase,
-            ftx_subaccount=ftx_subaccount,
         ))
         if edited is True:
             try:
@@ -133,7 +128,6 @@ class ExchangeManager():
                     passphrase=passphrase,
                     kraken_account_type=kraken_account_type,
                     binance_selected_trade_pairs=binance_selected_trade_pairs,
-                    ftx_subaccount=ftx_subaccount,
                 )
         except InputError as e:
             exchangeobj.reset_to_db_credentials()  # DB is already rolled back at this point
@@ -181,10 +175,6 @@ class ExchangeManager():
                 data = {'location': str(location), 'name': exchangeobj.name}
                 if location == Location.KRAKEN:  # ignore type since we know this is kraken here
                     data[KRAKEN_ACCOUNT_TYPE_KEY] = str(exchangeobj.account_type)  # type: ignore
-                if location == Location.FTX:
-                    subaccount = exchangeobj.subaccount  # type: ignore
-                    if subaccount is not None:
-                        data['ftx_subaccount'] = subaccount
                 exchange_info.append(data)
 
         return exchange_info
@@ -270,10 +260,6 @@ class ExchangeManager():
             kwargs['uri'] = BINANCE_BASE_URL
         elif credentials.location == Location.BINANCEUS:
             kwargs['uri'] = BINANCEUS_BASE_URL
-        elif credentials.location == Location.FTX:
-            kwargs['uri'] = FTX_BASE_URL
-        elif credentials.location == Location.FTXUS:
-            kwargs['uri'] = FTXUS_BASE_URL
 
         exchange_obj = exchange_ctor(
             name=credentials.name,

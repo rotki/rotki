@@ -622,7 +622,7 @@ class AssetTypeField(fields.Field):
 
 class LocationField(fields.Field):
 
-    def __init__(self, *, limit_to: Optional[list[Location]] = None, **kwargs: Any) -> None:  # noqa: E501
+    def __init__(self, *, limit_to: Optional[tuple[Location, ...]] = None, **kwargs: Any) -> None:  # noqa: E501
         self.limit_to = limit_to
         super().__init__(**kwargs)
 

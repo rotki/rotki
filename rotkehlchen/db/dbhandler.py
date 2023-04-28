@@ -102,7 +102,6 @@ from rotkehlchen.errors.misc import (
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
-from rotkehlchen.exchanges.ftx import FTX_SUBACCOUNT_DB_SETTING
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -1464,7 +1463,6 @@ class DBHandler:
             passphrase: Optional[str] = None,
             kraken_account_type: Optional[KrakenAccountType] = None,
             binance_selected_trade_pairs: Optional[list[str]] = None,
-            ftx_subaccount: Optional[str] = None,
     ) -> None:
         if location not in SUPPORTED_EXCHANGES:
             raise InputError(f'Unsupported exchange {str(location)}')
@@ -1487,9 +1485,6 @@ class DBHandler:
             if location in (Location.BINANCE, Location.BINANCEUS) and binance_selected_trade_pairs is not None:  # noqa: E501
                 self.set_binance_pairs(cursor, name=name, pairs=binance_selected_trade_pairs, location=location)  # noqa: E501
 
-            if location == Location.FTX and ftx_subaccount is not None:
-                self.set_ftx_subaccount(cursor, name, ftx_subaccount)
-
     def edit_exchange(
             self,
             write_cursor: 'DBCursor',
@@ -1501,7 +1496,6 @@ class DBHandler:
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             binance_selected_trade_pairs: Optional[list[str]],
-            ftx_subaccount: Optional[str],
     ) -> None:
         """May raise InputError if something is wrong with editing the DB"""
         if location not in SUPPORTED_EXCHANGES:
@@ -1561,12 +1555,6 @@ class DBHandler:
                     'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
                     (f'{str(location)}\\_trades_%', '\\'),
                 )
-            except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-                raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501
-        if location == Location.FTX and ftx_subaccount is not None:
-            try:
-                exchange_name = new_name if new_name is not None else name
-                self.set_ftx_subaccount(write_cursor, exchange_name, ftx_subaccount)
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501
 
@@ -1700,32 +1688,6 @@ class DBHandler:
             if data and data[0] != '':
                 return json.loads(data[0])
             return []
-
-    def set_ftx_subaccount(self, write_cursor: 'DBCursor', ftx_name: str, subaccount_name: str) -> None:  # noqa: E501
-        """This function may raise sqlcipher.DatabaseError"""
-        write_cursor.execute(
-            'INSERT OR REPLACE INTO user_credentials_mappings '
-            '(credential_name, credential_location, setting_name, setting_value) '
-            'VALUES (?, ?, ?, ?)',
-            (
-                ftx_name,
-                Location.FTX.serialize_for_db(),  # pylint: disable=no-member
-                FTX_SUBACCOUNT_DB_SETTING,
-                subaccount_name,
-            ),
-        )
-
-    def get_ftx_subaccount(self, ftx_name: str) -> Optional[str]:
-        with self.conn.read_ctx() as cursor:
-            cursor.execute(
-                'SELECT setting_value FROM user_credentials_mappings WHERE '
-                'credential_name=? AND credential_location=? AND setting_name=?',
-                (ftx_name, Location.FTX.serialize_for_db(), FTX_SUBACCOUNT_DB_SETTING),  # noqa: E501 pylint: disable=no-member
-            )
-            data = cursor.fetchone()
-            if data and data[0].strip() != '':
-                return data[0]
-            return None
 
     def write_tuples(
             self,

@@ -21,7 +21,6 @@ from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
-from rotkehlchen.exchanges.ftx import Ftx
 from rotkehlchen.exchanges.gemini import Gemini
 from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.exchanges.independentreserve import Independentreserve
@@ -683,21 +682,6 @@ def create_test_coinbasepro(
         passphrase=passphrase,
     )
     return coinbasepro
-
-
-def create_test_ftx(
-        database: DBHandler,
-        msg_aggregator: MessagesAggregator,
-) -> Ftx:
-    mock = Ftx(
-        name='ftx',
-        api_key=make_api_key(),
-        secret=make_api_secret(),
-        database=database,
-        msg_aggregator=msg_aggregator,
-        ftx_subaccount=None,
-    )
-    return mock
 
 
 # This function is dynamically used in rotkehlchen_api_server_with_exchanges

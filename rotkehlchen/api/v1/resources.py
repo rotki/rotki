@@ -435,7 +435,6 @@ class ExchangesResource(BaseMethodView):
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: Optional[list[str]],
-            ftx_subaccount: Optional[str],
     ) -> Response:
         return self.rest_api.setup_exchange(
             name=name,
@@ -445,7 +444,6 @@ class ExchangesResource(BaseMethodView):
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_markets=binance_markets,
-            ftx_subaccount=ftx_subaccount,
         )
 
     @require_loggedin_user()
@@ -460,7 +458,6 @@ class ExchangesResource(BaseMethodView):
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: Optional[list[str]],
-            ftx_subaccount: Optional[str],
     ) -> Response:
         return self.rest_api.edit_exchange(
             name=name,
@@ -471,7 +468,6 @@ class ExchangesResource(BaseMethodView):
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_markets=binance_markets,
-            ftx_subaccount=ftx_subaccount,
         )
 
     @require_loggedin_user()

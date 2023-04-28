@@ -17,8 +17,9 @@ from rotkehlchen.types import ChainID, EvmTransaction, Location, SupportedBlockc
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_purge_all_exchange_data(rotkehlchen_api_server_with_exchanges, added_exchanges):
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    mock_exchange_data_in_db(added_exchanges, rotki)
-    for exchange_location in added_exchanges:
+    exchange_locations = added_exchanges + (Location.FTX,)  # Also check that data for dead exchanges is purged  # noqa: E501
+    mock_exchange_data_in_db(exchange_locations, rotki)
+    for exchange_location in exchange_locations:
         check_saved_events_for_exchange(exchange_location, rotki.data.db, should_exist=True)
     response = requests.delete(
         api_url_for(
@@ -27,7 +28,7 @@ def test_purge_all_exchange_data(rotkehlchen_api_server_with_exchanges, added_ex
         ),
     )
     assert_simple_ok_response(response)
-    for exchange_location in added_exchanges:
+    for exchange_location in exchange_locations:
         check_saved_events_for_exchange(exchange_location, rotki.data.db, should_exist=False)
 
 
