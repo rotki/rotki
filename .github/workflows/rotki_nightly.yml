@@ -25,15 +25,14 @@ jobs:
     secrets: inherit
 
   e2e:
-    uses:  ./.github/workflows/task_e2e_tests.yml
+    uses: ./.github/workflows/task_e2e_tests.yml
     if: ${{ always() }}
     needs: [ 'macos' ]
     secrets: inherit
 
   unittest-frontend:
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
     uses: ./.github/workflows/task_fe_unit_tests.yml
+    if: ${{ always() }}
 
   notify:
     name: 'Success check'
