@@ -598,9 +598,11 @@ class TaskManager():
             if result is not None and ts_now() - result[1] <= DAY_IN_SECONDS:
                 return None
 
-            indices = cursor.execute('SELECT validator_index FROM eth2_validators').fetchall()
-            if len(indices) == 0:
-                return None
+            cursor.execute('SELECT validator_index FROM eth2_validators')
+            indices = [row[0] for row in cursor]
+
+        if len(indices) == 0:
+            return None
 
         task_name = 'Periodically query produced blocks'
         log.debug(f'Scheduling task to {task_name}')

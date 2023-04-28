@@ -2,6 +2,7 @@ import os
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
@@ -23,6 +24,9 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.skipif(
@@ -744,9 +748,10 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
 @pytest.mark.freeze_time('2023-04-26 12:38:23 GMT')
-def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_server):
+def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_server: 'APIServer') -> None:  # noqa: E501
     """Tests that combining mev rewards with block production events is seen by the API"""
     vindex1 = 45555
+    vindex2 = 54333
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     tx_hash = deserialize_evm_tx_hash('0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804')  # noqa: E501
     block_number = 15824493
@@ -759,6 +764,16 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
             'eth2validatorsresource',
         ), json={'validator_index': vindex1},
     )
+    response = requests.put(
+        url=api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ), json={'validator_index': vindex2},
+    )
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM eth2_validators').fetchone() == (2,)
+
     assert_simple_ok_response(response)
     _, _ = get_decoded_events_of_transaction(
         evm_inquirer=rotki.chains_aggregator.ethereum.node_inquirer,
@@ -784,14 +799,16 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         json={'group_by_event_ids': True},
     )
     result = assert_proper_response_with_result(response)
-    assert len(result['entries']) == result['entries_found'] == result['entries_total'] == 4
+    assert len(result['entries']) == result['entries_found'] == result['entries_total'] == 7
     event_identifier = None
     for entry in result['entries']:
         if entry['entry']['block_number'] == block_number:
             assert entry['grouped_events_num'] == 3
             event_identifier = entry['entry']['event_identifier']
-        else:
+        elif entry['entry']['block_number'] in (17055026, 16589592, 15938405):
             assert entry['grouped_events_num'] == 2
+        elif entry['entry']['block_number'] in (16135531, 15849710, 15798693):
+            assert entry['grouped_events_num'] == 1
 
     # now query the events of the combined group
     assert event_identifier is not None
@@ -804,11 +821,11 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
     )
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == result['entries_found'] == 3
-    assert result['entries_total'] == 9
+    assert result['entries_total'] == 12
     for outter_entry in result['entries']:
         entry = outter_entry['entry']
         if entry['sequence_index'] == 0:
-            assert entry['identifier'] == 8
+            assert entry['identifier'] == 10
             assert entry['event_identifier'] == event_identifier
             assert entry['entry_type'] == 'eth block event'
             assert entry['event_type'] == 'staking'
@@ -816,7 +833,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
             assert entry['validator_index'] == vindex1
             assert entry['balance']['amount'] == '0.126419309459217215'
         elif entry['sequence_index'] == 1:
-            assert entry['identifier'] == 9
+            assert entry['identifier'] == 11
             assert entry['event_identifier'] == event_identifier
             assert entry['entry_type'] == 'eth block event'
             assert entry['event_type'] == 'staking'
