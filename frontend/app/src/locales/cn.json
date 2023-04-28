@@ -182,7 +182,7 @@
       },
       "task": {
         "description": "检索{exchange}的存款和取款",
-        "title": "存取款"
+        "title": "外汇存款和取款"
       }
     },
     "assets": {
@@ -1800,7 +1800,7 @@
     "loading": "正在加载您的资产移动，请稍候...",
     "refresh_tooltip": "刷新存款和取款",
     "selected": "{count} 个项目被选中",
-    "title": "存取款"
+    "title": "外汇存款和取款"
   },
   "docker_warning": {
     "action": "是的，我明白了",
@@ -2943,7 +2943,7 @@
     },
     "history": "历史",
     "history_sub": {
-      "deposits_withdrawals": "存款和取款",
+      "deposits_withdrawals": "交换。存款和取款",
       "history_events": "历史事件",
       "ledger_actions": "Ledger 操作",
       "trades": "交易"

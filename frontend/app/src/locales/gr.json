@@ -171,7 +171,7 @@
       },
       "task": {
         "description": "Retrieving deposits & withdrawals for {exchange}",
-        "title": "Deposits & withdrawals"
+        "title": "Καταθέσεις & Αναλήψεις Ανταλλακτηρίων"
       }
     },
     "assets": {
@@ -1764,7 +1764,7 @@
     "loading": "Please wait while your asset movements are getting loaded...",
     "refresh_tooltip": "Refresh deposits & withdrawals",
     "selected": "{count} item(s) selected",
-    "title": "Deposits & Withdrawals"
+    "title": "Καταθέσεις & Αναλήψεις Ανταλλακτηρίων"
   },
   "ens_names": {
     "task": {
@@ -2894,7 +2894,7 @@
     },
     "history": "Ιστορικό",
     "history_sub": {
-      "deposits_withdrawals": "Καταθέσεις & Αναλήψεις",
+      "deposits_withdrawals": "Καταθέσεις & Αναλήψεις Αντ.",
       "history_events": "Ιστορικά γεγονότα",
       "ledger_actions": "Ledger Actions",
       "trades": "Συναλλαγές"
