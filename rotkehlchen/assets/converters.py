@@ -10,7 +10,6 @@ from rotkehlchen.assets.exchanges_mappings.blockfi import WORLD_TO_BLOCKFI
 from rotkehlchen.assets.exchanges_mappings.coinbase import WORLD_TO_COINBASE
 from rotkehlchen.assets.exchanges_mappings.coinbase_pro import WORLD_TO_COINBASE_PRO
 from rotkehlchen.assets.exchanges_mappings.cryptocom import WORLD_TO_CRYPTOCOM
-from rotkehlchen.assets.exchanges_mappings.ftx import WORLD_TO_FTX
 from rotkehlchen.assets.exchanges_mappings.gemeni import WORLD_TO_GEMINI
 from rotkehlchen.assets.exchanges_mappings.iconomi import WORLD_TO_ICONOMI
 from rotkehlchen.assets.exchanges_mappings.kraken import WORLD_TO_KRAKEN
@@ -21,7 +20,6 @@ from rotkehlchen.assets.exchanges_mappings.poloniex import WORLD_TO_POLONIEX
 from rotkehlchen.assets.exchanges_mappings.uphold import WORLD_TO_UPHOLD
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_DAI, A_SAI
-from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.types import Location, Timestamp
@@ -569,75 +567,6 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'LUXO',  # no cc/coingecko data
 )
 
-UNSUPPORTED_FTX_ASSETS = (
-    'AAPL',
-    'ABNB',
-    'ACB',
-    'AMC',
-    'AMD',
-    'AMZN',
-    'APHA',
-    'ASDBEAR',  # no cryptocompare/coingecko data TODO: Review this in a few days
-    'ASDBULL',  # no cryptocompare/coingecko data TODO: Review this in a few days
-    'ASDHALF',  # no cryptocompare/coingecko data TODO: Review this in a few days
-    'ASDHEDGE',  # no cryptocompare/coingecko data TODO: Review this in a few days
-    'ARKK',
-    'BABA',
-    'BB',
-    'BILI',
-    'BITO',  # no cryptocompare/coingecko data
-    'BITW',
-    'BNTX',
-    'DOGEBEAR2021',  # no cryptocompare/coingecko data
-    'MATICBEAR2021',  # no cryptocompare/coingecko data
-    'TOMOBEAR2021',  # no cryptocompare/coingecko data
-    'FB',
-    'GME',
-    'GOOGL',
-    'GRTBEAR',  # no cryptocompare/coingecko data
-    'GRTBULL',  # no cryptocompare/coingecko data
-    'KSHIB',  # kiloshiba no cryptocompare/coingecko data
-    'MSTR',
-    'NFLX',
-    'NOK',
-    'NVDA',
-    'PFE',
-    'PYPL',
-    'SLV',  # iShares Silver Trust
-    'SPY',
-    'SQ',
-    'TLRY',
-    'TSM',
-    'TSLA',
-    'TWTR',
-    'UBER',
-    'USO',
-    'ZM',
-    'DKNG',  # no cc/coingecko data https://twitter.com/FTX_Official/status/1404867122598072321
-    'ETHE',  # no cryptocompare/coingecko data
-    'GBTC',  # no cryptocompare/coingecko data
-    'GDX',  # no cryptocompare/coingecko data
-    'GDXJ',  # no cryptocompare/coingecko data
-    'GLD',  # no cryptocompare/coingecko data
-    'GLXY',  # no cryptocompare/coingecko data
-    'HOOD',  # no cryptocompare/coingecko data
-    'HUM'  # no cryptocompare/coingecko data
-    'MRNA',  # no cryptocompare/coingecko data
-    'PENN',  # no cryptocompare/coingecko data
-    'SECO',  # pool in bonfida
-    'ZECBULL',  # no cryptocompare/coingecko data
-    'ZECBEAR',  # no cryptocompare/coingecko data
-    'BYND',  # Beyond Meat Tokenized stock
-    'CGC',  # Trade Canopy Growth Corp Tokenized stock
-    'MRNA',  # Moderna Tokenized stock
-    'XRPMOON',  # no cryptocompare/coingecko data
-    'KBTT',  # no cryptocompare/coingecko data
-    'KSOS',  # no cryptocompare/coingecko data
-    'GALFAN',  # no cc/coingecko data
-    'APEAMC',  # no cc/coingecko data
-    'WAXL',  # no cc/coingecko data
-)
-
 # https://api.kucoin.com/api/v1/currencies
 UNSUPPORTED_KUCOIN_ASSETS = (
     'AAVE3L',  # no cryptocompare/coingecko data
@@ -828,7 +757,6 @@ POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
 BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
 BINANCE_TO_WORLD = {v: k for k, v in WORLD_TO_BINANCE.items()}
 BITFINEX_TO_WORLD = {v: k for k, v in WORLD_TO_BITFINEX.items()}
-FTX_TO_WORLD = {v: k for k, v in WORLD_TO_FTX.items()}
 KRAKEN_TO_WORLD = {v: k for k, v in WORLD_TO_KRAKEN.items()}
 KUCOIN_TO_WORLD = {v: k for k, v, in WORLD_TO_KUCOIN.items()}
 ICONOMI_TO_WORLD = {v: k for k, v in WORLD_TO_ICONOMI.items()}
@@ -1021,25 +949,6 @@ def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_ftx(ftx_name: str) -> AssetWithOracles:
-    """May raise:
-    - DeserializationError
-    - UnsupportedAsset
-    - UnknownAsset
-    """
-    if not isinstance(ftx_name, str):
-        raise DeserializationError(f'Got non-string type {type(ftx_name)} for ftx asset')
-
-    if ftx_name in UNSUPPORTED_FTX_ASSETS:
-        raise UnsupportedAsset(ftx_name)
-
-    if ftx_name == 'SRM_LOCKED':
-        name = strethaddress_to_identifier('0x476c5E26a75bd202a9683ffD34359C0CC15be0fF')  # SRM
-    else:
-        name = FTX_TO_WORLD.get(ftx_name, ftx_name)
-    return symbol_to_asset_or_token(name)
-
-
 def asset_from_kucoin(kucoin_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
@@ -1175,7 +1084,6 @@ LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.BITPANDA: asset_from_bitpanda,
     Location.COINBASEPRO: asset_from_coinbasepro,
     Location.KRAKEN: asset_from_kraken,
-    Location.FTX: asset_from_ftx,
     Location.BITSTAMP: asset_from_bitstamp,
     Location.GEMINI: asset_from_gemini,
     Location.POLONIEX: asset_from_poloniex,

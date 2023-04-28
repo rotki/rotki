@@ -1642,7 +1642,7 @@ Setup or remove an exchange
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"name": "my kraken key", "location": "kraken", "api_key": "ddddd", "api_secret": "ffffff", "passphrase": "secret", "binance_markets": ["ETHUSDC", "BTCUSDC"], "ftx_subaccount": "Dragon"}
+      {"name": "my kraken key", "location": "kraken", "api_key": "ddddd", "api_secret": "ffffff", "passphrase": "secret", "binance_markets": ["ETHUSDC", "BTCUSDC"]}
 
    :reqjson string name: A name to give to this exchange's key
    :reqjson string location: The location of the exchange to setup
@@ -1651,7 +1651,6 @@ Setup or remove an exchange
    :reqjson string passphrase: An optional passphrase, only for exchanges, like coinbase pro, which need a passphrase.
    :reqjson string kraken_account_type: An optional setting for kraken. The type of the user's kraken account. Valid values are "starter", "intermediate" and "pro".
    :reqjson list binance_markets: An optional setting for binance and binanceus. A list of string for markets that should be queried.
-   :reqjson string ftx_subaccount: An optional setting for FTX. This sets the subaccount that will be queried from FTX.
 
    **Example Response**:
 

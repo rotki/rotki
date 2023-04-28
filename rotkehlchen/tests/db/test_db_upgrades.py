@@ -1353,6 +1353,18 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
         ('ETHtokentxs_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 0, 1679312760),
         ('eth2_deposits_0x9531C059098e3d194fF87FebB587aB07B30B1306', 0, 10),
         ('eth2_deposits_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 100, 200),
+        ('kucoin_trades_Kucoin 1', 0, 1682610440),
+        ('kucoin_margins_Kucoin 1', 0, 1682610440),
+        ('kucoin_asset_movements_Kucoin 1', 0, 1682610440),
+        ('kucoin_ledger_actions_Kucoin 1', 0, 1682610440),
+        ('ftxus_trades_FTX 1', 0, 1682610440),
+        ('ftxus_margins_FTX 1', 0, 1682610440),
+        ('ftxus_asset_movements_FTX 1', 0, 1682610440),
+        ('ftxus_ledger_actions_FTX 1', 0, 1682610440),
+        ('ftx_trades_FTX 1', 0, 1682610440),
+        ('ftx_margins_FTX 1', 0, 1682610440),
+        ('ftx_asset_movements_FTX 1', 0, 1682610440),
+        ('ftx_ledger_actions_FTX 1', 0, 1682610440),
     ]
     # check that there are two kraken events and one of them has incorrect information
     cursor.execute('SELECT amount, asset FROM history_events WHERE event_identifier IN (?, ?)', ('KRAKEN-ETH2-EVENT', 'KRAKEN-ETH-EVENT-STAKING'))  # noqa: E501
@@ -1361,6 +1373,20 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
         (12345, 1682519933, '1000.0', '1001.0', '0.00001', '32.0', '32.00001', None, None, None, None, None, None, None, None, None),  # noqa: E501
         (67890, 1682519934, '1200.5', '1200.6', '0.00003', '32.01', '32.01003', None, None, None, None, None, None, None, None, None),  # noqa: E501
     ]
+    assert cursor.execute('select * from user_credentials').fetchall() == [
+        ('ftx1', 'Z', 'api-key-1', 'api-secret-1', None),
+        ('ftx2', 'd', 'api-key-2', 'api-secret-2', None),
+        ('binance1', 'E', 'api-key-3', 'api-secret-3', None),
+        ('kraken1', 'B', 'api-key-4', 'api-secret-4', None),
+    ]
+    assert cursor.execute('select * from user_credentials_mappings').fetchall() == [
+        ('ftx1', 'Z', 'ftx_subaccount', 'some-ftx-subaccount'),
+        ('kraken1', 'B', 'kraken_account_type', 'starter'),
+    ]
+    assert cursor.execute(
+        'SELECT value FROM settings WHERE name="non_syncing_exchanges"',
+    ).fetchone()[0] == '[{"name": "Kucoin 1", "location": "kucoin"}, {"name": "FTX 1", "location": "ftx"}]'  # noqa: E501
+
     db_v36.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -1412,12 +1438,26 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
         ('OPTIMISMinternaltxs_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 0, 1679312760),
         ('OPTIMISMtokentxs_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 0, 1679312760),
         ('ETHtokentxs_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 0, 1679312760),
+        ('kucoin_trades_Kucoin 1', 0, 1682610440),
+        ('kucoin_margins_Kucoin 1', 0, 1682610440),
+        ('kucoin_asset_movements_Kucoin 1', 0, 1682610440),
+        ('kucoin_ledger_actions_Kucoin 1', 0, 1682610440),
     ]
     cursor.execute('SELECT * FROM history_events WHERE identifier=?', (176,))
     assert cursor.fetchone() == (176, 0, 'KRAKEN-ETH2-EVENT', 0, 1681826144996, 'B', 'kraken', 'ETH2', '0.0032936117', '6.930681228076', 'Automatic virtual conversion of staked ETH rewards to ETH', 'informational', 'none')  # noqa: E501
     assert cursor.execute(
         'SELECT * FROM eth2_daily_staking_details',
     ).fetchall() == [(12345, 1682519933, '0.00001'), (67890, 1682519934, '0.00003')]
+    assert cursor.execute('select * from user_credentials').fetchall() == [
+        ('binance1', 'E', 'api-key-3', 'api-secret-3', None),
+        ('kraken1', 'B', 'api-key-4', 'api-secret-4', None),
+    ]
+    assert cursor.execute('select * from user_credentials_mappings').fetchall() == [
+        ('kraken1', 'B', 'kraken_account_type', 'starter'),
+    ]
+    assert cursor.execute(  # Check that FTX was deleted from non syncing exchanges
+        'SELECT value FROM settings WHERE name="non_syncing_exchanges"',
+    ).fetchone()[0] == '[{"name": "Kucoin 1", "location": "kucoin"}]'
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

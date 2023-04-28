@@ -513,7 +513,6 @@ class RestAPI():
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: Optional[list[str]],
-            ftx_subaccount: Optional[str],
     ) -> Response:
         result = None
         status_code = HTTPStatus.OK
@@ -526,7 +525,6 @@ class RestAPI():
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_selected_trade_pairs=binance_markets,
-            ftx_subaccount=ftx_subaccount,
         )
         if not result:
             result = None
@@ -544,7 +542,6 @@ class RestAPI():
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: Optional[list[str]],
-            ftx_subaccount: Optional[str],
     ) -> Response:
         edited, msg = self.rotkehlchen.exchange_manager.edit_exchange(
             name=name,
@@ -555,7 +552,6 @@ class RestAPI():
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_selected_trade_pairs=binance_markets,
-            ftx_subaccount=ftx_subaccount,
         )
         result: Optional[bool] = True
         status_code = HTTPStatus.OK

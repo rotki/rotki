@@ -83,8 +83,6 @@ def mock_validate_api_key_success(location: Location):
     name = str(location)
     if location == Location.BINANCEUS:
         name = 'binance'
-    if location == Location.FTXUS:
-        name = 'ftx'
     return patch(
         f'rotkehlchen.exchanges.{name}.{name.capitalize()}.validate_api_key',
         return_value=(True, ''),
@@ -95,8 +93,6 @@ def mock_validate_api_key_failure(location: Location):
     name = str(location)
     if location == Location.BINANCEUS:
         name = 'binance'
-    if location == Location.FTXUS:
-        name = 'ftx'
     return patch(
         f'rotkehlchen.exchanges.{name}.{name.capitalize()}.validate_api_key',
         side_effect=mock_validate_api_key,

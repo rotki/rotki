@@ -1352,7 +1352,6 @@ class ExchangesResourceEditSchema(Schema):
     passphrase = fields.String(load_default=None)
     kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
     binance_markets = fields.List(fields.String(), load_default=None)
-    ftx_subaccount = fields.String(load_default=None)
 
 
 class ExchangesResourceAddSchema(Schema):
@@ -1363,7 +1362,6 @@ class ExchangesResourceAddSchema(Schema):
     passphrase = fields.String(load_default=None)
     kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
     binance_markets = fields.List(fields.String(), load_default=None)
-    ftx_subaccount = fields.String(load_default=None)
 
 
 class ExchangesDataResourceSchema(Schema):
@@ -2414,7 +2412,7 @@ class ERC20InfoSchema(AsyncQueryArgumentSchema):
 
 class BinanceMarketsUserSchema(Schema):
     name = fields.String(required=True)
-    location = LocationField(limit_to=[Location.BINANCEUS, Location.BINANCE], required=True)
+    location = LocationField(limit_to=(Location.BINANCEUS, Location.BINANCE), required=True)
 
 
 class ManualPriceSchema(Schema):
@@ -2592,7 +2590,7 @@ class StatisticsNetValueSchema(Schema):
 
 class BinanceMarketsSchema(Schema):
     location = LocationField(
-        limit_to=[Location.BINANCEUS, Location.BINANCE],
+        limit_to=(Location.BINANCEUS, Location.BINANCE),
         load_default=Location.BINANCE,
     )
 
@@ -3076,7 +3074,7 @@ class EvmTransactionHashAdditionSchema(AsyncQueryArgumentSchema):
 class BinanceSavingsSchema(BaseStakingQuerySchema):
     location = LocationField(
         required=True,
-        limit_to=[Location.BINANCE, Location.BINANCEUS],
+        limit_to=(Location.BINANCE, Location.BINANCEUS),
     )
 
     @post_load

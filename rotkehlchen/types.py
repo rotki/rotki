@@ -551,7 +551,7 @@ class Location(DBCharEnumMixIn):
     KUCOIN = 23
     BALANCER = 24
     LOOPRING = 25
-    FTX = 26
+    FTX = 26  # FTX is dead but we keep the location for historical reasons
     NEXO = 27
     BLOCKFI = 28
     INDEPENDENTRESERVE = 29
@@ -623,7 +623,6 @@ class ExchangeAuthCredentials(NamedTuple):
     api_key: Optional[ApiKey]
     api_secret: Optional[ApiSecret]
     passphrase: Optional[str]
-    ftx_subaccount: Optional[str]
 
 
 class ExchangeApiCredentials(NamedTuple):
@@ -638,15 +637,15 @@ class ExchangeApiCredentials(NamedTuple):
     passphrase: Optional[str] = None
 
 
-EXTERNAL_EXCHANGES: list = [
+EXTERNAL_EXCHANGES = (
     Location.CRYPTOCOM,
     Location.BLOCKFI,
     Location.NEXO,
     Location.SHAPESHIFT,
     Location.UPHOLD,
     Location.BISQ,
-]
-EXTERNAL_LOCATION = [Location.EXTERNAL] + EXTERNAL_EXCHANGES
+)
+EXTERNAL_LOCATION = (Location.EXTERNAL,) + EXTERNAL_EXCHANGES
 
 
 class ExchangeLocationID(NamedTuple):

@@ -101,12 +101,10 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 name=self.name,
             )
         credentials = credentials_in_db[self.location][0]
-        ftx_subaccount = self.db.get_ftx_subaccount(self.name) if self.location in (Location.FTX, Location.FTXUS) else None  # noqa: E501
         self.edit_exchange_credentials(ExchangeAuthCredentials(
             api_key=credentials.api_key,
             api_secret=credentials.api_secret,
             passphrase=credentials.passphrase,
-            ftx_subaccount=ftx_subaccount,
         ))
 
     def location_id(self) -> ExchangeLocationID:

@@ -521,8 +521,6 @@ def rotkehlchen_api_server_with_exchanges(
         name = str(exchange_location)
         if exchange_location == Location.BINANCEUS:
             name = 'binance'
-        if exchange_location == Location.FTXUS:
-            name = 'ftx'
         create_fn = getattr(exchange_tests, f'create_test_{name}')
         passphrase = None
         kwargs = {}

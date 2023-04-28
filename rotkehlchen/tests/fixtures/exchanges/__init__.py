@@ -11,7 +11,6 @@ from .bitstamp import *  # noqa: F403
 from .bittrex import *  # noqa: F403
 from .coinbase import *  # noqa: F403
 from .coinbasepro import *  # noqa: F403
-from .ftx import *  # noqa: F403
 from .gemini import *  # noqa: F403
 from .iconomi import *  # noqa: F403
 from .independentreserve import *  # noqa: F403
