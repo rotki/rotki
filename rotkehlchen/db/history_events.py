@@ -101,7 +101,7 @@ class DBHistoryEvents():
                 (identifier, *db_tuples[1]),
             )
         if isinstance(event, EthStakingEvent):
-            idx = 2 if isinstance(event, EthDepositEvent) else 2
+            idx = 2 if isinstance(event, EthDepositEvent) else 1
             write_cursor.execute(
                 'INSERT OR IGNORE INTO eth_staking_events_info(identifier, validator_index, '
                 'is_exit_or_blocknumber) VALUES (?, ?, ?)',

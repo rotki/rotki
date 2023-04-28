@@ -35,6 +35,7 @@ class Eth2Decoder(DecoderInterface):
         amount = from_gwei(hex_or_bytes_to_int(context.tx_log.data[352:360], byteorder='little'))
 
         validator_index = UNKNOWN_VALIDATOR_INDEX
+        extra_data = None
         with self.base.database.conn.read_ctx() as cursor:
             result = cursor.execute(
                 'SELECT validator_index FROM eth2_validators WHERE public_key=?',
@@ -51,11 +52,13 @@ class Eth2Decoder(DecoderInterface):
                     beaconchain = BeaconChain(self.base.database, self.msg_aggregator)
                 except RemoteError as e:
                     log.error(f'Failed to query validator index for {public_key} due to {str(e)}')
+                    extra_data = {'public_key': public_key}
                 else:
                     result = beaconchain.get_validator_data([public_key])
                     validator_index = result[0]['validatorindex']
                     if not isinstance(validator_index, int) or validator_index < 0:
                         validator_index = UNKNOWN_VALIDATOR_INDEX
+                        extra_data = {'public_key': public_key}
 
         for idx, event in enumerate(context.decoded_events):
             if (
@@ -78,6 +81,7 @@ class Eth2Decoder(DecoderInterface):
             timestamp=old_event.timestamp,
             balance=old_event.balance,
             depositor=old_event.location_label,  # type: ignore  # it's an address
+            extra_data=extra_data,  # only used if validator index is unknown
         )
         return DEFAULT_DECODING_OUTPUT
 

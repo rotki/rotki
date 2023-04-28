@@ -373,6 +373,7 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):
             timestamp: TimestampMS,
             balance: Balance,
             depositor: ChecksumEvmAddress,
+            extra_data: Optional[dict[str, Any]] = None,
             identifier: Optional[int] = None,
             event_identifier: Optional[str] = None,
     ) -> None:
@@ -393,6 +394,7 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):
             address=ETH2_DEPOSIT_ADDRESS,
             identifier=identifier,
             event_identifier=event_identifier,
+            extra_data=extra_data,
         )  # for EthStakingEvent, just do manually to not reassign all common ones
         self.validator_index = validator_index
         self.is_exit_or_blocknumber = 0
