@@ -1,16 +1,11 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { type Ref } from 'vue';
 import {
   type LoginCredentials,
   type SyncApproval,
   type SyncConflict
 } from '@/types/login';
-
-const KEY_REMEMBER_USERNAME = 'rotki.remember_username';
-const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
-const KEY_USERNAME = 'rotki.username';
 
 const props = withDefaults(
   defineProps<{
@@ -47,13 +42,12 @@ const customBackendUrl: Ref<string> = ref('');
 const customBackendSessionOnly: Ref<boolean> = ref(false);
 const customBackendSaved: Ref<boolean> = ref(false);
 
-const form: Ref<any> = ref(null);
-const usernameRef: Ref<any> = ref(null);
-const passwordRef: Ref<any> = ref(null);
+const usernameRef: Ref = ref();
+const passwordRef: Ref = ref();
 
-const savedRememberUsername = useLocalStorage(KEY_REMEMBER_USERNAME, null);
-const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
-const savedUsername = useLocalStorage(KEY_USERNAME, '');
+const savedRememberUsername = useLocalStorage('rotki.remember_username', null);
+const savedRememberPassword = useLocalStorage('rotki.remember_password', null);
+const savedUsername = useLocalStorage('rotki.username', '');
 
 const { tc } = useI18n();
 
@@ -105,16 +99,21 @@ const v$ = useVuelidate(
 
 const { clearPassword, getPassword, isPackaged, storePassword } = useInterop();
 
-watch(username, () => {
-  touched();
-});
+watch(
+  [username, password],
+  ([username, password], [oldUsername, oldPassword]) => {
+    // touched should not be emitted when restoring from local storage
+    if (!oldUsername && username === get(savedUsername)) {
+      return;
+    }
+    if (username !== oldUsername || password !== oldPassword) {
+      touched();
+    }
+  }
+);
 
-watch(password, () => {
-  touched();
-});
-
-const isLoggedInError = computed<boolean>(() =>
-  get(errors).some(error => error.includes('is already logged in'))
+const isLoggedInError = useArraySome(errors, error =>
+  error.includes('is already logged in')
 );
 
 const logout = async () => {
@@ -124,12 +123,14 @@ const logout = async () => {
   }
 };
 
-const localLastModified = computed<number>(
-  () => get(syncConflict).payload?.localLastModified ?? 0
+const localLastModified = useRefMap(
+  syncConflict,
+  ({ payload }) => payload?.localLastModified ?? 0
 );
 
-const remoteLastModified = computed<number>(
-  () => get(syncConflict).payload?.remoteLastModified ?? 0
+const remoteLastModified = useRefMap(
+  syncConflict,
+  ({ payload }) => payload?.remoteLastModified ?? 0
 );
 
 const serverColor = computed<string | null>(() => {
@@ -143,12 +144,13 @@ const serverColor = computed<string | null>(() => {
 });
 
 const focusElement = (element: any) => {
-  if (element) {
-    const input = element.$el.querySelector(
-      'input:not([type=hidden])'
-    ) as HTMLInputElement;
-    input.focus();
+  if (!element) {
+    return;
   }
+  const input = element.$el.querySelector(
+    'input:not([type=hidden])'
+  ) as HTMLInputElement;
+  input.focus();
 };
 
 const updateFocus = () => {
@@ -261,7 +263,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
         {{ tc('login.title') }}
       </v-card-title>
       <v-card-text class="pb-2">
-        <v-form ref="form" :value="!v$.$invalid">
+        <v-form :value="!v$.$invalid">
           <v-text-field
             ref="usernameRef"
             v-model="username"
