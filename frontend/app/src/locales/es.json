@@ -176,7 +176,7 @@
       },
       "task": {
         "description": "Retrieving deposits & withdrawals for {exchange}",
-        "title": "Deposits & withdrawals"
+        "title": "Intercambio Depósitos & Retiros"
       }
     },
     "assets": {
@@ -1758,7 +1758,7 @@
     "loading": "Please wait while your asset movements are getting loaded...",
     "refresh_tooltip": "Refresh deposits & withdrawals",
     "selected": "{count} item(s) selected",
-    "title": "Deposits & Withdrawals"
+    "title": "Intercambio Depósitos & Retiros"
   },
   "ens_names": {
     "task": {
@@ -2879,7 +2879,7 @@
     },
     "history": "Historial",
     "history_sub": {
-      "deposits_withdrawals": "Depositos & Retiros",
+      "deposits_withdrawals": "Cambio Depósitos & Retiros",
       "history_events": "Historia Eventos",
       "ledger_actions": "Acciones contables",
       "trades": "Intercambios"
