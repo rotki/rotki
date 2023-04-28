@@ -12,6 +12,10 @@ const { backendChanged } = useBackendManagement();
 const { userLogin, errors, loading } = useAccountManagement();
 const { isPremiumDialogVisible } = usePremiumReminder();
 
+const showUpgradeProgress: ComputedRef<boolean> = computed(
+  () => get(upgradeVisible) && get(errors).length === 0
+);
+
 const handleLogin = async (credentials: LoginCredentials) => {
   const skipPremiumDisplay = await userLogin(credentials);
   if (skipPremiumDisplay) {
@@ -38,7 +42,7 @@ const navigate = async () => {
       v-else-if="isPremiumDialogVisible"
       @dismiss="checkForAssetUpdate = true"
     />
-    <upgrade-progress-display v-else-if="upgradeVisible" />
+    <upgrade-progress-display v-else-if="showUpgradeProgress" />
     <login-form
       v-else
       :loading="loading"
