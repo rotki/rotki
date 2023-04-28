@@ -226,7 +226,7 @@ def trim_daily_stats(write_cursor: 'DBCursor') -> None:
     write_cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS {table_to_create} (
         validator_index INTEGER NOT NULL,
-        timestamp integer NOT NULL,
+        timestamp INTEGER NOT NULL,
         pnl TEXT NOT NULL,
         FOREIGN KEY(validator_index) REFERENCES eth2_validators(validator_index) ON UPDATE CASCADE ON DELETE CASCADE,
         PRIMARY KEY (validator_index, timestamp)

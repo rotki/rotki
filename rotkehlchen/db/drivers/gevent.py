@@ -506,11 +506,11 @@ class DBConnection:
         db_name = self.connection_type.name.lower()
         with self.read_ctx() as cursor:
             cursor.execute('SELECT name, sql FROM sqlite_master WHERE type="table"')
-            tables_data_from_db = {}
+            tables_data_from_db: dict[str, tuple[str, str]] = {}
             for (name, raw_script) in cursor:
-                minimized_script = raw_script.replace(' ', '').replace('\n', '').replace('\'', '"')
+                minimized_script = raw_script.replace(' ', '').replace('\n', '').replace('\'', '"').lower()  # noqa: E501
                 table_properties = re.findall(
-                    pattern=r'CREATETABLE.*?\((.+)\)',
+                    pattern=r'createtable.*?\((.+)\)',
                     string=minimized_script,
                 )[0]
                 # Store table properties for comparison with expected table structure and
@@ -552,7 +552,7 @@ class DBConnection:
             differing_tables_properties: dict[str, tuple[tuple[str, str], str]] = {}
             # At this point keys of two dictionaries match
             for table_name, table_data in tables_data_from_db.items():
-                if table_data[0] != self.minimized_schema[table_name]:
+                if table_data[0] != self.minimized_schema[table_name].lower():
                     differing_tables_properties[table_name] = (
                         table_data,
                         self.minimized_schema[table_name],

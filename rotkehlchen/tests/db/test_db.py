@@ -21,6 +21,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.queried_addresses import QueriedAddresses
+from rotkehlchen.db.schema import DB_CREATE_ETH2_DAILY_STAKING_DETAILS
 from rotkehlchen.db.settings import (
     DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
     DEFAULT_ACTIVE_MODULES,
@@ -1517,10 +1518,16 @@ def test_fresh_db_adds_version(user_data_dir, sql_vm_instructions_cb):
     assert int(query[0][0]) == ROTKEHLCHEN_DB_VERSION
 
 
-def test_db_schema_sanity_check(database, caplog):
+def test_db_schema_sanity_check(database: 'DBHandler', caplog) -> None:
     connection = database.conn
     # by default should run without problems
     connection.schema_sanity_check()
+    # verify that a the difference in text being upper or lower case doesn't affect the check
+    with database.user_write() as write_cursor:
+        write_cursor.execute('DROP TABLE eth2_daily_staking_details')
+        write_cursor.execute(DB_CREATE_ETH2_DAILY_STAKING_DETAILS.lower())
+    connection.schema_sanity_check()
+
     assert 'Your user database has the following unexpected tables' not in caplog.text, 'Found unexpected table in clean DB'  # noqa: E501
     with suppress(ValueError), database.user_write() as cursor:
         cursor.execute('DROP TABLE rpc_nodes')
