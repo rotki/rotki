@@ -450,11 +450,12 @@ def fixture_avalanche_manager(
         covalent=covalent_avalanche,
         msg_aggregator=messages_aggregator,
     )
-    if network_mocking:
-        with patch_avalanche_request(avalanche_manager, avalanche_mock_data):
+    with patch('rotkehlchen.externalapis.covalent.COVALENT_KEYS', ('',)):
+        if network_mocking:
+            with patch_avalanche_request(avalanche_manager, avalanche_mock_data):
+                yield avalanche_manager
+        else:
             yield avalanche_manager
-    else:
-        yield avalanche_manager
 
 
 @pytest.fixture(name='ethereum_modules')

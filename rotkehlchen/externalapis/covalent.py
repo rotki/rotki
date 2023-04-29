@@ -1,4 +1,5 @@
 import logging
+import random
 from json.decoder import JSONDecodeError
 from typing import Any, Optional
 
@@ -25,7 +26,10 @@ COVALENT_QUERY_LIMIT = 1000
 CONST_RETRY = 1
 DATE_FORMAT_COVALENT = '%Y-%m-%dT%H:%M:%SZ'
 DEFAULT_API = 'covalent'
-KEY = 'ckey_cb70cd52c833489ea522f104e1a'
+COVALENT_KEYS = (
+    'cqt_rQ8wQPWR4Kgtb8mJCgkFYdgTKbrW',  # created by yabirgb
+    'cqt_rQJxJJkvW3rjKpWq7WcqrY4fJWGy',  # created by yabirgb
+)
 PAGESIZE = 8000
 
 logger = logging.getLogger(__name__)
@@ -108,7 +112,10 @@ class Covalent(ExternalServiceWithApiKey):
         query_str += f'/{module}/'
 
         own_key = self._get_api_key()
-        query_str += f'?key={own_key if own_key else KEY}'
+        if own_key is None:
+            query_str += f'?key={random.choice(COVALENT_KEYS)}'
+        else:
+            query_str += f'?key={own_key}'
 
         if options:
             for name, value in options.items():
