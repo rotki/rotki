@@ -323,7 +323,7 @@ class Opensea(ExternalServiceWithApiKey):
             # https://github.com/rotki/rotki/issues/3676
             stats_result = self._query(endpoint='collectionstats', options={'name': entry['slug']})
             floor_price = deserialize_optional_to_optional_fval(
-                value=stats_result['stats']['floor_price'],  # pylint: disable=unsubscriptable-object  # noqa: E501
+                value=stats_result['stats']['floor_price'],
                 name='floor price',
                 location='opensea',
             )
@@ -344,8 +344,8 @@ class Opensea(ExternalServiceWithApiKey):
         raw_result = []
         while True:
             result = self._query(endpoint='assets', options=options)
-            raw_result.extend(result['assets'])  # pylint: disable=unsubscriptable-object
-            if len(result['assets']) != ASSETS_MAX_LIMIT:  # pylint: disable=unsubscriptable-object
+            raw_result.extend(result['assets'])
+            if len(result['assets']) != ASSETS_MAX_LIMIT:
                 break
 
             # else continue by paginating

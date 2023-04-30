@@ -257,7 +257,7 @@ def test_genesis_remove_address(
     assert get_genesis_events() == all_events, 'Events should have not been modified'
 
     delete_transactions_for_address(genesis_address_1)
-    assert get_genesis_events() == [all_events[1]], 'One of the events should have been deleted'  # pylint: disable=unsubscriptable-object  # noqa: E501
+    assert get_genesis_events() == [all_events[1]], 'One of the events should have been deleted'
 
     delete_transactions_for_address(genesis_address_2)
     assert get_genesis_events() == [], 'There should be no events at this point'

@@ -78,7 +78,7 @@ class EvmProxiesInquirer():
         mapping = {}
         for idx, result_encoded in enumerate(output):
             address = addresses[idx]
-            result = self.dsproxy_registry.decode(    # pylint: disable=unsubscriptable-object
+            result = self.dsproxy_registry.decode(
                 result_encoded,
                 'proxies',
                 arguments=[address],

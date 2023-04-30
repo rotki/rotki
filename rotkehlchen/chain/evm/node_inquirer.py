@@ -608,7 +608,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
         if len(output_data) == 1:
             # due to https://github.com/PyCQA/pylint/issues/4114
-            return output_data[0]  # pylint: disable=unsubscriptable-object
+            return output_data[0]
         return output_data
 
     def call_contract(

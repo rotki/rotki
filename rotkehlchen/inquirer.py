@@ -846,18 +846,18 @@ class Inquirer():
         # Deserialize information obtained in the multicall execution
         data = []
         # https://github.com/PyCQA/pylint/issues/4739
-        virtual_price_decoded = contract.decode(output[0][1], 'get_virtual_price')  # pylint: disable=unsubscriptable-object  # noqa: E501
+        virtual_price_decoded = contract.decode(output[0][1], 'get_virtual_price')
         if not _check_curve_contract_call(virtual_price_decoded):
             log.debug(f'Failed to decode get_virtual_price while finding curve price. {output}')
             return None
-        data.append(FVal(virtual_price_decoded[0]))  # pylint: disable=unsubscriptable-object
+        data.append(FVal(virtual_price_decoded[0]))
         for i, token in enumerate(tokens):
             amount_decoded = contract.decode(output[i + 1][1], 'balances', arguments=[i])
             if not _check_curve_contract_call(amount_decoded):
                 log.debug(f'Failed to decode balances {i} while finding curve price. {output}')
                 return None
             # https://github.com/PyCQA/pylint/issues/4739
-            amount = amount_decoded[0]  # pylint: disable=unsubscriptable-object
+            amount = amount_decoded[0]
             normalized_amount = token_normalized_value_decimals(amount, token.decimals)
             data.append(normalized_amount)
 

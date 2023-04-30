@@ -127,7 +127,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         )
         mapping = {}
         for result_encoded, method_name in zip(output, ('urns', 'owns')):
-            result = self.makerdao_cdp_manager.decode(    # pylint: disable=unsubscriptable-object
+            result = self.makerdao_cdp_manager.decode(
                 result_encoded,
                 method_name,
                 arguments=[cdp_id],

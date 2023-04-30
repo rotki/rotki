@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
 
 import gevent
 import requests
-from rotkehlchen.api.websockets.typedefs import WSMessageType
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.timing import (
@@ -361,7 +361,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         chain_id = self.chain.to_chain_id()
         while True:
             result = self._query(module='account', action=action, options=options)
-            last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None  # noqa: E501 pylint: disable=unsubscriptable-object
+            last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None
             for entry in result:
                 try:  # Handle normal transactions. Internal dict does not contain a hash sometimes
                     if is_internal or entry['hash'].startswith('GENESIS') is False:
@@ -424,7 +424,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             # block we got. There may be duplicate entries if there are more than one
             # transactions for that last block but they should be filtered
             # out when we input all of these in the DB
-            last_block = result[-1]['blockNumber']  # pylint: disable=unsubscriptable-object
+            last_block = result[-1]['blockNumber']
             options['startBlock'] = last_block
 
         yield transactions
@@ -446,7 +446,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         hashes: set[tuple[str, Timestamp]] = set()
         while True:
             result = self._query(module='account', action='tokentx', options=options)
-            last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None  # noqa: E501 pylint: disable=unsubscriptable-object
+            last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None
             for entry in result:
                 timestamp = deserialize_timestamp(entry['timeStamp'])
                 if timestamp > last_ts and len(hashes) >= TRANSACTIONS_BATCH_NUM:  # type: ignore
@@ -461,7 +461,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             # block we got. There may be duplicate entries if there are more than one
             # transactions for that last block but they should be filtered
             # out when we input all of these in the DB
-            last_block = result[-1]['blockNumber']  # pylint: disable=unsubscriptable-object
+            last_block = result[-1]['blockNumber']
             options['startBlock'] = last_block
 
         yield _hashes_tuple_to_list(hashes)
@@ -504,7 +504,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         block_data = self._query(module='proxy', action='eth_getBlockByNumber', options=options)
         # We need to convert some data from hex here
         # https://github.com/PyCQA/pylint/issues/4739
-        block_data['timestamp'] = hex_or_bytes_to_int(block_data['timestamp'])  # pylint: disable=unsubscriptable-object  # noqa: E501
+        block_data['timestamp'] = hex_or_bytes_to_int(block_data['timestamp'])
         block_data['number'] = hex_or_bytes_to_int(block_data['number'])
 
         return block_data

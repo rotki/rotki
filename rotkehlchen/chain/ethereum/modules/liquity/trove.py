@@ -108,14 +108,14 @@ class Liquity(HasDSProxy):
             if status is True:
                 try:
                     trove_info = self.trove_manager_contract.decode(result, 'Troves', arguments=[addresses[idx]])  # noqa: E501
-                    trove_is_active = bool(trove_info[3])  # pylint: disable=unsubscriptable-object
+                    trove_is_active = bool(trove_info[3])
                     if not trove_is_active:
                         continue
                     collateral = deserialize_asset_amount(
-                        token_normalized_value_decimals(trove_info[1], 18),  # noqa: E501 pylint: disable=unsubscriptable-object
+                        token_normalized_value_decimals(trove_info[1], 18),
                     )
                     debt = deserialize_asset_amount(
-                        token_normalized_value_decimals(trove_info[0], 18),  # noqa: E501 pylint: disable=unsubscriptable-object
+                        token_normalized_value_decimals(trove_info[0], 18),
                     )
                     collateral_balance = AssetBalance(
                         asset=A_ETH,
@@ -152,7 +152,7 @@ class Liquity(HasDSProxy):
                         collateralization_ratio=collateralization_ratio,
                         liquidation_price=liquidation_price,
                         active=trove_is_active,
-                        trove_id=trove_info[4],  # pylint: disable=unsubscriptable-object
+                        trove_id=trove_info[4],
                     )
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(
@@ -222,7 +222,7 @@ class Liquity(HasDSProxy):
                 if idx % 3 == method_idx:
                     asset = _asset
                     key = _key
-                    gain_info = contract.decode(result, method, arguments=[current_address])[0]    # pylint: disable=unsubscriptable-object  # noqa: E501
+                    gain_info = contract.decode(result, method, arguments=[current_address])[0]
                     break
 
             # get price information for the asset and deserialize the amount

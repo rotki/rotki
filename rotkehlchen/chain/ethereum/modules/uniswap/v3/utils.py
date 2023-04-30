@@ -134,7 +134,7 @@ def uniswap_v3_lp_token_balances(
             continue
 
         tokens_ids = [
-            uniswap_v3_nft_manager.decode(   # pylint: disable=unsubscriptable-object
+            uniswap_v3_nft_manager.decode(
                 result=data[1],
                 method_name='tokenOfOwnerByIndex',
                 arguments=[address, index],
