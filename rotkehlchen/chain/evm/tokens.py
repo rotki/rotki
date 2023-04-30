@@ -189,7 +189,7 @@ class EvmTokens(metaclass=ABCMeta):
         )
         balances: dict[ChecksumEvmAddress, dict[EvmToken, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
         for (address, tokens), result in zip(chunk, results):
-            decoded_result = self.evm_inquirer.contract_scan.decode(  # pylint: disable=unsubscriptable-object  # noqa: E501
+            decoded_result = self.evm_inquirer.contract_scan.decode(
                 result=result,
                 method_name='tokensBalance',
                 arguments=[address, [token.evm_address for token in tokens]],

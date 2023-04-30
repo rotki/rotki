@@ -204,7 +204,7 @@ def find_uniswap_v2_lp_price(
             decoded_method = contract.decode(call_result, method_name)
             if len(decoded_method) == 1:
                 # https://github.com/PyCQA/pylint/issues/4739
-                decoded.append(decoded_method[0])  # pylint: disable=unsubscriptable-object
+                decoded.append(decoded_method[0])
             else:
                 decoded.append(decoded_method)
         else:

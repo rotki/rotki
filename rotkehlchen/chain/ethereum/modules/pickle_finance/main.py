@@ -88,11 +88,11 @@ class PickleFinance(EthereumModule):
                         arguments=[address],
                     )
                     dill_rewards = token_normalized_value_decimals(
-                        token_amount=rewards[0],  # pylint: disable=unsubscriptable-object
+                        token_amount=rewards[0],
                         token_decimals=self.pickle.decimals,
                     )
                     dill_locked = token_normalized_value_decimals(
-                        token_amount=dill_amounts[0],  # pylint: disable=unsubscriptable-object
+                        token_amount=dill_amounts[0],
                         token_decimals=self.pickle.decimals,
                     )
                     balance = DillBalance(
@@ -110,7 +110,7 @@ class PickleFinance(EthereumModule):
                                 usd_value=pickle_price * dill_rewards,
                             ),
                         ),
-                        lock_time=deserialize_timestamp(dill_amounts[1]),  # noqa: E501 pylint: disable=unsubscriptable-object
+                        lock_time=deserialize_timestamp(dill_amounts[1]),
                     )
                     api_output[address] = balance
                 except (DeserializationError, IndexError) as e:

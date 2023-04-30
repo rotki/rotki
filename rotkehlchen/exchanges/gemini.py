@@ -399,7 +399,7 @@ class Gemini(ExchangeInterface):
             # Use millisecond timestamp as pagination mechanism for lack of better option
             # Most recent entry is first
             # https://github.com/PyCQA/pylint/issues/4739
-            last_ts_ms = single_result[0]['timestampms']  # pylint: disable=unsubscriptable-object
+            last_ts_ms = single_result[0]['timestampms']
             # also if we are already over the end timestamp stop
             if int(last_ts_ms / 1000) > end_ts:
                 break

@@ -534,9 +534,9 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         try:
             parsed_data = CoingeckoAssetData(
                 identifier=asset_coingecko_id,
-                symbol=data['symbol'],  # pylint: disable=unsubscriptable-object
-                name=data['name'],  # pylint: disable=unsubscriptable-object
-                image_url=data['image']['small'],  # pylint: disable=unsubscriptable-object
+                symbol=data['symbol'],
+                name=data['name'],
+                image_url=data['image']['small'],
             )
         except KeyError as e:
             raise RemoteError(
@@ -625,7 +625,7 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
 
         # https://github.com/PyCQA/pylint/issues/4739
         try:
-            return Price(FVal(result[from_coingecko_id][vs_currency])), False  # pylint: disable=unsubscriptable-object  # noqa: E501
+            return Price(FVal(result[from_coingecko_id][vs_currency])), False
         except KeyError as e:
             log.warning(
                 f'Queried coingecko simple price from {from_asset.identifier} '
@@ -716,7 +716,7 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
 
         # https://github.com/PyCQA/pylint/issues/4739
         try:
-            price = Price(FVal(result['market_data']['current_price'][vs_currency]))  # pylint: disable=unsubscriptable-object  # noqa: E501
+            price = Price(FVal(result['market_data']['current_price'][vs_currency]))
         except KeyError as e:
             log.warning(
                 f'Queried coingecko historical price from {from_asset.identifier} '

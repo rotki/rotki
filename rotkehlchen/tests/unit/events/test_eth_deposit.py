@@ -34,7 +34,7 @@ def test_db_read_write(database):
             filter_query=EthDepositEventFilterQuery.make(),
             has_premium=True,
         )
-    assert event == events[0]  # pylint: disable=unsubscriptable-object
+    assert event == events[0]
 
 
 def test_serialization():

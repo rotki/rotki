@@ -74,7 +74,7 @@ class ConvexBalances(ProtocolWithBalance):
 
         for idx, result in enumerate(call_output):
             address = addresses_with_stake[idx]
-            amount_raw = staking_contract.decode(result, 'balanceOf', arguments=[address])[0]  # pylint: disable=unsubscriptable-object  # noqa: E501
+            amount_raw = staking_contract.decode(result, 'balanceOf', arguments=[address])[0]
             amount = asset_normalized_value(amount_raw, self.cvx)
             if amount == ZERO:
                 continue

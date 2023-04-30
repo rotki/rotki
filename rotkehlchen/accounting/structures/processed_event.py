@@ -170,7 +170,7 @@ class ProcessedAccountingEvent:
         return string_data
 
     @classmethod
-    def deserialize_from_db(cls: builtins.type[T], timestamp: Timestamp, stringified_json: str) -> T:  # noqa: E501  # pylint: disable=unsubscriptable-object
+    def deserialize_from_db(cls: builtins.type[T], timestamp: Timestamp, stringified_json: str) -> T:  # noqa: E501
         """May raise:
         - DeserializationError if something is wrong with reading this from the DB
         """

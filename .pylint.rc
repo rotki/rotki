@@ -99,7 +99,6 @@ enable=
     unreachable,
     unnecessary-pass,
     broad-except,
-    unsubscriptable-object,
     unnecessary-lambda,
     isinstance-second-argument-not-valid-type,
     unsupported-membership-test,

@@ -141,8 +141,8 @@ def mock_etherscan_for_dsr(
     account2_join1_move_event = f"""{{"address": "{makerdao_vat.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy2)}", "{makerdao_pot.address}", "{int_to_32byteshexstr(account2_join1_deposit // 10 ** 27)}"], "data": "0x1", "blockNumber": "{hex(params.account2_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account2_join1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
 
     # Not sure how to convince pylint that this ChecksumEvmAddress IS a subscriptable object
-    proxy1_contents = proxy1[2:].lower()  # pylint: disable=unsubscriptable-object
-    proxy2_contents = proxy2[2:].lower()  # pylint: disable=unsubscriptable-object
+    proxy1_contents = proxy1[2:].lower()
+    proxy2_contents = proxy2[2:].lower()
 
     def mock_requests_get(url, *args, **kwargs):
         if 'etherscan.io/api?module=proxy&action=eth_blockNumber' in url:

@@ -736,7 +736,7 @@ def test_combine_block_with_tx_events(eth2, database):
         notes=f'Received {mev_reward} ETH from {mev_builder_address} as mev reward for block {block_number}',  # noqa: E501
         event_identifier=EthBlockEvent.form_event_identifier(block_number),
     )
-    assert modified_event == events[2]  # pylint: disable=unsubscriptable-object
+    assert modified_event == events[2]
 
 
 @pytest.mark.vcr()
@@ -800,17 +800,17 @@ def test_refresh_activated_validators_deposits(eth2, database):
     # make sure validator indices have been detected for the deposits
     assert isinstance(new_events, list)
     assert len(starting_events) == len(new_events)
-    assert starting_events[0] == new_events[0], 'first event should not have been modified'  # pylint: disable=unsubscriptable-object  # noqa: E501
+    assert starting_events[0] == new_events[0], 'first event should not have been modified'
     edited_event_2 = starting_events[1]
     edited_event_2.extra_data = None
     edited_event_2.validator_index = validator2.index
     edited_event_2.notes = f'Deposit 32 ETH to validator {validator2.index}'
-    assert edited_event_2 == new_events[1]  # pylint: disable=unsubscriptable-object
+    assert edited_event_2 == new_events[1]
     edited_event_3 = starting_events[2]
     edited_event_3.extra_data = None
     edited_event_3.validator_index = validator3.index
     edited_event_3.notes = f'Deposit 32 ETH to validator {validator3.index}'
-    assert edited_event_3 == new_events[2]  # pylint: disable=unsubscriptable-object
+    assert edited_event_3 == new_events[2]
 
     # finally make sure validators are also added
     with database.conn.read_ctx() as cursor:
