@@ -9,11 +9,15 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryEvent
-from rotkehlchen.accounting.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
+from rotkehlchen.accounting.structures.eth2 import (
+    EthBlockEvent,
+    EthDepositEvent,
+    EthWithdrawalEvent,
+)
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
+from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
 from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator, ValidatorDailyStats
 from rotkehlchen.chain.ethereum.modules.eth2.utils import (
@@ -733,3 +737,81 @@ def test_combine_block_with_tx_events(eth2, database):
         event_identifier=EthBlockEvent.form_event_identifier(block_number),
     )
     assert modified_event == events[2]  # pylint: disable=unsubscriptable-object
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.freeze_time('2023-04-30 21:52:55 GMT')
+def test_refresh_activated_validators_deposits(eth2, database):
+    """Test that if an eth deposit event is missing the index, the redetection task works"""
+    dbevents = DBHistoryEvents(database)
+    dbeth2 = DBEth2(database)
+    validator1 = Eth2Validator(
+        index=30932,
+        public_key=Eth2PubKey('0xa7d4c301a02b7dc747c0f8ff32579226588c7771e133e9b2817cc7a9a977f0004dbee4f4f7f89451a1f5f761e3bb8c81'),  # noqa: E501
+    )
+    validator2 = Eth2Validator(
+        index=207003,
+        public_key=Eth2PubKey('0x989620ffd512c08907841e28a2c472bbfad2e57c73f474814bf64bab3ae3b44436b1db7b05e4ccc1eb2c3f949a546278'),  # noqa: E501
+    )
+    validator3 = Eth2Validator(
+        index=4523,
+        public_key=Eth2PubKey('0x967c17368bcb6a90164d1af369115b3bf265b82c350fc78d9b1fa9389f2a216867ca02121f21c4be121f334ce2ac7f4f'),  # noqa: E501
+    )
+    with database.user_write() as write_cursor:
+        dbeth2.add_validators(write_cursor, [validator1])  # first one is active and in DB at time of deposit decoding  # noqa: E501
+
+    starting_events = [EthDepositEvent(
+        identifier=1,
+        tx_hash=make_evm_tx_hash(),
+        validator_index=validator1.index,
+        sequence_index=1,
+        timestamp=360000,
+        balance=Balance(FVal(32)),
+        depositor=string_to_evm_address('0xA3E5ff1230a38243BB64Dc1423Df40B63a4CA0c3'),
+    ), EthDepositEvent(
+        identifier=2,
+        tx_hash=make_evm_tx_hash(),
+        validator_index=UNKNOWN_VALIDATOR_INDEX,  # actual value should be 207003
+        sequence_index=2,
+        timestamp=460000,
+        balance=Balance(FVal(32)),
+        depositor=string_to_evm_address('0xf879704602696cD6a567eA569F5D95b4dd51b5FD'),
+        extra_data={'public_key': validator2.public_key},
+    ), EthDepositEvent(
+        identifier=3,
+        tx_hash=make_evm_tx_hash(),
+        validator_index=UNKNOWN_VALIDATOR_INDEX,  # actual value should be 4523
+        sequence_index=3,
+        timestamp=660000,
+        balance=Balance(FVal(32)),
+        depositor=string_to_evm_address('0xFCD50905214325355A57aE9df084C5dd40D5D478'),
+        extra_data={'public_key': validator3.public_key},
+    )]
+
+    with database.user_write() as write_cursor:
+        dbevents.add_history_events(write_cursor, starting_events)
+
+    eth2.refresh_activated_validators_deposits()
+
+    with database.conn.read_ctx() as cursor:
+        new_events = dbevents.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
+
+    # make sure validator indices have been detected for the deposits
+    assert isinstance(new_events, list)
+    assert len(starting_events) == len(new_events)
+    assert starting_events[0] == new_events[0], 'first event should not have been modified'  # pylint: disable=unsubscriptable-object  # noqa: E501
+    edited_event_2 = starting_events[1]
+    edited_event_2.extra_data = None
+    edited_event_2.validator_index = validator2.index
+    edited_event_2.notes = f'Deposit 32 ETH to validator {validator2.index}'
+    assert edited_event_2 == new_events[1]  # pylint: disable=unsubscriptable-object
+    edited_event_3 = starting_events[2]
+    edited_event_3.extra_data = None
+    edited_event_3.validator_index = validator3.index
+    edited_event_3.notes = f'Deposit 32 ETH to validator {validator3.index}'
+    assert edited_event_3 == new_events[2]  # pylint: disable=unsubscriptable-object
+
+    # finally make sure validators are also added
+    with database.conn.read_ctx() as cursor:
+        assert dbeth2.get_validators(cursor) == [validator3, validator1, validator2]

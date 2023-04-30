@@ -406,6 +406,12 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):
     def __repr__(self) -> str:
         return f'EthDepositEvent({self.validator_index=}, {self.timestamp=}, {self.tx_hash=})'  # noqa: E501
 
+    def __eq__(self, other: Any) -> bool:
+        return (
+            EvmEvent.__eq__(self, other) is True and
+            EthStakingEvent.__eq__(self, other) is True
+        )
+
     def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE, EVM_EVENT_FIELDS, tuple[int, int]]:  # type: ignore  # does not match EvmEvent supertype, but yeah it would not make sense to  # noqa: E501
         base_tuple, evm_tuple = self._serialize_evm_event_tuple_for_db(HistoryBaseEntryType.ETH_DEPOSIT_EVENT)  # noqa: E501
         return (base_tuple, evm_tuple, (self.validator_index, 0))

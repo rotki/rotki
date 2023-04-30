@@ -21,6 +21,7 @@ def process_events(
     eth2 = chains_aggregator.get_module('eth2')
     if eth2 is not None:
         eth2.combine_block_with_tx_events()
+        eth2.refresh_activated_validators_deposits()
 
     with database.user_write() as write_cursor:
         database.update_used_query_range(  # update last withdrawal query timestamp
