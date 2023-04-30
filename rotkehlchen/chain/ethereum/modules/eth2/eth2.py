@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 from collections import defaultdict
@@ -29,6 +30,7 @@ from .constants import (
     CPT_ETH2,
     FREE_VALIDATORS_LIMIT,
     LAST_WITHDRAWALS_QUERY_TS,
+    UNKNOWN_VALIDATOR_INDEX,
     VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS,
     VALIDATOR_STATS_QUERY_BACKOFF_TIME,
     VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE,
@@ -511,6 +513,76 @@ class Eth2(EthereumModule):
                 'SET event_identifier=?, sequence_index=?, notes=?, type=?, subtype=?'
                 'WHERE identifier=?',
                 changes,
+            )
+
+    def refresh_activated_validators_deposits(self) -> None:
+        """It's possible that when an eth deposit gets decoded and created the validator
+        index is not known since at the time the validator was waiting in the activation queue.
+
+        To fix that we periodically check if the validator got activated, and if yes we fetch
+        and save the index.
+        """
+        pubkey_to_data = {}
+        with self.database.conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT H.identifier, H.amount, E.extra_data from history_events H LEFT JOIN eth_staking_events_info S '  # noqa: E501
+                'ON H.identifier=S.identifier LEFT JOIN evm_events_info E '
+                'ON E.identifier=H.identifier WHERE S.validator_index=?',
+                (UNKNOWN_VALIDATOR_INDEX,),
+            )
+            for entry in cursor:
+                try:
+                    public_key = json.loads(entry[2])['public_key']
+                except (json.JSONDecodeError, KeyError):
+                    log.error(f'Non json or unexpected extra data {entry[2]} found for evm event with identifier {entry[0]}')  # noqa: E501
+                    continue
+
+                pubkey_to_data[public_key] = (entry[0], entry[1])
+
+        if len(pubkey_to_data) == 0:
+            return
+
+        # now check validator data for all these keys
+        try:
+            results = self.beaconchain.get_validator_data(indices_or_pubkeys=list(pubkey_to_data))  # noqa: E501
+        except RemoteError as e:
+            log.error(f'During refreshing activated validator deposits got error: {str(e)}')
+            return
+
+        staking_changes = []
+        history_changes = []
+        validators = []
+        for result in results:
+            try:
+                identifier, amount = pubkey_to_data[result['pubkey']]
+                validator_index = result['validatorindex']
+            except KeyError as e:
+                log.error(f'During refreshing activated validator deposits missing key {str(e)} in result')  # noqa: E501
+                return
+
+            staking_changes.append((validator_index, identifier))
+            history_changes.append((f'Deposit {amount} ETH to validator {validator_index}', identifier))  # noqa: E501
+            validators.append((validator_index, result['pubkey'], '1.0'))
+
+        if len(staking_changes) == 0:
+            return
+
+        with self.database.user_write() as write_cursor:
+            write_cursor.executemany(
+                'UPDATE eth_staking_events_info SET validator_index=? WHERE identifier=?',
+                staking_changes,
+            )
+            write_cursor.executemany(
+                'UPDATE history_events SET notes=? WHERE identifier=?',
+                history_changes,
+            )
+            write_cursor.executemany(
+                'UPDATE evm_events_info SET extra_data=null WHERE identifier=?',
+                [(x[1],) for x in staking_changes],
+            )
+            write_cursor.executemany(
+                'INSERT OR IGNORE INTO eth2_validators(validator_index, public_key, ownership_proportion) VALUES(?, ?, ?)',  # noqa: E501
+                validators,
             )
 
     # -- Methods following the EthereumModule interface -- #

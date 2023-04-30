@@ -39,7 +39,7 @@ Eth2ValidatorDBTuple = tuple[int, str, str]
 class Eth2Validator:
     index: int
     public_key: Eth2PubKey
-    ownership_proportion: FVal
+    ownership_proportion: FVal = ONE
 
     def serialize_for_db(self) -> Eth2ValidatorDBTuple:
         return self.index, self.public_key, str(self.ownership_proportion)
