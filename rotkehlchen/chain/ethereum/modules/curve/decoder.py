@@ -409,7 +409,11 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             # Just to make sure that spend and receive events are consecutive
             maybe_reshuffle_events(spend_event, receive_event, context.decoded_events)
         else:
-            log.error(f'Did not find spend and receive events for curve swap {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.debug(
+                f'Did not find spend and receive events for a curve swap. '
+                f'{context.transaction.tx_hash.hex}. Probably some aggregator was used and '
+                f'decoding needs to happen in the aggregator-specific decoder.',
+            )
 
         return DEFAULT_DECODING_OUTPUT
 
