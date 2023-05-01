@@ -53,9 +53,59 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
         ), EthDepositEvent(
             tx_hash=evmhash,
             validator_index=validator.index,
-            sequence_index=1,
+            sequence_index=2,
             timestamp=TimestampMS(1674558203000),
             balance=Balance(amount=FVal('32')),
             depositor=user_address,
         ),
     ]
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x3e5fd0244e13d82fC230f3Fc610bcd76b3c8217C']])
+def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
+    evmhash = deserialize_evm_tx_hash('0x819fe4a07894cf044f5d8c63e5c1e2294e068d05bf91d9cfc3e7ae3e60528ae5')  # noqa: E501
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1608594280000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.010956672')),
+            location_label=user_address,
+            notes='Burned 0.010956672 ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EthDepositEvent(
+            tx_hash=evmhash,
+            validator_index=55750,
+            sequence_index=2,
+            timestamp=TimestampMS(1608594280000),
+            balance=Balance(amount=FVal('32')),
+            depositor=user_address,
+        ), EthDepositEvent(
+            tx_hash=evmhash,
+            validator_index=55751,
+            sequence_index=3,
+            timestamp=TimestampMS(1608594280000),
+            balance=Balance(amount=FVal('32')),
+            depositor=user_address,
+        ), EthDepositEvent(
+            tx_hash=evmhash,
+            validator_index=55752,
+            sequence_index=4,
+            timestamp=TimestampMS(1608594280000),
+            balance=Balance(amount=FVal('32')),
+            depositor=user_address,
+        ),
+    ]
+    assert events == expected_events
