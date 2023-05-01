@@ -214,7 +214,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             if user_or_contract_address in CURVE_DEPOSIT_CONTRACTS and return_event is not None:
                 return DecodingOutput(matched_counterparty=CPT_CURVE)
 
-            log.debug(
+            log.error(
                 f'Expected to see a return pool token event and '
                 f'withdrawal events for a curve pool, but have not found them. '
                 f'Tx_hash: {transaction.tx_hash.hex()} '
@@ -294,7 +294,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             if user_or_contract_address in CURVE_DEPOSIT_CONTRACTS and len(deposit_events) > 0:
                 return DecodingOutput(matched_counterparty=CPT_CURVE)
 
-            log.debug(
+            log.error(
                 f'Expected to see a receive pool token event and deposit '
                 f'events for a curve pool, but have not found them. '
                 f'Tx_hash: {transaction.tx_hash.hex()} '
@@ -409,7 +409,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             # Just to make sure that spend and receive events are consecutive
             maybe_reshuffle_events(spend_event, receive_event, context.decoded_events)
         else:
-            log.error(f'Did not find spend and receive events for a curve swap. {spend_event=} {receive_event=}')  # noqa: E501
+            log.error(f'Did not find spend and receive events for curve swap {context.transaction.tx_hash.hex()}')  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -546,7 +546,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             )
             return
 
-        log.debug(
+        log.error(
             f'Expected to see a receive pool token event and deposit events for a curve pool, '
             f'but have not found them. Tx_hash: {transaction.tx_hash.hex()}',
         )
@@ -593,7 +593,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             )
             return
 
-        log.debug(
+        log.error(
             f'Expected to see a return pool token event and withdrawal events '
             f'for a curve pool, but have not found them. '
             f'Tx_hash: {transaction.tx_hash.hex()}',

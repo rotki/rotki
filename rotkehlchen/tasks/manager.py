@@ -439,7 +439,7 @@ class TaskManager():
         new_query_filter.filters.append(
             DBIgnoreValuesFilter(
                 and_op=True,
-                column='identifier',
+                column='history_events.identifier',
                 values=list(self.base_entries_ignore_set),
             ),
         )
@@ -464,8 +464,8 @@ class TaskManager():
                 )
             except (NoPriceForGivenTimestamp, RemoteError) as e:
                 log.error(
-                    f'Failed to find price for {asset} at {timestamp} in base '
-                    f'entry {identifier}. {str(e)}.',
+                    f'Failed to find price for {asset} at {timestamp} in history '
+                    f'event with {identifier=}. {str(e)}.',
                 )
                 self.base_entries_ignore_set.add(identifier)
                 continue
