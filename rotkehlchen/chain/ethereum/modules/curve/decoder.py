@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.modules.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
@@ -48,9 +49,12 @@ ADD_LIQUIDITY_EVENTS = {
     b'&\xf5Z\x85\x08\x1d$\x97N\x85\xc6\xc0\x00E\xd0\xf0E9\x91\xe9Xs\xf5+\xff\r!\xaf@y\xa7h',  # ADD_LIQUIDITY_2_ASSETS  # noqa: E501
     b'?\x19\x15w^\x0c\x9a8\xa5z{\xb7\xf1\xf9\x00_Ho\xb9\x04\xe1\xf8J\xa2\x156MVs\x19\xa5\x8d',  # ADD_LIQUIDITY_4_ASSETS  # noqa: E501
 }
-REMOVE_LIQUIDITY_IMBALANCE = b'\xb9d\xb7/s\xf5\xef[\xf0\xfd\xc5Y\xb2\xfa\xb9\xa7\xb1*9\xe4x\x17\xa5G\xf1\xf0\xae\xe4\x7f\xeb\xd6\x02'  # noqa: E501
+REMOVE_LIQUIDITY_IMBALANCE = {
+    b'\xb9d\xb7/s\xf5\xef[\xf0\xfd\xc5Y\xb2\xfa\xb9\xa7\xb1*9\xe4x\x17\xa5G\xf1\xf0\xae\xe4\x7f\xeb\xd6\x02',  # noqa: E501
+    b'+U\x087\x8d~\x19\xe0\xd5\xfa3\x84\x19\x03G1AlO[!\x9a\x107\x99V\xf7d1\x7f\xd4~',
+}
 REMOVE_LIQUIDITY_EVENTS = {
-    REMOVE_LIQUIDITY_IMBALANCE,
+    *REMOVE_LIQUIDITY_IMBALANCE,
     b'|68T\xcc\xf7\x96#A\x1f\x89\x95\xb3b\xbc\xe5\xed\xdf\xf1\x8c\x92~\xdco]\xbb\xb5\xe0X\x19\xa8,',  # REMOVE_LIQUIDITY  # noqa: E501,
     b'\x9e\x96\xdd;\x99z*%~\xecM\xf9\xbbn\xafbn m\xf5\xf5C\xbd\x966\x82\xd1C0\x0b\xe3\x10',  # REMOVE_ONE  # noqa: E501
     b"Z\xd0V\xf2\xe2\x8a\x8c\xec# \x15@k\x846h\xc1\xe3l\xdaY\x81'\xec;\x8cY\xb8\xc7's\xa0",  # REMOVE_LIQUIDITY  # noqa: E501,
@@ -104,6 +108,11 @@ TOKEN_EXCHANGE = b'\x8b>\x96\xf2\xb8\x89\xfaw\x1cS\xc9\x81\xb4\r\xaf\x00_c\xf67\
 TOKEN_EXCHANGE_UNDERLYING = b'\xd0\x13\xca#\xe7ze\x00<,e\x9cTB\xc0\x0c\x80Sq\xb7\xfc\x1e\xbdL lA\xd1Sk\xd9\x0b'  # noqa: E501
 EXCHANGE_MULTIPLE = b'\x14\xb5a\x17\x8a\xe0\xf3h\xf4\x0f\xaf\xd0H\\Oq)\xeaq\xcd\xc0\x0bL\xe1\xe5\x94\x0f\x9b\xc6Y\xc8\xb2'  # noqa: E501
 CURVE_SWAP_ROUTER = string_to_evm_address('0x99a58482BD75cbab83b27EC03CA68fF489b5788f')
+
+AAVE_POOLS = {
+    string_to_evm_address('0xDeBF20617708857ebe4F679508E7b7863a8A8EeE'),  # aDAI + aUSDC + aUSDT
+    string_to_evm_address('0xEB16Ae0052ed37f479f7fe63849198Df1765a733'),  # aDAI + aSUSD
+}
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -183,7 +192,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 (
                     user_or_contract_address == event.location_label or
                     user_or_contract_address in CURVE_DEPOSIT_CONTRACTS or
-                    tx_log.topics[0] == REMOVE_LIQUIDITY_IMBALANCE
+                    tx_log.topics[0] in REMOVE_LIQUIDITY_IMBALANCE
                 )
             ):
                 event.event_type = HistoryEventType.SPEND
@@ -191,18 +200,32 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.counterparty = CPT_CURVE
                 event.notes = f'Return {event.balance.amount} {crypto_asset.symbol}'
                 return_event = event
-            elif (  # Withdraw receive asset
-                event.event_type == HistoryEventType.RECEIVE and
-                event.event_subtype == HistoryEventSubType.NONE and
-                event.location_label == transaction.from_address and
-                user_or_contract_address == event.location_label and
-                tx_log.address in self.curve_pools
+            if (  # Withdraw receive asset
+                tx_log.address in self.curve_pools and
+                transaction.from_address == user_or_contract_address
             ):
-                event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                event.counterparty = CPT_CURVE
-                event.notes = f'Remove {event.balance.amount} {crypto_asset.symbol} from {tx_log.address} curve pool'  # noqa: E501
-                withdrawal_events.append(event)
+                notes = f'Remove {event.balance.amount} {crypto_asset.symbol} from {tx_log.address} curve pool'  # noqa: E501
+                if (  # Raw event
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.location_label == user_or_contract_address
+                ):
+                    event.event_type = HistoryEventType.WITHDRAWAL
+                    event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                    event.counterparty = CPT_CURVE
+                    event.notes = notes
+                    withdrawal_events.append(event)
+                elif (  # Is already decoded by aave
+                    tx_log.address in AAVE_POOLS and
+                    event.event_type == HistoryEventType.WITHDRAWAL and
+                    event.event_subtype == HistoryEventSubType.REMOVE_ASSET and
+                    event.location_label == tx_log.address and
+                    event.counterparty in (CPT_AAVE_V1, CPT_AAVE_V2)
+                ):
+                    event.location_label = user_or_contract_address
+                    event.notes = notes
+                    event.counterparty = CPT_CURVE
+                    withdrawal_events.append(event)
 
         # Make sure that the order is the following:
         # 1. Return pool token event

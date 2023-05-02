@@ -1461,3 +1461,64 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts)
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x60b0f1919cf4ee46d1A8D63428276512814de570']])
+def test_remove_from_aave_pool(ethereum_transaction_decoder, ethereum_accounts):
+    """
+    Test that if liquidity is removed from a pool with a(aave) tokens,
+    the events are decoded correctly.
+    """
+    tx_hex = deserialize_evm_tx_hash('0xb0a45bc41a83b2bdf2e06b9913a2e4c8b0d7f3080030807a0a06f301287424e9')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1682041175000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=Asset('ETH'),
+            balance=Balance(amount=FVal('0.01441418456991474')),
+            location_label=user_address,
+            notes='Burned 0.01441418456991474 ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=179,
+            timestamp=TimestampMS(1682041175000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:1/erc20:0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900'),
+            balance=Balance(amount=FVal('2619.297635390037009904')),
+            location_label=user_address,
+            notes='Return 2619.297635390037009904 a3CRV',
+            counterparty=CPT_CURVE,
+            address=ZERO_ADDRESS,
+            extra_data={'withdrawal_events_num': 1},
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=183,
+            timestamp=TimestampMS(1682041175000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+            balance=Balance(amount=FVal('2904.458947543711333839')),
+            location_label=user_address,
+            notes='Remove 2904.458947543711333839 DAI from 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE curve pool',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=string_to_evm_address('0x028171bCA77440897B824Ca71D1c56caC55b68A3'),
+        ),
+    ]
+    assert events == expected_events
