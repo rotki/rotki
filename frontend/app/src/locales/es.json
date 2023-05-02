@@ -2879,10 +2879,10 @@
     },
     "history": "Historial",
     "history_sub": {
-      "deposits_withdrawals": "Depósitos y Retiros en exch.",
+      "deposits_withdrawals": "Depósitos y Retiros en Exch.",
       "history_events": "Historia Eventos",
       "ledger_actions": "Acciones contables",
-      "trades": "Intercambios"
+      "trades": "Intercambios en Exch."
     },
     "import_data": "Import Data",
     "locations": "Locations",
