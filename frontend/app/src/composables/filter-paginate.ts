@@ -18,6 +18,7 @@ interface FilterSchema<F, M> {
   matchers: ComputedRef<M[]>;
   updateFilter: (filter: F) => void;
   RouteFilterSchema: ZodSchema;
+  transformExclusionFilters?: (filter: F) => F;
 }
 
 /**
@@ -75,13 +76,25 @@ export const usePaginationFilters = <
     defaultSortBy
   } = options;
 
-  const { filters, matchers, updateFilter, RouteFilterSchema } = filterSchema();
+  const {
+    filters,
+    matchers,
+    updateFilter,
+    RouteFilterSchema,
+    transformExclusionFilters
+  } = filterSchema();
 
   const pageParams: ComputedRef<U> = computed(() => {
     const { itemsPerPage, page, sortBy, sortDesc } = get(paginationOptions);
     const offset = (page - 1) * itemsPerPage;
 
-    const selectedFilters = get(filters);
+    let selectedFilters = get(filters);
+    if (transformExclusionFilters) {
+      selectedFilters = {
+        ...selectedFilters,
+        ...transformExclusionFilters(selectedFilters)
+      };
+    }
     const overview = get(locationOverview);
     if (
       overview &&

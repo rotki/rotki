@@ -3608,7 +3608,7 @@
   "table_filter": {
     "hint": {
       "description": "* type the filter and then press enter e.g.",
-      "example": "start: 26/05/2022"
+      "example": "start = 26/05/2022"
     },
     "hint_filter": "The combined filters will be applied at the same time",
     "title": "Available filters",

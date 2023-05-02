@@ -3729,7 +3729,7 @@
   "table_filter": {
     "hint": {
       "description": "* 输入过滤器，然后按回车键，例如。",
-      "example": "开始： 26/05/2022"
+      "example": "开始 = 26/05/2022"
     },
     "hint_filter": "组合过滤器将同时应用",
     "no_suggestions": "没有找到{search}的建议",

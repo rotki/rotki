@@ -50,7 +50,8 @@ export const useSavedFilter = (
         value:
           !item.asset || typeof item.value === 'string'
             ? item.value
-            : item.value.identifier
+            : item.value.identifier,
+        exclude: item.exclude
       }))
     ];
     return await saveFilters(newFilters);
