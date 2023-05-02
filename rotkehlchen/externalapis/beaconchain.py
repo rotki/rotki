@@ -217,8 +217,8 @@ class BeaconChain(ExternalServiceWithApiKey):
         """
         chunks = _calculate_query_chunks(indices_or_pubkeys)
         data: list[dict[str, Any]] = []
-        offset = 0
         for chunk in chunks:
+            offset = 0
             while True:
                 result = self._query(
                     module=module,
@@ -287,7 +287,7 @@ class BeaconChain(ExternalServiceWithApiKey):
             self,
             indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
     ) -> None:
-        """Get blocks produced  by a set of validator indices/pubkeys and store the
+        """Get blocks produced by a set of validator indices/pubkeys and store the
         data in the DB.
 
         https://beaconcha.in/api/v1/docs/index.html#/Execution/get_api_v1_execution__addressIndexOrPubkey__produced
