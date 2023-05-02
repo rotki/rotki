@@ -25,7 +25,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import from_gwei, ts_now, ts_sec_to_ms
+from rotkehlchen.utils.misc import from_gwei, ts_ms_to_sec, ts_now, ts_sec_to_ms
 
 from .constants import (
     CPT_ETH2,
@@ -340,6 +340,7 @@ class Eth2(EthereumModule):
         - RemoteError due to problems querying beaconcha.in API
         """
         with self.withdrawals_query_lock:
+            log.debug(f'Querying for validator withdrawals up to {to_ts=}')
             dbeth2 = DBEth2(self.database)
             dbevents = DBHistoryEvents(self.database)
             result = dbeth2.get_validators_to_query_for_withdrawals(up_to_tsms=ts_sec_to_ms(to_ts))
@@ -356,12 +357,13 @@ class Eth2(EthereumModule):
                     exit_epoch[validator_entry['validatorindex']] = validator_entry['exitepoch']
 
             # Then fetch latest withdrawals for each
-            for validator_index, last_ts in result:
+            for validator_index, last_ts_ms in result:
                 self._maybe_backoff_beaconchain(now=now, name='withdrawals')
                 new_data = scrape_validator_withdrawals(
                     validator_index=validator_index,
-                    last_known_timestamp=last_ts,
+                    last_known_timestamp=ts_ms_to_sec(last_ts_ms),
                 )
+                log.debug(f'Got {len(new_data)} new withdrawals for validator {validator_index}')
                 now = ts_now()
                 self.validator_withdrawals_queried += 1
                 self.last_withdrawals_query_ts = now
@@ -386,6 +388,7 @@ class Eth2(EthereumModule):
                     start_ts=Timestamp(0),
                     end_ts=now,
                 )
+            log.debug(f'Finished querying for validator withdrawals up to {to_ts=}')
 
     def get_validator_daily_stats(
             self,

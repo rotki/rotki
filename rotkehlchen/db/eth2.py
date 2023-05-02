@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Literal, Optional, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator, ValidatorDailyStats
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
@@ -27,25 +28,32 @@ class DBEth2():
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
 
-    def get_validators_to_query_for_withdrawals(self, up_to_tsms: TimestampMS) -> list[tuple[int, Timestamp]]:  # noqa: E501
+    def get_validators_to_query_for_withdrawals(self, up_to_tsms: TimestampMS) -> list[tuple[int, TimestampMS]]:  # noqa: E501
         """Gets a list of validators that need to be queried for new withdrawals
 
         Validators need to be queried if last time they are queried was more than X seconds.
 
         Returns a list of tuples. First entry is validator index and second entry is
-        last queried timestamp for daily stats of that validator.
+        last queried timestamp in milliseconds for daily stats of that validator.
         """
         query_str = """
             SELECT V.validator_index, E.timestamp FROM eth2_validators V
             LEFT JOIN eth_staking_events_info S ON S.validator_index = V.validator_index
             LEFT JOIN history_events E ON
             E.identifier = S.identifier WHERE ? - (SELECT MAX(timestamp) FROM history_events WHERE identifier=S.identifier) > ? AND S.validator_index IS NOT NULL
+            AND E.entry_type=?
             UNION
             SELECT DISTINCT V2.validator_index, 0 FROM eth2_validators V2 WHERE
-            V2.validator_index NOT IN (SELECT validator_index FROM eth_staking_events_info)
+            V2.validator_index NOT IN (
+                SELECT validator_index FROM eth_staking_events_info S2 LEFT JOIN
+                history_events E2 ON S2.identifier=E2.identifier WHERE E2.entry_type=?
+            )
         """  # noqa: E501
         with self.db.conn.read_ctx() as cursor:
-            result = cursor.execute(query_str, (up_to_tsms, WITHDRAWALS_RECHECK_PERIOD)).fetchall()
+            result = cursor.execute(
+                query_str,
+                (up_to_tsms, WITHDRAWALS_RECHECK_PERIOD, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT.serialize_for_db(), HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT.serialize_for_db()),  # noqa: E501
+            ).fetchall()
         return result
 
     def get_validators_to_query_for_stats(self, up_to_ts: Timestamp) -> list[tuple[int, Timestamp]]:  # noqa: E501
