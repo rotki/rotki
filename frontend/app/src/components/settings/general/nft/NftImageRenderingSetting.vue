@@ -2,7 +2,7 @@
 import { type ComputedRef, type Ref } from 'vue';
 import isEqual from 'lodash/isEqual';
 
-const renderAllNftImages: Ref<boolean> = ref(false);
+const renderAllNftImages: Ref<boolean> = ref(true);
 const whitelistedDomainsForNftImages: Ref<string[]> = ref([]);
 
 const frontendStore = useFrontendSettingsStore();

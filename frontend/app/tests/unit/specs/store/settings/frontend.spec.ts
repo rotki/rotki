@@ -68,7 +68,7 @@ describe('settings:frontend', () => {
             graphZeroBased: false,
             showGraphRangeSelector: true,
             nftsInNetValue: true,
-            renderAllNftImages: false,
+            renderAllNftImages: true,
             whitelistedDomainsForNftImages: [],
             dashboardTablesVisibleColumns: {
               [DashboardTableType.ASSETS]:
