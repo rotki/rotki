@@ -1,21 +1,10 @@
 import { z } from 'zod';
-import { Balance, NumericString, Percentage } from '../../index';
+import { Balance, Percentage } from '../../index';
 
 const Eth2DailyStat = z.object({
   validatorIndex: z.number().nonnegative(),
   timestamp: z.number().nonnegative(),
-  pnl: Balance,
-  startBalance: Balance,
-  endBalance: Balance,
-  missedAttestations: z.number().nonnegative(),
-  orphanedAttestations: z.number().nonnegative(),
-  proposedBlocks: z.number().nonnegative(),
-  missedBlocks: z.number().nonnegative(),
-  orphanedBlocks: z.number().nonnegative(),
-  includedAttesterSlashings: z.number().nonnegative(),
-  proposerAttesterSlashings: z.number().nonnegative(),
-  depositsNumber: z.number().nonnegative(),
-  depositedBalance: Balance
+  pnl: Balance
 });
 
 export type Eth2DailyStat = z.infer<typeof Eth2DailyStat>;
@@ -24,8 +13,7 @@ export const Eth2DailyStats = z.object({
   entries: z.array(Eth2DailyStat),
   entriesFound: z.number().nonnegative(),
   entriesTotal: z.number().nonnegative(),
-  sumPnl: NumericString,
-  sumUsdValue: NumericString
+  sumPnl: Balance
 });
 
 export type Eth2DailyStats = z.infer<typeof Eth2DailyStats>;
