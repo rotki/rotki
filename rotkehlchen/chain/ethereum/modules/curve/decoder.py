@@ -200,7 +200,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.counterparty = CPT_CURVE
                 event.notes = f'Return {event.balance.amount} {crypto_asset.symbol}'
                 return_event = event
-            if (  # Withdraw receive asset
+            elif (  # Withdraw receive asset
                 tx_log.address in self.curve_pools and
                 transaction.from_address == user_or_contract_address
             ):
@@ -226,6 +226,26 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                     event.notes = notes
                     event.counterparty = CPT_CURVE
                     withdrawal_events.append(event)
+            # Two conditions below handle withdrawals from metapools via zap contracts. In this
+            # case there are 2 RemoveLiquidity events emitted. One for withdrawing from the
+            # metapool and one for withdrawing from the underlying pool. This means that this
+            # decoding method is executed twice. Between 2 RemoveLiquidity events an extra transfer
+            # can occur, and we have to handle it together with the events that were decoded in the
+            # first run (i.e. those that already have proper event type and counterparty set) in
+            # order to have extra_data properly populated for accounting. Same happens for deposits
+            # in another method below.
+            elif (
+                event.event_type == HistoryEventType.WITHDRAWAL and
+                event.event_subtype == HistoryEventSubType.REMOVE_ASSET and
+                event.counterparty == CPT_CURVE
+            ):
+                withdrawal_events.append(event)
+            elif (
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.RETURN_WRAPPED and
+                event.counterparty == CPT_CURVE
+            ):
+                return_event = event
 
         # Make sure that the order is the following:
         # 1. Return pool token event
@@ -306,6 +326,18 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.counterparty = CPT_CURVE
                 event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in curve pool {tx_log.address}'  # noqa: E501
                 deposit_events.append(event)
+            elif (
+                event.event_type == HistoryEventType.DEPOSIT and
+                event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and
+                event.counterparty == CPT_CURVE
+            ):
+                deposit_events.append(event)
+            elif (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.RECEIVE_WRAPPED and
+                event.counterparty == CPT_CURVE
+            ):
+                receive_event = event
 
         # Make sure that the order is the following:
         # 1. Receive pool token event
@@ -517,6 +549,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                     transaction=transaction,
                     decoded_events=decoded_events,
                 )
+                break  # We only need to handle zap contracts once
             if (
                 tx_log.topics[0] in REMOVE_LIQUIDITY_EVENTS and
                 hex_or_bytes_to_address(tx_log.topics[1]) in CURVE_DEPOSIT_CONTRACTS
@@ -526,6 +559,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                     transaction=transaction,
                     decoded_events=decoded_events,
                 )
+                break  # We only need to handle zap contracts once
 
         return decoded_events  # noop. just return the decoded events.
 
