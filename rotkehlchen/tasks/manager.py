@@ -623,7 +623,7 @@ class TaskManager():
         now = ts_now()
         with self.database.conn.read_ctx() as cursor:
             result = self.database.get_used_query_range(cursor, LAST_WITHDRAWALS_QUERY_TS)
-            if result is not None and now - result[1] <= HOUR_IN_SECONDS * 3:
+            if result is not None and now - result[1] <= DAY_IN_SECONDS:
                 return None
 
         task_name = 'Periodically query ethereum withdrawals'

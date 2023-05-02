@@ -108,6 +108,10 @@ class EthWithdrawalEvent(EthStakingEvent):
             is_exit: bool,
             identifier: Optional[int] = None,
     ) -> None:
+        if is_exit is True:
+            notes = f'Exited validator {validator_index} with {balance.amount} ETH'
+        else:
+            notes = f'Withdrew {balance.amount} ETH from validator {validator_index}'
         super().__init__(
             identifier=identifier,
             event_identifier=f'eth2_withdrawal_{validator_index}_{timestamp}',
@@ -119,7 +123,7 @@ class EthWithdrawalEvent(EthStakingEvent):
             balance=balance,
             location_label=withdrawal_address,
             is_exit_or_blocknumber=is_exit,
-            notes=f'Withdrew {balance.amount} ETH from validator {validator_index}',
+            notes=notes,
         )
 
     @property

@@ -815,3 +815,21 @@ def test_refresh_activated_validators_deposits(eth2, database):
     # finally make sure validators are also added
     with database.conn.read_ctx() as cursor:
         assert dbeth2.get_validators(cursor) == [validator3, validator1, validator2]
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.freeze_time('2023-04-30 21:52:55 GMT')
+def test_query_chunked_endpoint_with_offset_pagination(eth2):
+    """This test makes sure that offset pagination works fine for beaconchain queries.
+
+    It tries to do this by testing for block productions
+    """
+    validator_indices = range(450000, 450000 + 194)
+    result = eth2.beaconchain._query_chunked_endpoint_with_pagination(
+        indices_or_pubkeys=validator_indices,
+        module='execution',
+        endpoint='produced',
+        limit=50,
+    )
+    assert len(result) == 474  # with the offset bug it was 251 (only first chunk worked)
