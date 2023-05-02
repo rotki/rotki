@@ -2218,13 +2218,11 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             asset: Asset,
+            balance_type: BalanceType,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            balance_type: Optional[BalanceType] = None,
     ) -> list[SingleDBAssetBalance]:
-        """Query all balance entries for an asset within a range of timestamps
-
-        Can optionally filter by balance type
+        """Query all balance entries for an asset and balance type within a range of timestamps
         """
         if from_ts is None:
             from_ts = Timestamp(0)
@@ -2239,13 +2237,11 @@ class DBHandler:
         bindings = [from_ts, to_ts, asset.identifier]
 
         if settings.treat_eth2_as_eth and asset.identifier == 'ETH':
-            assert balance_type is not None, 'Asset balances and liabilities can\'t be queried at the same time when eth2 is equivalent to eth'  # noqa: E501
             querystr = querystr.replace('currency=?', 'currency IN (?,?)')
             bindings.append('ETH2')
 
-        if balance_type is not None:
-            querystr += ' AND category=?'
-            bindings.append(balance_type.serialize_for_db())
+        querystr += ' AND category=?'
+        bindings.append(balance_type.serialize_for_db())
         querystr += ' ORDER BY timestamp ASC;'
 
         cursor.execute(querystr, bindings)

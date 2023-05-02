@@ -5,6 +5,7 @@ from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH2
@@ -12,19 +13,36 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process, check_pnls_and_csv
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import Location
+from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_kraken_staking_events(accountant, google_service):
+@pytest.mark.parametrize(('db_settings', 'event_start_timestamp', 'expected_pnls'), [
+    (
+        {'eth_staking_taxable_after_withdrawal_enabled': False},
+        1636638550000,
+        [FVal('0.25114638241'), FVal('0.22035944359')],
+    ), (
+        {'eth_staking_taxable_after_withdrawal_enabled': True},
+        1636638550000,
+        [ZERO, ZERO],
+    ), (
+        {'eth_staking_taxable_after_withdrawal_enabled': True},
+        ts_sec_to_ms(Timestamp(SHAPPELA_TIMESTAMP + 5000)),
+        [FVal('0.09452788191'), FVal('0.09206375805')],
+    ),
+])
+def test_kraken_staking_events(accountant, google_service, event_start_timestamp, expected_pnls):
     """
     Test that staking events from kraken are correctly processed
     """
+    ts_addition = 3854824000
     history = [
         HistoryEvent(
             event_identifier=b'XXX',
             sequence_index=0,
-            timestamp=1640493374000,
+            timestamp=event_start_timestamp + ts_addition,
             location=Location.KRAKEN,
             location_label='Kraken 1',
             asset=A_ETH2,
@@ -38,7 +56,7 @@ def test_kraken_staking_events(accountant, google_service):
         ), HistoryEvent(
             event_identifier=b'YYY',
             sequence_index=0,
-            timestamp=1636638550000,
+            timestamp=event_start_timestamp,
             location=Location.KRAKEN,
             location_label='Kraken 1',
             asset=A_ETH2,
@@ -52,25 +70,27 @@ def test_kraken_staking_events(accountant, google_service):
         )]
     _, events = accounting_history_process(
         accountant,
-        start_ts=1636638549,
-        end_ts=1640493376,
+        start_ts=ts_ms_to_sec(event_start_timestamp),
+        end_ts=ts_ms_to_sec(event_start_timestamp + 2 * ts_addition),
         history_list=history,
     )
     no_message_errors(accountant.msg_aggregator)
-    expected_pnls = PnlTotals({
-        AccountingEventType.STAKING: PNL(taxable=FVal('0.471505826'), free=ZERO),
+    expected_pnls_csv = PnlTotals({
+        AccountingEventType.STAKING: PNL(taxable=sum(expected_pnls), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls, google_service)
-    assert len(events) == 2
-    expected_pnls = [FVal('0.25114638241'), FVal('0.22035944359')]
+    check_pnls_and_csv(accountant, expected_pnls_csv, google_service)
+    assert len(events) == sum(1 for x in expected_pnls if x != ZERO)
     for idx, event in enumerate(events):
         assert event.pnl.taxable == expected_pnls[idx]
         assert event.type == AccountingEventType.STAKING
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_eth2_staking(accountant, google_service):
-    """Test that ethereum 2 staking is accounted for properly"""
+@pytest.mark.parametrize('db_settings', [{
+    'eth_staking_taxable_after_withdrawal_enabled': False,
+}])
+def test_eth_staking_daily_stats(accountant, google_service):
+    """Test ethereum staking daily stats are accounted for if the setting to count them is on"""
     history = [
         ValidatorDailyStats(
             validator_index=1,

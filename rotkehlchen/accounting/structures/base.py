@@ -12,6 +12,7 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.constants.assets import A_ETH2
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -406,9 +407,10 @@ class HistoryEvent(HistoryBaseEntry):
             ):
                 return 1
 
+            timestamp = self.get_timestamp_in_sec()
             # This omits every acquisition event of `ETH2` if `eth_staking_taxable_after_withdrawal_enabled`  # noqa: 501
-            # setting is set to `True` until ETH2 is merged.
-            if self.asset == A_ETH2 and accounting.settings.eth_staking_taxable_after_withdrawal_enabled is True:  # noqa: 501
+            # setting is set to `True` until ETH2 withdrawals were enabled
+            if self.asset == A_ETH2 and accounting.settings.eth_staking_taxable_after_withdrawal_enabled is True and timestamp < SHAPPELA_TIMESTAMP:  # noqa: 501
                 return 1
 
             # otherwise it's kraken staking
@@ -416,7 +418,7 @@ class HistoryEvent(HistoryBaseEntry):
                 event_type=AccountingEventType.STAKING,
                 notes=f'Kraken {self.asset.resolve_to_asset_with_symbol().symbol} staking',
                 location=self.location,
-                timestamp=self.get_timestamp_in_sec(),
+                timestamp=timestamp,
                 asset=self.asset,
                 amount=self.balance.amount,
                 taxable=True,

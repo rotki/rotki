@@ -106,7 +106,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert settings['include_gas_costs'] is True
     assert settings['taxfree_after_period'] == 31536000
     assert settings['cost_basis_method'] == 'fifo'
-    assert settings['eth_staking_taxable_after_withdrawal_enabled'] is False
+    assert settings['eth_staking_taxable_after_withdrawal_enabled'] is True
     assert settings['include_fees_in_cost_basis'] == fees_in_cost_basis
 
     assert events_result['entries_limit'] == FREE_PNL_EVENTS_LIMIT

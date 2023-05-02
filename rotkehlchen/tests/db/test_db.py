@@ -559,9 +559,10 @@ def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb):
         data.db.add_multiple_balances(cursor, asset_balances)
         result = data.db.query_timed_balances(
             cursor=cursor,
+            asset=A_USD,
+            balance_type=BalanceType.ASSET,
             from_ts=1451606401,
             to_ts=1485907100,
-            asset=A_USD,
         )
         assert len(result) == 1
         assert result[0].time == 1465171200
@@ -571,9 +572,10 @@ def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb):
 
         all_data = data.db.query_timed_balances(
             cursor=cursor,
+            asset=A_ETH,
+            balance_type=BalanceType.ASSET,
             from_ts=1451606300,
             to_ts=1485907000,
-            asset=A_ETH,
         )
         assert len(all_data) == 2
         result = [x for x in all_data if x.amount != ZERO]
@@ -587,10 +589,10 @@ def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb):
         assert result[1].amount == FVal('10')
         assert result[1].usd_value == FVal('123')
 
-        all_data = data.db.query_timed_balances(cursor, A_ETH)
-        assert len(all_data) == 4
+        all_data = data.db.query_timed_balances(cursor, A_ETH, balance_type=BalanceType.ASSET)
+        assert len(all_data) == 3
         result = [x for x in all_data if x.amount != ZERO]
-        assert len(result) == 4
+        assert len(result) == 3
         result = data.db.query_timed_balances(cursor, A_ETH, balance_type=BalanceType.LIABILITY)
 
     assert len(result) == 1
@@ -1101,7 +1103,7 @@ def test_timed_balances_primary_key_works(user_data_dir, sql_vm_instructions_cb)
     assert 'Adding timed_balance failed' in str(exc_info.value)
 
     with db.user_write() as cursor:
-        balances = db.query_timed_balances(cursor, asset=A_BTC)
+        balances = db.query_timed_balances(cursor, asset=A_BTC, balance_type=BalanceType.ASSET)
         assert len(balances) == 0
         balances = [
             DBAssetBalance(
@@ -1261,7 +1263,7 @@ def test_multiple_location_data_and_balances_same_timestamp(user_data_dir, sql_v
     assert exc_info.errisinstance(InputError)
 
     with db.conn.read_ctx() as cursor:
-        balances = db.query_timed_balances(cursor=cursor, from_ts=0, to_ts=1590676728, asset=A_BTC)
+        balances = db.query_timed_balances(cursor=cursor, from_ts=0, to_ts=1590676728, asset=A_BTC, balance_type=BalanceType.ASSET)  # noqa: E501
     assert len(balances) == 0
 
     locations = [
