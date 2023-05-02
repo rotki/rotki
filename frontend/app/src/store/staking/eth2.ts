@@ -13,8 +13,7 @@ const defaultStats = (): Eth2DailyStats => ({
   entries: [],
   entriesFound: 0,
   entriesTotal: 0,
-  sumPnl: Zero,
-  sumUsdValue: Zero
+  sumPnl: zeroBalance()
 });
 
 const defaultPagination = (): Eth2DailyStatsPayload => {
