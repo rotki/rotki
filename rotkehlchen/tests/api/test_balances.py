@@ -94,21 +94,21 @@ def assert_all_balances(
         assert result['location']['external']['percentage_of_net_value'] is not None
 
     with db.conn.read_ctx() as cursor:
-        eth_tbalances = db.query_timed_balances(cursor=cursor, asset=A_ETH)
+        eth_tbalances = db.query_timed_balances(cursor=cursor, asset=A_ETH, balance_type=BalanceType.ASSET)  # noqa: E501
         if not expected_data_in_db:
             assert len(eth_tbalances) == 0
         else:
             assert len(eth_tbalances) == 1
             assert FVal(eth_tbalances[0].amount) == total_eth
 
-        btc_tbalances = db.query_timed_balances(cursor=cursor, asset=A_BTC)
+        btc_tbalances = db.query_timed_balances(cursor=cursor, asset=A_BTC, balance_type=BalanceType.ASSET)  # noqa: E501
         if not expected_data_in_db:
             assert len(btc_tbalances) == 0
         else:
             assert len(btc_tbalances) == 1
             assert FVal(btc_tbalances[0].amount) == total_btc
 
-        rdn_tbalances = db.query_timed_balances(cursor=cursor, asset=A_RDN)
+        rdn_tbalances = db.query_timed_balances(cursor=cursor, asset=A_RDN, balance_type=BalanceType.ASSET)  # noqa: E501
         if not expected_data_in_db:
             assert len(rdn_tbalances) == 0
         else:

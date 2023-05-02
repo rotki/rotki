@@ -162,7 +162,6 @@ class ValidatorDailyStats(AccountingEventMixin):
             return 1
 
         # This omits every acquisition event of `ETH2` if `eth_staking_taxable_after_withdrawal_enabled`  # noqa: 501
-        # setting is set to `True` until ETH2 is merged.
         if accounting.settings.eth_staking_taxable_after_withdrawal_enabled is True:
             return 1
 

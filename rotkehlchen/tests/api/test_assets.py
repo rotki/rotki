@@ -679,7 +679,7 @@ def test_search_assets(rotkehlchen_api_server):
         },
     )
     result = assert_proper_response_with_result(response)
-    assert len(result) == 4
+    assert len(result) == 3
     assert any(entry['name'] == 'Ethereum' for entry in result)
     for entry in result:
         assert entry['symbol'] == 'ETH'

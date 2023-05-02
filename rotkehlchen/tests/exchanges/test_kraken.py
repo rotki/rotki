@@ -674,6 +674,9 @@ def test_timestamp_deserialization():
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('start_with_valid_premium', [False, True])
+@pytest.mark.parametrize('db_settings', [{  # to count the kraken ETH staking events in accounting
+    'eth_staking_taxable_after_withdrawal_enabled': False,
+}])
 def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_premium):
     """Test that kraken staking events are processed correctly"""
     server = rotkehlchen_api_server_with_exchanges
