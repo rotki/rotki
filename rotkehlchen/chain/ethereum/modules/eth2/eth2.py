@@ -5,6 +5,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import gevent
+from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -76,6 +77,7 @@ class Eth2(EthereumModule):
         self.validator_stats_queried = 0
         self.validator_withdrawals_queried = 0
         self.deposits_pubkey_re = re.compile(r'.*validator with pubkey (.*)\. Deposit.*')
+        self.withdrawals_query_lock = Semaphore()
 
     def fetch_and_update_eth1_validator_data(
             self,
@@ -337,52 +339,53 @@ class Eth2(EthereumModule):
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
-        dbeth2 = DBEth2(self.database)
-        dbevents = DBHistoryEvents(self.database)
-        result = dbeth2.get_validators_to_query_for_withdrawals(up_to_tsms=ts_sec_to_ms(to_ts))
+        with self.withdrawals_query_lock:
+            dbeth2 = DBEth2(self.database)
+            dbevents = DBHistoryEvents(self.database)
+            result = dbeth2.get_validators_to_query_for_withdrawals(up_to_tsms=ts_sec_to_ms(to_ts))
 
-        # first get all validator indices to see which validators have exited and when
-        validator_indices = {x[0] for x in result}
-        data = self.beaconchain.get_validator_data(indices_or_pubkeys=list(validator_indices))
-        exit_epoch = {}
-        now = ts_now()
-        for validator_entry in data:
-            if validator_entry['status'] != 'exited':
-                exit_epoch[validator_entry['validatorindex']] = now  # so that is_exit fails
-            else:
-                exit_epoch[validator_entry['validatorindex']] = validator_entry['exitepoch']
-
-        # Then fetch latest withdrawals for each
-        for validator_index, last_ts in result:
-            self._maybe_backoff_beaconchain(now=now, name='withdrawals')
-            new_data = scrape_validator_withdrawals(
-                validator_index=validator_index,
-                last_known_timestamp=last_ts,
-            )
+            # first get all validator indices to see which validators have exited and when
+            validator_indices = {x[0] for x in result}
+            data = self.beaconchain.get_validator_data(indices_or_pubkeys=list(validator_indices))
+            exit_epoch = {}
             now = ts_now()
-            self.validator_withdrawals_queried += 1
-            self.last_withdrawals_query_ts = now
-            for entry in new_data:
-                withdrawal = EthWithdrawalEvent(
-                    validator_index=validator_index,
-                    timestamp=ts_sec_to_ms(entry[0]),
-                    balance=Balance(amount=entry[2]),
-                    withdrawal_address=entry[1],
-                    is_exit=entry[0] >= exit_epoch[validator_index],
-                )
-                try:
-                    with self.database.user_write() as write_cursor:
-                        dbevents.add_history_event(write_cursor, event=withdrawal)
-                except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                    log.error(f'Could not write withdrawal: {withdrawal} to the DB due to {str(e)}')  # noqa: E501
+            for validator_entry in data:
+                if validator_entry['status'] != 'exited':
+                    exit_epoch[validator_entry['validatorindex']] = now  # so that is_exit fails
+                else:
+                    exit_epoch[validator_entry['validatorindex']] = validator_entry['exitepoch']
 
-        with self.database.user_write() as write_cursor:
-            self.database.update_used_query_range(  # update last withdrawal query timestamp
-                write_cursor=write_cursor,
-                name=LAST_WITHDRAWALS_QUERY_TS,
-                start_ts=Timestamp(0),
-                end_ts=now,
-            )
+            # Then fetch latest withdrawals for each
+            for validator_index, last_ts in result:
+                self._maybe_backoff_beaconchain(now=now, name='withdrawals')
+                new_data = scrape_validator_withdrawals(
+                    validator_index=validator_index,
+                    last_known_timestamp=last_ts,
+                )
+                now = ts_now()
+                self.validator_withdrawals_queried += 1
+                self.last_withdrawals_query_ts = now
+                for entry in new_data:
+                    withdrawal = EthWithdrawalEvent(
+                        validator_index=validator_index,
+                        timestamp=ts_sec_to_ms(entry[0]),
+                        balance=Balance(amount=entry[2]),
+                        withdrawal_address=entry[1],
+                        is_exit=entry[0] >= exit_epoch[validator_index],
+                    )
+                    try:
+                        with self.database.user_write() as write_cursor:
+                            dbevents.add_history_event(write_cursor, event=withdrawal)
+                    except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                        log.error(f'Could not write withdrawal: {withdrawal} to the DB due to {str(e)}')  # noqa: E501
+
+            with self.database.user_write() as write_cursor:
+                self.database.update_used_query_range(  # update last withdrawal query timestamp
+                    write_cursor=write_cursor,
+                    name=LAST_WITHDRAWALS_QUERY_TS,
+                    start_ts=Timestamp(0),
+                    end_ts=now,
+                )
 
     def get_validator_daily_stats(
             self,
