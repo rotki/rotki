@@ -7,15 +7,16 @@ import { type EntryWithMeta } from '@/types/history/meta';
 import {
   type AddTransactionHashPayload,
   type AddressesAndEvmChainPayload,
+  type EditEvmHistoryEventPayload,
   type EvmChainAddress,
   type EvmChainAndTxHash,
   type EvmTransaction,
-  type HistoryEvent,
   type HistoryEventEntry,
   type HistoryEventEntryWithMeta,
   type HistoryEventRequestPayload,
   type HistoryEventsCollectionResponse,
-  type NewHistoryEvent,
+  type NewEvmHistoryEventPayload,
+  OnlineHistoryEventsQueryType,
   type TransactionHashAndEvmChainPayload,
   type TransactionRequestPayload
 } from '@/types/history/events';
@@ -28,6 +29,7 @@ import {
 import { TaskType } from '@/types/task-type';
 import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { Module } from '@/types/modules';
 
 export const useHistoryEvents = () => {
   const { t, tc } = useI18n();
@@ -41,7 +43,8 @@ export const useHistoryEvents = () => {
     addTransactionEvent: addTransactionEventCaller,
     editTransactionEvent: editTransactionEventCaller,
     addTransactionHash: addTransactionHashCaller,
-    fetchHistoryEvents: fetchHistoryEventsCaller
+    fetchHistoryEvents: fetchHistoryEventsCaller,
+    queryOnlineHistoryEvents
   } = useHistoryEventsApi();
 
   const { awaitTask, isTaskRunning } = useTaskStore();
@@ -52,11 +55,14 @@ export const useHistoryEvents = () => {
     useSupportedChains();
   const { accounts } = useAccountBalances();
 
+  const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(
+    Section.TX
+  );
+
   const syncTransactionTask = async (
     account: EvmChainAddress
   ): Promise<boolean> => {
     const taskType = TaskType.TX;
-    const { setStatus } = useStatusUpdater(Section.TX);
     const defaults: TransactionRequestPayload = {
       limit: 0,
       offset: 0,
@@ -109,10 +115,6 @@ export const useHistoryEvents = () => {
     chains: Blockchain[],
     userInitiated = false
   ): Promise<void> => {
-    const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(
-      Section.TX
-    );
-
     if (fetchDisabled(userInitiated)) {
       logger.info('skipping transaction refresh');
       return;
@@ -133,13 +135,60 @@ export const useHistoryEvents = () => {
     resetQueryStatus();
 
     try {
-      await Promise.all(txAccounts.map(syncTransactionTask));
+      await Promise.all([
+        ...txAccounts.map(syncTransactionTask),
+        queryOnlineEvent(OnlineHistoryEventsQueryType.ETH_WITHDRAWALS),
+        queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS),
+        queryOnlineEvent(OnlineHistoryEventsQueryType.EXCHANGES)
+      ]);
       setStatus(
         get(isTaskRunning(TaskType.TX)) ? Status.REFRESHING : Status.LOADED
       );
     } catch (e) {
       logger.error(e);
       resetStatus();
+    }
+  };
+
+  const { isModuleEnabled } = useModules();
+  const isEth2Enabled = isModuleEnabled(Module.ETH2);
+
+  const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType) => {
+    const eth2QueryTypes = [
+      OnlineHistoryEventsQueryType.ETH_WITHDRAWALS,
+      OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS
+    ];
+
+    if (!get(isEth2Enabled) && eth2QueryTypes.includes(queryType)) {
+      return;
+    }
+    const taskType = TaskType.QUERY_ONLINE_EVENTS;
+
+    const { taskId } = await queryOnlineHistoryEvents({
+      asyncQuery: true,
+      queryType
+    });
+
+    const taskMeta = {
+      title: t('actions.online_events.task.title').toString(),
+      description: t('actions.online_events.task.description', {
+        queryType
+      }).toString(),
+      queryType
+    };
+
+    try {
+      await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
+    } catch (e: any) {
+      logger.error(e);
+      notify({
+        title: t('actions.online_events.error.title').toString(),
+        message: t('actions.online_events.error.description', {
+          error: e,
+          queryType
+        }).toString(),
+        display: true
+      });
     }
   };
 
@@ -217,7 +266,7 @@ export const useHistoryEvents = () => {
   };
 
   const addTransactionEvent = async (
-    event: NewHistoryEvent
+    event: NewEvmHistoryEventPayload
   ): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
     let message: ValidationErrors | string = '';
@@ -235,7 +284,7 @@ export const useHistoryEvents = () => {
   };
 
   const editTransactionEvent = async (
-    event: HistoryEvent
+    event: EditEvmHistoryEventPayload
   ): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
     let message: ValidationErrors | string = '';

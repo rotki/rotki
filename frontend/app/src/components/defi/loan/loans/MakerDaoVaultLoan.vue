@@ -2,6 +2,7 @@
 import { type BigNumber } from '@rotki/common';
 import { type ComputedRef, type PropType } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps({
@@ -73,6 +74,7 @@ const chain = Blockchain.ETH;
           :use-external-account-filter="true"
           :external-account-filter="[{ chain, address: vault.owner }]"
           :only-chains="[chain]"
+          :entry-types="[HistoryEventEntryType.EVM_EVENT]"
         />
       </div>
     </v-col>

@@ -49,7 +49,7 @@ const transactionId = computed<string>(() => {
         v-if="isValidTxHash(transactionId)"
         :text="transactionId"
         :chain="chain"
-        tx
+        type="transaction"
         full-address
       />
       <span v-else>{{ item.transactionId ?? '' }}</span>

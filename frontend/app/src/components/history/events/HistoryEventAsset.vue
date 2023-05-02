@@ -15,7 +15,7 @@ const props = withDefaults(
 
 const { tc } = useI18n();
 
-const { event } = toRefs(props);
+const { event, showEventDetail } = toRefs(props);
 const { assetSymbol } = useAssetInfoRetrieval();
 
 const { getEventType } = useHistoryEventMappings();
@@ -25,10 +25,23 @@ const showBalance = computed<boolean>(() => {
   return !type || !['approval', 'informational'].includes(type);
 });
 
-const eventAsset = computed(() => get(event).asset);
+const eventAsset = useRefMap(event, ({ asset }) => asset);
 
 const symbol = assetSymbol(eventAsset);
 const extraDataPanel: Ref<number[]> = ref([]);
+
+const evmEvent = isEvmEventRef(event);
+
+const showLiquityDetail = computed(() => {
+  const evmEventVal = get(evmEvent);
+
+  return (
+    evmEventVal &&
+    get(showEventDetail) &&
+    get(event).hasDetails &&
+    evmEventVal.counterparty === 'liquity'
+  );
+});
 </script>
 
 <template>
@@ -60,9 +73,7 @@ const extraDataPanel: Ref<number[]> = ref([]);
       </div>
     </div>
     <v-expansion-panels
-      v-if="
-        showEventDetail && event.hasDetails && event.counterparty === 'liquity'
-      "
+      v-if="showLiquityDetail"
       v-model="extraDataPanel"
       multiple
     >

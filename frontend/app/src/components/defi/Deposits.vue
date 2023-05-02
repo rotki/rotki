@@ -3,6 +3,7 @@ import { type BigNumber } from '@rotki/common';
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
+import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import {
   AaveEarnedDetails,
   CompoundLendingDetails,
@@ -252,6 +253,7 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
         :protocols="transactionEventProtocols"
         :external-account-filter="selectedAccounts"
         :only-chains="chains"
+        :entry-types="[HistoryEventEntryType.EVM_EVENT]"
       />
     </div>
   </div>

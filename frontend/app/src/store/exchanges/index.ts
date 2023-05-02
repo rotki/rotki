@@ -120,10 +120,12 @@ export const useExchangesStore = defineStore('exchanges', () => {
         });
       }
 
-      await fetchExchangeBalances({
-        location: exchange.location,
-        ignoreCache: false
-      });
+      startPromise(
+        fetchExchangeBalances({
+          location: exchange.location,
+          ignoreCache: false
+        })
+      );
 
       return success;
     } catch (e: any) {

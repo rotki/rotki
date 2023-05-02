@@ -1,11 +1,30 @@
+import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { type MaybeRef } from '@vueuse/core';
 import {
   type EvmTransactionQueryData,
   EvmTransactionsQueryStatus
 } from '@/types/websocket-messages';
 
-export const useTransactionQueryStatus = () => {
+export const useTransactionQueryStatus = (
+  onlyChains: MaybeRef<Blockchain[]> = []
+) => {
   const { tc } = useI18n();
-  const { isStatusFinished } = useTxQueryStatusStore();
+  const store = useTxQueryStatusStore();
+  const { isStatusFinished } = store;
+  const { queryStatus } = storeToRefs(store);
+  const { getChain } = useSupportedChains();
+
+  const filtered: ComputedRef<EvmTransactionQueryData[]> = computed(() => {
+    const statuses = Object.values(get(queryStatus));
+    const chains = get(onlyChains);
+    if (chains.length === 0) {
+      return statuses;
+    }
+
+    return statuses.filter(({ evmChain }) =>
+      chains.includes(getChain(evmChain))
+    );
+  });
 
   const statusesData = computed(() => ({
     [EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED]: {
@@ -35,9 +54,6 @@ export const useTransactionQueryStatus = () => {
     }
   }));
 
-  const isQueryStatusRange = (data: EvmTransactionQueryData) =>
-    data.period?.[0] > 0;
-
   const getStatusData = (data: EvmTransactionQueryData) =>
     get(statusesData)[data.status];
 
@@ -64,10 +80,17 @@ export const useTransactionQueryStatus = () => {
       : 'transactions.query_status.end_date';
   };
 
+  const { sortedQueryStatus, queryingLength, length, isQueryStatusRange } =
+    useQueryStatus(filtered, isStatusFinished);
+
   return {
     getLabel,
     getStatusData,
     getItemTranslationKey,
-    isStatusFinished
+    isStatusFinished,
+    sortedQueryStatus,
+    filtered,
+    queryingLength,
+    length
   };
 };

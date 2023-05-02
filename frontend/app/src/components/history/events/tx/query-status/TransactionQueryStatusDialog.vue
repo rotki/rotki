@@ -15,18 +15,7 @@ const { onlyChains } = toRefs(props);
 const { t } = useI18n();
 const css = useCssModule();
 
-const { queryStatus } = toRefs(useTxQueryStatusStore());
-const { getChain } = useSupportedChains();
-
-const filtered = computed(() => {
-  const chains = get(onlyChains);
-  const statuses = Object.values(get(queryStatus));
-  if (chains.length === 0) {
-    return statuses;
-  }
-
-  return statuses.filter(({ evmChain }) => chains.includes(getChain(evmChain)));
-});
+const { sortedQueryStatus } = useTransactionQueryStatus(onlyChains);
 </script>
 
 <template>
@@ -38,7 +27,7 @@ const filtered = computed(() => {
       </v-btn>
     </template>
     <template #default="dialog">
-      <v-card :class="$style.card">
+      <v-card :class="css.card">
         <v-card-title class="d-flex justify-space-between pb-0">
           <div>
             {{ t('transactions.query_status.title') }}
@@ -48,11 +37,14 @@ const filtered = computed(() => {
           </v-btn>
         </v-card-title>
 
-        <transaction-query-status-current class="px-6 pb-4 text-caption" />
+        <transaction-query-status-current
+          :only-chains="onlyChains"
+          class="px-6 pb-4 text-caption"
+        />
 
         <div class="px-6 pb-4">
           <div
-            v-for="item in filtered"
+            v-for="item in sortedQueryStatus"
             :key="item.address + item.evmChain"
             :class="css.item"
           >

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type Suggestion } from '@/types/filtering';
+import { truncateAddress } from '@/filters';
 
 const props = defineProps({
   suggestion: {
@@ -37,9 +38,10 @@ const displayValue = computed(() => {
   return usedAsset.isCustomAsset ? usedAsset.name : usedAsset.symbol;
 });
 
-const displayText = computed(
-  () => `${get(suggestion).key}: ${get(displayValue)}`
-);
+const displayText = computed(() => {
+  const truncated = truncateAddress(get(displayValue), 10);
+  return `${get(suggestion).key}: ${truncated}`;
+});
 </script>
 
 <template>

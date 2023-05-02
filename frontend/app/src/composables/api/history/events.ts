@@ -15,11 +15,13 @@ import { type CollectionResponse } from '@/types/collection';
 import {
   type AddTransactionHashPayload,
   type AddressesAndEvmChainPayload,
+  type EditEvmHistoryEventPayload,
   HistoryEventDetail,
   type HistoryEventEntryWithMeta,
   type HistoryEventRequestPayload,
   HistoryEventsCollectionResponse,
-  type NewHistoryEvent,
+  type NewEvmHistoryEventPayload,
+  type OnlineHistoryEventsRequestPayload,
   type TransactionEventRequestPayload,
   type TransactionRequestPayload
 } from '@/types/history/events';
@@ -100,7 +102,7 @@ export const useHistoryEventsApi = () => {
   };
 
   const addTransactionEvent = async (
-    event: NewHistoryEvent
+    event: NewEvmHistoryEventPayload
   ): Promise<{ identifier: number }> => {
     const response = await api.instance.put<
       ActionResult<{ identifier: number }>
@@ -112,7 +114,7 @@ export const useHistoryEventsApi = () => {
   };
 
   const editTransactionEvent = async (
-    event: NewHistoryEvent
+    event: EditEvmHistoryEventPayload
   ): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       '/history/events',
@@ -201,6 +203,20 @@ export const useHistoryEventsApi = () => {
     return HistoryEventsCollectionResponse.parse(handleResponse(response));
   };
 
+  const queryOnlineHistoryEvents = async (
+    payload: OnlineHistoryEventsRequestPayload
+  ): Promise<PendingTask> => {
+    const response = await api.instance.post<ActionResult<PendingTask>>(
+      '/history/events/query',
+      snakeCaseTransformer(payload),
+      {
+        validateStatus: validStatus
+      }
+    );
+
+    return handleResponse(response);
+  };
+
   return {
     fetchEvmTransactionsTask,
     deleteEvmTransactions,
@@ -213,6 +229,7 @@ export const useHistoryEventsApi = () => {
     addTransactionHash,
     getTransactionTypeMappings,
     getHistoryEventCounterpartiesData,
-    fetchHistoryEvents
+    fetchHistoryEvents,
+    queryOnlineHistoryEvents
   };
 };

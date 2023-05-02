@@ -123,7 +123,7 @@ export const useAddressesNamesApi = () => {
     let url = `${api.instance.defaults.baseURL}avatars/ens/${ens}`;
 
     if (timestamp) {
-      url += `?timtesamp=${timestamp}`;
+      url += `?timestamp=${timestamp}`;
     }
 
     return url;

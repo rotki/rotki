@@ -1,17 +1,16 @@
 <script lang="ts" setup>
 import {
   type EvmChainAndTxHash,
-  type HistoryEvent,
-  type HistoryEventEntry
+  type EvmHistoryEvent
 } from '@/types/history/events';
 import type TransactionEventForm from '@/components/history/events/HistoryEventForm.vue';
 
 const props = withDefaults(
   defineProps<{
     value: boolean;
-    editableItem?: HistoryEvent | null;
+    editableItem?: EvmHistoryEvent | null;
     loading?: boolean;
-    transaction: HistoryEventEntry;
+    transaction: EvmHistoryEvent;
   }>(),
   {
     editableItem: null,

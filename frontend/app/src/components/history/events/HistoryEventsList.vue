@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { type DataTableHeader } from 'vuetify';
+import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type HistoryEventEntry } from '@/types/history/events';
+import { isEvmEvent } from '@/utils/history/events';
+import { type TablePagination } from '@/types/pagination';
 
 const props = withDefaults(
   defineProps<{
@@ -85,22 +88,41 @@ const editEvent = (item: HistoryEventEntry) => emit('edit:event', item);
 const deleteEvent = (item: HistoryEventEntry) =>
   emit('delete:event', { item, canDelete: get(events).length > 1 });
 
-const ignoredInAccounting: ComputedRef<boolean> = computed(
-  () => !!get(events)[0]?.ignoredInAccounting
+const ignoredInAccounting = useRefMap(
+  eventGroupHeader,
+  ({ ignoredInAccounting }) => !!ignoredInAccounting
 );
 
-const panel = ref<number[]>(get(ignoredInAccounting) ? [] : [0]);
-
-watch(ignoredInAccounting, (current, old) => {
-  if (old && !current) {
-    panel.value = [0];
-  } else if (!old && current) {
-    panel.value = [];
-  }
-});
+const panel: Ref<number[]> = ref(get(ignoredInAccounting) ? [] : [0]);
 
 const isNoTxHash = (item: HistoryEventEntry) =>
-  item.counterparty === 'eth2' && item.eventSubtype === 'deposit asset';
+  item.entryType === HistoryEventEntryType.EVM_EVENT &&
+  item.counterparty === 'eth2' &&
+  item.eventSubtype === 'deposit asset';
+
+const options: TablePagination<HistoryEventEntry> = {
+  itemsPerPage: -1,
+  page: 1,
+  sortBy: [],
+  sortDesc: []
+};
+
+const showDropdown = computed(() => {
+  const length = get(events).length;
+  return (get(ignoredInAccounting) || length > 10) && length > 0;
+});
+
+watch(
+  [eventGroupHeader, ignoredInAccounting],
+  ([current, currentIgnored], [old, oldIgnored]) => {
+    if (
+      current.eventIdentifier !== old.eventIdentifier ||
+      currentIgnored !== oldIgnored
+    ) {
+      set(panel, currentIgnored ? [] : [0]);
+    }
+  }
+);
 </script>
 
 <template>
@@ -117,9 +139,7 @@ const isNoTxHash = (item: HistoryEventEntry) =>
         multiple
       >
         <v-expansion-panel>
-          <v-expansion-panel-header
-            v-if="ignoredInAccounting && events.length > 0"
-          >
+          <v-expansion-panel-header v-if="showDropdown">
             <template #default="{ open }">
               <div class="primary--text font-weight-bold">
                 {{
@@ -136,7 +156,7 @@ const isNoTxHash = (item: HistoryEventEntry) =>
             <div
               class="my-n4"
               :class="{
-                'pt-4': ignoredInAccounting && events.length > 0
+                'pt-4': showDropdown
               }"
             >
               <data-table
@@ -147,39 +167,48 @@ const isNoTxHash = (item: HistoryEventEntry) =>
                 :loading-text="tc('transactions.events.loading')"
                 :no-data-text="tc('transactions.events.no_data')"
                 class="transparent"
+                :options="options"
                 hide-default-footer
                 :hide-default-header="$vuetify.breakpoint.mdAndUp"
               >
                 <template #progress><span /></template>
                 <template #item.type="{ item }">
-                  <history-event-type
-                    :event="item"
-                    :chain="getChain(item.location)"
-                  />
+                  <v-lazy>
+                    <history-event-type
+                      :event="item"
+                      :chain="getChain(item.location)"
+                    />
+                  </v-lazy>
                 </template>
                 <template #item.asset="{ item }">
-                  <history-event-asset
-                    :event="item"
-                    :show-event-detail="showEventDetail"
-                  />
+                  <v-lazy>
+                    <history-event-asset
+                      :event="item"
+                      :show-event-detail="showEventDetail"
+                    />
+                  </v-lazy>
                 </template>
                 <template #item.description="{ item }">
-                  <history-event-note
-                    :notes="item.notes"
-                    :amount="item.balance.amount"
-                    :asset="item.asset"
-                    :chain="getChain(item.location)"
-                    :no-tx-hash="isNoTxHash(item)"
-                    :validator-index="item.validatorIndex"
-                  />
+                  <v-lazy>
+                    <history-event-note
+                      v-bind="item"
+                      :amount="item.balance.amount"
+                      :chain="getChain(item.location)"
+                      :no-tx-hash="isNoTxHash(item)"
+                    />
+                  </v-lazy>
                 </template>
                 <template #item.actions="{ item }">
-                  <row-actions
-                    :delete-tooltip="tc('transactions.events.actions.delete')"
-                    :edit-tooltip="tc('transactions.events.actions.edit')"
-                    @edit-click="editEvent(item)"
-                    @delete-click="deleteEvent(item)"
-                  />
+                  <v-lazy>
+                    <row-actions
+                      align="end"
+                      :delete-tooltip="tc('transactions.events.actions.delete')"
+                      :edit-tooltip="tc('transactions.events.actions.edit')"
+                      :no-edit="!isEvmEvent(item)"
+                      @edit-click="editEvent(item)"
+                      @delete-click="deleteEvent(item)"
+                    />
+                  </v-lazy>
                 </template>
               </data-table>
             </div>
@@ -206,6 +235,8 @@ const isNoTxHash = (item: HistoryEventEntry) =>
             td {
               padding-top: 1rem !important;
               padding-bottom: 1rem !important;
+              min-height: 91px !important;
+              height: 91px !important;
 
               @media screen and (max-width: 599px) {
                 padding-left: 0 !important;
@@ -233,7 +264,7 @@ const isNoTxHash = (item: HistoryEventEntry) =>
   }
 
   &__actions {
-    width: 1px;
+    width: 100px;
     padding-right: 0 !important;
   }
 }

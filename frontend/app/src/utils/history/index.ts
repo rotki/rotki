@@ -32,11 +32,11 @@ export const getEthAddressesFromText = (notes: string[]): string[] =>
 
 export const toEvmChainAndTxHash = ({
   location,
-  eventIdentifier
+  txHash
 }: {
   location: string;
-  eventIdentifier: string;
+  txHash?: string;
 }): EvmChainAndTxHash => ({
   evmChain: location,
-  txHash: eventIdentifier
+  txHash: txHash || ''
 });

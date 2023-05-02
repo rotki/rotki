@@ -6,6 +6,7 @@ import {
   type XswapAsset,
   type XswapBalance
 } from '@rotki/common/lib/defi/xswap';
+import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 
@@ -223,6 +224,7 @@ const getIdentifier = (item: XswapBalance) => item.nftId;
       :protocols="['uniswap-v3']"
       :external-account-filter="selectedAccounts"
       :only-chains="chains"
+      :entry-types="[HistoryEventEntryType.EVM_EVENT]"
     />
   </div>
 </template>

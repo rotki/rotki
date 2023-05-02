@@ -1367,6 +1367,7 @@
     "tx": "Tx",
     "tx_hash": "Tx Hash",
     "type": "Type",
+    "validator_index": "Índice de validador",
     "value_in_symbol": "{symbol} Value",
     "visit_website": "To get a premium subscription please visit our {0}"
   },
@@ -1780,8 +1781,7 @@
       "validation": "The value should be 0-100%"
     },
     "ownership_percentage": "Ownership Percentage",
-    "public_key": "Public Key",
-    "validator_index": "Validator Index"
+    "public_key": "Public Key"
   },
   "eth2_page": {
     "loading": "Please wait while your ETH staking details are getting loaded...",
@@ -1907,6 +1907,8 @@
   "explorers": {
     "address": "Addresses",
     "address_url": "Addresses will open at {addressUrl}",
+    "block": "Blocks",
+    "block_url": "Blocks will open at {blockUrl}",
     "chain_selector": "Blockchain",
     "subtitle": "Set the external explorer urls for addresses and transaction",
     "title": "Blockchain explorers",
@@ -3753,6 +3755,9 @@
           "label": "Transaction Event Type"
         }
       },
+      "headers": {
+        "event_identifier": "Event information"
+      },
       "loading": "Loading events...",
       "view": {
         "hide": "Hide events",
@@ -3786,11 +3791,9 @@
       "title": "Ethereum Transaction Query Status"
     },
     "redecode_events": {
-      "all": "All events",
-      "this_page": "Only this page",
-      "title": "Redecode Events"
+      "title": "Redecode EVM Events"
     },
-    "refresh_tooltip": "Refresh evm transactions",
+    "refresh_tooltip": "Fetch latest events",
     "title": "History Events",
     "unignore": "Unignore Tx in Accounting"
   },
@@ -3871,9 +3874,6 @@
     "logout": "Cerrar sesión",
     "settings": "Ajustes",
     "switch_theme": "Cambiar tema"
-  },
-  "validator_display": {
-    "validator_index": "Índice de validador:"
   },
   "validator_filter_input": {
     "label": "Select validator"

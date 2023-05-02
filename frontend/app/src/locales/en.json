@@ -648,6 +648,16 @@
         "message_title": "Backend messages"
       }
     },
+    "online_events": {
+      "error": {
+        "description": "Failed query online events with query type {queryType}: {error}",
+        "title": "Online Events Query"
+      },
+      "task": {
+        "description": "Requesting new {queryType} events",
+        "title": "Querying events"
+      }
+    },
     "reports": {
       "csv_export": {
         "message": {
@@ -1440,6 +1450,7 @@
     "tx": "Tx",
     "tx_hash": "Tx Hash",
     "type": "Type",
+    "validator_index": "Validator Index",
     "value_in_symbol": "{symbol} Value",
     "visit_website": "To get a premium subscription please visit our {0}"
   },
@@ -1892,8 +1903,7 @@
       "validation": "The value should be 0-100%"
     },
     "ownership_percentage": "Ownership Percentage",
-    "public_key": "Public Key",
-    "validator_index": "Validator Index"
+    "public_key": "Public Key"
   },
   "eth2_page": {
     "loading": "Please wait while your ETH staking details are getting loaded...",
@@ -2026,6 +2036,8 @@
   "explorers": {
     "address": "Addresses",
     "address_url": "Addresses will open at {addressUrl}",
+    "block": "Blocks",
+    "block_url": "Blocks will open at {blockUrl}",
     "chain_selector": "Blockchain",
     "subtitle": "Set the external explorer urls for addresses and transaction",
     "title": "Blockchain explorers",
@@ -4019,7 +4031,12 @@
         }
       },
       "headers": {
-        "event_identifier": "Event group ID"
+        "event_identifier": "Event information",
+        "history_event": "{location} {type} Events",
+        "eth_block_event": "Block {blockNumber} produced",
+        "eth_withdrawal_event": "Withdrawal for validator {validatorIndex}",
+        "evm_event": "Transaction {txHash}",
+        "eth_deposit_event": "Deposit events {txHash}"
       },
       "loading": "Loading events...",
       "no_data": "Events are hidden because they contain ignored assets",
@@ -4033,9 +4050,12 @@
       "asset": "filter by the asset of the events",
       "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
       "end_date": "filter by the end date of the transaction period",
+      "entry_type": "filter by entry type",
       "location": "filter by event location",
       "protocol": "filter by the protocol / counterparty of the events",
-      "start_date": "filter by the start date of the transaction period"
+      "start_date": "filter by the start date of the transaction period",
+      "tx_hash": "filter by tx hash(es)",
+      "validator_index": "filter by validator index(es)"
     },
     "form": {
       "account": {
@@ -4069,12 +4089,21 @@
       },
       "title": "Evm Transaction Query Status"
     },
-    "redecode_events": {
-      "all": "All events",
-      "this_page": "Only this page",
-      "title": "Redecode Events"
+    "query_status_events": {
+      "date_range": "Querying events for {name} between {start} and {end}",
+      "done_date_range": "Done querying all events for {name} between {start} and {end}",
+      "done_end_date": "Done querying all events for {name} until {end}",
+      "done_group": "Done querying all events for {length} location(s)",
+      "end_date": "Querying events for {name} until {end}",
+      "group": "Querying events for {length} location(s)",
+      "latest_period_date_range": "Latest successfully queried period is between {start} and {end}",
+      "latest_period_end_date": "Latest successfully queried period is until {end}",
+      "title": "History Events Query Status"
     },
-    "refresh_tooltip": "Refresh evm transactions",
+    "redecode_events": {
+      "title": "Redecode EVM Events"
+    },
+    "refresh_tooltip": "Fetch latest events",
     "title": "History Events",
     "unignore": "Unignore Tx in Accounting"
   },
@@ -4155,9 +4184,6 @@
     "logout": "Logout",
     "settings": "Settings",
     "switch_theme": "Switch Theme"
-  },
-  "validator_display": {
-    "validator_index": "Validator Index:"
   },
   "validator_filter_input": {
     "label": "Select validator"

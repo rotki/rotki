@@ -1404,6 +1404,7 @@
     "tx": "Tx",
     "tx_hash": "交易哈希",
     "type": "类型",
+    "validator_index": "验证器索引",
     "value_in_symbol": "{symbol} 值",
     "visit_website": "要获得高级订阅，请访问我们的 {0}"
   },
@@ -1827,8 +1828,7 @@
       "validation": "该值应为 0-100%"
     },
     "ownership_percentage": "所有权百分比",
-    "public_key": "公钥",
-    "validator_index": "验证器索引"
+    "public_key": "公钥"
   },
   "eth2_page": {
     "loading": "正在加载您的 eth2 质押详细信息，请稍候...",
@@ -1954,6 +1954,8 @@
   "explorers": {
     "address": "地址",
     "address_url": "地址将在 {addressUrl} 打开",
+    "block": "积木",
+    "block_url": "块将在 {blockUrl} 打开",
     "chain_selector": "区块链",
     "subtitle": "设置地址和交易的外部资源管理器 url",
     "title": "区块链探索者",
@@ -3869,6 +3871,9 @@
           "label": "交易事件类型"
         }
       },
+      "headers": {
+        "event_identifier": "事件组 ID"
+      },
       "loading": "正在加载事件...",
       "no_data": "事件被隐藏是因为它们包含被忽略的资产",
       "view": {
@@ -3881,9 +3886,12 @@
       "asset": "按事件的资产过滤",
       "date_hint": "format {format} HH:mm:ss(时间/秒可选)",
       "end_date": "按交易周期结束日期筛选",
+      "entry_type": "按条目类型过滤",
       "location": "按活动地点过滤",
       "protocol": "按事件的协议/交易对手过滤",
-      "start_date": "按交易周期开始日期筛选"
+      "start_date": "按交易周期开始日期筛选",
+      "tx_hash": "按 tx hash (es) 过滤",
+      "validator_index": "按 validator_index(s) 过滤"
     },
     "ignore": "在会计中忽略 Tx",
     "label": "交易",
@@ -3904,11 +3912,9 @@
       "title": "evm交易查询状态"
     },
     "redecode_events": {
-      "all": "所有事件",
-      "this_page": "只有这个页面",
-      "title": "重新解码事件"
+      "title": "重新解码 EVM 事件"
     },
-    "refresh_tooltip": "刷新 evm 交易",
+    "refresh_tooltip": "获取最新事件",
     "title": "历史事件",
     "unignore": "在会计中忽略交易"
   },
@@ -3989,9 +3995,6 @@
     "logout": "注销",
     "settings": "设置",
     "switch_theme": "切换主题"
-  },
-  "validator_display": {
-    "validator_index": "验证器索引："
   },
   "validator_filter_input": {
     "label": "选择验证器"

@@ -34,7 +34,7 @@ const { t } = useI18n();
     <div>
       <span v-if="horizontal" :class="$style.divider"> - </span>
       <span v-else class="text-caption">
-        {{ t('validator_display.validator_index') }}
+        {{ t('common.validator_index') }}:
       </span>
       {{ validator.validatorIndex }}
     </div>

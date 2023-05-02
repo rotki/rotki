@@ -11,6 +11,7 @@ export enum Section {
   ASSET_MOVEMENT,
   TRADES,
   TX,
+  EVENT,
   BLOCKCHAIN_BTC,
   BLOCKCHAIN_BCH,
   BLOCKCHAIN_ETH,

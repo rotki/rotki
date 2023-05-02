@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type HistoryEventEntry } from '@/types/history/events';
-import { isValidTxHash } from '@/utils/text';
+import HistoryEventTypeCounterparty from '@/components/history/events/HistoryEventTypeCounterparty.vue';
+import {
+  isEthDepositEventRef,
+  isEvmEventRef,
+  isOnlineHistoryEventType
+} from '@/utils/history/events';
 
 const props = defineProps<{
   event: HistoryEventEntry;
@@ -11,74 +16,57 @@ const props = defineProps<{
 const { event } = toRefs(props);
 
 const { dark } = useTheme();
-const { getEventTypeData, getEventCounterpartyData } =
-  useHistoryEventMappings();
-
+const { getEventTypeData } = useHistoryEventMappings();
 const attrs = getEventTypeData(event);
-const counterparty = getEventCounterpartyData(event);
-
-const isTx: ComputedRef<boolean> = computed(() =>
-  isValidTxHash(get(event).eventIdentifier)
-);
 
 const { t } = useI18n();
-const imagePath = '/assets/images/protocols/';
+
+const entryType = useRefMap(event, ({ entryType }) => entryType);
+const onlineEvent = isOnlineHistoryEventType(entryType);
+const evmOrEthDepositEvent = computed(
+  () => get(isEvmEventRef(event)) || get(isEthDepositEventRef(event))
+);
+
+const [DefineAvatar, ReuseAvatar] = createReusableTemplate();
+const { locationData } = useLocations();
 </script>
 
 <template>
   <div class="d-flex align-center text-left">
-    <v-badge v-if="counterparty || event.address" avatar overlap color="white">
-      <template #badge>
-        <v-tooltip top>
-          <template #activator="{ on }">
-            <div v-on="on">
-              <v-avatar v-if="counterparty">
-                <v-icon v-if="counterparty.icon" :color="counterparty.color">
-                  {{ counterparty.icon }}
-                </v-icon>
-
-                <v-img
-                  v-else-if="counterparty.image"
-                  :src="`${imagePath}${counterparty.image}`"
-                  contain
-                />
-
-                <ens-avatar v-else :address="counterparty.label" />
-              </v-avatar>
-              <v-avatar v-else>
-                <ens-avatar :address="event.address" />
-              </v-avatar>
-            </div>
-          </template>
-          <div>{{ counterparty?.label || event.address }}</div>
-        </v-tooltip>
-      </template>
+    <define-avatar #default="{ type }">
       <v-avatar
         class="text--darken-4"
         :color="dark ? 'white' : 'grey lighten-3'"
         :size="36"
       >
-        <v-icon :size="20" :color="attrs.color || 'grey darken-2'">
-          {{ attrs.icon }}
+        <v-icon :size="20" :color="type.color || 'grey darken-2'">
+          {{ type.icon }}
         </v-icon>
       </v-avatar>
-    </v-badge>
-    <v-avatar
-      v-else
-      class="text--darken-4"
-      :color="dark ? 'white' : 'grey lighten-3'"
-      :size="36"
+    </define-avatar>
+
+    <history-event-type-counterparty
+      v-if="evmOrEthDepositEvent"
+      :event="evmOrEthDepositEvent"
     >
-      <v-icon :size="20" :color="attrs.color || 'grey darken-2'">
-        {{ attrs.icon }}
-      </v-icon>
-    </v-avatar>
+      <reuse-avatar :type="attrs" />
+    </history-event-type-counterparty>
+    <reuse-avatar v-else :type="attrs" />
+
     <div class="ml-4">
       <div class="font-weight-bold text-uppercase">{{ attrs.label }}</div>
-      <div v-if="event.locationLabel" class="grey--text">
+      <div v-if="event.locationLabel" class="grey--text d-flex align-center">
+        <location-icon
+          v-if="onlineEvent"
+          icon
+          no-padding
+          :item="locationData(event.location)"
+          size="16px"
+          class="mr-1"
+        />
         <hash-link
-          :show-icon="isTx"
-          :no-link="!isTx"
+          :show-icon="!onlineEvent"
+          :no-link="onlineEvent"
           :text="event.locationLabel"
           :chain="chain"
         />

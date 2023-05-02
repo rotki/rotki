@@ -7,6 +7,7 @@ import {
 import {
   type BalanceSnapshotError,
   type EvmTransactionQueryData,
+  type HistoryEventsQueryData,
   MESSAGE_WARNING,
   type MissingApiKey,
   type NewDetectedToken,
@@ -19,7 +20,8 @@ import { Routes } from '@/router/routes';
 import router from '@/router';
 
 export const useMessageHandling = () => {
-  const { setQueryStatus } = useTxQueryStatusStore();
+  const { setQueryStatus: setTxQueryStatus } = useTxQueryStatusStore();
+  const { setQueryStatus: setEventsQueryStatus } = useEventsQueryStatusStore();
   const { updateDataMigrationStatus, updateDbUpgradeStatus } =
     useSessionAuthStore();
   const notificationsStore = useNotificationsStore();
@@ -36,10 +38,12 @@ export const useMessageHandling = () => {
     display: true
   });
 
-  const handleEthereumTransactionStatus = (
-    data: EvmTransactionQueryData
-  ): void => {
-    setQueryStatus(data);
+  const handleEvmTransactionsStatus = (data: EvmTransactionQueryData): void => {
+    setTxQueryStatus(data);
+  };
+
+  const handleHistoryEventsStatus = (data: HistoryEventsQueryData): void => {
+    setEventsQueryStatus(data);
   };
 
   const handleLegacyMessage = (
@@ -162,7 +166,9 @@ export const useMessageHandling = () => {
       const isWarning = data.verbosity === MESSAGE_WARNING;
       notifications.push(handleLegacyMessage(data.value, isWarning));
     } else if (type === SocketMessageType.EVM_TRANSACTION_STATUS) {
-      handleEthereumTransactionStatus(message.data);
+      handleEvmTransactionsStatus(message.data);
+    } else if (type === SocketMessageType.HISTORY_EVENTS_STATUS) {
+      handleHistoryEventsStatus(message.data);
     } else if (type === SocketMessageType.PREMIUM_STATUS_UPDATE) {
       const notification = handlePremiumStatusUpdate(message.data);
       if (notification) {
@@ -193,7 +199,7 @@ export const useMessageHandling = () => {
       } else if (object.type === SocketMessageType.BALANCES_SNAPSHOT_ERROR) {
         notifications.push(handleSnapshotError(object));
       } else if (object.type === SocketMessageType.EVM_TRANSACTION_STATUS) {
-        await handleEthereumTransactionStatus(object);
+        await handleEvmTransactionsStatus(object);
       } else if (object.type === SocketMessageType.DB_UPGRADE_STATUS) {
         await updateDbUpgradeStatus(object);
       } else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS) {

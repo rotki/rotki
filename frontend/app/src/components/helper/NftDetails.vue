@@ -120,7 +120,7 @@ const fallbackData = computed(() => {
 <template>
   <div>
     <div class="d-flex align-center overflow-hidden">
-      <div :class="css.wrapper">
+      <div class="cursor-pointer">
         <v-tooltip
           top
           :disabled="renderImage"
@@ -217,9 +217,5 @@ const fallbackData = computed(() => {
     overflow: hidden;
     white-space: nowrap;
   }
-}
-
-.wrapper {
-  cursor: pointer;
 }
 </style>
