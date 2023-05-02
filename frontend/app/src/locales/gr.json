@@ -3140,24 +3140,8 @@
       "daily_stats": "Daily Stats",
       "earned": "Earned",
       "headers": {
-        "attestations": "Attestations",
-        "blocks": "Blocks",
-        "deposited_amount": "Deposited Amount",
-        "deposits_number": "Deposits Number",
-        "end": "End",
-        "included_attester_slashings": "Included Attester Slashings",
         "income": "Income",
-        "missed_attestations": "Missed Attestations",
-        "missed_blocks": "Missed Blocks",
-        "orphaned_attestations": "Orphaned Attestations",
-        "orphaned_blocks": "Orphaned Blocks",
-        "proposed_blocks": "Proposed Blocks",
-        "proposer_attester_slashings": "Proposer Attester Slashings",
-        "public_key": "Public key",
-        "slashing": "Slashing",
-        "start": "Start",
-        "validator": "Validator",
-        "value": "Value"
+        "validator": "Validator"
       },
       "overview": "Overview",
       "ranges": {

@@ -3222,24 +3222,8 @@
       "daily_stats": "每日统计",
       "earned": "获得",
       "headers": {
-        "attestations": "证明",
-        "blocks": "块",
-        "deposited_amount": "存款金额",
-        "deposits_number": "存款数量",
-        "end": "结束",
-        "included_attester_slashings": "包括证明者罚没",
         "income": "收入",
-        "missed_attestations": "遗漏证明",
-        "missed_blocks": "错过的区块",
-        "orphaned_attestations": "孤立的证明",
-        "orphaned_blocks": "孤立块",
-        "proposed_blocks": "提议的区块",
-        "proposer_attester_slashings": "提议者证明者削减",
-        "public_key": "公钥",
-        "slashing": "削减",
-        "start": "开始",
-        "validator": "验证器",
-        "value": "价值"
+        "validator": "验证器"
       },
       "overview": "概述",
       "ranges": {
