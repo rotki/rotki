@@ -604,6 +604,9 @@ class TaskManager():
         if len(indices) == 0:
             return None
 
+        if self.chains_aggregator.beaconchain.produced_blocks_lock.locked():
+            return None  # task is already running, either api or periodic
+
         task_name = 'Periodically query produced blocks'
         log.debug(f'Scheduling task to {task_name}')
         return [self.greenlet_manager.spawn_and_track(
@@ -619,6 +622,9 @@ class TaskManager():
         eth2 = self.chains_aggregator.get_module('eth2')
         if eth2 is None:
             return None
+
+        if eth2.withdrawals_query_lock.locked():
+            return None  # already running
 
         now = ts_now()
         with self.database.conn.read_ctx() as cursor:

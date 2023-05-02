@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 
 import gevent
 import requests
+from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.eth2 import EthBlockEvent
@@ -68,6 +69,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         self.warning_given = False
         set_user_agent(self.session)
         self.url = f'{BEACONCHAIN_ROOT_URL}/api/v1/'
+        self.produced_blocks_lock = Semaphore()
 
     def _query(
             self,
@@ -284,6 +286,13 @@ class BeaconChain(ExternalServiceWithApiKey):
         return performance
 
     def get_and_store_produced_blocks(
+            self,
+            indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
+    ) -> None:
+        with self.produced_blocks_lock:
+            return self._get_and_store_produced_blocks(indices_or_pubkeys)
+
+    def _get_and_store_produced_blocks(
             self,
             indices_or_pubkeys: Union[list[int], list[Eth2PubKey]],
     ) -> None:
