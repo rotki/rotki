@@ -1,6 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Zero, bigNumberify } from '@/utils/bignumbers';
-import { waitForAsyncQuery } from '../../support/utils';
+import { setCheckBox, waitForAsyncQuery } from '../../support/utils';
 import { AccountBalancesPage } from './index';
 
 export interface FixtureBlockchainBalance {
@@ -28,6 +28,11 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
     cy.get('[data-cy="account-blockchain-field"]').parent().click();
     cy.get('.v-menu__content').contains(balance.blockchain).click();
     cy.get('[data-cy="input-mode-manual"]').click();
+
+    if (balance.blockchain === 'ETH') {
+      setCheckBox('[data-cy="account-all-evm-chains"]', false);
+    }
+
     cy.get('[data-cy="account-address-field"]').type(balance.address);
     cy.get('[data-cy="account-label-field"]').type(balance.label);
 

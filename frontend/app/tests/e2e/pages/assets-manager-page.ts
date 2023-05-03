@@ -1,7 +1,9 @@
 export class AssetsManagerPage {
   visit() {
     cy.get('.v-app-bar__nav-icon').click();
+    cy.get('.navigation__asset-manager').scrollIntoView();
     cy.get('.navigation__asset-manager').click();
+    cy.get('[data-cy="managed-assets-table"]').should('be.visible');
   }
 
   ignoredAssets() {
