@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { type Blockchain } from '@rotki/common/lib/blockchain';
-
 const props = withDefaults(
   defineProps<{
-    locations?: Blockchain[];
+    locations?: string[];
   }>(),
   {
     locations: () => []
@@ -14,21 +12,22 @@ const { locations } = toRefs(props);
 
 const { t } = useI18n();
 
-const { isAllFinished } = toRefs(useEventsQueryStatusStore());
-const { queryingLength, length } = useEventsQueryStatus(locations);
+const { queryingLength, length, isAllFinished } =
+  useEventsQueryStatus(locations);
 </script>
 
 <template>
-  <div>
-    <div v-if="isAllFinished">
+  <query-status-current :finished="isAllFinished">
+    <template #finished>
       {{ t('transactions.query_status_events.done_group', { length }) }}
-    </div>
-    <div v-else>
+    </template>
+
+    <template #running>
       {{
         t('transactions.query_status_events.group', {
           length: queryingLength
         })
       }}
-    </div>
-  </div>
+    </template>
+  </query-status-current>
 </template>

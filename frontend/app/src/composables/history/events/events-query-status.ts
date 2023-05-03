@@ -3,8 +3,8 @@ import { type HistoryEventsQueryData } from '@/types/websocket-messages';
 
 export const useEventsQueryStatus = (locations: MaybeRef<string[]> = []) => {
   const store = useEventsQueryStatusStore();
-  const { isStatusFinished } = store;
-  const { queryStatus } = storeToRefs(store);
+  const { isStatusFinished, resetQueryStatus } = store;
+  const { queryStatus, isAllFinished } = storeToRefs(store);
 
   const filtered: ComputedRef<HistoryEventsQueryData[]> = computed(() => {
     const statuses = Object.values(get(queryStatus));
@@ -33,9 +33,20 @@ export const useEventsQueryStatus = (locations: MaybeRef<string[]> = []) => {
   const { sortedQueryStatus, queryingLength, length, isQueryStatusRange } =
     useQueryStatus(filtered, isStatusFinished);
 
+  const { locationData } = useLocations();
+
+  const getKey = (item: HistoryEventsQueryData) => item.location + item.name;
+
+  const getLocation = (item: HistoryEventsQueryData) =>
+    get(locationData(item.location));
+
   return {
     getItemTranslationKey,
     isStatusFinished,
+    getKey,
+    getLocation,
+    resetQueryStatus,
+    isAllFinished,
     sortedQueryStatus,
     filtered,
     queryingLength,

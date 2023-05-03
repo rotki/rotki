@@ -13,99 +13,38 @@ const props = withDefaults(
 
 const { onlyChains } = toRefs(props);
 
-const openStatusDropdown = ref<boolean>(false);
-
-const store = useTxQueryStatusStore();
-const { isAllFinished } = toRefs(store);
-
-const { sortedQueryStatus, length } = useTransactionQueryStatus(onlyChains);
-
-const { isStatusFinished, resetQueryStatus } = store;
-
-const css = useCssModule();
+const {
+  sortedQueryStatus,
+  getKey,
+  isStatusFinished,
+  resetQueryStatus,
+  isAllFinished
+} = useTransactionQueryStatus(onlyChains);
 </script>
 
 <template>
-  <tr v-if="length > 0" :class="css.tr">
-    <td :colspan="colspan" class="py-2">
-      <div class="d-flex">
-        <div v-if="isAllFinished" class="pr-2">
-          <v-btn icon @click="resetQueryStatus()">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </div>
-        <div class="pr-2">
-          <v-btn
-            v-if="length > 1 && !isAllFinished"
-            icon
-            @click="openStatusDropdown = !openStatusDropdown"
-          >
-            <v-icon v-if="openStatusDropdown"> mdi-chevron-up </v-icon>
-            <v-icon v-else> mdi-chevron-down </v-icon>
-          </v-btn>
-        </div>
-        <div>
-          <div
-            v-if="isAllFinished || (!openStatusDropdown && length > 1)"
-            class="py-2 d-flex align-center"
-          >
-            <div class="mr-4">
-              <v-progress-circular
-                v-if="!isAllFinished"
-                size="20"
-                color="primary"
-                width="2"
-                indeterminate
-              />
-              <v-icon v-else color="green" :class="css['check-icon']">
-                mdi-check-circle
-              </v-icon>
-            </div>
-            <transaction-query-status-current :only-chains="onlyChains" />
-          </div>
-          <div
-            v-for="item in sortedQueryStatus"
-            v-else
-            :key="item.address + item.evmChain"
-            class="d-flex align-center"
-          >
-            <div class="mr-4">
-              <v-progress-circular
-                v-if="!isStatusFinished(item)"
-                size="20"
-                color="primary"
-                width="2"
-                indeterminate
-              />
-              <v-icon v-else color="green" :class="css['check-icon']">
-                mdi-check-circle
-              </v-icon>
-            </div>
+  <query-status-bar
+    :colspan="colspan"
+    :items="sortedQueryStatus"
+    :get-key="getKey"
+    :is-item-finished="isStatusFinished"
+    :finished="isAllFinished"
+    @reset="resetQueryStatus()"
+  >
+    <template #current>
+      <transaction-query-status-current :only-chains="onlyChains" />
+    </template>
 
-            <adaptive-wrapper>
-              <evm-chain-icon :chain="item.evmChain" size="20px" />
-            </adaptive-wrapper>
+    <template #item="{ item }">
+      <adaptive-wrapper>
+        <evm-chain-icon :chain="item.evmChain" size="20px" />
+      </adaptive-wrapper>
 
-            <transaction-query-status-line :item="item" class="ms-2" />
-          </div>
-        </div>
-        <v-spacer />
-        <transaction-query-status-dialog :only-chains="onlyChains" />
-      </div>
-    </td>
-  </tr>
+      <transaction-query-status-line :item="item" class="ms-2" />
+    </template>
+
+    <template #dialog>
+      <transaction-query-status-dialog :only-chains="onlyChains" />
+    </template>
+  </query-status-bar>
 </template>
-
-<style module lang="scss">
-.tr {
-  background: transparent !important;
-}
-
-.row {
-  display: flex;
-}
-
-.check-icon {
-  margin: -2px;
-}
-</style>

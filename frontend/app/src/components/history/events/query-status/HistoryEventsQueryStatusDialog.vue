@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { type HistoryEventsQueryData } from '@/types/websocket-messages';
 
 const props = withDefaults(
   defineProps<{
-    locations?: Blockchain[];
+    locations?: string[];
   }>(),
   {
     locations: () => []
@@ -13,89 +13,50 @@ const props = withDefaults(
 const { locations } = toRefs(props);
 
 const { t } = useI18n();
-const css = useCssModule();
 
-const { sortedQueryStatus } = useEventsQueryStatus(locations);
+const { sortedQueryStatus, getKey, getLocation } =
+  useEventsQueryStatus(locations);
 
-const { locationData } = useLocations();
+const showTooltip = (item: HistoryEventsQueryData) => !!item.period;
 </script>
 
 <template>
-  <v-dialog width="1200">
-    <template #activator="{ on }">
-      <v-btn text class="ml-4" v-on="on">
-        {{ t('common.details') }}
-        <v-icon small>mdi-chevron-right</v-icon>
-      </v-btn>
+  <query-status-dialog
+    :get-key="getKey"
+    :items="sortedQueryStatus"
+    :show-tooltip="showTooltip"
+  >
+    <template #title>
+      {{ t('transactions.query_status_events.title') }}
     </template>
-    <template #default="dialog">
-      <v-card :class="css.card">
-        <v-card-title class="d-flex justify-space-between pb-0">
-          <div>
-            {{ t('transactions.query_status_events.title') }}
-          </div>
-          <v-btn icon @click="dialog.value = false">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
 
-        <history-events-query-status-current
-          :locations="locations"
-          class="px-6 pb-4 text-caption"
-        />
-
-        <div class="px-6 pb-4">
-          <div
-            v-for="item in sortedQueryStatus"
-            :key="item.location + item.name"
-            :class="css.item"
-          >
-            <div class="d-flex align-center">
-              <location-icon
-                icon
-                no-padding
-                :item="locationData(item.location)"
-                size="20px"
-              />
-
-              <history-events-query-status-line :item="item" class="ms-2" />
-
-              <v-tooltip v-if="item.period" bottom>
-                <template #activator="{ on }">
-                  <v-icon class="ml-2" v-on="on"> mdi-help-circle </v-icon>
-                </template>
-
-                <i18n
-                  :path="
-                    item.period[0] === 0
-                      ? 'transactions.query_status_events.latest_period_end_date'
-                      : 'transactions.query_status_events.latest_period_date_range'
-                  "
-                >
-                  <template #start>
-                    <date-display :timestamp="item.period[0]" />
-                  </template>
-                  <template #end>
-                    <date-display :timestamp="item.period[1]" />
-                  </template>
-                </i18n>
-              </v-tooltip>
-            </div>
-          </div>
-        </div>
-      </v-card>
+    <template #current>
+      <history-events-query-status-current
+        :locations="locations"
+        class="px-6 pb-4 text-caption"
+      />
     </template>
-  </v-dialog>
+
+    <template #item="{ item }">
+      <location-icon icon no-padding :item="getLocation(item)" size="20px" />
+      <history-events-query-status-line :item="item" class="ms-2" />
+    </template>
+
+    <template #tooltip="{ item }">
+      <i18n
+        :path="
+          item.period[0] === 0
+            ? 'transactions.query_status_events.latest_period_end_date'
+            : 'transactions.query_status_events.latest_period_date_range'
+        "
+      >
+        <template #start>
+          <date-display :timestamp="item.period[0]" />
+        </template>
+        <template #end>
+          <date-display :timestamp="item.period[1]" />
+        </template>
+      </i18n>
+    </template>
+  </query-status-dialog>
 </template>
-
-<style module lang="scss">
-.item {
-  padding: 1rem 0;
-  border-top: 1px solid var(--v-rotki-light-grey-darken1);
-}
-
-.card {
-  width: 100%;
-  overflow: auto;
-}
-</style>

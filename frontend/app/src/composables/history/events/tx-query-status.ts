@@ -10,8 +10,8 @@ export const useTransactionQueryStatus = (
 ) => {
   const { tc } = useI18n();
   const store = useTxQueryStatusStore();
-  const { isStatusFinished } = store;
-  const { queryStatus } = storeToRefs(store);
+  const { isStatusFinished, resetQueryStatus } = store;
+  const { queryStatus, isAllFinished } = storeToRefs(store);
   const { getChain } = useSupportedChains();
 
   const filtered: ComputedRef<EvmTransactionQueryData[]> = computed(() => {
@@ -83,11 +83,17 @@ export const useTransactionQueryStatus = (
   const { sortedQueryStatus, queryingLength, length, isQueryStatusRange } =
     useQueryStatus(filtered, isStatusFinished);
 
+  const getKey = (item: EvmTransactionQueryData) =>
+    item.address + item.evmChain;
+
   return {
     getLabel,
     getStatusData,
     getItemTranslationKey,
     isStatusFinished,
+    getKey,
+    resetQueryStatus,
+    isAllFinished,
     sortedQueryStatus,
     filtered,
     queryingLength,
