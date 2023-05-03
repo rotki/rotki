@@ -1,6 +1,16 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import { getValidSelectorFromEvmAddress } from '@/utils/assets';
 
+export const setCheckBox = (selector: string, enabled = false) => {
+  const slot = `${selector} .v-input__slot`;
+  const input = `${selector} input`;
+
+  cy.get(slot).should('be.visible');
+  cy.get(input).should('have.attr', 'aria-checked', `${!enabled}`);
+  cy.get(slot).click();
+  cy.get(input).should('have.attr', 'aria-checked', `${enabled}`);
+};
+
 export function selectAsset(element: string, value: string, id?: string) {
   cy.get(element).type(value);
   const identifier = getValidSelectorFromEvmAddress(

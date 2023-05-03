@@ -137,7 +137,12 @@ onMounted(() => {
       @update:selection="selectedModules = $event"
     />
 
-    <v-sheet v-if="evmChain && !accountToEdit" outlined rounded>
+    <v-sheet
+      v-if="evmChain && !accountToEdit"
+      outlined
+      rounded
+      data-cy="account-all-evm-chains"
+    >
       <v-checkbox
         v-model="allEvmChains"
         :disabled="loading"
