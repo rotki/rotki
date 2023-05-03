@@ -1,10 +1,19 @@
 <script setup lang="ts">
-defineProps({
-  loading: { required: true, type: Boolean },
-  tooltip: { required: true, type: String }
-});
+withDefaults(
+  defineProps<{
+    loading?: boolean;
+    tooltip: string;
+    disabled?: boolean;
+  }>(),
+  {
+    disabled: false,
+    loading: false
+  }
+);
 
-const emit = defineEmits(['refresh']);
+const emit = defineEmits<{
+  (e: 'refresh'): void;
+}>();
 
 const refresh = () => {
   emit('refresh');
@@ -19,7 +28,7 @@ const refresh = () => {
         text
         small
         depressed
-        :disabled="loading"
+        :disabled="loading || disabled"
         v-bind="attrs"
         @click="refresh()"
         v-on="on"
