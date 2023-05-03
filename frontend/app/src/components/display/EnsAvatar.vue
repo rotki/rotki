@@ -28,17 +28,25 @@ const { getBlockie } = useBlockie();
 const css = useCssModule();
 
 const success: Ref<boolean> = ref(false);
+const failed: Ref<boolean> = ref(false);
 </script>
 
 <template>
   <v-lazy :class="css.wrapper">
     <div>
-      <v-img v-if="!success" :src="getBlockie(address)" />
+      <v-img v-if="!avatarUrl || failed" :src="getBlockie(address)" />
+      <v-skeleton-loader
+        v-else-if="avatarUrl && !success"
+        type="image"
+        width="24px"
+        height="24px"
+      />
       <v-img
         v-if="avatarUrl"
         :class="css.avatar"
         :src="avatarUrl"
         @load="success = true"
+        @error="failed = true"
       />
     </div>
   </v-lazy>
