@@ -1,12 +1,18 @@
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, HistoryEvent
+from rotkehlchen.accounting.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.filtering import EvmEventFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.tests.utils.factories import make_evm_tx_hash
+from rotkehlchen.tests.utils.factories import (
+    make_ethereum_event,
+    make_evm_address,
+    make_evm_tx_hash,
+)
 from rotkehlchen.types import ChainID, Location, TimestampMS, deserialize_evm_tx_hash
 
 
@@ -158,3 +164,38 @@ def test_read_write_events_from_db(database):
                         address=data_entry[5],
                     )
                 assert event == expected_event
+
+
+def test_delete_last_event(database):
+    """
+    Test that if last event in a group is being deleted and it's not an EVM event,
+    then the deletion is allowed.
+    """
+    db = DBHistoryEvents(database)
+    with db.db.user_write() as write_cursor:
+        withdrawal_event_identifier = db.add_history_event(
+            write_cursor=write_cursor,
+            event=EthWithdrawalEvent(
+                validator_index=1000,
+                timestamp=TimestampMS(1683115229000),
+                balance=Balance(amount=ONE),
+                withdrawal_address=make_evm_address(),
+                is_exit=True,
+            ),
+        )
+        evm_event_identifier = db.add_history_event(
+            write_cursor=write_cursor,
+            event=make_ethereum_event(index=1),
+        )
+    with db.db.conn.read_ctx() as cursor:
+        assert len(db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)) == 2
+
+    msg = db.delete_history_events_by_identifier(identifiers=[withdrawal_event_identifier])
+    assert msg is None
+    with db.db.conn.read_ctx() as cursor:
+        assert len(db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)) == 1, 'Only the EVM event should be left'  # noqa: E501
+
+    msg = db.delete_history_events_by_identifier(identifiers=[evm_event_identifier])
+    assert 'was the last event of a transaction' in msg
+    with db.db.conn.read_ctx() as cursor:
+        assert len(db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)) == 1, 'EVM event should be left'  # noqa: E501

@@ -188,11 +188,11 @@ class DBHistoryEvents():
         for identifier in identifiers:
             with self.db.conn.read_ctx() as cursor:
                 cursor.execute(
-                    'SELECT COUNT(*) FROM history_events WHERE event_identifier=('
-                    'SELECT event_identifier FROM history_events WHERE identifier=?)',
-                    (identifier,),
+                    'SELECT COUNT(*) == 1 FROM history_events WHERE event_identifier=(SELECT '
+                    'event_identifier FROM history_events WHERE identifier=? AND entry_type=?)',
+                    (identifier, HistoryBaseEntryType.EVM_EVENT.serialize_for_db()),
                 )
-                if cursor.fetchone()[0] == 1:
+                if bool(cursor.fetchone()[0]) is True:
                     return (
                         f'Tried to remove history event with id {identifier} '
                         f'which was the last event of a transaction'
