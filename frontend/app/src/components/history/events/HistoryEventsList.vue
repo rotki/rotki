@@ -86,7 +86,10 @@ const events: Ref<HistoryEventEntry[]> = asyncComputed(() => {
 
 const editEvent = (item: HistoryEventEntry) => emit('edit:event', item);
 const deleteEvent = (item: HistoryEventEntry) =>
-  emit('delete:event', { item, canDelete: get(events).length > 1 });
+  emit('delete:event', {
+    item,
+    canDelete: isEvmEvent(item) ? get(events).length > 1 : true
+  });
 
 const ignoredInAccounting = useRefMap(
   eventGroupHeader,

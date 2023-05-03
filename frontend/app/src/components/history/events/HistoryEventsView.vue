@@ -73,8 +73,6 @@ const editableItem: Ref<EvmHistoryEvent | null> = ref(null);
 const selectedTransaction: Ref<EvmHistoryEvent | null> = ref(null);
 const eventToDelete: Ref<HistoryEventEntry | null> = ref(null);
 const transactionToIgnore: Ref<HistoryEventEntry | null> = ref(null);
-const confirmationTitle: Ref<string> = ref('');
-const confirmationPrimaryAction: Ref<string> = ref('');
 const accounts: Ref<GeneralAccount[]> = ref([]);
 
 const usedTitle: ComputedRef<string> = computed(
@@ -134,7 +132,6 @@ const {
   options,
   selected,
   openDialog,
-  confirmationMessage,
   isLoading: isEventsGroupHeaderLoading,
   userAction,
   state: eventsHeader,
@@ -287,23 +284,8 @@ const promptForDelete = ({
   canDelete: boolean;
 }) => {
   if (canDelete) {
-    set(confirmationTitle, tc('transactions.events.confirmation.delete.title'));
-    set(
-      confirmationMessage,
-      tc('transactions.events.confirmation.delete.message')
-    );
-    set(confirmationPrimaryAction, tc('common.actions.confirm'));
     set(eventToDelete, item);
   } else {
-    set(confirmationTitle, tc('transactions.events.confirmation.ignore.title'));
-    set(
-      confirmationMessage,
-      tc('transactions.events.confirmation.ignore.message')
-    );
-    set(
-      confirmationPrimaryAction,
-      tc('transactions.events.confirmation.ignore.action')
-    );
     set(transactionToIgnore, item);
   }
   showDeleteConfirmation();
@@ -329,9 +311,6 @@ const deleteEventHandler = async () => {
 
   set(eventToDelete, null);
   set(transactionToIgnore, null);
-  set(confirmationTitle, '');
-  set(confirmationMessage, '');
-  set(confirmationPrimaryAction, '');
 };
 
 const getItemClass = (item: HistoryEventEntry) =>
@@ -414,11 +393,17 @@ const resetPendingDeletion = () => {
 
 const showDeleteConfirmation = () => {
   show(
-    {
-      title: get(confirmationTitle),
-      message: get(confirmationMessage),
-      primaryAction: get(confirmationPrimaryAction)
-    },
+    get(transactionToIgnore)
+      ? {
+          title: tc('transactions.events.confirmation.ignore.title'),
+          message: tc('transactions.events.confirmation.ignore.message'),
+          primaryAction: tc('transactions.events.confirmation.ignore.action')
+        }
+      : {
+          title: tc('transactions.events.confirmation.delete.title'),
+          message: tc('transactions.events.confirmation.delete.message'),
+          primaryAction: tc('common.actions.confirm')
+        },
     deleteEventHandler,
     resetPendingDeletion
   );

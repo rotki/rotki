@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type HistoryEventEntry } from '@/types/history/events';
 import { toSentenceCase } from '@/utils/text';
 import {
@@ -58,6 +59,7 @@ const css = useCssModule();
             :class="css['address__content']"
             :text="withdrawEvent.validatorIndex.toString()"
             :show-icon="false"
+            :chain="Blockchain.ETH2"
             type="address"
           />
         </span>
