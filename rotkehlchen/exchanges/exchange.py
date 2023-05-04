@@ -20,6 +20,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    EventMappingType,
     ExchangeAuthCredentials,
     ExchangeLocationID,
     Location,
@@ -510,3 +511,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             )
         except RemoteError as e:
             fail_callback(str(e))
+
+    @staticmethod
+    def get_event_mappings() -> EventMappingType:
+        return {}

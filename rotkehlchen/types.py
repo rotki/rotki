@@ -824,13 +824,12 @@ DEFAULT_ADDRESS_NAME_PRIORITY: list[AddressNameSource] = [
     'ens_names',
 ]
 
-DecoderEventMappingType = dict[
-    str,
-    dict[
-        'HistoryEventType',
-        dict['HistoryEventSubType', 'EventCategory'],
-    ],
+EventMappingType = dict[
+    'HistoryEventType',
+    dict['HistoryEventSubType', 'EventCategory'],
 ]
+LocationEventMappingType = dict[Location, EventMappingType]
+DecoderEventMappingType = dict[str, EventMappingType]
 
 
 class HistoryEventQueryType(SerializableEnumNameMixin):

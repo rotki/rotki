@@ -521,7 +521,8 @@ def test_cache_deletion(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('have_decoders', [True])
-def test_events_mappings(rotkehlchen_api_server):
+@pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN, Location.BINANCE)])
+def test_events_mappings(rotkehlchen_api_server_with_exchanges):
     """
     Test different mappings and information that we provide for rendering events information
     - Test that the structure for types mappings is correctly generated
@@ -529,7 +530,7 @@ def test_events_mappings(rotkehlchen_api_server):
     """
     response = requests.get(
         api_url_for(
-            rotkehlchen_api_server,
+            rotkehlchen_api_server_with_exchanges,
             'typesmappingsresource',
         ),
     )
@@ -537,10 +538,11 @@ def test_events_mappings(rotkehlchen_api_server):
     assert 'per_protocol_mappings' in result
     assert 'global_mappings' in result
     assert 'event_category_details' in result
+    assert 'kraken' in result['exchange_mappings'] and len(result['exchange_mappings']) == 1
 
     response = requests.get(
         api_url_for(
-            rotkehlchen_api_server,
+            rotkehlchen_api_server_with_exchanges,
             'locationresource',
         ),
     )

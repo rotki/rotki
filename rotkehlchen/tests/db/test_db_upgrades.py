@@ -1407,15 +1407,21 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
         (74, 'state', 1),
     ]
     new_history_events = cursor.execute('SELECT * FROM history_events;').fetchall()
-    for entry in kraken_events:
-        if entry[0] == 176:
-            # this event is modified in two places and is checked later
+    updated_kraken_events = [
+        (171, 0, 'SDASD-DSAD-DSAD', 0, 1638706007439, 'B', 'kraken', 'ETH', '10.996', '11843.777435000000', None, 'withdrawal', 'none'),  # noqa: E501
+        (172, 0, 'YDASD-YDSAD-YDSAD', 0, 1636553589350, 'B', 'kraken', 'ETH', '5.1', '6145.834', None, 'trade', 'spend'),  # noqa: E501
+        (173, 0, 'TXZSDG-IUSNH2-OOAIE3U', 0, 1679243606179, 'B', 'kraken', 'BTC', '0.0922995600', '1391.564299579200', None, 'trade', 'spend'),  # noqa: E501
+        (174, 0, 'TXZSDG-IUSNH2-OOAIE3U', 1, 1679243606179, 'B', 'kraken', 'EUR', '1100', '1391.564299579200', None, 'trade', 'receive'),  # noqa: E501
+        (175, 0, 'TXZSDG-IUSNH2-OOAIE3U', 2, 1679243606179, 'B', 'kraken', 'EUR', '8.00', '8.53312', None, 'trade', 'fee'),  # noqa: E501
+        (176, 0, 'KRAKEN-ETH2-EVENT', 0, 1681826144996, 'B', 'kraken', 'ETH2', '0.0032936117', '6.930681228076', 'Automatic virtual conversion of staked ETH rewards to ETH', 'informational', 'none'),  # noqa: E501
+        (177, 0, 'KRAKEN-ETH-EVENT-STAKING', 0, 1681967948701, 'B', 'kraken', 'ETH', '0.0000355988', '0.069824910272', None, 'staking', 'reward'),  # noqa: E501
+    ]
+    for entry in new_history_events:
+        if entry[5] != 'B':
+            # we only check the kraken events here
             continue
-
-        if entry[11] is None and entry[0]:
-            assert (entry[0], 0, *entry[1:11]) + ('none',) in new_history_events
-        else:
-            assert (entry[0], 0, *entry[1:12]) in new_history_events
+        # for kraken events we check also values and subtypes
+        assert entry in updated_kraken_events
 
     new_evm_info = cursor.execute('SELECT * FROM evm_events_info;').fetchall()
     assert len(new_evm_info) == len(custom_events)
@@ -1443,8 +1449,6 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
         ('kucoin_asset_movements_Kucoin 1', 0, 1682610440),
         ('kucoin_ledger_actions_Kucoin 1', 0, 1682610440),
     ]
-    cursor.execute('SELECT * FROM history_events WHERE identifier=?', (176,))
-    assert cursor.fetchone() == (176, 0, 'KRAKEN-ETH2-EVENT', 0, 1681826144996, 'B', 'kraken', 'ETH2', '0.0032936117', '6.930681228076', 'Automatic virtual conversion of staked ETH rewards to ETH', 'informational', 'none')  # noqa: E501
     assert cursor.execute(
         'SELECT * FROM eth2_daily_staking_details',
     ).fetchall() == [(12345, 1682519933, '0.00001'), (67890, 1682519934, '0.00003')]
