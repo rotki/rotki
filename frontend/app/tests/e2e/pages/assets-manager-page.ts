@@ -36,6 +36,14 @@ export class AssetsManagerPage {
     cy.get('.v-data-table__progress').should('not.exist');
   }
 
+  searchAsseAddress(address: string) {
+    cy.get('[data-cy=asset_table_filter]').type(
+      `{selectall}{backspace}address: ${address}{enter}{esc}`
+    );
+    cy.get('.v-data-table__empty-wrapper').should('not.exist');
+    cy.get('.v-data-table__progress').should('not.exist');
+  }
+
   addIgnoredAsset(asset: string) {
     this.searchAsset(asset);
 
@@ -85,6 +93,36 @@ export class AssetsManagerPage {
     });
   }
 
+  createWaitForDeleteManagedAssets() {
+    cy.intercept({
+      method: 'DELETE',
+      url: '/api/1/assets/all**'
+    }).as('apiCall');
+
+    return () => {
+      // Wait for response.status to be 200
+      cy.wait('@apiCall', { timeout: 30000 })
+        .its('response.statusCode')
+        .should('equal', 200);
+    };
+  }
+
+  confirmDelete() {
+    cy.get('[data-cy=confirm-dialog]')
+      .find('[data-cy=dialog-title]')
+      .should('contain', 'Delete asset');
+    const waitForLedgerActions = this.createWaitForDeleteManagedAssets();
+    cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
+    waitForLedgerActions();
+    cy.get('[data-cy=confirm-dialog]').should('not.be.exist');
+  }
+
+  deleteAsset(address: string) {
+    this.searchAsseAddress(address);
+    cy.get('[data-cy=managed-assets-table] [data-cy=row-delete]').click();
+    this.confirmDelete();
+  }
+
   showAddAssetModal(): void {
     cy.get('[data-cy=managed-asset-add-btn]').scrollIntoView();
     // click the add asset button
@@ -119,6 +157,7 @@ export class AssetsManagerPage {
   }
 
   addAsset(): void {
+    const ethAddress = '0x9737c028a738f0856c86bc6279b356db8f3dd440';
     // get the fields
     cy.get('[data-cy=chain-select] [role=button]').as('chainInput');
     cy.get('[data-cy=chain-select] .v-messages__message')
@@ -166,7 +205,7 @@ export class AssetsManagerPage {
 
     cy.get('@addressMessage').should('be.visible');
     // enter address
-    cy.get('@addressInput').type('0x9737c028a738f0856c86bc6279b356db8f3dd440');
+    cy.get('@addressInput').type(ethAddress);
     // after loading, input should be enabled
     cy.get('@addressInput').should('be.enabled');
 
@@ -184,5 +223,6 @@ export class AssetsManagerPage {
 
     // dialog should not be visible
     cy.get('[data-cy=bottom-dialog]').should('not.be.visible');
+    this.deleteAsset(ethAddress);
   }
 }

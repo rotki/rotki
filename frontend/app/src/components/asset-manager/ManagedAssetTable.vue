@@ -282,6 +282,7 @@ const massIgnore = async (ignored: boolean) => {
       :sort-desc="false"
       :server-items-length="serverItemLength"
       :single-select="false"
+      data-cy="managed-assets-table"
       show-select
       @update:options="updatePagination($event)"
       @input="updateSelected($event)"
