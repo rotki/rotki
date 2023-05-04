@@ -852,6 +852,10 @@ def test_combine_block_with_tx_events(eth2, database):
     )
     assert modified_event == events[2]
 
+    with database.conn.read_ctx() as cursor:
+        hidden_ids = dbevents.get_hidden_event_ids(cursor)
+        assert [2] == hidden_ids
+
 
 @pytest.mark.vcr()
 @pytest.mark.parametrize('network_mocking', [False])

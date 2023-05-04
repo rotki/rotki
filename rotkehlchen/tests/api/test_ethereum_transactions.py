@@ -1101,9 +1101,6 @@ def test_query_transactions_check_decoded_events(
             'timestamp': 1642802807,
             'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
         },
-        'customized': False,
-        'has_details': False,
-        'ignored_in_accounting': False,
     }, {
         'entry': {
             'identifier': 5,
@@ -1123,9 +1120,6 @@ def test_query_transactions_check_decoded_events(
             'timestamp': 1642802807,
             'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
         },
-        'customized': False,
-        'has_details': False,
-        'ignored_in_accounting': False,
     }]
     assert returned_events[:2] == tx1_events
     tx2_events = [{
@@ -1147,9 +1141,6 @@ def test_query_transactions_check_decoded_events(
             'timestamp': 1642802735,
             'tx_hash': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
         },
-        'customized': False,
-        'has_details': False,
-        'ignored_in_accounting': False,
     }, {
         'entry': {
             'identifier': 2,
@@ -1169,9 +1160,6 @@ def test_query_transactions_check_decoded_events(
             'timestamp': 1642802735,
             'tx_hash': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
         },
-        'customized': False,
-        'has_details': False,
-        'ignored_in_accounting': False,
     }]
     assert returned_events[2:4] == tx2_events
     tx3_events = [{
@@ -1193,9 +1181,6 @@ def test_query_transactions_check_decoded_events(
             'timestamp': 1642802651,
             'tx_hash': '0x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',
         },
-        'customized': False,
-        'has_details': False,
-        'ignored_in_accounting': False,
     }]
     assert returned_events[4:5] == tx3_events
     tx4_events = [{
@@ -1217,9 +1202,6 @@ def test_query_transactions_check_decoded_events(
             'timestamp': 1642802286,
             'tx_hash': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
         },
-        'customized': False,
-        'has_details': False,
-        'ignored_in_accounting': False,
     }]
     assert returned_events[5:6] == tx4_events
 
@@ -1256,8 +1238,6 @@ def test_query_transactions_check_decoded_events(
             'tx_hash': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
         },
         'customized': True,
-        'has_details': False,
-        'ignored_in_accounting': False,
     })
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),

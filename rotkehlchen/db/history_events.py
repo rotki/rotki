@@ -618,3 +618,19 @@ class DBHistoryEvents():
             except DeserializationError as e:
                 log.debug(f'Failed to deserialize amount {row[1]}. {str(e)}')
         return usd_value, assets_amounts
+
+    def get_hidden_event_ids(self, cursor: 'DBCursor') -> list[int]:
+        """Returns all event identifiers that should be hidden in the UI
+
+        These are, at the moment, special cases where due to grouping different event
+        types with similar info they all appear together but the UI should just show one.
+        """
+        # Only 1 type of hidden event for now
+        cursor.execute(
+            'SELECT E.identifier FROM history_events E LEFT JOIN eth_staking_events_info S '
+            'ON E.identifier=S.identifier WHERE E.sequence_index=1 AND S.identifier IS NOT NULL '
+            'AND 3=(SELECT COUNT(*) FROM history_events E2 WHERE '
+            'E2.event_identifier=E.event_identifier)',
+        )
+        result = [x[0] for x in cursor]
+        return result

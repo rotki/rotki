@@ -3602,6 +3602,7 @@ class RestAPI():
                 cursor=cursor,
                 chain_id=chain_id,  # type: ignore
             )
+            hidden_event_ids = dbevents.get_hidden_event_ids(cursor)
             ignored_ids_mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
                 cursor=cursor,
                 action_type=ActionType.EVM_TRANSACTION,
@@ -3612,6 +3613,7 @@ class RestAPI():
                 x.serialize_for_api(
                     customized_event_ids=customized_event_ids,
                     ignored_ids_mapping=ignored_ids_mapping,
+                    hidden_event_ids=hidden_event_ids,
                     grouped_events_num=grouped_events_num,
                 ) for grouped_events_num, x in events_result
             ]
@@ -3620,6 +3622,7 @@ class RestAPI():
                 x.serialize_for_api(  # type: ignore
                     customized_event_ids=customized_event_ids,
                     ignored_ids_mapping=ignored_ids_mapping,
+                    hidden_event_ids=hidden_event_ids,
                 ) for x in events_result
             ]
         result = {
