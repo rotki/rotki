@@ -31,6 +31,7 @@ from rotkehlchen.api.websockets.typedefs import (
 )
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_kraken
+from rotkehlchen.chain.evm.decoding.types import EventCategory
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_ETH2, A_KFEE, A_USD
 from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
@@ -59,6 +60,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
+    EventMappingType,
     ExchangeAuthCredentials,
     Fee,
     Location,
@@ -158,9 +160,10 @@ def history_event_from_kraken(
                 elif raw_event['subtype'] == 'spotfromstaking':
                     event_type = HistoryEventType.STAKING
                     event_subtype = HistoryEventSubType.RETURN_WRAPPED
-            elif event_type == HistoryEventType.ADJUSTMENT:
+            elif event_type in (HistoryEventType.ADJUSTMENT, HistoryEventType.TRADE):
                 if raw_amount < ZERO:
                     event_subtype = HistoryEventSubType.SPEND
+                    raw_amount = AssetAmount(-raw_amount)
                 else:
                     event_subtype = HistoryEventSubType.RECEIVE
             elif event_type == HistoryEventType.STAKING:
@@ -179,6 +182,9 @@ def history_event_from_kraken(
                 log.warning(
                     f'Encountered kraken historic event type we do not process. {raw_event}',
                 )
+            elif event_type == HistoryEventType.WITHDRAWAL:
+                raw_amount = AssetAmount(-raw_amount)
+
             fee_amount = deserialize_asset_amount(raw_event['fee'])
 
             # Make sure to not generate an event for KFEES that is not of type FEE
@@ -842,10 +848,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             elif trade_part.event_type == HistoryEventType.TRADE:
                 if trade_part.event_subtype == HistoryEventSubType.FEE:
                     fee_part = trade_part
+                elif trade_part.event_subtype == HistoryEventType.SPEND:
+                    spend_part = trade_part
                 elif trade_part.asset == A_KFEE:
                     kfee_part = trade_part
-                elif trade_part.balance.amount < ZERO:
-                    spend_part = trade_part
                 else:
                     receive_part = trade_part
 
@@ -879,7 +885,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             if spend_part is not None:
                 base_asset = spend_part.asset
                 trade_type = TradeType.SELL
-                amount = spend_part.balance.amount * -1
+                amount = spend_part.balance.amount
             elif receive_part is not None:
                 base_asset = receive_part.asset
                 trade_type = TradeType.BUY
@@ -927,12 +933,12 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 )
                 return None
 
-            rate = Price((spend_part.balance.amount / amount) * -1)
+            rate = Price(spend_part.balance.amount / amount)
         else:
             trade_type = TradeType.SELL
             base_asset = spend_asset
             quote_asset = receive_asset
-            amount = -1 * spend_part.balance.amount
+            amount = spend_part.balance.amount
             if amount == ZERO:
                 self.msg_aggregator.add_warning(
                     f'Rate for kraken trade couldnt be calculated. Base amount is ZERO '
@@ -1177,3 +1183,14 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 'name': self.name,
             },
         )
+
+    @staticmethod
+    def get_event_mappings() -> EventMappingType:
+        return {
+            HistoryEventType.TRADE: {
+                HistoryEventSubType.FEE: EventCategory.FEE,
+            },
+            HistoryEventType.SPEND: {
+                HistoryEventSubType.FEE: EventCategory.FEE,
+            },
+        }

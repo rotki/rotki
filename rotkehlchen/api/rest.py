@@ -4325,6 +4325,7 @@ class RestAPI():
         result = {
             'global_mappings': DEFAULT_EVENT_CATEGORY_MAPPINGS,
             'event_category_details': EVENT_CATEGORY_DETAILS,
+            'exchange_mappings': self.rotkehlchen.exchange_manager.get_exchange_mappings(),
             'per_protocol_mappings': {
                 'ethereum': self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.events_types_tuples,  # noqa: E501
                 'optimism': self.rotkehlchen.chains_aggregator.optimism.transactions_decoder.events_types_tuples,  # noqa: E501

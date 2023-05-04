@@ -16,6 +16,7 @@ from rotkehlchen.types import (
     ExchangeApiCredentials,
     ExchangeAuthCredentials,
     Location,
+    LocationEventMappingType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class ExchangeManager():
+class ExchangeManager:
 
     def __init__(self, msg_aggregator: MessagesAggregator) -> None:
         self.connected_exchanges: dict[Location, list[ExchangeInterface]] = defaultdict(list)
@@ -307,3 +308,13 @@ class ExchangeManager():
     def query_history_events(self) -> None:
         for exchange in self.iterate_exchanges():
             exchange.query_history_events()
+
+    def get_exchange_mappings(self) -> LocationEventMappingType:
+        """Collect from the different exchanges the event mappings"""
+        mappings: LocationEventMappingType = {}
+        for location, exchanges in self.connected_exchanges.items():
+            for exchange in exchanges:
+                if (exchange_mapping := exchange.get_event_mappings()) != {}:
+                    mappings[location] = exchange_mapping
+                break
+        return mappings

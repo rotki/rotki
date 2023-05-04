@@ -1,9 +1,10 @@
 import json
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.constants.assets import A_ETH2
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
@@ -185,15 +186,23 @@ def _update_ens_mappings_schema(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _update_ens_mappings_schema')
 
 
-def _fix_kraken_eth2_events(write_cursor: 'DBCursor') -> None:
-    """Fix kraken events with negative amounts related to staking ETH after the merge"""
-    log.debug('Enter _fix_kraken_eth2_events')
+def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
+    """
+    Fix kraken events with negative amounts related to:
+    - staking ETH after the merge
+    - trades not having subtypes and having negative amounts
+    - withdrawals use positive amounts
+
+    Needs to be executed after _update_history_events_schema
+    """
+    log.debug('Enter _fix_kraken_events')
+    log.debug('Fixing kraken eth2 related tuples')
+    update_tuples: list[Any] = []
     write_cursor.execute(
         'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
         'asset=? AND type="staking" AND subtype="reward" AND CAST(amount AS REAL) < 0',
         (A_ETH2.identifier,),
     )
-    update_tuples = []
     for event_row in write_cursor:
         update_tuples.append(
             (
@@ -205,13 +214,59 @@ def _fix_kraken_eth2_events(write_cursor: 'DBCursor') -> None:
                 event_row[0],
             ),
         )
-
     if len(update_tuples) != 0:
         write_cursor.executemany(
             'UPDATE history_events SET type=?, subtype=?, amount=?, usd_value=?, notes=? WHERE identifier=?',  # noqa: E501
             update_tuples,
         )
-    log.debug('Exit _fix_kraken_eth2_events')
+
+    log.debug('Fixing kraken trades')
+    update_tuples = []
+    write_cursor.execute(
+        'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
+        'type="trade" AND subtype="none"',
+    )
+    for event_row in write_cursor:
+        asset_amount = FVal(event_row[1])
+        usd_value = FVal(event_row[2])
+        update_tuples.append(
+            (
+                HistoryEventType.TRADE.serialize(),
+                HistoryEventSubType.SPEND.serialize() if asset_amount < ZERO else HistoryEventSubType.RECEIVE.serialize(),  # noqa: E501
+                str(-asset_amount) if asset_amount < ZERO else str(asset_amount),
+                str(-usd_value) if usd_value < ZERO else str(usd_value),
+                event_row[0],
+            ),
+        )
+
+    if len(update_tuples) != 0:
+        write_cursor.executemany(
+            'UPDATE history_events SET type=?, subtype=?, amount=?, usd_value=? WHERE identifier=?',  # noqa: E501
+            update_tuples,
+        )
+
+    log.debug('Fixing kraken withdrawals')
+    update_tuples = []
+    write_cursor.execute(
+        'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
+        'type="withdrawal"',
+    )
+    for event_row in write_cursor:
+        asset_amount = FVal(event_row[1])
+        usd_value = FVal(event_row[2])
+        update_tuples.append(
+            (
+                str(-FVal(event_row[1])),
+                str(-FVal(event_row[2])),
+                event_row[0],
+            ),
+        )
+    if len(update_tuples) != 0:
+        write_cursor.executemany(
+            'UPDATE history_events SET amount=?, usd_value=? WHERE identifier=?',
+            update_tuples,
+        )
+    log.debug('Exit _fix_kraken_events')
 
 
 def trim_daily_stats(write_cursor: 'DBCursor') -> None:
@@ -292,7 +347,7 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
         _delete_old_tables(write_cursor)
         progress_handler.new_step()
-        _fix_kraken_eth2_events(write_cursor)
+        _fix_kraken_events(write_cursor)
         progress_handler.new_step()
         trim_daily_stats(write_cursor)
         progress_handler.new_step()
