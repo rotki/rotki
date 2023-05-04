@@ -74,7 +74,8 @@ const events: Ref<HistoryEventEntry[]> = asyncComputed(() => {
   }
   const eventIdentifierHeader = eventHeader.eventIdentifier;
   const filtered = all.filter(
-    ({ eventIdentifier }) => eventIdentifier === eventIdentifierHeader
+    ({ eventIdentifier, hidden }) =>
+      eventIdentifier === eventIdentifierHeader && !hidden
   );
 
   if (filtered.length > 0) {

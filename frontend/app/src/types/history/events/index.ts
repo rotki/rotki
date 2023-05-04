@@ -168,8 +168,9 @@ export type NewEvmHistoryEventPayload = Omit<
 
 export const HistoryEventMeta = EntryMeta.merge(
   z.object({
-    customized: z.boolean(),
-    hasDetails: z.boolean(),
+    customized: z.boolean().optional(),
+    hasDetails: z.boolean().optional(),
+    hidden: z.boolean().optional(),
     groupedEventsNum: z.number().nullish()
   })
 );

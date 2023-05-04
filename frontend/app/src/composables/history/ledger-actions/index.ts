@@ -135,7 +135,7 @@ export const useLedgerActions = () => {
   };
 
   const editLedgerAction = async (
-    ledgerAction: LedgerActionEntry
+    ledgerAction: LedgerAction
   ): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
     let message: ValidationErrors | string = '';
