@@ -5,6 +5,8 @@ import {
   type SupportedAsset,
   type UnderlyingToken
 } from '@rotki/common/lib/data';
+import useVuelidate from '@vuelidate/core';
+import { required } from '@vuelidate/validators';
 import omit from 'lodash/omit';
 import { type ComputedRef, type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
@@ -20,7 +22,6 @@ function time(t: string): number | undefined {
 
 const props = withDefaults(
   defineProps<{
-    value: boolean;
     edit?: SupportedAsset | null;
     saving?: boolean;
   }>(),
@@ -78,6 +79,16 @@ const {
   editAsset,
   addAsset
 } = useAssetManagementApi();
+
+const v$ = useVuelidate(
+  {
+    asset_type: { required }
+  },
+  {
+    asset_type: computed(() => get(assetType))
+  },
+  { $autoDirty: true }
+);
 
 watch(address, async () => {
   const sanitizedAddress = sanitizeAddress(get(address));
@@ -242,7 +253,7 @@ const save = async () => {
   } catch (e: any) {
     let errors = e.message;
     if (e instanceof ApiValidationError) {
-      errors = e.getValidationErrors({});
+      errors = e.getValidationErrors({ token: '' });
     }
 
     if (typeof errors === 'string') {
@@ -283,7 +294,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
         />
       </v-col>
     </v-row>
-    <v-form :value="value" class="pt-2" @input="input($event)">
+    <v-form :value="!v$.$invalid" class="pt-2" @input="input($event)">
       <v-row>
         <v-col cols="12">
           <v-select
@@ -308,8 +319,8 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             :items="allEvmChains"
             item-value="name"
             item-text="name"
-            :error-messages="errors['evm_chain']"
-            @focus="delete errors['evm_chain']"
+            :error-messages="errors['evmChain']"
+            @focus="delete errors['evmChain']"
           />
         </v-col>
         <v-col md="6">
@@ -321,8 +332,8 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             :items="evmTokenKindsData"
             item-text="label"
             item-value="identifier"
-            :error-messages="errors['token_kind']"
-            @focus="delete errors['token_kind']"
+            :error-messages="errors['tokenKind']"
+            @focus="delete errors['tokenKind']"
           />
         </v-col>
       </v-row>
@@ -476,9 +487,9 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
                   persistent-hint
                   clearable
                   :label="tc('asset_form.labels.swapped_for')"
-                  :error-messages="errors['swapped_for']"
+                  :error-messages="errors['swappedFor']"
                   :disabled="saving"
-                  @focus="delete errors['swapped_for']"
+                  @focus="delete errors['swappedFor']"
                 />
               </v-col>
               <v-col v-if="!isEvmToken" cols="12" md="6">
