@@ -94,7 +94,7 @@ describe('composables::history/filter-paginate', () => {
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual(undefined);
       expect(get(options).sortBy[0]).toEqual('name');
-      expect(get(options).sortDesc[0]).toEqual(true);
+      expect(get(options).sortDesc[0]).toEqual(false);
       expect(get(options).sortBy).toHaveLength(1);
       expect(get(options).sortDesc).toHaveLength(1);
       expect(get(state).data).toHaveLength(0);
@@ -148,7 +148,7 @@ describe('composables::history/filter-paginate', () => {
           extraParams,
           defaultSortBy: {
             key: 'name',
-            ascending: [true]
+            ascending: [false]
           }
         }
       );

@@ -86,14 +86,19 @@ export const setupEntryLimit = (
   };
 };
 
-export const defaultOptions = <T extends Object>(
-  orderBy?: keyof T
-): TablePagination<T> => {
+export const defaultOptions = <T extends Object>(defaultSortBy?: {
+  key?: keyof T;
+  ascending?: boolean[];
+}): TablePagination<T> => {
   const { itemsPerPage } = useFrontendSettingsStore();
   return {
     page: 1,
     itemsPerPage,
-    sortBy: orderBy ? [orderBy] : ['timestamp' as keyof T],
-    sortDesc: [true]
+    sortBy: defaultSortBy?.key
+      ? [defaultSortBy?.key]
+      : ['timestamp' as keyof T],
+    sortDesc: defaultSortBy?.ascending
+      ? defaultSortBy?.ascending.map(bool => !bool)
+      : [true]
   };
 };

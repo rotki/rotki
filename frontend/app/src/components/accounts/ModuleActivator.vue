@@ -33,6 +33,8 @@ const visibleModules = computed(() =>
 onMounted(async () => await queriedAddressesStore.fetchQueriedAddresses());
 
 const { t } = useI18n();
+const { isAccountOperationRunning } = useAccountLoading();
+const loading = isAccountOperationRunning();
 </script>
 
 <template>
@@ -45,6 +47,7 @@ const { t } = useI18n();
       <v-btn-toggle
         v-model="enabledModules"
         multiple
+        :disabled="loading"
         class="mt-2"
         @change="updateSelection($event)"
       >
@@ -52,6 +55,7 @@ const { t } = useI18n();
           v-for="module in visibleModules"
           :key="module.identifier"
           icon
+          :disabled="loading"
           :value="module.identifier"
           color="primary"
           depressed
