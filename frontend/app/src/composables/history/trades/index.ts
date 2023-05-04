@@ -136,7 +136,7 @@ export const useTrades = () => {
   };
 
   const editExternalTrade = async (
-    trade: TradeEntry
+    trade: Trade
   ): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
     let message: ValidationErrors | string = '';
