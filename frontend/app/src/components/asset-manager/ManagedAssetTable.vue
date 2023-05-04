@@ -257,7 +257,16 @@ const massIgnore = async (ignored: boolean) => {
         </v-col>
       </v-row>
     </template>
-    <v-btn absolute fab top right dark color="primary" @click="add()">
+    <v-btn
+      data-cy="managed-asset-add-btn"
+      absolute
+      fab
+      top
+      right
+      dark
+      color="primary"
+      @click="add()"
+    >
       <v-icon> mdi-plus </v-icon>
     </v-btn>
     <data-table

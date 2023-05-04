@@ -310,7 +310,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             </template>
           </v-select>
         </v-col>
-        <v-col md="6">
+        <v-col md="6" data-cy="chain-select">
           <v-select
             v-model="evmChain"
             outlined
@@ -323,7 +323,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             @focus="delete errors['evmChain']"
           />
         </v-col>
-        <v-col md="6">
+        <v-col md="6" data-cy="token-select">
           <v-select
             v-model="tokenKind"
             outlined
@@ -338,7 +338,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
         </v-col>
       </v-row>
       <v-row v-if="isEvmToken">
-        <v-col>
+        <v-col data-cy="address-input">
           <v-text-field
             v-model="address"
             outlined
@@ -373,7 +373,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             @focus="delete errors['symbol']"
           />
         </v-col>
-        <v-col v-if="isEvmToken" cols="12" md="3">
+        <v-col v-if="isEvmToken" cols="12" md="3" data-cy="decimal-input">
           <v-text-field
             v-model="decimals"
             type="number"
