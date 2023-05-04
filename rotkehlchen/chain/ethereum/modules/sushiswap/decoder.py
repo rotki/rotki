@@ -142,5 +142,5 @@ class SushiswapDecoder(DecoderInterface):
         return [CounterpartyDetails(
             identifier=CPT_SUSHISWAP_V2,
             label='Sushiswap',
-            image='sushi.png',
+            image='sushiswap.svg',
         )]
