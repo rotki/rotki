@@ -154,9 +154,6 @@ def generate_events_response(
     for event in data:
         result.append({
             'entry': event.serialize(),
-            'has_details': False,
-            'customized': False,
-            'ignored_in_accounting': False,
         })
     return result
 

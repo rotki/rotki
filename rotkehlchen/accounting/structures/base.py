@@ -226,15 +226,17 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             self,
             customized_event_ids: list[int],
             ignored_ids_mapping: dict[ActionType, set[str]],
+            hidden_event_ids: list[int],
             grouped_events_num: Optional[int] = None,
     ) -> dict[str, Any]:
         """Serialize event and extra flags for api"""
-        result = {
-            'entry': self.serialize(),
-            'has_details': False,
-            'customized': self.identifier in customized_event_ids,
-            'ignored_in_accounting': self.should_ignore(ignored_ids_mapping=ignored_ids_mapping),
-        }
+        result: dict[str, Any] = {'entry': self.serialize()}
+        if self.should_ignore(ignored_ids_mapping=ignored_ids_mapping):
+            result['ignored_in_accounting'] = True
+        if self.identifier in customized_event_ids:
+            result['customized'] = True
+        if self.identifier in hidden_event_ids:
+            result['hidden'] = True
         if grouped_events_num is not None:
             result['grouped_events_num'] = grouped_events_num
 

@@ -162,14 +162,17 @@ class EvmEvent(HistoryBaseEntry):
             self,
             customized_event_ids: list[int],
             ignored_ids_mapping: dict[ActionType, set[str]],
+            hidden_event_ids: list[int],
             grouped_events_num: Optional[int] = None,
     ) -> dict[str, Any]:
         result = super().serialize_for_api(
             customized_event_ids=customized_event_ids,
             ignored_ids_mapping=ignored_ids_mapping,
+            hidden_event_ids=hidden_event_ids,
             grouped_events_num=grouped_events_num,
         )
-        result['has_details'] = self.has_details()
+        if self.has_details():
+            result['has_details'] = True
         return result
 
     @classmethod

@@ -4923,6 +4923,7 @@ Dealing with History Events
 		      "product": null
                   },
                   "customized": false,
+		  "hidden": true,
                   "ignored_in_accounting": false,
                   "has_details": false,
                   "grouped_events_num": 1
@@ -4967,6 +4968,7 @@ Dealing with History Events
 		      "is_exit": false
                   },
                   "customized": false,
+		  "hidden": true,
                   "ignored_in_accounting": false,
                   "has_details": false,
                   "grouped_events_num": 1
@@ -5023,7 +5025,7 @@ Dealing with History Events
           "message": ""
       }
 
-   :resjson list decoded_events: A list of history events. Each event is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not. Each entry also has a `has_details` flag. If `has_details` is true, then it is possible to call /history/events/details endpoint to retrieve some extra information about the event. Also each entry has a `customized` flag denoting if the event has been customized/added by the user. Finally if `group_by_event_ids` is true, each entry contains `grouped_events_num` which is an integer with the amount of events under the common event identifier. The consumer has to query this endpoint again with `group_by_event_ids` set to false and with the `event_identifiers` filter set to the identifier of the events having more than 1 event. Finally `ignored_in_accounting` is set to `true` when the user has marked this event as ignored. Following are all possible entries depending on entry type.
+   :resjson list decoded_events: A list of history events. Each event is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not. Each entry may also have a `has_details` flag if true. If `has_details` is true, then it is possible to call /history/events/details endpoint to retrieve some extra information about the event. Also each entry may have a `customized` flag set to true. If it does, it means the event has been customized/added by the user. Each entry may also have a `hidden` flag if set to true. If it does then that means it should be hidden in the UI due to consolidation of events. Finally if `group_by_event_ids` exist and is true, each entry contains `grouped_events_num` which is an integer with the amount of events under the common event identifier. The consumer has to query this endpoint again with `group_by_event_ids` set to false and with the `event_identifiers` filter set to the identifier of the events having more than 1 event. Finally `ignored_in_accounting` is set to `true` when the user has marked this event as ignored. Following are all possible entries depending on entry type.
    :resjson string identifier: Common key. This is the identifier of a single event.
    :resjson string entry_type: Common key. This identifies the category of the event and determines the schema. Possible values are: ``"history event"``, ``"evm event"``, ``"eth withdrawal event"``, ``"eth block event"``, ``"eth deposit event"``.
    :resjson string event_identifier: Common key. An event identifier grouping multiple events under a common group. This is how we group transaction events under a transaction, staking related events under block production etc.
@@ -10588,7 +10590,7 @@ Data imports
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
-   
+
    .. note::
       If you want to provide a stream of data instead of a path, you can call POST on this endpoint and provide the stream in `filepath` variable.
 
@@ -12655,7 +12657,7 @@ Get all valid locations
         }
       }
 
-  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Can also contain `display_name` if a special name has to be used. 
+  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Can also contain `display_name` if a special name has to be used.
 
   :statuscode 200: Information was correctly returned
   :statuscode 500: Internal rotki error

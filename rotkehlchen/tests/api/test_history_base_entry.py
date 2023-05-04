@@ -393,7 +393,6 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
     )
     result = assert_proper_response_with_result(response)
     events = result['entries']
-    assert events[0]['has_details'] is False
     assert events[1]['has_details'] is True
 
     # Check that if an event is not in the db, an error is returned
@@ -460,14 +459,12 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
     assert result['entries_total'] == 6
     for event in result['entries']:
         assert event['entry'] in expected_entries
-        assert event['customized'] is False
-        assert event['has_details'] is False
 
         # check that the only ignored event is the one that we have set
         if event['entry']['event_identifier'] == entries[0].event_identifier:
             assert event['ignored_in_accounting'] is True
         else:
-            assert event['ignored_in_accounting'] is False
+            assert 'ignored_in_accounting' not in event
 
     # now try with grouping
     response = requests.post(
