@@ -49,4 +49,18 @@ describe('assets', () => {
       page.ignoredAssetCount(ignoredAssets + 2);
     });
   });
+
+  describe('add managed asset', () => {
+    before(() => {
+      page.visit();
+    });
+
+    it('should show modal with title, fields and button', () => {
+      page.showAddAssetModal();
+    });
+
+    it('adds a single managed asset', () => {
+      page.addAsset();
+    });
+  });
 });
