@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type TradeLocationData } from '@/types/history/trade/location';
 
 const props = defineProps({
   item: {
     required: true,
-    type: Object as PropType<TradeLocationData>
+    type: [Object, String] as PropType<TradeLocationData | string | null>
   },
   horizontal: { required: false, type: Boolean, default: false },
   icon: { required: false, type: Boolean, default: false },
@@ -14,9 +13,20 @@ const props = defineProps({
 });
 
 const { item, size } = toRefs(props);
+
 const iconStyle = computed(() => ({
   fontSize: get(size)
 }));
+
+const { locationData } = useLocations();
+
+const location: ComputedRef<TradeLocationData | null> = computed(() => {
+  const data = get(item);
+  if (typeof data === 'string') {
+    return get(locationData(data));
+  }
+  return data;
+});
 </script>
 
 <template>
@@ -28,17 +38,20 @@ const iconStyle = computed(() => ({
       'py-4': !noPadding
     }"
   >
-    <adaptive-wrapper tag="span">
+    <adaptive-wrapper v-if="!location" tag="span">
+      <v-skeleton-loader type="image" :width="size" :height="size" />
+    </adaptive-wrapper>
+    <adaptive-wrapper v-else tag="span">
       <v-img
-        v-if="item.image"
+        v-if="location.image"
         :width="size"
         contain
         position="center"
         :max-height="size"
-        :src="item.image"
+        :src="location.image"
       />
       <v-icon v-else color="accent" :style="iconStyle">
-        {{ item.icon }}
+        {{ location.icon }}
       </v-icon>
     </adaptive-wrapper>
     <span
@@ -46,7 +59,9 @@ const iconStyle = computed(() => ({
       class="text-capitalize"
       :class="horizontal ? 'ml-3' : null"
     >
-      {{ item.name }}
+      <template v-if="location">
+        {{ location.name }}
+      </template>
     </span>
   </span>
 </template>

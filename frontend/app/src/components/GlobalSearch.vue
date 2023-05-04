@@ -251,7 +251,7 @@ const getExchanges = (keyword: string): SearchItemWithoutValue[] => {
       const name = exchange.name;
 
       return {
-        location: getLocationData(identifier),
+        location: getLocationData(identifier) ?? undefined,
         route: `${Routes.ACCOUNTS_BALANCES_EXCHANGE.route}/${identifier}`,
         texts: [
           Routes.ACCOUNTS_BALANCES.text,
@@ -344,25 +344,26 @@ const getAssets = async (
   }
 };
 
-const getLocations = (keyword: string) => {
-  const locationBalances = get(balancesByLocation) as Record<string, BigNumber>;
-  const locationItems: SearchItemWithoutValue[] = Object.keys(
-    locationBalances
-  ).map(identifier => {
-    const total = locationBalances?.[identifier] ?? undefined;
+function* transformLocations(): IterableIterator<SearchItemWithoutValue> {
+  const locationBalances = get(balancesByLocation);
 
-    const location: TradeLocationData = getLocationData(identifier);
-
-    return {
+  for (const identifier in locationBalances) {
+    const location = getLocationData(identifier);
+    if (!location) {
+      continue;
+    }
+    const total = locationBalances[identifier];
+    yield {
       route: Routes.LOCATIONS.route.replace(':identifier', location.identifier),
       texts: [t('common.location').toString(), location.name],
       location,
       total
-    };
-  });
+    } satisfies SearchItemWithoutValue;
+  }
+}
 
-  return filterItems(locationItems, keyword);
-};
+const getLocations = (keyword: string) =>
+  filterItems([...transformLocations()], keyword);
 
 watchDebounced(
   search,

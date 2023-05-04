@@ -14,8 +14,7 @@ const { locations } = toRefs(props);
 
 const { t } = useI18n();
 
-const { sortedQueryStatus, getKey, getLocation } =
-  useEventsQueryStatus(locations);
+const { sortedQueryStatus, getKey } = useEventsQueryStatus(locations);
 
 const showTooltip = (item: HistoryEventsQueryData) => !!item.period;
 </script>
@@ -38,7 +37,7 @@ const showTooltip = (item: HistoryEventsQueryData) => !!item.period;
     </template>
 
     <template #item="{ item }">
-      <location-icon icon no-padding :item="getLocation(item)" size="20px" />
+      <location-icon icon no-padding :item="item.location" size="20px" />
       <history-events-query-status-line :item="item" class="ms-2" />
     </template>
 

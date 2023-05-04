@@ -16,7 +16,7 @@ const { onlyChains } = toRefs(props);
 const {
   sortedQueryStatus,
   getKey,
-  isStatusFinished,
+  isQueryFinished,
   resetQueryStatus,
   isAllFinished
 } = useTransactionQueryStatus(onlyChains);
@@ -27,7 +27,7 @@ const {
     :colspan="colspan"
     :items="sortedQueryStatus"
     :get-key="getKey"
-    :is-item-finished="isStatusFinished"
+    :is-item-finished="isQueryFinished"
     :finished="isAllFinished"
     @reset="resetQueryStatus()"
   >

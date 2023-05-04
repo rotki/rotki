@@ -13,9 +13,8 @@ const { locations } = toRefs(props);
 
 const {
   sortedQueryStatus,
-  getLocation,
   getKey,
-  isStatusFinished,
+  isQueryFinished,
   isAllFinished,
   resetQueryStatus
 } = useEventsQueryStatus(locations);
@@ -27,7 +26,7 @@ const {
     :items="sortedQueryStatus"
     :finished="isAllFinished"
     :get-key="getKey"
-    :is-item-finished="isStatusFinished"
+    :is-item-finished="isQueryFinished"
     @reset="resetQueryStatus()"
   >
     <template #current>
@@ -35,12 +34,7 @@ const {
     </template>
 
     <template #item="{ item }">
-      <location-icon
-        icon
-        no-padding
-        :item="getLocation(item.location)"
-        size="20px"
-      />
+      <location-icon icon no-padding :item="item.location" size="20px" />
       <history-events-query-status-line :item="item" class="ms-2" />
     </template>
 

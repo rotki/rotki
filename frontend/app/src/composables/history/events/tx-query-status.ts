@@ -86,11 +86,14 @@ export const useTransactionQueryStatus = (
   const getKey = (item: EvmTransactionQueryData) =>
     item.address + item.evmChain;
 
+  const isQueryFinished = (item: EvmTransactionQueryData) =>
+    isStatusFinished(item);
+
   return {
     getLabel,
     getStatusData,
     getItemTranslationKey,
-    isStatusFinished,
+    isQueryFinished,
     getKey,
     resetQueryStatus,
     isAllFinished,

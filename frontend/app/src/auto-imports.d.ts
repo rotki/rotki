@@ -468,6 +468,7 @@ declare global {
   const useLiquityApi: typeof import('./composables/api/defi/liquity')['useLiquityApi']
   const useLiquityStore: typeof import('./store/defi/liquity/index')['useLiquityStore']
   const useLocalStorage: typeof import('@vueuse/core')['useLocalStorage']
+  const useLocationStore: typeof import('./store/locations')['useLocationStore']
   const useLocations: typeof import('./composables/locations')['useLocations']
   const useMagicKeys: typeof import('@vueuse/core')['useMagicKeys']
   const useMainStore: typeof import('./store/main')['useMainStore']
@@ -1134,6 +1135,7 @@ declare module 'vue' {
     readonly useLiquityApi: UnwrapRef<typeof import('./composables/api/defi/liquity')['useLiquityApi']>
     readonly useLiquityStore: UnwrapRef<typeof import('./store/defi/liquity/index')['useLiquityStore']>
     readonly useLocalStorage: UnwrapRef<typeof import('@vueuse/core')['useLocalStorage']>
+    readonly useLocationStore: UnwrapRef<typeof import('./store/locations')['useLocationStore']>
     readonly useLocations: UnwrapRef<typeof import('./composables/locations')['useLocations']>
     readonly useMagicKeys: UnwrapRef<typeof import('@vueuse/core')['useMagicKeys']>
     readonly useMainStore: UnwrapRef<typeof import('./store/main')['useMainStore']>

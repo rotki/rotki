@@ -33,18 +33,15 @@ export const useEventsQueryStatus = (locations: MaybeRef<string[]> = []) => {
   const { sortedQueryStatus, queryingLength, length, isQueryStatusRange } =
     useQueryStatus(filtered, isStatusFinished);
 
-  const { locationData } = useLocations();
-
   const getKey = (item: HistoryEventsQueryData) => item.location + item.name;
 
-  const getLocation = (item: HistoryEventsQueryData) =>
-    get(locationData(item.location));
+  const isQueryFinished = (item: HistoryEventsQueryData) =>
+    isStatusFinished(item);
 
   return {
     getItemTranslationKey,
-    isStatusFinished,
+    isQueryFinished,
     getKey,
-    getLocation,
     resetQueryStatus,
     isAllFinished,
     sortedQueryStatus,

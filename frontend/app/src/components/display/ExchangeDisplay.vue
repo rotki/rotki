@@ -9,8 +9,8 @@ const { exchange } = toRefs(props);
 const { locationData } = useLocations();
 
 const location = locationData(exchange);
-const name = useRefMap(location, ({ name }) => name);
-const image = useRefMap(location, ({ image }) => image);
+const name = useRefMap(location, location => location?.name);
+const image = useRefMap(location, location => location?.image);
 </script>
 
 <template>
