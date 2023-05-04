@@ -57,7 +57,7 @@ export const usePaginationFilters = <
   const router = useRouter();
   const route = useRoute();
   const paginationOptions: Ref<TablePagination<T>> = ref(
-    defaultOptions<T>(options.defaultSortBy?.key)
+    defaultOptions<T>(options.defaultSortBy)
   );
   const selected: Ref<V[]> = ref([]);
   const openDialog: Ref<boolean> = ref(false);
@@ -139,7 +139,7 @@ export const usePaginationFilters = <
       // for empty query, we reset the filters, and pagination to defaults
       onUpdateFilters?.(query);
       updateFilter(RouteFilterSchema.parse({}));
-      return setOptions(defaultOptions<T>(options.defaultSortBy?.key));
+      return setOptions(defaultOptions<T>(options.defaultSortBy));
     }
 
     const parsedOptions = RouterPaginationOptionsSchema.parse(query);

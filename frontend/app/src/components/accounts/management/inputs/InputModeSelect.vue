@@ -30,6 +30,8 @@ const copyPageUrl = async () => {
 
 const { t } = useI18n();
 const { isPackaged } = useInterop();
+const { isAccountOperationRunning } = useAccountLoading();
+const loading = isAccountOperationRunning();
 </script>
 
 <template>
@@ -40,7 +42,11 @@ const { isPackaged } = useInterop();
       mandatory
       @change="update($event)"
     >
-      <v-btn :value="InputMode.MANUAL_ADD" data-cy="input-mode-manual">
+      <v-btn
+        :value="InputMode.MANUAL_ADD"
+        data-cy="input-mode-manual"
+        :disabled="loading"
+      >
         <v-icon>mdi-pencil-plus</v-icon>
         <span class="hidden-sm-and-down ml-1">
           {{ t('input_mode_select.manual_add.label') }}
@@ -49,7 +55,7 @@ const { isPackaged } = useInterop();
       <v-btn
         v-if="isEth"
         :value="InputMode.METAMASK_IMPORT"
-        :disabled="!isMetaMaskSupported()"
+        :disabled="!isMetaMaskSupported() || loading"
       >
         <v-img
           contain

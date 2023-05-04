@@ -158,7 +158,7 @@ const {
   extraParams,
   defaultSortBy: {
     key: 'symbol',
-    ascending: [false]
+    ascending: [true]
   }
 });
 
