@@ -405,7 +405,7 @@ declare global {
   const useEventBus: typeof import('@vueuse/core')['useEventBus']
   const useEventListener: typeof import('@vueuse/core')['useEventListener']
   const useEventSource: typeof import('@vueuse/core')['useEventSource']
-  const useEventsQueryStatus: typeof import('./composables/history/events/events-query-status')['useEventsQueryStatus']
+  const useEventsQueryStatus: typeof import('./composables/history/events/query-status/events-query-status')['useEventsQueryStatus']
   const useEventsQueryStatusStore: typeof import('./store/history/query-status/events-query-status')['useEventsQueryStatusStore']
   const useEvmNodesApi: typeof import('./composables/api/settings/evm-nodes-api')['useEvmNodesApi']
   const useExchangeApi: typeof import('./composables/api/balances/exchanges')['useExchangeApi']
@@ -468,6 +468,7 @@ declare global {
   const useLiquityApi: typeof import('./composables/api/defi/liquity')['useLiquityApi']
   const useLiquityStore: typeof import('./store/defi/liquity/index')['useLiquityStore']
   const useLocalStorage: typeof import('@vueuse/core')['useLocalStorage']
+  const useLocationStore: typeof import('./store/locations')['useLocationStore']
   const useLocations: typeof import('./composables/locations')['useLocations']
   const useMagicKeys: typeof import('@vueuse/core')['useMagicKeys']
   const useMainStore: typeof import('./store/main')['useMainStore']
@@ -612,7 +613,7 @@ declare global {
   const useTradeFilters: typeof import('./composables/filters/trades')['useTradeFilters']
   const useTrades: typeof import('./composables/history/trades/index')['useTrades']
   const useTradesApi: typeof import('./composables/api/history/trades')['useTradesApi']
-  const useTransactionQueryStatus: typeof import('./composables/history/events/tx-query-status')['useTransactionQueryStatus']
+  const useTransactionQueryStatus: typeof import('./composables/history/events/query-status/tx-query-status')['useTransactionQueryStatus']
   const useTransition: typeof import('@vueuse/core')['useTransition']
   const useTrunc: typeof import('@vueuse/math')['useTrunc']
   const useTxQueryStatusStore: typeof import('./store/history/query-status/tx-query-status')['useTxQueryStatusStore']
@@ -1071,7 +1072,7 @@ declare module 'vue' {
     readonly useEventBus: UnwrapRef<typeof import('@vueuse/core')['useEventBus']>
     readonly useEventListener: UnwrapRef<typeof import('@vueuse/core')['useEventListener']>
     readonly useEventSource: UnwrapRef<typeof import('@vueuse/core')['useEventSource']>
-    readonly useEventsQueryStatus: UnwrapRef<typeof import('./composables/history/events/events-query-status')['useEventsQueryStatus']>
+    readonly useEventsQueryStatus: UnwrapRef<typeof import('./composables/history/events/query-status/events-query-status')['useEventsQueryStatus']>
     readonly useEventsQueryStatusStore: UnwrapRef<typeof import('./store/history/query-status/events-query-status')['useEventsQueryStatusStore']>
     readonly useEvmNodesApi: UnwrapRef<typeof import('./composables/api/settings/evm-nodes-api')['useEvmNodesApi']>
     readonly useExchangeApi: UnwrapRef<typeof import('./composables/api/balances/exchanges')['useExchangeApi']>
@@ -1134,6 +1135,7 @@ declare module 'vue' {
     readonly useLiquityApi: UnwrapRef<typeof import('./composables/api/defi/liquity')['useLiquityApi']>
     readonly useLiquityStore: UnwrapRef<typeof import('./store/defi/liquity/index')['useLiquityStore']>
     readonly useLocalStorage: UnwrapRef<typeof import('@vueuse/core')['useLocalStorage']>
+    readonly useLocationStore: UnwrapRef<typeof import('./store/locations')['useLocationStore']>
     readonly useLocations: UnwrapRef<typeof import('./composables/locations')['useLocations']>
     readonly useMagicKeys: UnwrapRef<typeof import('@vueuse/core')['useMagicKeys']>
     readonly useMainStore: UnwrapRef<typeof import('./store/main')['useMainStore']>
@@ -1278,7 +1280,7 @@ declare module 'vue' {
     readonly useTradeFilters: UnwrapRef<typeof import('./composables/filters/trades')['useTradeFilters']>
     readonly useTrades: UnwrapRef<typeof import('./composables/history/trades/index')['useTrades']>
     readonly useTradesApi: UnwrapRef<typeof import('./composables/api/history/trades')['useTradesApi']>
-    readonly useTransactionQueryStatus: UnwrapRef<typeof import('./composables/history/events/tx-query-status')['useTransactionQueryStatus']>
+    readonly useTransactionQueryStatus: UnwrapRef<typeof import('./composables/history/events/query-status/tx-query-status')['useTransactionQueryStatus']>
     readonly useTransition: UnwrapRef<typeof import('@vueuse/core')['useTransition']>
     readonly useTrunc: UnwrapRef<typeof import('@vueuse/math')['useTrunc']>
     readonly useTxQueryStatusStore: UnwrapRef<typeof import('./store/history/query-status/tx-query-status')['useTxQueryStatusStore']>

@@ -471,6 +471,7 @@
     "useLiquityApi": true,
     "useLiquityStore": true,
     "useLocalStorage": true,
+    "useLocationStore": true,
     "useLocations": true,
     "useMagicKeys": true,
     "useMainStore": true,

@@ -347,9 +347,9 @@ watch(
 
 const { isLoading: isSectionLoading } = useStatusStore();
 const sectionLoading = isSectionLoading(Section.TX);
-
 const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
 const onlineHistoryEventsLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
+
 const { isAllFinished: isQueryingTxsFinished } = toRefs(
   useTxQueryStatusStore()
 );
@@ -357,23 +357,26 @@ const { isAllFinished: isQueryingOnlineEventsFinished } = toRefs(
   useEventsQueryStatusStore()
 );
 
-const shouldFetchEventsRegularly = logicOr(
+const refreshing = logicOr(
   sectionLoading,
-  not(isQueryingTxsFinished),
-  not(isQueryingOnlineEventsFinished),
   eventTaskLoading,
   onlineHistoryEventsLoading
 );
 
-const anyLoading = logicOr(
-  shouldFetchEventsRegularly,
-  isEventsGroupHeaderLoading,
-  isEventsLoading
+const querying = not(
+  logicOr(isQueryingTxsFinished, isQueryingOnlineEventsFinished)
+);
+
+const shouldFetchEventsRegularly = logicOr(querying, refreshing);
+
+const loading = refThrottled(
+  logicOr(isEventsGroupHeaderLoading, isEventsLoading),
+  300
 );
 
 const { pause, resume, isActive } = useIntervalFn(() => {
   fetchData();
-}, 10000);
+}, 20000);
 
 watch(shouldFetchEventsRegularly, shouldFetchEventsRegularly => {
   const active = get(isActive);
@@ -477,7 +480,7 @@ const { locationData } = useLocations();
       </v-btn>
       <template #title>
         <refresh-button
-          :loading="sectionLoading || onlineHistoryEventsLoading"
+          :disabled="refreshing"
           :tooltip="tc('transactions.refresh_tooltip')"
           @refresh="refresh(true)"
         />
@@ -493,8 +496,7 @@ const { locationData } = useLocations();
                   depressed
                   height="40px"
                   small
-                  :disabled="anyLoading"
-                  :loading="eventTaskLoading"
+                  :disabled="refreshing"
                   @click="redecodeAllEvmEvents()"
                 >
                   {{ tc('transactions.redecode_events.title') }}
@@ -547,7 +549,7 @@ const { locationData } = useLocations();
             :expanded="eventsData"
             :headers="tableHeaders"
             :items="eventsData"
-            :loading="anyLoading"
+            :loading="loading"
             :options="options"
             :server-items-length="itemLength"
             :single-select="false"

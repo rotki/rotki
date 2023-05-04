@@ -23,18 +23,22 @@ const { identifier, detailPath } = toRefs(props);
 const { locationData } = useLocations();
 const location = locationData(identifier);
 
+const name = computed(() => get(location)?.name ?? '');
+
 const route = computed<{ path: string }>(() => {
   if (get(detailPath)) {
     return { path: get(detailPath) };
   }
 
-  const path = get(location).detailPath;
+  const tradeLocation = get(location);
+  assert(tradeLocation);
+  const path = tradeLocation?.detailPath;
   if (path) {
     return { path };
   }
 
   return {
-    path: Routes.LOCATIONS.replace(':identifier', get(location).identifier)
+    path: Routes.LOCATIONS.replace(':identifier', tradeLocation.identifier)
   };
 });
 </script>
@@ -45,10 +49,11 @@ const route = computed<{ path: string }>(() => {
       v-bind="$attrs"
       class="my-0 text-center"
       :show-details="false"
-      :title="location.name"
+      :title="name"
     >
       <template #icon>
         <location-icon
+          v-if="location"
           class="location-display"
           :item="location"
           :icon="icon"

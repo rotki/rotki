@@ -8,7 +8,6 @@ const props = defineProps<{
 }>();
 
 const { identifier } = toRefs(props);
-
 const { locationData } = useLocations();
 const location = locationData(identifier);
 </script>
@@ -17,10 +16,18 @@ const location = locationData(identifier);
   <v-container class="pb-12">
     <v-row align="center" class="mt-12">
       <v-col cols="auto">
-        <location-icon :item="location" icon size="48px" no-padding />
+        <location-icon
+          v-if="location"
+          :item="location"
+          icon
+          size="48px"
+          no-padding
+        />
       </v-col>
       <v-col class="d-flex flex-column" cols="auto">
-        <span class="text-h5 font-weight-medium">{{ location.name }}</span>
+        <span v-if="location" class="text-h5 font-weight-medium">
+          {{ location.name }}
+        </span>
       </v-col>
     </v-row>
     <location-value-row class="mt-8" :identifier="identifier" />

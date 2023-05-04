@@ -14,21 +14,22 @@ const { onlyChains } = toRefs(props);
 
 const { t } = useI18n();
 
-const { isAllFinished } = toRefs(useTxQueryStatusStore());
-const { queryingLength, length } = useTransactionQueryStatus(onlyChains);
+const { queryingLength, length, isAllFinished } =
+  useTransactionQueryStatus(onlyChains);
 </script>
 
 <template>
-  <div>
-    <div v-if="isAllFinished">
+  <query-status-current :finished="isAllFinished">
+    <template #finished>
       {{ t('transactions.query_status.done_group', { length }) }}
-    </div>
-    <div v-else>
+    </template>
+
+    <template #running>
       {{
         t('transactions.query_status.group', {
           length: queryingLength
         })
       }}
-    </div>
-  </div>
+    </template>
+  </query-status-current>
 </template>
