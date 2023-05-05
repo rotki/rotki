@@ -62,6 +62,11 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
     ) -> None:
+        super().__init__(
+            evm_inquirer=ethereum_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
         self.base = base_tools
         self.ethereum = ethereum_inquirer
         CustomizableDateMixin.__init__(self, base_tools.database)
