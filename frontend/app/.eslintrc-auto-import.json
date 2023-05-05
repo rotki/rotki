@@ -401,6 +401,8 @@
     "useEmptyFilter": true,
     "useEmptyOrSome": true,
     "useEth2Api": true,
+    "useEth2DailyStats": true,
+    "useEth2Rewards": true,
     "useEth2StakingStore": true,
     "useEthAccountBalances": true,
     "useEthAccountsStore": true,

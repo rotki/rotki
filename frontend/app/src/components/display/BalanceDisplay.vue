@@ -1,54 +1,69 @@
 <script setup lang="ts">
 import { type Balance } from '@rotki/common';
-import { type PropType } from 'vue';
 
-const props = defineProps({
-  asset: { required: true, type: String },
-  value: {
-    required: false,
-    type: Object as PropType<Balance>,
-    default: null
-  },
-  noIcon: { required: false, type: Boolean, default: false },
-  noJustify: { required: false, type: Boolean, default: false },
-  align: { required: false, type: String, default: 'end' },
-  mode: {
-    required: false,
-    type: String as PropType<'gain' | 'loss' | ''>,
-    default: ''
-  },
-  assetPadding: { required: false, type: Number, default: 0 },
-  ticker: { required: false, type: Boolean, default: true },
-  priceLoading: { required: false, type: Boolean, default: false },
-  iconSize: { required: false, type: String, default: '24px' }
-});
+const props = withDefaults(
+  defineProps<{
+    asset: string;
+    value?: Balance | null;
+    noIcon?: boolean;
+    noJustify?: boolean;
+    align?: string;
+    mode?: 'gain' | 'loss' | '';
+    assetPadding?: number;
+    ticker?: boolean;
+    loading?: boolean;
+    iconSize?: string;
+  }>(),
+  {
+    value: null,
+    noIcon: false,
+    noJustify: false,
+    align: 'end',
+    mode: '',
+    assetPadding: 0,
+    ticker: true,
+    loading: false,
+    iconSize: '24px'
+  }
+);
 
-const { asset } = toRefs(props);
+const { asset, value } = toRefs(props);
+
+const amount = useValueOrDefault(
+  useRefMap(value, value => value?.amount),
+  Zero
+);
+const usdValue = useValueOrDefault(
+  useRefMap(value, value => value?.usdValue),
+  Zero
+);
+
+const css = useCssModule();
 </script>
 
 <template>
   <div
-    class="d-flex flex-row balance-display shrink pt-1 pb-1 align-center"
+    class="d-flex flex-row shrink pt-1 pb-1 align-center"
     :class="{
       'justify-end': !noJustify,
-      [$style.gain]: mode === 'gain',
-      [$style.loss]: mode === 'loss'
+      [css.gain]: mode === 'gain',
+      [css.loss]: mode === 'loss'
     }"
   >
     <div :class="`d-flex flex-column align-${align}`">
       <amount-display
-        :loading="priceLoading"
+        :loading="loading"
         :asset="asset"
         :asset-padding="assetPadding"
-        :value="value.amount"
+        :value="amount"
         class="d-block font-weight-medium"
       />
       <amount-display
         fiat-currency="USD"
         :asset-padding="assetPadding"
-        :value="value.usdValue"
+        :value="usdValue"
         :show-currency="ticker ? 'ticker' : 'none'"
-        :loading="priceLoading"
+        :loading="loading"
         class="d-block grey--text"
       />
     </div>
@@ -59,10 +74,6 @@ const { asset } = toRefs(props);
 </template>
 
 <style module lang="scss">
-.balance-display {
-  line-height: 1.5em;
-}
-
 .gain {
   color: #4caf50 !important;
 }

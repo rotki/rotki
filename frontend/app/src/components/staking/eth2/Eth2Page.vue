@@ -1,45 +1,45 @@
 <script setup lang="ts">
-import { type GeneralAccount } from '@rotki/common/lib/account';
+import {
+  type Eth2StakingFilter,
+  type EthStakingPayload
+} from '@rotki/common/lib/staking/eth2';
+import { type ComputedRef } from 'vue';
 import { Eth2Staking } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 
-const selection = ref<{ keys: string[]; accounts: GeneralAccount[] }>({
-  keys: [],
-  accounts: []
-});
-const filterType = ref<'address' | 'key'>('key');
-const { isModuleEnabled } = useModules();
+const module = Module.ETH2;
 
-const enabled = isModuleEnabled(Module.ETH2);
+const defaultSelection = () => ({
+  accounts: [],
+  validators: []
+});
+
+const selection: Ref<Eth2StakingFilter> = ref(defaultSelection());
+const filterType: Ref<'address' | 'key'> = ref('key');
 
 const store = useEth2StakingStore();
-const { details, stats } = storeToRefs(store);
-const { load, updatePagination } = store;
+const { details } = storeToRefs(store);
+const { fetchStakingDetails } = store;
 
-onMounted(async () => {
-  if (get(enabled)) {
-    await load(false);
-    await refresh();
-  }
-});
+const { isModuleEnabled } = useModules();
 
-onUnmounted(() => {
-  store.$reset();
-});
+const enabled = isModuleEnabled(module);
+const {
+  dailyStats,
+  fetchDailyStats,
+  syncStakingStats,
+  dailyStatsLoading,
+  pagination
+} = useEth2DailyStats();
+const { rewards, fetchRewards, loading: rewardsLoading } = useEth2Rewards();
 
 const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 
-const loading = shouldShowLoadingScreen(Section.STAKING_ETH2);
+const detailsLoading = shouldShowLoadingScreen(Section.STAKING_ETH2);
 const primaryRefreshing = isLoading(Section.STAKING_ETH2);
-const secondaryRefreshing = isLoading(Section.STAKING_ETH2_DEPOSITS);
-
-const eth2StatsLoading = isLoading(Section.STAKING_ETH2_STATS);
 
 const { eth2Validators } = storeToRefs(useEthAccountsStore());
-watch(filterType, () => set(selection, { keys: [], accounts: [] }));
-
-const refresh = async () => await load(true);
 
 const ownership = computed(() => {
   const ownership: Record<string, string> = {};
@@ -50,11 +50,44 @@ const ownership = computed(() => {
   return ownership;
 });
 
+const filter: ComputedRef<EthStakingPayload> = computed(() => {
+  const { accounts, validators } = get(selection);
+  return {
+    addresses: accounts.map(({ address }) => address),
+    validatorIndices: validators.map(({ validatorIndex }) => validatorIndex)
+  };
+});
+
 const premium = usePremium();
-
-const module = [Module.ETH2];
-
 const { t, tc } = useI18n();
+
+const refresh = async (userInitiated = false) => {
+  await Promise.allSettled([
+    fetchDailyStats(get(pagination)),
+    fetchRewards(get(filter)),
+    fetchStakingDetails(userInitiated, get(filter)),
+    syncStakingStats(userInitiated)
+  ]);
+};
+
+onMounted(async () => {
+  if (get(enabled)) {
+    await refresh(false);
+  }
+});
+
+onUnmounted(() => {
+  store.$reset();
+});
+
+watch(filter, async filter => {
+  await Promise.allSettled([
+    fetchRewards(filter),
+    fetchStakingDetails(false, filter)
+  ]);
+});
+
+watch(filterType, () => set(selection, defaultSelection()));
 </script>
 
 <template>
@@ -63,24 +96,23 @@ const { t, tc } = useI18n();
       v-if="!premium"
       :text="tc('eth2_page.no_premium')"
     />
-    <module-not-active v-else-if="!enabled" :modules="module" />
-    <progress-screen v-else-if="loading">
-      <template #message>
-        {{ t('eth2_page.loading') }}
-      </template>
-    </progress-screen>
+    <module-not-active v-else-if="!enabled" :modules="[module]" />
+
     <eth2-staking
       v-else
       :refreshing="primaryRefreshing"
-      :secondary-refreshing="secondaryRefreshing"
+      :secondary-refreshing="false"
       :validators="eth2Validators.entries"
       :filter="selection"
+      :rewards="rewards"
+      :rewards-loading="rewardsLoading"
       :eth2-details="details"
-      :eth2-stats="stats"
-      :eth2-stats-loading="eth2StatsLoading"
+      :eth2-details-loading="detailsLoading"
+      :eth2-stats="dailyStats"
+      :eth2-stats-loading="dailyStatsLoading"
       :ownership="ownership"
-      @refresh="refresh()"
-      @update:stats-pagination="updatePagination($event)"
+      @refresh="refresh(true)"
+      @update:stats-pagination="pagination = $event"
     >
       <template #selection>
         <v-row>
@@ -108,7 +140,7 @@ const { t, tc } = useI18n();
         </v-row>
       </template>
       <template #modules>
-        <active-modules :modules="module" />
+        <active-modules :modules="[module]" />
       </template>
     </eth2-staking>
   </div>

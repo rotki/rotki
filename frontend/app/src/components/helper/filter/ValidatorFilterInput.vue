@@ -1,30 +1,27 @@
 <script setup lang="ts">
 import { type Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
-import { type PropType } from 'vue';
 
-const props = defineProps({
-  value: {
-    required: true,
-    type: Array as PropType<string[]>
-  },
-  items: {
-    required: true,
-    type: Array as PropType<Eth2ValidatorEntry[]>
-  },
-  loading: {
-    required: false,
-    type: Boolean,
-    default: false
+const props = withDefaults(
+  defineProps<{
+    value: Eth2ValidatorEntry[];
+    items: Eth2ValidatorEntry[];
+    loading?: boolean;
+  }>(),
+  {
+    loading: false
   }
-});
+);
 
-const emit = defineEmits(['input']);
+const emit = defineEmits<{
+  (e: 'input', value: Eth2ValidatorEntry[]): void;
+}>();
 
-const search = ref('');
 const { value } = toRefs(props);
-const input = (value: (Eth2ValidatorEntry | string)[]) => {
-  const selection = value.map(v => (typeof v === 'string' ? v : v.publicKey));
-  emit('input', selection);
+
+const search: Ref<string> = ref('');
+
+const input = (value: Eth2ValidatorEntry[]) => {
+  emit('input', value);
 };
 
 const filter = (
@@ -34,9 +31,9 @@ const filter = (
   publicKey.includes(queryText) ||
   validatorIndex.toString().includes(queryText);
 
-const removeValidator = (publicKey: string) => {
+const removeValidator = (validator: Eth2ValidatorEntry) => {
   const selection = [...get(value)];
-  const index = selection.indexOf(publicKey);
+  const index = selection.findIndex(v => v.publicKey === validator.publicKey);
   if (index >= 0) {
     selection.splice(index, 1);
   }
@@ -46,12 +43,13 @@ const removeValidator = (publicKey: string) => {
 const { dark } = useTheme();
 
 const { t } = useI18n();
+const css = useCssModule();
 </script>
 
 <template>
   <v-card flat>
     <v-autocomplete
-      :class="$style.filter"
+      :class="css.filter"
       :filter="filter"
       :value="value"
       :items="items"
@@ -82,9 +80,9 @@ const { t } = useI18n();
           :color="dark ? null : 'grey lighten-3'"
           filter
           class="text-truncate"
-          :class="$style.chip"
+          :class="css.chip"
           close
-          @click:close="removeValidator(item.publicKey)"
+          @click:close="removeValidator(item)"
         >
           <validator-display :validator="item" horizontal />
         </v-chip>

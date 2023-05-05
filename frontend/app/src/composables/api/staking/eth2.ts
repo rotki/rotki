@@ -1,7 +1,9 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import {
   Eth2DailyStats,
-  type Eth2DailyStatsPayload
+  type Eth2DailyStatsPayload,
+  Eth2StakingRewards,
+  type EthStakingPayload
 } from '@rotki/common/lib/staking/eth2';
 import {
   getUpdatedKey,
@@ -15,20 +17,36 @@ import {
 import { type PendingTask } from '@/types/task';
 
 export const useEth2Api = () => {
-  const eth2StakingDetails = async (): Promise<PendingTask> => {
-    const response = await api.instance.get<ActionResult<PendingTask>>(
+  const fetchStakingDetails = async (
+    payload: EthStakingPayload
+  ): Promise<PendingTask> => {
+    const response = await api.instance.put<ActionResult<PendingTask>>(
       '/blockchains/ETH2/stake/details',
+      snakeCaseTransformer({
+        asyncQuery: true,
+        ...nonEmptyProperties(payload)
+      }),
       {
-        params: snakeCaseTransformer({
-          asyncQuery: true
-        }),
         validateStatus: validWithSessionAndExternalService
       }
     );
     return handleResponse(response);
   };
 
-  const internalEth2Stats = async <T>(
+  const fetchStakingDetailRewards = async (
+    payload: EthStakingPayload
+  ): Promise<Eth2StakingRewards> => {
+    const response = await api.instance.post<ActionResult<Eth2StakingRewards>>(
+      '/blockchains/ETH2/stake/details',
+      snakeCaseTransformer(nonEmptyProperties(payload)),
+      {
+        validateStatus: validWithSessionAndExternalService
+      }
+    );
+    return Eth2StakingRewards.parse(handleResponse(response));
+  };
+
+  const stakingStatsQuery = async <T>(
     payload: any,
     asyncQuery: boolean
   ): Promise<T> => {
@@ -49,20 +67,21 @@ export const useEth2Api = () => {
     return handleResponse(response);
   };
 
-  const eth2StatsTask = async (
+  const refreshStakingStats = async (
     payload: Eth2DailyStatsPayload
-  ): Promise<PendingTask> => internalEth2Stats(payload, true);
+  ): Promise<PendingTask> => stakingStatsQuery(payload, true);
 
-  const eth2Stats = async (
+  const fetchStakingStats = async (
     payload: Eth2DailyStatsPayload
   ): Promise<Eth2DailyStats> => {
-    const stats = await internalEth2Stats<Eth2DailyStats>(payload, false);
+    const stats = await stakingStatsQuery<Eth2DailyStats>(payload, false);
     return Eth2DailyStats.parse(stats);
   };
 
   return {
-    eth2StakingDetails,
-    eth2StatsTask,
-    eth2Stats
+    fetchStakingDetailRewards,
+    fetchStakingDetails,
+    refreshStakingStats,
+    fetchStakingStats
   };
 };

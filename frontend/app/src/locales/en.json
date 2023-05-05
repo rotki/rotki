@@ -1451,6 +1451,7 @@
     "price_in_symbol": "Price in {symbol}",
     "priority": "Priority",
     "protocol": "Protocol",
+    "rewards": "@:common.rewards",
     "select_address": "Select address(es)",
     "total": "Total",
     "tx": "Tx",
@@ -1912,7 +1913,6 @@
     "public_key": "Public Key"
   },
   "eth2_page": {
-    "loading": "Please wait while your ETH staking details are getting loaded...",
     "no_premium": "ETH Staking is",
     "toggle": {
       "depositor": "Depositor",
@@ -2799,7 +2799,7 @@
   "liquity_pools": {
     "liquidation_gains": "Liquidation gains",
     "no_lusd_deposited": "No LUSD deposited",
-    "rewards": "Rewards",
+    "rewards": "@:common.rewards",
     "title": "Stability pool deposits"
   },
   "liquity_staking_details": {
@@ -2875,7 +2875,7 @@
   },
   "loan_stake": {
     "no_lqty_staked": "No LQTY staked",
-    "rewards": "Rewards",
+    "rewards": "@:common.rewards",
     "title": "Stake"
   },
   "locations": {
@@ -3345,7 +3345,7 @@
       "debt_loss": "Debt Loss",
       "interest_profit": "Interest Profit",
       "liquidation_profit": "Liquidation profit",
-      "rewards": "Rewards"
+      "rewards": "@:common.rewards"
     },
     "eth2_staking": {
       "based_of_performance": "Based of performance of",
@@ -3370,6 +3370,10 @@
         "one_month": "1M",
         "one_week": "1W",
         "one_year": "1Y"
+      },
+      "rewards": {
+        "withdrawn_cl": "Consensus Layer (Withdrawn)",
+        "el": "Execution Layer"
       },
       "staking_per_beacon_chain": "Staking per beacon chain validator",
       "staking_per_eth1_address": "Staking per ETH1 address",

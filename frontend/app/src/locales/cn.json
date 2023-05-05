@@ -1399,6 +1399,7 @@
     "price_in_symbol": "{symbol} 价格",
     "priority": "优先级",
     "protocol": "协议",
+    "rewards": "@:common.rewards",
     "select_address": "选择地址",
     "total": "总计",
     "tx": "Tx",
@@ -1831,7 +1832,6 @@
     "public_key": "公钥"
   },
   "eth2_page": {
-    "loading": "正在加载您的 eth2 质押详细信息，请稍候...",
     "no_premium": "ETH2 质押是",
     "toggle": {
       "depositor": "存款人",
@@ -2687,7 +2687,7 @@
   "liquity_pools": {
     "liquidation_gains": "清算收益",
     "no_lusd_deposited": "没有存入 LUSD",
-    "rewards": "奖励",
+    "rewards": "@:common.rewards",
     "title": "稳定池存款"
   },
   "liquity_staking_details": {
@@ -2740,7 +2740,7 @@
   },
   "loan_stake": {
     "no_lqty_staked": "没有质押的 LQTY",
-    "rewards": "奖励",
+    "rewards": "@:common.rewards",
     "title": "Stake"
   },
   "locations": {
@@ -3208,7 +3208,7 @@
       "debt_loss": "债务损失",
       "interest_profit": "利息利润",
       "liquidation_profit": "清算利润",
-      "rewards": "奖励"
+      "rewards": "@:common.rewards"
     },
     "eth2_staking": {
       "based_of_performance": "基于性能",
