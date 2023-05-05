@@ -21,11 +21,11 @@ import {
 
 export const useAssetManagementApi = () => {
   const queryAllAssets = async (
-    pagination: MaybeRef<AssetRequestPayload>
+    payload: MaybeRef<AssetRequestPayload>
   ): Promise<Collection<SupportedAsset>> => {
     const response = await api.instance.post<ActionResult<SupportedAssets>>(
       '/assets/all',
-      snakeCaseTransformer(get(pagination)),
+      snakeCaseTransformer(get(payload)),
       {
         validateStatus: validWithSessionAndExternalService
       }
@@ -37,11 +37,11 @@ export const useAssetManagementApi = () => {
   };
 
   const queryAllCustomAssets = async (
-    pagination: MaybeRef<CustomAssetRequestPayload>
+    payload: MaybeRef<CustomAssetRequestPayload>
   ): Promise<Collection<CustomAsset>> => {
     const response = await api.instance.post<ActionResult<CustomAssets>>(
       '/assets/custom',
-      snakeCaseTransformer(get(pagination)),
+      snakeCaseTransformer(get(payload)),
       {
         validateStatus: validWithSessionAndExternalService
       }
@@ -91,12 +91,12 @@ export const useAssetManagementApi = () => {
 
   const deleteEthereumToken = async (
     address: string,
-    chain: string
+    evmChain: string
   ): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       '/assets/ethereum',
       {
-        data: snakeCaseTransformer({ address, chain }),
+        data: snakeCaseTransformer({ address, evmChain }),
         validateStatus: validStatus
       }
     );

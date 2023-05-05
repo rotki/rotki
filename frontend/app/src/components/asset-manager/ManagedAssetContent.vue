@@ -60,9 +60,13 @@ const edit = (editAsset: SupportedAsset) => {
 
 const editAsset = async (assetId: Nullable<string>) => {
   if (assetId) {
-    const foundAsset = get(assets).data.find(
-      ({ identifier: id }) => id === assetId
-    );
+    const all = await queryAllAssets({
+      identifiers: [assetId],
+      limit: 1,
+      offset: 0
+    });
+
+    const foundAsset = all.data[0];
     if (foundAsset) {
       edit(foundAsset);
     }
@@ -80,9 +84,9 @@ const save = async () => {
   set(saving, false);
 };
 
-const deleteToken = async (address: string, chain: string) => {
+const deleteToken = async (address: string, evmChain: string) => {
   try {
-    const success = await deleteEthereumToken(address, chain);
+    const success = await deleteEthereumToken(address, evmChain);
     if (success) {
       await fetchData();
     }
@@ -113,7 +117,7 @@ const deleteAssetHandler = async (identifier: string) => {
 };
 
 const confirmDelete = async (toDeleteAsset: SupportedAsset) => {
-  if (toDeleteAsset.type === EVM_TOKEN) {
+  if (toDeleteAsset.type !== EVM_TOKEN) {
     await deleteAssetHandler(toDeleteAsset.identifier);
   } else {
     const address = toDeleteAsset.address;
@@ -176,11 +180,15 @@ const showDeleteConfirmation = (item: SupportedAsset) => {
 
 onMounted(async () => {
   await fetchData();
-  await editAsset(get(identifier));
-
+  const idToEdit = get(identifier);
   const query = get(route).query;
-  if (query.add) {
-    add();
+
+  if (idToEdit || query.add) {
+    if (idToEdit) {
+      await editAsset(get(identifier));
+    } else {
+      add();
+    }
     await router.replace({ query: {} });
   }
 });

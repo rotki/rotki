@@ -165,6 +165,9 @@ const massIgnore = async (ignored: boolean) => {
 
   if (status.success) {
     updateSelected([]);
+    if (props.ignoredAssetsHandling !== 'none') {
+      emit('refresh');
+    }
   }
 };
 </script>
