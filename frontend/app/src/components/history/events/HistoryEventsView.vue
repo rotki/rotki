@@ -374,8 +374,10 @@ const loading = refThrottled(
   300
 );
 
+const { fetchAssociatedLocations } = useHistoryStore();
 const { pause, resume, isActive } = useIntervalFn(() => {
   fetchData();
+  fetchAssociatedLocations();
 }, 20000);
 
 watch(shouldFetchEventsRegularly, shouldFetchEventsRegularly => {
@@ -415,8 +417,8 @@ const showDeleteConfirmation = () => {
 const { txEvmChains, getEvmChainName } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
 
-onMounted(async () => {
-  await fetchData();
+onMounted(() => {
+  startPromise(Promise.all([fetchData(), fetchAssociatedLocations()]));
   refresh();
 });
 
