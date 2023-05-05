@@ -124,8 +124,8 @@ watch(address, async () => {
 });
 
 watch(assetType, () => {
-  // clearing these errors because these fields are disabled for non evm assets
-  clearFieldErrors(['evmChain', 'tokenKind']);
+  // clearing errors because the errors are unique based on the asset type
+  set(errors, {});
 });
 
 const asset: ComputedRef<Omit<SupportedAsset, 'identifier' | 'type'>> =

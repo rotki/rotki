@@ -206,10 +206,10 @@ export class AssetsManagerPage {
     cy.get('@addressMessage').should('be.visible');
     // enter address
     cy.get('@addressInput').type(ethAddress);
+    cy.get('@decimalMessage').should('be.visible');
     // after loading, input should be enabled
     cy.get('@addressInput').should('be.enabled');
 
-    cy.get('@decimalMessage').should('be.visible');
     // enter decimals
     cy.get('@decimalInput').clear();
     cy.get('@decimalInput').type('2');
