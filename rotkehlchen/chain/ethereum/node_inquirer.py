@@ -261,7 +261,7 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
         except DeserializationError:
             log.error(
                 f'Error deserializing address {resolver_addr} while doing'
-                f'ens lookup',
+                f' an ens lookup for {name}.',
             )
             return None, None
 
