@@ -2042,11 +2042,14 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
             elif data['ignored_assets_handling'] == IgnoredAssetsHandling.SHOW_ONLY:
                 ignored_assets_filter_params = ('IN', self.db.get_ignored_asset_ids(cursor))
 
+            identifiers: Optional[list[str]] = data['identifiers']
             if data['show_user_owned_assets_only'] is True:
                 globaldb_read_cursor.execute('SELECT asset_id FROM user_owned_assets;')
-                identifiers = [entry[0] for entry in globaldb_read_cursor]
-            else:
-                identifiers = data['identifiers']
+                user_owned_assets_identifiers = [entry[0] for entry in globaldb_read_cursor]
+                if identifiers is None:
+                    identifiers = user_owned_assets_identifiers
+                else:  # filter out identifiers that are not owned by the user
+                    identifiers = list(set(user_owned_assets_identifiers) & set(identifiers))
 
             filter_query = AssetsFilterQuery.make(
                 and_op=True,
@@ -2064,7 +2067,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
                 identifiers=identifiers,
                 ignored_assets_filter_params=ignored_assets_filter_params,
             )
-        return {'filter_query': filter_query, 'identifiers': data['identifiers']}
+        return {'filter_query': filter_query}
 
 
 class AssetsSearchLevenshteinSchema(Schema):
