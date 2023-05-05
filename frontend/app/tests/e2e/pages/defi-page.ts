@@ -1,10 +1,9 @@
 import { Module } from '@/types/modules';
+import { RotkiApp } from './rotki-app';
 
 export class DefiPage {
   visit() {
-    cy.get('.v-app-bar__nav-icon').click();
-    cy.get('.navigation__defi').click();
-    cy.get('.navigation__defi-overview').click();
+    RotkiApp.navigateMenu('defi', 'defi-overview');
   }
 
   goToSelectModules() {

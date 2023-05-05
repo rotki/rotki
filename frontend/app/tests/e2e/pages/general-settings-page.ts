@@ -1,3 +1,5 @@
+import { RotkiApp } from './rotki-app';
+
 export class GeneralSettingsPage {
   visit() {
     cy.get('.user-dropdown').click();
@@ -141,8 +143,7 @@ export class GeneralSettingsPage {
   }
 
   navigateAway() {
-    cy.get('.v-app-bar__nav-icon').click();
-    cy.get('.navigation__dashboard').click();
+    RotkiApp.navigateMenu('dashboard');
   }
 
   addEthereumRPC(name: string, endpoint: string) {
