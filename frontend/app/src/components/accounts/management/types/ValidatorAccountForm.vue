@@ -99,7 +99,7 @@ onMounted(() => {
   <v-form v-model="valid">
     <eth2-input
       :validator="validator"
-      :disabled="loading"
+      :disabled="loading || !!accountToEdit"
       :error-messages="errorMessages"
       @update:validator="validator = $event"
     />
