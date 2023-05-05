@@ -143,7 +143,7 @@ export class GeneralSettingsPage {
   }
 
   navigateAway() {
-    RotkiApp.navigateMenu('dashboard');
+    RotkiApp.navigateTo('dashboard');
   }
 
   addEthereumRPC(name: string, endpoint: string) {

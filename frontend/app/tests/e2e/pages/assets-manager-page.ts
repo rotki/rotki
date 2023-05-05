@@ -2,7 +2,7 @@ import { RotkiApp } from './rotki-app';
 
 export class AssetsManagerPage {
   visit() {
-    RotkiApp.navigateMenu('asset-manager');
+    RotkiApp.navigateTo('asset-manager');
     cy.get('[data-cy="managed-assets-table"]').should('be.visible');
   }
 

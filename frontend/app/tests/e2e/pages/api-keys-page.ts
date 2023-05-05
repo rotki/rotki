@@ -3,7 +3,7 @@ import { RotkiApp } from './rotki-app';
 
 export class ApiKeysPage {
   visit() {
-    RotkiApp.navigateMenu('settings__api-keys');
+    RotkiApp.navigateTo('settings__api-keys');
   }
 
   addExchange(

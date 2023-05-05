@@ -12,7 +12,7 @@ export class AccountBalancesPage {
   }
 
   visit() {
-    RotkiApp.navigateMenu('accounts-balances');
+    RotkiApp.navigateTo('accounts-balances');
     cy.get('[data-cy=accounts-balances-tab]').should('be.visible');
   }
 }

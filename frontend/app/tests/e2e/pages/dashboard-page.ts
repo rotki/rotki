@@ -5,7 +5,7 @@ import { RotkiApp } from './rotki-app';
 
 export class DashboardPage {
   visit() {
-    RotkiApp.navigateMenu('dashboard');
+    RotkiApp.navigateTo('dashboard');
   }
 
   getSanitizedAmountString(amount: string) {

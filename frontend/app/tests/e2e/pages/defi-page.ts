@@ -3,7 +3,7 @@ import { RotkiApp } from './rotki-app';
 
 export class DefiPage {
   visit() {
-    RotkiApp.navigateMenu('defi', 'defi-overview');
+    RotkiApp.navigateTo('defi', 'defi-overview');
   }
 
   goToSelectModules() {

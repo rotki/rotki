@@ -129,7 +129,7 @@ export class RotkiApp {
     });
   }
 
-  static navigateMenu(menu: string, submenu?: string) {
+  static navigateTo(menu: string, submenu?: string) {
     cy.get('.v-app-bar__nav-icon').click();
 
     const click = (selector: string) => {
