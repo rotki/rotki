@@ -1,8 +1,8 @@
+import { RotkiApp } from './rotki-app';
+
 export class AssetsManagerPage {
   visit() {
-    cy.get('.v-app-bar__nav-icon').click();
-    cy.get('.navigation__asset-manager').scrollIntoView();
-    cy.get('.navigation__asset-manager').click();
+    RotkiApp.navigateTo('asset-manager');
     cy.get('[data-cy="managed-assets-table"]').should('be.visible');
   }
 

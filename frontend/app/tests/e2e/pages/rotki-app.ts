@@ -128,4 +128,23 @@ export class RotkiApp {
       expect(query.getAll(key)).to.deep.equal(values);
     });
   }
+
+  static navigateTo(menu: string, submenu?: string) {
+    cy.get('.v-app-bar__nav-icon').click();
+
+    const click = (selector: string) => {
+      cy.get(selector).scrollIntoView();
+      cy.get(selector).should('be.visible');
+      cy.get(selector).trigger('mouseover');
+      cy.get(selector).click();
+    };
+
+    const menuClass = `.navigation__${menu}`;
+    click(menuClass);
+
+    if (submenu) {
+      const subMenuClass = `.navigation__${submenu}`;
+      click(subMenuClass);
+    }
+  }
 }

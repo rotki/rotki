@@ -1,9 +1,9 @@
 import { mockRequest } from '../support/utils';
+import { RotkiApp } from './rotki-app';
 
 export class ApiKeysPage {
   visit() {
-    cy.get('.v-app-bar__nav-icon').click();
-    cy.get('.navigation__settings__api-keys').click();
+    RotkiApp.navigateTo('settings__api-keys');
   }
 
   addExchange(
