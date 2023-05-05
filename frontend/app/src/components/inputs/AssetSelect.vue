@@ -1,39 +1,46 @@
 ﻿<script setup lang="ts">
-import { type PropType, type Ref, useListeners } from 'vue';
+import { type Ref, useListeners } from 'vue';
 import { type AssetInfoWithId } from '@/types/asset';
 import { getValidSelectorFromEvmAddress } from '@/utils/assets';
 import { getUpdatedKey } from '@/services/axios-tranformers';
 import { type NftAsset } from '@/types/nfts';
 
-const props = defineProps({
-  items: {
+const props = withDefaults(
+  defineProps<{
+    items?: string[];
+    excludes?: string[];
+    hint?: string;
+    successMessages?: string;
+    errorMessages?: string[];
+    label?: string;
+    value?: string;
+    disabled?: boolean;
+    outlined?: boolean;
+    clearable?: boolean;
+    persistentHint?: boolean;
+    required?: boolean;
+    showIgnored?: boolean;
+    hideDetails?: boolean;
+    includeNfts?: boolean;
+  }>(),
+  {
+    items: () => [],
+    excludes: () => [],
+    hint: '',
+    successMessages: '',
+    errorMessages: () => [],
+    label: 'Asset',
+    value: '',
+    disabled: false,
+    outlined: false,
+    clearable: false,
+    persistentHint: false,
     required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
-  },
-  excludes: {
-    required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
-  },
-  hint: { required: false, type: String, default: '' },
-  successMessages: { required: false, type: String, default: '' },
-  errorMessages: {
-    required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
-  },
-  label: { required: false, type: String, default: 'Asset' },
-  value: { required: false, type: String, default: '' },
-  disabled: { required: false, type: Boolean, default: false },
-  outlined: { required: false, type: Boolean, default: false },
-  clearable: { required: false, type: Boolean, default: false },
-  persistentHint: { required: false, type: Boolean, default: false },
-  required: { required: false, type: Boolean, default: false },
-  showIgnored: { required: false, type: Boolean, default: false },
-  hideDetails: { required: false, type: Boolean, default: false },
-  includeNfts: { required: false, type: Boolean, default: false }
-});
+    showIgnored: false,
+    hideDetails: false,
+    includeNfts: false
+  }
+);
 
 const emit = defineEmits<{ (e: 'input', value: string): void }>();
 

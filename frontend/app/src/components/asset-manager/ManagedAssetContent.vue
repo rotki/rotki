@@ -260,9 +260,9 @@ watch(identifier, async assetId => {
     >
       <managed-asset-form
         ref="form"
-        :value="validForm"
         :edit="asset"
         :saving="saving"
+        @input="validForm = $event"
       />
     </big-dialog>
   </v-container>

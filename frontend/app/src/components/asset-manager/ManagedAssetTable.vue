@@ -257,7 +257,16 @@ const massIgnore = async (ignored: boolean) => {
         </v-col>
       </v-row>
     </template>
-    <v-btn absolute fab top right dark color="primary" @click="add()">
+    <v-btn
+      data-cy="managed-asset-add-btn"
+      absolute
+      fab
+      top
+      right
+      dark
+      color="primary"
+      @click="add()"
+    >
       <v-icon> mdi-plus </v-icon>
     </v-btn>
     <data-table
@@ -273,6 +282,7 @@ const massIgnore = async (ignored: boolean) => {
       :sort-desc="false"
       :server-items-length="serverItemLength"
       :single-select="false"
+      data-cy="managed-assets-table"
       show-select
       @update:options="updatePagination($event)"
       @input="updateSelected($event)"
