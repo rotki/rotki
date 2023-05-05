@@ -9,6 +9,7 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.types import SchemaEventType
+from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
@@ -884,7 +885,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             ignored_ids: Optional[list[str]] = None,
             null_columns: Optional[list[str]] = None,
             event_identifiers: Optional[list[str]] = None,
-            entry_types: Optional[list[HistoryBaseEntryType]] = None,
+            entry_types: Optional[IncludeExcludeFilterData] = None,
             exclude_ignored_assets: bool = False,
     ) -> T_HistoryFilterQuery:
         if order_by_rules is None:
@@ -914,8 +915,8 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             filters.append(DBMultiIntegerFilter(
                 and_op=True,
                 column='entry_type',
-                values=[x.value for x in entry_types],
-                operator='IN',
+                values=[x.value for x in entry_types.values],
+                operator=entry_types.operator,
             ))
         if event_types is not None:
             filters.append(DBMultiStringFilter(
@@ -1026,14 +1027,15 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             ignored_ids: Optional[list[str]] = None,
             null_columns: Optional[list[str]] = None,
             event_identifiers: Optional[list[str]] = None,
-            entry_types: Optional[list[HistoryBaseEntryType]] = None,
+            entry_types: Optional[IncludeExcludeFilterData] = None,
             exclude_ignored_assets: bool = False,
             tx_hashes: Optional[list[EVMTxHash]] = None,
             counterparties: Optional[list[str]] = None,
             products: Optional[list[EvmProduct]] = None,
     ) -> 'EvmEventFilterQuery':
         if entry_types is None:
-            entry_types = [HistoryBaseEntryType.EVM_EVENT]
+            entry_type_values = [HistoryBaseEntryType.EVM_EVENT]
+            entry_types = IncludeExcludeFilterData(values=entry_type_values)
 
         filter_query = super().make(
             and_op=and_op,
@@ -1109,12 +1111,13 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery):
             ignored_ids: Optional[list[str]] = None,
             null_columns: Optional[list[str]] = None,
             event_identifiers: Optional[list[str]] = None,
-            entry_types: Optional[list[HistoryBaseEntryType]] = None,
+            entry_types: Optional[IncludeExcludeFilterData] = None,
             exclude_ignored_assets: bool = False,
             validator_indices: Optional[list[int]] = None,
     ) -> 'EthStakingEventFilterQuery':
         if entry_types is None:
-            entry_types = [HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT, HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_DEPOSIT_EVENT]  # noqa: E501
+            entry_type_values = [HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT, HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_DEPOSIT_EVENT]  # noqa: E501
+            entry_types = IncludeExcludeFilterData(values=entry_type_values)
 
         filter_query = super().make(
             and_op=and_op,
@@ -1181,13 +1184,14 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             ignored_ids: Optional[list[str]] = None,
             null_columns: Optional[list[str]] = None,
             event_identifiers: Optional[list[str]] = None,
-            entry_types: Optional[list[HistoryBaseEntryType]] = None,
+            entry_types: Optional[IncludeExcludeFilterData] = None,
             exclude_ignored_assets: bool = False,
             tx_hashes: Optional[list[EVMTxHash]] = None,
             validator_indices: Optional[list[int]] = None,
     ) -> 'EthDepositEventFilterQuery':
         if entry_types is None:
-            entry_types = [HistoryBaseEntryType.ETH_DEPOSIT_EVENT]
+            entry_type_values = [HistoryBaseEntryType.ETH_DEPOSIT_EVENT]
+            entry_types = IncludeExcludeFilterData(values=entry_type_values)
 
         filter_query = EvmEventFilterQuery.make(
             and_op=and_op,
