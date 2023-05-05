@@ -1,0 +1,7 @@
+﻿Date,Destination,Destination Amount,Destination Currency,Fee Amount,Fee Currency,Id,Origin,Origin Amount,Origin Currency,Status,Type
+Tue May 26 2020 18:06:28 GMT+0000,xrp-ledger,314.642101,XRP,0.0000021,BTC,1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d,uphold,0.00714216,BTC,completed,out
+Wed May 20 2020 02:00:26 GMT+0000,litecoin,1.26155562,LTC,0.111123,NANO,1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d,uphold,133.362002,NANO,completed,out
+Wed May 13 2020 13:30:04 GMT+0000,,24.65,GBP,,,1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d,uphold,24.65,GBP,completed,out
+Sun Mar 29 2020 12:21:44 GMT+0000,uphold,24.65,GBP,,,1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d,uphold,0.00421,BTC,completed,transfer
+Tue Feb 11 2020 13:13:57 GMT+0000,uphold,0.00331961,BTC,,,1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d,credit-card,25,GBP,completed,in
+Thu Dec 19 2019 18:40:09 GMT+0000,uphold,5.15,BAT,,,1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d,uphold,5.15,BAT,completed,in

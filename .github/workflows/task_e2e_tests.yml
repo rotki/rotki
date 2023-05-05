@@ -1,0 +1,96 @@
+name: E2E tests
+
+on:
+  workflow_call:
+
+jobs:
+  e2e:
+    name: '${{ matrix.group }}'
+    env:
+      CI: true
+      GROUP: ${{ matrix.group }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [app, balances, history]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+      - name: Load env
+        uses: rotki/action-env@v1
+        with:
+          env_file: .github/.env.ci
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/Cypress
+            ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+            frontend/app/components.d.ts
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - name: Store test data
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/rotki-e2e/icons
+            ~/rotki-e2e/global_data
+          key: ${{ runner.os }}-e2e-data-${{ hashFiles('rotkehlchen/data/global.db') }}
+      - name: Setup backend
+        run: |
+          pip install --upgrade pip==${{ env.PIP_VERSION }} wheel
+          pip install -r requirements.txt
+          pip install -e .
+      - name: Restore dependencies
+        working-directory: ./frontend
+        run: pnpm install
+      - name: Run e2e tests
+        env:
+          CYPRESS_ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: pnpm run --filter rotki test:integration-ci --browser chrome
+        working-directory: ./frontend
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          flags: frontend_integration
+          env_vars: GROUP
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: screenshots-${{ runner.os }}
+          path: ./frontend/app/tests/e2e/screenshots
+      - name: Upload backend logs
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: backend-logs-${{ runner.os }}
+          path: ~/rotki-e2e-logs/*.log
+      - name: Upload videos
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: videos-${{ runner.os }}
+          path: ./frontend/app/tests/e2e/videos

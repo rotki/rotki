@@ -1,0 +1,239 @@
+name: Rotki CI
+
+on:
+  pull_request:
+    branches:
+      - master
+      - develop
+      - bugfixes
+  push:
+    branches:
+      - master
+      - develop
+      - bugfixes
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-changes:
+    name: 'Required job check'
+    runs-on: ubuntu-latest
+    outputs:
+      backend_tasks: ${{ steps.checker.outputs.backend_tasks }}
+      frontend_tasks: ${{ steps.checker.outputs.frontend_tasks }}
+      e2e_tasks: ${{ steps.checker.outputs.e2e_tasks }}
+      documentation_tasks: ${{ steps.checker.outputs.documentation_tasks }}
+      test_environment: ${{ steps.checker.outputs.test_environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Run check action
+        uses: rotki/action-job-checker@v2
+        id: checker
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          documentation_paths: |
+            docs
+          backend_paths: |
+            rotkehlchen
+            requirements.txt
+            requirements_dev.txt
+            requirements_lint.txt
+          frontend_paths: |
+            frontend/app
+
+  code-analyze-frontend:
+    name: 'Code analyze frontend'
+    needs: ['check-changes']
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    if: ${{ needs.check-changes.outputs.frontend_tasks }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: 'javascript'
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:javascript"
+
+  lint-frontend:
+    name: 'Frontend lint'
+    needs: ['check-changes']
+    if: ${{ needs.check-changes.outputs.frontend_tasks }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+      - name: Load env
+        uses: rotki/action-env@v1
+        with:
+          env_file: .github/.env.ci
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/Cypress
+            ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+            frontend/app/components.d.ts
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - name: Store eslint cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            frontend/.eslintcache
+          key: ${{ runner.os }}-eslint-${{ github.ref_name }}
+          restore-keys: |
+            ${{ runner.os }}-eslint-${{ github.ref_name }}          
+            ${{ runner.os }}-eslint-${{ github.base_ref || github.ref_name }}
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        working-directory: ./frontend
+        run: |
+          if [ ${{ github.event_name }} != 'push' ]; then                    
+            pnpm run build
+          fi
+      - name: Lint code
+        working-directory: ./frontend
+        run: pnpm run lint
+
+  unittest-frontend:
+    name: 'Frontend unit tests'
+    needs: [ 'check-changes']
+    if: ${{ github.event_name != 'push' && needs.check-changes.outputs.frontend_tasks }}
+    uses: ./.github/workflows/task_fe_unit_tests.yml
+
+  docs:
+    name: 'Documentation build'
+    needs: [ 'check-changes']
+    if: ${{ github.event_name != 'push' && needs.check-changes.outputs.documentation_tasks }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Load env
+        uses: rotki/action-env@v1
+        with:
+          env_file: .github/.env.ci
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip==${{ env.PIP_VERSION }}
+          pip install -r requirements_docs.txt
+          pip install -e .
+          git rev-parse HEAD
+      - name: Build html docs
+        run: cd docs && make html
+
+  code-analyze-backend:
+    name: 'Code analyze backend'
+    needs: ['check-changes']
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    if: ${{ needs.check-changes.outputs.backend_tasks }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: 'python'
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:python"
+
+  lint-backend:
+    name: 'Backend lint'
+    needs: ['check-changes']
+    if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Load env
+        uses: rotki/action-env@v1
+        with:
+          env_file: .github/.env.ci
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip==${{ env.PIP_VERSION }}
+          pip install -r requirements_lint.txt
+          pip install -e .
+          git rev-parse HEAD
+      - name: Lint
+        run: make lint
+
+  test-backend:
+    if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}
+    needs: ['lint-backend', 'check-changes']
+    uses: ./.github/workflows/task_backend_tests.yml
+    with:
+      os: ubuntu-20.04
+      test_environment: ${{needs.check-changes.outputs.test_environment}}
+
+  test-e2e:
+    name: 'Frontend e2e tests'
+    needs: check-changes
+    if: ${{ github.event_name != 'push' && needs.check-changes.outputs.e2e_tasks }}
+    uses:  ./.github/workflows/task_e2e_tests.yml
+
+  done:
+    name: 'Success check'
+    if: ${{ always() }}
+    needs: [ 'check-changes', 'lint-frontend', 'unittest-frontend', 'docs', 'lint-backend', 'test-backend', 'test-e2e' ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if any task failed
+        run: |
+          data=($(echo "${{ toJSON(needs.*.result) }}" | sed 's/[][,]//g'))
+          for i in "${data[@]}"
+          do
+            if [[ $i == "failure" ]]; then
+                echo "::error::At least one required task failed"
+                exit 1;
+            fi
+          done

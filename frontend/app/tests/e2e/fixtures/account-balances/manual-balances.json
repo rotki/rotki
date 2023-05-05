@@ -1,0 +1,26 @@
+[
+  {
+    "asset": "XMR",
+    "keyword": "XMR",
+    "label": "My monero wallet",
+    "amount": "50.315",
+    "tags": ["public"],
+    "location": "blockchain"
+  },
+  {
+    "asset": "EUR",
+    "keyword": "EUR",
+    "label": "My Bank Account",
+    "amount": "150",
+    "tags": [],
+    "location": "banks"
+  },
+  {
+    "asset": "USD",
+    "keyword": "United States Dollar",
+    "label": "My USD Bank Account",
+    "amount": "100",
+    "tags": [],
+    "location": "banks"
+  }
+]

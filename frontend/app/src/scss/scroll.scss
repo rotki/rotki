@@ -1,0 +1,29 @@
+/* stylelint-disable no-descending-specificity */
+
+* {
+  scrollbar-color: var(--v-rotki-scrollbar-darken1) !important;
+  scrollbar-width: medium;
+
+  &::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+
+    &-thumb {
+      height: 6px;
+      background-clip: padding-box;
+      border-radius: 7px;
+      background-color: var(--v-rotki-scrollbar-darken1) !important;
+      border: 4px solid transparent;
+
+      &:hover {
+        background-color: var(--v-rotki-scrollbar-darken2) !important;
+      }
+
+      &:active {
+        background-color: var(--v-rotki-scrollbar-darken3) !important;
+      }
+    }
+  }
+}
+
+/* stylelint-enable no-descending-specificity */

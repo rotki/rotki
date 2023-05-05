@@ -1,0 +1,3 @@
+tools/data_faker/data_faker/data/kraken_asset_pairs.json
+tools/data_faker/data_faker/data/kraken_ticker.json
+rotkehlchen/tests/utils/data/binance_exchange_info.json

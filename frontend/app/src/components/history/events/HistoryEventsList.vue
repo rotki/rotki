@@ -1,0 +1,301 @@
+<script setup lang="ts">
+import { type DataTableHeader } from 'vuetify';
+import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { type HistoryEventEntry } from '@/types/history/events';
+import { isEvmEvent } from '@/utils/history/events';
+import { type TablePagination } from '@/types/pagination';
+
+const props = withDefaults(
+  defineProps<{
+    eventGroupHeader: HistoryEventEntry;
+    allEvents: HistoryEventEntry[];
+    colspan: number;
+    showEventDetail?: boolean;
+    loading?: boolean;
+  }>(),
+  {
+    showEventDetail: false,
+    loading: false
+  }
+);
+
+const emit = defineEmits<{
+  (e: 'edit:event', data: HistoryEventEntry): void;
+  (
+    e: 'delete:event',
+    data: {
+      canDelete: boolean;
+      item: HistoryEventEntry;
+    }
+  ): void;
+}>();
+
+const { eventGroupHeader, allEvents } = toRefs(props);
+
+const css = useCssModule();
+const { tc } = useI18n();
+
+const { getChain } = useSupportedChains();
+
+const headers: DataTableHeader[] = [
+  {
+    text: tc('common.type'),
+    value: 'type',
+    sortable: false,
+    cellClass: css['row__type']
+  },
+  {
+    text: tc('common.asset'),
+    value: 'asset',
+    sortable: false
+  },
+  {
+    text: tc('common.description'),
+    value: 'description',
+    sortable: false,
+    cellClass: css['row__description']
+  },
+  {
+    text: '',
+    value: 'actions',
+    align: 'end',
+    sortable: false,
+    cellClass: css['row__actions']
+  }
+];
+
+const evaluating: Ref<boolean> = ref(false);
+
+const events: Ref<HistoryEventEntry[]> = asyncComputed(() => {
+  const all = get(allEvents);
+  const eventHeader = get(eventGroupHeader);
+  if (all.length === 0) {
+    return [eventHeader];
+  }
+  const eventIdentifierHeader = eventHeader.eventIdentifier;
+  const filtered = all.filter(
+    ({ eventIdentifier, hidden }) =>
+      eventIdentifier === eventIdentifierHeader && !hidden
+  );
+
+  if (filtered.length > 0) {
+    return filtered;
+  }
+
+  return [eventHeader];
+}, []);
+
+const editEvent = (item: HistoryEventEntry) => emit('edit:event', item);
+const deleteEvent = (item: HistoryEventEntry) =>
+  emit('delete:event', {
+    item,
+    canDelete: isEvmEvent(item) ? get(events).length > 1 : true
+  });
+
+const ignoredInAccounting = useRefMap(
+  eventGroupHeader,
+  ({ ignoredInAccounting }) => !!ignoredInAccounting
+);
+
+const panel: Ref<number[]> = ref(get(ignoredInAccounting) ? [] : [0]);
+
+const isNoTxHash = (item: HistoryEventEntry) =>
+  item.entryType === HistoryEventEntryType.EVM_EVENT &&
+  item.counterparty === 'eth2' &&
+  item.eventSubtype === 'deposit asset';
+
+const options: TablePagination<HistoryEventEntry> = {
+  itemsPerPage: -1,
+  page: 1,
+  sortBy: [],
+  sortDesc: []
+};
+
+const showDropdown = computed(() => {
+  const length = get(events).length;
+  return (get(ignoredInAccounting) || length > 10) && length > 0;
+});
+
+watch(
+  [eventGroupHeader, ignoredInAccounting],
+  ([current, currentIgnored], [old, oldIgnored]) => {
+    if (
+      current.eventIdentifier !== old.eventIdentifier ||
+      currentIgnored !== oldIgnored
+    ) {
+      set(panel, currentIgnored ? [] : [0]);
+    }
+  }
+);
+</script>
+
+<template>
+  <table-expand-container
+    :colspan="colspan - 1"
+    :offset="1"
+    :padded="false"
+    visible
+  >
+    <template #append>
+      <v-expansion-panels
+        v-model="panel"
+        :class="css['expansions-panels']"
+        multiple
+      >
+        <v-expansion-panel>
+          <v-expansion-panel-header v-if="showDropdown">
+            <template #default="{ open }">
+              <div class="primary--text font-weight-bold">
+                {{
+                  open
+                    ? tc('transactions.events.view.hide')
+                    : tc('transactions.events.view.show', 0, {
+                        length: events.length
+                      })
+                }}
+              </div>
+            </template>
+          </v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <div
+              class="my-n4"
+              :class="{
+                'pt-4': showDropdown
+              }"
+            >
+              <data-table
+                :class="css.table"
+                :headers="headers"
+                :items="events"
+                :loading="loading || evaluating"
+                :loading-text="tc('transactions.events.loading')"
+                :no-data-text="tc('transactions.events.no_data')"
+                class="transparent"
+                :options="options"
+                hide-default-footer
+                :hide-default-header="$vuetify.breakpoint.mdAndUp"
+              >
+                <template #progress><span /></template>
+                <template #item.type="{ item }">
+                  <v-lazy>
+                    <history-event-type
+                      :event="item"
+                      :chain="getChain(item.location)"
+                    />
+                  </v-lazy>
+                </template>
+                <template #item.asset="{ item }">
+                  <v-lazy>
+                    <history-event-asset
+                      :event="item"
+                      :show-event-detail="showEventDetail"
+                    />
+                  </v-lazy>
+                </template>
+                <template #item.description="{ item }">
+                  <v-lazy>
+                    <history-event-note
+                      v-bind="item"
+                      :amount="item.balance.amount"
+                      :chain="getChain(item.location)"
+                      :no-tx-hash="isNoTxHash(item)"
+                    />
+                  </v-lazy>
+                </template>
+                <template #item.actions="{ item }">
+                  <v-lazy>
+                    <row-actions
+                      align="end"
+                      :delete-tooltip="tc('transactions.events.actions.delete')"
+                      :edit-tooltip="tc('transactions.events.actions.edit')"
+                      :no-edit="!isEvmEvent(item)"
+                      @edit-click="editEvent(item)"
+                      @delete-click="deleteEvent(item)"
+                    />
+                  </v-lazy>
+                </template>
+              </data-table>
+            </div>
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+      </v-expansion-panels>
+    </template>
+  </table-expand-container>
+</template>
+
+<style lang="scss" module>
+.table {
+  :global {
+    .v-data-table {
+      &__wrapper {
+        overflow-x: hidden;
+
+        tbody {
+          tr {
+            &:hover {
+              background-color: transparent !important;
+            }
+
+            td {
+              padding-top: 1rem !important;
+              padding-bottom: 1rem !important;
+              min-height: 91px !important;
+              height: 91px !important;
+
+              @media screen and (max-width: 599px) {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.row {
+  &__type {
+    width: 250px;
+    padding-left: 0 !important;
+  }
+
+  &__description {
+    width: 40%;
+    min-width: 300px;
+    line-height: 1.5rem;
+    word-break: break-word;
+  }
+
+  &__actions {
+    width: 100px;
+    padding-right: 0 !important;
+  }
+}
+
+.expansions {
+  &-panels {
+    :global {
+      .v-expansion-panel {
+        background: transparent !important;
+
+        &::before {
+          box-shadow: none;
+        }
+
+        &-header {
+          padding: 0;
+          min-height: auto;
+          width: auto;
+        }
+
+        &-content {
+          &__wrap {
+            padding: 0;
+          }
+        }
+      }
+    }
+  }
+}
+</style>

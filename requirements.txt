@@ -1,0 +1,42 @@
+gevent==22.10.2
+greenlet==2.0.2
+gevent-websocket==0.10.1
+wsaccel==0.6.3  # recommended for acceleration of gevent-websocket. But abandoned.
+web3==5.31.3
+rotki-pysqlcipher3==2022.8.1
+requests==2.30.0
+urllib3==1.26.15
+coincurve==17.0.0
+base58check==1.0.2
+bech32==1.2.0
+gql==2.0.0
+scalecodec==1.2.2
+py-sr25519-bindings==0.2.0
+py-ed25519-zebra-bindings==1.0.1
+py-bip39-bindings==0.1.11
+substrate-interface==1.6.2
+beautifulsoup4==4.12.2
+maxminddb==2.2.0
+miniupnpc==2.0.2; sys_platform != 'win32'
+miniupnpc==2.2.3; sys_platform == 'win32'
+cryptography==40.0.2
+
+# For the rest api
+flask-cors==3.0.10
+flask==2.3.2
+marshmallow==3.19.0
+webargs==8.2.0
+werkzeug==2.3.3
+
+# for icon validation
+filetype==1.2.0
+
+# for fuzzy search of assets
+polyleven==0.8
+
+bip-utils==2.7.0
+
+typing-extensions==4.5.0 # used for typing.ParamSpec and typing.Concatenate (in stdlib since python 3.10)
+
+#constraints
+pycparser<=2.17 # ugly -- to avoid https://github.com/eliben/pycparser/pull/198

@@ -1,0 +1,105 @@
+name: Backend Tests
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+      test_environment:
+        required: true
+        type: string
+
+jobs:
+  test-backend:
+    env:
+      CI: true
+      TEST_ENVIRONMENT: ${{ inputs.test_environment }}
+    runs-on: ${{ inputs.os }}
+    name: 'Backend tests'
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        test-group: [api, others]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+      - name: Checkout test caching
+        uses: actions/checkout@v3
+        with:
+          repository: rotki/test-caching
+          path: test-caching
+      - name: Load env
+        uses: rotki/action-env@v1
+        with:
+          env_file: .github/.env.ci
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - name: Cache rotkehlchen test directory
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/.rotkehlchen-test-dir
+          key: ${{ runner.os }}-testdir
+      - name: Setup minupnpc
+        if: runner.os == 'Windows'
+        run: |          
+          $MINIUPNPC_ZIP = "miniupnpc_64bit_py39-2.2.24.zip"
+          echo "`nFetching miniupnpc for windows`n"
+          $PYTHON_LOCATION = ((python -c "import os, sys; print(os.path.dirname(sys.executable))") | Out-String).trim()
+          $PYTHON_DIRECTORY = Split-Path -Path $PYTHON_LOCATION -Leaf        
+                    
+          $DLL_PATH = (Join-Path $PYTHON_LOCATION "miniupnpc.dll")
+          
+          echo "miniupnpc.dll will be installled in $PYTHON_LOCATION"
+          curl.exe -L -O "https://github.com/mrx23dot/miniupnp/releases/download/miniupnpd_2_2_24/$MINIUPNPC_ZIP"
+          
+          echo "Downloaded miniupnpc.zip"
+          
+          Expand-Archive -Force -Path ".\$MINIUPNPC_ZIP" -DestinationPath $PYTHON_LOCATION
+          
+          echo "Unzipped miniupnpc to $PYTHON_LOCATION`nDone with miniupnpc"
+          Get-ChildItem -Path $PYTHON_LOCATION
+          (Get-Command python).Path
+      - name: Install dependencies
+        run: |          
+          pip install --upgrade pip==${{ env.PIP_VERSION }} wheel
+          pip install pytest-cov
+          pip install -r requirements_dev.txt
+          pip install -e .
+      - name: Install pytest annotation plugin
+        run: |     
+          pip install pytest-github-actions-annotate-failures
+      - name: Run tests
+        env:
+          PYTEST_ARGS: '--durations=150'
+          FORCE_COLOR: 1
+          MATIX_JOB: ${{ matrix.test-group }}
+        run: |
+          if [ "${{ runner.os }}" == 'macOS' ];
+          then
+            COVERAGE_ARGS=''
+          else
+            COVERAGE_ARGS='--cov=./'
+          fi          
+
+          export CASSETTES_DIR=$HOME/work/rotki/rotki/test-caching
+
+          if [ "${{ matrix.test-group }}" == 'api' ]
+          then
+            python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS rotkehlchen/tests/api
+          else
+            python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS --ignore=rotkehlchen/tests/api rotkehlchen/tests/
+          fi
+          
+          python pytestgeventwrapper.py --dead-fixtures
+        shell: bash
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          flags: backend

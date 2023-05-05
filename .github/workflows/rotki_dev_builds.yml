@@ -1,0 +1,348 @@
+name: Rotki Development Builds
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  push:
+    branches:
+      - build
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_MACOS: 11
+
+jobs:
+  build-linux:
+    name: Build linux binary
+    env:
+      CI: true
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Load env
+        uses: rotki/action-env@v1
+        with:
+          env_file: .github/.env.ci
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+            frontend/app/components.d.ts
+            ~/.cache/Cypress
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - name: Package
+        id: packaging
+        run: |
+          echo "::group::packaging dependencies"
+          pip3 install --upgrade pip==${{ env.PIP_VERSION }}
+          pip3 install packaging wheel setuptools-scm
+          echo "::endgroup::"
+          ./package.py --build full
+      - name: Upload files
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-app
+          path: |
+            dist/*.AppImage
+            dist/*.AppImage.sha512
+
+  build-macos:
+    name: 'Build macOS binary'
+    env:
+      CI: true
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      MACOS_BUILD_ARCH: 'universal2'
+      ARCHFLAGS: '-arch arm64 -arch x86_64'
+      _PYTHON_HOST_PLATFORM: macosx-10.9-universal2
+      MACOSX_DEPLOYMENT_TARGET: 10.9
+      CMAKE_OSX_ARCHITECTURES: 'x86_64;arm64'
+    environment: macos_sign
+    runs-on: macos-11
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Load env
+        uses: rotki/action-env@v1
+        with:
+          env_file: .github/.env.ci
+      - name: Checkout libffi
+        uses: actions/checkout@v3
+        with:
+          repository: libffi/libffi
+          path: libffi
+          ref: v3.4.2
+      - name: Install libffi build tools
+        run: brew install autoconf automake libtool pkg-config
+      - name: Build universal libbfi (required by coincurve)
+        run: |
+          brew uninstall --ignore-dependencies libffi || true
+          echo "::group::Autogen"
+          ./autogen.sh
+          echo "::endgroup::"
+          echo "::group::arm64"
+          ./configure --host=aarch64-apple-darwin CC='gcc -arch arm64' CXX='g++ -arch arm64'
+          make
+          mkdir ../ffi
+          cp -R aarch64-apple-darwin ../ffi/
+          echo "::endgroup::"
+          echo "::group::x86_64"
+          make clean
+          ./configure --host=x86_64-apple-darwin CC='gcc -arch x86_64' CXX='g++ -arch x86_64'
+          make
+          echo "::endgroup::"
+          echo "::group::install"
+          lipo -create -output x86_64-apple-darwin/.libs/libffi.8.dylib x86_64-apple-darwin/.libs/libffi.8.dylib ../ffi/aarch64-apple-darwin/.libs/libffi.8.dylib
+          lipo -create -output x86_64-apple-darwin/.libs/libffi.a x86_64-apple-darwin/.libs/libffi.a ../ffi/aarch64-apple-darwin/.libs/libffi.a
+          lipo -create -output x86_64-apple-darwin/.libs/libffi_convenience.a x86_64-apple-darwin/.libs/libffi_convenience.a ../ffi/aarch64-apple-darwin/.libs/libffi_convenience.a
+          lipo -archs x86_64-apple-darwin/.libs/libffi.8.dylib
+          make install
+          echo "::endgroup::"
+        working-directory: libffi
+      - name: Cache python pkg
+        uses: actions/cache@v3
+        with:
+          path: ~/python*.pkg
+          key: ${{ runner.os }}-python-${{ env.PYTHON_VERSION }}-${{ env.PYTHON_MACOS }}
+      - name: Cache python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/Library/Caches/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Set up python
+        run: packaging/setup-macos-python.sh ${{ env.PYTHON_VERSION }} ${{ env.PYTHON_MACOS }}
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+            frontend/app/components.d.ts
+            ~/Library/Caches/Cypress
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - name: Package
+        id: packaging
+        run: |
+          echo "::group::packaging dependencies"
+          pip3 install --upgrade pip==${{ env.PIP_VERSION }}
+          pip3 install virtualenv
+          python3 -m virtualenv ~/venv
+          source ~/venv/bin/activate
+          pip3 install packaging wheel setuptools-scm
+          echo "::endgroup::"
+          ./package.py --build full
+        env:
+          CERTIFICATE_OSX_APPLICATION: ${{ secrets.CERTIFICATE_OSX_APPLICATION }}
+          CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+          IDENTITY: ${{ secrets.IDENTITY }}
+          APPLEID: ${{ secrets.APPLEID }}
+          APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
+      - name: Upload files (arm64)
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-app-arm64
+          path: |
+            dist/rotki-darwin_arm64*.dmg
+            dist/rotki-darwin_arm64*.dmg.sha512
+      - name: Upload files (x86_64)
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-app-x64
+          path: |
+            dist/rotki-darwin_x64*.dmg
+            dist/rotki-darwin_x64*.dmg.sha512
+      - name: Upload colibri files
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-colibri
+          path: |
+            dist/colibri
+
+  build-windows:
+    name: Build windows binary
+    env:
+      CI: true
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BUILD_DEPENDENCIES: "build-dependencies"
+    runs-on: windows-latest
+    environment: windows_sign
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Load env
+        uses: rotki/action-env@v1
+        with:
+          env_file: .github/.env.ci
+      - name: Set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: |            
+            ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+            frontend/app/components.d.ts
+            ~\AppData\Local\Cypress
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - name: Build rotki
+        id: packaging
+        env:
+          CERTIFICATE_WIN_APPLICATION: ${{ secrets.CERTIFICATE_WIN_APPLICATION }}
+          CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+        run: |
+          echo ::group::"packaging dependencies"          
+          pip3 install --upgrade pip==${{ env.PIP_VERSION }}
+          pip3 install packaging wheel setuptools-scm
+          echo ::endgroup::
+          python .\package.py --build full
+        shell: powershell
+      - name: Upload files
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-app
+          path: |
+            dist\rotki-win32*.exe
+            dist\rotki-win32*.exe.sha512
+
+  build-docker:
+    name: Build docker images
+    runs-on: ubuntu-latest
+    environment: docker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Rotki Version
+        id: rotki_version
+        run: |
+          ROTKI_VERSION=$(cat .bumpversion.cfg | grep 'current_version = ' | sed -n -e 's/current_version = //p')
+          POSTFIX=$(if git describe --tags --exact-match "$REVISION" &>/dev/null; then echo ''; else echo '-dev'; fi)
+          ROTKI_VERSION=${ROTKI_VERSION}${POSTFIX}$(date +'%Y%m%d')
+          echo "version=${ROTKI_VERSION}" >> $GITHUB_OUTPUT
+      - name: Build Information
+        id: build_information
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == 'schedule' ]]; then
+            PLATFORMS='linux/amd64,linux/arm64'
+            TAG=nightly
+          else
+            PLATFORMS=linux/amd64
+            TAG=dev
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "platforms=$PLATFORMS" >> $GITHUB_OUTPUT
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ steps.build_information.outputs.platforms }}
+          push: true
+          tags: rotki/rotki:${{ steps.build_information.outputs.tag }}
+          build-args: |
+            REVISION=${{ github.sha }}
+            ROTKI_VERSION=${{ steps.rotki_version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
+
+  notify:
+    name: 'Success check'
+    if: ${{ always() }}
+    needs: [ 'build-linux', 'build-windows', 'build-macos', 'build-docker' ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Check if any task failed
+        run: |
+          pip install requests
+
+          data=($(echo "${{ toJSON(needs.*.result) }}" | sed 's/[][,]//g'))
+          for i in "${data[@]}"
+          do
+            if [[ $i == "failure" ]]; then
+                ./.github/scripts/notifier.py --webhook ${{ secrets.WEBHOOK }} --run-id ${{ github.run_id }}
+                exit 1;
+            fi
+          done

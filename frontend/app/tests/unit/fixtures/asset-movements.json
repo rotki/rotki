@@ -1,0 +1,170 @@
+{
+  "result": {
+    "entries": [
+      {
+        "entry": {
+          "identifier": "7290b52b03e8cb004610d4b97fbf3e23fabcd4621818dd0a2796b26adbfde20f",
+          "timestamp": 1672397802,
+          "location": "binance",
+          "category": "deposit",
+          "address": "TGfXpXekeDvUdf5pyx28ujfKbPWU9TvR4D",
+          "transaction_id": "Internal transfer 125265501096",
+          "asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "amount": "535.71",
+          "fee_asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "fee": "0",
+          "link": "3262151839558738176"
+        },
+        "ignored_in_accounting": false
+      },
+      {
+        "entry": {
+          "identifier": "320fc0eae375b9cc8da9c2254c7f5f0db243fcec5c325f75ae13b075ace70ff9",
+          "timestamp": 1671112421,
+          "location": "binance",
+          "category": "deposit",
+          "address": "TGfXpXekeDvUdf5pyx28ujfKbPWU9TvR4D",
+          "transaction_id": "Internal transfer 124487556073",
+          "asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "amount": "535.71",
+          "fee_asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "fee": "0",
+          "link": "3240586736304726273"
+        },
+        "ignored_in_accounting": false
+      },
+      {
+        "entry": {
+          "identifier": "05205fc450058e8a36c9b032513a2ae92cabe922886256003cfd1f189aeede05",
+          "timestamp": 1669840741,
+          "location": "binance",
+          "category": "deposit",
+          "address": "TGfXpXekeDvUdf5pyx28ujfKbPWU9TvR4D",
+          "transaction_id": "Internal transfer 123556063180",
+          "asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "amount": "535.71",
+          "fee_asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "fee": "0",
+          "link": "3219251476161962241"
+        },
+        "ignored_in_accounting": false
+      },
+      {
+        "entry": {
+          "identifier": "19dee45be662987067df1f37fcd7bb9ae146901fc1bbffb818a06af5476460ae",
+          "timestamp": 1668632261,
+          "location": "binance",
+          "category": "deposit",
+          "address": "TGfXpXekeDvUdf5pyx28ujfKbPWU9TvR4D",
+          "transaction_id": "Internal transfer 122452515678",
+          "asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "amount": "535.71",
+          "fee_asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "fee": "0",
+          "link": "3198976553334201345"
+        },
+        "ignored_in_accounting": false
+      },
+      {
+        "entry": {
+          "identifier": "82627fa6d8f54cd2d905a8f346e3915ac221b1c7f798298d9bfd4af3312f789c",
+          "timestamp": 1667984559,
+          "location": "binance",
+          "category": "deposit",
+          "address": "0xa13a1baf456e2b750a87b9e1987d1387cfdc05f6",
+          "transaction_id": "0x47bbfdfc89957e2ab9cca3e46bb49ccd66f4deedabdec9188517af97f365f985",
+          "asset": "eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53",
+          "amount": "100",
+          "fee_asset": "eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53",
+          "fee": "0",
+          "link": "3188109910433394945"
+        },
+        "ignored_in_accounting": false
+      },
+      {
+        "entry": {
+          "identifier": "ae59b12d360ea761cb52fb27b899be769d9b78ce7a0082a78f9ef0751d90390f",
+          "timestamp": 1667307082,
+          "location": "binance",
+          "category": "deposit",
+          "address": "TGfXpXekeDvUdf5pyx28ujfKbPWU9TvR4D",
+          "transaction_id": "Internal transfer 120543292378",
+          "asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "amount": "535.71",
+          "fee_asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "fee": "0",
+          "link": "3176743733962463232"
+        },
+        "ignored_in_accounting": false
+      },
+      {
+        "entry": {
+          "identifier": "02f7e92c130f00b021f24f09f33c4cc8fd4f534cdfa7137128b8423668b86976",
+          "timestamp": 1665822646,
+          "location": "binance",
+          "category": "deposit",
+          "address": "TGfXpXekeDvUdf5pyx28ujfKbPWU9TvR4D",
+          "transaction_id": "Internal transfer 119270677766",
+          "asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "amount": "535.71",
+          "fee_asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "fee": "0",
+          "link": "3151839029864421377"
+        },
+        "ignored_in_accounting": false
+      },
+      {
+        "entry": {
+          "identifier": "364b47b9c35c9810727d0507f4e0a69439ea5fabce9631bed3cd520bef6d43da",
+          "timestamp": 1664654524,
+          "location": "binance",
+          "category": "deposit",
+          "address": "TGfXpXekeDvUdf5pyx28ujfKbPWU9TvR4D",
+          "transaction_id": "Internal transfer 118437087598",
+          "asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "amount": "535.71",
+          "fee_asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "fee": "0",
+          "link": "3132241205896158976"
+        },
+        "ignored_in_accounting": false
+      },
+      {
+        "entry": {
+          "identifier": "5ea6a4d7d9b69a948c2b6731dd7a161565f0ff8630a4dec9cf091e99c850671a",
+          "timestamp": 1664581119,
+          "location": "binance",
+          "category": "deposit",
+          "address": "TGfXpXekeDvUdf5pyx28ujfKbPWU9TvR4D",
+          "transaction_id": "09f83e09bd382ac13f090aeebe2ea48be99f11fab024769f5a7b593bb0f36a3a",
+          "asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "amount": "3426.396588",
+          "fee_asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "fee": "0",
+          "link": "3131009659222630145"
+        },
+        "ignored_in_accounting": false
+      },
+      {
+        "entry": {
+          "identifier": "1ac97b480a6f05ded08dbb3ab7340f4deaf7b40538108150688d79db1919b04d",
+          "timestamp": 1664382069,
+          "location": "binance",
+          "category": "deposit",
+          "address": "TGfXpXekeDvUdf5pyx28ujfKbPWU9TvR4D",
+          "transaction_id": "c839cdb9ac18a4b2d4e478fecac38d6e5c620509c319936202f0415a1c020c73",
+          "asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "amount": "19.464148",
+          "fee_asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "fee": "0",
+          "link": "3127670168806235906"
+        },
+        "ignored_in_accounting": false
+      }
+    ],
+    "entries_total": 45,
+    "entries_found": 45,
+    "entries_limit": -1
+  },
+  "message": ""
+}

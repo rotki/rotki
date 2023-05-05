@@ -1,0 +1,52 @@
+{
+  "plugins": [
+    "stylelint-scss",
+    "@namics/stylelint-bem",
+    "stylelint-order"
+  ],
+  "extends": "stylelint-config-recommended-vue/scss",
+  "overrides": [
+    {
+      "files": [
+        "**/*.scss"
+      ],
+      "customSyntax": "postcss-scss"
+    }
+    ],
+  "rules": {
+    "no-empty-source": null,
+    "selector-pseudo-element-no-unknown": [
+      true,
+      {}
+    ],
+    "selector-pseudo-class-no-unknown": [
+      true,
+      {
+        "ignorePseudoClasses": ["global", "deep"]
+      }
+    ],
+    "scss/selector-nest-combinators": "always",
+    "scss/selector-no-redundant-nesting-selector": true,
+    "plugin/stylelint-bem-namics": {
+      "patternPrefixes": [],
+      "helperPrefixes": []
+    },
+    "rule-empty-line-before": [
+      "always", {
+        "except": ["first-nested"]
+      }
+    ],
+    "comment-no-empty": true,
+    "declaration-block-no-duplicate-properties": true,
+    "declaration-block-single-line-max-declarations": 1,
+    "selector-class-pattern": "^(?:(?![^&](__|--))[\\s\\S])*$",
+    "selector-nested-pattern": "^(?:(?![^&](__|--))[\\s\\S])*$",
+    "order/order": [
+      "custom-properties",
+      "dollar-variables",
+      "declarations",
+      "rules",
+      "at-rules"
+    ]
+  }
+}

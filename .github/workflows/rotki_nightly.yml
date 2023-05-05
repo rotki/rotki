@@ -1,0 +1,58 @@
+name: Rotki Nightly Tests
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  push:
+    branches:
+      - tests
+
+jobs:
+  linux:
+    uses: ./.github/workflows/task_backend_tests.yml
+    with:
+      os: ubuntu-20.04
+      test_environment: nightly
+    secrets: inherit
+
+  macos:
+    uses: ./.github/workflows/task_backend_tests.yml
+    if: ${{ always() }}
+    needs: ['linux']
+    with:
+      os: macos-latest
+      test_environment: nightly
+    secrets: inherit
+
+  e2e:
+    uses: ./.github/workflows/task_e2e_tests.yml
+    if: ${{ always() }}
+    needs: [ 'macos' ]
+    secrets: inherit
+
+  unittest-frontend:
+    uses: ./.github/workflows/task_fe_unit_tests.yml
+    if: ${{ always() }}
+
+  notify:
+    name: 'Success check'
+    if: ${{ always() }}
+    needs: [ 'linux', 'macos' ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Check if any task failed
+        run: |
+          pip install requests
+
+          data=($(echo "${{ toJSON(needs.*.result) }}" | sed 's/[][,]//g'))
+          for i in "${data[@]}"
+          do
+            if [[ $i == "failure" ]]; then
+                ./.github/scripts/notifier.py --webhook ${{ secrets.WEBHOOK }} --run-id ${{ github.run_id }} --test
+                exit 1;
+            fi
+          done

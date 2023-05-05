@@ -1,0 +1,12 @@
+<script setup lang="ts">
+import '@/utils/chartjs-adapter-dayjs';
+
+useSessionStateCleaner();
+
+const { setupBackend } = useBackendManagement();
+startPromise(setupBackend());
+</script>
+
+<template>
+  <router-view />
+</template>

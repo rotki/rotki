@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   id="Layer_1"
+   data-name="Layer 1"
+   viewBox="0 0 300 299.99999"
+   class="logo"
+   version="1.1"
+   sodipodi:docname="keeperdao.svg"
+   width="300"
+   height="300"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)">
+  <metadata
+     id="metadata19697">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="3174"
+     inkscape:window-height="1820"
+     id="namedview19695"
+     showgrid="false"
+     inkscape:pagecheckerboard="true"
+     inkscape:zoom="1.85"
+     inkscape:cx="306.50916"
+     inkscape:cy="311.70294"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="Layer_1" />
+  <defs
+     id="defs19668">
+    <style
+       id="style19666">.cls-1{fill:#fff;}</style>
+  </defs>
+  <circle
+     style="fill:#000000;fill-rule:evenodd;stroke-width:1.00506"
+     id="path19699"
+     cx="150"
+     cy="150"
+     r="125" />
+  <g
+     id="g19704"
+     transform="translate(10.185899,6.249831)">
+    <rect
+       class="cls-1"
+       y="73.560165"
+       width="28.08"
+       height="28.08"
+       id="rect19688"
+       x="69.61911" />
+    <path
+       class="cls-1"
+       d="M 153.8391,101.63017 V 73.550168 H 125.77911 V 101.63017 H 97.699108 v 112.32 H 181.9291 v -112.32 z m 1.94,58.09 h -31.93999 v -31.94 h 31.93999 z"
+       id="path19690" />
+    <rect
+       class="cls-1"
+       x="181.92909"
+       y="73.560165"
+       width="28.08"
+       height="28.08"
+       id="rect19692" />
+  </g>
+</svg>

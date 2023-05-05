@@ -1,0 +1,99 @@
+{
+  "aave_lending": {
+    "header": "Aave Darlehnen ({asset})",
+    "history": "Aave Verlauf"
+  },
+  "about": {
+    "copy_data_directory_tooltip": "Datenverzeichnis kopieren",
+    "copy_information_tooltip": "Programminformationen kopieren",
+    "data_directory": "Datenverzeichnis:",
+    "electron": "Electron:",
+    "frontend_version": "Frontend Version:",
+    "open_data_dir_tooltip": "Datenverzeichnis öffnen",
+    "platform": "Platform:",
+    "release_notes": "Was gibt's Neues",
+    "user_agent": "User Agent:"
+  },
+  "account_balance_table": {
+    "liabilities": "Verbindlichkeiten",
+    "loopring": "Loopring"
+  },
+  "account_balances": {
+    "confirm_delete": {
+      "description_address": "Sind Sie sicher dass Sie {count} Adresse(n) entfernen möchten",
+      "description_xpub": "Sind Sie sicher dass Sie {address} entfernen möchten",
+      "title": "Konto entfernen"
+    },
+    "data_table": {
+      "loading": "Bitte warten während rotki die Blockchain abfragt..."
+    },
+    "delete_tooltip": "Entferne ausgewählte Konten",
+    "detect_tokens": {
+      "tooltip": {
+        "last_detected": "Zuletzt erfasst: {time}",
+        "redetect": "Neuerfassung Tokens",
+        "redetect_all": "Re-detect tokens for all addreses"
+      }
+    },
+    "edit_tooltip": "Konto ändern",
+    "headers": {
+      "actions": "Aktivitäten",
+      "num_of_detected_tokens": "Anzahl erfasster Tokens",
+      "ownership": "Eigentum",
+      "usd_value": "{symbol} Wert ",
+      "usd_value_eth": "Totaler {symbol} Wert der Kontovermögenswerte",
+      "validator": "Validator Index | Public Key"
+    },
+    "refresh_tooltip": "Aktualisierung der {blockchain} Salden - gecachte Einträge werden ignoriert"
+  },
+  "account_form": {
+    "advanced_tooltip": "Zeige erweiterte xpub Optionen | Verstecke erweiterte xpub Optionen",
+    "error": {
+      "description": "Fehler beim hinzufügen des Kontos: {error}",
+      "title": "Konto hinzufügen"
+    },
+    "labels": {
+      "addresses": "Adressen",
+      "addresses_entries": "keine Einträge | {count} einmaliger Eintrag | {count} einmalige Einträge",
+      "addresses_hint": "Füge mehrere Komma serpartierte Adressen hinzu",
+      "blockchain": "Wähle Blockchain",
+      "btc": {
+        "derivation_path": "Derivation Path",
+        "derivation_path_hint": "Optional",
+        "xpub": "XPUB"
+      },
+      "multiple": "Mehrere Adressen hinzufügen"
+    },
+    "validation": {
+      "address_non_empty": "Die Adresse darf nicht leer sein",
+      "xpub_non_empty": "Das XPUB Feld draf nicht leer sein"
+    }
+  },
+  "account_group_header": {
+    "copy_tooltip": "XPUB in die Zwischwenablage kopieren",
+    "delete_tooltip": "Eintrag und alle dazugehörigen Konten löschen",
+    "derivation_path": "Derivation Path",
+    "edit_tooltip": "XPUB Label und Tags bearbeiten",
+    "standalone": "Standalone",
+    "xpub": "xpub:"
+  },
+  "account_management": {
+    "about_tooltip": "Über Programm Modal anzeigen",
+    "creation": {
+      "error": "Kontoerstellung fehlgeschlagen"
+    }
+  },
+  "actions": {
+    "defi": {
+      "liquity_pools": {
+        "error": {
+          "description": "Die Abfrage der Liquity Pools ist fehlgeschlagen: {message}",
+          "title": "Liquity Pools"
+        },
+        "task": {
+          "title": "Liquity Pools abfragen"
+        }
+      }
+    }
+  }
+}

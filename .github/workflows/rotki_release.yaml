@@ -1,0 +1,395 @@
+name: Rotki Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_MACOS: 11
+
+jobs:
+  create_draft:
+    name: Create Draft
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Get Release Version
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Generate changelog
+        id: change_log
+        run: |
+          version=$(echo $RELEASE_VERSION | sed 's/^v//g')
+          echo 'changes<<EOF' >> $GITHUB_OUTPUT
+          python3 tools/scripts/generate_changelog.py -f docs/changelog.rst -v $version >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+          echo "version=${version}" >> $GITHUB_OUTPUT
+      - name: Create Release
+        id: create_release
+        uses: rotki/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ env.RELEASE_VERSION }}
+          name: Rotki ${{ env.RELEASE_VERSION }} -
+          body: |
+            # Description
+
+            For more information check the detailed changelog below :point_down:
+
+            # Downloads
+
+            Upgrade is highly recommended. Download the binary for your OS from below:
+
+            - **Linux**
+              - [AppImage](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage)
+              - [Tar with executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x64-${{ env.RELEASE_VERSION }}.tar.xz)
+              - [deb package](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_amd64-${{ env.RELEASE_VERSION }}.deb)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-linux)
+            - **OSX**
+              - arm64
+                - [DMG](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_arm64-${{ env.RELEASE_VERSION }}.dmg)
+                - [ZIP](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_arm64-${{ env.RELEASE_VERSION }}.zip)
+              - x86_64
+                - [DMG](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.dmg)
+                - [ZIP](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.zip)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-macos.zip)
+            - **Windows**
+              - [Windows executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32_x64-${{ env.RELEASE_VERSION }}.exe)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-windows.exe)
+            
+            Optionally, you can also [verify the integrity](https://rotki.readthedocs.io/en/latest/installation_guide.html#verifying-integrity) of the aforementioned binaries using the following checksums:
+            
+            - **Linux**
+              - [AppImage checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage.sha512)
+              - [Tar with executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x64-${{ env.RELEASE_VERSION }}.tar.xz.sha512)
+              - [deb package](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_amd64-${{ env.RELEASE_VERSION }}.deb.sha512)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-linux.sha512)
+            - **OSX**
+              - arm64
+                - [DMG checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_arm64-${{ env.RELEASE_VERSION }}.dmg.sha512)
+                - [ZIP checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_arm64-${{ env.RELEASE_VERSION }}.zip.sha512)
+              - x86_64
+                - [DMG checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.dmg.sha512)
+                - [ZIP checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.zip.sha512)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-backend-${{ steps.change_log.outputs.version }}-macos.zip.sha512)
+            - **Windows**
+              - [Windows executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32_x64-${{ env.RELEASE_VERSION }}.exe.sha512)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-windows.exe.sha512)
+
+            # Release Highlights
+            ----
+
+            These were the highlights. Check below for the full changelog :point_down:
+
+            ${{ steps.change_log.outputs.changes }}
+
+            # Newly supported assets
+
+            Added support for the following assets:
+
+          draft: true
+  linux:
+    name: 'Build linux binary'
+    env:
+      CI: true
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    runs-on: ubuntu-20.04
+    needs: create_draft
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Load env
+        uses: rotki/action-env@v1
+        with:
+          env_file: .github/.env.ci
+      - name: Get Release Version
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+            frontend/app/components.d.ts
+            ~/.cache/Cypress
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - name: Package
+        id: packaging
+        run: |
+          echo "::group::packaging dependencies"
+          pip3 install --upgrade pip==${{ env.PIP_VERSION }}
+          pip3 install packaging wheel setuptools-scm
+          echo "::endgroup::"
+          ./package.py --build full
+      - name: Upload to release
+        uses: rotki/action-gh-release@v1
+        with:
+          tag_name: ${{ env.RELEASE_VERSION }}
+          name: Rotki ${{ env.RELEASE_VERSION }} -
+          draft: true
+          files: |
+            dist/*.sha512
+            dist/rotki-core-*-linux
+
+  macos:
+    name: 'Build macOS binary'
+    env:
+      CI: true
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      MACOS_BUILD_ARCH: 'universal2'
+      ARCHFLAGS: '-arch arm64 -arch x86_64'
+      _PYTHON_HOST_PLATFORM: macosx-10.9-universal2
+      MACOSX_DEPLOYMENT_TARGET: 10.9
+      CMAKE_OSX_ARCHITECTURES: 'x86_64;arm64'
+    environment: macos_sign
+    runs-on: macos-11
+    needs: create_draft
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Load env
+        uses: rotki/action-env@v1
+        with:
+          env_file: .github/.env.ci
+      - name: Get Release Version
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Checkout libffi
+        uses: actions/checkout@v3
+        with:
+          repository: libffi/libffi
+          path: libffi
+          ref: v3.4.2
+      - name: Install libffi build tools
+        run: brew install autoconf automake libtool pkg-config
+      - name: Build universal libbfi (required by coincurve)
+        run: |
+          brew uninstall --ignore-dependencies libffi || true
+          echo "::group::Autogen"
+          ./autogen.sh
+          echo "::endgroup::"
+          echo "::group::arm64"
+          ./configure --host=aarch64-apple-darwin CC='gcc -arch arm64' CXX='g++ -arch arm64'
+          make
+          mkdir ../ffi
+          cp -R aarch64-apple-darwin ../ffi/
+          echo "::endgroup::"
+          echo "::group::x86_64"
+          make clean
+          ./configure --host=x86_64-apple-darwin CC='gcc -arch x86_64' CXX='g++ -arch x86_64'
+          make
+          echo "::endgroup::"
+          echo "::group::install"
+          lipo -create -output x86_64-apple-darwin/.libs/libffi.8.dylib x86_64-apple-darwin/.libs/libffi.8.dylib ../ffi/aarch64-apple-darwin/.libs/libffi.8.dylib
+          lipo -create -output x86_64-apple-darwin/.libs/libffi.a x86_64-apple-darwin/.libs/libffi.a ../ffi/aarch64-apple-darwin/.libs/libffi.a
+          lipo -create -output x86_64-apple-darwin/.libs/libffi_convenience.a x86_64-apple-darwin/.libs/libffi_convenience.a ../ffi/aarch64-apple-darwin/.libs/libffi_convenience.a
+          lipo -archs x86_64-apple-darwin/.libs/libffi.8.dylib
+          make install
+          echo "::endgroup::"
+        working-directory: libffi
+      - name: Cache python pkg
+        uses: actions/cache@v3
+        with:
+          path: ~/python*.pkg
+          key: ${{ runner.os }}-python-${{ env.PYTHON_VERSION }}-${{ env.PYTHON_MACOS }}
+      - name: Cache python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/Library/Caches/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Set up python
+        run: packaging/setup-macos-python.sh ${{ env.PYTHON_VERSION }} ${{ env.PYTHON_MACOS }}
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+            frontend/app/components.d.ts
+            ~/Library/Caches/Cypress
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - name: Package
+        id: packaging
+        run: |
+          echo "::group::packaging dependencies"
+          pip3 install --upgrade pip==${{ env.PIP_VERSION }}
+          pip3 install virtualenv
+          python3 -m virtualenv ~/venv
+          source ~/venv/bin/activate
+          pip3 install packaging wheel setuptools-scm
+          echo "::endgroup::"
+          ./package.py --build full
+        env:
+          CERTIFICATE_OSX_APPLICATION: ${{ secrets.CERTIFICATE_OSX_APPLICATION }}
+          CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+          IDENTITY: ${{ secrets.IDENTITY }}
+          APPLEID: ${{ secrets.APPLEID }}
+          APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
+      - name: Upload to release
+        uses: rotki/action-gh-release@v1
+        with:
+          tag_name: ${{ env.RELEASE_VERSION }}
+          name: Rotki ${{ env.RELEASE_VERSION }} -
+          draft: true
+          files: |
+            dist/*.sha512
+            dist/rotki-core-*-macos.zip
+
+  windows:
+    name: 'Build windows binary'
+    env:
+      CI: true
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BUILD_DEPENDENCIES: "build-dependencies"
+    runs-on: windows-latest
+    environment: windows_sign
+    needs: create_draft
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Load env
+        uses: rotki/action-env@v1
+        with:
+          env_file: .github/.env.ci
+      - name: Get Release Version
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+            frontend/app/components.d.ts
+            ~\AppData\Local\Cypress
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - name: Persist Build Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~\${{ env.BUILD_DEPENDENCIES }}\
+          key: ${{ runner.os }}-build-dependencies
+      - name: Build rotki
+        id: packaging
+        env:
+          CERTIFICATE_WIN_APPLICATION: ${{ secrets.CERTIFICATE_WIN_APPLICATION }}
+          CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+        run: |
+          echo ::group::"packaging dependencies"
+          pip3 install --upgrade pip==${{ env.PIP_VERSION }}
+          pip3 install packaging wheel setuptools-scm
+          echo ::endgroup::
+          python .\package.py --build full
+        shell: powershell
+      - name: Upload to release
+        uses: rotki/action-gh-release@v1
+        with:
+          tag_name: ${{ env.RELEASE_VERSION }}
+          name: Rotki ${{ env.RELEASE_VERSION }} -
+          draft: true
+          files: |
+            dist/*.sha512
+            dist/rotki-core-*-windows.exe
+
+  docker:
+    name: 'Build docker images'
+    runs-on: ubuntu-latest
+    environment: docker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Rotki Version
+        id: rotki_version
+        run: echo "version=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ github.repository }}:${{ steps.rotki_version.outputs.version }}
+          build-args: |
+            REVISION=${{ github.sha }}
+            ROTKI_VERSION=${{ steps.rotki_version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}

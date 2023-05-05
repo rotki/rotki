@@ -1,0 +1,82 @@
+[
+    {
+        "name": "etherscan",
+        "endpoint": "",
+        "weight": 0.30,
+        "owned": false,
+        "active": true,
+        "blockchain": "ETH"
+    },
+    {
+        "name": "cloudflare",
+        "endpoint": "https://cloudflare-eth.com/",
+        "weight": 0.20,
+        "owned": false,
+        "active": true,
+        "blockchain": "ETH"
+    },
+    {
+        "name": "flashbots",
+        "endpoint": "https://rpc.flashbots.net/",
+        "weight": 0.20,
+        "owned": false,
+        "active": true,
+        "blockchain": "ETH"
+    },
+    {
+        "name": "ankr",
+        "endpoint": "https://rpc.ankr.com/eth",
+        "weight": 0.20,
+        "owned": false,
+        "active": true,
+        "blockchain": "ETH"
+    },
+    {
+        "name": "myetherwallet",
+        "endpoint": "https://nodes.mewapi.io/rpc/eth",
+        "weight": 0.10,
+        "owned": false,
+        "active": true,
+        "blockchain": "ETH"
+    },
+    {
+        "name": "optimism etherscan",
+        "endpoint": "",
+        "weight": 0.40,
+        "owned": false,
+        "active": true,
+        "blockchain": "OPTIMISM"
+    },
+    {
+        "name": "optimism official",
+        "endpoint": "https://mainnet.optimism.io",
+        "weight": 0.20,
+        "owned": false,
+        "active": true,
+        "blockchain": "OPTIMISM"
+    },
+    {
+        "name": "optimism blastapi",
+        "endpoint": "https://optimism-mainnet.public.blastapi.io",
+        "weight": 0.20,
+        "owned": false,
+        "active": true,
+        "blockchain": "OPTIMISM"
+    },
+    {
+        "name": "optimism ankr",
+        "endpoint": "https://rpc.ankr.com/optimism",
+        "weight": 0.10,
+        "owned": false,
+        "active": true,
+        "blockchain": "OPTIMISM"
+    },
+    {
+        "name": "optimism 1rpc",
+        "endpoint": "https://1rpc.io/op",
+        "weight": 0.10,
+        "owned": false,
+        "active": true,
+        "blockchain": "OPTIMISM"
+    }
+]

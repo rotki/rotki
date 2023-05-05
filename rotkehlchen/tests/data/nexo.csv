@@ -1,0 +1,24 @@
+Transaction,Type,Input Currency,Input Amount,Output Currency,Output Amount,USD Equivalent,Details,Outstanding Loan,Date / Time
+NXTZOvzs3be6e,FixedTermInterest,GBPX,127.5520683,GBPX,127.5520683,$166.15914566,approved / Term Deposit Interest,$0.00,2022-02-01 07:01:00
+NXTNru1bVwXqN,ExchangeToWithdraw,GBPX,-1000.00000000,GBP,1000.00000000,$1936.905,"rejected / GBPX to GBP",$0.00,2022-07-13 09:41:49
+NXT0holq0qpzw,LockingTermDeposit,MATIC,-3055.00000000,MATIC,3055.00000000,$4641.17433,"approved / Transfer from Savings Wallet to Term Wallet",$0.00,2022-03-22 15:58:56
+NXTGjeCTHAXxg,Deposit,MATIC,3050.00000000,MATIC,3050.00000000,$4639.42515,"approved / GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",$0.00,2022-03-22 15:52:33
+NXT9aSBjiAOjq,Deposit,MATIC,5.00000000,MATIC,5.00000000,$7.6345,"approved / GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",$0.00,2022-03-22 15:45:25
+NXTabcdefghij,Cashback,NEXO,0.10000001,NEXO,0.10000001,$0.40174998,"approved / a description of vendor | | details from vendor",$100.00,2022-03-01 00:00:00
+NXTabcdefghij,CreditCardStatus,USD,-80.35000000,GBP,61.39000000,$80.35,"approved / a description of vendor | | details from vendor",$100.00,2022-03-01 00:00:00
+NXTabcdefghij,CreditCardStatus,USD,-1.31000000,GBP,1.00000000,$1.31,"rejected / a description of vendor | | details from vendor",$1.31,2022-04-01 00:00:00
+NXTabcdefghij,Liquidation,GBPX,-710.82000000,GBPX,710.82000000,$930.6076743,"approved / Fiat Repayment",$930.61,2022-04-09 00:00:00
+NXTabcdefghij,ReferralBonus,BTC,0.00999999,BTC,0.00999999,$99.99971452,"approved / Referral bonus",$0.00,2022-04-10 00:00:00
+NXTabcdefghij,Repayment,USD,930.60767430,USD,0.00000000,$930.6076743,"approved / Fiat Repayment",$0.00,2022-02-11 00:00:00
+NXTabcdefghij,TransferOut,BTC,-14.59000000,BTC,-14.59000000,$125000.60224953,"approved / Transfer from Savings Wallet to Credit Line Wallet",$0.00,2022-03-06 00:00:00
+NXTigcmvsts2L,Deposit,USDC,595.92,USDC,595.92,$595.62204,approved / 0xd4e7f6bf268f8c123b7f922dea3ea4331e00c0b7bee237cae2bca4d1b84fff75,$0.00,2022-04-13 19:15:00
+NXTUXIqDoz2V7,DepositToExchange,GBP,54,GBPX,54,$70.524,approved / GBP Top Up,$0.00,2022-04-17 10:41:00
+NXTsDa2LR4Pcw,Exchange,GBPX,-54,BTC,0.0017316,$69.85,approved / Exchange GBPX to Bitcoin,$0.00,2022-04-17 10:41:00
+NXT6r1e6CtfNI,ExchangeDepositedOn,GBP,54,GBPX,54,$70.524,approved / GBP to GBPX,$0.00,2022-04-17 10:41:00
+NXTPv1ZpdnIZa,ExchangeToWithdraw,GBPX,-5000,GBP,5000,$7079.345,approved / GBPX to GBP,$0.00,2021-05-21 21:28:00
+NXTGWynyMmm5K,Interest,USDC,1.09246793,USDC,1.09246793,$1.09,approved / USDC Interest Earned,$0.00,2022-04-20 07:00:00
+NXT1isX0Refua,Interest,ETH,0.00178799,ETH,0.00178799,$1.98,"approved / ETH Interest Earned",$0.00,2022-07-14 07:00:07
+NXTntAhYzNwvP,LockingTermDeposit,GBPX,-6785.49,GBPX,6785.49,$8827.80035118,approved / Transfer from Savings Wallet to Term Wallet,$0.00,2022-04-19 00:58:00
+NXT682mMVx8bw,UnlockingTermDeposit,GBPX,6657.94,GBPX,6657.94,$8673.14530538,approved / Transfer from Term Wallet to Savings Wallet,$0.00,2022-04-18 07:01:00
+NXTdtS1ezWxeN,Withdrawal,BTC,-0.0017316,BTC,0.0017316,$69.86150519,approved / BTC withdrawal,$0.00,2022-04-17 10:43:00
+NXTo1JlZsUlAd,WithdrawExchanged,GBP,-5000,GBP,5000,$7093.005,approved / GBP withdrawal,$0.00,2021-05-25 11:00:00

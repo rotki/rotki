@@ -1,0 +1,17 @@
+Timestamp (UTC),Transaction Description,Currency,Amount,To Currency,To Amount,Native Currency,Native Amount,Native Amount (in USD),Transaction Kind
+2021-01-05 22:00:00,CRO Stake Rewards,CRO,1,,,USD,1,1,mco_stake_reward
+2021-01-05 22:00:00,MCO Earnings/Rewards Swap,CRO,1,,,USD,1,1,interest_swap_credited
+2021-01-05 22:00:00,MCO Earnings/Rewards Swap,MCO,-0.1,,,USD,-1,-1,interest_swap_debited
+2021-01-05 22:00:00,MCO Stake Rewards,MCO,0.5,,,USD,1,1,mco_stake_reward
+2021-01-05 22:00:00,CRO Airdrop to Exchange,CRO,1,,,USD,-1,-1,airdrop_to_exchange_transfer
+2021-01-04 22:00:00,Invest Withdrawal,BTC,1.02005,,,USD,100,100,invest_withdrawal
+2021-01-03 23:00:00,Invest Deposit,BTC,-1.0,,,USD,-100,-100,invest_deposit
+2021-01-02 22:00:00,Invest Withdrawal,BTC,0.02005,,,USD,100,100,invest_withdrawal
+2021-01-01 22:00:00,CRO Airdrop,CRO,1,,,USD,1,1,airdrop_locked
+2021-01-01 23:00:00,Invest Deposit,BTC,-0.01,,,USD,-100,-100,invest_deposit
+2021-01-01 22:00:00,Invest Deposit,BTC,-0.01,,,USD,-100,-100,invest_deposit
+2021-01-01 21:01:00,Invest Withdrawal,ETC,0.24,,,USD,100,100,invest_withdrawal
+2021-01-01 21:00:00,Invest Deposit,ETC,-1.0,,,USD,-100,-100,invest_deposit
+2021-10-28 03:16:37,Supercharger Reward,AXS,0.00356292,,,EUR,0.38,0.4430698990794,supercharger_reward_to_app_credited
+2021-10-28 03:16:38,USDC -> EUR,USDC,-12.94,,,EUR,-11.3,-12.64961995,card_top_up
+2021-10-29 03:16:38,Card Cashback Reversal,CRO,-0.5678,,,USD,0.25,0.25,card_cashback_reverted

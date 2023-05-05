@@ -1,0 +1,1 @@
+FREE_NFT_LIMIT = 10

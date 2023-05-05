@@ -1,0 +1,162 @@
+[MASTER]
+jobs=4
+persistent=yes
+suggestion-mode=yes
+unsafe-load-any-extension=no
+init-hook="import sys; sys.path.append('.')"
+load-plugins=tools.pylint.log_checker,tools.pylint.not_checker,pylint.extensions.comparison_placement, pylint.extensions.consider_refactoring_into_while_condition
+
+# Blacklist files or directories (basenames, not paths)
+ignore=
+
+# blacklist files or directories by regex  (basenames, not paths)
+ignore-patterns=
+
+[EXCEPTIONS]
+
+overgeneral-exceptions=builtins.Exception
+
+[BASIC]
+
+bad-names=foo,bar,baz,toto,tutu,tata
+good-names=i,j,k,_
+
+[LOGGING]
+
+logging-modules=logging
+
+[MESSAGES CONTROL]
+
+# These are rules we either want to completely ignore or have no time to fix yet
+# disable=
+#    missing-module-docstring,
+#    missing-function-docstring,
+#    invalid-name,
+#    line-too-long,
+#    too-many-locals,
+#    missing-class-docstring,
+#    too-many-lines,
+#    too-many-arguments,
+#    too-many-return-statements,
+#    fixme,
+#    redefined-outer-name,
+#    logging-fstring-interpolation,
+#    arguments-differ,
+#    protected-access,
+#    too-few-public-methods,
+#    too-many-public-methods,
+#    too-many-statements,
+#    too-many-branches,
+#    unused-wildcard-import,
+#    too-many-instance-attributes,
+#    too-many-nested-blocks,
+#    wrong-import-position,
+#    attribute-defined-outside-init,
+#    wildcard-import,
+#    wrong-import-order,
+#    abstract-method,
+#    wrong-import-position,  # handled by isort
+#    missing-module-docstring,  # maybe activate in future?
+#    missing-class-docstring,  # maybe activate in future?
+#    too-many-arguments,  # we don't conform to certain number
+#    line-too-long,  # already checked by others
+#    missing-timeout,  # we already check this via ruff S113. But we skip all test files
+#    use-implicit-booleaness-not-comparison  # we don't use implitic booleaness in the code
+
+# When wanting to discover new things to check for comment the following line and uncomment above
+disable=all
+enable=
+    unnecessary-ellipsis,
+    no-value-for-parameter,
+    too-many-format-args,
+    no-member,
+    bad-except-order,
+    redefined-builtin,
+    unused-variable,
+    import-self,
+    useless-object-inheritance,
+    unused-argument,
+    unexpected-keyword-arg,
+    expression-not-assigned,
+    pointless-statement,
+    unused-import,
+    inconsistent-return-statements,
+    reimported,
+    too-many-function-args,
+    no-else-raise,
+#     no-else-return,  # https://github.com/PyCQA/pylint/issues/8155
+    raise-missing-from,
+    useless-return,
+    consider-iterating-dictionary,
+    comparison-with-callable,
+    import-outside-toplevel,
+    redefined-outer-name,
+    redefined-argument-from-local,
+    useless-super-delegation,
+    super-init-not-called,
+    super-with-arguments,
+    unneeded-not,
+    unreachable,
+    unnecessary-pass,
+    broad-except,
+    unnecessary-lambda,
+    isinstance-second-argument-not-valid-type,
+    unsupported-membership-test,
+    confusing-with-statement,
+    no-else-break,
+    method-hidden,
+    chained-comparison,
+    consider-using-enumerate,
+    bare-except,
+    no-else-continue,
+    deprecated-method,
+    consider-using-in,
+    superfluous-parens,
+    return-in-init,
+    undefined-loop-variable,
+    assignment-from-none,
+    simplifiable-if-expression,
+    bad-super-call,
+    duplicate-string-formatting-argument,
+    misplaced-comparison-constant,
+    unidiomatic-typecheck,
+    pointless-exception-statement,
+    shadowed-import,
+    unbalanced-dict-unpacking,
+    positional-only-arguments-expected,
+    named-expr-without-context,
+    invalid-slice-step,
+    consider-refactoring-into-while-condition,
+    consider-using-dict-items,
+    comparison-with-itself,
+    unnecessary-comprehension,
+    rotki-lognokwargs,
+    rotki-nonbooleannot
+
+[REPORTS]
+
+reports=no
+score=no
+
+[FORMAT]
+
+expected-line-ending-format=LF
+ignore-long-lines=^\s*(# )?<?https?://\S+>?$
+max-line-length=100
+max-module-lines=1000
+
+[VARIABLES]
+
+callbacks=cb_,_cb
+dummy-variables-rgx=_
+ignored-argument-names=_.*
+
+[TYPECHECK]
+
+contextmanager-decorators=contextlib.contextmanager
+
+# List of class names for which member attributes should not be checked
+ignored-classes=
+
+# List of module names for which member attributes should not be checked
+ignored-modules=

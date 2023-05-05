@@ -1,0 +1,98 @@
+@import '~@/scss/scroll';
+
+html {
+  overflow-y: hidden !important;
+  max-height: 100vh;
+}
+
+body {
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  height: calc(100vh - 64px);
+  margin-top: 64px;
+  background: var(--v-rotki-light-grey-base);
+}
+
+.v-application {
+  &--wrap {
+    min-height: 0 !important;
+  }
+}
+
+.v-btn {
+  &--fixed {
+    z-index: 4;
+  }
+}
+
+.theme {
+  &--light {
+    --border-color: rgba(0, 0, 0, 0.12);
+    /* stylelint-disable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators */
+
+    .v-btn:not(.v-btn--flat):not(.v-btn--text):not(.v-btn--outlined):not(.primary) {
+      /* stylelint-enable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators */
+      background-color: transparent;
+    }
+  }
+
+  &--dark {
+    --border-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.container {
+  max-width: 1500px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+aside {
+  max-height: calc(100vh - 64px);
+  position: fixed !important;
+}
+
+.v-card {
+  border-radius: 8px !important;
+}
+
+/* stylelint-disable */
+.v-dialog {
+  > .v-card {
+    > .v-card__actions {
+      padding: 16px 24px !important;
+    }
+  }
+}
+
+.v-card:not(.v-card--flat):not(.v-sheet--outlined):not(.elevation-0) {
+  /* stylelint-enable */
+  box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1) !important;
+}
+
+.v-menu {
+  &__content {
+    background: white;
+
+    &.theme {
+      &--dark {
+        background: #363636;
+      }
+    }
+  }
+}
+
+.table-inside-dialog {
+  scroll-behavior: smooth;
+  max-height: calc(100vh - 340px);
+  overflow: auto;
+}
+
+.fill-width {
+  width: 100%;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}

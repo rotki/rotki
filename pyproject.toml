@@ -1,0 +1,253 @@
+[build-system]
+requires = ["setuptools==67.3.2", "setuptools-scm==7.1.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rotkehlchen"
+authors = [
+    {name = "Rotki Solutions GmbH", email = "info@rotki.com"},
+]
+description = "Acccounting, asset management and tax report helper for cryptocurrencies"
+readme = "README.md"
+requires-python = ">=3.9"
+keywords = ["accounting tax-report", "portfolio asset-management", "cryptocurrencies"]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Topic :: Utilities",
+]
+license = {file = "LICENSE.md"}
+dynamic = ["dependencies", "version"]
+
+[project.urls]
+homepage = "https://rotki.com"
+documentation = "https://rotki.readthedocs.io/en/stable/"
+repository = "https://github.com/rotki/rotki"
+changelog = "https://github.com/rotki/rotki/blob/develop/docs/changelog.rst"
+
+[tool.setuptools.packages.find]
+where = ["."]  # list of folders that contain the packages (["."] by default)
+include = ["rotkehlchen*"]
+
+[project.scripts]
+rotkehlchen = "rotkehlchen.__main__:main"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools_scm]
+fallback_version = "1.27.1"
+
+[tool.setuptools.package-data]
+"rotkehlchen.data" = ["*"]
+"rotkehlchen.chain" = ["ethereum/modules/dxdaomesa/data/contracts.json"]
+
+# -- Mypy config section --
+
+[tool.mypy]
+# Docs: https://mypy.readthedocs.io/en/latest/config_file.html
+ignore_missing_imports = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+warn_unused_configs = true
+warn_unused_ignores = true
+warn_unreachable = true
+warn_redundant_casts = true
+disallow_untyped_decorators = true
+disallow_untyped_calls = true
+mypy_path="./stubs/"
+
+[[tool.mypy.overrides]]
+module = "rotkehlchen.*"
+ignore_missing_imports = false
+
+# -- These modules still need to have proper type definitions given --
+[[tool.mypy.overrides]]
+module = "rotkehlchen.tests.*"
+check_untyped_defs = false
+disallow_untyped_defs = false
+# Pytest's fixture decorators are not typed
+disallow_untyped_decorators = false
+
+# custom pylint checkers still need to be typed
+[[tool.mypy.overrides]]
+module = "tools.pylint.*"
+check_untyped_defs = false
+disallow_untyped_defs = false
+
+# profiling is not typed
+[[tool.mypy.overrides]]
+module = "tools.profiling.*"
+check_untyped_defs = false
+disallow_untyped_defs = false
+
+# -- ruff config section --
+
+[tool.ruff]
+line-length = 99
+
+select = [
+    "E",
+    "F",
+    "W",
+    "C",
+    # "I",  # isort -- not using since does not play well with running isort too
+    # "D",  # pydocstule -- too many docstuff we don't use
+    "N",
+    "B",
+    "G",
+    # "EM",  #  our exceptions use f strings everywhere. Very little upside to this and I don't think it's cleaner code
+    "ISC",
+    "ICN",
+    "T",
+    "UP",
+    "YTT",
+    # "ANN",  # flake8-annotations -- looks like mypy already covers this?
+    "S",
+    # "BLE",  # blind-except -- already pylint does this and we got ignores where needed
+    # "FBT",  # FBT -- not sure I agree with the concept of boolean trap
+    # "A",  # flake8-builtins -- we got some shadowed builtins. Should probably fix this
+    "Q",  # configured for our quoting style
+    "ERA",
+    "PGH",
+    "RET",
+    "SIM",
+    # "TID",  # tidy-imports -- we use relative imports from parent in some cases. Maybe stop?
+    # "ARG",  # flake8-unused-arguments -- pylint already does this and we got ignores where needed
+    "PL",  # all pylint rules
+    "PIE",
+    "PYI",
+    "COM",
+    "DTZ",
+    "EXE",
+    "INP",
+    "PT",
+    # "TCH",  # Should do it at some point. Too many hits and no autofix. When enabled fully, remove from extend-select
+    # "PTH",  # Should do it at some point. Many hits and no autofix. When enabled fully remove from extend-select
+    "INT",
+    "TRY",
+    "RSE",
+    #  "SLF",  Private member access -- we unfortunately do that some times
+    "RUF",
+]
+extend-select = [
+    "Q002",   # Single quote docstring found but double quotes preferred
+    "Q003",   # Change outer quotes to avoid escaping inner quotes
+    "TCH004", # Move import out of type-checking block. Used for more than type hinting.
+    "TCH005", # Found empty type-checking block
+    # Some pathlib enforcement rules follow
+    "PTH108",
+    "PTH109",
+]
+ignore = [
+    "B028",  # no explicit stack level argument for warnings. Is fine due to the way we use them for now
+    "E402",  # module level import at file top. https://www.flake8rules.com/rules/E402.html
+    "N818",  # error suffix in exception names
+    "C901",  # function too complex
+    "RUF001",  # AmbiguousUnicodeCharacterString
+    "RUF002",  # AmbiguousUnicodeCharacterDocstring
+    "RUF005",  # Unpacking over concatenation -> https://github.com/charliermarsh/ruff/issues/2054#issuecomment-1399617413
+    "RET501",  # Explicitly returning None
+    "RET504",  # Unnecessary variable assignment before `return
+    "RET505",  # https://github.com/charliermarsh/ruff/issues/1035
+    "RET506",  # https://github.com/charliermarsh/ruff/issues/1035
+    "RET507",  # https://github.com/charliermarsh/ruff/issues/1035
+    "RET508",  # https://github.com/charliermarsh/ruff/issues/1035
+    "PGH003",  # we do use blanket type: ignore. Perhaps can fix in the future
+    "SIM108",  # we do use ternary operator when it makes sense. But forcing it everywhere makes the code unreadable.
+    "PLR2004", # we try to use constant vars where possile but this complains abouttoo many things
+    "PLR0913", # too many arguments to function call. This is a bit too much to enforce in the codebase
+    "PLR0915", # too many statements -- we probably could use this ... but with custom statements number?
+    "PLR0911", # too many return statements -- we dont care
+    "PLR0912", # too many branches -- we dont care
+    "PLC1901", # we prefer direct comparison to empty string for explicitness
+    # Some bandit rules we don't check for
+    "S101",  # asserts are fine
+    "S103",  # permissive mask on file/directory
+    "S105",  # hard coded password checks got false positives
+    "S106",  # hard coded password checks got false positives
+    "S311",  # We know pseud-random is not safe for cryptographic operations
+    "S324",  # insecure hash function. We use it for image md5 for etag. TODO: Change and enable?
+    "S608",  # possible sql-injection is overkill since we control the variables in question
+    "G004",  # Our logs do use f-strings everywhere at least for now
+    # Some pytest-styles rules we don't check for
+    "PT011", # pytest.raises() too broad is fine, since there is functions that raise ValueError
+    "PT018", # composite assertions are fine
+    "TRY003",  # long messages outside the exception class. Perhaps enable when we do internationalization and need to put messages in class logic?
+    "TRY004",  # Prefer TypeError for wrong type. May be okay but would need to invetigate all usages of suggested changes
+    "TRY301",  # Abstract raise to an inner function -- not sure what this? Use exception for control flow?
+    "TRY400",  # loggin.exception instead of logging.error. Not sure I understood this one
+]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+target-version = "py39"
+
+[tool.ruff.per-file-ignores]
+
+"tools/*" = [
+    "T201",  # got prints in tools
+    "INP001",  # no need for __init__ in tools
+]
+"rotkehlchen/__main__.py" = ["T201"]  # got prints in main
+"rotkehlchen/api/server.py" = ["T201"]  # got prints in server.py
+"rotkehlchen/args.py" = ["T201"]  # got prints in args.py
+"rotkehlchen/db/minimized_schema.py" = ["E501"]  # huge lines there
+"rotkehlchen/globaldb/minimized_schema.py" = ["E501"]  # huge lines there
+"rotkehlchen/tests/*" = ["S113"]  # tests have no timeout in requests
+"rotkehlchen/tests/conftest.py" = [
+    "S602",  # test setup. No problem with shell=True
+    "S605",  # test setup, can't inject in process
+    "S607",  # test setup, partial path does not mater
+]
+"rotkehlchen/tests/integration/test_backend.py" = [
+    "S603",  # test called by us. No variable input
+    "S607",  # test called by us. Partial executable path is fine.
+]
+"setup.py" = ["INP001"]  # no need for __init__ here
+"package.py" = [
+    "INP001",  # no need for __init__ here
+    "S602",  # script called by us only when packaging. No problem with shell=True
+    "S607",  # script called by us only when packaging. No problem with partial path
+]
+"tools/scripts/pylint_useless_suppression.py" = [
+    "S603",  # Script called by us. No variable input
+    "S607",  # Script called by us. Partial executable path is fine.
+]
+
+[tool.ruff.flake8-quotes]
+avoid-escape = true
+docstring-quotes = "double"
+inline-quotes = "single"
+multiline-quotes = "double"
+
+# -- isort config section --
+
+[tool.isort]
+line_length = 99
+known_future_library = "future"
+multi_line_output = "3"
+known_first_party = ["rotkehlchen"]
+include_trailing_comma = "1"
+default_section = "THIRDPARTY"
+combine_as_imports = "1"

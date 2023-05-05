@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "target": "es2020",
+    "module": "esnext",
+    "strict": true,
+    "esModuleInterop": true,
+    "jsx": "preserve",
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "noUnusedLocals": true,
+    "strictNullChecks": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "allowJs": false,
+    "forceConsistentCasingInFileNames": true,
+    "sourceMap": true,
+    "isolatedModules": true,
+    "paths": {
+      "@/*": ["app/src/*"]
+    },
+    "lib": ["es2020", "dom", "dom.iterable", "scripthost"]
+  },
+  "references": [
+    {
+      "path": "app"
+    }
+  ],
+  "include": [".eslintrc.js"],
+  "exclude": ["node_modules/**", "**/.*", "cypress"]
+}

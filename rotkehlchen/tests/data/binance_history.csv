@@ -1,0 +1,50 @@
+User_ID,UTC_Time,Account,Operation,Coin,Change,Remark
+1,2020-10-28 22:03:03,Spot,Transaction Related,BNB,0.576474665,
+1,2020-10-28 22:03:03,Spot,Deposit,EUR,245.25,
+1,2020-10-28 22:03:03,Spot,Transaction Related,EUR,-245.25,
+1,,Spot,Withdraw,BTC,0.05,Testing empty cells
+1,2020-10-28 22:21:44,Spot,Deposit,,,
+1,2020-10-28 23:11:02,Spot,POS savings purchase,BNB,-0.577257355,
+1,2020-10-30 07:16:38,Spot,Transaction Related,EUR,-150,
+1,2020-10-30 07:16:38,Spot,Transaction Related,AXS,1.19592356,
+1,2020-10-30 14:21:20,Spot,Fee,ETH,-3.605E-05,
+1,2020-10-30 14:21:20,Spot,Buy,EUR,-134.4719075,
+1,2020-10-30 14:21:20,Spot,Buy,ETH,0.03605,
+1,2020-10-30 15:09:05,Spot,ETH 2.0 Staking,BETH,0.036,
+1,2020-10-30 15:09:05,Spot,ETH 2.0 Staking,ETH,-0.036,
+1,2020-11-01 09:36:13,Spot,ETH 2.0 Staking Rewards,BETH,4.615E-06,
+1,2020-11-01 23:50:10,Spot,Launchpool Interest,DAR,0.115147055,
+1,2020-11-03 21:12:59,Spot,Buy,EUR,-333.209174,
+1,2020-11-03 21:12:59,Spot,Fee,BNB,-9.009E-05,
+1,2020-11-03 21:12:59,Spot,Buy,ETH,0.0148,
+1,2020-11-03 21:12:59,Spot,Fee,ETH,-8.345E-05,
+1,2020-11-03 21:12:59,Spot,Buy,EUR,-59.089888,
+1,2020-11-03 21:12:59,Spot,Buy,ETH,0.08345,
+1,2020-11-04 00:36:28,Spot,POS savings redemption,AXS,1.18837124,
+1,2020-11-04 02:28:08,Spot,POS savings interest,BNB,9.2675E-05,
+1,2020-11-12 08:21:54,Spot,Sell,IOTA,-67.5,
+1,2020-11-12 08:21:54,Spot,Fee,BNB,-0.0001057,
+1,2020-11-12 08:21:54,Spot,Sell,BTC,0.001366875,
+1,2020-11-20 20:22:20,Spot,Small assets exchange BNB,SOL,-0.002055565,
+1,2020-11-20 20:22:20,Spot,Small assets exchange BNB,SOL,-0.00014477,
+1,2020-11-20 20:22:20,Spot,Small assets exchange BNB,BNB,0.00072724,
+1,2020-11-20 20:22:20,Spot,Small assets exchange BNB,BNB,0.000237955,Should be skipped
+1,2020-11-20 20:22:21,Spot,Small assets exchange BNB,BNB,0.000964505,Should be skipped
+1,2020-11-20 20:22:21,Spot,Small assets exchange BNB,BTC,-9.895E-06,Should be skipped
+1,2020-11-20 20:22:21,Spot,Small assets exchange BNB,BNB,4.76E-06,
+1,2020-11-20 22:18:01,Spot,Fee,USDT,-1.15756,
+1,2020-11-20 22:18:01,Spot,Sell,USDT,1157.56,
+1,2020-11-20 22:18:01,Spot,Sell,DAR,-336.5,
+1,2020-11-20 22:30:01,Spot,Fee,IOTA,-0.882,
+1,2020-11-20 22:30:01,Spot,Buy,IOTA,882,
+1,2020-11-20 22:30:01,Spot,Buy,USDT,-1146.3354,
+1,2020-12-01 20:06:44,Spot,Withdraw,KNC,-0.16,Withdraw fee is included
+1,2020-12-01 20:06:45,Spot,ABC,ETH,-15,This is to test non-existent row type
+1,2020-12-01 15:51:47,Spot,Transaction Related,ETH,-1.01065076,""
+1,2020-12-01 15:51:47,Spot,Buy,BTC,0.10680859385,""
+1,2020-12-01 15:51:47,Spot,Transaction Related,ETH,-0.9049715199999999,""
+1,2020-12-01 15:51:47,Spot,Fee,BNB,-0.041427214681599996,""
+1,2020-12-01 15:51:47,Spot,Fee,BNB,-0.0462623227152,""
+1,2020-12-01 15:51:47,Spot,Buy,BTC,0.09564009919439999,""
+1,2020-12-02 22:30:01,Spot,Buy,IOTA,882,"Trade with no fee for test"
+1,2020-12-02 22:30:01,Spot,Buy,USDT,-1146.3354,

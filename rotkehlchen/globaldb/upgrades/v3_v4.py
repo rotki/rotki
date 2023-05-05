@@ -1,0 +1,398 @@
+import json
+import logging
+import re
+import sqlite3
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from rotkehlchen.errors.misc import DBUpgradeError
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import YEARN_VAULTS_V1_PROTOCOL
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
+
+# Specify which of the eth_contracts.json contracts share identical ABI
+MAKERDAO_ABI_GROUP_1 = [
+    'MAKERDAO_ETH_A_JOIN',
+    'MAKERDAO_ETH_B_JOIN',
+    'MAKERDAO_ETH_C_JOIN',
+    'MAKERDAO_BAT_A_JOIN',
+    'MAKERDAO_PAXUSD_A_JOIN',
+    'MAKERDAO_COMP_A_JOIN',
+    'MAKERDAO_LRC_A_JOIN',
+    'MAKERDAO_LINK_A_JOIN',
+    'MAKERDAO_KNC_A_JOIN',
+    'MAKERDAO_MANA_A_JOIN',
+    'MAKERDAO_ZRX_A_JOIN',
+    'MAKERDAO_BAL_A_JOIN',
+    'MAKERDAO_YFI_A_JOIN',
+    'MAKERDAO_UNI_A_JOIN',
+    'MAKERDAO_AAVE_A_JOIN',
+]
+MAKERDAO_ABI_GROUP_2 = ['MAKERDAO_USDC_A_JOIN', 'MAKERDAO_USDC_B_JOIN', 'MAKERDAO_WBTC_A_JOIN']
+MAKERDAO_ABI_GROUP_3 = ['MAKERDAO_WBTC_B_JOIN', 'MAKERDAO_WBTC_C_JOIN']
+
+YEARN_ABI_GROUP_1 = ['YEARN_YCRV_VAULT', 'YEARN_USDC_VAULT']
+YEARN_ABI_GROUP_2 = [
+    'YEARN_YFI_VAULT',
+    'YEARN_USDT_VAULT',
+    'YEARN_BCURVE_VAULT',
+    'YEARN_DAI_VAULT',
+    'YEARN_SRENCURVE_VAULT',
+]
+YEARN_ABI_GROUP_3 = ['YEARN_TUSD_VAULT', 'YEARN_GUSD_VAULT', 'YEARN_3CRV_VAULT']
+YEARN_ABI_GROUP_4 = [
+    'YEARN_CDAI_CUSDC_VAULT',
+    'YEARN_MUSD_3CRV_VAULT',
+    'YEARN_GUSD_3CRV_VAULT',
+    'YEARN_EURS_VAULT',
+    'YEARN_MUSD_VAULT',
+    'YEARN_RENBTC_WBTC_VAULT',
+    'YEARN_USDN_3CRV_VAULT',
+    'YEARN_UST_3CRV_VAULT',
+    'YEARN_BBTC_SBTC_VAULT',
+    'YEARN_TBTC_SBTC_VAULT',
+    'YEARN_OBTC_SBTC_VAULT',
+    'YEARN_HBTC_WBTC_VAULT',
+    'YEARN_SUSD_3CRV_VAULT',
+    'YEARN_HUSD_3CRV_VAULT',
+    'YEARN_DUSD_3CRV_VAULT',
+    'YEARN_A3CRV_VAULT',
+    'YEARN_ETH_ANKER_VAULT',
+    'YEARN_ASUSD_VAULT',
+    'YEARN_USDP_3CRV_VAULT',
+]
+
+
+def _get_abi(cursor: 'DBCursor', name: str) -> int:
+    cursor.execute('SELECT id FROM contract_abi WHERE name=?', (name,))
+    result = cursor.fetchone()
+    if result is None:
+        error = f'During globalDB v3 -> v4 upgrade could not find abi {name} in the DB'
+        log.error(error)
+        raise DBUpgradeError(error)
+
+    return result[0]
+
+
+def _insert_abi_return_id(cursor: 'DBCursor', name: str, serialized_abi: str) -> int:
+    cursor.execute(
+        'INSERT INTO contract_abi(value, name) VALUES(?, ?)',
+        (serialized_abi, name),
+    )
+    return cursor.lastrowid
+
+
+def _get_or_create_common_abi(
+        cursor: 'DBCursor',
+        name: str,
+        serialized_abi: str,
+) -> int:
+    cursor.execute('SELECT id FROM contract_abi WHERE name=?', (name,))
+    result = cursor.fetchone()
+    if result is not None:
+        return result[0]
+
+    return _insert_abi_return_id(
+        cursor=cursor,
+        name=name,
+        serialized_abi=serialized_abi,
+    )
+
+
+def _create_new_tables(cursor: 'DBCursor') -> None:
+    log.debug('Enter _create_new_tables')
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS contract_abi (
+            id INTEGER NOT NULL PRIMARY KEY,
+            value TEXT NOT NULL,
+            name TEXT
+        );""")
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS contract_data (
+            address VARCHAR[42] NOT NULL,
+            chain_id INTEGER NOT NULL,
+            name TEXT,
+            abi INTEGER NOT NULL,
+            deployed_block INTEGER,
+            FOREIGN KEY(abi) REFERENCES contract_abi(id) ON UPDATE CASCADE ON DELETE SET NULL,
+            PRIMARY KEY(address, chain_id)
+        );""")
+
+    log.debug('Exit _create_new_tables')
+
+
+def _add_eth_abis_json(cursor: 'DBCursor') -> None:
+    log.debug('Enter _add_eth_abis_json')
+
+    root_dir = Path(__file__).resolve().parent.parent.parent
+    with open(root_dir / 'data' / 'eth_abi.json') as f:
+        abi_entries = json.loads(f.read())
+
+    abi_entries_tuples = []
+    for name, value in abi_entries.items():
+        abi_entries_tuples.append((name, json.dumps(value, separators=(',', ':'))))
+    cursor.executemany('INSERT INTO contract_abi(name, value) VALUES(?, ?)', abi_entries_tuples)  # noqa: E501
+
+    log.debug('Exit _add_eth_abis_json')
+
+
+def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
+    log.debug('Enter _add_eth_contracts_json')
+
+    eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id = None, None, None
+    root_dir = Path(__file__).resolve().parent.parent.parent
+    with open(root_dir / 'data' / 'eth_contracts.json') as f:
+        contract_entries = json.loads(f.read())
+    with open(root_dir / 'chain' / 'ethereum' / 'modules' / 'dxdaomesa' / 'data' / 'contracts.json') as f:  # noqa: E501
+        dxdao_contracts = json.loads(f.read())
+
+    contract_entries.update(dxdao_contracts)
+    for contract_key, items in contract_entries.items():
+        if contract_key == 'ETH_MULTICALL':
+            continue  # skip it as is superseded by multicall2
+
+        serialized_abi = json.dumps(items['abi'], separators=(',', ':'))
+        if contract_key == 'UNISWAP_V3_NFT_MANAGER':
+            abi_id = _get_abi(cursor, 'ERC721_TOKEN')
+        elif contract_key in MAKERDAO_ABI_GROUP_1:
+            abi_id = _get_or_create_common_abi(
+                cursor=cursor,
+                name='MAKERDAO_JOIN_GROUP1',
+                serialized_abi=serialized_abi,
+            )
+        elif contract_key in MAKERDAO_ABI_GROUP_2:
+            abi_id = _get_or_create_common_abi(
+                cursor=cursor,
+                name='MAKERDAO_JOIN_GROUP2',
+                serialized_abi=serialized_abi,
+            )
+        elif contract_key in MAKERDAO_ABI_GROUP_3:
+            abi_id = _get_or_create_common_abi(
+                cursor=cursor,
+                name='MAKERDAO_JOIN_GROUP3',
+                serialized_abi=serialized_abi,
+            )
+        elif contract_key in YEARN_ABI_GROUP_1:
+            abi_id = _get_or_create_common_abi(
+                cursor=cursor,
+                name='YEARN_VAULTS_GROUP1',
+                serialized_abi=serialized_abi,
+            )
+        elif contract_key in YEARN_ABI_GROUP_2:
+            abi_id = _get_or_create_common_abi(
+                cursor=cursor,
+                name='YEARN_VAULTS_GROUP2',
+                serialized_abi=serialized_abi,
+            )
+        elif contract_key in YEARN_ABI_GROUP_3:
+            abi_id = _get_or_create_common_abi(
+                cursor=cursor,
+                name='YEARN_VAULTS_GROUP3',
+                serialized_abi=serialized_abi,
+            )
+        elif contract_key in YEARN_ABI_GROUP_4:
+            abi_id = _get_or_create_common_abi(
+                cursor=cursor,
+                name='YEARN_VAULTS_GROUP4',
+                serialized_abi=serialized_abi,
+            )
+        else:  # need to add the abi to the DB
+            if contract_key == 'ETH_SCAN':
+                contract_key = 'BALANCE_SCAN'  # let's rename to non eth-specific  # noqa: E501, PLW2901
+            elif contract_key == 'ETH_MULTICALL_2':
+                contract_key = 'MULTICALL2'  # let's rename to non eth-specific  # noqa: E501, PLW2901
+            abi_id = _insert_abi_return_id(
+                cursor=cursor,
+                name=contract_key,
+                serialized_abi=serialized_abi,
+            )
+
+        if contract_key == 'BALANCE_SCAN':
+            eth_scan_abi_id = abi_id
+        elif contract_key == 'MULTICALL2':
+            multicall_abi_id = abi_id
+        elif contract_key == 'DS_PROXY_REGISTRY':
+            ds_registry_abi_id = abi_id
+
+        cursor.execute(
+            'INSERT INTO contract_data(address, chain_id, name, abi, deployed_block) '
+            'VALUES(?, ?, ?, ?, ?)',
+            (items['address'], 1, contract_key, abi_id, items['deployed_block']),
+        )
+
+    if eth_scan_abi_id is None or multicall_abi_id is None or ds_registry_abi_id is None:
+        raise DBUpgradeError(
+            'Failed to find either eth_scan or multicall or ds registry abi id during '
+            'v3->v4 global DB upgrade',
+        )
+
+    log.debug('Exit _add_eth_contracts_json')
+    return eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id
+
+
+def _add_optimism_contracts(
+        cursor: 'DBCursor',
+        eth_scan_abi_id: int,
+        multicall_abi_id: int,
+        ds_registry_abi_id: int,
+) -> None:
+    log.debug('Enter _add_optimism_contracts')
+
+    cursor.executemany(
+        'INSERT INTO contract_data(address, chain_id, name, abi, deployed_block) '
+        'VALUES(?, ?, ?, ?, ?)',
+        [(
+            '0x1e21bc42FaF802A0F115dC998e2F0d522aDb1F68',
+            10,
+            'BALANCE_SCAN',
+            eth_scan_abi_id,
+            46787373,
+        ), (
+            '0x2DC0E2aa608532Da689e89e237dF582B783E552C',
+            10,
+            'MULTICALL2',
+            multicall_abi_id,
+            722566,
+        ), (
+            '0x283Cc5C26e53D66ed2Ea252D986F094B37E6e895',
+            10,
+            'DS_PROXY_REGISTRY',
+            ds_registry_abi_id,
+            2944824,
+        )],
+    )
+
+    log.debug('Exit _add_optimism_contracts')
+
+
+def _copy_assets_from_packaged_db(
+        cursor: 'DBCursor',
+        assets_ids: list[str],
+        root_dir: Path,
+) -> None:
+    """
+    Copy missing assets from the packaged globaldb to the globaldb
+    Since the upgrade happens when the connection to the globaldb hasn't been created yet we need
+    to manually copy the assets information as we don't have the GlobalDBHandler object.
+
+    We need to commit the changes here because otherwise the packaged globaldb is busy and we
+    can't detach it. At this point all the information in the upgrade should be fine.
+
+    TODO: This approach assumes that the schema in the packaged globaldb and the schema in v3 are
+    the same. When this doesn't hold anymore we will ask users to use an intermediate
+    version to upgrade.
+    """
+    packaged_db_path = root_dir / 'data' / 'global.db'
+    identifiers_quotes = ','.join('?' * len(assets_ids))
+    cursor.execute(f'ATTACH DATABASE "{packaged_db_path}" AS packaged_db;')
+    cursor.execute(f'INSERT INTO assets SELECT * FROM packaged_db.assets WHERE identifier IN ({identifiers_quotes});', assets_ids)  # noqa: E501
+    cursor.execute(f'INSERT INTO evm_tokens SELECT * FROM packaged_db.evm_tokens WHERE identifier IN ({identifiers_quotes});', assets_ids)  # noqa: E501
+    cursor.execute(f'INSERT INTO common_asset_details SELECT * FROM packaged_db.common_asset_details WHERE identifier IN ({identifiers_quotes});', assets_ids)  # noqa: E501
+    cursor.execute('COMMIT;')
+    cursor.execute('DETACH DATABASE packaged_db;')
+
+
+def _populate_asset_collections(cursor: 'DBCursor', root_dir: Path) -> None:
+    """Insert into the collections table the information about known collections"""
+    log.debug('Enter _populate_asset_collection')
+    with open(root_dir / 'data' / 'populate_asset_collections.sql') as f:
+        cursor.execute(f.read())
+    log.debug('Exit _populate_asset_collection')
+
+
+def _populate_multiasset_mappings(cursor: 'DBCursor', root_dir: Path) -> None:
+    """
+    Insert into the assets_mappings table the information about each asset's collection
+    If any of the assets that needs to go in the collections is missing we copy it from the
+    packaged globaldb.
+    """
+    log.debug('Enter _populate_multiasset_mappings')
+    asset_regex = re.compile(r'eip155[a-zA-F0-9:\/]+')
+    with open(root_dir / 'data' / 'populate_multiasset_mappings.sql') as f:
+        sql_sentences = f.read()
+        # check if we are adding the assets
+        # in this case we need to ensure that the assets exist locally and
+        # if not copy them from the packaged db
+        mapping_assets_identifiers = asset_regex.findall(sql_sentences)
+        cursor.execute(
+            f'SELECT identifier FROM assets WHERE identifier IN ({",".join("?" * len(mapping_assets_identifiers))})',  # noqa: E501
+            mapping_assets_identifiers,
+        )
+        all_evm_assets = {entry[0] for entry in cursor}
+        assets_to_add = set(mapping_assets_identifiers) - all_evm_assets
+
+        if len(assets_to_add) != 0:
+            try:
+                _copy_assets_from_packaged_db(
+                    cursor=cursor,
+                    assets_ids=list(assets_to_add),
+                    root_dir=root_dir,
+                )
+            except sqlite3.OperationalError as e:
+                log.error(f'Failed to add missing assets for collections. Missing assets were {assets_to_add}. {str(e)}')  # noqa: E501
+                return
+
+        cursor.execute(sql_sentences)
+    log.debug('Exit _populate_multiasset_mappings')
+
+
+def _upgrade_address_book_table(cursor: 'DBCursor') -> None:
+    """Upgrades the address book table if it exists by making the blockchain column optional"""
+    cursor.execute('SELECT COUNT(*) from sqlite_master WHERE type="table" AND name="address_book"')
+    table_exists = cursor.fetchone()[0] == 1
+    table_creation = 'address_book'
+    if table_exists:
+        table_creation = 'address_book_new'
+    cursor.execute(  # create temp table if exists and final if not
+        f"""
+        CREATE TABLE IF NOT EXISTS {table_creation} (
+            address TEXT NOT NULL,
+            blockchain TEXT,
+            name TEXT NOT NULL,
+            PRIMARY KEY(address, blockchain)
+        );
+        """,
+    )
+
+    if table_exists:
+        cursor.execute('INSERT INTO address_book_new SELECT address, blockchain, name FROM address_book')  # noqa: E501
+        cursor.execute('DROP TABLE address_book')
+        cursor.execute('ALTER TABLE address_book_new RENAME TO address_book;')
+
+
+def _update_yearn_v1_protocol(cursor: 'DBCursor') -> None:
+    """Update the protocol name for yearn assets"""
+    cursor.execute('UPDATE evm_tokens SET protocol=? WHERE protocol="yearn-v1"', (YEARN_VAULTS_V1_PROTOCOL,))  # noqa: E501
+
+
+def migrate_to_v4(connection: 'DBConnection') -> None:
+    """Upgrades globalDB to v4 by creating and populating the contract data + abi tables.
+
+    Also making sure to not repeat existing abis. Ran a script to determine which
+    abis are common between all contracts and encoding the output of these relations
+    to the upgrade.
+
+    eth_abi.json has no repeating ABIs
+    """
+    log.debug('Entered globaldb v3->v4 upgrade')
+    root_dir = Path(__file__).resolve().parent.parent.parent
+
+    with connection.write_ctx() as cursor:
+        _create_new_tables(cursor)
+        _add_eth_abis_json(cursor)
+        eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id = _add_eth_contracts_json(cursor)
+        _add_optimism_contracts(cursor, eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id)
+        _populate_asset_collections(cursor, root_dir)
+        _populate_multiasset_mappings(cursor, root_dir)
+        _upgrade_address_book_table(cursor)
+        _update_yearn_v1_protocol(cursor)
+
+    log.debug('Finished globaldb v3->v4 upgrade')

@@ -1,0 +1,16 @@
+name: Cassette Merge
+
+# only trigger on pull request closed events
+on:
+  pull_request_target:
+    types: [ closed ]
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    environment: cassette-merge
+    steps:
+      - uses: rotki/action-cassette-deck@v1
+        with:
+          token: ${{ secrets.MERGE_TOKEN }}
+          cassette_repo: test-caching

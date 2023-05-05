@@ -1,0 +1,19 @@
+Transaction,Type,Currency,Amount,USD Equivalent,Details,Outstanding Loan,Date / Time
+NXT0000000001,LockingTermDeposit,USDC,-1,$1.1226435,approved / Transfer from Savings Wallet to Term Wallet,$0.00,2021-03-06 09:51:54
+NXT0000000002,Interest,USDC,1,$1.16806918161,approved / USDC Interest Earned,$0.00,2021-03-06 01:20:20
+NXT0000000003,ExchangeDepositedOn,EUR,10,$15.1411,approved / EUR,$0.00,2021-02-26 19:09:00
+NXT0000000004,DepositToExchange,EUR,100,$120.1509,approved / EUR Top Up,$0.00,2021-02-26 14:58:12
+NXT0000000005,WithdrawExchanged,EUR,-2000.79,$2500.63591346,approved / EUR Withdrawal,$0.00,2020-12-16 15:09:24
+NXT0000000006,ExchangeToWithdraw,USDC,-2000.79,$2500.5364681,approved / User,$0.00,2020-12-16 21:18:33
+NXT0000000007,Dividend,NEXO,10.3585507,$3.43448965222,approved / Loyalty Dividend,$0.00,2020-08-15 12:01:55
+NXT0000000008,ExchangeToWithdraw,USDC,-2000,$2500.5,rejected / USER,$0.00,2020-08-15 01:10:12
+NXT0000000009,Dividend,NEXO,22.5653042,$16.0708424630,approved / Base Dividend,$0.00,2019-08-15 17:01:04
+NXT0000000010,ExchangeDepositedOn,EUR,10000,$11174.47,approved / USDC,$0.00,2019-08-15 23:47:01
+NXT0000000011,Deposit,NEXO,1.00001,$5487.0248909704,approved / 0x999999999849662f1106541b0d2e78be4445e6d8d870ac8616a3cf79de969c9b,$0.00,2019-05-24 17:50:10
+NXT0000000012,Withdrawal,BTC,-0.9995,$5574.2115,approved / BTC withdrawal,$0.00,2019-04-24 16:18:19
+NXT0000000013,Deposit,BTC,1,$5579.7,approved / 3699999999999999999999999,$0.00,2019-04-24 14:42:44
+NXT0000000014,Interest,USD,-10,-$10,approved / Interest,$0.00,2020-04-24 14:42:44
+NXT0000000015,Interest,NEXONEXO,10,$10,approved / Interest,$0.00,2020-04-24 14:43:44
+NXT0000000016,FixedTermInterest,ETH,10,$10,approved / Term Deposit Interest,$0.00,2020-04-25 14:43:44
+NXT0000000017,UnlockingTermDeposit,,10,$10,approved / Transfer from Term Wallet to Savings Wallet,$0.00,2020-04-25 14:45:44
+

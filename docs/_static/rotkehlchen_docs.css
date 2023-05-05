@@ -1,0 +1,11 @@
+.wy-side-nav-search > a {
+  width: 175px;
+}
+
+.red {
+  color: red;
+}
+
+.rst-content section > img {
+  margin-bottom: 24px !important;
+}

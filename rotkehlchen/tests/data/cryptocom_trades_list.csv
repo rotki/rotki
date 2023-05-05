@@ -1,0 +1,41 @@
+﻿Timestamp (UTC),Transaction Description,Currency,Amount,To Currency,To Amount,Native Currency,Native Amount,Native Amount (in USD),Transaction Kind
+2020-12-15 09:25:14,Convert Dust,CRO,193.02779901061902311,,,EUR,10.59,12.8794521,dust_conversion_credited
+2020-12-15 09:25:14,Convert Dust,UNI,-1.3387887,,,EUR,-5.84,-7.1025496,dust_conversion_debited
+2020-12-15 09:25:14,Convert Dust,DOT,-0.6295092,,,EUR,-4.8,-5.837712,dust_conversion_debited
+2020-12-01 14:39:25,Convert Dust,CRO,0.007231228760408149,,,EUR,0.0,0,dust_conversion_credited
+2020-12-01 14:39:25,Convert Dust,DAI,-0.00050680380674961,,,EUR,0.0,0,dust_conversion_debited
+2020-10-12 19:10:36,Transfer: Exchange -> App wallet,ETH,0.033,,,EUR,10.75,12.7743325,exchange_to_crypto_transfer
+2020-10-12 19:09:36,Transfer: App wallet -> Exchange,CRO,-161.73231782,,,EUR,-10.71,-12.7268001,crypto_to_exchange_transfer
+2020-10-12 18:09:36,Referral Bonus Reward,CRO,482.2566417,,,EUR,42.23,49.2763433,referral_bonus
+2020-10-12 15:09:36,Card Cashback,CRO,52.151,,,EUR,3.49,4.1472019,referral_card_cashback
+2020-09-12 18:09:36,Card Rebate: Deliveries,CRO,138.256,,,EUR,19.76,23.48,reimbursement
+2020-08-09 17:10:25,Withdraw DAI,DAI,-115,,,EUR,-98.37,-116.8940547,crypto_withdrawal
+2020-08-09 17:09:25,Deposit DAI,DAI,115,,,EUR,98.37,116.8940547,crypto_deposit
+2020-08-06 16:09:25,MCO/CRO Overall Swap,CRO,1301.64,,,EUR,182.23,211.673899,dynamic_coin_swap_credited
+2020-08-06 16:09:25,MCO/CRO Overall Swap,MCO,-50,,,EUR,-159.97,-183.7864,dynamic_coin_swap_debited
+2020-08-06 22:47:56,Early Swap Bonus,CRO,-276.46122951,,,EUR,-37.63,-44.5595645,dynamic_coin_swap_bonus_exchange_deposit
+2020-08-03 14:39:25,MCO/CRO Overall Swap,CRO,1382.306147552291,,,EUR,197.68,234.082772,dynamic_coin_swap_credited
+2020-08-03 14:39:25,MCO/CRO Overall Swap,MCO,-50.00402069,,,EUR,-168.37,-199.3753355,dynamic_coin_swap_debited
+2020-08-03 15:39:25,CRO Stake Rebate,CRO,1382.195,,,EUR,197.66,234.059089,lockup_swap_rebate
+2020-08-03 14:39:25,CRO Stake,CRO,1382.195,,,EUR,197.66,234.059089,lockup_swap_credited
+2020-08-03 14:39:25,MCO Unstake,MCO,-50.0,,,EUR,-168.36,-199.363494,lockup_swap_debited
+2020-08-03 14:39:25,MCO/CRO Wallet Swap,CRO,0.111147552291,,,EUR,0.02,0.023683,crypto_wallet_swap_credited
+2020-08-03 14:39:25,MCO/CRO Wallet Swap,MCO,-0.00402069,,,EUR,-0.01,-0.0118415,crypto_wallet_swap_debited
+2020-08-03 04:45:34,Crypto Earn,ETH,0.00061475,,,EUR,0.19,0.2249885,crypto_earn_interest_paid
+2020-07-31 15:37:07,MCO -> ETH,MCO,-12.32,ETH,0.14445954600007045,EUR,42.13,49.8882395,crypto_exchange
+2020-07-29 09:17:03,Sign-up Bonus Unlocked,MCO,12.32402069,,,USD,50.0,50.0,referral_gift
+2020-07-29 09:16:57,MCO Stake,MCO,-50.0,,,EUR,-174.36,-206.468394,lockup_lock
+2020-07-29 09:16:54,Buy MCO,MCO,50.0,,,EUR,176.05,208.4696075,crypto_purchase
+2020-07-29 09:12:07,Crypto Earn Deposit,ETH,-1.0,,,EUR,-275.55,-326.2925325,crypto_earn_program_created
+2020-07-28 09:12:07,Crypto Earn Withdrawal,ETH,-1.0,,,EUR,-275.55,-326.2925325,crypto_earn_program_withdrawn
+2020-07-27 06:59:55,Buy ETH,ETH,1.0,,,EUR,281.14,332.911931,crypto_purchase
+2021-07-19 18:56:00,EUR -> BTC,EUR,-78.01,BTC,0.003,EUR,79.03,98.39247273,viban_purchase
+2021-05-05 05:34:27,DOGE -> EUR,DOGE,-750.0,EUR,406.22,EUR,406.22,470.713883898,crypto_viban_exchange
+2021-03-25 11:00:41,Refund from Merchant XXX,CRO,15.31,,,EUR,2.63,3.047554317,crypto_payment_refund
+2021-03-25 10:52:28,Pay Rewards,CRO,0.3076,,,EUR,0.05,0.057938295,pay_checkout_reward
+2021-03-25 10:52:27,Merchant XXX,CRO,-15.38,CRO,-15.38,EUR,-2.63,-3.047554317,crypto_payment
+2021-03-20 18:59:00,From +49XXXXXXXXXX,CRO,100.0,,,EUR,18.21,21.101127039,crypto_transfer
+2021-03-20 10:49:11,Pay Rewards,CRO,10.0,,,EUR,2.0,2.3175318,transfer_cashback
+2021-03-20 10:49:11,To +49XXXXXXXXXX,CRO,-100.0,,,EUR,-20.0,-23.175318,crypto_transfer
+2021-03-07 06:17:09,Card Rebate Reversal: Netflix,CRO,-7.76792828,,,EUR,-1.0,-1.1587659,reimbursement_reverted
+2021-03-06 00:05:35,Card Rebate: Netflix,CRO,7.76792828,,,EUR,1.0,1.1587659,reimbursement

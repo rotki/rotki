@@ -1,0 +1,69 @@
+{
+  "/api/1/assets/updates": {
+    "GET": [
+      {
+        "result": {
+          "local_version": 1,
+          "remote_version": 6
+        },
+        "message": ""
+      },
+      {
+        "result": {
+          "local_version": 2,
+          "remote_version": 5
+        },
+        "message": ""
+      }
+    ],
+    "POST": [
+      {
+        "result": [
+          {
+            "identifier": "assetid1",
+            "local": {
+              "coingecko": "2give",
+              "name": "2GIVE",
+              "started": 1460937600,
+              "symbol": "2GIVE",
+              "type": "own chain"
+            },
+            "remote": {
+              "coingecko": "TWOgive",
+              "name": "TWOGIVE",
+              "started": 1460937600,
+              "symbol": "2GIVEORNOTTOGIVE",
+              "type": "own chain"
+            }
+          },
+          {
+            "identifier": "asset_id2",
+            "local": {
+              "coingecko": "aave",
+              "ethereum_address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+              "decimals": 18,
+              "name": "Aave Token",
+              "started": 1600970788,
+              "symbol": "AAVE",
+              "type": "ethereum token"
+            },
+            "remote": {
+              "coingecko": "aaveNGORZ",
+              "ethereum_address": "0x1Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+              "decimals": 15,
+              "name": "Aave Token FOR REALZ",
+              "started": 1600970789,
+              "symbol": "AAVE_YO!",
+              "type": "binance token"
+            }
+          }
+        ],
+        "message": ""
+      },
+      {
+        "result": true,
+        "message": ""
+      }
+    ]
+  }
+}

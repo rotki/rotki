@@ -1,0 +1,47 @@
+name: Rotki Docker Release
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker:
+    name: Update ${{ github.repository }}:latest on hub.docker.com
+    runs-on: ubuntu-latest
+    environment: docker
+    env:
+      REGCTL: v0.4.4
+      REGCTL_SUM: 'bafe0048e1b5e8112dfb416e733bb9994b74de6973999a7fb5473ab4125a9eda74df367d5324c2e94726ac0dbfd0445f4b0102f2e43ba5136bedc05b690271c2'
+    steps:
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Rotki Version
+        id: rotki_version
+        run: echo "version=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+      - name: Cache regctl
+        uses: actions/cache@v3
+        with:
+          path: regctl-linux-amd64
+          key: ${{ runner.os }}-regctl-${{ env.REGCTL }}
+      - name: Publish ${{ github.repository }}:latest from ${{ steps.rotki_version.outputs.version }}
+        run: |
+          if [[ ! -f "regctl-linux-amd64" ]]; then
+            echo "downloading regctl"
+            curl -LO "https://github.com/regclient/regclient/releases/download/${{ env.REGCTL }}/regctl-linux-amd64"            
+          fi
+          chmod u+x regctl-linux-amd64
+          echo "${{ env.REGCTL_SUM }} regctl-linux-amd64" > regctl-linux-amd64.sha512
+          if [[ ! $(sha512sum -c regctl-linux-amd64.sha512) ]]; then 
+            echo checksum failed
+            exit 1
+          fi
+      - name: Publish latest to hub.docker.com
+        run: ./regctl-linux-amd64 image copy "${{ github.repository }}:${{ steps.rotki_version.outputs.version }}" "${{ github.repository }}:latest"
+
+

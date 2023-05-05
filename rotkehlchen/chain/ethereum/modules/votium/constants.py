@@ -1,0 +1,1 @@
+CPT_VOTIUM = 'votium'
