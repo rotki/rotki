@@ -219,7 +219,7 @@ def test_ens_reverse_lookup(ethereum_inquirer):
         reversed_addr_1 = ethereum_inquirer.ens_lookup('lefteris.eth')
         expected = {reversed_addr_0: None, reversed_addr_1: 'lefteris.eth'}
         assert ethereum_inquirer.ens_reverse_lookup([reversed_addr_0, reversed_addr_1]) == expected
-        assert call_contract_mock.call_count == 1
+        assert call_contract_mock.call_count == 2
 
     with addrs_in_chunk_patch, call_contract_patch as call_contract_mock:
         reversed_addr_2 = ethereum_inquirer.ens_lookup('abc.eth')
@@ -231,4 +231,4 @@ def test_ens_reverse_lookup(ethereum_inquirer):
             [reversed_addr_2, reversed_addr_3, reversed_addr_4],
         )
         assert queried_ens_names == expected
-        assert call_contract_mock.call_count == 2
+        assert call_contract_mock.call_count == 4

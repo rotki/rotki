@@ -10,7 +10,6 @@ from web3 import Web3
 
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, ETH_PROTOCOLS_CACHE_REFRESH
@@ -191,7 +190,12 @@ def try_download_ens_avatar(
     May raise:
     - RemoteError if failed to query chain
     """
-    avatar_url = eth_inquirer.contracts.contract(string_to_evm_address('0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41')).call(  # noqa: E501
+    resolver_addr, _ = eth_inquirer.get_ens_resolver_addr(ens_name)
+    if resolver_addr is None:
+        log.error(f'Could not find ENS resolver address for {ens_name}')
+        return
+
+    avatar_url = eth_inquirer.contracts.contract(resolver_addr).call(
         node_inquirer=eth_inquirer,
         method_name='text',
         arguments=[normal_name_to_hash(ens_name), 'avatar'],

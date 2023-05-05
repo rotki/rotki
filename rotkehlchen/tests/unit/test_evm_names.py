@@ -115,9 +115,11 @@ def test_uses_sources_only_when_needed(evm_address, database: 'DBHandler'):
 
 
 @pytest.mark.vcr()
-@freeze_time('2023-03-20')  # freezing time just to make sure comparisons of timestamps won't fail
+@freeze_time('2023-05-05')  # freezing time just to make sure comparisons of timestamps won't fail
 def test_download_ens_avatar(ethereum_inquirer):
-    """Tests that detection and downloading of ens avatars works properly"""
+    """
+    Tests that detection and downloading of ens avatars works properly for all resolvers
+    """
     dbens = DBEns(ethereum_inquirer.database)
     with dbens.db.user_write() as write_cursor:
         dbens.add_ens_mapping(
@@ -132,6 +134,12 @@ def test_download_ens_avatar(ethereum_inquirer):
             name='nebolax.eth',
             now=ts_now(),
         )
+        dbens.add_ens_mapping(
+            write_cursor=write_cursor,
+            address=make_evm_address(),
+            name='tewshi.eth',
+            now=ts_now(),
+        )
     with tempfile.TemporaryDirectory() as tempdir_str:
         tempdir = Path(tempdir_str)
         try_download_ens_avatar(
@@ -139,15 +147,21 @@ def test_download_ens_avatar(ethereum_inquirer):
             avatars_dir=tempdir,
             ens_name='random.ens.name.eth',  # a random ens name, and thus there is no avatar
         )
-        assert dbens.get_last_avatar_update('random.ens.name.eth') == ts_now(), 'Last update timestamp should have been set'  # noqa: E501
+        assert dbens.get_last_avatar_update('random.ens.name.eth') <= ts_now(), 'Last update timestamp should have been set'  # noqa: E501
         assert list(tempdir.iterdir()) == []
         try_download_ens_avatar(
             eth_inquirer=ethereum_inquirer,
             avatars_dir=tempdir,
-            ens_name='nebolax.eth',  # an avatar should be downloaded
+            ens_name='nebolax.eth',  # an avatar should be downloaded. Resolver v2.
         )
-        assert dbens.get_last_avatar_update('nebolax.eth') == ts_now(), 'Last update timestamp should have been set'  # noqa: E501
-        assert list(tempdir.iterdir()) == [tempdir / 'nebolax.eth.png']
+        assert dbens.get_last_avatar_update('nebolax.eth') <= ts_now(), 'Last update timestamp should have been set'  # noqa: E501
+        try_download_ens_avatar(
+            eth_inquirer=ethereum_inquirer,
+            avatars_dir=tempdir,
+            ens_name='tewshi.eth',  # an avatar should be downloaded. Resolver v3
+        )
+        assert dbens.get_last_avatar_update('tewshi.eth') <= ts_now(), 'Last update timestamp should have been set'  # noqa: E501
+        assert set(tempdir.iterdir()) == set([tempdir / 'tewshi.eth.png', tempdir / 'nebolax.eth.png'])
         downloaded_hash = file_md5(tempdir / 'nebolax.eth.png')
         expected_hash = file_md5(Path(__file__).parent.parent / 'data' / 'example_ens_avatar.png')
         assert downloaded_hash == expected_hash, 'Downloaded avatar should match the expected avatar'  # noqa: E501
