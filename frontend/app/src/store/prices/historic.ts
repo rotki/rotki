@@ -1,6 +1,6 @@
 import { type BigNumber } from '@rotki/common';
 import { type ComputedRef } from 'vue';
-import { HistoricPrices } from '@/types/prices';
+import { HistoricPrices, type HistoricalPrice } from '@/types/prices';
 import { TaskType } from '@/types/task-type';
 import { type TaskMeta } from '@/types/task';
 import { NoPrice } from '@/utils/bignumbers';
@@ -12,6 +12,9 @@ export const useHistoricCachePriceStore = defineStore(
     const { queryHistoricalRates } = usePriceApi();
     const { awaitTask } = useTaskStore();
     const { t, tc } = useI18n();
+
+    const createKey = (fromAsset: string, timestamp: number | string) =>
+      `${fromAsset}#${timestamp}`;
 
     const fetchHistoricPrices = async (keys: string[]) => {
       const taskType = TaskType.FETCH_HISTORIC_PRICE;
@@ -47,7 +50,7 @@ export const useHistoricCachePriceStore = defineStore(
       return function* () {
         for (const assetTimestamp of assetsTimestamp) {
           const [fromAsset, timestamp] = assetTimestamp;
-          const key = `${fromAsset}#${timestamp}`;
+          const key = createKey(fromAsset, timestamp);
 
           const item = response.assets?.[fromAsset]?.[timestamp];
           yield { key, item };
@@ -60,7 +63,7 @@ export const useHistoricCachePriceStore = defineStore(
       timestamp: number
     ): ComputedRef<BigNumber> =>
       computed(() => {
-        const key = `${fromAsset}#${timestamp}`;
+        const key = createKey(fromAsset, timestamp);
 
         if (get(isPending(key))) {
           return NoPrice;
@@ -69,20 +72,27 @@ export const useHistoricCachePriceStore = defineStore(
         return get(retrieve(key)) || NoPrice;
       });
 
-    const { cache, isPending, retrieve, reset } = useItemCache<BigNumber>(
-      keys => fetchHistoricPrices(keys)
-    );
+    const { cache, isPending, retrieve, reset, deleteCacheKey } =
+      useItemCache<BigNumber>(keys => fetchHistoricPrices(keys));
 
     watch(currencySymbol, () => {
       reset();
     });
+
+    const resetHistoricalPricesData = (items: HistoricalPrice[]) => {
+      items.forEach(item => {
+        const key = createKey(item.fromAsset, item.timestamp);
+        deleteCacheKey(key);
+      });
+    };
 
     return {
       cache,
       isPending,
       retrieve,
       reset,
-      historicPriceInCurrentCurrency
+      historicPriceInCurrentCurrency,
+      resetHistoricalPricesData
     };
   }
 );

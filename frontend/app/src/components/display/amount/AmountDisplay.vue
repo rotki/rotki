@@ -306,7 +306,7 @@ const css = useCssModule();
 <template>
   <div class="d-inline-block">
     <div class="d-flex flex-row align-baseline">
-      <manual-price-indicator :price-asset="priceAsset" />
+      <manual-price-indicator v-if="timestamp < 0" :price-asset="priceAsset" />
       <span
         :class="{
           [css.blur]: !shouldShowAmount,

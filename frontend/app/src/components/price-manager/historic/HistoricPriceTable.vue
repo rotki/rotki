@@ -4,31 +4,29 @@ import {
   type NotificationPayload,
   Severity
 } from '@rotki/common/lib/messages';
-import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import { type HistoricalPrice, type ManualPricePayload } from '@/types/prices';
+import { type HistoricalPrice } from '@/types/prices';
 
-const props = defineProps({
-  filter: {
-    type: Object as PropType<ManualPricePayload>,
-    required: true
-  },
-  refreshing: {
-    type: Boolean,
-    required: false,
-    default: false
+const props = withDefaults(
+  defineProps<{
+    items: HistoricalPrice[];
+    loading?: boolean;
+  }>(),
+  {
+    loading: false
   }
-});
+);
 
-const emit = defineEmits(['edit', 'refreshed']);
-const { filter, refreshing } = toRefs(props);
+const emit = defineEmits<{
+  (e: 'edit', item: HistoricalPrice): void;
+  (e: 'refresh', modified: boolean | HistoricalPrice): void;
+}>();
 
-const prices = ref<HistoricalPrice[]>([]);
-const loading = ref(false);
+const { items } = toRefs(props);
 
 const { notify } = useNotificationsStore();
 const { tc } = useI18n();
-const { deleteHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
+const { deleteHistoricalPrice } = useAssetPricesApi();
 
 const headers = computed<DataTableHeader[]>(() => [
   {
@@ -64,11 +62,17 @@ const headers = computed<DataTableHeader[]>(() => [
   }
 ]);
 
+const edit = (item: HistoricalPrice) => {
+  emit('edit', item);
+};
+const refresh = (modified: boolean | HistoricalPrice = false) =>
+  emit('refresh', modified);
+
 const deletePrice = async (item: HistoricalPrice) => {
   const { price, ...payload } = item!;
   try {
     await deleteHistoricalPrice(payload);
-    await refresh();
+    await refresh(item);
   } catch (e: any) {
     const notification: NotificationPayload = {
       title: tc('price_table.delete.failure.title'),
@@ -82,48 +86,6 @@ const deletePrice = async (item: HistoricalPrice) => {
     notify(notification);
   }
 };
-
-const fetchPrices = async (payload?: Partial<ManualPricePayload>) => {
-  set(loading, true);
-  try {
-    set(prices, await fetchHistoricalPrices(payload));
-  } catch (e: any) {
-    const notification: NotificationPayload = {
-      title: tc('price_table.fetch.failure.title'),
-      message: tc('price_table.fetch.failure.message', 0, {
-        message: e.message
-      }),
-      display: true,
-      severity: Severity.ERROR,
-      category: NotificationCategory.DEFAULT
-    };
-    notify(notification);
-  } finally {
-    set(loading, false);
-  }
-};
-
-const refresh = async () => {
-  await fetchPrices(get(filter));
-};
-
-watch(
-  filter,
-  async () => {
-    await refresh();
-  },
-  { deep: true }
-);
-
-watch(refreshing, async refreshing => {
-  if (!refreshing) {
-    return;
-  }
-  await refresh();
-  emit('refreshed');
-});
-
-onMounted(fetchPrices);
 
 const { show } = useConfirmStore();
 
@@ -152,7 +114,7 @@ const showDeleteConfirmation = (item: HistoricalPrice) => {
     </template>
     <slot />
     <data-table
-      :items="prices"
+      :items="items"
       :headers="headers"
       :loading="loading"
       sort-by="timestamp"
@@ -177,7 +139,7 @@ const showDeleteConfirmation = (item: HistoricalPrice) => {
           :delete-tooltip="tc('price_table.actions.delete.tooltip')"
           :edit-tooltip="tc('price_table.actions.edit.tooltip')"
           @delete-click="showDeleteConfirmation(item)"
-          @edit-click="$emit('edit', item)"
+          @edit-click="edit(item)"
         />
       </template>
     </data-table>
