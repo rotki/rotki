@@ -196,8 +196,7 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
     - fix instant swaps
     Needs to be executed after _update_history_events_schema
     """
-    log.debug('Enter _fix_kraken_events')
-    log.debug('Fixing kraken eth2 related tuples')
+    log.debug('Enter _fix_kraken_events. Fixing kraken eth2 related tuples')
     update_tuples: list[Any] = []
     write_cursor.execute(
         'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
@@ -205,14 +204,12 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
         (A_ETH2.identifier,),
     )
     for event_row in write_cursor:
-        amount = FVal(event_row[1])
-        usd_value = FVal(event_row[2])
         update_tuples.append(
             (
                 HistoryEventType.INFORMATIONAL.serialize(),
                 HistoryEventSubType.NONE.serialize(),
-                str(-amount) if amount != ZERO else str(amount),
-                str(-usd_value) if usd_value != ZERO else str(usd_value),
+                str(-FVal(event_row[1])),
+                str(-FVal(event_row[2])),
                 'Automatic virtual conversion of staked ETH rewards to ETH',
                 event_row[0],
             ),
@@ -232,12 +229,19 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
     for event_row in write_cursor:
         asset_amount = FVal(event_row[1])
         usd_value = FVal(event_row[2])
+        if asset_amount < ZERO:
+            event_subtype = HistoryEventSubType.SPEND
+            asset_amount = -asset_amount
+            usd_value = -usd_value
+        else:
+            event_subtype = HistoryEventSubType.RECEIVE
+
         update_tuples.append(
             (
                 HistoryEventType.TRADE.serialize(),
-                HistoryEventSubType.SPEND.serialize() if asset_amount < ZERO else HistoryEventSubType.RECEIVE.serialize(),  # noqa: E501
-                str(-asset_amount) if asset_amount < ZERO else str(asset_amount),
-                str(-usd_value) if usd_value < ZERO else str(usd_value),
+                event_subtype.serialize(),
+                str(asset_amount),
+                str(usd_value),
                 event_row[0],
             ),
         )
@@ -248,19 +252,17 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
             update_tuples,
         )
 
-    log.debug('Fixing kraken withdrawals')
+    log.debug('Fixing kraken withdrawals')  # deposits are all positive amount already
     update_tuples = []
     write_cursor.execute(
         'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
         'type="withdrawal"',
     )
     for event_row in write_cursor:
-        amount = FVal(event_row[1])
-        usd_value = FVal(event_row[2])
         update_tuples.append(
             (
-                str(-amount) if amount != ZERO else str(amount),
-                str(-usd_value) if usd_value != ZERO else str(usd_value),
+                str(-FVal(event_row[1])),
+                str(-FVal(event_row[2])),
                 event_row[0],
             ),
         )
@@ -280,26 +282,25 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
     for row in write_cursor:
         grouped_events[row[1]].append(row)
 
-    for groups in grouped_events.values():
-        if len(groups) != 2:
+    for events in grouped_events.values():
+        if len(events) != 2:
             continue
 
-        for event in groups:
-            event_type = HistoryEventType.TRADE.serialize()
+        for event in events:
             if event[2] == 'spend':
-                event_subtype = HistoryEventSubType.SPEND.serialize()
+                event_subtype = HistoryEventSubType.SPEND
                 asset_amount = FVal(event[3])
                 asset_amount_str = str(-asset_amount) if asset_amount != ZERO else str(asset_amount)  # noqa: E501
                 usd_value_str = str(-FVal(event[4]))
             else:
-                event_subtype = HistoryEventSubType.RECEIVE.serialize()
+                event_subtype = HistoryEventSubType.RECEIVE
                 asset_amount_str = event[3]
                 usd_value_str = event[4]
 
             update_tuples.append(
                 (
-                    event_type,
-                    event_subtype,
+                    HistoryEventType.TRADE.serialize(),
+                    event_subtype.serialize(),
                     asset_amount_str,
                     usd_value_str,
                     event[0],

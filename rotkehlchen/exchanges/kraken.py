@@ -147,7 +147,11 @@ def history_event_from_kraken(
             asset = asset_from_kraken(raw_event['asset'])
             event_subtype = HistoryEventSubType.NONE
             notes = None
-            raw_amount = deserialize_asset_amount(raw_event['amount'])
+            raw_amount = deserialize_fval(
+                raw_event['amount'],
+                name='event amount',
+                location='kraken ledger processing',
+            )
             # If we don't know how to handle an event atm or we find an unsupported
             # event type the logic will be to store it as unknown and if in the future
             # we need some information from it we can take actions to process them
@@ -167,7 +171,7 @@ def history_event_from_kraken(
             elif event_type in (HistoryEventType.ADJUSTMENT, HistoryEventType.TRADE):
                 if raw_amount < ZERO:
                     event_subtype = HistoryEventSubType.SPEND
-                    raw_amount = AssetAmount(-raw_amount)
+                    raw_amount = -raw_amount
                 else:
                     event_subtype = HistoryEventSubType.RECEIVE
             elif event_type == HistoryEventType.STAKING:
@@ -177,7 +181,7 @@ def history_event_from_kraken(
                 if asset == A_ETH2 and raw_amount < ZERO:
                     event_type = HistoryEventType.INFORMATIONAL
                     notes = 'Automatic virtual conversion of staked ETH rewards to ETH'
-                    raw_amount = AssetAmount(-raw_amount)
+                    raw_amount = -raw_amount
                 else:
                     event_subtype = HistoryEventSubType.REWARD
             elif event_type == HistoryEventType.INFORMATIONAL:
@@ -187,7 +191,7 @@ def history_event_from_kraken(
                     f'Encountered kraken historic event type we do not process. {raw_event}',
                 )
             elif event_type == HistoryEventType.WITHDRAWAL:
-                raw_amount = AssetAmount(-raw_amount)
+                raw_amount = -raw_amount
 
             fee_amount = deserialize_asset_amount(raw_event['fee'])
 
@@ -247,7 +251,7 @@ def history_event_from_kraken(
                     event.event_subtype = HistoryEventSubType.RECEIVE
                 else:
                     event.event_subtype = HistoryEventSubType.SPEND
-                    event.balance.amount = AssetAmount(-event.balance.amount)
+                    event.balance.amount = -event.balance.amount
                 event.event_type = HistoryEventType.TRADE
 
         # make sure to add all the event to group_events
