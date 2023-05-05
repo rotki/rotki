@@ -131,6 +131,10 @@ def history_event_from_kraken(
     type is found.
     """
     group_events = []
+    # for receive/spend events they could be airdrops but they could also be instant swaps.
+    # the only way to know if it was a trade is by finding a pair of events receive/spend
+    # this is why we collect them instead of directly pushing to group_events
+    receive_spend_events: dict[str, list[HistoryEvent]] = defaultdict(list)
     found_unknown_event = False
     current_fee_index = len(events)
     for idx, raw_event in enumerate(events):
@@ -189,7 +193,7 @@ def history_event_from_kraken(
 
             # Make sure to not generate an event for KFEES that is not of type FEE
             if asset != A_KFEE:
-                group_events.append(HistoryEvent(
+                event = HistoryEvent(
                     event_identifier=identifier,
                     sequence_index=idx,
                     timestamp=timestamp,
@@ -203,7 +207,11 @@ def history_event_from_kraken(
                     notes=notes,
                     event_type=event_type,
                     event_subtype=event_subtype,
-                ))
+                )
+                if event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.SPEND):
+                    receive_spend_events[event.event_identifier].append(event)
+                else:
+                    group_events.append(event)
             if fee_amount != ZERO:
                 group_events.append(HistoryEvent(
                     event_identifier=identifier,
@@ -231,6 +239,19 @@ def history_event_from_kraken(
                 f'Failed to read ledger event from kraken {raw_event} due to {msg}',
             )
             return [], False
+
+    for event_set in receive_spend_events.values():
+        if len(event_set) == 2:
+            for event in event_set:
+                if event.event_type == HistoryEventType.RECEIVE:
+                    event.event_subtype = HistoryEventSubType.RECEIVE
+                else:
+                    event.event_subtype = HistoryEventSubType.SPEND
+                    event.balance.amount = AssetAmount(-event.balance.amount)
+                event.event_type = HistoryEventType.TRADE
+
+        # make sure to add all the event to group_events
+        group_events.extend(event_set)
     return group_events, found_unknown_event
 
 
@@ -764,9 +785,6 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 fee = Fee(ZERO)
 
             amount = movement.balance.amount
-            if movement.event_type == HistoryEventType.WITHDRAWAL:
-                amount = amount * -1
-
             try:
                 asset = movement.asset
                 movement_type = movement.event_type
@@ -848,7 +866,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             elif trade_part.event_type == HistoryEventType.TRADE:
                 if trade_part.event_subtype == HistoryEventSubType.FEE:
                     fee_part = trade_part
-                elif trade_part.event_subtype == HistoryEventType.SPEND:
+                elif trade_part.event_subtype == HistoryEventSubType.SPEND:
                     spend_part = trade_part
                 elif trade_part.asset == A_KFEE:
                     kfee_part = trade_part

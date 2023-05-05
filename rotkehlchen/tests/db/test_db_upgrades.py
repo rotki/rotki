@@ -1313,7 +1313,7 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     cursor = db_v36.conn.cursor()
     # Test state of DB before upgrade is as expected
     result = cursor.execute('SELECT COUNT(*) FROM history_events;')
-    assert result.fetchone()[0] == 177
+    assert result.fetchone()[0] == 180
     result = cursor.execute('SELECT COUNT(*) FROM history_events WHERE subtype IS NULL;')
     assert result.fetchone()[0] == 4
     result = cursor.execute('SELECT * from history_events_mappings;')
@@ -1330,6 +1330,9 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
         (175, 'TXZSDG-IUSNH2-OOAIE3U', 2, 1679243606179, 'B', 'kraken', 'EUR', '8.00', '8.53312', None, 'trade', 'fee', None, None),  # noqa: E501
         (176, 'KRAKEN-ETH2-EVENT', 0, 1681826144996, 'B', 'kraken', 'ETH2', '-0.0032936117', '-6.930681228076', None, 'staking', 'reward', None, None),  # noqa: E501
         (177, 'KRAKEN-ETH-EVENT-STAKING', 0, 1681967948701, 'B', 'kraken', 'ETH', '0.0000355988', '0.069824910272', None, 'staking', 'reward', None, None),  # noqa: E501
+        (1113, 'TSTLG5', 0, 1621508243539, 'B', 'Kraken 1', 'EUR', '-37.7000', '0', '', 'spend', 'none', None, None),  # noqa: E501
+        (1114, 'TSTLG5', 2, 1621508243539, 'B', 'Kraken 1', 'EUR', '0.5500', '0', '', 'spend', 'fee', None, None),  # noqa: E501
+        (1115, 'TSTLG5', 1, 1621508243543, 'B', 'Kraken 1', 'ETH', '0.0169800000', '0', '', 'receive', 'none', None, None),  # noqa: E501
     ]
     custom_events = [
         (1, b'\xf1\xe0SX\xcbe\xed{3\xa6\xbb\x0f"\x8am>E\x9a\xf8\x18e\xccc6\x99M\xeciw\xc3\x1aM', 0, 1676042975000, 'g', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'ETH', '0.0000004061904', '0.000609801461808', 'Burned 0.0000004061904 ETH for gas for greater justice', 'spend', 'fee', 'gas', None),  # noqa: E501
@@ -1415,6 +1418,9 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
         (175, 0, 'TXZSDG-IUSNH2-OOAIE3U', 2, 1679243606179, 'B', 'kraken', 'EUR', '8.00', '8.53312', None, 'trade', 'fee'),  # noqa: E501
         (176, 0, 'KRAKEN-ETH2-EVENT', 0, 1681826144996, 'B', 'kraken', 'ETH2', '0.0032936117', '6.930681228076', 'Automatic virtual conversion of staked ETH rewards to ETH', 'informational', 'none'),  # noqa: E501
         (177, 0, 'KRAKEN-ETH-EVENT-STAKING', 0, 1681967948701, 'B', 'kraken', 'ETH', '0.0000355988', '0.069824910272', None, 'staking', 'reward'),  # noqa: E501
+        (1113, 0, 'TSTLG5', 0, 1621508243539, 'B', 'Kraken 1', 'EUR', '37.7000', '0', '', 'trade', 'spend'),  # noqa: E501
+        (1114, 0, 'TSTLG5', 2, 1621508243539, 'B', 'Kraken 1', 'EUR', '0.5500', '0', '', 'spend', 'fee'),  # noqa: E501
+        (1115, 0, 'TSTLG5', 1, 1621508243543, 'B', 'Kraken 1', 'ETH', '0.0169800000', '0', '', 'trade', 'receive'),  # noqa: E501
     ]
     for entry in new_history_events:
         if entry[5] != 'B':

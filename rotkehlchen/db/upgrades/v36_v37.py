@@ -1,5 +1,6 @@
 import json
 import logging
+from collections import defaultdict
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -192,7 +193,7 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
     - staking ETH after the merge
     - trades not having subtypes and having negative amounts
     - withdrawals use positive amounts
-
+    - fix instant swaps
     Needs to be executed after _update_history_events_schema
     """
     log.debug('Enter _fix_kraken_events')
@@ -204,12 +205,14 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
         (A_ETH2.identifier,),
     )
     for event_row in write_cursor:
+        amount = FVal(event_row[1])
+        usd_value = FVal(event_row[2])
         update_tuples.append(
             (
                 HistoryEventType.INFORMATIONAL.serialize(),
                 HistoryEventSubType.NONE.serialize(),
-                str(-FVal(event_row[1])),
-                str(-FVal(event_row[2])),
+                str(-amount) if amount != ZERO else str(amount),
+                str(-usd_value) if usd_value != ZERO else str(usd_value),
                 'Automatic virtual conversion of staked ETH rewards to ETH',
                 event_row[0],
             ),
@@ -252,12 +255,12 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
         'type="withdrawal"',
     )
     for event_row in write_cursor:
-        asset_amount = FVal(event_row[1])
+        amount = FVal(event_row[1])
         usd_value = FVal(event_row[2])
         update_tuples.append(
             (
-                str(-FVal(event_row[1])),
-                str(-FVal(event_row[2])),
+                str(-amount) if amount != ZERO else str(amount),
+                str(-usd_value) if usd_value != ZERO else str(usd_value),
                 event_row[0],
             ),
         )
@@ -266,6 +269,48 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
             'UPDATE history_events SET amount=?, usd_value=? WHERE identifier=?',
             update_tuples,
         )
+
+    log.debug('Fixing kraken instant swaps')
+    update_tuples = []
+    grouped_events: dict[str, list[Any]] = defaultdict(list)
+    write_cursor.execute(
+        'SELECT identifier, event_identifier, type, amount, usd_value FROM history_events '
+        'WHERE location="B" AND type IN ("spend", "receive") AND subtype="none"',
+    )
+    for row in write_cursor:
+        grouped_events[row[1]].append(row)
+
+    for groups in grouped_events.values():
+        if len(groups) != 2:
+            continue
+
+        for event in groups:
+            event_type = HistoryEventType.TRADE.serialize()
+            if event[2] == 'spend':
+                event_subtype = HistoryEventSubType.SPEND.serialize()
+                asset_amount = FVal(event[3])
+                asset_amount_str = str(-asset_amount) if asset_amount != ZERO else str(asset_amount)  # noqa: E501
+                usd_value_str = str(-FVal(event[4]))
+            else:
+                event_subtype = HistoryEventSubType.RECEIVE.serialize()
+                asset_amount_str = event[3]
+                usd_value_str = event[4]
+
+            update_tuples.append(
+                (
+                    event_type,
+                    event_subtype,
+                    asset_amount_str,
+                    usd_value_str,
+                    event[0],
+                ),
+            )
+    if len(update_tuples) != 0:
+        write_cursor.executemany(
+            'UPDATE history_events SET type=?, subtype=?, amount=?, usd_value=? WHERE identifier=?',  # noqa: E501
+            update_tuples,
+        )
+
     log.debug('Exit _fix_kraken_events')
 
 
