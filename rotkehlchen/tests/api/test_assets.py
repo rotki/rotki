@@ -470,22 +470,6 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert result['entries'][1]['identifier'] == custom_asset_id
     assert result['entries'][2]['identifier'] == A_BTC
 
-    # ask for a non existent asset
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'allassetsresource',
-        ),
-        json={
-            'identifiers': ['my_life'],
-        },
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='Queried identifiers my_life are not present in the database',
-        status_code=HTTPStatus.CONFLICT,
-    )
-
     # check that evm tokens with underlying tokens are shown
     response = requests.post(
         api_url_for(

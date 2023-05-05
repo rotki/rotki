@@ -1254,30 +1254,14 @@ class RestAPI():
         # else
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def query_list_of_all_assets(
-            self,
-            filter_query: AssetsFilterQuery,
-            identifiers: Optional[list[str]],
-    ) -> Response:
-        """
-        If a set of identifiers is provided returns the information for those identifiers otherwise
-        returns all supported assets with pagination.
-        """
+    def query_list_of_all_assets(self, filter_query: AssetsFilterQuery) -> Response:
+        """Query assets using the provided filter_query and return them in a paginated format"""
         assets, assets_found = GlobalDBHandler().retrieve_assets(filter_query=filter_query)
         with GlobalDBHandler().conn.read_ctx() as cursor:
             assets_total = self.rotkehlchen.data.db.get_entries_count(
                 cursor=cursor,
                 entries_table='assets',
             )
-
-        if identifiers is not None and len(identifiers) != assets_found:
-            not_found = []
-            found_assets = {asset['identifier'] for asset in assets}
-            for asset in identifiers:
-                if asset not in found_assets:
-                    not_found.append(asset)
-            msg = f"Queried identifiers {','.join(not_found)} are not present in the database"
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
         result = {
             'entries': assets,

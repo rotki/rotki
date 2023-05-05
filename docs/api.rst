@@ -2912,6 +2912,7 @@ Querying all supported assets
    :reqjson string address: The address of the evm asset to be used to filter the result data. Optional.
    :reqjson bool show_user_owned_assets_only: A flag to specify if only user owned assets should be returned. Defaults to ``"false"``. Optional.
    :reqjson string ignored_assets_handling: A flag to specify how to handle ignored assets. Possible values are `'none'`, `'exclude'` and `'show_only'`. You can write 'none' in order to not handle them in any special way (meaning to show them too). This is the default. You can write 'exclude' if you want to exlude them from the result. And you can write 'show_only' if you want to only see the ignored assets in the result.
+   :reqjson list[string] identifiers: A list of asset identifiers to filter by. Optional.
 
    **Example Response**:
 
@@ -3009,7 +3010,6 @@ Querying all supported assets
    :resjson string notes: If the type is ``custom_asset`` this is a string field with notes added by the user.
    :resjson string custom_asset_type: If the type is ``custom_asset`` this field contains the custom type set by the user for the asset.
    :statuscode 200: Assets successfully queried.
-   :statuscode 409: One or more of the requested identifiers don't exist in the database.
    :statuscode 500: Internal rotki error
 
 
