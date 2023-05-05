@@ -314,7 +314,7 @@ class ExchangeManager:
         mappings: LocationEventMappingType = {}
         for location, exchanges in self.connected_exchanges.items():
             for exchange in exchanges:
-                if (exchange_mapping := exchange.get_event_mappings()) != {}:
+                if len(exchange_mapping := exchange.get_event_mappings()) != 0:
                     mappings[location] = exchange_mapping
                 break
         return mappings
