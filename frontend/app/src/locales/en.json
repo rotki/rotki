@@ -822,6 +822,12 @@
         "title": "Evm Transactions Events"
       }
     },
+    "transaction_redecode": {
+      "error": {
+        "description": "Failed to redecode missing events from transactions: {error}",
+        "title": "Redecode missing events from transactions"
+      }
+    },
     "unignore": {
       "error": {
         "description": "Failed to unignore the selected actions: {error}",

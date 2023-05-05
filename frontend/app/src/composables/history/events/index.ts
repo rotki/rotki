@@ -224,6 +224,13 @@ export const useHistoryEvents = () => {
       await awaitTask(taskId, taskType, taskMeta, true);
     } catch (e) {
       logger.error(e);
+      notify({
+        title: t('actions.transaction_redecode.error.title').toString(),
+        message: t('actions.transaction_redecode.error.description', {
+          error: e
+        }).toString(),
+        display: true
+      });
     }
   };
 
