@@ -161,7 +161,7 @@ def test_download_ens_avatar(ethereum_inquirer):
             ens_name='tewshi.eth',  # an avatar should be downloaded. Resolver v3
         )
         assert dbens.get_last_avatar_update('tewshi.eth') <= ts_now(), 'Last update timestamp should have been set'  # noqa: E501
-        assert set(tempdir.iterdir()) == set([tempdir / 'tewshi.eth.png', tempdir / 'nebolax.eth.png'])
+        assert set(tempdir.iterdir()) == {tempdir / 'tewshi.eth.png', tempdir / 'nebolax.eth.png'}
         downloaded_hash = file_md5(tempdir / 'nebolax.eth.png')
         expected_hash = file_md5(Path(__file__).parent.parent / 'data' / 'example_ens_avatar.png')
         assert downloaded_hash == expected_hash, 'Downloaded avatar should match the expected avatar'  # noqa: E501

@@ -150,10 +150,10 @@ class EvmContracts(Generic[T]):
     def contract_by_address(
             self,
             address: ChecksumEvmAddress,
-            fallback_to_packaged_db: bool = False,
+            fallback_to_packaged_db: bool = True,
     ) -> Optional[EvmContract]:
         """
-        Returns contract data by address if found. Optionally falls back to packaged global db if
+        Returns contract data by address if found. Can fall back to packaged global db if
         not found in the normal global DB
         """
         with GlobalDBHandler().conn.read_ctx() as cursor:
