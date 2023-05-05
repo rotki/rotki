@@ -24,6 +24,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.api.websockets.typedefs import (
     HistoryEventsQueryType,
     HistoryEventsStep,
@@ -713,7 +714,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 ],
                 location=Location.KRAKEN,
                 location_labels=[self.name],
-                entry_types=[HistoryBaseEntryType.HISTORY_EVENT],
+                entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.HISTORY_EVENT]),
             )
             trades_raw = self.history_events_db.get_history_events(
                 cursor=cursor,
@@ -759,7 +760,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 ],
                 location=Location.KRAKEN,
                 location_labels=[self.name],
-                entry_types=[HistoryBaseEntryType.HISTORY_EVENT],
+                entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.HISTORY_EVENT]),
             )
             events = self.history_events_db.get_history_events(
                 cursor=cursor,

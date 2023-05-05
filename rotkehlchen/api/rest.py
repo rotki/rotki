@@ -41,6 +41,7 @@ from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.api.v1.types import (
     EvmPendingTransactionDecodingApiData,
     EvmTransactionDecodingApiData,
+    IncludeExcludeFilterData,
 )
 from rotkehlchen.assets.asset import (
     Asset,
@@ -4170,7 +4171,7 @@ class RestAPI():
             event_types=event_types,
             event_subtypes=event_subtypes,
             exclude_subtypes=exclude_subtypes,
-            entry_types=[HistoryBaseEntryType.HISTORY_EVENT],
+            entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.HISTORY_EVENT]),  # noqa: E501
         )
 
         message = ''

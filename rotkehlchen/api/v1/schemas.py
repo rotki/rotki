@@ -125,6 +125,7 @@ from .fields import (
     FileField,
     FloatingPercentageField,
     HistoricalPriceOracleField,
+    IncludeExcludeListField,
     LocationField,
     MaybeAssetField,
     NonEmptyList,
@@ -136,7 +137,7 @@ from .fields import (
     TimestampUntilNowField,
     XpubField,
 )
-from .types import EvmPendingTransactionDecodingApiData
+from .types import EvmPendingTransactionDecodingApiData, IncludeExcludeFilterData
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -527,7 +528,7 @@ class BaseStakingQuerySchema(
             event_subtypes=query_event_subtypes,
             exclude_subtypes=exclude_event_subtypes,
             assets=asset_list,
-            entry_types=[HistoryBaseEntryType.HISTORY_EVENT],
+            entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.HISTORY_EVENT]),
         )
 
         value_filter = HistoryEventFilterQuery.make(
@@ -540,7 +541,7 @@ class BaseStakingQuerySchema(
             event_subtypes=value_event_subtypes,
             order_by_rules=None,
             assets=asset_list,
-            entry_types=[HistoryBaseEntryType.HISTORY_EVENT],
+            entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.HISTORY_EVENT]),
         )
 
         return {
@@ -613,7 +614,7 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
     location = SerializableEnumField(Location, load_default=None)
     location_labels = DelimitedOrNormalList(fields.String(), load_default=None)
     asset = AssetField(expected_type=CryptoAsset, load_default=None)
-    entry_types = DelimitedOrNormalList(
+    entry_types = IncludeExcludeListField(
         SerializableEnumField(enum_class=HistoryBaseEntryType),
         load_default=None,
     )
@@ -675,11 +676,15 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
                     )
 
             counterparties = None
-            entry_types = [
+            entry_type_values = [
                 HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT,
                 HistoryBaseEntryType.ETH_BLOCK_EVENT,
                 HistoryBaseEntryType.ETH_DEPOSIT_EVENT,
             ]
+            entry_types = IncludeExcludeFilterData(
+                values=entry_type_values,
+                operator='IN',
+            )
             should_query_eth_staking_event = True
             should_query_evm_event = False
 
@@ -3206,13 +3211,13 @@ class EthStakingHistoryStatsProfit(EthStakingHistoryStats):
             **common_arguments,
             event_types=[HistoryEventType.STAKING],
             event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
-            entry_types=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT],
+            entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]),  # noqa: E501
         )
         execution_filter_query = EthStakingEventFilterQuery.make(
             **common_arguments,
             event_types=[HistoryEventType.STAKING],
             event_subtypes=[HistoryEventSubType.BLOCK_PRODUCTION, HistoryEventSubType.MEV_REWARD],
-            entry_types=[HistoryBaseEntryType.ETH_BLOCK_EVENT],
+            entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_BLOCK_EVENT]),
         )
 
         return {

@@ -1,5 +1,7 @@
-from typing import Optional, TypedDict
+from dataclasses import dataclass
+from typing import Literal, Optional, TypedDict
 
+from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChecksumEvmAddress, EVMTxHash
 
 
@@ -11,3 +13,9 @@ class EvmTransactionDecodingApiData(TypedDict):
 class EvmPendingTransactionDecodingApiData(TypedDict):
     evm_chain: SUPPORTED_CHAIN_IDS
     addresses: Optional[list[ChecksumEvmAddress]]
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class IncludeExcludeFilterData:
+    values: list[HistoryBaseEntryType]
+    operator: Literal['IN', 'NOT IN'] = 'IN'

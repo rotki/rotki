@@ -905,8 +905,8 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == result['entries_found'] == 3
     assert result['entries_total'] == 12
-    for outter_entry in result['entries']:
-        entry = outter_entry['entry']
+    for outer_entry in result['entries']:
+        entry = outer_entry['entry']
         if entry['sequence_index'] == 0:
             assert entry['identifier'] == 10
             assert entry['event_identifier'] == event_identifier
@@ -961,3 +961,41 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
     assert len(result['entries']) == 11
     for entry in result['entries']:
         assert entry['entry']['entry_type'] == 'eth block event'
+
+    # check that filtering by entry_types works properly with include behaviour (default)
+    assert event_identifier is not None
+    entry_types_include_arg = {
+        'values': ['eth block event'],
+        # default behaviour is include
+    }
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ),
+        json={'entry_types': entry_types_include_arg},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 11
+    for outer_entry in result['entries']:
+        entry = outer_entry['entry']
+        assert entry['entry_type'] == 'eth block event'
+
+    # check that filtering by entry_types works properly with exclude behaviour
+    assert event_identifier is not None
+    entry_types_exclude_arg = {
+        'values': ['eth block event'],
+        'behaviour': 'exclude',
+    }
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ),
+        json={'entry_types': entry_types_exclude_arg},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 1
+    for outer_entry in result['entries']:
+        entry = outer_entry['entry']
+        assert entry['entry_type'] != 'eth block event'
