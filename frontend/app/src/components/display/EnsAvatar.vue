@@ -34,7 +34,11 @@ const failed: Ref<boolean> = ref(false);
 <template>
   <v-lazy :class="css.wrapper">
     <div>
-      <v-img v-if="!avatarUrl || failed" :src="getBlockie(address)" />
+      <v-img
+        v-if="!avatarUrl || failed"
+        :src="getBlockie(address)"
+        :class="css.avatar"
+      />
       <v-skeleton-loader
         v-else-if="avatarUrl && !success"
         type="image"
@@ -62,7 +66,6 @@ const failed: Ref<boolean> = ref(false);
 
 .avatar {
   position: absolute;
-  z-index: 2;
   width: 100%;
   height: 100%;
   top: 0;
