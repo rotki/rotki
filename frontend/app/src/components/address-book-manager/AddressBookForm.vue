@@ -115,7 +115,7 @@ const { getBlockie } = useBlockie();
       </div>
       <div>
         <combobox-with-custom-input
-          :value="value.address"
+          :value="value.address || ''"
           outlined
           :label="t('address_book.form.labels.address')"
           :items="addressSuggestions"

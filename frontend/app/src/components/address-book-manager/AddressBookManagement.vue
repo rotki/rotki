@@ -225,7 +225,7 @@ const css = useCssModule();
       <address-book-form
         v-model="formPayload"
         :edit="editMode"
-        :enable-for-all-chain="enableForAllChains"
+        :enable-for-all-chains="enableForAllChains"
         @valid="valid = $event"
         @update:enable-for-all-chains="enableForAllChains = $event"
       />
