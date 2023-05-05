@@ -3,6 +3,7 @@ import logging
 import random
 from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, Sequence
+from contextlib import suppress
 from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 from urllib.parse import urlparse
@@ -352,6 +353,15 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         )
         ens = ENS(provider) if self.chain_id == ChainID.ETHEREUM else None
         web3 = Web3(provider, ens=ens)
+        with suppress(ValueError):
+            # https://github.com/ethereum/web3.py/blob/bba87a283d802bbebbfe3f8c7dc47560c7a08583/web3/middleware/validation.py#L137-L142  # noqa: E501
+            # validation middleware makes an un-needed for us chain ID validation causing 1 extra rpc call per eth_call # noqa: E501
+            web3.middleware_onion.remove('validation')
+            # We do not need to automatically estimate gas
+            web3.middleware_onion.remove('gas_price_strategy')
+            web3.middleware_onion.remove('gas_estimate')
+            # we do our own handling for ens names
+            web3.middleware_onion.remove('name_to_address')
         if self.chain_id == ChainID.OPTIMISM:  # for now only optimism needs this
             # https://web3py.readthedocs.io/en/stable/middleware.html#why-is-geth-poa-middleware-necessary
             web3.middleware_onion.inject(geth_poa_middleware, layer=0)
