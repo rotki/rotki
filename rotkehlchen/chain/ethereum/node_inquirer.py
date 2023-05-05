@@ -4,7 +4,7 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, Literal, Optional, Union, cast, overload
 
 import requests
-from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
+from ens.abis import RESOLVER as ENS_RESOLVER_ABI
 from ens.exceptions import InvalidName
 from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
@@ -202,19 +202,9 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
         parsing its response
         - InputError if the given name is not a valid ENS name
         """
-        try:
-            normal_name = normalize_name(name)
-        except InvalidName as e:
-            raise InputError(str(e)) from e
-
-        resolver_addr = self._call_contract(
-            web3=web3,
-            contract_address=ENS_MAINNET_ADDR,
-            abi=ENS_ABI,
-            method_name='resolver',
-            arguments=[normal_name_to_hash(normal_name)],
-        )
-        if is_none_or_zero_address(resolver_addr):
+        resolver_addr, normal_name = self.get_ens_resolver_addr(name)
+        if resolver_addr is None:
+            log.error(f'Could not get ENS resolver for {name}')
             return None
 
         ens_resolver_abi = ENS_RESOLVER_ABI.copy()
@@ -223,18 +213,9 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
             ens_resolver_abi.extend(ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS)
             arguments.append(blockchain.ens_coin_type())
 
-        try:
-            deserialized_resolver_addr = deserialize_evm_address(resolver_addr)
-        except DeserializationError:
-            log.error(
-                f'Error deserializing address {resolver_addr} while doing'
-                f'ens lookup',
-            )
-            return None
-
         address = self._call_contract(
             web3=web3,
-            contract_address=deserialized_resolver_addr,
+            contract_address=resolver_addr,
             abi=ens_resolver_abi,
             method_name='addr',
             arguments=arguments,
@@ -250,6 +231,41 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
         except DeserializationError:
             log.error(f'Error deserializing address {address}')
             return None
+
+    def get_ens_resolver_addr(
+            self,
+            name: str,
+    ) -> tuple[Optional[ChecksumEvmAddress], Optional[str]]:
+        """Get the ENS resolver for the given name. Also returns the normalized name.
+
+        May raise:
+        - RemoteError if Etherscan is used and there is a problem querying it or
+        parsing its response
+        - InputError if the given name is not a valid ENS name
+        """
+        try:
+            normal_name = normalize_name(name)
+        except InvalidName as e:
+            raise InputError(str(e)) from e
+
+        resolver_addr = self.contracts.contract(ENS_MAINNET_ADDR).call(
+            self,
+            method_name='resolver',
+            arguments=[normal_name_to_hash(normal_name)],
+        )
+        if is_none_or_zero_address(resolver_addr):
+            return None, None
+
+        try:
+            deserialized_resolver_addr = deserialize_evm_address(resolver_addr)
+        except DeserializationError:
+            log.error(
+                f'Error deserializing address {resolver_addr} while doing'
+                f'ens lookup',
+            )
+            return None, None
+
+        return deserialized_resolver_addr, normal_name
 
     @protect_with_lock()
     def assure_curve_protocol_cache_is_queried(self) -> bool:
