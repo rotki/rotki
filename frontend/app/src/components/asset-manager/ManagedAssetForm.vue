@@ -43,7 +43,7 @@ const input = (value: boolean) => {
 const address = ref<string>('');
 const name = ref<string>('');
 const symbol = ref<string>('');
-const decimals = ref<string>('');
+const decimals = ref<number | null>(null);
 const started = ref<string>('');
 const coingecko = ref<string>('');
 const cryptocompare = ref<string>('');
@@ -82,13 +82,21 @@ const {
 
 const v$ = useVuelidate(
   {
-    asset_type: { required }
+    assetType: { required }
   },
   {
-    asset_type: computed(() => get(assetType))
+    assetType
   },
   { $autoDirty: true }
 );
+
+const clearFieldError = (field: keyof SupportedAsset) => {
+  delete get(errors)[field];
+};
+
+const clearFieldErrors = (fields: Array<keyof SupportedAsset>) => {
+  fields.forEach(clearFieldError);
+};
 
 watch(address, async () => {
   const sanitizedAddress = sanitizeAddress(get(address));
@@ -108,10 +116,16 @@ watch(address, async () => {
     name: newName,
     symbol: newSymbol
   } = await fetchTokenDetails(get(address));
-  set(decimals, newDecimals?.toString() || get(decimals));
+  set(decimals, newDecimals ?? get(decimals));
   set(name, newName || get(name));
   set(symbol, newSymbol || get(symbol));
   set(fetching, false);
+  clearFieldErrors(['decimals', 'name', 'symbol']);
+});
+
+watch(assetType, () => {
+  // clearing these errors because these fields are disabled for non evm assets
+  clearFieldErrors(['evmChain', 'tokenKind']);
 });
 
 const asset: ComputedRef<Omit<SupportedAsset, 'identifier' | 'type'>> =
@@ -121,7 +135,7 @@ const asset: ComputedRef<Omit<SupportedAsset, 'identifier' | 'type'>> =
       address: get(address),
       name: get(name),
       symbol: get(symbol),
-      decimals: Number.parseInt(get(decimals)),
+      decimals: get(decimals),
       coingecko: get(coingeckoEnabled) ? onlyIfTruthy(get(coingecko)) : null,
       cryptocompare: get(cryptocompareEnabled)
         ? onlyIfTruthy(get(cryptocompare))
@@ -172,7 +186,7 @@ onMounted(() => {
   set(forked, token.forked ?? '');
   set(assetType, token.type);
   set(address, token.address);
-  set(decimals, token.decimals ? token.decimals.toString() : '');
+  set(decimals, token.decimals ?? null);
   set(protocol, token.protocol ?? '');
   set(underlyingTokens, token.underlyingTokens ?? []);
   set(evmChain, token.evmChain);
@@ -320,7 +334,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             item-value="name"
             item-text="name"
             :error-messages="errors['evmChain']"
-            @focus="delete errors['evmChain']"
+            @focus="clearFieldError('evmChain')"
           />
         </v-col>
         <v-col md="6" data-cy="token-select">
@@ -333,7 +347,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             item-text="label"
             item-value="identifier"
             :error-messages="errors['tokenKind']"
-            @focus="delete errors['tokenKind']"
+            @focus="clearFieldError('tokenKind')"
           />
         </v-col>
       </v-row>
@@ -347,7 +361,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             :label="t('common.address')"
             :disabled="saving || fetching || !!edit"
             @keydown.space.prevent
-            @focus="delete errors['address']"
+            @focus="clearFieldError('address')"
           />
         </v-col>
       </v-row>
@@ -360,7 +374,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             :error-messages="errors['name']"
             :label="t('common.name')"
             :disabled="saving || fetching"
-            @focus="delete errors['name']"
+            @focus="clearFieldError('name')"
           />
         </v-col>
         <v-col cols="12" :md="isEvmToken ? 3 : 6">
@@ -370,12 +384,12 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             :error-messages="errors['symbol']"
             :label="t('asset_form.labels.symbol')"
             :disabled="saving || fetching"
-            @focus="delete errors['symbol']"
+            @focus="clearFieldError('symbol')"
           />
         </v-col>
         <v-col v-if="isEvmToken" cols="12" md="3" data-cy="decimal-input">
           <v-text-field
-            v-model="decimals"
+            v-model.number="decimals"
             type="number"
             outlined
             min="0"
@@ -383,7 +397,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             :label="t('asset_form.labels.decimals')"
             :error-messages="errors['decimals']"
             :disabled="saving || fetching"
-            @focus="delete errors['decimals']"
+            @focus="clearFieldError('decimals')"
           />
         </v-col>
       </v-row>
@@ -398,7 +412,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             :label="t('asset_form.labels.coingecko')"
             :error-messages="errors['coingecko']"
             :disabled="saving || !coingeckoEnabled"
-            @focus="delete errors['coingecko']"
+            @focus="clearFieldError('coingecko')"
           >
             <template #append>
               <help-link
@@ -427,7 +441,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             :hint="t('asset_form.labels.cryptocompare_hint')"
             :error-messages="errors['cryptocompare']"
             :disabled="saving || !cryptocompareEnabled"
-            @focus="delete errors['cryptocompare']"
+            @focus="clearFieldError('cryptocompare')"
           >
             <template #append>
               <help-link
@@ -463,7 +477,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
               :label="tc('asset_form.labels.started')"
               :error-messages="errors['started']"
               :disabled="saving"
-              @focus="delete errors['started']"
+              @focus="clearFieldError('started')"
             />
             <v-row>
               <v-col v-if="isEvmToken" cols="12" md="6">
@@ -477,7 +491,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
                   :label="t('common.protocol')"
                   :error-messages="errors['protocol']"
                   :disabled="saving"
-                  @focus="delete errors['protocol']"
+                  @focus="clearFieldError('protocol')"
                 />
               </v-col>
               <v-col cols="12" md="6">
@@ -489,7 +503,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
                   :label="tc('asset_form.labels.swapped_for')"
                   :error-messages="errors['swappedFor']"
                   :disabled="saving"
-                  @focus="delete errors['swappedFor']"
+                  @focus="clearFieldError('swappedFor')"
                 />
               </v-col>
               <v-col v-if="!isEvmToken" cols="12" md="6">
@@ -502,7 +516,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
                   :label="tc('asset_form.labels.forked')"
                   :error-messages="errors['forked']"
                   :disabled="saving"
-                  @focus="delete errors['forked']"
+                  @focus="clearFieldError('forked')"
                 />
               </v-col>
             </v-row>
