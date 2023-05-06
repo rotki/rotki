@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
+import {
+  TRADE_LOCATION_ETHEREUM,
+  TRADE_LOCATION_OPTIMISM
+} from '@/data/defaults';
 import { Module } from '@/types/modules';
 import {
   type ExternalServiceKey,
@@ -37,6 +41,7 @@ const loading = ref(false);
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
 const { setMessage } = useMessageStore();
 const { fetchLoopringBalances } = useEthBalancesStore();
+const { remove: removeNotification, prioritized } = useNotificationsStore();
 
 const { tc } = useI18n();
 const route = useRoute();
@@ -64,6 +69,24 @@ const updateKeys = ({
   set(openseaKey, opensea?.apiKey || '');
 };
 
+/**
+ * After an api key is added, remove the etherscan notification for that location
+ * @param {string} location
+ */
+const removeEtherscanNotification = (location: string) => {
+  // using prioritized list here, because the actionable notifications are always on top (index 0|1)
+  // so it is faster to find
+  const notification = prioritized.find(
+    data => data.i18nParam?.props?.location?.toLocaleLowerCase() === location
+  );
+
+  if (!notification) {
+    return;
+  }
+
+  removeNotification(notification.id);
+};
+
 const save = async (serviceName: ExternalServiceName, key: string) => {
   const keys: ExternalServiceKey[] = [
     { name: serviceName, apiKey: key.trim() }
@@ -81,6 +104,10 @@ const save = async (serviceName: ExternalServiceName, key: string) => {
     });
     if (serviceName === 'loopring') {
       await fetchLoopringBalances(true);
+    } else if (serviceName === 'etherscan') {
+      removeEtherscanNotification(TRADE_LOCATION_ETHEREUM);
+    } else if (serviceName === 'optimism_etherscan') {
+      removeEtherscanNotification(TRADE_LOCATION_OPTIMISM);
     }
   } catch (e: any) {
     setMessage({
