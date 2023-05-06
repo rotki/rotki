@@ -23,10 +23,10 @@ cryptography==39.0.2
 
 # For the rest api
 flask-cors==3.0.10
-flask==2.2.3
+flask==2.3.2
 marshmallow==3.19.0
 webargs==8.2.0
-werkzeug==2.2.3
+werkzeug==2.3.3
 
 # for icon validation
 filetype==1.2.0
