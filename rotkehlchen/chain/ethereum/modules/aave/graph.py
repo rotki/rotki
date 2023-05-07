@@ -310,7 +310,7 @@ def _parse_atoken_balance_history(
         pairs = entry_id.split('0x')
         if len(pairs) not in (4, 5):
             log.error(
-                f'Expected to find 3-4 hashes in graph\'s aTokenBalanceHistory '
+                f"Expected to find 3-4 hashes in graph's aTokenBalanceHistory "
                 f'id but the encountered id does not match: {entry_id}. Skipping entry...',
             )
             continue
@@ -474,7 +474,7 @@ class AaveGraphInquirer(AaveInquirer):
             pairs = reserve['id'].split('0x')
             if len(pairs) != 4:
                 log.error(
-                    f'Expected to find 3 addresses in graph\'s reserve history id '
+                    f"Expected to find 3 addresses in graph's reserve history id "
                     f'but the encountered id does not match: {reserve["id"]}. Skipping entry...',
                 )
                 continue

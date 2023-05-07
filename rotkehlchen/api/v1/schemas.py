@@ -1495,7 +1495,7 @@ class BlockchainAccountDataSchema(TagsSettingSchema):
     ) -> None:
         label = data.get('label', None)
         if label == '':
-            raise ValidationError('Blockchain account\'s label cannot be empty string. Use null instead.')  # noqa: E501
+            raise ValidationError("Blockchain account's label cannot be empty string. Use null instead.")  # noqa: E501
 
 
 class BaseXpubSchema(AsyncQueryArgumentSchema):
@@ -2803,7 +2803,7 @@ class RpcAddNodeSchema(Schema):
         required=True,
         validate=webargs.validate.NoneOf(
             iterable=['', ETHEREUM_ETHERSCAN_NODE_NAME],
-            error=f'Name can\'t be empty or {ETHEREUM_ETHERSCAN_NODE_NAME}',
+            error=f"Name can't be empty or {ETHEREUM_ETHERSCAN_NODE_NAME}",
         ),
     )
     endpoint = fields.String(required=True)
@@ -2817,7 +2817,7 @@ class RpcNodeEditSchema(RpcAddNodeSchema):
         required=True,
         validate=webargs.validate.NoneOf(
             iterable=[''],
-            error='Name can\'t be empty',
+            error="Name can't be empty",
         ),
     )
     identifier = fields.Integer(required=True)
@@ -2830,7 +2830,7 @@ class RpcNodeEditSchema(RpcAddNodeSchema):
     ) -> None:
         if data['identifier'] == 1 and data['name'] != ETHEREUM_ETHERSCAN_NODE_NAME:
             raise ValidationError(
-                message='Can\'t change the etherscan node name',
+                message="Can't change the etherscan node name",
                 field_name='name',
             )
         # verify that if the node is not etherscan the endpoint field has valid information
@@ -2853,7 +2853,7 @@ class RpcNodeListDeleteSchema(Schema):
     ) -> None:
         if data['identifier'] == 1:
             raise ValidationError(
-                message='Can\'t delete the etherscan node',
+                message="Can't delete the etherscan node",
                 field_name='identifier',
             )
 

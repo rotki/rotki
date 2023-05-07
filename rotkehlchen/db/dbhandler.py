@@ -3145,7 +3145,7 @@ class DBHandler:
             )
 
             if cursor.rowcount == 0:
-                raise InputError(f'Node with identifier {node.identifier} doesn\'t exist')
+                raise InputError(f"Node with identifier {node.identifier} doesn't exist")
 
             self.rebalance_rpc_nodes_weights(
                 write_cursor=cursor,

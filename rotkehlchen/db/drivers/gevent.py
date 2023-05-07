@@ -508,7 +508,7 @@ class DBConnection:
             cursor.execute('SELECT name, sql FROM sqlite_master WHERE type="table"')
             tables_data_from_db: dict[str, tuple[str, str]] = {}
             for (name, raw_script) in cursor:
-                minimized_script = raw_script.replace(' ', '').replace('\n', '').replace('\'', '"').lower()  # noqa: E501
+                minimized_script = raw_script.replace(' ', '').replace('\n', '').replace("'", '"').lower()  # noqa: E501
                 table_properties = re.findall(
                     pattern=r'createtable.*?\((.+)\)',
                     string=minimized_script,

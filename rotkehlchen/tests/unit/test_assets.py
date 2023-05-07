@@ -293,7 +293,7 @@ def test_assets_tokens_addresses_are_checksummed():
             continue
 
         msg = (
-            f'Ethereum token\'s {asset_data.name} ethereum address '
+            f"Ethereum token's {asset_data.name} ethereum address "
             f'is not checksummed {asset_data.address}'
         )
         assert is_checksum_address(asset_data.address), msg

@@ -426,7 +426,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 bad_accounts.append(account)
 
         if len(bad_accounts) != 0:
-            word = 'already' if append_or_remove == 'append' else 'don\'t'
+            word = 'already' if append_or_remove == 'append' else "don't"
             raise InputError(
                 f'Blockchain account/s {",".join(bad_accounts)} {word} exist',
             )

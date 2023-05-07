@@ -106,7 +106,7 @@ select = [
     # "BLE",  # blind-except -- already pylint does this and we got ignores where needed
     # "FBT",  # FBT -- not sure I agree with the concept of boolean trap
     # "A",  # flake8-builtins -- we got some shadowed builtins. Should probably fix this
-    # "Q",  # flake8-quotes -- does not seem to be configurable for us
+    "Q",  # configured for our quoting style
     "ERA",
     "PGH",
     "RET",
@@ -236,7 +236,10 @@ target-version = "py39"
 ]
 
 [tool.ruff.flake8-quotes]
+avoid-escape = true
 docstring-quotes = "double"
+inline-quotes = "single"
+multiline-quotes = "double"
 
 # -- isort config section --
 

@@ -108,7 +108,7 @@ class PriceHistorian():
     @staticmethod
     def set_oracles_order(oracles: list[HistoricalPriceOracle]) -> None:
         assert len(oracles) != 0 and len(oracles) == len(set(oracles)), (
-            'Oracles can\'t be empty or have repeated items'
+            "Oracles can't be empty or have repeated items"
         )
         instance = PriceHistorian()
         instance._oracles = oracles

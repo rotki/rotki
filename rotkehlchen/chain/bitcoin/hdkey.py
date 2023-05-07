@@ -327,7 +327,7 @@ class HDKey():
             (HDKey): the descendant
         """
         if not self.path:
-            raise XPUBError('XPUB current key\'s path is unknown')
+            raise XPUBError("XPUB current key's path is unknown")
 
         own_path = self.path
         path_nodes = self._parse_derivation(path)

@@ -25,7 +25,7 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 BRIDGE_ADDRESS = string_to_evm_address('0x4200000000000000000000000000000000000010')
 
 DEPOSIT_FINALIZED = b'\xb0DE#&\x87\x17\xa0&\x98\xbeG\xd0\x80:\xa7F\x8c\x00\xac\xbe\xd2\xf8\xbd\x93\xa0E\x9c\xdea\xdd\x89'  # noqa: E501
-WITHDRAWAL_INITIATED = b's\xd1p\x91\n\xba\x9emP\xb1\x02\xdbR+\x1d\xbc\xd7\x96!oQ(\xb4E\xaa!5\'(\x86I~'  # noqa: E501
+WITHDRAWAL_INITIATED = b"s\xd1p\x91\n\xba\x9emP\xb1\x02\xdbR+\x1d\xbc\xd7\x96!oQ(\xb4E\xaa!5'(\x86I~"  # noqa: E501
 
 
 logger = logging.getLogger(__name__)

@@ -1550,4 +1550,4 @@ def test_db_schema_sanity_check(database: 'DBHandler', caplog) -> None:
         cursor.execute('DROP TABLE user_notes;')
         with pytest.raises(DBSchemaError) as exception_info:
             connection.schema_sanity_check()
-    assert 'Tables {\'user_notes\'} are missing' in str(exception_info.value)
+    assert "Tables {'user_notes'} are missing" in str(exception_info.value)

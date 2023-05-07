@@ -134,7 +134,7 @@ class DBAddressbook:
                 if write_cursor.rowcount == 0:
                     raise InputError(
                         f'Entry with address "{entry.address}" and blockchain {entry.blockchain} '
-                        f'doesn\'t exist in the address book. So it cannot be modified.',
+                        f"doesn't exist in the address book. So it cannot be modified.",
                     )
 
     def delete_addressbook_entries(

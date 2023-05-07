@@ -225,7 +225,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             self.msg_aggregator.add_error(
                 f'Failed to find ENS public resolver contract with address '
                 f'{context.tx_log.address}. This should never happen. Please, '
-                f'open an issue in rotki\'s github repository.',
+                f"open an issue in rotki's github repository.",
             )
         else:
             try:

@@ -226,7 +226,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Name can\'t be empty or etherscan',
+        contained_in_msg="Name can't be empty or etherscan",
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

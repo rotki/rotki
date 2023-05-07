@@ -274,7 +274,7 @@ def test_check_premium_status(rotkehlchen_api_server):
             mock_check_premium_status()
             assert rotki.premium is not None, (
                 'Permium object is None and Periodic check'
-                'didn\'t reactivate the premium status'
+                "didn't reactivate the premium status"
             )
 
         with patch(
@@ -290,7 +290,7 @@ def test_check_premium_status(rotkehlchen_api_server):
 
         with patch('rotkehlchen.premium.premium.Premium.is_active', MagicMock(return_value=True)):
             mock_check_premium_status()
-            assert rotki.premium is not None, 'Permium object is None and Periodic check didn\'t reactivate the premium status'  # noqa: E501
+            assert rotki.premium is not None, "Permium object is None and Periodic check didn't reactivate the premium status"  # noqa: E501
 
 
 def test_update_snapshot_balances(task_manager):
