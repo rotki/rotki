@@ -38,7 +38,7 @@ regexp_result = re.findall(
     pattern=r'CREATETABLEIFNOTEXISTS(.+?)\((.+?)\);',
     # Replacing new lines and white spaces since they may vary if by an accident code of a
     # db upgrade was a bit different from the one that creates new tables
-    string=db_script.replace(' ', '').replace('\n', '').replace('\'', '"'),
+    string=db_script.replace(' ', '').replace('\n', '').replace("'", '"'),
 )
 
 lines = [

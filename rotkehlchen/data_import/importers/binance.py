@@ -222,9 +222,9 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             ):
                 log.warning(
                     f'Skipped binance rows {data} because '
-                    f'it didn\'t have enough data',
+                    f"it didn't have enough data",
                 )
-                importer.db.msg_aggregator.add_warning('Skipped some rows because couldn\'t find amounts or it was zero')  # noqa: E501
+                importer.db.msg_aggregator.add_warning("Skipped some rows because couldn't find amounts or it was zero")  # noqa: E501
                 continue
 
             rate = to_amount / from_amount

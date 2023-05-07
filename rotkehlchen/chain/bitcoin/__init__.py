@@ -123,7 +123,7 @@ def get_bitcoin_addresses_balances(
             errors[api_name] = str(e)
             continue
         except KeyError as e:
-            errors[api_name] = f'Got unexpected response from {api_name}. Couldn\'t find key {str(e)}'  # noqa: E501
+            errors[api_name] = f"Got unexpected response from {api_name}. Couldn't find key {str(e)}"  # noqa: E501
         else:
             return balances
 
@@ -212,6 +212,6 @@ def have_bitcoin_transactions(accounts: list[BTCAddress]) -> dict[BTCAddress, tu
             f'Did not find key {str(e)}',
         ) from e
     except DeserializationError as e:
-        raise RemoteError(f'Couldn\'t read data from the response due to {str(e)}') from e
+        raise RemoteError(f"Couldn't read data from the response due to {str(e)}") from e
 
     return have_transactions

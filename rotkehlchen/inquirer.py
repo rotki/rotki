@@ -414,7 +414,7 @@ class Inquirer():
     @staticmethod
     def set_oracles_order(oracles: list[CurrentPriceOracle]) -> None:
         assert len(oracles) != 0 and len(oracles) == len(set(oracles)), (
-            'Oracles can\'t be empty or have repeated items'
+            "Oracles can't be empty or have repeated items"
         )
         instance = Inquirer()
         instance._oracles = oracles
