@@ -7,8 +7,8 @@ from urllib.parse import urlencode
 import requests
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -111,14 +111,14 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         """
         Reads the response from defillama for prices and returns the usd price.
         If the price is not available, couldn't deserialize the response or the confidence
-        is too low we return Price(ZERO) instead
+        is too low we return ZERO_PRICE instead
         """
         if 'coins' not in result or len(result['coins']) == 0:
             log.warning(
                 f'Queried Defillama current price from {from_asset.identifier} '
                 f'to {to_asset.identifier}. But coins is not available in the result {result}',
             )
-            return Price(ZERO)
+            return ZERO_PRICE
 
         coin_result_raw = result['coins'][coin_id]
         try:
@@ -129,7 +129,7 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
                 # Defillama provides a confidence value ranking how good their confidence in
                 # reported price is. When their confidence in the price is lower than 20% ignore
                 # it. Probably a spam token
-                return Price(ZERO)
+                return ZERO_PRICE
             usd_price = deserialize_price(coin_result_raw['price'])
         except (KeyError, DeserializationError) as e:
             error_msg = str(e)
@@ -141,7 +141,7 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
                 f'to {to_asset.identifier}. But got key error for {error_msg} when '
                 f'processing the result.',
             )
-            return Price(ZERO)
+            return ZERO_PRICE
         return usd_price
 
     def query_current_price(
@@ -165,7 +165,7 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
                 f'{to_asset} but {from_asset} is not an EVM token and is not '
                 f'suppported by defillama',
             )
-            return Price(ZERO), False
+            return ZERO_PRICE, False
 
         result = self._query(
             module='prices',

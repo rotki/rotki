@@ -12,7 +12,7 @@ from rotkehlchen.accounting.structures.processed_event import ProcessedAccountin
 from rotkehlchen.accounting.transactions import TransactionsAccountant
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_KFEE
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.misc import ONE, ZERO, ZERO_PRICE
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors.misc import InputError, RemoteError
@@ -143,13 +143,13 @@ class AccountingPot(CustomizableDateMixin):
             try:
                 price = self.get_rate_in_profit_currency(asset=asset, timestamp=timestamp)
             except (PriceQueryUnsupportedAsset, RemoteError):
-                price = Price(ZERO)
+                price = ZERO_PRICE
             except NoPriceForGivenTimestamp as e:
                 # In the case of NoPriceForGivenTimestamp when we got rate limited we let
                 # it propagate so the user can take action after the report is made
                 if e.rate_limited is True:
                     raise
-                price = Price(ZERO)
+                price = ZERO_PRICE
 
         prefork_events = handle_prefork_asset_acquisitions(
             cost_basis=self.cost_basis,

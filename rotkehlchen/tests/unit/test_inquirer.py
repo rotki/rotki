@@ -10,7 +10,6 @@ from freezegun import freeze_time
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
     A_AAVE,
@@ -25,6 +24,7 @@ from rotkehlchen.constants.assets import (
     A_USD,
     A_USDC,
 )
+from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.errors.misc import RemoteError
@@ -176,9 +176,9 @@ def test_fallback_to_coingecko(inquirer):  # pylint: disable=unused-argument
     """Cryptocompare does not return current prices for some assets.
     For those we are going to be using coingecko"""
     price = inquirer.find_usd_price(EvmToken('eip155:1/erc20:0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF'))  # RARI # noqa: E501
-    assert price != Price(ZERO)
+    assert price != ZERO_PRICE
     price = inquirer.find_usd_price(EvmToken('eip155:1/erc20:0x679131F591B4f369acB8cd8c51E68596806c3916'))  # TLN # noqa: E501
-    assert price != Price(ZERO)
+    assert price != ZERO_PRICE
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
@@ -256,7 +256,7 @@ def test_find_usd_price_all_rate_limited_in_last(inquirer):  # pylint: disable=u
 
     price = inquirer.find_usd_price(A_BTC)
 
-    assert price == Price(ZERO)
+    assert price == ZERO_PRICE
     for oracle_instance in inquirer._oracle_instances:
         assert oracle_instance.rate_limited_in_last.call_count == 1
         assert oracle_instance.query_current_price.call_count == 0
@@ -271,11 +271,11 @@ def test_find_usd_price_no_price_found(inquirer):
     inquirer._oracle_instances = [MagicMock() for _ in inquirer._oracles]
 
     for oracle_instance in inquirer._oracle_instances:
-        oracle_instance.query_current_price.return_value = (Price(ZERO), False)
+        oracle_instance.query_current_price.return_value = (ZERO_PRICE, False)
 
     price = inquirer.find_usd_price(A_BTC)
 
-    assert price == Price(ZERO)
+    assert price == ZERO_PRICE
     for oracle_instance in inquirer._oracle_instances:
         assert oracle_instance.query_current_price.call_count == 1
 
@@ -397,7 +397,7 @@ def test_find_asset_with_no_api_oracles(inquirer_defi):
     )
     price_uni_v3 = inquirer_defi.find_usd_price(A_1INCH, ignore_cache=True)
 
-    assert price != Price(ZERO)
+    assert price != ZERO_PRICE
     assert price != price_uni_v2
     assert price.is_close(price_uni_v2, max_diff='0.05')
     assert price.is_close(price_uni_v3, max_diff='0.05')
@@ -486,10 +486,10 @@ def test_coingecko_handles_rate_limit(inquirer):
     with coingecko_patch:
         # Query a price and get rate limited
         price = inquirer.find_usd_price(A_ETH)
-        assert price == Price(ZERO)
+        assert price == ZERO_PRICE
         assert inquirer._coingecko.last_rate_limit > 0
         # Now try again, since we are rate limited the price query wil fail
-        assert inquirer.find_usd_price(A_ETH, ignore_cache=True) == Price(ZERO)
+        assert inquirer.find_usd_price(A_ETH, ignore_cache=True) == ZERO_PRICE
         # Change the last_rate_limit time to allow for further calls
         inquirer._coingecko.last_rate_limit = ts_now() - (DEFAULT_RATE_LIMIT_WAITING_TIME + 10)
         inquirer.find_usd_price(A_ETH, ignore_cache=True)
@@ -505,7 +505,7 @@ def test_punishing_of_oracles_works(inquirer):
 
     with coingecko_patch as coingecko_mock, defillama_patch as defillama_mock:
         for counter in range(1, 7):
-            assert inquirer.find_usd_price(A_BTC, ignore_cache=True) > Price(ZERO)
+            assert inquirer.find_usd_price(A_BTC, ignore_cache=True) > ZERO_PRICE
             # check that coingecko is not called the sixth time and is already penalized.
             if counter == 6:
                 assert coingecko_mock.call_count == 5

@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 import requests
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.misc import ZERO_PRICE
 from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
@@ -605,7 +605,7 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
             location='simple price',
         )
         if not vs_currency:
-            return Price(ZERO), False
+            return ZERO_PRICE, False
 
         try:
             from_coingecko_id = from_asset.to_coingecko()
@@ -614,7 +614,7 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
                 f'Tried to query coingecko simple price from {from_asset.identifier} '
                 f'to {to_asset.identifier}. But from_asset is not supported in coingecko',
             )
-            return Price(ZERO), False
+            return ZERO_PRICE, False
 
         result = self._query(
             module='simple/price',
@@ -632,7 +632,7 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
                 f'to {to_asset.identifier}. But got key error for {str(e)} when '
                 f'processing the result.',
             )
-            return Price(ZERO), False
+            return ZERO_PRICE, False
 
     def can_query_history(
             self,

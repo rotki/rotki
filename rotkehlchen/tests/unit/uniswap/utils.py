@@ -10,8 +10,8 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     LiquidityPoolEventsBalance,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USDT, A_WETH
+from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED
 from rotkehlchen.types import AssetAmount, Price, Timestamp, deserialize_evm_tx_hash
@@ -98,7 +98,7 @@ def const_exp_liquidity_pool_1():
                         amount=FVal('2486.554982222884623101272349'),
                         usd_value=ZERO,
                     ),
-                    usd_price=Price(ZERO),
+                    usd_price=ZERO_PRICE,
                 ),
                 LiquidityPoolAsset(
                     token=A_WETH.resolve_to_evm_token(),
@@ -107,7 +107,7 @@ def const_exp_liquidity_pool_1():
                         amount=FVal('1.332490679729371260856256139'),
                         usd_value=ZERO,
                     ),
-                    usd_price=Price(ZERO),
+                    usd_price=ZERO_PRICE,
                 ),
             ],
             total_supply=FVal('2885.30760350854829554'),
@@ -132,7 +132,7 @@ def const_exp_liquidity_pool_2():
                         amount=FVal('3773477.536528796798537134308'),
                         usd_value=ZERO,
                     ),
-                    usd_price=Price(ZERO),
+                    usd_price=ZERO_PRICE,
                 ),
                 LiquidityPoolAsset(
                     token=A_USDT.resolve_to_evm_token(),
@@ -141,7 +141,7 @@ def const_exp_liquidity_pool_2():
                         amount=FVal('997021.3061952553312356558897'),
                         usd_value=ZERO,
                     ),
-                    usd_price=Price(ZERO),
+                    usd_price=ZERO_PRICE,
                 ),
             ],
             total_supply=FVal('4.565121916083260693'),

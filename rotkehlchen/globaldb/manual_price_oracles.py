@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.misc import ZERO_PRICE
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
@@ -84,7 +84,7 @@ class ManualCurrentOracle(CurrentPriceOracleInterface):
             asset=from_asset,
         )
         if manual_current_result is None:
-            return Price(ZERO), False
+            return ZERO_PRICE, False
         current_to_asset, current_price = manual_current_result
         if match_main_currency is True:
             assert self.database is not None, 'When trying to match main currency, database should be set'  # noqa: E501

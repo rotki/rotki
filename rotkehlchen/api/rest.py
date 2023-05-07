@@ -84,7 +84,7 @@ from rotkehlchen.constants.misc import (
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
     HTTP_STATUS_INTERNAL_DB_ERROR,
     ONE,
-    ZERO,
+    ZERO_PRICE,
 )
 from rotkehlchen.constants.resolver import ChainID, evm_address_to_identifier
 from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
@@ -455,8 +455,8 @@ class RestAPI():
                 continue
 
             usd_price = Inquirer().find_usd_price(asset)
-            if usd_price == Price(ZERO):
-                asset_rates[asset] = Price(ZERO)
+            if usd_price == ZERO_PRICE:
+                asset_rates[asset] = ZERO_PRICE
             else:
                 asset_rates[asset] = Price(ONE / usd_price)
 
@@ -3007,7 +3007,7 @@ class RestAPI():
             f'{", ".join(f"{asset.identifier} at {ts}" for asset, ts in assets_timestamp)}',
             assets_timestamp=assets_timestamp,
         )
-        assets_price: defaultdict[Asset, defaultdict] = defaultdict(lambda: defaultdict(lambda: Price(ZERO)))  # noqa: E501
+        assets_price: defaultdict[Asset, defaultdict] = defaultdict(lambda: defaultdict(lambda: ZERO_PRICE))  # noqa: E501
         for asset, timestamp in assets_timestamp:
             try:
                 price = PriceHistorian().query_historical_price(
@@ -3020,7 +3020,7 @@ class RestAPI():
                     f'Could not query the historical {target_asset.identifier} price for '
                     f'{asset.identifier} at time {timestamp} due to: {str(e)}. Using zero price',
                 )
-                price = Price(ZERO)
+                price = ZERO_PRICE
 
             assets_price[asset][timestamp] = price
 

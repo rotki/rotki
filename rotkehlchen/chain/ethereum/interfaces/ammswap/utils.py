@@ -11,10 +11,10 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     LiquidityPoolAsset,
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price
+from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
@@ -108,10 +108,10 @@ def update_asset_price_in_lp_balances(
                 asset_ethereum_address = asset.token.evm_address
                 asset_usd_price = known_asset_price.get(
                     asset_ethereum_address,
-                    unknown_asset_price.get(asset_ethereum_address, Price(ZERO)),
+                    unknown_asset_price.get(asset_ethereum_address, ZERO_PRICE),
                 )
                 # Update <LiquidityPoolAsset> if asset USD price exists
-                if asset_usd_price != Price(ZERO):
+                if asset_usd_price != ZERO_PRICE:
                     asset.usd_price = asset_usd_price
                     asset.user_balance.usd_value = FVal(
                         asset.user_balance.amount * asset_usd_price,

@@ -33,7 +33,7 @@ from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_ETH2, A_KFEE, A_USD
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -895,7 +895,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 quote_asset=A_USD,  # whatever
                 trade_type=trade_type,
                 amount=AssetAmount(amount),
-                rate=Price(ZERO),
+                rate=ZERO_PRICE,
                 fee=None,
                 fee_currency=None,
                 link=exchange_uuid,

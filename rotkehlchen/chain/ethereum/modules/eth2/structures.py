@@ -6,12 +6,12 @@ from rotkehlchen.accounting.mixins.event import AccountingEventMixin, Accounting
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.misc import ONE, ZERO, ZERO_PRICE
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
-from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Location, Price, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Location, Timestamp
 from rotkehlchen.utils.misc import from_gwei
 
 if TYPE_CHECKING:
@@ -87,7 +87,7 @@ class ValidatorDailyStats(AccountingEventMixin):
                 timestamp=self.timestamp,
             )
         except NoPriceForGivenTimestamp:
-            usd_price = Price(ZERO)
+            usd_price = ZERO_PRICE
 
         return Balance(
             amount=self.pnl,

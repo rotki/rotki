@@ -25,7 +25,7 @@ from rotkehlchen.constants.assets import (
     A_USDT,
     A_XRP,
 )
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.misc import ONE, ZERO, ZERO_PRICE
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     HistoryEventFilterQuery,
@@ -87,7 +87,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
         quote_asset=A_USD,
         trade_type=TradeType.BUY,
         amount=AssetAmount(FVal('0.00100000')),
-        rate=Price(ZERO),
+        rate=ZERO_PRICE,
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
@@ -99,7 +99,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
         quote_asset=A_USD,
         trade_type=TradeType.BUY,
         amount=AssetAmount(FVal('2')),
-        rate=Price(ZERO),
+        rate=ZERO_PRICE,
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
