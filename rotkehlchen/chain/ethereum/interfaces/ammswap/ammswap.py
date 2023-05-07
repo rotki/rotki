@@ -41,7 +41,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import (
     SUBGRAPH_REMOTE_ERROR_MSG,
     update_asset_price_in_lp_balances,
 )
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.misc import ZERO_PRICE
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -194,7 +194,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         for known_asset in known_assets:
             asset_usd_price = Inquirer().find_usd_price(known_asset)
 
-            if asset_usd_price != Price(ZERO):
+            if asset_usd_price != ZERO_PRICE:
                 asset_price[known_asset.evm_address] = asset_usd_price
             else:
                 unknown_assets.add(known_asset)

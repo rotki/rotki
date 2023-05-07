@@ -7,8 +7,8 @@ from typing import Any
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.converters import asset_from_cryptocom
-from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.misc import ONE, ZERO, ZERO_PRICE
 from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
@@ -420,7 +420,7 @@ class CryptocomImporter(BaseExchangeImporter):
                     if base_amount_bought != ZERO:
                         rate = Price(abs(quote_amount_sold / base_amount_bought))
                     else:
-                        rate = Price(ZERO)
+                        rate = ZERO_PRICE
 
                     trade = Trade(
                         timestamp=timestamp,

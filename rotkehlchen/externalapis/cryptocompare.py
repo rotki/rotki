@@ -9,7 +9,6 @@ import gevent
 import requests
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_BAT,
     A_BNB,
@@ -37,6 +36,7 @@ from rotkehlchen.constants.assets import (
     A_YFII,
     A_ZRX,
 )
+from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
@@ -479,7 +479,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
         # Up until 23/09/2020 cryptocompare may return {} due to bug.
         # Handle that case by assuming 0 if that happens
         if cc_to_asset_symbol not in result:
-            return Price(ZERO), False
+            return ZERO_PRICE, False
 
         return Price(FVal(result[cc_to_asset_symbol])), False
 
@@ -533,7 +533,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
             cc_from_asset_symbol not in result or
             cc_to_asset_symbol not in result[cc_from_asset_symbol]
         ):
-            return Price(ZERO)
+            return ZERO_PRICE
 
         return Price(FVal(result[cc_from_asset_symbol][cc_to_asset_symbol]))
 
@@ -728,7 +728,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
         for entry in calculated_history:
             try:
                 price = Price((deserialize_price(entry['high']) + deserialize_price(entry['low'])) / 2)  # noqa: E501
-                if price == Price(ZERO):
+                if price == ZERO_PRICE:
                     continue  # don't write zero prices
                 prices.append(HistoricalPrice(
                     from_asset=from_asset,
@@ -785,7 +785,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
             max_seconds_distance=3600,
             source=HistoricalPriceOracle.CRYPTOCOMPARE,
         )
-        if price_cache_entry and price_cache_entry.price != Price(ZERO):
+        if price_cache_entry and price_cache_entry.price != ZERO_PRICE:
             log.debug('Got historical price from cryptocompare', from_asset=from_asset, to_asset=to_asset, timestamp=timestamp, price=price_cache_entry.price)  # noqa: E501
             return price_cache_entry.price
 
@@ -796,7 +796,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
             f' Attempting to get daily price...',
         )
         price = self.query_endpoint_pricehistorical(from_asset, to_asset, timestamp)
-        if price == Price(ZERO):
+        if price == ZERO_PRICE:
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
                 to_asset=to_asset,

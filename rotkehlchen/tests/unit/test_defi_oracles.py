@@ -8,7 +8,7 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DOGE, A_ETH, A_LINK, A_USDC, A_WETH
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.misc import ONE, ZERO_PRICE
 from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
@@ -38,7 +38,7 @@ def test_uniswap_oracles_asset_to_asset(inquirer_defi, socket_enabled):  # pylin
             price_instance = inquirer_defi._uniswapv3
         inquirer_defi.set_oracles_order(oracles=[oracle])
         price, _ = price_instance.query_current_price(A_1INCH, A_LINK, False)
-        assert price != Price(ZERO)
+        assert price != ZERO_PRICE
         assert (inch_price / link_price).is_close(price, max_diff='0.01')
         defi_price = inquirer_defi.find_usd_price(A_LINK, ignore_cache=True)
         assert abs(defi_price - link_price) / link_price < FVal(0.1), f'{defi_price=} and {link_price=} have more than 10% difference'  # noqa: E501

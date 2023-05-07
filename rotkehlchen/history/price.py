@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_KFEE, A_USD
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.misc import ONE, ZERO_PRICE
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
@@ -67,7 +67,7 @@ def query_usd_price_zero_if_error(
             f'Could not query usd price for {str(asset)} and time {time} '
             f'when processing {location}. Using zero price',
         )
-        usd_price = Price(ZERO)
+        usd_price = ZERO_PRICE
 
     return usd_price
 

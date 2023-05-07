@@ -8,7 +8,7 @@ from eth_typing.evm import ChecksumAddress
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.misc import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
@@ -41,7 +41,7 @@ class BalancerPoolTokenBalance:
     total_amount: FVal  # token amount in the pool
     user_balance: Balance  # user token balance
     weight: FVal
-    usd_price: Price = Price(ZERO)
+    usd_price: Price = ZERO_PRICE
 
     def serialize(self) -> dict:
         return {

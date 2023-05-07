@@ -12,7 +12,6 @@ from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_3CRV,
     A_ALINK_V1,
@@ -57,6 +56,7 @@ from rotkehlchen.constants.assets import (
     A_YV1_WETH,
     A_YV1_YFI,
 )
+from rotkehlchen.constants.misc import CURRENCYCONVERTER_API_KEY, ONE, ZERO, ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -231,7 +231,7 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Optional[Price], Curren
             underlying_asset_price, oracle, _ = Inquirer().find_usd_price_and_oracle(token)
             usd_price += underlying_asset_price * underlying_token.weight
 
-        if usd_price != Price(ZERO):
+        if usd_price != ZERO_PRICE:
             price = Price(usd_price)
 
     return price, oracle
@@ -461,7 +461,7 @@ class Inquirer():
             oracles = [CurrentPriceOracle.MANUALCURRENT]
             oracle_instances = [instance._manualcurrent]
 
-        price = Price(ZERO)
+        price = ZERO_PRICE
         oracle_queried = CurrentPriceOracle.BLOCKCHAIN
         used_main_currency = False
         for oracle, oracle_instance in zip(oracles, oracle_instances):
@@ -501,7 +501,7 @@ class Inquirer():
                 )
                 continue
 
-            if price != Price(ZERO):
+            if price != ZERO_PRICE:
                 oracle_queried = oracle
                 log.debug(
                     f'Current price oracle {oracle} got price',
@@ -534,7 +534,7 @@ class Inquirer():
         3. Flag that shows whether returned price is in main currency.
         NB: prices for special symbols in any currency but USD are not supported.
 
-        Returns Price(ZERO) if all options have been exhausted and errors are logged in the logs.
+        Returns ZERO_PRICE if all options have been exhausted and errors are logged in the logs.
         `coming_from_latest_price` is used by manual latest price oracle to handle price loops.
         """
         if from_asset == to_asset:
@@ -651,7 +651,7 @@ class Inquirer():
         """Returns the current price of the asset, oracle that was used and hether returned price
         is in main currency.
 
-        Returns Price(ZERO) if all options have been exhausted and errors are logged in the logs.
+        Returns ZERO_PRICE if all options have been exhausted and errors are logged in the logs.
         `coming_from_latest_price` is used by manual latest price oracle to handle price loops.
         """
         if asset == A_USD:
@@ -691,7 +691,7 @@ class Inquirer():
                 underlying_asset_price=underlying_asset_price,
             )
             if usd_price is None:
-                price = Price(ZERO)
+                price = ZERO_PRICE
             else:
                 price = Price(usd_price)
 
@@ -718,7 +718,7 @@ class Inquirer():
                 bsq = A_BSQ.resolve_to_crypto_asset()
             except (UnknownAsset, WrongAssetType):
                 log.error('Asked for BSQ price but BSQ is missing or misclassified in the global DB')  # noqa: E501
-                return Price(ZERO), oracle, False
+                return ZERO_PRICE, oracle, False
 
             try:
                 price_in_btc = get_bisq_market_price(bsq)
@@ -808,7 +808,7 @@ class Inquirer():
         prices = []
         for token in tokens:
             price = self.find_usd_price(token)
-            if price == Price(ZERO):
+            if price == ZERO_PRICE:
                 log.error(
                     f'Could not calculate price for {lp_token} due to inability to '
                     f'fetch price for {token}.',
@@ -972,7 +972,7 @@ class Inquirer():
                 )
                 rates[currency] = price
             except RemoteError:
-                rates[currency] = Price(ZERO)
+                rates[currency] = ZERO_PRICE
 
         return rates
 

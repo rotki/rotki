@@ -18,7 +18,7 @@ from rotkehlchen.chain.ethereum.graph import (
     format_query_indentation,
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.graph import TOKEN_DAY_DATAS_QUERY
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -719,7 +719,7 @@ class Balancer(EthereumModule):
         token_to_prices: TokenToPrices = {}
         for token in known_tokens:
             usd_price = Inquirer().find_usd_price(token)
-            if usd_price == Price(ZERO):
+            if usd_price == ZERO_PRICE:
                 self.msg_aggregator.add_error(
                     f'Failed to request the USD price of {token.identifier}. '
                     f"Balances of the balancer pools that have this token won't be accurate.",
@@ -838,7 +838,7 @@ class Balancer(EthereumModule):
                     timestamp=timestamp,
                 )
 
-            usd_price = token_to_prices.get(token.evm_address, Price(ZERO))
+            usd_price = token_to_prices.get(token.evm_address, ZERO_PRICE)
 
         return usd_price
 
@@ -1042,9 +1042,9 @@ class Balancer(EthereumModule):
                     token_ethereum_address = pool_token_balance.token.evm_address
                     usd_price = known_token_to_prices.get(
                         token_ethereum_address,
-                        unknown_token_to_prices.get(token_ethereum_address, Price(ZERO)),
+                        unknown_token_to_prices.get(token_ethereum_address, ZERO_PRICE),
                     )
-                    if usd_price != Price(ZERO):
+                    if usd_price != ZERO_PRICE:
                         pool_token_balance.usd_price = usd_price
                         pool_token_balance.user_balance.usd_value = FVal(
                             pool_token_balance.user_balance.amount * usd_price,

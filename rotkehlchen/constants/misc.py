@@ -1,11 +1,14 @@
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.fval import FVal
+from rotkehlchen.types import Price
 
 CURRENCYCONVERTER_API_KEY = 'da602d71f11712a25137'
 
 ZERO = FVal(0)
 ONE = FVal(1)
 EXP18 = FVal(1e18)
+
+ZERO_PRICE = Price(ZERO)
 
 # Could also try to extend HTTPStatus but looks complicated
 # https://stackoverflow.com/questions/45028991/best-way-to-extend-httpstatus-with-custom-value

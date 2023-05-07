@@ -2,7 +2,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPool, LiquidityPoolAsset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_USDT, A_WETH
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Price
 
@@ -42,7 +42,7 @@ def test_half_asset_prices_are_updated(mock_uniswap):
                         amount=FVal('3773477.536528796798537134308'),
                         usd_value=ZERO,
                     ),
-                    usd_price=Price(ZERO),
+                    usd_price=ZERO_PRICE,
                 ),
                 LiquidityPoolAsset(
                     token=A_USDT,

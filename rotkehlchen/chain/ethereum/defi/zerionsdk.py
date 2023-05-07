@@ -15,7 +15,7 @@ from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_USDC
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.misc import ONE, ZERO, ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
@@ -24,7 +24,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer, get_underlying_asset_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChecksumEvmAddress, Price, SupportedBlockchain
+from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
 
@@ -381,7 +381,7 @@ class ZerionSDK():
                     f'Unsupported asset {token_symbol} with address '
                     f'{token_address} encountered during DeFi protocol queries',
                 )
-            usd_price = Price(ZERO)
+            usd_price = ZERO_PRICE
 
         usd_value = normalized_value * usd_price
         defi_balance = DefiBalance(

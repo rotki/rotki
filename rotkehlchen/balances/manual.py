@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ZERO_PRICE
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.types import Location, Price
+from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -56,7 +56,7 @@ def get_manually_tracked_balances(
                 f'Could not find price for {entry.asset.identifier} during '
                 f'manually tracked balance querying due to {str(e)}',
             )
-            price = Price(ZERO)
+            price = ZERO_PRICE
 
         value = Balance(amount=entry.amount, usd_value=price * entry.amount)
         balances_with_value.append(ManuallyTrackedBalanceWithValue(

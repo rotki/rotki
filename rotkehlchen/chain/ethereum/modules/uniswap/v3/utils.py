@@ -23,12 +23,12 @@ from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_USDC
-from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
+from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO, ZERO_PRICE
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price
+from rotkehlchen.types import ChainID, ChecksumEvmAddress
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
 
@@ -536,7 +536,7 @@ def get_unknown_asset_price_chain(
                 f'Failed to find price for {str(from_token)}/{str(A_USDC) } LP using '
                 f'Uniswap V3 oracle due to: {str(e)}.',
             )
-            asset_price[from_token.evm_address] = Price(ZERO)
+            asset_price[from_token.evm_address] = ZERO_PRICE
 
     return asset_price
 
