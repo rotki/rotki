@@ -241,29 +241,29 @@ class Aave(EthereumModule):
                 spent_asset: Optional[CryptoAsset]
                 pnl = got_asset = got_balance = spent_asset = spent_balance = None
                 if event.event_type == 'deposit':
-                    event = cast(AaveDepositWithdrawalEvent, event)  # noqa: PLW2901
+                    event = cast(AaveDepositWithdrawalEvent, event)
                     spent_asset = event.asset
                     spent_balance = event.value
                     # this will need editing for v2
                     got_asset = event.atoken
                     got_balance = event.value
                 elif event.event_type == 'withdrawal':
-                    event = cast(AaveDepositWithdrawalEvent, event)  # noqa: PLW2901
+                    event = cast(AaveDepositWithdrawalEvent, event)
                     got_asset = event.asset
                     got_balance = event.value
                     # this will need editing for v2
                     spent_asset = event.atoken
                     spent_balance = got_balance
                 elif event.event_type == 'interest':
-                    event = cast(AaveInterestEvent, event)  # noqa: PLW2901
+                    event = cast(AaveInterestEvent, event)
                     pnl = [AssetBalance(asset=event.asset, balance=event.value)]
                 elif event.event_type == 'borrow':
-                    event = cast(AaveBorrowEvent, event)  # noqa: PLW2901
+                    event = cast(AaveBorrowEvent, event)
                     got_asset = event.asset
                     got_balance = event.value
                     total_borrow[got_asset] += got_balance
                 elif event.event_type == 'repay':
-                    event = cast(AaveRepayEvent, event)  # noqa: PLW2901
+                    event = cast(AaveRepayEvent, event)
                     spent_asset = event.asset
                     spent_balance = event.value
                     if total_borrow[spent_asset].amount + realized_borrow_loss[spent_asset].amount < ZERO:  # noqa: E501
@@ -271,7 +271,7 @@ class Aave(EthereumModule):
                         realized_borrow_loss[spent_asset] += -pnl_balance
                         pnl = [AssetBalance(asset=spent_asset, balance=pnl_balance)]
                 elif event.event_type == 'liquidation':
-                    event = cast(AaveLiquidationEvent, event)  # noqa: PLW2901
+                    event = cast(AaveLiquidationEvent, event)
                     got_asset = event.principal_asset
                     got_balance = event.principal_balance
                     spent_asset = event.collateral_asset

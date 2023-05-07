@@ -206,8 +206,8 @@ target-version = "py39"
 [tool.ruff.per-file-ignores]
 
 "tools/*" = [
-	  "T201",  # got prints in tools
-	  "INP001",  # no need for __init__ in tools
+    "T201",  # got prints in tools
+    "INP001",  # no need for __init__ in tools
 ]
 "rotkehlchen/__main__.py" = ["T201"]  # got prints in main
 "rotkehlchen/api/server.py" = ["T201"]  # got prints in server.py
@@ -215,9 +215,25 @@ target-version = "py39"
 "rotkehlchen/db/minimized_schema.py" = ["E501"]  # huge lines there
 "rotkehlchen/globaldb/minimized_schema.py" = ["E501"]  # huge lines there
 "rotkehlchen/tests/*" = ["S113"]  # tests have no timeout in requests
-"package.py" = ["INP001"]  # no need for __init__ here
+"rotkehlchen/tests/conftest.py" = [
+    "S602",  # test setup. No problem with shell=True
+    "S605",  # test setup, can't inject in process
+    "S607",  # test setup, partial path does not mater
+]
+"rotkehlchen/tests/integration/test_backend.py" = [
+    "S603",  # test called by us. No variable input
+    "S607",  # test called by us. Partial executable path is fine.
+]
 "setup.py" = ["INP001"]  # no need for __init__ here
-
+"package.py" = [
+    "INP001",  # no need for __init__ here
+    "S602",  # script called by us only when packaging. No problem with shell=True
+    "S607",  # script called by us only when packaging. No problem with partial path
+]
+"tools/scripts/pylint_useless_suppression.py" = [
+    "S603",  # Script called by us. No variable input
+    "S607",  # Script called by us. Partial executable path is fine.
+]
 
 [tool.ruff.flake8-quotes]
 docstring-quotes = "double"
