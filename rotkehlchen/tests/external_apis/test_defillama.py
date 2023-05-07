@@ -47,7 +47,9 @@ def test_defillama_historical_price(price_historian, session_defillama):  # pyli
     assert price == Price(FVal('1.0182482830027697'))
 
 
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_defillama_current_price(inquirer, session_defillama, session_coingecko):  # pylint: disable=unused-argument  # noqa: E501
+    """Test that defillama current price queries work fine in comparison with other oracles"""
     eth = A_ETH.resolve()
     usd = A_USD.resolve()
     dai = A_DAI.resolve()
@@ -79,8 +81,7 @@ def test_defillama_current_price(inquirer, session_defillama, session_coingecko)
     )
     assert price_coingecko.is_close(price_defillama, max_diff='0.1')
 
-    # Test a non usd pair
-    # Test evm assets
+    # Test a non usd pair + evm assets
     price_defillama, _ = session_defillama.query_current_price(
         from_asset=dai,
         to_asset=eur,
@@ -91,6 +92,4 @@ def test_defillama_current_price(inquirer, session_defillama, session_coingecko)
         to_asset=eur,
         match_main_currency=False,
     )
-    # Multiply by 1.5 because we are mocking rates queries.
-    # Also 1.5 max diff. This seems to diverge often
-    assert (price_coingecko * FVal('1.5')).is_close(price_defillama, max_diff='0.15')
+    assert price_coingecko.is_close(price_defillama, max_diff='0.15')
