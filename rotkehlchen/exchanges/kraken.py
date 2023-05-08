@@ -1084,12 +1084,16 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             cursor: 'DBCursor',
             start_ts: Timestamp,
             end_ts: Timestamp,
+            notify_events: bool = False,
     ) -> bool:
         """
         Query Kraken's ledger to retrieve events and transform them to our internal representation
         of history events. Internally we look for the query range that needs to be queried in the
         range (start_ts, end_ts) to avoid double quering the kraken API when this method is called
         for deposits/withdrawals and trades. The events queried are then stored in the database.
+        If notify_events is True we send websocket messages to notify the current interval of
+        time being queried. By default is set to False to avoid sending unwanted message when this
+        funtion is called internally and not directly from the UI by the user.
 
         Returns true if any query to the kraken API was not successful
         """
@@ -1104,16 +1108,17 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         with_errors = False
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying kraken ledger entries from {query_start_ts} to {query_end_ts}')
-            self.msg_aggregator.add_message(
-                message_type=WSMessageType.HISTORY_EVENTS_STATUS,
-                data={
-                    'status': str(HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE),
-                    'location': str(self.location),
-                    'event_type': str(HistoryEventsQueryType.HISTORY_QUERY),
-                    'name': self.name,
-                    'period': [query_start_ts, query_end_ts],
-                },
-            )
+            if notify_events is True:
+                self.msg_aggregator.add_message(
+                    message_type=WSMessageType.HISTORY_EVENTS_STATUS,
+                    data={
+                        'status': str(HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE),
+                        'location': str(self.location),
+                        'event_type': str(HistoryEventsQueryType.HISTORY_QUERY),
+                        'name': self.name,
+                        'period': [query_start_ts, query_end_ts],
+                    },
+                )
             try:
                 response, with_errors = self.query_until_finished(
                     endpoint='Ledgers',
@@ -1195,6 +1200,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 cursor=cursor,
                 start_ts=Timestamp(0),
                 end_ts=ts_now(),
+                notify_events=True,
             )
         self.msg_aggregator.add_message(
             message_type=WSMessageType.HISTORY_EVENTS_STATUS,
