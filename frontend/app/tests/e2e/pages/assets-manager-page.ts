@@ -96,7 +96,7 @@ export class AssetsManagerPage {
   createWaitForDeleteManagedAssets() {
     cy.intercept({
       method: 'DELETE',
-      url: '/api/1/assets/all**'
+      url: '/api/1/assets/ethereum**'
     }).as('apiCall');
 
     return () => {

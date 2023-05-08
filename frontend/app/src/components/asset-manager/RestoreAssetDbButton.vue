@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
+import { DialogType } from '@/types/dialogs';
 
 withDefaults(
   defineProps<{
@@ -84,7 +85,8 @@ const showDoneConfirmation = () => {
       title: tc('asset_update.restore.success.title'),
       message: tc('asset_update.restore.success.description'),
       primaryAction: tc('asset_update.success.ok'),
-      singleAction: true
+      singleAction: true,
+      type: DialogType.SUCCESS
     },
     updateComplete
   );
