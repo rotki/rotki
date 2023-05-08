@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
-    DEFAULT_ENRICHMENT_OUTPUT,
+    FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecoderContext,
     DecodingOutput,
@@ -520,9 +520,9 @@ class Uniswapv3Decoder(DecoderInterface):
             context.event.event_subtype = HistoryEventSubType.NFT
             context.event.notes = f'Create {CPT_UNISWAP_V3} LP with id {hex_or_bytes_to_int(context.tx_log.topics[3])}'  # noqa: E501
             context.event.counterparty = CPT_UNISWAP_V3
-            return DEFAULT_ENRICHMENT_OUTPUT
+            return TransferEnrichmentOutput(matched_counterparty=CPT_UNISWAP_V3)
 
-        return DEFAULT_ENRICHMENT_OUTPUT
+        return FAILED_ENRICHMENT_OUTPUT
 
     # -- DecoderInterface methods
 

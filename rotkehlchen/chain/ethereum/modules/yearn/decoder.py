@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_ENRICHMENT_OUTPUT,
+    FAILED_ENRICHMENT_OUTPUT,
     EnricherContext,
     TransferEnrichmentOutput,
 )
@@ -80,14 +80,14 @@ class YearnDecoder(DecoderInterface):
         if context.transaction.to_address in self.vaults_v1:
             protocol = CPT_YEARN_V1
         elif context.transaction.to_address not in self.vaults_v2:
-            return DEFAULT_ENRICHMENT_OUTPUT
+            return FAILED_ENRICHMENT_OUTPUT
 
         is_deposit = False
         if context.transaction.input_data.startswith(YEARN_DEPOSIT_4_BYTES):
             is_deposit = True
         elif not context.transaction.input_data.startswith(YEARN_WITHDRAW_4_BYTES):
             # a yearn contract method that we don't need to handle
-            return DEFAULT_ENRICHMENT_OUTPUT
+            return FAILED_ENRICHMENT_OUTPUT
 
         if (
             is_deposit is True and
@@ -130,9 +130,9 @@ class YearnDecoder(DecoderInterface):
             context.event.notes = f'Return {context.event.balance.amount} {context.token.symbol} to a {protocol} vault'  # noqa: E501
         else:
             # in this case we failed to find a valid transfer event. Inform about the failure
-            return DEFAULT_ENRICHMENT_OUTPUT
+            return FAILED_ENRICHMENT_OUTPUT
 
-        return DEFAULT_ENRICHMENT_OUTPUT
+        return TransferEnrichmentOutput(matched_counterparty=protocol)
 
     # -- DecoderInterface methods
 

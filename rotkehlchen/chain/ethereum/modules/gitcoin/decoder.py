@@ -4,7 +4,7 @@ from typing import Callable
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_ENRICHMENT_OUTPUT,
+    FAILED_ENRICHMENT_OUTPUT,
     EnricherContext,
     TransferEnrichmentOutput,
 )
@@ -34,7 +34,7 @@ class GitcoinDecoder(DecoderInterface):
                 '0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',
                 '0x7d655c57f71464B6f83811C55D84009Cd9f5221C',
         ):
-            return DEFAULT_ENRICHMENT_OUTPUT
+            return FAILED_ENRICHMENT_OUTPUT
         crypto_asset = context.event.asset.resolve_to_crypto_asset()
         if context.event.event_type == HistoryEventType.SPEND:
             to_address = context.event.address
@@ -45,7 +45,7 @@ class GitcoinDecoder(DecoderInterface):
 
         context.event.event_subtype = HistoryEventSubType.DONATE
         context.event.counterparty = CPT_GITCOIN
-        return DEFAULT_ENRICHMENT_OUTPUT
+        return TransferEnrichmentOutput(matched_counterparty=CPT_GITCOIN)
 
     # -- DecoderInterface methods
 

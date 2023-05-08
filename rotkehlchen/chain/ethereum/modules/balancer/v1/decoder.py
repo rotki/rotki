@@ -6,7 +6,7 @@ from rotkehlchen.chain.ethereum.modules.balancer.constants import BALANCER_LABEL
 from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerV1EventTypes
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_ENRICHMENT_OUTPUT,
+    FAILED_ENRICHMENT_OUTPUT,
     EnricherContext,
     TransferEnrichmentOutput,
 )
@@ -92,7 +92,7 @@ class Balancerv1Decoder(DecoderInterface):
         """
         events_information = self._decode_v1_pool_event(all_logs=context.all_logs)
         if events_information is None:
-            return DEFAULT_ENRICHMENT_OUTPUT
+            return FAILED_ENRICHMENT_OUTPUT
 
         for proxied_event in events_information:
             if proxied_event['ds_address'] != context.event.address:
@@ -135,7 +135,7 @@ class Balancerv1Decoder(DecoderInterface):
                     context.event.notes = f'Return {context.event.balance.amount} {context.token.symbol} to a Balancer v1 pool'  # noqa: E501
                     return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V1)
 
-        return DEFAULT_ENRICHMENT_OUTPUT
+        return FAILED_ENRICHMENT_OUTPUT
 
     def _check_refunds_v1(
             self,

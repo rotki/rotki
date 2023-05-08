@@ -10,7 +10,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, ERC20_OR_ERC721_TR
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
-    DEFAULT_ENRICHMENT_OUTPUT,
+    FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecoderContext,
     DecodingOutput,
@@ -397,14 +397,14 @@ class MakerdaosaiDecoder(DecoderInterface):
                 context.event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 context.event.notes = f'Supply {context.event.balance.amount} {self.weth.symbol} to Sai vault'  # noqa: E501
                 context.event.counterparty = CPT_SAI
-                return DEFAULT_ENRICHMENT_OUTPUT
+                return TransferEnrichmentOutput(matched_counterparty=CPT_SAI)
 
             if context.event.asset == self.peth:
                 context.event.event_type = HistoryEventType.DEPOSIT
                 context.event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 context.event.notes = f'Increase CDP collateral by {context.event.balance.amount} {self.peth.symbol}'  # noqa: E501
                 context.event.counterparty = CPT_SAI
-                return DEFAULT_ENRICHMENT_OUTPUT
+                return TransferEnrichmentOutput(matched_counterparty=CPT_SAI)
 
         if (
             context.event.event_type == HistoryEventType.RECEIVE and
@@ -416,16 +416,16 @@ class MakerdaosaiDecoder(DecoderInterface):
                 context.event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 context.event.notes = f'Withdraw {context.event.balance.amount} {self.weth.symbol} from Sai vault'  # noqa: E501
                 context.event.counterparty = CPT_SAI
-                return DEFAULT_ENRICHMENT_OUTPUT
+                return TransferEnrichmentOutput(matched_counterparty=CPT_SAI)
 
             if context.event.asset == self.peth:
                 context.event.event_type = HistoryEventType.WITHDRAWAL
                 context.event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 context.event.notes = f'Decrease CDP collateral by {context.event.balance.amount} {self.peth.symbol}'  # noqa: E501
                 context.event.counterparty = CPT_SAI
-                return DEFAULT_ENRICHMENT_OUTPUT
+                return TransferEnrichmentOutput(matched_counterparty=CPT_SAI)
 
-        return DEFAULT_ENRICHMENT_OUTPUT
+        return FAILED_ENRICHMENT_OUTPUT
 
     def _decode_peth_mint_after_deposit(self, context: DecoderContext) -> DecodingOutput:
         """

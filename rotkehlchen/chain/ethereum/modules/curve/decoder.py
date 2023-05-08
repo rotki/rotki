@@ -11,7 +11,7 @@ from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
-    DEFAULT_ENRICHMENT_OUTPUT,
+    FAILED_ENRICHMENT_OUTPUT,
     DecoderContext,
     DecodingOutput,
     EnricherContext,
@@ -676,7 +676,8 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             context.event.event_subtype = HistoryEventSubType.REWARD
             context.event.notes = f'Receive {context.event.balance.amount} {crypto_asset.symbol} rewards from {source_address} curve gauge'  # noqa: E501
             context.event.counterparty = CPT_CURVE
-        return DEFAULT_ENRICHMENT_OUTPUT
+            return TransferEnrichmentOutput(matched_counterparty=CPT_CURVE)
+        return FAILED_ENRICHMENT_OUTPUT
 
     @staticmethod
     def _sort_events(

@@ -24,7 +24,7 @@ from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
-    DEFAULT_ENRICHMENT_OUTPUT,
+    FAILED_ENRICHMENT_OUTPUT,
     DecoderContext,
     DecodingOutput,
     EnricherContext,
@@ -150,8 +150,8 @@ class ConvexDecoder(DecoderInterface):
             else:
                 context.event.notes = f'Claim {context.event.balance.amount} {crypto_asset.symbol} reward from convex'  # noqa: E501
             context.event.counterparty = CPT_CONVEX
-            return DEFAULT_ENRICHMENT_OUTPUT
-        return DEFAULT_ENRICHMENT_OUTPUT
+            return TransferEnrichmentOutput(matched_counterparty=CPT_CONVEX)
+        return FAILED_ENRICHMENT_OUTPUT
 
     def possible_events(self) -> DecoderEventMappingType:
         return {
