@@ -312,7 +312,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             to_ts=1614038500,
         )
         with database.conn.read_ctx() as cursor:
-            stats, filter_total_found, sum_pnl = eth2.get_validator_daily_stats(
+            stats, filter_total_found = eth2.get_validator_daily_stats(
                 cursor=cursor,
                 filter_query=filter_query,
                 only_cache=False,
@@ -348,11 +348,10 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
         )]
         # TODO: doesn't seem to be related to the refactoring. Need to check.
         assert stats[:len(expected_stats)] == expected_stats
-        assert sum_pnl >= sum(x.pnl for x in expected_stats)
 
         with database.conn.read_ctx() as cursor:
             # Make sure that calling it again does not make an external call
-            stats, filter_total_found, _ = eth2.get_validator_daily_stats(
+            stats, filter_total_found = eth2.get_validator_daily_stats(
                 cursor=cursor,
                 filter_query=filter_query,
                 only_cache=False,
@@ -366,7 +365,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             ownership_proportion=FVal(0.45),
         )
         with database.conn.read_ctx() as cursor:
-            stats, filter_total_found, _ = eth2.get_validator_daily_stats(
+            stats, filter_total_found = eth2.get_validator_daily_stats(
                 cursor=cursor,
                 filter_query=filter_query,
                 only_cache=False,

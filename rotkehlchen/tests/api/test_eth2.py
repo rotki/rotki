@@ -265,7 +265,14 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     assert result['entries_total'] == total_stats
     assert result['entries_found'] <= total_stats
     assert len(result['entries']) == 5
+    # Check the sum pnl values here and see that they include only values from the current page
+    full_sum_pnl = FVal(result['sum_pnl']['amount'])
+    full_sum_usd_value = FVal(result['sum_pnl']['usd_value'])
+    calculated_sum_pnl = ZERO
+    calculated_sum_usd_value = ZERO
     for idx, entry in enumerate(result['entries']):
+        calculated_sum_pnl += FVal(entry['pnl']['amount'])
+        calculated_sum_usd_value += FVal(entry['pnl']['usd_value'])
         assert entry['validator_index'] in queried_validators
         time = entry['timestamp']
         assert time >= from_ts
@@ -273,6 +280,8 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
 
         if idx <= 4:
             assert time == next_page_times[idx]
+    assert full_sum_pnl.is_close(calculated_sum_pnl)
+    assert full_sum_usd_value.is_close(calculated_sum_usd_value)
 
 
 @pytest.mark.skipif(

@@ -103,25 +103,18 @@ class DBEth2():
             self,
             cursor: 'DBCursor',
             filter_query: 'Eth2DailyStatsFilterQuery',
-    ) -> tuple[list[ValidatorDailyStats], int, FVal]:
+    ) -> tuple[list[ValidatorDailyStats], int]:
         """Gets all eth2 daily stats for the query from the DB
 
         Returns a tuple with the following in order:
          - A list of the daily stats
-         - how many are the total found for the filter
-         - What is the PnL in ETH for the filter
+         - How many are the total entries found for the filter
         """
         stats = self.get_validator_daily_stats(cursor, filter_query=filter_query)
         query, bindings = filter_query.prepare(with_pagination=False)
-        query = 'SELECT COUNT(*), SUM(CAST(pnl AS REAL)) from eth2_daily_staking_details ' + query
-        result = cursor.execute(query, bindings).fetchone()
-
-        try:
-            pnl = FVal(result[1])
-        except ValueError:
-            pnl = ZERO
-
-        return stats, result[0], pnl
+        query = 'SELECT COUNT(*) from eth2_daily_staking_details ' + query
+        count = cursor.execute(query, bindings).fetchone()[0]
+        return stats, count
 
     def get_validator_daily_stats(
             self,
