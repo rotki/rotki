@@ -2248,14 +2248,10 @@ class RestAPI():
 
     def delete_eth2_validator(
             self,
-            validators: list[dict],
+            validators: list[int],
     ) -> Response:
         try:
-            for validator in validators:
-                self.rotkehlchen.chains_aggregator.delete_eth2_validator(
-                    validator_index=validator.get('validator_index'),
-                    public_key=validator.get('public_key'),
-                )
+            self.rotkehlchen.chains_aggregator.delete_eth2_validators(validators)
             result = OK_RESULT
             status_code = HTTPStatus.OK
         except InputError as e:

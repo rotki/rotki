@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -180,27 +180,38 @@ class DBEth2():
                     f'that is not in the database',
                 )
 
-    def delete_validator(self, validator_index: Optional[int], public_key: Optional[str]) -> None:
-        """Deletes the given validator from the DB. Due to marshmallow here at least one
+    def delete_validators(self, validator_indices: list[int]) -> None:
+        """Deletes the given validators from the DB. Due to marshmallow here at least one
         of the two arguments is not None.
 
-        May raise:
-        - InputError if the given validator to delete does not exist in the DB
-        """
-        if validator_index is not None:
-            field = 'validator_index'
-            input_tuple = (validator_index,)
-        else:  # public key can't be None due to marshmallow
-            field = 'public_key'
-            input_tuple = (public_key,)  # type: ignore
+        Also delete all events where that validator index is involved.
 
+        May raise:
+        - InputError if any of the given validators to delete does not exist in the DB
+        """
+        indices_num = len(validator_indices)
+        question_marks = ['?'] * indices_num
         with self.db.user_write() as cursor:
-            cursor.execute(f'DELETE FROM eth2_validators WHERE {field} == ?', input_tuple)
-            if cursor.rowcount != 1:
+            # Delete from the validators table. This should also delete from daily_staking_details
+            cursor.execute(
+                f'DELETE FROM eth2_validators WHERE validator_index IN '
+                f'({",".join(question_marks)})',
+                validator_indices,
+            )
+            if cursor.rowcount != len(validator_indices):
                 raise InputError(
-                    f'Tried to delete eth2 validator with {field} '
-                    f'{input_tuple[0]} from the DB but it did not exist',
+                    f'Tried to delete eth2 validator/s with indices {validator_indices} '
+                    f'from the DB but at least one of them did not exist',
                 )
+
+            # Delete from the events table, all staking events except for deposits.
+            # We keep deposits since they are associated with the address and are EVM transactions
+            cursor.execute(
+                f'DELETE FROM history_events WHERE identifier in (SELECT S.identifier '
+                f'FROM eth_staking_events_info S WHERE S.validator_index IN '
+                f'({",".join(question_marks)})) AND entry_type != ?',
+                (*validator_indices, HistoryBaseEntryType.ETH_DEPOSIT_EVENT.serialize_for_db()),
+            )
 
     @staticmethod
     def _validator_stats_process_queries(
