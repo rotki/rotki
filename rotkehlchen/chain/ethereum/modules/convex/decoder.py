@@ -23,7 +23,6 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
     DecoderContext,
     DecodingOutput,
@@ -48,6 +47,7 @@ class ConvexDecoder(DecoderInterface):
     def _decode_convex_events(self, context: DecoderContext) -> DecodingOutput:
         amount_raw = hex_or_bytes_to_int(context.tx_log.data[0:32])
         interacted_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        found_event_modifying_balances = False
 
         for event in context.decoded_events:
             try:
@@ -66,6 +66,7 @@ class ConvexDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE
             ):
+                found_event_modifying_balances = True
                 if event.address == ZERO_ADDRESS:
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     event.counterparty = CPT_CONVEX
@@ -106,6 +107,7 @@ class ConvexDecoder(DecoderInterface):
                 if context.tx_log.topics[0] in WITHDRAWAL_TOPICS:
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.counterparty = CPT_CONVEX
+                    found_event_modifying_balances = True
                     if context.tx_log.address in CONVEX_POOLS:
                         event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} from convex {CONVEX_POOLS[context.tx_log.address]} pool'  # noqa: E501
                         event.product = EvmProduct.GAUGE
@@ -119,11 +121,12 @@ class ConvexDecoder(DecoderInterface):
                 elif context.tx_log.topics[0] in REWARD_TOPICS:
                     event.event_subtype = HistoryEventSubType.REWARD
                     event.counterparty = CPT_CONVEX
+                    found_event_modifying_balances = True
                     if context.tx_log.address in CONVEX_POOLS:
                         event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex {CONVEX_POOLS[context.tx_log.address]} pool'  # noqa: E501
                     else:
                         event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex'  # noqa: E501
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(refresh_balances=found_event_modifying_balances)
 
     @staticmethod
     def _maybe_enrich_convex_transfers(context: EnricherContext) -> TransferEnrichmentOutput:

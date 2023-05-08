@@ -8,7 +8,6 @@ from geventwebsocket import WebSocketApplication
 from geventwebsocket.exceptions import WebSocketError
 from geventwebsocket.websocket import WebSocket
 
-from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -45,11 +44,7 @@ def _ws_send_impl(
 
 class RotkiNotifier():
 
-    def __init__(
-            self,
-            greenlet_manager: GreenletManager,
-    ) -> None:
-        self.greenlet_manager = greenlet_manager
+    def __init__(self) -> None:
         self.subscribers: list[WebSocket] = []
         self.locks: dict[WebSocket, Semaphore] = {}
 

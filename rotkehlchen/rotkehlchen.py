@@ -143,7 +143,7 @@ class Rotkehlchen():
         self.api_task_greenlets: list[gevent.Greenlet] = []
         self.msg_aggregator = MessagesAggregator()
         self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
-        self.rotki_notifier = RotkiNotifier(greenlet_manager=self.greenlet_manager)
+        self.rotki_notifier = RotkiNotifier()
         self.msg_aggregator.rotki_notifier = self.rotki_notifier
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
         # Initialize the GlobalDBHandler singleton. Has to be initialized BEFORE asset resolver

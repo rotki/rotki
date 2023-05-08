@@ -157,10 +157,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
 
     # -- methods that need to be implemented by child classes --
 
-    def _enrich_protocol_tranfers(
-            self,
-            context: EnricherContext,
-    ) -> TransferEnrichmentOutput:
+    def _enrich_protocol_tranfers(self, context: EnricherContext) -> TransferEnrichmentOutput:
         for enrich_call in self.rules.token_enricher_rules:
             try:
                 transfer_enrich: TransferEnrichmentOutput = enrich_call(context)

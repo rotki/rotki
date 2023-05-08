@@ -92,7 +92,7 @@ def test_kyber_legacy_old_contract(database, ethereum_inquirer, eth_transactions
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [
@@ -215,7 +215,7 @@ def test_kyber_legacy_new_contract(database, ethereum_inquirer, eth_transactions
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [

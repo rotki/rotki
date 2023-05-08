@@ -82,7 +82,7 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     timestamp = TimestampMS(1646375440000)
     expected_events = [
@@ -195,7 +195,7 @@ def test_gnosis_chain_bridge(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [
         EvmEvent(
@@ -289,7 +289,7 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [
         EvmEvent(

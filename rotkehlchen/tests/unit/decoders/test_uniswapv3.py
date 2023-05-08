@@ -114,7 +114,7 @@ def test_uniswap_v3_swap(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [
@@ -247,7 +247,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_inquirer, eth_transa
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [
@@ -460,7 +460,7 @@ def test_uniswap_v3_swap_by_aggregator(database, ethereum_inquirer, eth_transact
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -908,7 +908,7 @@ def test_uniswap_v3_remove_liquidity(database, ethereum_inquirer, eth_transactio
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [
@@ -1048,7 +1048,7 @@ def test_uniswap_v3_add_liquidity(database, ethereum_inquirer, eth_transactions)
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 4
     expected_events = [
