@@ -1802,7 +1802,7 @@ class Eth2ValidatorsResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, validators: list[dict[str, Any]]) -> Response:
+    def delete(self, validators: list[int]) -> Response:
         return self.rest_api.delete_eth2_validator(validators=validators)
 
     @require_loggedin_user()

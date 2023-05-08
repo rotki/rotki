@@ -1218,11 +1218,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False)  # noqa: E501
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=True)  # noqa: E501
 
-    def delete_eth2_validator(
-            self,
-            validator_index: Optional[int],
-            public_key: Optional[str],
-    ) -> None:
+    def delete_eth2_validators(self, validator_indices: list[int]) -> None:
         """May raise:
         - ModuleInactive if eth2 module is not activated
         - InputError if the validator is not found in the DB
@@ -1231,10 +1227,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         eth2 = self.get_module('eth2')
         if eth2 is None:
             raise ModuleInactive('Cant delete eth2 validator since eth2 module is not active')
-        return DBEth2(self.database).delete_validator(
-            validator_index=validator_index,
-            public_key=public_key,
-        )
+        return DBEth2(self.database).delete_validators(validator_indices)
 
     @cache_response_timewise()
     def get_loopring_balances(self) -> dict[CryptoAsset, Balance]:

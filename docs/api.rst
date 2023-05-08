@@ -8839,7 +8839,7 @@ Deleting Eth2 validators
 
 .. http:delete:: /api/(version)/blockchains/ETH2/validators
 
-   Doing a DELETE on the eth2 validators endpoint will delete information and stop tracking an ETH2 validator.
+   Doing a DELETE on the eth2 validators endpoint will delete information and stop tracking a number of ETH2 validator/s.
 
 
    **Example Request**:
@@ -8851,17 +8851,10 @@ Deleting Eth2 validators
       Content-Type: application/json
 
       {
-        "validators": [
-          {
-            "validator_index": 1,
-            "public_key": "abcd"
-          }
-        ]
+        "validators": [1, 23423, 3233]
       }
 
-   :reqjson list[object] validators: A list of eth2 validators to delete.
-   :reqjsonarr int[optional] validator_index: An optional integer representing the validator index of the validator to track. If this is not given then the pulic key of the validator has to be given!
-   :reqjsonarr string[optional] public_key: An optional string representing the hexadecimal string of the public key of the validator to track. If this is not given the the validator index has to be given!
+   :reqjson list[int] validators: A list of indices of eth2 validators to delete
 
    **Example Response**:
 
@@ -8875,7 +8868,7 @@ Deleting Eth2 validators
         "message": ""
       }
 
-   :statuscode 200: Eth2 validator successfully delete.
+   :statuscode 200: Eth2 validator/s successfully delete.
    :statuscode 409: User is not logged in. Or eth2 module is not activated.
    :statuscode 500: Internal rotki error.
 

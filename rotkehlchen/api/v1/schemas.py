@@ -2514,7 +2514,13 @@ class Eth2ValidatorPutSchema(AsyncQueryArgumentSchema, Eth2ValidatorSchema):
 
 
 class Eth2ValidatorDeleteSchema(Schema):
-    validators = fields.List(fields.Nested(Eth2ValidatorSchema), required=True)
+    validators = DelimitedOrNormalList(fields.Integer(
+        strict=True,
+        validate=webargs.validate.Range(
+            min=0,
+            error='Validator index must be an integer >= 0',
+        ),
+    ), required=True)
 
 
 class Eth2ValidatorPatchSchema(Schema):

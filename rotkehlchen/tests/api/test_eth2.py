@@ -7,9 +7,17 @@ from typing import TYPE_CHECKING
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.eth2 import (
+    EthBlockEvent,
+    EthDepositEvent,
+    EthWithdrawalEvent,
+)
 from rotkehlchen.chain.ethereum.modules.eth2.eth2 import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
@@ -22,8 +30,9 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -445,27 +454,65 @@ def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_
             status_code=HTTPStatus.UNAUTHORIZED,
         )
 
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    dbevents = DBHistoryEvents(database)
+    events = [
+        EthDepositEvent(
+            identifier=1,
+            tx_hash=make_evm_tx_hash(),
+            validator_index=validators[0].index,
+            sequence_index=1,
+            timestamp=TimestampMS(1601379127000),
+            balance=Balance(FVal(32)),
+            depositor=make_evm_address(),
+        ), EthWithdrawalEvent(
+            identifier=2,
+            validator_index=validators[0].index,
+            timestamp=TimestampMS(1611379127000),
+            balance=Balance(FVal('0.01')),
+            withdrawal_address=make_evm_address(),
+            is_exit=False,
+        ), EthBlockEvent(
+            identifier=3,
+            validator_index=validators[2].index,
+            timestamp=TimestampMS(1671379127000),
+            balance=Balance(FVal(1)),
+            fee_recipient=make_evm_address(),
+            block_number=42,
+            is_mev_reward=True,
+        )]
+    with database.user_write() as cursor:
+        dbevents.add_history_events(cursor, events)
+
+    with database.conn.read_ctx() as cursor:  # assert events are in the DB
+        assert events == dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+        )
+
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'validators': [{'public_key': validators[0].public_key}]},
+        ), json={'validators': [validators[0].index, validators[2].index]},
     )
     assert_simple_ok_response(response)
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'validators': [{'validator_index': validators[2].index}]},
+        ), json={'validators': [validators[3].index]},
     )
     assert_simple_ok_response(response)
-    response = requests.delete(
-        api_url_for(
-            rotkehlchen_api_server,
-            'eth2validatorsresource',
-        ), json={'validators': [{'validator_index': validators[3].index, 'public_key': validators[3].public_key}]},  # noqa: E501
-    )
-    assert_simple_ok_response(response)
+
+    # after deleting validator indices, make sure their events are also gone
+    with database.conn.read_ctx() as cursor:
+        assert [events[0]] == dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+        )
 
     response = requests.get(
         api_url_for(
@@ -547,7 +594,7 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
     )
     invalid_index = {'validator_index': -1}
     if method == 'DELETE':
-        invalid_index = {'validators': [invalid_index]}
+        invalid_index = {'validators': [-1]}
     response = requests.request(
         method=method,
         url=api_url_for(
@@ -562,7 +609,7 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
     )
     unknown_index = {'validator_index': 999957426}
     if method == 'DELETE':
-        unknown_index = {'validators': [unknown_index]}
+        unknown_index = {'validators': [999957426]}
     response = requests.request(
         method=method,
         url=api_url_for(
@@ -574,43 +621,41 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
         msg = 'Validator data for 999957426 could not be found. Likely invalid validator'  # noqa: E501
         status_code = HTTPStatus.BAD_GATEWAY
     else:  # DELETE
-        msg = 'Tried to delete eth2 validator with validator_index 999957426 from the DB but it did not exist'  # noqa: E501
+        msg = 'Tried to delete eth2 validator/s with indices [999957426] from the DB but at least one of them did not exist'  # noqa: E501
         status_code = HTTPStatus.CONFLICT
     assert_error_response(
         response=response,
         contained_in_msg=msg,
         status_code=status_code,
     )
-    unknown_public_key = {'public_key': 'fooboosoozloklkl'}
-    if method == 'DELETE':
-        unknown_public_key = {'validators': [unknown_public_key]}
-    response = requests.request(
-        method=method,
-        url=api_url_for(
-            rotkehlchen_api_server,
-            'eth2validatorsresource',
-        ), json=unknown_public_key,
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='The given eth2 public key fooboosoozloklkl is not valid hex',  # noqa: E501
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-    invalid_hex = {'public_key': '0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fbcd'}  # noqa: E501
-    if method == 'DELETE':
-        invalid_hex = {'validators': [invalid_hex]}
-    response = requests.request(
-        method=method,
-        url=api_url_for(
-            rotkehlchen_api_server,
-            'eth2validatorsresource',
-        ), json=invalid_hex,
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='The given eth2 public key 0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fbcd has 49 bytes. Expected 48',  # noqa: E501
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
+
+    if method == 'PUT':
+        unknown_public_key = {'public_key': 'fooboosoozloklkl'}
+        response = requests.request(
+            method=method,
+            url=api_url_for(
+                rotkehlchen_api_server,
+                'eth2validatorsresource',
+            ), json=unknown_public_key,
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='The given eth2 public key fooboosoozloklkl is not valid hex',  # noqa: E501
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+        invalid_hex = {'public_key': '0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fbcd'}  # noqa: E501
+        response = requests.request(
+            method=method,
+            url=api_url_for(
+                rotkehlchen_api_server,
+                'eth2validatorsresource',
+            ), json=invalid_hex,
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='The given eth2 public key 0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fbcd has 49 bytes. Expected 48',  # noqa: E501
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
 
     # and now add a validator and try to re-add it
     response = requests.put(
