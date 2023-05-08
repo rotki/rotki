@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 const props = defineProps({
   url: { required: true, type: String }
 });
@@ -8,5 +8,5 @@ const { onLinkClick } = useLinks(url);
 </script>
 
 <template>
-  <a href="#" @click="onLinkClick()"><slot /></a>
+  <a href="#" @click.prevent="onLinkClick()"><slot /></a>
 </template>
