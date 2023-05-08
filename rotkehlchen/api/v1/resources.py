@@ -2933,3 +2933,11 @@ class LocationResource(BaseMethodView):
             result={'result': result, 'message': ''},
             status_code=HTTPStatus.OK,
         )
+
+
+class RefreshGeneralCacheResource(BaseMethodView):
+    post_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(self, async_query: bool) -> Response:
+        return self.rest_api.refresh_general_cache(async_query=async_query)

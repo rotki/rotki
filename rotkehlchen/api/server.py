@@ -118,6 +118,7 @@ from rotkehlchen.api.v1.resources import (
     PickleDillResource,
     PingResource,
     QueriedAddressesResource,
+    RefreshGeneralCacheResource,
     ReverseEnsResource,
     RpcNodesResource,
     SettingsResource,
@@ -320,6 +321,7 @@ URLS_V1: URLS = [
     ),
     ('/notes', UserNotesResource),
     ('/cache/<string:cache_type>/clear', ClearCacheResource),
+    ('/cache/general/refresh', RefreshGeneralCacheResource),
 ]
 
 logger = logging.getLogger(__name__)

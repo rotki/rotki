@@ -12661,3 +12661,39 @@ Get all valid locations
 
   :statuscode 200: Information was correctly returned
   :statuscode 500: Internal rotki error
+
+Refresh general cache
+========================
+
+.. http:post:: /api/(version)/cache/general/refresh
+
+   Doing a POST on this endpoint will refresh the entire general cache (curve, makerdao, yearn).
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+    POST /cache/general/refresh HTTP/1.1
+    Host: localhost:5042
+
+
+  **Example Response**
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": True,
+        "message": """
+      }
+
+  :resjson bool result: Is true if all the caches were refreshed successfully.
+
+  :statuscode 200: Caches were correctly updated
+  :statuscode 409: An issue during refreshing caches occured
+  :statuscode 500: Internal rotki error
