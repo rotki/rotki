@@ -24,6 +24,7 @@ export const useMessageHandling = () => {
   const { setQueryStatus: setEventsQueryStatus } = useEventsQueryStatusStore();
   const { updateDataMigrationStatus, updateDbUpgradeStatus } =
     useSessionAuthStore();
+  const { fetchBlockchainBalances } = useBlockchainBalances();
   const notificationsStore = useNotificationsStore();
   const { data: notifications } = storeToRefs(notificationsStore);
   const { notify } = notificationsStore;
@@ -182,6 +183,11 @@ export const useMessageHandling = () => {
       setUpgradedAddresses(message.data);
     } else if (type === SocketMessageType.NEW_EVM_TOKEN_DETECTED) {
       notifications.push(handleNewTokenDetectedMessage(message.data));
+    } else if (type === SocketMessageType.REFRESH_BALANCES) {
+      await fetchBlockchainBalances({
+        blockchain: message.data.blockchain,
+        ignoreCache: true
+      });
     } else {
       logger.warn(`Unsupported socket message received: '${type}'`);
     }
