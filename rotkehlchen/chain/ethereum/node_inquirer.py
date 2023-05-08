@@ -268,7 +268,7 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
         return deserialized_resolver_addr, normal_name
 
     @protect_with_lock()
-    def assure_curve_protocol_cache_is_queried(self) -> bool:
+    def assure_curve_protocol_cache_is_queried(self, force_refresh: bool = False) -> bool:
         """
         Make sure that curve information that needs to be queried is queried and if not query it.
         Returns true if the cache was modified or false otherwise.
@@ -277,7 +277,10 @@ class EthereumInquirer(EvmNodeInquirer, LockableQueryMixIn):
         2. Queries information about curve pools' addresses, lp tokens and used coins
         3. Saves queried information in the cache in globaldb
         """
-        if should_update_protocol_cache(GeneralCacheType.CURVE_LP_TOKENS) is False:
+        if (
+            should_update_protocol_cache(GeneralCacheType.CURVE_LP_TOKENS) is False and
+            force_refresh is False
+        ):
             return False
 
         all_pools = query_curve_data(ethereum=self)

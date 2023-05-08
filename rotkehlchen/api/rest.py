@@ -63,7 +63,11 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as get_liquity_stats
+from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
+    query_ilk_registry_and_maybe_update_cache,
+)
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
+from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
@@ -4353,3 +4357,30 @@ class RestAPI():
             )),
             status_code=HTTPStatus.OK,
         )
+
+    @async_api_call()
+    def refresh_general_cache(self) -> dict[str, Any]:
+        eth_node_inquirer = self.rotkehlchen.chains_aggregator.ethereum.node_inquirer
+        success = eth_node_inquirer.assure_curve_protocol_cache_is_queried(
+            force_refresh=True,
+        )
+        if success is False:
+            return wrap_in_fail_result(
+                message='Failed to refresh curve pools cache',
+                status_code=HTTPStatus.CONFLICT,
+            )
+        try:
+            query_yearn_vaults(self.rotkehlchen.data.db)
+        except RemoteError as e:
+            return wrap_in_fail_result(
+                message=f'Failed to refresh yearn vaults cache due to: {str(e)}',
+                status_code=HTTPStatus.CONFLICT,
+            )
+        try:
+            query_ilk_registry_and_maybe_update_cache(eth_node_inquirer)
+        except RemoteError as e:
+            return wrap_in_fail_result(
+                message=f'Failed to refresh makerdao vault ilk cache due to: {str(e)}',
+                status_code=HTTPStatus.CONFLICT,
+            )
+        return OK_RESULT
