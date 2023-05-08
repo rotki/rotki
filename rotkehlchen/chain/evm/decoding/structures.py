@@ -71,4 +71,4 @@ class TransferEnrichmentOutput(NamedTuple):
 
 
 DEFAULT_DECODING_OUTPUT: Final = DecodingOutput()
-DEFAULT_ENRICHMENT_OUTPUT: Final = TransferEnrichmentOutput()
+FAILED_ENRICHMENT_OUTPUT: Final = TransferEnrichmentOutput()

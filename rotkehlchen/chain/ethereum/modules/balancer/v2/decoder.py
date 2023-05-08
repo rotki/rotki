@@ -8,7 +8,7 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
-    DEFAULT_ENRICHMENT_OUTPUT,
+    FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecoderContext,
     DecodingOutput,
@@ -125,10 +125,10 @@ class Balancerv2Decoder(DecoderInterface):
         - WrongAssetType
         """
         if context.action_items is None or len(context.action_items) == 0 or context.transaction.to_address != VAULT_ADDRESS:  # noqa: E501
-            return DEFAULT_ENRICHMENT_OUTPUT
+            return FAILED_ENRICHMENT_OUTPUT
 
         if context.action_items[-1].extra_data is None:
-            return DEFAULT_ENRICHMENT_OUTPUT
+            return FAILED_ENRICHMENT_OUTPUT
 
         asset = context.event.asset.resolve_to_evm_token()
         if (
@@ -136,7 +136,7 @@ class Balancerv2Decoder(DecoderInterface):
             context.action_items[-1].asset.evm_address != context.tx_log.address or  # type: ignore[attr-defined]  # noqa: E501 mypy fails to understand that due the previous statmenet in the or this check won't be evaluated if the asset isn't a token
             context.action_items[-1].amount != context.event.balance.amount
         ):
-            return DEFAULT_ENRICHMENT_OUTPUT
+            return FAILED_ENRICHMENT_OUTPUT
 
         context.event.counterparty = CPT_BALANCER_V2
         context.event.event_type = HistoryEventType.TRADE
@@ -146,7 +146,7 @@ class Balancerv2Decoder(DecoderInterface):
         else:
             context.event.event_subtype = HistoryEventSubType.SPEND
 
-        return DEFAULT_ENRICHMENT_OUTPUT
+        return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V2)
 
     # -- DecoderInterface methods
 

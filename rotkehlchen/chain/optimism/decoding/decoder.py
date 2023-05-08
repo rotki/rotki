@@ -2,6 +2,10 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
+from rotkehlchen.chain.evm.decoding.structures import (
+    FAILED_ENRICHMENT_OUTPUT,
+    TransferEnrichmentOutput,
+)
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -35,8 +39,8 @@ class OptimismTransactionDecoder(EVMTransactionDecoder):
 
     # -- methods that need to be implemented by child classes --
 
-    def _enrich_protocol_tranfers(self, context: 'EnricherContext') -> Optional[str]:  # pylint: disable=unused-argument # noqa: E501
-        return None
+    def _enrich_protocol_tranfers(self, context: 'EnricherContext') -> TransferEnrichmentOutput:  # pylint: disable=unused-argument # noqa: E501
+        return FAILED_ENRICHMENT_OUTPUT
 
     @staticmethod
     def _is_non_conformant_erc721(address: ChecksumEvmAddress) -> bool:  # pylint: disable=unused-argument # noqa: E501

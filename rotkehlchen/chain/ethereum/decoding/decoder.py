@@ -9,6 +9,7 @@ from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
+    FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecodingOutput,
     EnricherContext,
@@ -156,7 +157,10 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
 
     # -- methods that need to be implemented by child classes --
 
-    def _enrich_protocol_tranfers(self, context: EnricherContext) -> Optional[str]:
+    def _enrich_protocol_tranfers(
+            self,
+            context: EnricherContext,
+    ) -> TransferEnrichmentOutput:
         for enrich_call in self.rules.token_enricher_rules:
             try:
                 transfer_enrich: TransferEnrichmentOutput = enrich_call(context)
@@ -166,12 +170,12 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                     f'{context.event.asset}. {str(e)}',
                 )
                 # Don't try other rules since all of them will fail to resolve the asset
-                return None
+                return FAILED_ENRICHMENT_OUTPUT
 
-            if transfer_enrich.matched_counterparty is not None:
-                return transfer_enrich.matched_counterparty
+            if transfer_enrich != FAILED_ENRICHMENT_OUTPUT:
+                return transfer_enrich
 
-        return None
+        return FAILED_ENRICHMENT_OUTPUT
 
     @staticmethod
     def _is_non_conformant_erc721(address: ChecksumEvmAddress) -> bool:

@@ -55,6 +55,7 @@ from .structures import (
     DecoderContext,
     DecodingOutput,
     EnricherContext,
+    TransferEnrichmentOutput,
 )
 from .utils import maybe_reshuffle_events
 
@@ -790,7 +791,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 break  # found an action item and acted on it
 
         # Add additional information to transfers for different protocols
-        maybe_counterparty = self._enrich_protocol_tranfers(
+        enrichment_output = self._enrich_protocol_tranfers(
             context=EnricherContext(
                 tx_log=tx_log,
                 transaction=transaction,
@@ -800,12 +801,18 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 event=transfer,
             ),
         )
-        return DecodingOutput(event=transfer, matched_counterparty=maybe_counterparty)
+        return DecodingOutput(
+            event=transfer,
+            matched_counterparty=enrichment_output.matched_counterparty,
+        )
 
     # -- methods to be implemented by child classes --
 
     @abstractmethod
-    def _enrich_protocol_tranfers(self, context: EnricherContext) -> Optional[str]:
+    def _enrich_protocol_tranfers(
+            self,
+            context: EnricherContext,
+    ) -> TransferEnrichmentOutput:
         """
         Decode special transfers made by contract execution for example at the moment
         of depositing assets or withdrawing.

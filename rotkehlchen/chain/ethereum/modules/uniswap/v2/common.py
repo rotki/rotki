@@ -11,7 +11,7 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
-    DEFAULT_ENRICHMENT_OUTPUT,
+    FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecodingOutput,
     EnricherContext,
@@ -311,7 +311,7 @@ def enrich_uniswap_v2_like_lp_tokens_transfers(
         context.event.counterparty = counterparty
         context.event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
         context.event.notes = f'Receive {context.event.balance.amount} {resolved_asset.symbol} from {counterparty} pool'  # noqa: E501
-        return DEFAULT_ENRICHMENT_OUTPUT
+        return TransferEnrichmentOutput(matched_counterparty=counterparty)
 
     if (
         resolved_asset.symbol == lp_token_symbol and
@@ -322,9 +322,9 @@ def enrich_uniswap_v2_like_lp_tokens_transfers(
         context.event.counterparty = counterparty
         context.event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
         context.event.notes = f'Send {context.event.balance.amount} {resolved_asset.symbol} to {counterparty} pool'  # noqa: E501
-        return DEFAULT_ENRICHMENT_OUTPUT
+        return TransferEnrichmentOutput(matched_counterparty=counterparty)
 
-    return DEFAULT_ENRICHMENT_OUTPUT
+    return FAILED_ENRICHMENT_OUTPUT
 
 
 def _compute_uniswap_v2_like_pool_address(
