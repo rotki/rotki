@@ -193,7 +193,7 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
     - staking ETH after the merge
     - trades not having subtypes and having negative amounts
     - withdrawals use positive amounts
-    - fix instant swaps
+    - instant swaps
     Needs to be executed after _update_history_events_schema
     """
     log.debug('Enter _fix_kraken_events. Fixing kraken eth2 related tuples')
@@ -226,6 +226,8 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
         'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
         'type="trade" AND subtype="none"',
     )
+
+    trade_db_type = HistoryEventType.TRADE.serialize()
     for event_row in write_cursor:
         asset_amount = FVal(event_row[1])
         usd_value = FVal(event_row[2])
@@ -238,7 +240,7 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
 
         update_tuples.append(
             (
-                HistoryEventType.TRADE.serialize(),
+                trade_db_type,
                 event_subtype.serialize(),
                 str(asset_amount),
                 str(usd_value),
@@ -284,6 +286,8 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
 
     for events in grouped_events.values():
         if len(events) != 2:
+            # we are looking for instant swaps that are always pairs of spend/receive
+            # with the same event identifier
             continue
 
         for event in events:
@@ -299,7 +303,7 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
 
             update_tuples.append(
                 (
-                    HistoryEventType.TRADE.serialize(),
+                    trade_db_type,
                     event_subtype.serialize(),
                     asset_amount_str,
                     usd_value_str,

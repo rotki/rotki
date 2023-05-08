@@ -310,7 +310,7 @@ class ExchangeManager:
             exchange.query_history_events()
 
     def get_exchange_mappings(self) -> LocationEventMappingType:
-        """Collect from the different exchanges the event mappings"""
+        """Collect event mappings from each exchange"""
         mappings: LocationEventMappingType = {}
         for location, exchanges in self.connected_exchanges.items():
             for exchange in exchanges:
