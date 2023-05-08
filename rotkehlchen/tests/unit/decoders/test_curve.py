@@ -1,10 +1,13 @@
+from typing import cast
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
@@ -13,6 +16,7 @@ from rotkehlchen.constants.assets import A_DAI, A_ETH, A_LINK, A_USDC, A_USDT
 from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
@@ -102,7 +106,7 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-    events = ethereum_transaction_decoder.decode_transaction(
+    events, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
     )
@@ -245,7 +249,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-    events = ethereum_transaction_decoder.decode_transaction(
+    events, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
     )
@@ -323,19 +327,23 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
     assert events == expected_events
 
 
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xDf9f0AE722A3919fE7f9cC8805773ef142007Ca6']])  # noqa: E501
-def test_curve_remove_liquidity(database, ethereum_transaction_decoder):
+def test_curve_remove_liquidity(
+        database,
+        ethereum_transaction_decoder,
+) -> None:
     """Data for deposit taken from
     https://etherscan.io/tx/0xd63dccdbebeede3a1f50b97c0a8592255203a0559880b80377daa39f915741b0
     This tests uses the link pool to verify that withdrawals are correctly decoded
     """
     tx_hex = '0xd63dccdbebeede3a1f50b97c0a8592255203a0559880b80377daa39f915741b0'
-    location_label = '0xDf9f0AE722A3919fE7f9cC8805773ef142007Ca6'
+    location_label = string_to_evm_address('0xDf9f0AE722A3919fE7f9cC8805773ef142007Ca6')
     evmhash = deserialize_evm_tx_hash(tx_hex)
     transaction = EvmTransaction(
         tx_hash=evmhash,
         chain_id=ChainID.ETHEREUM,
-        timestamp=1650276061,
+        timestamp=Timestamp(1650276061),
         block_number=14608535,
         from_address=location_label,
         to_address=string_to_evm_address('0xF178C0b5Bb7e7aBF4e12A4838C7b7c5bA2C623c0'),
@@ -398,10 +406,12 @@ def test_curve_remove_liquidity(database, ethereum_transaction_decoder):
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-    events = ethereum_transaction_decoder.decode_transaction(
+    events, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
     )
+    mocked_notifier = database.msg_aggregator.rotki_notifier
+    assert len(mocked_notifier.messages) == 0, 'There is no gauge action, so there should be no message to refresh balances'  # noqa: E501
     timestamp = TimestampMS(1650276061000)
     expected_events = [
         EvmEvent(
@@ -517,7 +527,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=location_label)  # noqa: E501
-    events = ethereum_transaction_decoder.decode_transaction(
+    events, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
     )
@@ -686,7 +696,7 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-    events = ethereum_transaction_decoder.decode_transaction(
+    events, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
     )
@@ -796,15 +806,29 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd289986c25Ae3f4644949e25bC369e9d8e0caeaD']])
-def test_gauge_deposit(ethereum_transaction_decoder, ethereum_accounts):
+def test_gauge_deposit(
+        ethereum_accounts,
+        database,
+        ethereum_transaction_decoder,
+) -> None:
     tx_hex = deserialize_evm_tx_hash('0x5ae70d68241d85feac65c90e4546154e232dba9fecad9036bcec10082acc9d46')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        evm_inquirer=cast(EthereumInquirer, ethereum_transaction_decoder.evm_inquirer),
         database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
+    )
+    mocked_notifier = database.msg_aggregator.rotki_notifier
+    message = mocked_notifier.pop_message()
+    assert message == MockedWsMessage(
+        type=WSMessageType.REFRESH_BALANCES,
+        data={
+            'type': 'blockchain_balances',
+            'blockchain': 'eth',
+        },
     )
     expected_events = [
         EvmEvent(

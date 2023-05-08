@@ -5,9 +5,11 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_POOLS, CPT_CONVEX
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -17,6 +19,7 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_CRV, A_CVX, A_ETH
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
@@ -88,8 +91,13 @@ def test_convex_pools(ethereum_inquirer):
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0xC960338B529e0353F570f62093Fd362B8FB55f0B')]])  # noqa: E501
-def test_booster_deposit(database, ethereum_inquirer, ethereum_accounts):
+def test_booster_deposit(
+        ethereum_accounts,
+        database,
+        ethereum_inquirer: 'EthereumInquirer',
+) -> None:
     tx_hex = '0x8f643dc245ce64085197692ed98309a94fd176a1e7394e8967ae7bfa10ad1f8f'
     timestmap = TimestampMS(1655810357000)
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -98,6 +106,28 @@ def test_booster_deposit(database, ethereum_inquirer, ethereum_accounts):
         evm_inquirer=ethereum_inquirer,
         database=database,
         tx_hash=evmhash,
+    )
+    mocked_notifier = database.msg_aggregator.rotki_notifier
+    assert mocked_notifier.pop_message() == MockedWsMessage(
+        type=WSMessageType.NEW_EVM_TOKEN_DETECTED,
+        data={
+            'token_identifier': 'eip155:1/erc20:0x182B723a58739a9c974cFDB385ceaDb237453c28',  # stETH  # noqa: E501
+            'seen_tx_hash': tx_hex,
+        },
+    )
+    assert mocked_notifier.pop_message() == MockedWsMessage(
+        type=WSMessageType.NEW_EVM_TOKEN_DETECTED,
+        data={
+            'token_identifier': 'eip155:1/erc20:0x9518c9063eB0262D791f38d8d6Eb0aca33c63ed0',  # cvxsteCRV  # noqa: E501
+            'seen_tx_hash': tx_hex,
+        },
+    )
+    assert mocked_notifier.pop_message() == MockedWsMessage(
+        type=WSMessageType.REFRESH_BALANCES,
+        data={
+            'type': 'blockchain_balances',
+            'blockchain': 'eth',
+        },
     )
     expected_events = [
         EvmEvent(
@@ -284,7 +314,7 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     timestamp = TimestampMS(1655675488000)
     expected_events = [
         EvmEvent(
@@ -528,7 +558,7 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
         transactions=eth_transactions,
 
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -676,7 +706,7 @@ def test_cvx_get_reward(database, ethereum_inquirer, eth_transactions):
         transactions=eth_transactions,
 
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -769,7 +799,7 @@ def test_cvx_withdraw(database, ethereum_inquirer, eth_transactions):
         transactions=eth_transactions,
 
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -853,7 +883,7 @@ def test_claimzap_abracadabras(database, ethereum_inquirer, eth_transactions):
         transactions=eth_transactions,
 
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -946,7 +976,7 @@ def test_claimzap_cvx_locker(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,

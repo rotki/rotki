@@ -84,7 +84,7 @@ def test_votium_claim(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     timestamp = TimestampMS(1646375440000)
     assert len(events) == 2
     expected_events = [

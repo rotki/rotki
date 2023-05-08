@@ -246,3 +246,23 @@ Finally the backend provides more granular information to know what interval of 
 - ``location``(Optional): When the same ``event_type`` can be queried in multiple locations this helps to differentiate them.
 - ``name``(Optional): If multiple appearences of the same location are possible it will differentiate each one of them.
 - ``period``: Time range that is being queried.
+
+
+Request a refresh of balances
+============================
+
+If at some point backend detects that balances need to be refreshed, it will send this message to the frontend.
+
+::
+
+    {
+        "type": "refresh_balances",
+        "data": {
+            "type": "blockchain_balances",
+            "blockchain": "optimism"
+        }
+    }
+
+
+- ``type``: Balances section that needs a refresh. Valid values are: ``blockchain_balances``.
+- ``blockchain``: Returned only for section: ``blockchain_balances``. The blockchain for which balances need to be refreshed. Valid values are: ``optimism``, ``eth``.

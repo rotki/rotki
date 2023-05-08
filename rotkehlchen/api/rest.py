@@ -4084,7 +4084,7 @@ class RestAPI():
         """
         evm_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
         try:
-            transaction, tx_receipt = evm_manager.transactions.add_transaction_by_hash(
+            evm_manager.transactions.add_transaction_by_hash(
                 tx_hash=tx_hash,
                 associated_address=associated_address,
             )
@@ -4103,7 +4103,11 @@ class RestAPI():
                 ),
                 status_code=status_code,
             )
-        evm_manager.transactions_decoder.decode_transaction(transaction=transaction, tx_receipt=tx_receipt)  # noqa: E501
+
+        evm_manager.transactions_decoder.decode_transaction_hashes(
+            ignore_cache=True,
+            tx_hashes=[tx_hash],
+        )
         return OK_RESULT
 
     def _get_exchange_staking_or_savings_history(

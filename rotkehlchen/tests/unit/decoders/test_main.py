@@ -160,7 +160,7 @@ def test_no_logs_and_zero_eth(
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-    events = ethereum_transaction_decoder.decode_transaction(
+    events, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
     )
@@ -242,7 +242,7 @@ def test_simple_erc20_transfer(
     tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-    events = tx_decoder.decode_transaction(
+    events, _ = tx_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
     )
@@ -325,7 +325,7 @@ def test_eth_transfer(
     tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-    events = tx_decoder.decode_transaction(
+    events, _ = tx_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
     )
@@ -408,7 +408,7 @@ def test_eth_spend(
     tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-    events = tx_decoder.decode_transaction(
+    events, _ = tx_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
     )
@@ -484,7 +484,7 @@ def test_eth_deposit(
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-    events = ethereum_transaction_decoder.decode_transaction(
+    events, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
     )

@@ -53,21 +53,33 @@ class EnricherContext(DecoderBasicContext):
 class DecodingOutput(NamedTuple):
     """
     Output of decoding functions
-    matched_counterparty is optionally set if needed for decoder rules that matched
+
+    - event can be returned if the decodeing method has generated a new event and it needs to be
+    added to the list of other decoded events.
+    - action_items is a list of actions to be performed later automatically or to be passed
+    in further decoding methods.
+    - matched_counterparty is optionally set if needed for decoder rules that matched
     and is used in post-decoding rules like in the case of balancer
+    - refresh_balances may be set to True if the user's on-chain balances in some protocols has
+    changed (for example if the user has deposited / withdrawn funds from a curve gauge).
     """
     event: Optional['EvmEvent'] = None
     action_items: list[ActionItem] = []
     matched_counterparty: Optional[str] = None
+    refresh_balances: bool = False
 
 
 class TransferEnrichmentOutput(NamedTuple):
     """
     Return structure for the enrichment functions.
-    matched_counterparty is optionally set if needed for enrichment rules
-    and is used in post-decoding rules like in the case of balancer
+
+    - matched_counterparty is optionally set if needed for enrichment rules
+    and is used in post-decoding rules like in the case of balancer.
+    - refresh_balances may be set to True if the user's on-chain balances in some protocols has
+    changed (for example if the user has deposited / withdrawn funds from a curve gauge).
     """
     matched_counterparty: Optional[str] = None
+    refresh_balances: bool = False
 
 
 DEFAULT_DECODING_OUTPUT: Final = DecodingOutput()

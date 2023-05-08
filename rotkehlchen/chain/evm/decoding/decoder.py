@@ -15,6 +15,7 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
 from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -349,21 +350,27 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         assert self._check_correct_types(decoded_events)
         return decoded_events
 
-    def decode_transaction(
+    def _decode_transaction(
             self,
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
-    ) -> list['EvmEvent']:
-        """Decodes an evm transaction and its receipt and saves result in the DB"""
+    ) -> tuple[list['EvmEvent'], bool]:
+        """
+        Decodes an evm transaction and its receipt and saves result in the DB.
+        Returns the list of decoded events and a flag which is True if balances refresh is needed.
+        """
         self.base.reset_sequence_counter()
         # check if any eth transfer happened in the transaction, including in internal transactions
         events = self._maybe_decode_simple_transactions(transaction, tx_receipt)
         action_items: list[ActionItem] = []
         counterparties = set()
+        refresh_balances = False
 
         # decode transaction logs from the receipt
         for tx_log in tx_receipt.logs:
             decoding_output = self.decode_by_address_rules(tx_log, transaction, events, tx_receipt.logs, action_items)  # noqa: E501
+            if decoding_output.refresh_balances is True:
+                refresh_balances = True
             action_items.extend(decoding_output.action_items)
             if decoding_output.matched_counterparty is not None:
                 counterparties.add(decoding_output.matched_counterparty)
@@ -384,6 +391,8 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 all_logs=tx_receipt.logs,
             )
             if rules_decoding_output is not None:
+                if rules_decoding_output.refresh_balances is True:
+                    refresh_balances = True
                 action_items.extend(rules_decoding_output.action_items)
                 if rules_decoding_output.matched_counterparty is not None:
                     counterparties.add(rules_decoding_output.matched_counterparty)
@@ -420,7 +429,8 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 (transaction.tx_hash, self.evm_inquirer.chain_id.serialize_for_db(), HISTORY_MAPPING_STATE_DECODED),  # noqa: E501
             )
 
-        return sorted(events, key=lambda x: x.sequence_index, reverse=False)
+        events = sorted(events, key=lambda x: x.sequence_index, reverse=False)
+        return events, refresh_balances  # Propagate for post processing in the caller
 
     def get_and_decode_undecoded_transactions(
             self,
@@ -454,7 +464,8 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         - RemoteError if there is a problem with contacting a remote to get receipts
         - InputError if the transaction hash is not found in the DB
         """
-        events = []
+        events: list['EvmEvent'] = []
+        refresh_balances = False
         with self.database.conn.read_ctx() as cursor:
             self.reload_data(cursor)
             # If no transaction hashes are passed, decode all transactions.
@@ -480,21 +491,28 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
                     has_premium=True,  # ignore limiting here
                 )
-            events.extend(self.get_or_decode_transaction_events(
+            new_events, new_refresh_balances = self._get_or_decode_transaction_events(
                 transaction=txs[0],
                 tx_receipt=receipt,
                 ignore_cache=ignore_cache,
-            ))
+            )
+            events.extend(new_events)
+            if new_refresh_balances is True:
+                refresh_balances = True
 
+        self._post_process(refresh_balances=refresh_balances)
         return events
 
-    def get_or_decode_transaction_events(
+    def _get_or_decode_transaction_events(
             self,
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
             ignore_cache: bool,
-    ) -> list['EvmEvent']:
-        """Get a transaction's events if existing in the DB or decode them"""
+    ) -> tuple[list['EvmEvent'], bool]:
+        """
+        Get a transaction's events if existing in the DB or decode them.
+        Returns the list of decoded events and a flag which is True if balances refresh is needed.
+        """
         serialized_chain_id = self.evm_inquirer.chain_id.serialize_for_db()
         if ignore_cache is True:  # delete all decoded events
             with self.database.user_write() as write_cursor:
@@ -521,11 +539,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                         ),
                         has_premium=True,  # for this function we don't limit anything
                     )
-                    return events
+                    return events, False
 
         # else we should decode now
-        events = self.decode_transaction(transaction, tx_receipt)
-        return events
+        return self._decode_transaction(transaction=transaction, tx_receipt=tx_receipt)
 
     def _maybe_decode_internal_transactions(
             self,
@@ -804,15 +821,29 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         return DecodingOutput(
             event=transfer,
             matched_counterparty=enrichment_output.matched_counterparty,
+            refresh_balances=enrichment_output.refresh_balances,
         )
+
+    def _post_process(self, refresh_balances: bool) -> None:
+        """
+        Method that handles actions that have to be taken after a batch of transactions gets
+        decoded. Currently may only send a websocket message to the frontend to refresh balances.
+        The caller of decode_transactions should call this method after a batch of transactions
+        has been decoded.
+        """
+        if refresh_balances is True:
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.REFRESH_BALANCES,
+                data={
+                    'type': 'blockchain_balances',
+                    'blockchain': self.evm_inquirer.chain_id.to_blockchain().serialize(),
+                },
+            )
 
     # -- methods to be implemented by child classes --
 
     @abstractmethod
-    def _enrich_protocol_tranfers(
-            self,
-            context: EnricherContext,
-    ) -> TransferEnrichmentOutput:
+    def _enrich_protocol_tranfers(self, context: EnricherContext) -> TransferEnrichmentOutput:
         """
         Decode special transfers made by contract execution for example at the moment
         of depositing assets or withdrawing.

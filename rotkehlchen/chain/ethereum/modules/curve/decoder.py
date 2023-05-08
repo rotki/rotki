@@ -508,6 +508,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         provider = hex_or_bytes_to_address(context.tx_log.topics[1])
         gauge_address = context.tx_log.address
         raw_amount = hex_or_bytes_to_int(context.tx_log.data)
+        found_event_modifying_balances = False
         for event in context.decoded_events:
             crypto_asset = event.asset.resolve_to_crypto_asset()
             if (
@@ -517,6 +518,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             ):
                 event.counterparty = CPT_CURVE
                 event.product = EvmProduct.GAUGE
+                found_event_modifying_balances = True
                 if context.tx_log.topics[0] == GAUGE_DEPOSIT:
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
@@ -526,7 +528,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} from {gauge_address} curve gauge'  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(refresh_balances=found_event_modifying_balances)
 
     def _handle_post_decoding(
             self,
