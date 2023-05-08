@@ -34,11 +34,21 @@ class MockRotkiNotifier():
 
 @pytest.fixture(name='function_scope_initialize_mock_rotki_notifier')
 def fixture_function_scope_initialize_mock_rotki_notifier() -> bool:
+    """
+    This fixture determines whether to initialize msg_aggregator.rotki_notifier.
+    Existence of rotki_notifier affects how warnings and errors are processed in msg_aggregator,
+    and we need different behaviour in different tests.
+    """
     return False
 
 
 @pytest.fixture(scope='session', name='initialize_mock_rotki_notifier')
 def fixture_initialize_mock_rotki_notifier() -> bool:
+    """
+    This fixture determines whether to initialize msg_aggregator.rotki_notifier.
+    Existence of rotki_notifier affects how warnings and errors are processed in msg_aggregator,
+    and we need different behaviour in different tests.
+    """
     return False
 
 
