@@ -8781,8 +8781,8 @@ Getting Eth2 Staking daily stats
    :resjson eth_depositor string: The eth1 address that made the deposit for the validator.
    :resjson timestamp int: The timestamp of the start of the day in GMT for which this entry is.
    :resjson pnl object: The amount of ETH gained or lost in that day along with its usd value. Average price of the day is taken.
-   :resjson string sum_pnl: The sum of PnL in ETH for the current filter. Ignores pagination.
-   :resjson string sum_usd_value: The sum of usd value of ETH PnL for the current filter. Ignores pagination.
+   :resjson string sum_pnl_amount: The sum of PnL in ETH for the current filter and current page.
+   :resjson string sum_pnl_usd_value: The sum of usd value of ETH PnL for the current filter and current page.
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_total: The number of total entries ignoring all filters.
 
