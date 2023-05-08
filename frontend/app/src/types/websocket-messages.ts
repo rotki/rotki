@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { EvmChainAddress } from '@/types/history/events';
 
 export const MESSAGE_WARNING = 'warning';
@@ -106,6 +107,15 @@ export const MissingApiKey = z.object({
 
 export type MissingApiKey = z.infer<typeof MissingApiKey>;
 
+export const RefreshBalancesType = {
+  BLOCKCHAIN_BALANCES: 'blockchain_balances'
+} as const;
+
+export const RefreshBalancesData = z.object({
+  type: z.nativeEnum(RefreshBalancesType),
+  blockchain: z.nativeEnum(Blockchain)
+});
+
 export const SocketMessageType = {
   LEGACY: 'legacy',
   BALANCES_SNAPSHOT_ERROR: 'balance_snapshot_error',
@@ -116,7 +126,8 @@ export const SocketMessageType = {
   DATA_MIGRATION_STATUS: 'data_migration_status',
   EVM_ACCOUNTS_DETECTION: 'evm_accounts_detection',
   NEW_EVM_TOKEN_DETECTED: 'new_evm_token_detected',
-  MISSING_API_KEY: 'missing_api_key'
+  MISSING_API_KEY: 'missing_api_key',
+  REFRESH_BALANCES: 'refresh_balances'
 } as const;
 
 export type SocketMessageType =
@@ -177,6 +188,11 @@ const MissingApiKeyMessage = z.object({
   data: MissingApiKey
 });
 
+const RefreshBalancesMessage = z.object({
+  type: z.literal(SocketMessageType.REFRESH_BALANCES),
+  data: RefreshBalancesData
+});
+
 export const WebsocketMessage = UnknownWebsocketMessage.or(
   LegacyWebsocketMessage
 )
@@ -188,6 +204,7 @@ export const WebsocketMessage = UnknownWebsocketMessage.or(
   .or(DataMigrationStatusMessage)
   .or(MigratedAccountsMessage)
   .or(NewEvmTokenDetectedMessage)
-  .or(MissingApiKeyMessage);
+  .or(MissingApiKeyMessage)
+  .or(RefreshBalancesMessage);
 
 export type WebsocketMessage = z.infer<typeof WebsocketMessage>;
