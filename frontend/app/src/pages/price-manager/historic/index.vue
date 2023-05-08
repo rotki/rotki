@@ -1,9 +1,16 @@
 <script setup lang="ts">
+import {
+  NotificationCategory,
+  type NotificationPayload,
+  Severity
+} from '@rotki/common/lib/messages';
 import { type Nullable } from '@/types';
 import {
   type HistoricalPrice,
-  type HistoricalPriceFormPayload
+  type HistoricalPriceFormPayload,
+  type ManualPricePayload
 } from '@/types/prices';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
 
 const emptyPrice: () => HistoricalPriceFormPayload = () => ({
   fromAsset: '',
@@ -12,7 +19,6 @@ const emptyPrice: () => HistoricalPriceFormPayload = () => ({
   timestamp: 0
 });
 
-const refreshing = ref(false);
 const formData = ref<HistoricalPriceFormPayload>(emptyPrice());
 const showForm = ref(false);
 const filter = reactive<{
@@ -26,10 +32,66 @@ const valid = ref(false);
 const editMode = ref(false);
 
 const { setMessage } = useMessageStore();
-const { editHistoricalPrice, addHistoricalPrice } = useAssetPricesApi();
+const {
+  editHistoricalPrice,
+  addHistoricalPrice,
+  fetchHistoricalPrices,
+  deleteHistoricalPrice
+} = useAssetPricesApi();
 const router = useRouter();
 const route = useRoute();
 const { tc } = useI18n();
+
+const prices: Ref<HistoricalPrice[]> = ref([]);
+const loading: Ref<boolean> = ref(false);
+const { notify } = useNotificationsStore();
+
+const fetchPrices = async (payload?: Partial<ManualPricePayload>) => {
+  set(loading, true);
+  try {
+    set(prices, await fetchHistoricalPrices(payload));
+  } catch (e: any) {
+    const notification: NotificationPayload = {
+      title: tc('price_table.fetch.failure.title'),
+      message: tc('price_table.fetch.failure.message', 0, {
+        message: e.message
+      }),
+      display: true,
+      severity: Severity.ERROR,
+      category: NotificationCategory.DEFAULT
+    };
+    notify(notification);
+  } finally {
+    set(loading, false);
+  }
+};
+
+const { resetHistoricalPricesData } = useHistoricCachePriceStore();
+
+const refresh = async (payload?: {
+  modified?: boolean;
+  additionalEntry?: HistoricalPrice;
+}) => {
+  await fetchPrices(get(filter));
+
+  if (payload?.modified) {
+    const items: HistoricalPrice[] = [...get(prices)];
+    if (payload?.additionalEntry) {
+      items.push(payload.additionalEntry);
+    }
+    resetHistoricalPricesData(items);
+  }
+};
+
+watch(
+  filter,
+  async () => {
+    await refresh();
+  },
+  { deep: true }
+);
+
+onBeforeMount(refresh);
 
 const openForm = (hPrice: HistoricalPrice | null = null) => {
   set(editMode, !!hPrice);
@@ -66,9 +128,7 @@ const managePrice = async (
     }
 
     set(showForm, false);
-    if (!get(refreshing)) {
-      set(refreshing, true);
-    }
+    await refresh({ modified: true });
   } catch (e: any) {
     const values = { message: e.message };
     const title = edit
@@ -82,6 +142,40 @@ const managePrice = async (
       description,
       success: false
     });
+  }
+};
+
+const { show } = useConfirmStore();
+
+const showDeleteConfirmation = (item: HistoricalPrice) => {
+  show(
+    {
+      title: tc('price_table.delete.dialog.title'),
+      message: tc('price_table.delete.dialog.message')
+    },
+    () => deletePrice(item)
+  );
+};
+
+const deletePrice = async (item: HistoricalPrice) => {
+  const { price, ...payload } = item!;
+  try {
+    await deleteHistoricalPrice(payload);
+    await refresh({
+      modified: true,
+      additionalEntry: item
+    });
+  } catch (e: any) {
+    const notification: NotificationPayload = {
+      title: tc('price_table.delete.failure.title'),
+      message: tc('price_table.delete.failure.message', 0, {
+        message: e.message
+      }),
+      display: true,
+      severity: Severity.ERROR,
+      category: NotificationCategory.DEFAULT
+    };
+    notify(notification);
   }
 };
 
@@ -127,10 +221,11 @@ onMounted(async () => {
     </card>
     <historic-price-table
       class="mt-12"
-      :filter="filter"
-      :refreshing="refreshing"
+      :items="prices"
+      :loading="loading"
+      @refresh="refresh($event)"
       @edit="openForm($event)"
-      @refreshed="refreshing = false"
+      @delete="showDeleteConfirmation($event)"
     >
       <v-btn absolute fab top right color="primary" @click="openForm()">
         <v-icon> mdi-plus </v-icon>

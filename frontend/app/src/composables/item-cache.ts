@@ -146,6 +146,7 @@ export const useItemCache = <T>(
     cache,
     isPending,
     retrieve,
-    reset
+    reset,
+    deleteCacheKey
   };
 };
