@@ -1409,8 +1409,9 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
         (1, 'state', 1),
         (74, 'state', 1),
     ]
-    new_history_events = cursor.execute('SELECT * FROM history_events;').fetchall()
-    updated_kraken_events = [
+
+    new_kraken_events = set(cursor.execute('SELECT * FROM history_events WHERE location="B";'))
+    updated_kraken_events = {
         (171, 0, 'SDASD-DSAD-DSAD', 0, 1638706007439, 'B', 'kraken', 'ETH', '10.996', '11843.777435000000', None, 'withdrawal', 'none'),  # noqa: E501
         (172, 0, 'YDASD-YDSAD-YDSAD', 0, 1636553589350, 'B', 'kraken', 'ETH', '5.1', '6145.834', None, 'trade', 'spend'),  # noqa: E501
         (173, 0, 'TXZSDG-IUSNH2-OOAIE3U', 0, 1679243606179, 'B', 'kraken', 'BTC', '0.0922995600', '1391.564299579200', None, 'trade', 'spend'),  # noqa: E501
@@ -1421,16 +1422,12 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
         (1113, 0, 'TSTLG5', 0, 1621508243539, 'B', 'Kraken 1', 'EUR', '37.7000', '0', '', 'trade', 'spend'),  # noqa: E501
         (1114, 0, 'TSTLG5', 2, 1621508243539, 'B', 'Kraken 1', 'EUR', '0.5500', '0', '', 'spend', 'fee'),  # noqa: E501
         (1115, 0, 'TSTLG5', 1, 1621508243543, 'B', 'Kraken 1', 'ETH', '0.0169800000', '0', '', 'trade', 'receive'),  # noqa: E501
-    ]
-    for entry in new_history_events:
-        if entry[5] != 'B':
-            # we only check the kraken events here
-            continue
-        # for kraken events we check also values and subtypes
-        assert entry in updated_kraken_events
+    }
+    assert new_kraken_events == updated_kraken_events
 
     new_evm_info = cursor.execute('SELECT * FROM evm_events_info;').fetchall()
     assert len(new_evm_info) == len(custom_events)
+    new_history_events = cursor.execute('SELECT * FROM history_events;').fetchall()
     for entry in custom_events:
         prefix = '10x' if entry[4] == 'f' else '100x'  # chain id prefix depending on location
         assert (entry[0], 1, prefix + entry[1].hex(), *entry[2:12]) in new_history_events

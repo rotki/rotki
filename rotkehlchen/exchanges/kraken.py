@@ -132,8 +132,8 @@ def history_event_from_kraken(
     """
     group_events = []
     # for receive/spend events they could be airdrops but they could also be instant swaps.
-    # the only way to know if it was a trade is by finding a pair of events receive/spend
-    # this is why we collect them instead of directly pushing to group_events
+    # the only way to know if it was a trade is by finding a pair of receive/spend events.
+    # This is why we collect them instead of directly pushing to group_events
     receive_spend_events: dict[str, list[HistoryEvent]] = defaultdict(list)
     found_unknown_event = False
     current_fee_index = len(events)
@@ -254,7 +254,7 @@ def history_event_from_kraken(
                     event.balance.amount = -event.balance.amount
                 event.event_type = HistoryEventType.TRADE
 
-        # make sure to add all the event to group_events
+        # make sure to add all the events to group_events
         group_events.extend(event_set)
     return group_events, found_unknown_event
 
@@ -1214,5 +1214,13 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             },
             HistoryEventType.SPEND: {
                 HistoryEventSubType.FEE: EventCategory.FEE,
+            },
+            HistoryEventType.STAKING: {
+                HistoryEventSubType.REWARD: EventCategory.RECEIVE,
+                HistoryEventSubType.FEE: EventCategory.FEE,
+            },
+            HistoryEventType.ADJUSTMENT: {
+                HistoryEventSubType.SPEND: EventCategory.SEND,
+                HistoryEventSubType.RECEIVE: EventCategory.RECEIVE,
             },
         }

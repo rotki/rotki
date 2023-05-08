@@ -57,11 +57,9 @@ DEFAULT_EVENT_CATEGORY_MAPPINGS = {
     },
     HistoryEventType.STAKING: {
         HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-        HistoryEventSubType.REWARD: EventCategory.RECEIVE,
         HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
         HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
         HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
-        HistoryEventSubType.FEE: EventCategory.FEE,
         HistoryEventSubType.MEV_REWARD: EventCategory.MEV_REWARD,
         HistoryEventSubType.BLOCK_PRODUCTION: EventCategory.CREATE_BLOCK,
     },
