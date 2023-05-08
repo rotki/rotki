@@ -1,9 +1,4 @@
 <script setup lang="ts">
-import {
-  NotificationCategory,
-  type NotificationPayload,
-  Severity
-} from '@rotki/common/lib/messages';
 import { type DataTableHeader } from 'vuetify';
 import { type HistoricalPrice } from '@/types/prices';
 
@@ -19,14 +14,13 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'edit', item: HistoricalPrice): void;
-  (e: 'refresh', modified: boolean | HistoricalPrice): void;
+  (e: 'delete', item: HistoricalPrice): void;
+  (e: 'refresh'): void;
 }>();
 
 const { items } = toRefs(props);
 
-const { notify } = useNotificationsStore();
 const { tc } = useI18n();
-const { deleteHistoricalPrice } = useAssetPricesApi();
 
 const headers = computed<DataTableHeader[]>(() => [
   {
@@ -65,39 +59,11 @@ const headers = computed<DataTableHeader[]>(() => [
 const edit = (item: HistoricalPrice) => {
   emit('edit', item);
 };
-const refresh = (modified: boolean | HistoricalPrice = false) =>
-  emit('refresh', modified);
 
-const deletePrice = async (item: HistoricalPrice) => {
-  const { price, ...payload } = item!;
-  try {
-    await deleteHistoricalPrice(payload);
-    await refresh(item);
-  } catch (e: any) {
-    const notification: NotificationPayload = {
-      title: tc('price_table.delete.failure.title'),
-      message: tc('price_table.delete.failure.message', 0, {
-        message: e.message
-      }),
-      display: true,
-      severity: Severity.ERROR,
-      category: NotificationCategory.DEFAULT
-    };
-    notify(notification);
-  }
+const deleteItem = (item: HistoricalPrice) => {
+  emit('delete', item);
 };
-
-const { show } = useConfirmStore();
-
-const showDeleteConfirmation = (item: HistoricalPrice) => {
-  show(
-    {
-      title: tc('price_table.delete.dialog.title'),
-      message: tc('price_table.delete.dialog.message')
-    },
-    () => deletePrice(item)
-  );
-};
+const refresh = () => emit('refresh');
 </script>
 
 <template>
@@ -138,7 +104,7 @@ const showDeleteConfirmation = (item: HistoricalPrice) => {
           :disabled="loading"
           :delete-tooltip="tc('price_table.actions.delete.tooltip')"
           :edit-tooltip="tc('price_table.actions.edit.tooltip')"
-          @delete-click="showDeleteConfirmation(item)"
+          @delete-click="deleteItem(item)"
           @edit-click="edit(item)"
         />
       </template>
