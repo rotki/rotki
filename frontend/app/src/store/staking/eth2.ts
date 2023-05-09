@@ -74,7 +74,9 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
     }
     const taskType = TaskType.STAKING_ETH2_STATS;
 
-    const { fetchDisabled } = useStatusUpdater(Section.STAKING_ETH2);
+    const { fetchDisabled, setStatus } = useStatusUpdater(
+      Section.STAKING_ETH2_STATS
+    );
 
     if (fetchDisabled(userInitiated)) {
       return false;
@@ -102,8 +104,10 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
         taskMeta,
         true
       );
+      setStatus(Status.LOADED);
       return true;
     } catch (e: any) {
+      setStatus(Status.NONE);
       notify({
         title: t('actions.eth2_staking_stats.error.title').toString(),
         message: t('actions.eth2_staking_stats.error.message', {
