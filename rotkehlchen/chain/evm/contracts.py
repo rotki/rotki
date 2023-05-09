@@ -15,6 +15,7 @@ from typing import (
 )
 
 from eth_typing.abi import Decodable
+from gevent.lock import Semaphore
 from web3 import Web3
 from web3._utils.abi import get_abi_output_types
 from web3.types import BlockIdentifier
@@ -146,6 +147,7 @@ class EvmContracts(Generic[T]):
     def __init__(self, chain_id: T) -> None:
         self.chain_id = chain_id
         self.builtin_database_path = Path(__file__).resolve().parent.parent.parent / 'data' / 'global.db'  # noqa: E501
+        self.packaged_db_lock = Semaphore()
 
     def contract_by_address(
             self,
@@ -175,17 +177,20 @@ class EvmContracts(Generic[T]):
                 return None
 
             # Try to find the contract in the packaged db
-            cursor.execute(f'ATTACH DATABASE "{self.builtin_database_path}" AS packaged_db;')
-            result = cursor.execute(
-                'SELECT contract_data.address, contract_data.chain_id, '
-                'contract_data.deployed_block, contract_abi.name, contract_abi.value FROM '
-                'packaged_db.contract_data LEFT JOIN packaged_db.contract_abi ON '
-                'contract_data.abi=contract_abi.id WHERE contract_data.chain_id=? AND '
-                'contract_data.address=?',
-                bindings,
-            ).fetchone()
-            cursor.execute('DETACH DATABASE "packaged_db"')
+            with self.packaged_db_lock:
+                log.debug(f'Using packaged globaldb to get contract {address} information')
+                cursor.execute(f'ATTACH DATABASE "{self.builtin_database_path}" AS packaged_db;')
+                result = cursor.execute(
+                    'SELECT contract_data.address, contract_data.chain_id, '
+                    'contract_data.deployed_block, contract_abi.name, contract_abi.value FROM '
+                    'packaged_db.contract_data LEFT JOIN packaged_db.contract_abi ON '
+                    'contract_data.abi=contract_abi.id WHERE contract_data.chain_id=? AND '
+                    'contract_data.address=?',
+                    bindings,
+                ).fetchone()
+                cursor.execute('DETACH DATABASE "packaged_db"')
             if result is None:
+                log.debug(f"Couldn't find contract {address} in the packaged globaldb")
                 return None
 
         # Copy the contract to the global db
@@ -195,10 +200,11 @@ class EvmContracts(Generic[T]):
         )
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             write_cursor.execute(
-                'INSERT INTO contract_data(address, chain_id, abi, deployed_block) '
+                'INSERT OR IGNORE INTO contract_data(address, chain_id, abi, deployed_block) '
                 'VALUES (?, ?, ?, ?)',
                 (result[0], result[1], abi_id, result[2]),
             )
+            log.debug(f'Saved contract {address} in the globaldb')
         return EvmContract(
             address=address,
             abi=json.loads(result[4]),  # not handling json error -- assuming DB consistency
