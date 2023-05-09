@@ -61,12 +61,21 @@ const filter: ComputedRef<EthStakingPayload> = computed(() => {
 const premium = usePremium();
 const { t, tc } = useI18n();
 
-const refresh = async (userInitiated = false) => {
+const refreshStats = async (userInitiated: boolean): Promise<void> => {
+  await fetchDailyStats(get(pagination));
+  const success = await syncStakingStats(userInitiated);
+  if (success) {
+    // We unref here to make sure that we use the latest pagination
+    await fetchDailyStats(get(pagination));
+  }
+};
+
+const refresh = async (userInitiated = false): Promise<void> => {
+  const filterBy = get(filter);
   await Promise.allSettled([
-    fetchDailyStats(get(pagination)),
-    fetchRewards(get(filter)),
-    fetchStakingDetails(userInitiated, get(filter)),
-    syncStakingStats(userInitiated)
+    refreshStats(userInitiated),
+    fetchRewards(filterBy),
+    fetchStakingDetails(userInitiated, filterBy)
   ]);
 };
 
