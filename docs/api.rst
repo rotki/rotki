@@ -8620,8 +8620,9 @@ Getting Eth2 Staking details
         "result": [{
               "eth1_depositor": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
               "index": 9,
+	      "has_exited": true,
               "public_key": "0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b",
-              "balance": {"amount": "32.101", "usd_value": "11399"},
+              "balance": {"amount": "0", "usd_value": "0"},
               "performance_1d": {"amount": "0.1", "usd_value": "100"},
               "performance_1w": {"amount": "0.7", "usd_value": "700"},
               "performance_1m": {"amount": "3", "usd_value": "3000"},
@@ -8630,6 +8631,7 @@ Getting Eth2 Staking details
           }, {
               "eth1_depositor": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
               "index": 10,
+	      "has_exited": false,
               "public_key": "0xa256e41f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cf14",
               "balance": {"amount": "32.101", "usd_value": "11399"},
               "performance_1d": {"amount": "0.1", "usd_value": "100"},
@@ -8640,6 +8642,7 @@ Getting Eth2 Staking details
           }, {
               "eth1_depositor": null,
               "index": 155,
+	      "has_exited": false,
               "public_key": "0xa8ff5fc88412d080a297683c25a791ef77eb52d75b265fabab1f2c2591bb927c35818ac6289bc6680ab252787d0ebab3",
               "balance": {"amount": "32", "usd_value": "19000"},
               "performance_1d": {"amount": "0", "usd_value": "0"},
@@ -8655,6 +8658,7 @@ Getting Eth2 Staking details
 
    :resjson eth_depositor [optional]string: The eth1 address that made the deposit for the validator. Can be missing if we can't find it yet.
    :resjson index int: The Eth2 validator index.
+   :resjson has_exited bool: A boolean indicating if the validator has exited.
    :resjson public_key str: The Eth2 validator pulic key.
    :resjson balance object: The balance in ETH of the validator and its usd value
    :resjson performance_1d object: How much has the validator earned in ETH (and USD equivalent value) in the past day.

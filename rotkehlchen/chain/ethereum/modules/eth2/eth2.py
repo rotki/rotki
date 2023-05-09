@@ -199,6 +199,7 @@ class Eth2(EthereumModule):
                         validator_index=None,
                         public_key=validator.public_key,
                         eth1_depositor=address,
+                        has_exited=False,  # should be in deposit queue
                         performance=DEPOSITING_VALIDATOR_PERFORMANCE,
                     ))
                     continue
@@ -230,11 +231,14 @@ class Eth2(EthereumModule):
 
         # Get current balance of all validator indices
         performance_result = self.beaconchain.get_performance(indices)
+        with self.database.conn.read_ctx() as cursor:
+            exited_validator_indices = dbeth2.get_exited_validator_indices(cursor)
         for validator_index, entry in performance_result.items():
             result.append(ValidatorDetails(  # depositor can be None for manually input validator
                 validator_index=validator_index,
                 public_key=index_to_pubkey[validator_index],
                 eth1_depositor=index_to_address.get(validator_index),
+                has_exited=validator_index in exited_validator_indices,
                 performance=entry,
             ))
 
@@ -245,6 +249,7 @@ class Eth2(EthereumModule):
                 validator_index=index,
                 public_key=index_to_pubkey[index],
                 eth1_depositor=index_to_address.get(index),
+                has_exited=False,  # if in deposit queue, it has not exited
                 performance=DEPOSITING_VALIDATOR_PERFORMANCE,
             ))
 
