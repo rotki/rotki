@@ -241,7 +241,7 @@
     ],
     "pnl_csv_with_formulas": true,
     "pnl_csv_have_summary": false,
-    "ssf_0graph_multiplier": 0,
+    "ssf_graph_multiplier": 0,
     "last_data_migration": 5,
     "non_syncing_exchanges": [],
     "cost_basis_method": "lifo",
