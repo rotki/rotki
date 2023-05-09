@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { Balance, Percentage } from '../../index';
+import { type GeneralAccount } from '../../account';
+import { Balance, NumericString, Percentage } from '../../index';
 
 const Eth2DailyStat = z.object({
   validatorIndex: z.number().nonnegative(),
@@ -47,6 +48,11 @@ export interface Eth2DailyStatsPayload {
   readonly onlyCache?: boolean;
 }
 
+export interface EthStakingPayload {
+  validatorIndices?: number[];
+  addresses?: string[];
+}
+
 const Validator = z.object({
   validatorIndex: z.number(),
   publicKey: z.string(),
@@ -62,3 +68,17 @@ export const Eth2Validators = z.object({
 });
 
 export type Eth2Validators = z.infer<typeof Eth2Validators>;
+
+export const Eth2StakingRewards = z.object({
+  withdrawnConsensusLayerRewards: NumericString,
+  executionLayerRewards: NumericString
+});
+
+export type Eth2StakingRewards = z.infer<typeof Eth2StakingRewards>;
+
+export interface Eth2StakingFilter {
+  accounts: GeneralAccount[];
+  validators: Eth2ValidatorEntry[];
+}
+
+export type Eth2StakingFilterType = 'address' | 'validator';

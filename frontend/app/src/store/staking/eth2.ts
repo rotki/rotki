@@ -1,45 +1,29 @@
 import {
-  Eth2DailyStats,
+  type Eth2DailyStats,
   type Eth2DailyStatsPayload,
-  Eth2Details
+  Eth2Details,
+  type Eth2StakingRewards,
+  type EthStakingPayload
 } from '@rotki/common/lib/staking/eth2';
-import omitBy from 'lodash/omitBy';
-import isEqual from 'lodash/isEqual';
+import { type MaybeRef } from '@vueuse/core';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
-const defaultStats = (): Eth2DailyStats => ({
-  entries: [],
-  entriesFound: 0,
-  entriesTotal: 0,
-  sumPnl: zeroBalance()
-});
-
-const defaultPagination = (): Eth2DailyStatsPayload => {
-  const store = useFrontendSettingsStore();
-  const itemsPerPage = store.itemsPerPage;
-
-  return {
-    limit: itemsPerPage,
-    offset: 0,
-    orderByAttributes: ['timestamp'],
-    ascending: [false]
-  };
-};
-
 export const useEth2StakingStore = defineStore('staking/eth2', () => {
-  const details = ref<Eth2Details>([]);
-  const stats = ref<Eth2DailyStats>(defaultStats());
-  const pagination = ref<Eth2DailyStatsPayload>(defaultPagination());
+  const details: Ref<Eth2Details> = ref([]);
+
   const premium = usePremium();
-  const { awaitTask, isTaskRunning } = useTaskStore();
+  const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { t, tc } = useI18n();
 
   const api = useEth2Api();
 
-  const fetchStakingDetails = async (refresh = false): Promise<void> => {
+  const fetchStakingDetails = async (
+    refresh = false,
+    payload: EthStakingPayload = {}
+  ): Promise<void> => {
     if (!get(premium)) {
       return;
     }
@@ -56,7 +40,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
 
     try {
       const taskType = TaskType.STAKING_ETH2;
-      const { taskId } = await api.eth2StakingDetails();
+      const { taskId } = await api.fetchStakingDetails(payload);
       const { result } = await awaitTask<Eth2Details, TaskMeta>(
         taskId,
         taskType,
@@ -80,82 +64,50 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
     setStatus(Status.LOADED);
   };
 
-  const fetchDailyStats = async (refresh = false): Promise<void> => {
-    if (!get(premium)) {
-      return;
-    }
+  const fetchStakingRewards = async (
+    payload: MaybeRef<EthStakingPayload> = {}
+  ): Promise<Eth2StakingRewards> => api.fetchStakingDetailRewards(get(payload));
 
+  const syncStakingStats = async (userInitiated = false): Promise<boolean> => {
+    if (!get(premium)) {
+      return false;
+    }
     const taskType = TaskType.STAKING_ETH2_STATS;
-    const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
+
+    const { fetchDisabled, setStatus } = useStatusUpdater(
       Section.STAKING_ETH2_STATS
     );
 
-    const fetchStats = async (onlyCache: boolean): Promise<Eth2DailyStats> => {
-      const defaults: Eth2DailyStatsPayload = {
-        limit: 0,
-        offset: 0,
-        ascending: [false],
-        orderByAttributes: ['timestamp'],
-        onlyCache
-      };
+    if (fetchDisabled(userInitiated)) {
+      return false;
+    }
 
-      const payload = Object.assign(defaults, {
-        ...get(pagination),
-        onlyCache
-      });
+    const defaults: Eth2DailyStatsPayload = {
+      limit: 0,
+      offset: 0,
+      ascending: [false],
+      orderByAttributes: ['timestamp'],
+      onlyCache: false
+    };
 
-      if (onlyCache) {
-        return await api.eth2Stats(payload);
-      }
-
-      const { taskId } = await api.eth2StatsTask(defaults);
+    try {
+      const { taskId } = await api.refreshStakingStats(defaults);
 
       const taskMeta: TaskMeta = {
         title: t('actions.eth2_staking_stats.task.title').toString(),
         description: t('actions.eth2_staking_stats.task.description').toString()
       };
 
-      const { result } = await awaitTask<Eth2DailyStats, TaskMeta>(
+      await awaitTask<Eth2DailyStats, TaskMeta>(
         taskId,
         taskType,
         taskMeta,
         true
       );
-
-      setStatus(
-        get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
-      );
-
-      return Eth2DailyStats.parse(result);
-    };
-
-    try {
-      const firstLoad = isFirstLoad();
-      const onlyCache = firstLoad ? false : !refresh;
-      if ((get(isTaskRunning(taskType)) || loading()) && !onlyCache) {
-        return;
-      }
-
-      const fetchOnlyCache = async (): Promise<void> => {
-        set(stats, await fetchStats(true));
-      };
-
-      setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
-
-      await fetchOnlyCache();
-
-      if (!onlyCache) {
-        setStatus(Status.REFRESHING);
-        await fetchStats(false);
-        await fetchOnlyCache();
-      }
-
-      setStatus(
-        get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
-      );
+      setStatus(Status.LOADED);
+      return true;
     } catch (e: any) {
-      logger.error(e);
-      resetStatus();
+      setStatus(Status.NONE);
       notify({
         title: t('actions.eth2_staking_stats.error.title').toString(),
         message: t('actions.eth2_staking_stats.error.message', {
@@ -164,42 +116,27 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
         display: true
       });
     }
+
+    return false;
   };
 
-  const updatePagination = async (
-    data: Eth2DailyStatsPayload
-  ): Promise<void> => {
-    const filteredData = omitBy(data, value => value === undefined);
-    if (!isEqual(get(pagination), filteredData)) {
-      set(pagination, filteredData);
-      await fetchDailyStats();
-    }
-  };
+  const fetchStakingStats = async (
+    payload: MaybeRef<Eth2DailyStatsPayload>
+  ): Promise<Eth2DailyStats> => {
+    assert(get(premium));
 
-  const load = async (refresh = false): Promise<void> => {
-    await Promise.allSettled([
-      fetchStakingDetails(refresh),
-      fetchDailyStats(refresh)
-    ]);
-  };
-
-  const reset = (): void => {
-    set(details, []);
-    set(stats, defaultStats());
-    set(pagination, defaultPagination());
-
-    const { resetStatus } = useStatusUpdater(Section.STAKING_ETH2);
-    resetStatus();
-    resetStatus(Section.STAKING_ETH2_DEPOSITS);
-    resetStatus(Section.STAKING_ETH2_STATS);
+    return await api.fetchStakingStats({
+      ...get(payload),
+      onlyCache: true
+    });
   };
 
   return {
     details,
-    stats,
-    updatePagination,
-    load,
-    reset
+    fetchStakingDetails,
+    fetchStakingRewards,
+    fetchStakingStats,
+    syncStakingStats
   };
 });
 

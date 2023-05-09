@@ -398,6 +398,8 @@ declare global {
   const useEmptyFilter: typeof import('./composables/filters/index')['useEmptyFilter']
   const useEmptyOrSome: typeof import('./composables/utils/useEmptyOrSome/index')['useEmptyOrSome']
   const useEth2Api: typeof import('./composables/api/staking/eth2')['useEth2Api']
+  const useEth2DailyStats: typeof import('./composables/staking/eth2/daily-stats')['useEth2DailyStats']
+  const useEth2Rewards: typeof import('./composables/staking/eth2/rewards')['useEth2Rewards']
   const useEth2StakingStore: typeof import('./store/staking/eth2')['useEth2StakingStore']
   const useEthAccountBalances: typeof import('./composables/blockchain/account-balances/eth')['useEthAccountBalances']
   const useEthAccountsStore: typeof import('./store/blockchain/accounts/eth')['useEthAccountsStore']
@@ -1065,6 +1067,8 @@ declare module 'vue' {
     readonly useEmptyFilter: UnwrapRef<typeof import('./composables/filters/index')['useEmptyFilter']>
     readonly useEmptyOrSome: UnwrapRef<typeof import('./composables/utils/useEmptyOrSome/index')['useEmptyOrSome']>
     readonly useEth2Api: UnwrapRef<typeof import('./composables/api/staking/eth2')['useEth2Api']>
+    readonly useEth2DailyStats: UnwrapRef<typeof import('./composables/staking/eth2/daily-stats')['useEth2DailyStats']>
+    readonly useEth2Rewards: UnwrapRef<typeof import('./composables/staking/eth2/rewards')['useEth2Rewards']>
     readonly useEth2StakingStore: UnwrapRef<typeof import('./store/staking/eth2')['useEth2StakingStore']>
     readonly useEthAccountBalances: UnwrapRef<typeof import('./composables/blockchain/account-balances/eth')['useEthAccountBalances']>
     readonly useEthAccountsStore: UnwrapRef<typeof import('./store/blockchain/accounts/eth')['useEthAccountsStore']>

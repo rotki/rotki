@@ -1784,7 +1784,6 @@
     "public_key": "Public Key"
   },
   "eth2_page": {
-    "loading": "Please wait while your ETH staking details are getting loaded...",
     "no_premium": "ETH Staking is",
     "toggle": {
       "depositor": "Depositor",

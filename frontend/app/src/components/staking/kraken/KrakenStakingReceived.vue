@@ -54,7 +54,7 @@ const { t } = useI18n();
             no-icon
             :asset="item.asset"
             :value="getBalance(item)"
-            :price-loading="pricesAreLoading && current"
+            :loading="pricesAreLoading && current"
           />
         </v-col>
       </v-row>
