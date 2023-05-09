@@ -51,8 +51,8 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const historicalPriceOracles: ComputedRef<PriceOracle[]> = computed(
     () => settings.historicalPriceOracles
   );
-  const ssf0graphMultiplier: ComputedRef<number> = computed(
-    () => settings.ssf0graphMultiplier
+  const ssfGraphMultiplier: ComputedRef<number> = computed(
+    () => settings.ssfGraphMultiplier
   );
   const nonSyncingExchanges: ComputedRef<Exchange[]> = computed(
     () => settings.nonSyncingExchanges
@@ -90,7 +90,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     displayDateInLocaltime,
     currentPriceOracles,
     historicalPriceOracles,
-    ssf0graphMultiplier,
+    ssfGraphMultiplier,
     nonSyncingExchanges,
     treatEth2AsEth,
     addressNamePriority,
