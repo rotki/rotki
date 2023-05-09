@@ -1399,7 +1399,7 @@
     "price_in_symbol": "{symbol} 价格",
     "priority": "优先级",
     "protocol": "协议",
-    "rewards": "@:common.rewards",
+    "rewards": "奖励",
     "select_address": "选择地址",
     "total": "总计",
     "tx": "Tx",

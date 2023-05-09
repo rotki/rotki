@@ -1451,7 +1451,7 @@
     "price_in_symbol": "Price in {symbol}",
     "priority": "Priority",
     "protocol": "Protocol",
-    "rewards": "@:common.rewards",
+    "rewards": "Rewards",
     "select_address": "Select address(es)",
     "total": "Total",
     "tx": "Tx",
