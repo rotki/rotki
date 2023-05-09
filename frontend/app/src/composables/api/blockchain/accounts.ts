@@ -241,7 +241,7 @@ export const useBlockchainAccountsApi = () => {
       '/blockchains/ETH2/validators',
       {
         data: snakeCaseTransformer({
-          validators
+          validators: validators.map(({ validatorIndex }) => validatorIndex)
         }),
         validateStatus: validWithSessionStatus
       }
