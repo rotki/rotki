@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`5473` Block production rewards for your validators will now be properly detected, displayed and accounted for in the PnL report.
+* :feature:`4886` Staking MEV rewards for your validators will now be properly detected, displayed and accounted for in the PnL report.
 * :feature:`5933` FTX and FTX US support is removed since the exchanges no longer exist
 * :feature:`5824` Improved support for ENS allowing to decode the version of their contracts that added the name wrapper.
 * :feature:`-` Refunds in ENS renewal transactions will now be properly processed.
@@ -23,6 +25,7 @@ Changelog
 * :bug:`5572` Fix a detection error that caused some uniswap v2 trade edge cases not to be accounted for properly in pnl report.
 * :feature:`5592` Either include fees in the bought assets price or treat them as standalone events depending on the accounting settings.
 * :feature:`-` For known protocols like yearn, curve, uniswap etc, if the on-chain price query fails, external oracles will still be queried in case something is found there.
+* :bug:`5825` Eth staking view overview numbers will no longer be limited to the past year.
 * :bug:`-` Yearn vault price queries will now work more robustly. If the underlying token is not in rotki's DB it will be queried from the chain.
 * :bug:`-` Fixed a bug where balancer icon is not showed as transaction event counterparty.
 * :bug:`5672` Exported csv files after using ACB as the cost basis calculation algorithm will now reflect the same numbers as shown in the app.
