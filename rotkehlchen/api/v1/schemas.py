@@ -1183,11 +1183,11 @@ class ModifiableSettingsSchema(Schema):
     )
     pnl_csv_with_formulas = fields.Bool(load_default=None)
     pnl_csv_have_summary = fields.Bool(load_default=None)
-    ssf_0graph_multiplier = fields.Integer(
+    ssf_graph_multiplier = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
             min=0,
-            error='The snapshot saving frequeny 0graph multiplier should be >= 0',
+            error='The snapshot saving frequency zero graph multiplier should be >= 0',
         ),
         load_default=None,
     )
@@ -1247,7 +1247,7 @@ class ModifiableSettingsSchema(Schema):
             taxable_ledger_actions=data['taxable_ledger_actions'],
             pnl_csv_with_formulas=data['pnl_csv_with_formulas'],
             pnl_csv_have_summary=data['pnl_csv_have_summary'],
-            ssf_0graph_multiplier=data['ssf_0graph_multiplier'],
+            ssf_graph_multiplier=data['ssf_graph_multiplier'],
             non_syncing_exchanges=data['non_syncing_exchanges'],
             cost_basis_method=data['cost_basis_method'],
             treat_eth2_as_eth=data['treat_eth2_as_eth'],

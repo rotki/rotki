@@ -1389,6 +1389,12 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute(
         'SELECT value FROM settings WHERE name="non_syncing_exchanges"',
     ).fetchone()[0] == '[{"name": "Kucoin 1", "location": "kucoin"}, {"name": "FTX 1", "location": "ftx"}]'  # noqa: E501
+    assert cursor.execute(
+        'SELECT value FROM settings WHERE name="ssf_0graph_multiplier"',
+    ).fetchone()[0] == '42'
+    assert cursor.execute(
+        'SELECT value FROM settings WHERE name="ssf_graph_multiplier"',
+    ).fetchone() is None
 
     db_v36.logout()
     # Execute upgrade
@@ -1465,6 +1471,12 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute(  # Check that FTX was deleted from non syncing exchanges
         'SELECT value FROM settings WHERE name="non_syncing_exchanges"',
     ).fetchone()[0] == '[{"name": "Kucoin 1", "location": "kucoin"}]'
+    assert cursor.execute(  # Check the 0graph multiplier setting got updated properly
+        'SELECT value FROM settings WHERE name="ssf_0graph_multiplier"',
+    ).fetchone() is None
+    assert cursor.execute(
+        'SELECT value FROM settings WHERE name="ssf_graph_multiplier"',
+    ).fetchone()[0] == '42'
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

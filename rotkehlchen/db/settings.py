@@ -52,7 +52,7 @@ DEFAULT_TAXABLE_LEDGER_ACTIONS = [
 ]
 DEFAULT_PNL_CSV_WITH_FORMULAS = True
 DEFAULT_PNL_CSV_HAVE_SUMMARY = False
-DEFAULT_SSF_0GRAPH_MULTIPLIER = 0
+DEFAULT_SSF_GRAPH_MULTIPLIER = 0
 DEFAULT_LAST_DATA_MIGRATION = LAST_DATA_MIGRATION
 DEFAULT_COST_BASIS_METHOD = CostBasisMethod.FIFO
 DEFAULT_TREAT_ETH2_AS_ETH = True
@@ -86,7 +86,7 @@ INTEGER_KEYS = (
     'ui_floating_precision',
     'balance_save_frequency',
     'btc_derivation_gap_limit',
-    'ssf_0graph_multiplier',
+    'ssf_graph_multiplier',
     'last_data_migration',
 )
 STRING_KEYS = (
@@ -127,7 +127,7 @@ class DBSettings(NamedTuple):
     taxable_ledger_actions: list[LedgerActionType] = DEFAULT_TAXABLE_LEDGER_ACTIONS
     pnl_csv_with_formulas: bool = DEFAULT_PNL_CSV_WITH_FORMULAS
     pnl_csv_have_summary: bool = DEFAULT_PNL_CSV_HAVE_SUMMARY
-    ssf_0graph_multiplier: int = DEFAULT_SSF_0GRAPH_MULTIPLIER
+    ssf_graph_multiplier: int = DEFAULT_SSF_GRAPH_MULTIPLIER
     last_data_migration: int = DEFAULT_LAST_DATA_MIGRATION
     non_syncing_exchanges: list[ExchangeLocationID] = []
     cost_basis_method: CostBasisMethod = DEFAULT_COST_BASIS_METHOD
@@ -173,7 +173,7 @@ class ModifiableDBSettings(NamedTuple):
     taxable_ledger_actions: Optional[list[LedgerActionType]] = None
     pnl_csv_with_formulas: Optional[bool] = None
     pnl_csv_have_summary: Optional[bool] = None
-    ssf_0graph_multiplier: Optional[int] = None
+    ssf_graph_multiplier: Optional[int] = None
     non_syncing_exchanges: Optional[list[ExchangeLocationID]] = None
     cost_basis_method: Optional[CostBasisMethod] = None
     treat_eth2_as_eth: Optional[bool] = None

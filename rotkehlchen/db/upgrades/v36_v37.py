@@ -319,8 +319,9 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _fix_kraken_events')
 
 
-def trim_daily_stats(write_cursor: 'DBCursor') -> None:
+def _trim_daily_stats(write_cursor: 'DBCursor') -> None:
     """Decreases the amount of data in the daily stats table"""
+    log.debug('Enter _trim_daily_stats')
     table_exists = write_cursor.execute(
         'SELECT COUNT(*) FROM sqlite_master '
         'WHERE type="table" AND name="eth2_daily_staking_details"',
@@ -345,10 +346,12 @@ def trim_daily_stats(write_cursor: 'DBCursor') -> None:
         write_cursor.execute(
             'ALTER TABLE eth2_daily_staking_details_new RENAME TO eth2_daily_staking_details',
         )
+    log.debug('Exit _trim_daily_stats')
 
 
-def remove_ftx_data(write_cursor: 'DBCursor') -> None:
+def _remove_ftx_data(write_cursor: 'DBCursor') -> None:
     """Removes FTX-related settings from the DB"""
+    log.debug('Enter _remove_ftx_data')
     write_cursor.execute(
         'DELETE FROM user_credentials WHERE location IN (?, ?)',
         (Location.FTX.serialize_for_db(), Location.FTXUS.serialize_for_db()),
@@ -379,6 +382,15 @@ def remove_ftx_data(write_cursor: 'DBCursor') -> None:
             'UPDATE settings SET value=? WHERE name="non_syncing_exchanges"',
             (json.dumps(new_values),),
         )
+    log.debug('Exit _remove_ftx_data')
+
+
+def _adjust_user_settings(write_cursor: 'DBCursor') -> None:
+    """Adjust user settings, renaming a key that misbehaves in frontend transformation"""
+    log.debug('Enter _adjust_user_settings')
+    write_cursor.execute(
+        'UPDATE settings SET name="ssf_graph_multiplier" WHERE name="ssf_0graph_multiplier"')
+    log.debug('Exit _adjust_user_settings')
 
 
 def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
@@ -387,7 +399,7 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Replace null history event subtype
     """
     log.debug('Entered userdb v36->v37 upgrade')
-    progress_handler.set_total_steps(7)
+    progress_handler.set_total_steps(8)
     with db.user_write() as write_cursor:
         _create_new_tables(write_cursor)
         progress_handler.new_step()
@@ -399,9 +411,11 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
         _fix_kraken_events(write_cursor)
         progress_handler.new_step()
-        trim_daily_stats(write_cursor)
+        _trim_daily_stats(write_cursor)
         progress_handler.new_step()
-        remove_ftx_data(write_cursor)
+        _remove_ftx_data(write_cursor)
+        progress_handler.new_step()
+        _adjust_user_settings(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finished userdb v36->v36 upgrade')

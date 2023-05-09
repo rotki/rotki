@@ -2259,11 +2259,11 @@ class DBHandler:
                     category=category,
                 ),
             )
-            if settings.ssf_0graph_multiplier == 0 or idx == results_length - 1:
+            if settings.ssf_graph_multiplier == 0 or idx == results_length - 1:
                 continue
 
             next_result_time = results[idx + 1][0]
-            max_diff = settings.balance_save_frequency * HOUR_IN_SECONDS * settings.ssf_0graph_multiplier  # noqa: E501
+            max_diff = settings.balance_save_frequency * HOUR_IN_SECONDS * settings.ssf_graph_multiplier  # noqa: E501
             while next_result_time - entry_time > max_diff:
                 entry_time = entry_time + settings.balance_save_frequency * HOUR_IN_SECONDS
                 if entry_time >= next_result_time:
