@@ -150,6 +150,16 @@ class DBEth2():
         cursor.execute('SELECT * from eth2_validators;')
         return [Eth2Validator.deserialize_from_db(x) for x in cursor]
 
+    def get_exited_validator_indices(self, cursor: 'DBCursor') -> set[int]:
+        """Returns the indices of the tracked validators that we know have exited
+
+        Does so by processing events, so will only return a list as up to date as the events we got
+        """
+        cursor.execute(
+            'SELECT validator_index FROM eth_staking_events_info WHERE is_exit_or_blocknumber=1',
+        )  # checking against literal 1 is safe since block 1 was not mined during PoS
+        return {x[0] for x in cursor}
+
     def add_validators(self, write_cursor: 'DBCursor', validators: list[Eth2Validator]) -> None:  # noqa: E501
         write_cursor.executemany(
             'INSERT OR IGNORE INTO '

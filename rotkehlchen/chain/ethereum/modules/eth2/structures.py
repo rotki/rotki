@@ -217,6 +217,7 @@ class ValidatorDetails(NamedTuple):
     validator_index: Optional[int]
     public_key: str
     eth1_depositor: Optional[ChecksumEvmAddress]
+    has_exited: bool
     performance: ValidatorPerformance
 
     def serialize(self, eth_usd_price: FVal) -> dict[str, Any]:
@@ -224,6 +225,7 @@ class ValidatorDetails(NamedTuple):
             'index': self.validator_index,
             'public_key': self.public_key,
             'eth1_depositor': self.eth1_depositor,
+            'has_exited': self.has_exited,
             **self.performance.serialize(eth_usd_price),
         }
 
