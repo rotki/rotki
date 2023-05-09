@@ -5,7 +5,7 @@ import shutil
 import urllib.parse
 from http import HTTPStatus
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import gevent
 import requests
@@ -19,7 +19,11 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.utils.data_structures import LRUSetCache
 from rotkehlchen.utils.hashing import file_md5
+
+if TYPE_CHECKING is True:
+    from rotkehlchen.greenlets.manager import GreenletManager
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -48,6 +52,24 @@ def check_if_image_is_cached(image_path: Path, match_header: Optional[str]) -> O
     return None
 
 
+def create_image_response(image_path: Path) -> Response:
+    """
+    Returns a response with the image at image_path. It assumes that the file exists
+    May raise:
+    - OSError if the file doesn't exists
+    """
+    with open(image_path, 'rb') as f:
+        image_data = f.read()
+
+    response = make_response(
+        (
+            image_data,
+            HTTPStatus.OK, {'mimetype': 'image/png', 'Content-Type': 'image/png'}),
+    )
+    response.set_etag(hashlib.md5(image_data).hexdigest())
+    return response
+
+
 def maybe_create_image_response(image_path: Optional[Path]) -> Response:
     """Checks whether the file at `image_path` exists.
 
@@ -61,19 +83,10 @@ def maybe_create_image_response(image_path: Optional[Path]) -> Response:
             ),
         )
 
-    with open(image_path, 'rb') as f:
-        image_data = f.read()
-
-    response = make_response(
-        (
-            image_data,
-            HTTPStatus.OK, {'mimetype': 'image/png', 'Content-Type': 'image/png'}),
-    )
-    response.set_etag(hashlib.md5(image_data).hexdigest())
-    return response
+    return create_image_response(image_path)
 
 
-class IconManager():
+class IconManager:
     """
     Manages the icons for all the assets of the application
 
@@ -83,13 +96,19 @@ class IconManager():
     an API call. In the end the right file would be written on disk.
     """
 
-    def __init__(self, data_dir: Path, coingecko: Coingecko) -> None:
+    def __init__(
+            self,
+            data_dir: Path,
+            coingecko: Coingecko,
+            greenlet_manager: 'GreenletManager',
+    ) -> None:
         self.icons_dir = data_dir / 'icons'
         self.custom_icons_dir = self.icons_dir / 'custom'
         self.coingecko = coingecko
         self.icons_dir.mkdir(parents=True, exist_ok=True)
         self.custom_icons_dir.mkdir(parents=True, exist_ok=True)
-        self.failed_asset_ids: set[str] = set()
+        self.failed_asset_ids: LRUSetCache[str] = LRUSetCache(maxsize=256)
+        self.greenlet_manager = greenlet_manager
 
     def iconfile_path(self, asset: Asset) -> Path:
         return self.icons_dir / f'{urllib.parse.quote_plus(asset.identifier)}_small.png'
@@ -157,8 +176,10 @@ class IconManager():
     def get_icon(
             self,
             asset: Asset,
-    ) -> Optional[Path]:
-        """Returns the file path of the requested icon
+    ) -> tuple[Optional[Path], bool]:
+        """
+        Returns the file path of the requested icon and whether it has been scheduled to be
+        queried if the file is not in the system and is possible to obtain it from coingecko.
 
         If the icon can't be found it returns None.
 
@@ -167,10 +188,8 @@ class IconManager():
         If not, all icons of the asset are queried from coingecko and cached
         locally before the requested data are returned.
         """
-        # First search custom icons
-        custom_icon_path = self.custom_iconfile_path(asset)
-        if custom_icon_path is not None:
-            return custom_icon_path
+        if asset.identifier in self.failed_asset_ids:
+            return None, False
 
         # check if the asset is in a collection
         collection_main_asset_id = GlobalDBHandler().get_collection_main_asset(asset.identifier)
@@ -182,7 +201,7 @@ class IconManager():
 
         needed_path = self.iconfile_path(asset_to_query_icon)
         if needed_path.is_file() is True:
-            return needed_path
+            return needed_path, False
 
         # Then our only chance is coingecko
         # If we don't have the image check if this is a valid coingecko asset
@@ -190,15 +209,17 @@ class IconManager():
             asset_to_query_icon = asset_to_query_icon.resolve_to_asset_with_oracles()
             coingecko_id = asset_to_query_icon.to_coingecko()
         except (UnknownAsset, WrongAssetType, UnsupportedAsset):
-            return None
+            return None, False
 
-        if self.query_coingecko_for_icon(asset_to_query_icon, coingecko_id) is False:
-            return None
-
-        if not needed_path.is_file():
-            return None
-
-        return needed_path
+        self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Coingecko icon query',
+            exception_is_error=False,
+            method=self.query_coingecko_for_icon,
+            asset=asset_to_query_icon,
+            coingecko_id=coingecko_id,
+        )
+        return None, True
 
     def _assets_with_coingecko_id(self) -> dict[str, str]:
         """Create a mapping of all the assets identifiers to their coingecko id if it is set"""
@@ -225,7 +246,7 @@ class IconManager():
             str(x.name)[:-10] for x in self.icons_dir.glob('*_small.png') if x.is_file()
         ]
         uncached_asset_ids = (
-            coingecko_integrated_asset_ids - set(cached_asset_ids) - self.failed_asset_ids
+            coingecko_integrated_asset_ids - set(cached_asset_ids) - self.failed_asset_ids.get_values()  # noqa: E501
         )
         log.info(
             f'Periodic task to query coingecko for {batch_size} uncached asset icons. '

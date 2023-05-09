@@ -84,7 +84,7 @@ class AssetResolver():
             log.debug(f'Attempt to resolve asset {identifier} using the packaged database')
             asset = GlobalDBHandler().resolve_asset_from_packaged_and_store(identifier=identifier)
         # Save it in the cache
-        instance.assets_cache.set(identifier, asset)
+        instance.assets_cache.add(identifier, asset)
         return asset
 
     @staticmethod
@@ -108,7 +108,7 @@ class AssetResolver():
             log.debug(f'Attempt to get asset_type for {identifier} using the packaged database')
             asset = GlobalDBHandler().resolve_asset_from_packaged_and_store(identifier=identifier)
             asset_type = asset.asset_type
-        instance.types_cache.set(identifier, asset_type)
+        instance.types_cache.add(identifier, asset_type)
         return asset_type
 
     @staticmethod
@@ -134,7 +134,7 @@ class AssetResolver():
         if identifier in CONSTANT_ASSETS:
             # Check if the version in the packaged globaldb is correct
             resolved_asset = GlobalDBHandler().resolve_asset_from_packaged_and_store(identifier=identifier)  # noqa: E501
-            AssetResolver().assets_cache.set(identifier, resolved_asset)
+            AssetResolver().assets_cache.add(identifier, resolved_asset)
             if isinstance(resolved_asset, expected_type) is True:
                 # resolve_asset returns Asset, but we already narrow type with the if check above
                 return resolved_asset  # type: ignore
