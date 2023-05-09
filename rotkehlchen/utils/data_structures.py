@@ -19,7 +19,7 @@ class LRUCacheWithRemove(Generic[RT]):
             return self.cache[lowered_key]
         return None
 
-    def set(self, key: str, value: RT) -> None:
+    def add(self, key: str, value: RT) -> None:
         self.cache[key.lower()] = value
         if len(self.cache) > self.maxsize:
             self.cache.popitem(last=False)
@@ -33,3 +33,32 @@ class LRUCacheWithRemove(Generic[RT]):
     def clear(self) -> None:
         """Delete all entries in the cache"""
         self.cache.clear()
+
+
+class LRUSetCache(Generic[RT]):
+    """
+    LRU cache that works like a set.
+    Internally it uses an OrderedDict to keep the order that maps to None.
+    None is constant in python and it uses the minimum space possible.
+    """
+
+    def __init__(self, maxsize: int = 512):
+        self.cache: OrderedDict[RT, None] = collections.OrderedDict()
+        self.maxsize: int = maxsize
+
+    def __contains__(self, key: RT) -> bool:
+        return key in self.cache
+
+    def add(self, key: RT) -> None:
+        """Add an item to the cache"""
+        self.cache[key] = None
+        if len(self.cache) > self.maxsize:
+            self.cache.popitem(last=False)
+
+    def remove(self, key: RT) -> None:
+        """Remove an item from the cache"""
+        if key in self.cache:
+            self.cache.pop(key)
+
+    def get_values(self) -> set[RT]:
+        return set(self.cache.keys())

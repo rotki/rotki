@@ -156,7 +156,11 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
-from rotkehlchen.icons import check_if_image_is_cached, maybe_create_image_response
+from rotkehlchen.icons import (
+    check_if_image_is_cached,
+    create_image_response,
+    maybe_create_image_response,
+)
 from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -1371,8 +1375,7 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
-    @staticmethod
-    def edit_user_asset(data: dict[str, Any]) -> Response:
+    def edit_user_asset(self, data: dict[str, Any]) -> Response:
         try:
             GlobalDBHandler().edit_user_asset(data)
         except InputError as e:
@@ -1380,6 +1383,8 @@ class RestAPI():
 
         # Also clear the in-memory cache of the asset resolver to requery DB
         AssetResolver().assets_cache.remove(data['identifier'])
+        # clear the icon cache in case the coingecko id was edited
+        self.rotkehlchen.icon_manager.failed_asset_ids.remove(data['identifier'])
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def delete_asset(self, identifier: str) -> Response:
@@ -1397,6 +1402,8 @@ class RestAPI():
 
         # Also clear the in-memory cache of the asset resolver
         AssetResolver().assets_cache.remove(identifier)
+        # clear the icon cache in case the asset was there
+        self.rotkehlchen.icon_manager.failed_asset_ids.remove(identifier)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def replace_asset(self, source_identifier: str, target_asset: Asset) -> Response:
@@ -1456,8 +1463,7 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
-    @staticmethod
-    def edit_custom_ethereum_token(token: EvmToken) -> Response:
+    def edit_custom_ethereum_token(self, token: EvmToken) -> Response:
         try:
             identifier = GlobalDBHandler().edit_evm_token(token)
         except InputError as e:
@@ -1465,6 +1471,8 @@ class RestAPI():
 
         # Also clear the in-memory cache of the asset resolver to requery DB
         AssetResolver().assets_cache.remove(identifier)
+        # clear the icon cache in case the coingecko id was edited
+        self.rotkehlchen.icon_manager.failed_asset_ids.remove(token.identifier)
 
         return api_response(
             result=_wrap_in_ok_result({'identifier': identifier}),
@@ -1494,6 +1502,8 @@ class RestAPI():
 
         # Also clear the in-memory cache of the asset resolver
         AssetResolver().assets_cache.remove(identifier)
+        # clear the icon cache in case the asset was there
+        self.rotkehlchen.icon_manager.failed_asset_ids.remove(identifier)
 
         return api_response(
             result=_wrap_in_ok_result({'identifier': identifier}),
@@ -2921,8 +2931,19 @@ class RestAPI():
             )
             if response is not None:
                 return response
+            else:
+                # here icon_path comes from asset_icon_path where the existence has been
+                # already checked
+                return create_image_response(image_path=icon_path)
 
-        image_path = self.rotkehlchen.icon_manager.get_icon(asset)
+        image_path, launched_remote_query = self.rotkehlchen.icon_manager.get_icon(asset)
+        if image_path is None and launched_remote_query is True:
+            return make_response(
+                (
+                    b'',
+                    HTTPStatus.ACCEPTED, {'mimetype': 'image/png', 'Content-Type': 'image/png'},
+                ),
+            )
         return maybe_create_image_response(image_path=image_path)
 
     def upload_asset_icon(self, asset: Asset, filepath: Path) -> Response:

@@ -164,7 +164,11 @@ class Rotkehlchen():
         self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
         self.coingecko = Coingecko()
         self.defillama = Defillama()
-        self.icon_manager = IconManager(data_dir=self.data_dir, coingecko=self.coingecko)
+        self.icon_manager = IconManager(
+            data_dir=self.data_dir,
+            coingecko=self.coingecko,
+            greenlet_manager=self.greenlet_manager,
+        )
 
         # Initialize the Inquirer singleton
         Inquirer(

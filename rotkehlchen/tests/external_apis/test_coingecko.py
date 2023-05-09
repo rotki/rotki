@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import patch
+import gevent
 
 import pytest
 
@@ -15,8 +16,8 @@ from rotkehlchen.types import Price
 
 
 @pytest.fixture(name='icon_manager')
-def fixture_icon_manager(data_dir):
-    return IconManager(data_dir=data_dir, coingecko=Coingecko())
+def fixture_icon_manager(data_dir, greenlet_manager):
+    return IconManager(data_dir=data_dir, coingecko=Coingecko(), greenlet_manager=greenlet_manager)
 
 
 def assert_coin_data_same(given, expected, compare_description=False):
@@ -109,24 +110,29 @@ def test_asset_icons_for_collections(icon_manager: IconManager) -> None:
         raise AssertionError(f'Unexpected url {url} in asset collection icons test')
 
     with patch.object(icon_manager.coingecko.session, 'get', wraps=mock_coingecko):
-        icon_dai_op = icon_manager.get_icon(dai_op)
+        icon_dai_op, processed = icon_manager.get_icon(dai_op)
+        gevent.joinall(icon_manager.greenlet_manager.greenlets)
 
     # check that the asset was correctly created
-    assert icon_dai_op is not None
+    assert icon_dai_op is None
+    assert processed is True
     assert icon_path.exists() is True
     assert times_api_was_queried == 2
 
     # Try to get the icon for an asset in the same collection
-    with patch('requests.get', wraps=mock_coingecko):
-        icon_dai_eth = icon_manager.get_icon(A_DAI)
+    with patch.object(icon_manager.coingecko.session, 'get', wraps=mock_coingecko):
+        icon_dai_eth, processed = icon_manager.get_icon(A_DAI)
+        gevent.joinall(icon_manager.greenlet_manager.greenlets)
 
     # check that the api was not queried again and the fail returned is the same
+    assert processed is False
     assert times_api_was_queried == 2
-    assert icon_dai_op == icon_dai_eth
+    assert icon_path == icon_dai_eth
 
     # try to get an asset without collection
     with patch.object(icon_manager.coingecko.session, 'get', wraps=mock_coingecko):
         icon_manager.get_icon(A_ETH)
+        gevent.joinall(icon_manager.greenlet_manager.greenlets)
 
     assert icon_manager.iconfile_path(A_ETH).exists()
     assert times_api_was_queried == 4

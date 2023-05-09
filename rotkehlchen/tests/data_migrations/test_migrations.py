@@ -165,13 +165,13 @@ def test_failed_migration(database):
 @pytest.mark.parametrize('data_migration_version', [2])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_migration_3(database, data_dir):
+def test_migration_3(database, data_dir, greenlet_manager):
     """
     Test that the third data migration for rotki works. This migration removes icons of assets
     that are not valid images and update the list of ignored assets.
     """
     rotki = MockRotkiForMigrations(database)
-    icon_manager = IconManager(data_dir=data_dir, coingecko=None)
+    icon_manager = IconManager(data_dir=data_dir, coingecko=None, greenlet_manager=greenlet_manager)  # noqa: E501
     rotki.icon_manager = icon_manager
     btc_iconpath = _create_invalid_icon(A_BTC.identifier, icon_manager.icons_dir)
     eth_iconpath = _create_invalid_icon(A_ETH.identifier, icon_manager.icons_dir)
@@ -190,13 +190,13 @@ def test_migration_3(database, data_dir):
 @pytest.mark.parametrize('data_migration_version', [4])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_migration_5(database, data_dir):
+def test_migration_5(database, data_dir, greenlet_manager):
     """
     Test that the fifth data migration for rotki works.
     - Create two fake icons and check that the file name was correctly updated
     """
     rotki = MockRotkiForMigrations(database)
-    icon_manager = IconManager(data_dir=data_dir, coingecko=None)
+    icon_manager = IconManager(data_dir=data_dir, coingecko=None, greenlet_manager=greenlet_manager)  # noqa: E501
     rotki.icon_manager = icon_manager
     migration_patch = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
