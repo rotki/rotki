@@ -724,6 +724,11 @@
           "title": "定期客户端查询"
         }
       },
+      "refresh_general_cache": {
+        "task": {
+          "title": "刷新通用缓存 (Curve, MakerDAO, Yearn)"
+        }
+      },
       "tag_add": {
         "error": {
           "title": "添加标签"
@@ -3603,6 +3608,7 @@
     "all_modules": "所有模块",
     "ethereum_transactions": "以太坊交易",
     "exchange": "交换：{name}",
+    "general_cache": "一般缓存 (Curve, MakerDAO, Yearn)",
     "label": "选择数据源",
     "module": "模块：{name}",
     "tooltip": "清除所选源的缓存数据"

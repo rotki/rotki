@@ -726,6 +726,11 @@
           "title": "Periodic client query"
         }
       },
+      "refresh_general_cache": {
+        "task": {
+          "title": "Refresh general cache (Curve, MakerDAO, Yearn)"
+        }
+      },
       "tag_add": {
         "error": {
           "title": "Adding tag"
@@ -3482,6 +3487,7 @@
     "all_modules": "All Modules",
     "ethereum_transactions": "Evm Transactions",
     "exchange": "Exchange: {name}",
+    "general_cache": "General cache (Curve, MakerDAO, Yearn)",
     "label": "Select a data source",
     "module": "Module: {name}",
     "tooltip": "Purge the cached data for the selected source"
