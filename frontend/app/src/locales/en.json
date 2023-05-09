@@ -3372,7 +3372,7 @@
         "one_year": "1Y"
       },
       "rewards": {
-        "withdrawn_cl": "Consensus Layer (Withdrawn)",
+        "withdrawn_cl": "Withdrawn from consensus layer",
         "el": "Execution Layer"
       },
       "staking_per_beacon_chain": "Staking per beacon chain validator",
