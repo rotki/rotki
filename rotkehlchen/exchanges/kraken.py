@@ -1091,9 +1091,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         of history events. Internally we look for the query range that needs to be queried in the
         range (start_ts, end_ts) to avoid double quering the kraken API when this method is called
         for deposits/withdrawals and trades. The events queried are then stored in the database.
+
         If notify_events is True we send websocket messages to notify the current interval of
-        time being queried. By default is set to False to avoid sending unwanted message when this
-        funtion is called internally and not directly from the UI by the user.
+        time being queried. By default it is set to False to avoid sending unwanted message when
+        this funtion is called internally and not directly from the UI by the user.
 
         Returns true if any query to the kraken API was not successful
         """
