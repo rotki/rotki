@@ -45,7 +45,7 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
-import TableFilter from '@/components/history/filtering/TableFilter.vue';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';

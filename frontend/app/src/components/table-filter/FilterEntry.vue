@@ -1,19 +1,16 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type SearchMatcher } from '@/types/filtering';
 
-defineProps({
-  matcher: {
-    required: true,
-    type: Object as PropType<SearchMatcher<any>>
-  }
-});
+defineProps<{
+  matcher: SearchMatcher<any>;
+  active: boolean;
+}>();
 
-const emit = defineEmits<{ (e: 'click', key: string): void }>();
+const emit = defineEmits<{ (e: 'click', matcher: SearchMatcher<any>): void }>();
 const css = useCssModule();
 
-const click = (key: string) => {
-  emit('click', key);
+const click = (matcher: SearchMatcher<any>) => {
+  emit('click', matcher);
 };
 </script>
 
@@ -22,9 +19,13 @@ const click = (key: string) => {
     <v-btn
       text
       color="primary"
-      :class="css.button"
       class="text-none text-body-1"
-      @click="click(matcher.key)"
+      block
+      :class="{
+        [css.button]: true,
+        [css.selected]: active
+      }"
+      @click="click(matcher)"
     >
       <span class="text-start" :class="css.wrapper">
         <span class="font-weight-medium"> {{ matcher.key }}: </span>
@@ -39,9 +40,8 @@ const click = (key: string) => {
   </div>
 </template>
 
-<style module>
+<style module lang="scss">
 .button {
-  width: 100%;
   height: auto !important;
   padding: 0.5rem !important;
   display: block;
@@ -55,5 +55,9 @@ const click = (key: string) => {
 
 .description {
   white-space: normal;
+}
+
+.selected {
+  background-color: var(--v-primary-lighten4);
 }
 </style>

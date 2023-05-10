@@ -24,7 +24,7 @@ enum HistoryEventFilterKeys {
   PROTOCOL = 'protocol',
   EVENT_TYPE = 'event_type',
   LOCATION = 'location',
-  ENTRY_TYPE = 'entry_type',
+  ENTRY_TYPE = 'type',
   TX_HASHES = 'tx_hash',
   VALIDATOR_INDICES = 'validator_index'
 }
@@ -37,8 +37,8 @@ enum HistoryEventFilterValueKeys {
   EVENT_TYPE = 'eventTypes',
   LOCATION = 'location',
   ENTRY_TYPE = 'entryTypes',
-  TX_HASHES = 'tx_hashes',
-  VALIDATOR_INDICES = 'validator_indices'
+  TX_HASHES = 'txHashes',
+  VALIDATOR_INDICES = 'validatorIndices'
 }
 
 export type Matcher = SearchMatcher<
@@ -149,7 +149,8 @@ export const useHistoryEventFilter = (
         multiple: true,
         suggestions: () =>
           entryTypesVal ?? Object.values(HistoryEventEntryType),
-        validate: (type: string) => !!type
+        validate: (type: string) => !!type,
+        allowExclusion: true
       });
     }
 
@@ -204,10 +205,53 @@ export const useHistoryEventFilter = (
     [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString
   });
 
+  const transformExclusionFilters = (filters: Filters) => {
+    const matchersVal: Matcher[] = get(matchers).filter(
+      item => 'string' in item && item.allowExclusion
+    );
+
+    const newFilters = { ...filters };
+    matchersVal.forEach(matcher => {
+      if (!('string' in matcher)) {
+        return;
+      }
+      const keyValue = matcher.keyValue;
+      if (keyValue && keyValue in newFilters) {
+        const data = newFilters[keyValue];
+        if (!data) {
+          return;
+        }
+
+        let formattedData: string | string[] = data;
+
+        const allData = matcher.suggestions();
+
+        if (typeof data === 'string' && data.startsWith('!')) {
+          formattedData = allData.filter(item => item !== data.substring(1));
+        } else if (
+          Array.isArray(data) &&
+          data.length > 0 &&
+          data[0].startsWith('!')
+        ) {
+          const newArray = data.map(item =>
+            item.startsWith('!') ? item.substring(1) : item
+          );
+
+          formattedData = allData.filter(item => !newArray.includes(item));
+        }
+
+        newFilters[keyValue] = formattedData;
+      }
+    });
+
+    return newFilters;
+  };
+
   return {
     matchers,
     filters,
     updateFilter,
+    transformExclusionFilters,
     RouteFilterSchema
   };
 };

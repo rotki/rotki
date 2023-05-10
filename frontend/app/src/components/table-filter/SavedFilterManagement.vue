@@ -144,7 +144,7 @@ const css = useCssModule();
                 small
                 class="ma-1"
               >
-                <suggested-item :suggestion="filter" />
+                <suggested-item chip :suggestion="filter" />
               </v-chip>
             </div>
             <div class="d-flex">

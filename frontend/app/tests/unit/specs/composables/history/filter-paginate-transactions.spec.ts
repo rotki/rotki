@@ -254,5 +254,53 @@ describe('composables::history/filter-paginate', () => {
 
       expect(get(filters).counterparties).toStrictEqual(get(protocols));
     });
+
+    test('exclusion filters', async () => {
+      const fetchHistoryEvents = vi.fn();
+
+      const { userAction, fetchData, isLoading, updateFilter } =
+        usePaginationFilters<
+          HistoryEvent,
+          HistoryEventRequestPayload,
+          HistoryEvent,
+          Collection<HistoryEvent>,
+          Filters,
+          Matcher
+        >(
+          locationOverview,
+          mainPage,
+          () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
+          fetchHistoryEvents,
+          {
+            onUpdateFilters,
+            extraParams,
+            customPageParams
+          }
+        );
+
+      updateFilter({
+        location: 'protocols',
+        entryTypes: ['!evm event']
+      });
+
+      set(userAction, true);
+      fetchData().catch(() => {});
+      expect(get(isLoading)).toBe(true);
+      await flushPromises();
+      expect(get(isLoading)).toBe(false);
+
+      expect(fetchHistoryEvents).toHaveBeenCalledWith(
+        expect.objectContaining({
+          value: expect.objectContaining({
+            entryTypes: [
+              'history event',
+              'eth withdrawal event',
+              'eth block event',
+              'eth deposit event'
+            ]
+          })
+        })
+      );
+    });
   });
 });

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type AssetInfo } from '@rotki/common/lib/data';
+import { type ComputedRef } from 'vue';
 import {
   type MatchedKeyword,
   type SavedFilterLocation,
@@ -37,9 +38,9 @@ const suggestedFilter = ref<Suggestion>({
 });
 const validKeys = computed(() => get(matchers).map(({ key }) => key));
 
-const searchSuggestion = computed(() => {
+const selectedMatcher = computed(() => {
   const searchKey = splitSearch(get(search));
-  const key = get(validKeys).find(value => value.startsWith(searchKey[0]));
+  const key = get(validKeys).find(value => value === searchKey.key);
   return matcherForKey(key) ?? null;
 });
 
@@ -55,13 +56,10 @@ const matcherForKey = (searchKey: string | undefined) =>
 const matcherForKeyValue = (searchKey: string | undefined) =>
   get(matchers).find(({ keyValue }) => keyValue === searchKey);
 
-const appendToSearch = (key: string) => {
-  const filter = `${key}:`;
-  if (get(search)) {
-    search.value += ` ${filter}`;
-  } else {
-    set(search, filter);
-  }
+const setSearchToMatcherKey = (matcher: SearchMatcher<any>) => {
+  const allowExclusion = 'string' in matcher && matcher.allowExclusion;
+  const filter = `${matcher.key}${allowExclusion ? '' : '='}`;
+  set(search, filter);
   get(input).focus();
 };
 
@@ -84,6 +82,10 @@ function updateMatches(pairs: Suggestion[]) {
       }
       if (matcher.validate(entry.value)) {
         transformedKeyword = matcher.serializer?.(entry.value) || entry.value;
+
+        if (entry.exclude) {
+          transformedKeyword = `!${transformedKeyword}`;
+        }
       } else {
         continue;
       }
@@ -113,28 +115,49 @@ function updateMatches(pairs: Suggestion[]) {
 }
 
 const applyFilter = (filter: Suggestion) => {
-  const newSelection = [...get(selection)];
+  let newSelection = [...get(selection)];
   const key = filter.key;
   const index = newSelection.findIndex(value => value.key === key);
   const matcher = matcherForKey(key);
   assert(matcher);
 
-  if (index >= 0 && !matcher.multiple) {
-    newSelection[index] = filter;
-  } else {
-    newSelection.push(filter);
+  if (
+    index >= 0 &&
+    (!matcher.multiple || newSelection[index].exclude !== filter.exclude)
+  ) {
+    newSelection = newSelection.filter(item => item.key !== key);
   }
+
+  newSelection.push(filter);
 
   updateMatches(newSelection);
   set(search, '');
 };
 
+const filteredMatchers: ComputedRef<SearchMatcher<any>[]> = computed(() =>
+  get(matchers).filter(
+    ({ key, multiple }) =>
+      (!get(usedKeys).includes(key) || multiple) &&
+      key.startsWith(get(search) || '')
+  )
+);
+
 const applySuggestion = async () => {
+  const selectedIndex = get(selectedSuggestion);
+  if (!get(selectedMatcher)) {
+    const filteredMatchersVal = get(filteredMatchers);
+    if (filteredMatchersVal.length >= selectedIndex) {
+      setSearchToMatcherKey(filteredMatchersVal[selectedIndex]);
+    }
+    return;
+  }
+
   const filter = get(suggestedFilter);
   if (filter.value) {
     nextTick(() => applyFilter(filter));
   } else {
-    const [key, keyword] = splitSearch(get(search));
+    const { key, value: keyword, exclude } = splitSearch(get(search));
+
     const matcher = matcherForKey(key);
     let asset = false;
     if (matcher) {
@@ -159,7 +182,8 @@ const applySuggestion = async () => {
             asset,
             value: keyword,
             index: 0,
-            total: 1
+            total: 1,
+            exclude
           })
         );
       }
@@ -176,11 +200,7 @@ onMounted(() => {
   get(input).onTabDown = function (e: KeyboardEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (get(selectedSuggestion) < get(suggestedFilter).total - 1) {
-      selectedSuggestion.value += 1;
-    } else {
-      set(selectedSuggestion, 0);
-    }
+    moveSuggestion(false);
   };
   get(input).onEnterDown = function (e: KeyboardEvent) {
     e.preventDefault();
@@ -193,15 +213,19 @@ watch(search, () => {
 });
 
 const moveSuggestion = (up: boolean) => {
+  const total = get(selectedMatcher)
+    ? get(suggestedFilter).total
+    : get(filteredMatchers).length;
+
   let position = get(selectedSuggestion);
   const move = up ? -1 : 1;
 
   position += move;
 
-  if (position >= get(suggestedFilter).total) {
+  if (position >= total) {
     set(selectedSuggestion, 0);
   } else if (position < 0) {
-    set(selectedSuggestion, get(suggestedFilter).total - 1);
+    set(selectedSuggestion, total - 1);
   } else {
     set(selectedSuggestion, position);
   }
@@ -217,8 +241,10 @@ const getDisplayValue = (suggestion: Suggestion) => {
   return value.isCustomAsset ? value.name : value.symbol;
 };
 
-const getSuggestionText = (suggestion: Suggestion) =>
-  `${suggestion.key}: ${getDisplayValue(suggestion)}`;
+const getSuggestionText = (suggestion: Suggestion) => {
+  const operator = suggestion.exclude ? '!=' : '=';
+  return `${suggestion.key}${operator}${getDisplayValue(suggestion)}`;
+};
 
 const selectItem = (suggestion: Suggestion) => {
   nextTick(() => {
@@ -250,8 +276,15 @@ const restoreSelection = (matches: MatchedKeyword<any>): void => {
         }
       }
 
+      let exclude = false;
       if (!deserializedValue) {
-        deserializedValue = foundMatchers.deserializer?.(value) || value;
+        let normalizedValue = value;
+        if (!asset && value.startsWith('!')) {
+          normalizedValue = value.substring(1);
+          exclude = true;
+        }
+        deserializedValue =
+          foundMatchers.deserializer?.(normalizedValue) || normalizedValue;
       }
 
       newSelection.push({
@@ -259,7 +292,8 @@ const restoreSelection = (matches: MatchedKeyword<any>): void => {
         value: deserializedValue,
         asset,
         total: 1,
-        index: 0
+        index: 0,
+        exclude
       });
     });
   });
@@ -303,7 +337,7 @@ watch(matches, matches => {
         <v-chip
           label
           small
-          class="font-weight-medium"
+          class="font-weight-medium px-2"
           :input-value="selected"
           close
           @click:close="removeSelection(item)"
@@ -312,22 +346,21 @@ watch(matches, matches => {
             selectItem(item);
           "
         >
-          <suggested-item :suggestion="item" />
+          <suggested-item chip :suggestion="item" />
         </v-chip>
       </template>
       <template #no-data>
         <filter-dropdown
-          :matchers="matchers"
+          :matchers="filteredMatchers"
           :used="usedKeys"
           :keyword="search"
-          :suggestion="searchSuggestion"
+          :selected-matcher="selectedMatcher"
           :selection="selection"
           :selected-suggestion="selectedSuggestion"
           :location="location"
           @apply:filter="applyFilter($event)"
           @suggest="suggestedFilter = $event"
-          @click="appendToSearch($event)"
-          @update:matches="updateMatches($event)"
+          @click="setSearchToMatcherKey($event)"
         />
       </template>
     </v-combobox>

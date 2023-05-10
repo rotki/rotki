@@ -15,12 +15,14 @@ interface BaseMatcher<K, KV = void> {
   readonly multiple?: boolean;
 }
 
-interface StringSuggestionMatcher<K, KV = void> extends BaseMatcher<K, KV> {
+export interface StringSuggestionMatcher<K, KV = void>
+  extends BaseMatcher<K, KV> {
   readonly string: true;
   readonly suggestions: StringSuggestion;
   readonly validate: (value: string) => boolean;
   readonly serializer?: (value: string) => string;
   readonly deserializer?: (value: string) => string;
+  readonly allowExclusion?: boolean;
 }
 
 interface AssetSuggestionMatcher<K, KV = void> extends BaseMatcher<K, KV> {
@@ -39,7 +41,8 @@ export type MatchedKeyword<T extends string> = {
 
 export const BaseSuggestion = z.object({
   key: z.string(),
-  value: AssetInfoWithId.or(z.string())
+  value: AssetInfoWithId.or(z.string()),
+  exclude: z.boolean().optional()
 });
 
 export type BaseSuggestion = z.infer<typeof BaseSuggestion>;
