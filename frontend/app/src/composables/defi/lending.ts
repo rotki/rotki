@@ -55,6 +55,7 @@ export const useDefiLending = () => {
   const { balances: liquityBalances } = storeToRefs(liquityStore);
 
   const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_LENDING);
+  const { scrambleHex, scrambleIdentifier } = useScramble();
 
   const loans = (protocols: DefiProtocol[] = []): ComputedRef<DefiLoan[]> =>
     computed(() => {
@@ -67,6 +68,7 @@ export const useDefiLending = () => {
             value =>
               ({
                 identifier: `${value.identifier}`,
+                label: `${scrambleIdentifier(value.identifier)}`,
                 protocol: DefiProtocol.MAKERDAO_VAULTS
               } satisfies DefiLoan)
           )
@@ -85,8 +87,11 @@ export const useDefiLending = () => {
 
           for (const asset of assets) {
             const symbol = get(assetInfo(asset))?.symbol ?? asset;
+            const formattedAddress = truncateAddress(scrambleHex(address), 6);
+
             loans.push({
-              identifier: `${symbol} - ${truncateAddress(address, 6)}`,
+              identifier: `${symbol} - ${address}`,
+              label: `${symbol} - ${formattedAddress}`,
               protocol: DefiProtocol.AAVE,
               owner: address,
               asset
@@ -109,8 +114,11 @@ export const useDefiLending = () => {
 
           for (const asset of historyAssets) {
             const symbol = get(assetInfo(asset))?.symbol ?? asset;
+            const formattedAddress = truncateAddress(scrambleHex(address), 6);
+
             loans.push({
-              identifier: `${symbol} - ${truncateAddress(address, 6)}`,
+              identifier: `${symbol} - ${address}`,
+              label: `${symbol} - ${formattedAddress}`,
               protocol: DefiProtocol.AAVE,
               owner: address,
               asset
@@ -149,8 +157,11 @@ export const useDefiLending = () => {
           )
           .forEach(({ address, asset }) => {
             const symbol = get(assetInfo(asset))?.symbol ?? asset;
+            const formattedAddress = truncateAddress(scrambleHex(address), 6);
+
             loans.push({
-              identifier: `${symbol} - ${truncateAddress(address, 6)}`,
+              identifier: `${symbol} - ${address}`,
+              label: `${symbol} - ${formattedAddress}`,
               protocol: DefiProtocol.COMPOUND,
               owner: address,
               asset
@@ -164,12 +175,13 @@ export const useDefiLending = () => {
 
         loans.push(
           ...balanceAddress.filter(uniqueStrings).map(address => {
-            let troveId = 0;
-            if (balances[address]) {
-              troveId = balances[address].troveId;
-            }
+            const troveId = balances[address] ? balances[address].troveId : 0;
+            const formattedTroveId = scrambleIdentifier(troveId);
+            const formattedAddress = truncateAddress(scrambleHex(address), 6);
+
             return {
-              identifier: `Trove ${troveId} - ${truncateAddress(address, 6)}`,
+              identifier: `Trove ${troveId} - ${address}`,
+              label: `Trove ${formattedTroveId} - ${formattedAddress}`,
               protocol: DefiProtocol.LIQUITY,
               owner: address,
               asset: ''

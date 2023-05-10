@@ -1,19 +1,15 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import { type ComputedRef, type PropType } from 'vue';
+import { type ComputedRef } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 
-const props = defineProps({
-  vault: {
-    required: true,
-    type: Object as PropType<MakerDAOVaultModel>
-  }
-});
+const props = defineProps<{
+  vault: MakerDAOVaultModel;
+}>();
 
 const { vault } = toRefs(props);
-const { scrambleData } = storeToRefs(useSessionSettingsStore());
 const { premium } = storeToRefs(usePremiumStore());
 const { tc } = useI18n();
 
@@ -25,10 +21,12 @@ const totalInterestOwed: ComputedRef<BigNumber> = computed(() => {
   return Zero;
 });
 
+const { scrambleIdentifier } = useScramble();
+
 const header = computed(() => {
   const makerVault = get(vault);
   return {
-    identifier: get(scrambleData) ? '-' : makerVault.identifier,
+    identifier: scrambleIdentifier(makerVault.identifier),
     collateralType: makerVault.collateralType
   };
 });

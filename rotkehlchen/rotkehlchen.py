@@ -866,10 +866,10 @@ class Rotkehlchen():
             blockchain_result = self.chains_aggregator.query_balances(
                 blockchain=None,
                 ignore_cache=ignore_cache,
-            )
+            )  # copies below since if cache is used we end up modifying the balance sheet object
             if len(blockchain_result.totals.assets) != 0:
-                balances[str(Location.BLOCKCHAIN)] = blockchain_result.totals.assets
-            liabilities = blockchain_result.totals.liabilities
+                balances[str(Location.BLOCKCHAIN)] = blockchain_result.totals.assets.copy()
+            liabilities = blockchain_result.totals.liabilities.copy()
         except (RemoteError, EthSyncError) as e:
             problem_free = False
             liabilities = {}

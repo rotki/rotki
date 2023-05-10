@@ -29,6 +29,7 @@ Changelog
 * :bug:`-` Yearn vault price queries will now work more robustly. If the underlying token is not in rotki's DB it will be queried from the chain.
 * :bug:`-` Fixed a bug where balancer icon is not showed as transaction event counterparty.
 * :bug:`5672` Exported csv files after using ACB as the cost basis calculation algorithm will now reflect the same numbers as shown in the app.
+* :bug:`-` Fixed an issue importing events from BlockFi when the assets' symbol use lowercase instead of uppercase.
 * :bug:`-` Ethereum transactions claiming COMP after comptroller's COMP ran out and has been refilled will now be decoded correctly as COMP rewards.
 * :bug:`-` Fixed an edge case where removing an EVM account multiple times in a row, while a transactions querying task ran, would result in an error.
 * :bug:`-` Ignoring forked assets ETC, BCH and BSV for accounting should now also remove any pre-fork references of them and completely omit them from the PnL report.
@@ -39,6 +40,7 @@ Changelog
 * :bug:`5697` Tokens returned to the user when decoding Balancer V1 deposits won't be detected as received wrapped tokens.
 * :bug:`5749` Phishing zero token transfer transactions will now be hidden and ignored.
 * :bug:`5717` Swaps will now be processed in accounting correctly even if set manually.
+* :bug:`5847` Dev users: Querying the all balances api endpoint multiple times within 15 mins under certain conditions will no longer double some asset balances.
 * :bug:`-` If a premium user changes their rotki password they will now be able to pull remote data without restarting the app.
 * :bug:`-` Now there won't be errors querying balances when an address owning a Makerdao vault is deleted.
 * :bug:`-` Fixed an issue where reports couldn't be exported if there was special characters in notes or assets and the user locale was not compatible.

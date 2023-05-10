@@ -1754,9 +1754,6 @@
     "filter_specific": "显示所选协议的结果",
     "label": "过滤协议"
   },
-  "defi_selector_item": {
-    "vault": "Maker Vault"
-  },
   "defi_wizard": {
     "steps": {
       "select_accounts": {

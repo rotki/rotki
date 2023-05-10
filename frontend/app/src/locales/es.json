@@ -1711,9 +1711,6 @@
     "filter_specific": "Showing results for selected protocol",
     "label": "Filter protocol(s)"
   },
-  "defi_selector_item": {
-    "vault": "Maker Vault"
-  },
   "defi_wizard": {
     "steps": {
       "select_accounts": {

@@ -989,6 +989,7 @@ def asset_from_blockfi(symbol: str) -> AssetWithOracles:
     if not isinstance(symbol, str):
         raise DeserializationError(f'Got non-string type {type(symbol)} for blockfi asset')
 
+    symbol = symbol.upper()
     name = BLOCKFI_TO_WORLD.get(symbol, symbol)
     return symbol_to_asset_or_token(name)
 

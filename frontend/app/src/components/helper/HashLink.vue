@@ -56,10 +56,6 @@ const aliasName = computed<string | null>(() => {
 
 const displayText = computed<string>(() => {
   const textVal = get(text);
-  if (!get(scrambleData)) {
-    return textVal;
-  }
-
   return scrambleHex(textVal);
 });
 

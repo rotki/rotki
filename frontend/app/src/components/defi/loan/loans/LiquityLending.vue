@@ -25,6 +25,7 @@ const liquidationPrice: ComputedRef<BigNumber | null> = computed(
 );
 const premium = usePremium();
 const { tc } = useI18n();
+const { scrambleIdentifier } = useScramble();
 const chain = Blockchain.ETH;
 </script>
 
@@ -32,7 +33,11 @@ const chain = Blockchain.ETH;
   <v-row>
     <v-col cols="12">
       <loan-header class="mt-8 mb-6" :owner="loan.owner">
-        {{ tc('liquity_lending.header', 0, { troveId: loan.balance.troveId }) }}
+        {{
+          tc('liquity_lending.header', 0, {
+            troveId: scrambleIdentifier(loan.balance.troveId)
+          })
+        }}
       </loan-header>
       <v-row no-gutters>
         <v-col cols="12" md="6" class="pe-md-4">

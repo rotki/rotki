@@ -24,6 +24,12 @@ const form = ref();
 const { getExchangeNonce } = useExchangesStore();
 const { tc } = useI18n();
 
+const requiresApiSecret = computed(() => {
+  const { location } = get(exchange);
+
+  return ![SupportedExchange.BITPANDA].includes(location);
+});
+
 const requiresPassphrase = computed(() => {
   const { location } = get(exchange);
   return [
@@ -134,7 +140,7 @@ const rules = {
   apiSecret: {
     required: helpers.withMessage(
       tc('exchange_keys_form.api_secret.non_empty'),
-      requiredIf(sensitiveFieldEditable)
+      requiredIf(logicAnd(sensitiveFieldEditable, requiresApiSecret))
     )
   },
   passphrase: {
@@ -255,7 +261,7 @@ watch(v$, ({ $invalid }) => {
       />
 
       <revealable-input
-        v-if="exchange.location !== 'bitpanda'"
+        v-if="requiresApiSecret"
         outlined
         sensitive-key
         :disabled="edit && !editKeys"
