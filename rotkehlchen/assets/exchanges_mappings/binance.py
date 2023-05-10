@@ -140,4 +140,7 @@ WORLD_TO_BINANCE = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xE5417Af564e4bFDA1c483642db72007871397896', ChainID.MATIC, EvmTokenKind.ERC20): 'GNS',  # noqa: E501
     evm_address_to_identifier('0x0f2D719407FdBeFF09D87557AbB7232601FD9F29', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SYN',  # noqa: E501
     evm_address_to_identifier('0xA4Bdb11dc0a2bEC88d24A3aa1E6Bb17201112eBe', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'USDS',  # noqa: E501
+    evm_address_to_identifier('0xfb5B838b6cfEEdC2873aB27866079AC55363D37E', ChainID.BINANCE, EvmTokenKind.ERC20): 'FLOKI',  # noqa: E501
+    evm_address_to_identifier('0x320623b8E4fF03373931769A31Fc52A4E78B5d70', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RSR',  # noqa: E501
+    evm_address_to_identifier('0xa2E3356610840701BDf5611a53974510Ae27E2e1', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WBETH',  # noqa: E501
 }

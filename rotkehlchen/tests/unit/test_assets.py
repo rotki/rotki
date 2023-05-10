@@ -270,6 +270,22 @@ def test_cryptocompare_asset_support(cryptocompare):
         strethaddress_to_identifier('0x6967299e9F3d5312740Aa61dEe6E9ea658958e31'),
         'eip155:42161/erc20:0x602Eb0D99A5e3e76D1510372C4d2020e12EaEa8a',
         'KON',
+        evm_address_to_identifier(address='0x20658291677a29EFddfd0E303f8b23113d837cC7', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x2dff88a56767223a5529ea5960da7a3f5f766406', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xe238ecb42c424e877652ad82d8a939183a04c35f', chain_id=ChainID.MATIC, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xA35923162C49cF95e6BF26623385eb431ad920D3', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x297E4e5e59Ad72B1B0A2fd446929e76117be0E0a', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x297E4e5e59Ad72B1B0A2fd446929e76117be0E0a', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # GDX but cc has gold miner
+        'KING',  # differnt king
+        evm_address_to_identifier(address='0x9bf1D7D63dD7a4ce167CF4866388226EEefa702E', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # BEN memecoin but cc has bitcoen
+        evm_address_to_identifier(address='0xF831938CaF837cd505dE196BBb408D81A06376ab', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # JEFF memecoin but cc has jeff on space
+        evm_address_to_identifier(address='0x3c8b650257cfb5f272f799f5e2b4e65093a11a05', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # velodrome but cc has a different one
+        evm_address_to_identifier(address='0x01BA67AAC7f75f647D94220Cc98FB30FCc5105Bf', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # lyra but cc has scryptia
+        'ACS',
+        'HDX',
+        'NXRA',
+        'NOM',
+        evm_address_to_identifier(address='0x9559Aaa82d9649C7A7b220E7c461d2E74c9a3593', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # reth2 in cc
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -600,6 +616,19 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
         strethaddress_to_identifier('0x8b921e618dD3Fa5a199b0a8B7901f5530D74EF27'),
         strethaddress_to_identifier('0xBEA0000029AD1c77D3d5D23Ba2D8893dB9d1Efab'),
         strethaddress_to_identifier('0x9F77BA354889BF6eb5c275d4AC101e9547f15AdB'),
+        # boosted lusd but not lusd. Also no activity on the token
+        evm_address_to_identifier(address='0x20658291677a29EFddfd0E303f8b23113d837cC7', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        # coingecko has PTS but we have PETAL
+        evm_address_to_identifier(address='0x2e60f6C4CA05bC55A8e577DEeBD61FCe727c4a6e', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        # USV but the address doesn't match the one in coingecko
+        evm_address_to_identifier(address='0x6bAD6A9BcFdA3fd60Da6834aCe5F93B8cFed9598', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        # VEE but the address doesn't match the ones in coingecko
+        evm_address_to_identifier(address='0x7616113782AaDAB041d7B10d474F8A0c04EFf258', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        # Alladin cvxCRV but coingecko has aave crv
+        evm_address_to_identifier(address='0x2b95A1Dcc3D405535f9ed33c219ab38E8d7e0884', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        # coingecko has crypto price intex that doesn't match the address
+        evm_address_to_identifier(address='0x8bb08042c06FA0Fc26cd2474C5F0C03a1056Ad2F', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier

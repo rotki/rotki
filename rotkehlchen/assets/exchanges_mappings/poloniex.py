@@ -140,8 +140,15 @@ WORLD_TO_POLONIEX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xb3999F658C0391d94A37f7FF328F3feC942BcADC', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'HFT',  # noqa: E501
     evm_address_to_identifier('0xbB95cc1c662D89822bda29D2e147B124406e6e42', ChainID.BINANCE, EvmTokenKind.ERC20): 'TRR',  # noqa: E501
     evm_address_to_identifier('0xaaAEBE6Fe48E54f431b0C390CfaF0b017d09D42d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CEL',  # noqa: E501
-    evm_address_to_identifier('0x8dAEBADE922dF735c38C80C7eBD708Af50815fAa', ChainID.BINANCE, EvmTokenKind.ERC20): 'ALPACA',  # noqa: E501
+    evm_address_to_identifier('0x8dAEBADE922dF735c38C80C7eBD708Af50815fAa', ChainID.BINANCE, EvmTokenKind.ERC20): 'TBTC',  # noqa: E501
     evm_address_to_identifier('0x7db5af2B9624e1b3B4Bb69D6DeBd9aD1016A58Ac', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'VOLT',  # noqa: E501
     evm_address_to_identifier('0xE5417Af564e4bFDA1c483642db72007871397896', ChainID.MATIC, EvmTokenKind.ERC20): 'GNS1',  # noqa: E501
     evm_address_to_identifier('0x8F0528cE5eF7B51152A59745bEfDD91D97091d2F', ChainID.BINANCE, EvmTokenKind.ERC20): 'ALPACA',  # noqa: E501
+    evm_address_to_identifier('0xc55126051B22eBb829D00368f4B12Bde432de5Da', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BTRFLY',  # noqa: E501
+    evm_address_to_identifier('0x808507121B80c02388fAd14726482e061B8da827', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PENDLE',  # noqa: E501
+    evm_address_to_identifier('0x1ce270557C1f68Cfb577b856766310Bf8B47FD9C', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MONG',  # noqa: E501
+    evm_address_to_identifier('0x320623b8E4fF03373931769A31Fc52A4E78B5d70', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RSR',  # noqa: E501
+    evm_address_to_identifier('0x993864E43Caa7F7F12953AD6fEb1d1Ca635B875F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SDAO',  # noqa: E501
+    evm_address_to_identifier('0x12970E6868f88f6557B76120662c1B3E50A646bf', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LADYS',  # noqa: E501
+    'CORE': 'COREUM',
 }

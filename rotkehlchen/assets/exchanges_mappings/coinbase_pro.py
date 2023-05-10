@@ -73,4 +73,7 @@ WORLD_TO_COINBASE_PRO = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xB0c7a3Ba49C7a6EaBa6cD4a96C55a1391070Ac9A', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MAGIC',  # noqa: E501
     evm_address_to_identifier('0x9534ad65fb398E27Ac8F4251dAe1780B989D136e', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PYR',  # noqa: E501
     evm_address_to_identifier('0x467719aD09025FcC6cF6F8311755809d45a5E5f3', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'AXL',  # noqa: E501
+    evm_address_to_identifier('0x5fab9761d60419C9eeEbe3915A8FA1ed7e8d2E1B', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'DIMO',  # noqa: E501
+    evm_address_to_identifier('0x8c1BEd5b9a0928467c9B1341Da1D7BD5e10b6549', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LSETH',  # noqa: E501
+    evm_address_to_identifier('0x65Ef703f5594D2573eb71Aaf55BC0CB548492df4', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MULTI',  # noqa: E501
 }

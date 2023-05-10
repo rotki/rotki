@@ -58,4 +58,10 @@ WORLD_TO_OKX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x4C2e59D098DF7b6cBaE0848d66DE2f8A4889b9C3', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FODL',  # noqa: E501
     evm_address_to_identifier('0xEB9A4B185816C354dB92DB09cC3B50bE60b901b6', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ORS',  # noqa: E501
     evm_address_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'REP',  # noqa: E501
+    evm_address_to_identifier('0x320623b8E4fF03373931769A31Fc52A4E78B5d70', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RSR',  # noqa: E501
+    evm_address_to_identifier('0x2dff88a56767223a5529ea5960da7a3f5f766406', ChainID.BINANCE, EvmTokenKind.ERC20): 'ID',  # noqa: E501
+    evm_address_to_identifier('0xBc7d6B50616989655AfD682fb42743507003056D', ChainID.BINANCE, EvmTokenKind.ERC20): 'ACH',  # noqa: E501
+    evm_address_to_identifier('0x4922a015c4407F87432B179bb209e125432E4a2A', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'XAUT',  # noqa: E501
+    evm_address_to_identifier('0x3c8b650257cfb5f272f799f5e2b4e65093a11a05', ChainID.OPTIMISM, EvmTokenKind.ERC20): 'VELODROME',  # noqa: E501
+
 }

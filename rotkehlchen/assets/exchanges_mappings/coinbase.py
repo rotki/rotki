@@ -14,7 +14,7 @@ WORLD_TO_COINBASE = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB'): 'REP',
     strethaddress_to_identifier('0x362bc847A3a9637d3af6624EeC853618a43ed7D2'): 'PRQ',
     strethaddress_to_identifier('0x0258F474786DdFd37ABCE6df6BBb1Dd5dfC4434a'): 'ORN',
-    strethaddress_to_identifier('0xdeFA4e8a7bcBA345F687a2f1456F5Edd9CE97202'): 'KNC',
+    strethaddress_to_identifier('0xdd974D5C2e2928deA5F71b9825b8b646686BD200'): 'KNC',
     strethaddress_to_identifier('0x41D5D79431A913C4aE7d69a668ecdfE5fF9DFB68'): 'INV',
     evm_address_to_identifier('0x4Fabb145d64652a948d72533023f6E7A623C7C53', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BUSD',  # noqa: E501
     evm_address_to_identifier('0x3472A5A71965499acd81997a54BBA8D852C6E53d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BADGER',  # noqa: E501
@@ -72,5 +72,7 @@ WORLD_TO_COINBASE = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x0AbdAce70D3790235af448C88547603b945604ea', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'DNT',  # noqa: E501
     evm_address_to_identifier('0x9E46A38F5DaaBe8683E10793b06749EEF7D733d1', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'NCT',  # noqa: E501
     evm_address_to_identifier('0x5732046A883704404F284Ce41FfADd5b007FD668', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BLZ',  # noqa: E501
-
+    evm_address_to_identifier('0x5fab9761d60419C9eeEbe3915A8FA1ed7e8d2E1B', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'DIMO',  # noqa: E501
+    evm_address_to_identifier('0x8c1BEd5b9a0928467c9B1341Da1D7BD5e10b6549', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LSETH',  # noqa: E501
+    evm_address_to_identifier('0x65Ef703f5594D2573eb71Aaf55BC0CB548492df4', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MULTI',  # noqa: E501
 }
