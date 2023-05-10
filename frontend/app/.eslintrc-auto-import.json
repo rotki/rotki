@@ -144,6 +144,7 @@
     "isReactive": true,
     "isReadonly": true,
     "isRef": true,
+    "isTransactionEvent": true,
     "isValidDate": true,
     "isValidEthAddress": true,
     "isValidTxHash": true,

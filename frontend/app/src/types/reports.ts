@@ -3,10 +3,6 @@ import { z } from 'zod';
 import { type Quarter } from '@/types/frontend-settings';
 import { BaseAccountingSettings } from '@/types/user';
 
-export enum ProfitLossEventTypeEnum {
-  TRANSACTION_EVENT = 'transaction event'
-}
-
 export const ProfitLossOverviewItem = z.object({
   taxable: NumericString,
   free: NumericString

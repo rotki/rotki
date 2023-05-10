@@ -1,4 +1,5 @@
 import {
+  type ProfitLossEvent,
   type ProfitLossOverviewItem,
   type SelectedReport
 } from '@/types/reports';
@@ -18,3 +19,7 @@ export const calculateTotalProfitLoss = (
     taxable: totalTaxable
   };
 };
+
+// TODO: Figure out in the future, how to avoid hardcode
+export const isTransactionEvent = (item: ProfitLossEvent) =>
+  item.type === 'transaction event';

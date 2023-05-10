@@ -141,6 +141,7 @@ declare global {
   const isReactive: typeof import('vue')['isReactive']
   const isReadonly: typeof import('vue')['isReadonly']
   const isRef: typeof import('vue')['isRef']
+  const isTransactionEvent: typeof import('./utils/report')['isTransactionEvent']
   const isValidDate: typeof import('./utils/date')['isValidDate']
   const isValidEthAddress: typeof import('./utils/text')['isValidEthAddress']
   const isValidTxHash: typeof import('./utils/text')['isValidTxHash']
@@ -811,6 +812,7 @@ declare module 'vue' {
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
+    readonly isTransactionEvent: UnwrapRef<typeof import('./utils/report')['isTransactionEvent']>
     readonly isValidDate: UnwrapRef<typeof import('./utils/date')['isValidDate']>
     readonly isValidEthAddress: UnwrapRef<typeof import('./utils/text')['isValidEthAddress']>
     readonly isValidTxHash: UnwrapRef<typeof import('./utils/text')['isValidTxHash']>

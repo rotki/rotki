@@ -2,7 +2,6 @@ import { type Message } from '@rotki/common/lib/messages';
 import { type ComputedRef, type Ref } from 'vue';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
-  ProfitLossEventTypeEnum,
   type ProfitLossReportDebugPayload,
   type ProfitLossReportPeriod,
   type ReportActionableItem,
@@ -169,9 +168,7 @@ export const useReportsStore = defineStore('reports', () => {
       }
       set(loaded, false);
       const notes = reportEntries.entries
-        .filter(
-          event => event.type === ProfitLossEventTypeEnum.TRANSACTION_EVENT
-        )
+        .filter(event => isTransactionEvent(event))
         .map(event => event.notes);
 
       const addresses = getEthAddressesFromText(notes);
