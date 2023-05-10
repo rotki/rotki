@@ -1095,6 +1095,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         If notify_events is True we send websocket messages to notify the current interval of
         time being queried. By default it is set to False to avoid sending unwanted message when
         this funtion is called internally and not directly from the UI by the user.
+        May raise:
+        - RemoteError if request to kraken fails for whatever reason
 
         Returns true if any query to the kraken API was not successful
         """

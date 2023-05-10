@@ -69,7 +69,11 @@ def _parse_int(line: str, entry: str) -> int:
 
 
 def _query_page(url: str, event: Literal['stats', 'withdrawals']) -> requests.Response:
-    """Query a single page and return the response"""
+    """Query a single page and return the response
+
+    May raise:
+    - RemoteError if there is a request failure to beaconcha.in site
+    """
     tries = 1
     max_tries = 3
     backoff = 60

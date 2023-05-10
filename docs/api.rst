@@ -5233,6 +5233,7 @@ Querying online events
     :statuscode 400: Provided JSON is in some way malformed.
     :statuscode 409: Module for the given events is not active.
     :statuscode 500: Internal rotki error.
+    :statuscode 502: An external service used in the query such as beaconchain could not be reached or returned an unexpected response.
 
 Querying messages to show to the user
 =====================================
