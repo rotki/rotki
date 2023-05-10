@@ -70,7 +70,7 @@ const scrollToTop = () => {
 
   const tableTop = get(top);
   setTimeout(() => {
-    let newScrollTop = 0;
+    let newScrollTop: number;
     if (get(container)) {
       newScrollTop =
         tableTop + wrapper.scrollTop - get(containerTop) - table.$el.scrollTop;

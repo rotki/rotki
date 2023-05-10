@@ -188,13 +188,13 @@ const values = computed<Tag[]>(() =>
       </template>
     </v-combobox>
     <v-dialog
-      :value="!!manageTags"
+      :value="manageTags"
       max-width="800"
       class="tag-input__tag-manager"
       content-class="fill-height"
       @input="manageTags = false"
     >
-      <tag-manager v-if="!!manageTags" dialog @close="manageTags = false" />
+      <tag-manager v-if="manageTags" dialog @close="manageTags = false" />
     </v-dialog>
   </div>
 </template>

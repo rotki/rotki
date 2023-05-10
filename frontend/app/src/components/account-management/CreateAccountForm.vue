@@ -34,7 +34,7 @@ const premiumFormValid: Ref<boolean> = ref(false);
 const credentialsFormValid: Ref<boolean> = ref(false);
 const step: Ref<number> = ref(1);
 
-const form: Ref<any> = ref(null);
+const form: Ref = ref(null);
 
 const { tc } = useI18n();
 

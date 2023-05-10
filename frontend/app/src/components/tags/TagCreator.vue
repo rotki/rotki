@@ -14,7 +14,7 @@ const { t } = useI18n();
 
 const { tag } = toRefs(props);
 
-const form: Ref<any> = ref(null);
+const form: Ref = ref(null);
 
 const rules = {
   name: {

@@ -483,10 +483,10 @@ watch(defaultArguments, args => {
             <v-checkbox
               v-model="logFromOtherModules"
               :label="tc('backend_settings.log_from_other_modules.label')"
-              :disabled="!!fileConfig.logFromOtherModules"
+              :disabled="fileConfig.logFromOtherModules"
               persistent-hint
               :hint="
-                !!fileConfig.logFromOtherModules
+                fileConfig.logFromOtherModules
                   ? tc('backend_settings.config_file_disabled')
                   : tc('backend_settings.log_from_other_modules.hint')
               "

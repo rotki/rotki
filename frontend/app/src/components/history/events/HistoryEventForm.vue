@@ -331,8 +331,7 @@ const fetchHistoricPrices = async () => {
 
   const timestamp = convertToTimestamp(get(datetime));
 
-  let price: BigNumber = Zero;
-  price = await getHistoricPrice({
+  let price: BigNumber = await getHistoricPrice({
     timestamp,
     fromAsset: assetVal,
     toAsset: CURRENCY_USD

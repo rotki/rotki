@@ -27,7 +27,7 @@ const { deleteManualBalance } = useManualBalancesStore();
 const { assetPrice } = useBalancePricesStore();
 
 const visibleBalances = computed<ManualBalance[]>(() => {
-  let mappedBalances = [];
+  let mappedBalances: ManualBalance[];
   const selectedTags = get(onlyTags);
   if (selectedTags.length === 0) {
     mappedBalances = get(balances);
