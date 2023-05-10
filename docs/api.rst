@@ -4891,7 +4891,7 @@ Dealing with History Events
    :reqjson list[string] entry_types: A list of entry types to optionally filter by. Entry type is the event category and defines the schema. Possible values are: ``"history event"``, ``"evm event"``, ``"eth withdrawal event"``, ``"eth block event"``, ``"eth deposit event"``.
    :reqjson string asset: The asset to optionally filter by.
    :reqjson list[string] tx_hashes: An optional list of transaction hashes to filter for. This will make it an EVM event query.
-   :reqjson list[string] counterparties: An optional list of counterparties to filter by. List of strings. This will make it an EVM event query.
+   :reqjson list[string] counterparties: An optional list of counterparties to filter by. List of strings. This will make it an EVM event query. We currently have a special exception for ``"eth2"`` as a counterparty. It filters for all eth staking events if given. It can't be given along with other counterparties in a filter. Or with an entry types filter.
    :reqjson list[string] products: An optional list of product type to filter by. List of strings. This will make it an EVM event query.
    :reqjson list[int] validator_indices: An optional list of validator indices to filter by. This makes it an EthStakingevent query
 
