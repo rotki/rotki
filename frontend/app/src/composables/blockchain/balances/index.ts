@@ -61,6 +61,13 @@ export const useBlockchainBalances = () => {
       setStatus(Status.LOADED);
     } catch (e: any) {
       logger.error(e);
+      notify({
+        title: tc('actions.balances.blockchain.error.title'),
+        message: tc('actions.balances.blockchain.error.description', 0, {
+          error: e.message
+        }),
+        display: true
+      });
       resetStatus();
     }
   };
