@@ -13,6 +13,7 @@ from rotkehlchen.accounting.structures.eth2 import (
     EthDepositEvent,
     EthWithdrawalEvent,
 )
+from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.eth2.eth2 import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -946,3 +947,17 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
     for entry in result['entries']:
         assert entry['entry']['entry_type'] == 'eth block event'
         assert entry['entry']['validator_index'] == vindex1
+
+    # Also check that querying by ETH2 counterparty implements the exception of querying
+    # all staking entry types
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ),
+        json={'counterparties': [CPT_ETH2]},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 11
+    for entry in result['entries']:
+        assert entry['entry']['entry_type'] == 'eth block event'

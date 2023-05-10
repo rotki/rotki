@@ -35,6 +35,7 @@ from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
+from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.types import EvmAccount
@@ -651,8 +652,32 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        should_query_evm_event = any(data[x] is not None for x in ('products', 'counterparties', 'tx_hashes'))  # noqa: E501
         should_query_eth_staking_event = data['validator_indices'] is not None
+        should_query_evm_event = any(data[x] is not None for x in ('products', 'counterparties', 'tx_hashes'))  # noqa: E501
+        counterparties = data['counterparties']
+        entry_types = data['entry_types']
+        if counterparties is not None and CPT_ETH2 in counterparties:
+            if len(counterparties) != 1:
+                raise ValidationError(
+                    message='Filtering by counterparty ETH2 does not work in combination with other counterparties',  # noqa: E501
+                    field_name='counterparties',
+                )
+
+            if entry_types is not None:
+                raise ValidationError(
+                    message='Filtering by counterparty ETH2 does not work in combination with entry type',  # noqa: E501
+                    field_name='counterparties',
+                )
+
+            counterparties = None
+            entry_types = [
+                HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT,
+                HistoryBaseEntryType.ETH_BLOCK_EVENT,
+                HistoryBaseEntryType.ETH_DEPOSIT_EVENT,
+            ]
+            should_query_eth_staking_event = True
+            should_query_evm_event = False
+
         common_arguments = {
             'order_by_rules': create_order_by_rules_list(
                 data=data,  # descending timestamp and ascending sequence index
@@ -661,7 +686,7 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
             ),
             'limit': data['limit'],
             'offset': data['offset'],
-            'entry_types': data['entry_types'],
+            'entry_types': entry_types,
             'from_ts': data['from_timestamp'],
             'to_ts': data['to_timestamp'],
             'exclude_ignored_assets': data['exclude_ignored_assets'],
@@ -678,7 +703,7 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
                 **common_arguments,
                 tx_hashes=data['tx_hashes'],
                 products=data['products'],
-                counterparties=data['counterparties'],
+                counterparties=counterparties,
             )
         elif should_query_eth_staking_event:
             filter_query = EthStakingEventFilterQuery.make(
