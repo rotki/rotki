@@ -70,5 +70,9 @@ WORLD_TO_BITFINEX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x2a3bFF78B79A009976EeA096a51A948a3dC00e34', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WILD',  # noqa: E501
     evm_address_to_identifier('0x607F4C5BB672230e8672085532f7e901544a7375', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RLC',  # noqa: E501
     evm_address_to_identifier('0x7659CE147D0e714454073a5dd7003544234b6Aa0', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'XCAD',  # noqa: E501
+    evm_address_to_identifier('0xfb5B838b6cfEEdC2873aB27866079AC55363D37E', ChainID.BINANCE, EvmTokenKind.ERC20): 'FLOKI',  # noqa: E501
     'ONE-2': 'ONE',
+    evm_address_to_identifier('0x4922a015c4407F87432B179bb209e125432E4a2A', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'XAUT',  # noqa: E501
+    evm_address_to_identifier('0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LDO',  # noqa: E501
+    evm_address_to_identifier('0xfb5B838b6cfEEdC2873aB27866079AC55363D37E', ChainID.BINANCE, EvmTokenKind.ERC20): 'FLOKI',  # noqa: E501
 }

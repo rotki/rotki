@@ -26,7 +26,7 @@ from rotkehlchen.types import Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 COINBASE_DAI_UPGRADE_END_TS = 1575244800  # December 2
-UNSUPPORTED_POLONIEX_ASSETS = (
+UNSUPPORTED_POLONIEX_ASSETS = {
     'ACH1',  # neither in coingecko nor cryptocompare
     # This was a super shortlived coin.
     # Only info is here: https://bitcointalk.org/index.php?topic=632818.0
@@ -353,9 +353,15 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'XCNOLD',  # No info in the exchange about this asset
     'USDTEARN1',  # neither in coingecko nor cryptocompare
     'LOGT',  # lord of dragon but not in cc or coingecko
-)
+    'OPT',
+    'SOV',
+    'WSTREETBABY',
+    'GEKE',
+    'BAM',
+    'LZM',
+}
 
-UNSUPPORTED_BITTREX_ASSETS = (
+UNSUPPORTED_BITTREX_ASSETS = {
     # 4ART, As of 22/07/2020 no data found outside of Bittrex
     '4ART',
     # APIX, As of 19/12/2019 no data found outside of Bittrex
@@ -526,10 +532,10 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'PRMX',
     'TCR',
     'USDS',
-)
+}
 
 
-UNSUPPORTED_BINANCE_ASSETS = (
+UNSUPPORTED_BINANCE_ASSETS = {
     'ETF',  # ETF is a dead coin given to all ETH holders. Just ignore
     # BTCB, USDSB, BGBP are not yet supported anywhere else
     'BTCB',  # https://www.binance.com/en/support/articles/360029288972
@@ -552,9 +558,11 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'UAH',  # no cryptocompare/coingecko data
     'BTTC',  # no cryptocompare/coingecko data
     'USD4',  # no info available about this asset
-)
+    'FLOKI8',  # no info available about this asset
+    'ARS',  # no info available about this asset
+}
 
-UNSUPPORTED_BITFINEX_ASSETS = (
+UNSUPPORTED_BITFINEX_ASSETS = {
     'B21X',  # no cryptocompare/coingecko data
     'GTX',  # no cryptocompare/coingecko data (GT, Gate.io token)
     'IQX',  # no cryptocompare/coingecko data (EOS token)
@@ -565,10 +573,10 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'EXO',  # noqa: E501 #  https://blog.exordium.co/exo-security-token-to-be-listed-on-bitfinex-securities-ltd-24cb03dc8bb0 no cc/coingecko data
     'BMN',  # no cryptocompare and coingecko doesn't update it
     'LUXO',  # no cc/coingecko data
-)
+}
 
 # https://api.kucoin.com/api/v1/currencies
-UNSUPPORTED_KUCOIN_ASSETS = (
+UNSUPPORTED_KUCOIN_ASSETS = {
     'AAVE3L',  # no cryptocompare/coingecko data
     'AAVE3S',  # no cryptocompare/coingecko data
     'AI',  # no cryptocompare/coingecko data
@@ -708,17 +716,59 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'KING',
     'HIUNDEAD',
     'HIFRIENDS',
-)
+    'PEPEUP',
+    'PEPEDOWN',
+    'ICPUP',
+    'ICPDOWN',
+    'CTSIUP',
+    'CTSIDOWN',
+    'SUI3L',
+    'SUI3S',
+    'ETCDOWN',
+    'ETCUP',
+    'INJUP',
+    'INJDOWN',
+    'LINAUP',
+    'LINADOWN',
+    'RNDRUP',
+    'RNDRDOWN',
+    'STXDOWN',
+    'STXUP',
+    'DYDXUP',
+    'DYDXDOWN',
+    'MASKUP',
+    'MASKDOWN',
+    'ARB3S',
+    'ARB3L',
+    'ID3L',
+    'ID3S',
+    'OPT',  # optimus token but no coingecko/cc
+    'AOS',  # no coingecko/cc
+    'KAGI',
+    'SXPUP',
+    'SXPDOWN',
+    'FLOKIUP',
+    'FLOKIDOWN',
+    'KAVAUP',
+    'KAVADOWN',
+    'ZILUP',
+    'LUNCDOWN',
+    'LUNCUP',
+    'WOOUP',
+    'WOODOWN',
+    'SUIA',
+    'ZILDOWN',
+}
 
 # https://api.iconomi.com/v1/assets marks delisted assets
-UNSUPPORTED_ICONOMI_ASSETS = (
+UNSUPPORTED_ICONOMI_ASSETS = {
     'ICNGS',
     'ETCPOLO',
     'FTR',  # delisted
     'TT',  # delisted
-)
+}
 
-UNSUPPORTED_GEMINI_ASSETS = (
+UNSUPPORTED_GEMINI_ASSETS = {
     '2USD',  # no information about this asset
     'AUSD',  # no information about this asset
     'LFIL',  # no information about this asset
@@ -729,7 +779,7 @@ UNSUPPORTED_GEMINI_ASSETS = (
     'LCAD',  # no information about this asset
     'LAUD',  # no information about this asset
     'SPEL',  # Spell moon (SPEL). No information about this token
-)
+}
 
 UNSUPPORTED_OKX_ASSETS = {
     'CORE',  # CORE(CORE) but APIs list cvault
@@ -738,6 +788,7 @@ UNSUPPORTED_OKX_ASSETS = {
     'EC',  # not in cc or coingecko
     'GOAL',  # not in cc or coingecko
     'CGL',  # not in cc or coingecko
+    'OPTIMUS',
 }
 
 # Exchange symbols that are clearly for testing purposes. They appear in all

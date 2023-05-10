@@ -147,4 +147,5 @@ WORLD_TO_BITTREX = COMMON_ASSETS_MAPPINGS | {
     'META': 'METADIUM',
     'NLG': 'MUNT',
     evm_address_to_identifier('0xc56c2b7e71B54d38Aab6d52E94a04Cbfa8F604fA', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ZUSD',  # noqa: E501
+    evm_address_to_identifier('0x320623b8E4fF03373931769A31Fc52A4E78B5d70', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RSR',  # noqa: E501
 }
