@@ -590,7 +590,8 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.location_label == transaction.from_address and
                 (
                     event.address in CURVE_DEPOSIT_CONTRACTS or
-                    event.address == ZERO_ADDRESS
+                    event.address == ZERO_ADDRESS or
+                    event.address in self.curve_pools
                 )
             ):
                 receive_event_idx = idx
@@ -638,7 +639,10 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == transaction.from_address and
-                event.address in CURVE_DEPOSIT_CONTRACTS
+                (
+                    event.address in CURVE_DEPOSIT_CONTRACTS or
+                    event.address in self.curve_pools
+                )
             ):
                 crypto_asset = event.asset.resolve_to_crypto_asset()
                 event.event_type = HistoryEventType.WITHDRAWAL

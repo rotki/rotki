@@ -1620,3 +1620,64 @@ def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_acco
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xd381e358d6b4E176559D3D76109985ED83259aEC']])
+def test_no_zap_event(ethereum_transaction_decoder, ethereum_accounts):
+    """
+    Checks that if a curve zap is used, but there is no zap-specific event emitted (only event from
+    the used pool is emitted), transaction is still decoded correctly.
+    """
+    tx_hex = deserialize_evm_tx_hash('0xc8617f0adcd6273c522359a244bb6908f8ea9232879884d572fd64d5b33e5e83 ')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1683629339000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.010742095846323672')),
+            location_label=user_address,
+            notes='Burned 0.010742095846323672 ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=112,
+            timestamp=TimestampMS(1683629339000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:1/erc20:0x5a6A4D54456819380173272A5E8E9B9904BdF41B'),
+            balance=Balance(amount=FVal('44107.783344489319243346')),
+            location_label=user_address,
+            notes='Return 44107.783344489319243346 MIM-3LP3CRV-f',
+            counterparty=CPT_CURVE,
+            address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
+            extra_data={'withdrawal_events_num': 1},
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=114,
+            timestamp=TimestampMS(1683629339000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:1/erc20:0x99D8a9C45b2ecA8864373A26D1459e3Dff1e17F3'),
+            balance=Balance(amount=FVal('44587.625561888235283247')),
+            location_label=user_address,
+            notes='Remove 44587.625561888235283247 MIM from 0x5a6A4D54456819380173272A5E8E9B9904BdF41B curve pool',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=string_to_evm_address('0x5a6A4D54456819380173272A5E8E9B9904BdF41B'),
+        ),
+    ]
+    assert events == expected_events
