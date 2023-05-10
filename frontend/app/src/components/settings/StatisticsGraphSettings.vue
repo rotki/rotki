@@ -13,7 +13,7 @@ const invalid = computed(() => {
 });
 
 const { update } = useSettingsStore();
-const { ssf0graphMultiplier, balanceSaveFrequency } = storeToRefs(
+const { ssfGraphMultiplier, balanceSaveFrequency } = storeToRefs(
   useGeneralSettingsStore()
 );
 
@@ -21,13 +21,13 @@ const { tc } = useI18n();
 
 const updateSetting = async () => {
   await update({
-    ssf0graphMultiplier: get(numericMultiplier)
+    ssfGraphMultiplier: get(numericMultiplier)
   });
   emit('updated');
   set(visible, false);
 };
 
-const multiplierSetting = computed(() => get(ssf0graphMultiplier).toString());
+const multiplierSetting = computed(() => get(ssfGraphMultiplier).toString());
 
 const period = computed(() => {
   const multi = get(numericMultiplier);

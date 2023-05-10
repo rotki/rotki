@@ -46,7 +46,7 @@ const GeneralSettings = z.object({
   displayDateInLocaltime: z.boolean(),
   currentPriceOracles: z.array(PriceOracleEnum),
   historicalPriceOracles: z.array(PriceOracleEnum),
-  ssf0graphMultiplier: z.number().default(0),
+  ssfGraphMultiplier: z.number().default(0),
   nonSyncingExchanges: z.array(Exchange),
   treatEth2AsEth: z.boolean(),
   addressNamePriority: z.array(AddressNamePriorityEnum)
@@ -140,7 +140,7 @@ const getGeneralSettings = (settings: UserSettings): GeneralSettings => ({
   displayDateInLocaltime: settings.displayDateInLocaltime,
   currentPriceOracles: settings.currentPriceOracles,
   historicalPriceOracles: settings.historicalPriceOracles,
-  ssf0graphMultiplier: settings.ssf0graphMultiplier,
+  ssfGraphMultiplier: settings.ssfGraphMultiplier,
   nonSyncingExchanges: settings.nonSyncingExchanges,
   treatEth2AsEth: settings.treatEth2AsEth,
   addressNamePriority: settings.addressNamePriority

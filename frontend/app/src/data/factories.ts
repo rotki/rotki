@@ -21,7 +21,7 @@ export const defaultGeneralSettings = (
   displayDateInLocaltime: Defaults.DISPLAY_DATE_IN_LOCALTIME,
   currentPriceOracles: [],
   historicalPriceOracles: [],
-  ssf0graphMultiplier: 0,
+  ssfGraphMultiplier: 0,
   nonSyncingExchanges: [],
   treatEth2AsEth: false,
   addressNamePriority: []
