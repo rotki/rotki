@@ -107,15 +107,21 @@ const newTagForeground = computed<string>(
   () => `#${get(colorScheme).foregroundColor}`
 );
 
-const values = computed<Tag[]>(() =>
+const filteredValue = computed<Tag[]>(() =>
   get(tags).filter(({ name }) => get(value).includes(name))
 );
+
+watch(filteredValue, filteredValue => {
+  if (filteredValue.length !== get(value).length) {
+    input(filteredValue);
+  }
+});
 </script>
 
 <template>
   <div>
     <v-combobox
-      :value="values"
+      :value="filteredValue"
       :disabled="disabled"
       :items="tags"
       class="tag-input"
