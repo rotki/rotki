@@ -8,7 +8,7 @@ LOCATION_DETAILS = {
     Location.BINANCE: LocationDetails(image='binance.svg'),
     Location.BITMEX: LocationDetails(image='bitmex.svg'),
     Location.COINBASE: LocationDetails(image='coinbase.svg'),
-    Location.BANKS: LocationDetails(icon='mdi-book'),
+    Location.BANKS: LocationDetails(icon='mdi-bank'),
     Location.BLOCKCHAIN: LocationDetails(icon='mdi-link'),
     Location.COINBASEPRO: LocationDetails(
         image='coinbasepro.svg',
