@@ -17,7 +17,8 @@ export const HistoryEventTypeData = z.object({
   globalMappings: HistoryEventTypeMapping,
   perProtocolMappings: z.record(z.record(HistoryEventTypeMapping)),
   exchangeMappings: z.record(HistoryEventTypeMapping),
-  eventCategoryDetails: HistoryEventTypeDetails
+  eventCategoryDetails: HistoryEventTypeDetails,
+  accountingEventsIcons: z.record(z.string())
 });
 
 export type HistoryEventTypeData = z.infer<typeof HistoryEventTypeData>;

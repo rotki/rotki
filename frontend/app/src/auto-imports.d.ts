@@ -250,6 +250,7 @@ declare global {
   const toRef: typeof import('vue')['toRef']
   const toRefs: typeof import('vue')['toRefs']
   const toSentenceCase: typeof import('./utils/text')['toSentenceCase']
+  const toSnakeCase: typeof import('./utils/text')['toSnakeCase']
   const toSortedAssetBalanceArray: typeof import('./utils/balances')['toSortedAssetBalanceArray']
   const toSortedAssetBalanceWithPrice: typeof import('./utils/balances')['toSortedAssetBalanceWithPrice']
   const toUnit: typeof import('./utils/calculation')['toUnit']
@@ -919,6 +920,7 @@ declare module 'vue' {
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
     readonly toSentenceCase: UnwrapRef<typeof import('./utils/text')['toSentenceCase']>
+    readonly toSnakeCase: UnwrapRef<typeof import('./utils/text')['toSnakeCase']>
     readonly toSortedAssetBalanceArray: UnwrapRef<typeof import('./utils/balances')['toSortedAssetBalanceArray']>
     readonly toSortedAssetBalanceWithPrice: UnwrapRef<typeof import('./utils/balances')['toSortedAssetBalanceWithPrice']>
     readonly toUnit: UnwrapRef<typeof import('./utils/calculation')['toUnit']>

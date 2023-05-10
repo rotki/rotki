@@ -17,7 +17,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     globalMappings: {},
     perProtocolMappings: {},
     eventCategoryDetails: {},
-    exchangeMappings: {}
+    exchangeMappings: {},
+    accountingEventsIcons: {}
   });
 
   const historyEventTypeData: Ref<HistoryEventTypeData> =
@@ -61,9 +62,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
       identifier,
       label:
         tc(
-          `backend_mappings.events.history_event_subtype.${identifier.replace(
-            / /g,
-            '_'
+          `backend_mappings.events.history_event_subtype.${toSnakeCase(
+            identifier
           )}`
         )?.toString() || toSentenceCase(identifier)
     })
@@ -77,7 +77,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
         identifier,
         label:
           tc(
-            `backend_mappings.events.type.${data.label.replace(/ /g, '_')}`
+            `backend_mappings.events.type.${toSnakeCase(data.label)}`
           )?.toString() || toSentenceCase(data.label)
       }))
   );
@@ -240,6 +240,35 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     ({ identifier }) => identifier
   );
 
+  const accountingEventsTypeData: Ref<ActionDataEntry[]> = useRefMap(
+    historyEventTypeData,
+    ({ accountingEventsIcons }) =>
+      Object.entries(accountingEventsIcons).map(([identifier, icon]) => ({
+        identifier,
+        icon,
+        label:
+          tc(
+            `backend_mappings.profit_loss_event_type.${toSnakeCase(identifier)}`
+          )?.toString() || toCapitalCase(identifier)
+      }))
+  );
+
+  const getAccountingEventTypeData = (
+    type: MaybeRef<string>
+  ): ComputedRef<ActionDataEntry> => {
+    const typeVal = get(type);
+    return computed(
+      () =>
+        get(accountingEventsTypeData).find(
+          ({ identifier }) => identifier === typeVal
+        ) || {
+          identifier: typeVal,
+          icon: 'mdi-help',
+          label: toCapitalCase(typeVal)
+        }
+    );
+  };
+
   return {
     historyEventTypeData,
     historyEventTypes,
@@ -253,6 +282,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     historyEventTypeGlobalMapping,
     historyEventTypePerProtocolMapping,
     historyEventCounterpartiesData,
-    counterparties
+    counterparties,
+    accountingEventsTypeData,
+    getAccountingEventTypeData
   };
 });

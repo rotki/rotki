@@ -1188,6 +1188,18 @@
         "withdraw": "Withdraw"
       }
     },
+    "profit_loss_event_type": {
+      "asset_movement": "Asset Movement",
+      "fee": "Fee",
+      "history_base_entry": "History Base Entry",
+      "ledger_action": "Ledger Action",
+      "loan": "Loan",
+      "margin_position": "Margin Position",
+      "prefork_acquisition": "Prefork Acquisition",
+      "staking": "Staking",
+      "trade": "Trade",
+      "transaction_event": "Transaction Event"
+    },
     "trade_location": {
       "banks": "Banks",
       "commodities": "Commodities",
@@ -3613,18 +3625,6 @@
   "privacy_notice": {
     "message": "rotki accounts are encrypted using your password and saved in your local filesystem.",
     "title": "rotki is a local application that respects your privacy."
-  },
-  "profit_loss_event_type": {
-    "asset_movement": "Asset Movement",
-    "fee": "Fee",
-    "history_base_entry": "History Base Entry",
-    "ledger_action": "Ledger Action",
-    "loan": "Loan",
-    "margin_position": "Margin Position",
-    "prefork_acquisition": "Prefork Acquisition",
-    "staking": "Staking",
-    "trade": "Trade",
-    "transaction_event": "Transaction Event"
   },
   "profit_loss_events": {
     "cost_basis": {

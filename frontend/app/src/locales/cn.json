@@ -1140,6 +1140,18 @@
         "withdraw": "撤回"
       }
     },
+    "profit_loss_event_type": {
+      "asset_movement": "资产移动",
+      "fee": "Fee",
+      "history_base_entry": "历史数据库条目",
+      "ledger_action": "账本操作",
+      "loan": "贷款",
+      "margin_position": "保证金位置",
+      "prefork_acquisition": "预叉收购",
+      "staking": "质押",
+      "trade": "贸易",
+      "transaction_event": "交易事件"
+    },
     "trade_location": {
       "banks": "银行",
       "commodities": "商品",
@@ -3471,18 +3483,6 @@
   "privacy_notice": {
     "message": "rotki 帐户使用您的密码加密并保存在您的本地文件系统中。",
     "title": "rotki 是一款尊重您隐私的本地应用程序。"
-  },
-  "profit_loss_event_type": {
-    "asset_movement": "资产移动",
-    "fee": "Fee",
-    "history_base_entry": "历史数据库条目",
-    "ledger_action": "账本操作",
-    "loan": "贷款",
-    "margin_position": "保证金位置",
-    "prefork_acquisition": "预叉收购",
-    "staking": "质押",
-    "trade": "贸易",
-    "transaction_event": "交易事件"
   },
   "profit_loss_events": {
     "cost_basis": {
