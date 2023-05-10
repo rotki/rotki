@@ -23,6 +23,7 @@ jobs:
     outputs:
       backend_tasks: ${{ steps.checker.outputs.backend_tasks }}
       frontend_tasks: ${{ steps.checker.outputs.frontend_tasks }}
+      e2e_tasks: ${{ steps.checker.outputs.e2e_tasks }}
       documentation_tasks: ${{ steps.checker.outputs.documentation_tasks }}
       test_environment: ${{ steps.checker.outputs.test_environment }}
     steps:
@@ -217,7 +218,7 @@ jobs:
   test-e2e:
     name: 'Frontend e2e tests'
     needs: check-changes
-    if: ${{ github.event_name != 'push' && (needs.check-changes.outputs.frontend_tasks || needs.check-changes.outputs.backend_tasks) }}
+    if: ${{ github.event_name != 'push' && needs.check-changes.outputs.e2e_tasks }}
     uses:  ./.github/workflows/task_e2e_tests.yml
 
   done:
