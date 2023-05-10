@@ -662,12 +662,17 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
                     message='Filtering by counterparty ETH2 does not work in combination with other counterparties',  # noqa: E501
                     field_name='counterparties',
                 )
-
             if entry_types is not None:
                 raise ValidationError(
                     message='Filtering by counterparty ETH2 does not work in combination with entry type',  # noqa: E501
                     field_name='counterparties',
                 )
+            for x in ('products', 'tx_hashes'):
+                if data[x] is not None:
+                    raise ValidationError(
+                        message=f'Filtering by counterparty ETH2 does not work in combination with filtering by {x}',  # noqa: E501
+                        field_name='counterparties',
+                    )
 
             counterparties = None
             entry_types = [

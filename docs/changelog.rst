@@ -5,7 +5,7 @@ Changelog
 * :feature:`5473` Block production rewards for your validators will now be properly detected, displayed and accounted for in the PnL report.
 * :feature:`4886` Staking MEV rewards for your validators will now be properly detected, displayed and accounted for in the PnL report.
 * :feature:`5933` FTX and FTX US support is removed since the exchanges no longer exist
-* :feature:`5824` Improved support for ENS allowing to decode the version of their contracts that added the name wrapper.
+* :feature:`5824` Improved support for ENS, allowing to decode the version of their contracts that added the name wrapper.
 * :feature:`-` Refunds in ENS renewal transactions will now be properly processed.
 * :feature:`5816` The NFT images will not be automatically rendered now. It is made so to prevent a known security issue, that may result in leakage of your privacy (read https://medium.com/@alxlpsc/critical-privacy-vulnerability-getting-exposed-by-metamask-693c63c2ce94 ). You can add domains you trust to the whitelisted domain in the NFT setting.
 * :feature:`5696` Transactions interacting with Curve Zap Deposit contracts are now decoded properly.
