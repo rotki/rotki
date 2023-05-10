@@ -80,7 +80,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
   const labelAccount = t('common.account').toString();
   const labelValidator = t('asset_locations.header.validator').toString();
 
-  let label = '';
+  let label: string;
   if (eth2Length === 0) {
     label = labelAccount;
   } else if (eth2Length === visibleItemsLength) {
