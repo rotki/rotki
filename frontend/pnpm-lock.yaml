@@ -64,11 +64,11 @@ importers:
         specifier: 9.1.1
         version: 9.1.1(patch_hash=mia2k5wehigboo5ep5nlxwffwa)
       chart.js:
-        specifier: 4.2.1
-        version: 4.2.1
+        specifier: 4.3.0
+        version: 4.3.0
       chartjs-plugin-zoom:
         specifier: 2.0.1
-        version: 2.0.1(chart.js@4.2.1)
+        version: 2.0.1(chart.js@4.3.0)
       cleave.js:
         specifier: 1.6.0
         version: 1.6.0
@@ -4105,19 +4105,19 @@ packages:
     dev: false
     optional: true
 
-  /chart.js@4.2.1:
-    resolution: {integrity: sha512-6YbpQ0nt3NovAgOzbkSSeeAQu/3za1319dPUQTXn9WcOpywM8rGKxJHrhS8V8xEkAlk8YhEfjbuAPfUyp6jIsw==}
-    engines: {pnpm: ^7.0.0}
+  /chart.js@4.3.0:
+    resolution: {integrity: sha512-ynG0E79xGfMaV2xAHdbhwiPLczxnNNnasrmPEXriXsPJGjmhOBYzFVEsB65w2qMDz+CaBJJuJD0inE/ab/h36g==}
+    engines: {pnpm: '>=7'}
     dependencies:
       '@kurkle/color': 0.3.2
     dev: false
 
-  /chartjs-plugin-zoom@2.0.1(chart.js@4.2.1):
+  /chartjs-plugin-zoom@2.0.1(chart.js@4.3.0):
     resolution: {integrity: sha512-ogOmLu6e+Q7E1XWOCOz9YwybMslz9qNfGV2a+qjfmqJYpsw5ZMoRHZBUyW+NGhkpQ5PwwPA/+rikHpBZb7PZuA==}
     peerDependencies:
       chart.js: '>=3.2.0'
     dependencies:
-      chart.js: 4.2.1
+      chart.js: 4.3.0
       hammerjs: 2.0.8
     dev: false
 
