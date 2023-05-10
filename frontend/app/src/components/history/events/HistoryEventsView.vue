@@ -417,13 +417,14 @@ const showDeleteConfirmation = () => {
 const { txEvmChains, getEvmChainName } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
 
-onMounted(() => {
+onMounted(async () => {
   startPromise(Promise.all([fetchData(), fetchAssociatedLocations()]));
-  refresh();
+  await refresh();
 });
 
-const refresh = (userInitiated = false) => {
-  startPromise(refreshTransactions(get(onlyChains), userInitiated));
+const refresh = async (userInitiated = false) => {
+  await refreshTransactions(get(onlyChains), userInitiated);
+  await fetchData();
 };
 
 onUnmounted(() => {

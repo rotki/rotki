@@ -3,6 +3,7 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { type BigNumber } from '@rotki/common';
+import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { type Writeable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
@@ -411,7 +412,13 @@ watch(
   ([eventType, eventSubtype, counterparty, location]) => {
     const typeData = get(
       getEventTypeData(
-        { eventType, eventSubtype, counterparty, location },
+        {
+          eventType,
+          eventSubtype,
+          counterparty,
+          location,
+          entryType: HistoryEventEntryType.EVM_EVENT
+        },
         false
       )
     );
