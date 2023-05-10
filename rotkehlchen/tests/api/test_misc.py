@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import pytest
 import requests
+from rotkehlchen.accounting.mixins.event import AccountingEventType
 
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.constants.assets import A_ETH
@@ -429,6 +430,12 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges):
     assert 'per_protocol_mappings' in result
     assert 'global_mappings' in result
     assert 'event_category_details' in result
+    assert 'accounting_events_icons' in result
+    received_accounting_event_types = {
+        AccountingEventType.deserialize(event_type)
+        for event_type in result['accounting_events_icons']
+    }
+    assert received_accounting_event_types == set(AccountingEventType)
     assert result['exchange_mappings'].keys() == {'kraken'}
     assert {'trade', 'spend'}.issubset(result['exchange_mappings']['kraken'].keys())
 

@@ -22,6 +22,7 @@ from web3.exceptions import BadFunctionCallOutput
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.constants import (
+    ACCOUNTING_EVENTS_ICONS,
     DEFAULT_EVENT_CATEGORY_MAPPINGS,
     EVENT_CATEGORY_DETAILS,
     FREE_PNL_EVENTS_LIMIT,
@@ -4330,6 +4331,7 @@ class RestAPI():
             'global_mappings': DEFAULT_EVENT_CATEGORY_MAPPINGS,
             'event_category_details': EVENT_CATEGORY_DETAILS,
             'exchange_mappings': self.rotkehlchen.exchange_manager.get_exchange_mappings(),
+            'accounting_events_icons': ACCOUNTING_EVENTS_ICONS,
             'per_protocol_mappings': {
                 'ethereum': self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.events_types_tuples,  # noqa: E501
                 'optimism': self.rotkehlchen.chains_aggregator.optimism.transactions_decoder.events_types_tuples,  # noqa: E501

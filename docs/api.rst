@@ -12571,6 +12571,7 @@ Event Mappings
   :resjson object global_mappings: keys of this object are the history event types names and values are mappings of subtypes' names to the ``EventCategory`` name. Contains mappings that should be applied if there is no a specific protocol rule.
   :resjson object per_protocol_mappings: same as global_mappings but contains specific mappings per chain and protocol.
   :resjson object event_category_details: Properties for ``EventCategory``.
+  :resjon object accounting_events_icons: Mapping of accounting event type to its corresponding icon name.
   :resjson string label: Label to show in the frontend for the event type.
   :resjson string icon: Icon to be used by the frontend for this event type.
   :resjson string color[optional]: Optional color to apply to the icon

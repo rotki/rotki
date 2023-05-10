@@ -4,6 +4,7 @@ from hexbytes import HexBytes
 from web3.datastructures import AttributeDict
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
+from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, StakingEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -93,7 +94,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
         for k, v in entry.items():
             if isinstance(k, Asset) is True:
                 k = k.identifier  # noqa: PLW2901
-            elif isinstance(k, (HistoryEventType, HistoryEventSubType, EventCategory, Location)) is True:  # noqa: E501
+            elif isinstance(k, (HistoryEventType, HistoryEventSubType, EventCategory, Location, AccountingEventType)) is True:  # noqa: E501
                 k = _process_entry(k)  # noqa: PLW2901
             new_dict[k] = _process_entry(v)
         return new_dict
@@ -202,6 +203,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             EvmTokenKind,
             HistoryBaseEntryType,
             EventCategory,
+            AccountingEventType,
     )):
         return str(entry)
 
