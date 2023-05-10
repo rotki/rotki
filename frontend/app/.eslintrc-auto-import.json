@@ -352,6 +352,7 @@
     "useBtcAccountBalances": true,
     "useBtcAccountsStore": true,
     "useBtcBalancesStore": true,
+    "useCacheRefresh": true,
     "useCached": true,
     "useCeil": true,
     "useChainAccountBalances": true,

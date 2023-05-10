@@ -15,5 +15,9 @@ const { tc } = useI18n();
     <div class="mt-4">
       <purge-images-cache />
     </div>
+
+    <div class="mt-4">
+      <refresh-cache />
+    </div>
   </setting-category>
 </template>

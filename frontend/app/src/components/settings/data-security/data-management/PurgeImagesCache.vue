@@ -1,28 +1,21 @@
 <script setup lang="ts">
 import { type ComputedRef, type Ref } from 'vue';
-import { type BaseMessage } from '@/types/messages';
+import { OtherPurge } from '@/types/session/purge';
 
 const { tc } = useI18n();
-enum PurgeType {
-  ASSET_ICONS = 'asset_icons',
-  ENS_AVATARS = 'ens_avatars'
-}
 
 const purgable = [
   {
-    id: PurgeType.ASSET_ICONS,
+    id: OtherPurge.ASSET_ICONS,
     text: tc('data_management.purge_images_cache.label.asset_icons')
   },
   {
-    id: PurgeType.ENS_AVATARS,
+    id: OtherPurge.ENS_AVATARS,
     text: tc('data_management.purge_images_cache.label.ens_avatars')
   }
 ];
 
-const source: Ref<PurgeType> = ref(PurgeType.ASSET_ICONS);
-const status: Ref<BaseMessage | null> = ref(null);
-const confirm: Ref<boolean> = ref(false);
-const pending: Ref<boolean> = ref(false);
+const source: Ref<OtherPurge> = ref(OtherPurge.ASSET_ICONS);
 
 const assetToClear: Ref<string> = ref('');
 const ensToClear: Ref<string[]> = ref([]);
@@ -33,15 +26,13 @@ const ensNamesList: ComputedRef<string[]> = computed(
   () => Object.values(get(ensNames)).filter(value => !!value) as string[]
 );
 
-const { show } = useConfirmStore();
-
 const { clearIconCache } = useAssetIconApi();
 const { setLastRefreshedAssetIcon } = useAssetIcon();
 const { clearEnsAvatarCache } = useAddressesNamesApi();
 const { setLastRefreshedAvatar } = useAddressesNamesStore();
 
-const purgeSource = async (source: PurgeType) => {
-  if (source === PurgeType.ASSET_ICONS) {
+const purgeSource = async (source: OtherPurge) => {
+  if (source === OtherPurge.ASSET_ICONS) {
     const asset = get(assetToClear);
     await clearIconCache(asset ? [asset] : null);
     setLastRefreshedAssetIcon();
@@ -54,45 +45,24 @@ const purgeSource = async (source: PurgeType) => {
   }
 };
 
-const text = (source: PurgeType): string =>
-  purgable.find(({ id }) => id === source)?.text || '';
-
-const purge = async (source: PurgeType) => {
-  set(confirm, false);
-  try {
-    set(pending, true);
-    await purgeSource(source);
-    set(status, {
-      success: tc('data_management.purge_images_cache.success', 0, {
-        source: text(source)
-      }),
-      error: ''
-    });
-    setTimeout(() => set(status, null), 5000);
-  } catch {
-    set(status, {
-      error: tc('data_management.purge_images_cache.error', 0, {
-        source: text(source)
-      }),
-      success: ''
-    });
-  } finally {
-    set(pending, false);
-  }
-};
-
-const showConfirmation = (source: PurgeType) => {
-  show(
-    {
-      title: tc('data_management.purge_images_cache.confirm.title'),
-      message: tc('data_management.purge_images_cache.confirm.message', 0, {
-        source: text(source)
-      })
-    },
-    async () => purge(source)
-  );
-  set(confirm, true);
-};
+const { status, pending, showConfirmation } = useCacheRefresh(
+  purgable,
+  purgeSource,
+  (source: string) => ({
+    success: tc('data_management.purge_images_cache.success', 0, {
+      source
+    }),
+    error: tc('data_management.purge_images_cache.error', 0, {
+      source
+    })
+  }),
+  (source: string) => ({
+    title: tc('data_management.purge_images_cache.confirm.title'),
+    message: tc('data_management.purge_images_cache.confirm.message', 0, {
+      source
+    })
+  })
+);
 
 const css = useCssModule();
 </script>
@@ -122,7 +92,7 @@ const css = useCssModule();
       </v-col>
       <v-col md="6">
         <asset-select
-          v-if="source === PurgeType.ASSET_ICONS"
+          v-if="source === OtherPurge.ASSET_ICONS"
           v-model="assetToClear"
           outlined
           persistent-hint

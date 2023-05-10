@@ -1616,6 +1616,40 @@
       "success": "Data was successfully deleted",
       "title": "Purge Data"
     },
+    "purge_images_cache": {
+      "confirm": {
+        "message": "Are you sure you want to clear the images cached for {source}?",
+        "title": "Confirm clear images cached"
+      },
+      "label": {
+        "asset_icons": "Asset icons",
+        "asset_to_clear": "Search asset icon to clear",
+        "ens_avatars": "ENS avatars",
+        "ens_to_clear": "ENS avatars to clear"
+      },
+      "hint": "Empty this field to remove the cache for all",
+      "error": "Clear the cached images for {source} failed: {message}",
+      "success": "Cache was successfully cleared",
+      "select_image_source": "Select image cache source to clear",
+      "subtitle": "Allows you to purge image cached by rotki",
+      "title": "Purge Images Cache",
+      "tooltip": "Purge the cached images for the selected source"
+    },
+    "refresh_cache": {
+      "confirm": {
+        "message": "Are you sure you want to refresh the cache for {source}?",
+        "title": "Confirm refresh cache"
+      },
+      "label": {
+        "general_cache": "General cache (Curve, MakerDAO, Yearn)"
+      },
+      "error": "Clear the cache for {source} failed: {message}",
+      "success": "Cache was successfully cleared",
+      "select_cache": "Select cache to refresh",
+      "subtitle": "Allows you to refresh data cached by rotki",
+      "title": "Refresh cache",
+      "tooltip": "Refresh cache for selected source"
+    },
     "title": "Manage Data"
   },
   "data_table": {
@@ -3509,7 +3543,6 @@
     "all_modules": "All Modules",
     "ethereum_transactions": "Evm Transactions",
     "exchange": "Exchange: {name}",
-    "general_cache": "General cache (Curve, MakerDAO, Yearn)",
     "label": "Select a data source",
     "module": "Module: {name}",
     "tooltip": "Purge the cached data for the selected source"

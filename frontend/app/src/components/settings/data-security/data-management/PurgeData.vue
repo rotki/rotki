@@ -7,7 +7,6 @@ import {
   ALL_DECENTRALIZED_EXCHANGES,
   ALL_MODULES,
   ALL_TRANSACTIONS,
-  GENERAL_CACHE,
   PURGABLE,
   type PurgeParams,
   type Purgeable
@@ -20,7 +19,7 @@ const status: Ref<BaseMessage | null> = ref(null);
 const confirm: Ref<boolean> = ref(false);
 const pending: Ref<boolean> = ref(false);
 
-const { purgeCache, refreshGeneralCache } = useSessionPurge();
+const { purgeCache } = useSessionPurge();
 
 const { show } = useConfirmStore();
 
@@ -60,8 +59,6 @@ const purgeSource = async (source: Purgeable) => {
     await deleteExchangeData(source as SupportedExchange);
   } else if (Object.values(Module).includes(source as any)) {
     await deleteModuleData(source as Module);
-  } else if (source === GENERAL_CACHE) {
-    await refreshGeneralCache();
   }
   await purgeCache(source);
 };
@@ -119,8 +116,6 @@ const text = (source: Purgeable) => {
     return tc('purge_selector.all_modules');
   } else if (source === ALL_DECENTRALIZED_EXCHANGES) {
     return tc('purge_selector.all_decentralized_exchanges');
-  } else if (source === GENERAL_CACHE) {
-    return tc('purge_selector.general_cache');
   }
   return source;
 };

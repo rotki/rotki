@@ -3,6 +3,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithSessionStatus } from '@/services/utils';
 import { type Messages, type PeriodicClientQueryResult } from '@/types/session';
 import { type PendingTask } from '@/types/task';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 
 export const useSessionApi = () => {
   const consumeMessages = async (): Promise<Messages> => {
@@ -26,9 +27,7 @@ export const useSessionApi = () => {
   const refreshGeneralCacheTask = async (): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
       '/cache/general/refresh',
-      {
-        async_query: true
-      },
+      snakeCaseTransformer({ asyncQuery: true }),
       {
         validateStatus: validWithSessionStatus
       }

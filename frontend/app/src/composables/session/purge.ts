@@ -65,6 +65,7 @@ export const useSessionPurge = () => {
 
   const { awaitTask } = useTaskStore();
   const { tc } = useI18n();
+
   const refreshGeneralCache = async () => {
     const taskType = TaskType.REFRESH_GENERAL_CACHE;
     const { taskId } = await refreshGeneralCacheTask();
