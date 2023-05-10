@@ -1,4 +1,5 @@
 import { type MaybeRef } from '@vueuse/core';
+import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type HistoryEventTypeData } from '@/types/history/events/event-type';
 import { type ActionDataEntry } from '@/types/action';
 import {
@@ -11,22 +12,17 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     useHistoryEventsApi();
 
   const { tc } = useI18n();
-  const { connected } = toRefs(useMainStore());
 
   const defaultHistoryEventTypeData = () => ({
     globalMappings: {},
     perProtocolMappings: {},
-    eventCategoryDetails: {}
+    eventCategoryDetails: {},
+    exchangeMappings: {}
   });
 
   const historyEventTypeData: Ref<HistoryEventTypeData> =
     asyncComputed<HistoryEventTypeData>(
-      () => {
-        if (get(connected)) {
-          return getTransactionTypeMappings();
-        }
-        return defaultHistoryEventTypeData();
-      },
+      () => getTransactionTypeMappings(),
       defaultHistoryEventTypeData(),
       {
         lazy: true
@@ -35,18 +31,9 @@ export const useHistoryEventMappings = createSharedComposable(() => {
 
   const historyEventCounterpartiesData: Ref<ActionDataEntry[]> = asyncComputed<
     ActionDataEntry[]
-  >(
-    () => {
-      if (get(connected)) {
-        return getHistoryEventCounterpartiesData();
-      }
-      return [];
-    },
-    [],
-    {
-      lazy: true
-    }
-  );
+  >(() => getHistoryEventCounterpartiesData(), [], {
+    lazy: true
+  });
 
   const historyEventTypes: ComputedRef<string[]> = computed(() =>
     Object.keys(get(historyEventTypeGlobalMapping))
@@ -105,21 +92,32 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     ({ perProtocolMappings }) => perProtocolMappings
   );
 
+  const historyEventTypeExchangeMapping = useRefMap(
+    historyEventTypeData,
+    ({ exchangeMappings }) => exchangeMappings
+  );
+
   const getEventType = (
     event: MaybeRef<{
       eventType?: string | null;
       eventSubtype?: string | null;
       counterparty?: string | null;
       location?: string | null;
+      entryType: HistoryEventEntryType;
     }>
   ): ComputedRef<string | undefined> =>
     computed(() => {
-      const { eventType, eventSubtype, counterparty, location } = get(event);
+      const { eventType, eventSubtype, counterparty, location, entryType } =
+        get(event);
 
       const eventTypeNormalized = eventType || 'none';
       const eventSubtypeNormalized = eventSubtype || 'none';
 
-      if (location && counterparty) {
+      if (
+        entryType === HistoryEventEntryType.EVM_EVENT &&
+        location &&
+        counterparty
+      ) {
         const subTypesFromPerProtocolMapping = get(
           historyEventTypePerProtocolMapping
         )[location]?.[counterparty]?.[eventTypeNormalized]?.[
@@ -128,6 +126,16 @@ export const useHistoryEventMappings = createSharedComposable(() => {
 
         if (subTypesFromPerProtocolMapping) {
           return subTypesFromPerProtocolMapping;
+        }
+      }
+
+      if (entryType === HistoryEventEntryType.HISTORY_EVENT && location) {
+        const subTypesFromExchangesMapping = get(
+          historyEventTypeExchangeMapping
+        )[location]?.[eventTypeNormalized]?.[eventSubtypeNormalized];
+
+        if (subTypesFromExchangesMapping) {
+          return subTypesFromExchangesMapping;
         }
       }
 
@@ -144,6 +152,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
       eventSubtype?: string | null;
       counterparty?: string | null;
       location?: string | null;
+      entryType: HistoryEventEntryType;
     }>,
     showFallbackLabel = true
   ): ComputedRef<ActionDataEntry> =>
