@@ -183,6 +183,10 @@ const aggregatedStatistic: ComputedRef<LiquityStatisticDetails | null> =
       return allStatistics.globalStats;
     }
 
+    if (!allStatistics.byAddress) {
+      return null;
+    }
+
     let aggregatedStatistic: LiquityStatisticDetails | null = null;
     for (const address in allStatistics.byAddress) {
       if (!selectedAddresses.includes(address)) {

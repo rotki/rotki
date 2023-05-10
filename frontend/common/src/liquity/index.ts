@@ -79,7 +79,7 @@ export type LiquityStatisticDetails = z.infer<typeof LiquityStatisticDetails>;
 
 export const LiquityStatistics = z.object({
   globalStats: LiquityStatisticDetails,
-  byAddress: z.record(z.string(), LiquityStatisticDetails)
+  byAddress: z.record(z.string(), LiquityStatisticDetails).optional()
 });
 
 export type LiquityStatistics = z.infer<typeof LiquityStatistics>;
