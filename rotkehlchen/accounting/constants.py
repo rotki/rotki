@@ -1,3 +1,4 @@
+from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.types import EventCategory, EventCategoryDetails
 
@@ -178,4 +179,17 @@ EVENT_CATEGORY_DETAILS = {
         label='new block',
         icon='mdi-cube-outline',
     ),
+}
+
+ACCOUNTING_EVENTS_ICONS = {
+    AccountingEventType.TRADE: 'mdi-shuffle-variant',
+    AccountingEventType.FEE: 'mdi-fire',
+    AccountingEventType.ASSET_MOVEMENT: 'mdi-bank-transfer',
+    AccountingEventType.MARGIN_POSITION: 'mdi-margin',
+    AccountingEventType.LOAN: 'mdi-handshake',
+    AccountingEventType.PREFORK_ACQUISITION: 'mdi-source-fork',
+    AccountingEventType.LEDGER_ACTION: 'mdi-book-open-variant',
+    AccountingEventType.STAKING: 'mdi-sprout',
+    AccountingEventType.HISTORY_EVENT: 'mdi-history',
+    AccountingEventType.TRANSACTION_EVENT: 'mdi-swap-horizontal',
 }
