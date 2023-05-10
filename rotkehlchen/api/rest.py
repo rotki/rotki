@@ -3552,28 +3552,34 @@ class RestAPI():
     @async_api_call()
     def query_online_events(self, query_type: HistoryEventQueryType) -> dict[str, Any]:
         """Queries the specified event type for any new events and saves them in the DB"""
-        if query_type == HistoryEventQueryType.EXCHANGES:
-            self.rotkehlchen.exchange_manager.query_history_events()
-            return OK_RESULT
+        try:
+            if query_type == HistoryEventQueryType.EXCHANGES:
+                self.rotkehlchen.exchange_manager.query_history_events()
+                return OK_RESULT
 
-        # else we query eth staking events
-        eth2 = self.rotkehlchen.chains_aggregator.get_module('eth2')
-        if eth2 is None:
+            # else we query eth staking events
+            eth2 = self.rotkehlchen.chains_aggregator.get_module('eth2')
+            if eth2 is None:
+                return wrap_in_fail_result(
+                    message='eth2 module is not active',
+                    status_code=HTTPStatus.CONFLICT,
+                )
+
+            if query_type == HistoryEventQueryType.ETH_WITHDRAWALS:
+                eth2.query_services_for_validator_withdrawals(to_ts=ts_now())
+            else:  # block production
+                with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                    cursor.execute('SELECT validator_index FROM eth2_validators')
+                    indices = [row[0] for row in cursor]
+                if len(indices) != 0:
+                    log.debug(f'Querying information for validator indices {indices}')
+                    eth2.beaconchain.get_and_store_produced_blocks(indices)
+                    eth2.combine_block_with_tx_events()
+        except RemoteError as e:
             return wrap_in_fail_result(
-                message='eth2 module is not active',
-                status_code=HTTPStatus.CONFLICT,
+                message=str(e),
+                status_code=HTTPStatus.BAD_GATEWAY,
             )
-
-        if query_type == HistoryEventQueryType.ETH_WITHDRAWALS:
-            eth2.query_services_for_validator_withdrawals(to_ts=ts_now())
-        else:  # block production
-            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-                cursor.execute('SELECT validator_index FROM eth2_validators')
-                indices = [row[0] for row in cursor]
-            if len(indices) != 0:
-                log.debug(f'Querying information for validator indices {indices}')
-                eth2.beaconchain.get_and_store_produced_blocks(indices)
-                eth2.combine_block_with_tx_events()
 
         return OK_RESULT
 

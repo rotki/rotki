@@ -306,6 +306,11 @@ class ExchangeManager:
         return []
 
     def query_history_events(self) -> None:
+        """Queries all history events for exchanges that need it
+
+        May raise:
+        - RemoteError if any exchange's remote query fails
+        """
         for exchange in self.iterate_exchanges():
             exchange.query_history_events()
 
