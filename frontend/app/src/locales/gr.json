@@ -3630,6 +3630,25 @@
       "example": "start = 26/05/2022"
     },
     "hint_filter": "The combined filters will be applied at the same time",
+    "exclusion": {
+      "description": "Use operator `!=` to filter out option, e.g.",
+      "example": "type != evm event"
+    },
+    "no_suggestions": "No suggestions found for {search}",
+    "saved_filters": {
+      "actions": {
+        "list": "Open saved filter list",
+        "add": "Save current filter to list",
+        "apply": "Apply this saved filter",
+        "remove": "Remove this saved filter"
+      },
+      "added": "Filter saved",
+      "empty": "You don't have any saved filter. Apply the filter as usual, and click this button {button} to save the filter.",
+      "saving": {
+        "title": "Failed to save filter",
+        "limited": "You are only allowed to save up to {limit} filters. Remove other filters to be able to add again."
+      }
+    },
     "title": "Available filters",
     "unsupported_filter": "Unsupported filter:"
   },
@@ -3789,7 +3808,7 @@
       "end_date": "filter by the end date of the transaction period",
       "entry_type": "filter by entry type",
       "location": "filter by event location",
-      "protocol": "filter by the protocol / counterparty of the events",
+      "protocol": "filter by the protocol of the events",
       "start_date": "filter by the start date of the transaction period",
       "tx_hash": "filter by tx hash(es)",
       "validator_index": "filter by validator index(es)"

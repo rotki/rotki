@@ -192,9 +192,9 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
         :class="highlightedTextClasses"
         class="font-weight-regular pt-2"
       >
-        {{ t('table_filter.negation.description') }}
+        {{ t('table_filter.exclusion.description') }}
         <span class="font-weight-medium">
-          {{ t('table_filter.negation.example') }}
+          {{ t('table_filter.exclusion.example') }}
         </span>
       </div>
 
