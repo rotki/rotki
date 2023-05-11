@@ -2,6 +2,7 @@ import json
 import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any
+from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.constants.assets import A_ETH2
@@ -85,30 +86,29 @@ def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection'
         read_cursor.execute('SELECT * from history_events')
         for entry in read_cursor:
             location = Location.deserialize_from_db(entry[4])
-            if isinstance(entry[1], str):
-                event_identifier = entry[1]
-            else:  # is an EVM transaction event
-                if location not in EVM_LOCATIONS:
-                    # data is somehow wrong. Let's try to fix location
-                    chain_id = write_cursor.execute('SELECT chain_id from evm_transactions WHERE tx_hash=?', (entry[1],)).fetchone()  # noqa: E501
-                    if chain_id is not None:
-                        location = Location.from_chain_id(chain_id)
-                    else:  # could not find tx_hash. Let's just default to ethereum
-                        location = Location.ETHEREUM
-
-                event_identifier = f'{location.to_chain_id()}{deserialize_evm_tx_hash(entry[1]).hex()}'  # noqa: E501 # pylint: disable=no-member
+            db_event_identifier = entry[1]
+            if location in EVM_LOCATIONS:
+                event_identifier = f'{location.to_chain_id()}{deserialize_evm_tx_hash(db_event_identifier).hex()}'  # noqa: E501 # pylint: disable=no-member
+            elif location == Location.KRAKEN or db_event_identifier.startswith(b'rotki_events'):
+                # kraken is the only location with basic history event entry type that doesn't
+                # start with 'rotki_events'
+                event_identifier = db_event_identifier.decode()
+            else:
+                # this shouldn't happen, leaving it here to avoid losing information or
+                # failing during the upgrade
+                log.critical(f'Unexpected event found with {event_identifier=} and {location=}')
+                event_identifier = db_event_identifier
 
             if location == Location.KRAKEN or event_identifier.startswith('rotki_events'):  # This is the rule at 1.27.1   # noqa: E501
-                entry_type = 0  # Pure history base entry
+                entry_type = HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db()
             else:
-                entry_type = 1  # An evm event
+                entry_type = HistoryBaseEntryType.EVM_EVENT.serialize_for_db()
+                extra_evm_info_entries.append((entry[0], entry[1]) + entry[12:])
+
             if entry[11] is None:
                 new_entries.append([entry[0], entry_type, event_identifier, *entry[2:11], 'none'])  # turn NULL values to text `none`  # noqa: E501
             else:
                 new_entries.append([entry[0], entry_type, event_identifier, *entry[2:12]])  # Don't change NON-NULL values  # noqa: E501
-
-            if entry_type == 1:
-                extra_evm_info_entries.append((entry[0], entry[1]) + entry[12:])
 
     # add all non-evm entries to the new table (no data lost)
     write_cursor.executemany('INSERT INTO history_events_copy VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', new_entries)  # noqa: E501

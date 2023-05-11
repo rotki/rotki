@@ -1313,33 +1313,36 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     cursor = db_v36.conn.cursor()
     # Test state of DB before upgrade is as expected
     result = cursor.execute('SELECT COUNT(*) FROM history_events;')
-    assert result.fetchone()[0] == 180
+    assert result.fetchone()[0] == 181
     result = cursor.execute('SELECT COUNT(*) FROM history_events WHERE subtype IS NULL;')
-    assert result.fetchone()[0] == 4
+    assert result.fetchone()[0] == 5
     result = cursor.execute('SELECT * from history_events_mappings;')
     assert result.fetchall() == [  # customized events
         (1, 'state', 1),
         (74, 'state', 1),
     ]
     old_history_events = cursor.execute('SELECT * FROM history_events;').fetchall()
-    kraken_events = [
-        (171, 'SDASD-DSAD-DSAD', 0, 1638706007439, 'B', 'kraken', 'ETH', '-10.996', '-11843.777435000000', None, 'withdrawal', None, None, None),  # noqa: E501
-        (172, 'YDASD-YDSAD-YDSAD', 0, 1636553589350, 'B', 'kraken', 'ETH', '-5.1', '-6145.834', None, 'trade', None, None, None),  # noqa: E501
-        (173, 'TXZSDG-IUSNH2-OOAIE3U', 0, 1679243606179, 'B', 'kraken', 'BTC', '-0.0922995600', '-1391.564299579200', None, 'trade', None, None, None),  # noqa: E501
-        (174, 'TXZSDG-IUSNH2-OOAIE3U', 1, 1679243606179, 'B', 'kraken', 'EUR', '1100', '1391.564299579200', None, 'trade', None, None, None),  # noqa: E501
-        (175, 'TXZSDG-IUSNH2-OOAIE3U', 2, 1679243606179, 'B', 'kraken', 'EUR', '8.00', '8.53312', None, 'trade', 'fee', None, None),  # noqa: E501
-        (176, 'KRAKEN-ETH2-EVENT', 0, 1681826144996, 'B', 'kraken', 'ETH2', '-0.0032936117', '-6.930681228076', None, 'staking', 'reward', None, None),  # noqa: E501
-        (177, 'KRAKEN-ETH-EVENT-STAKING', 0, 1681967948701, 'B', 'kraken', 'ETH', '0.0000355988', '0.069824910272', None, 'staking', 'reward', None, None),  # noqa: E501
-        (1113, 'TSTLG5', 0, 1621508243539, 'B', 'Kraken 1', 'EUR', '-37.7000', '0', '', 'spend', 'none', None, None),  # noqa: E501
-        (1114, 'TSTLG5', 2, 1621508243539, 'B', 'Kraken 1', 'EUR', '0.5500', '0', '', 'spend', 'fee', None, None),  # noqa: E501
-        (1115, 'TSTLG5', 1, 1621508243543, 'B', 'Kraken 1', 'ETH', '0.0169800000', '0', '', 'receive', 'none', None, None),  # noqa: E501
-    ]
-    custom_events = [
+    kraken_events = {
+        (171, b'SDASD-DSAD-DSAD', 0, 1638706007439, 'B', 'kraken', 'ETH', '-10.996', '-11843.777435000000', None, 'withdrawal', None, None, None),  # noqa: E501
+        (172, b'YDASD-YDSAD-YDSAD', 0, 1636553589350, 'B', 'kraken', 'ETH', '-5.1', '-6145.834', None, 'trade', None, None, None),  # noqa: E501
+        (173, b'TXZSDG-IUSNH2-OOAIE3U', 0, 1679243606179, 'B', 'kraken', 'BTC', '-0.0922995600', '-1391.564299579200', None, 'trade', None, None, None),  # noqa: E501
+        (174, b'TXZSDG-IUSNH2-OOAIE3U', 1, 1679243606179, 'B', 'kraken', 'EUR', '1100', '1391.564299579200', None, 'trade', None, None, None),  # noqa: E501
+        (175, b'TXZSDG-IUSNH2-OOAIE3U', 2, 1679243606179, 'B', 'kraken', 'EUR', '8.00', '8.53312', None, 'trade', 'fee', None, None),  # noqa: E501
+        (176, b'KRAKEN-ETH2-EVENT', 0, 1681826144996, 'B', 'kraken', 'ETH2', '-0.0032936117', '-6.930681228076', None, 'staking', 'reward', None, None),  # noqa: E501
+        (177, b'KRAKEN-ETH-EVENT-STAKING', 0, 1681967948701, 'B', 'kraken', 'ETH', '0.0000355988', '0.069824910272', None, 'staking', 'reward', None, None),  # noqa: E501
+        (1113, b'TSTLG5', 0, 1621508243539, 'B', 'Kraken 1', 'EUR', '-37.7000', '0', '', 'spend', 'none', None, None),  # noqa: E501
+        (1114, b'TSTLG5', 2, 1621508243539, 'B', 'Kraken 1', 'EUR', '0.5500', '0', '', 'spend', 'fee', None, None),  # noqa: E501
+        (1115, b'TSTLG5', 1, 1621508243543, 'B', 'Kraken 1', 'ETH', '0.0169800000', '0', '', 'receive', 'none', None, None),  # noqa: E501
+    }
+    custom_events = {
         (1, b'\xf1\xe0SX\xcbe\xed{3\xa6\xbb\x0f"\x8am>E\x9a\xf8\x18e\xccc6\x99M\xeciw\xc3\x1aM', 0, 1676042975000, 'g', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'ETH', '0.0000004061904', '0.000609801461808', 'Burned 0.0000004061904 ETH for gas for greater justice', 'spend', 'fee', 'gas', None),  # noqa: E501
         (74, b'\xd1\x81W\xff\x16\xd3D\xcf-"\xf1D\xeb\xcf\xc3;\xff\x0b0\xcd\xcd\xddY\x97?\xd2\xf9\xf9%\xb3\xf5\xa3', 474, 1669664867000, 'f', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F', '125.835582561728229714', '125.6594127461418101924004', 'Receive 125.835582561728229714 DAI from 0x73043143e0A6418cc45d82D4505B096b802FD365 to 0xc37b40ABdB939635068d3c5f13E7faF686F03B65 because I am cool', 'receive', 'none', '0x73043143e0A6418cc45d82D4505B096b802FD365', None),  # noqa: E501
-    ]
+    }
+    imported_event = (1116, b'rotki_eventsf3d3c9cc11e3442c91662c24ed7b3554', 0, 1638706007440, 'P', 'crypto.com', 'ETH', '12', '12000', None, 'receive', None, None, None)  # noqa: E501
     assert all(x in old_history_events for x in kraken_events)
     assert all(x in old_history_events for x in custom_events)
+    assert imported_event in old_history_events
+
     old_ens_mappings = cursor.execute('SELECT * FROM ens_mappings').fetchall()
     assert len(old_ens_mappings) == 10
     # Check that old tables exist
@@ -1370,7 +1373,7 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
         ('ftx_ledger_actions_FTX 1', 0, 1682610440),
     ]
     # check that there are two kraken events and one of them has incorrect information
-    cursor.execute('SELECT amount, asset FROM history_events WHERE event_identifier IN (?, ?)', ('KRAKEN-ETH2-EVENT', 'KRAKEN-ETH-EVENT-STAKING'))  # noqa: E501
+    cursor.execute('SELECT amount, asset FROM history_events WHERE event_identifier IN (?, ?)', (b'KRAKEN-ETH2-EVENT', b'KRAKEN-ETH-EVENT-STAKING'))  # noqa: E501
     assert cursor.fetchall() == [('0.0000355988', 'ETH'), ('-0.0032936117', 'ETH2')]
     assert cursor.execute('SELECT * FROM eth2_daily_staking_details').fetchall() == [
         (12345, 1682519933, '1000.0', '1001.0', '0.00001', '32.0', '32.00001', None, None, None, None, None, None, None, None, None),  # noqa: E501
@@ -1406,7 +1409,8 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     cursor = db.conn.cursor()
 
     result = cursor.execute('SELECT COUNT(*) FROM history_events;')
-    assert result.fetchone()[0] == len(kraken_events) + len(custom_events)
+    # the extra event is the imported rotki_event
+    assert result.fetchone()[0] == len(kraken_events) + len(custom_events) + 1
     result = cursor.execute('SELECT COUNT(*) FROM history_events WHERE subtype IS NULL;')
     assert result.fetchone()[0] == 0
 
@@ -1418,26 +1422,28 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
 
     new_kraken_events = set(cursor.execute('SELECT * FROM history_events WHERE location="B";'))
     updated_kraken_events = {
-        (171, 0, 'SDASD-DSAD-DSAD', 0, 1638706007439, 'B', 'kraken', 'ETH', '10.996', '11843.777435000000', None, 'withdrawal', 'none'),  # noqa: E501
-        (172, 0, 'YDASD-YDSAD-YDSAD', 0, 1636553589350, 'B', 'kraken', 'ETH', '5.1', '6145.834', None, 'trade', 'spend'),  # noqa: E501
-        (173, 0, 'TXZSDG-IUSNH2-OOAIE3U', 0, 1679243606179, 'B', 'kraken', 'BTC', '0.0922995600', '1391.564299579200', None, 'trade', 'spend'),  # noqa: E501
-        (174, 0, 'TXZSDG-IUSNH2-OOAIE3U', 1, 1679243606179, 'B', 'kraken', 'EUR', '1100', '1391.564299579200', None, 'trade', 'receive'),  # noqa: E501
-        (175, 0, 'TXZSDG-IUSNH2-OOAIE3U', 2, 1679243606179, 'B', 'kraken', 'EUR', '8.00', '8.53312', None, 'trade', 'fee'),  # noqa: E501
-        (176, 0, 'KRAKEN-ETH2-EVENT', 0, 1681826144996, 'B', 'kraken', 'ETH2', '0.0032936117', '6.930681228076', 'Automatic virtual conversion of staked ETH rewards to ETH', 'informational', 'none'),  # noqa: E501
-        (177, 0, 'KRAKEN-ETH-EVENT-STAKING', 0, 1681967948701, 'B', 'kraken', 'ETH', '0.0000355988', '0.069824910272', None, 'staking', 'reward'),  # noqa: E501
-        (1113, 0, 'TSTLG5', 0, 1621508243539, 'B', 'Kraken 1', 'EUR', '37.7000', '0', '', 'trade', 'spend'),  # noqa: E501
-        (1114, 0, 'TSTLG5', 2, 1621508243539, 'B', 'Kraken 1', 'EUR', '0.5500', '0', '', 'spend', 'fee'),  # noqa: E501
-        (1115, 0, 'TSTLG5', 1, 1621508243543, 'B', 'Kraken 1', 'ETH', '0.0169800000', '0', '', 'trade', 'receive'),  # noqa: E501
+        (171, 1, 'SDASD-DSAD-DSAD', 0, 1638706007439, 'B', 'kraken', 'ETH', '10.996', '11843.777435000000', None, 'withdrawal', 'none'),  # noqa: E501
+        (172, 1, 'YDASD-YDSAD-YDSAD', 0, 1636553589350, 'B', 'kraken', 'ETH', '5.1', '6145.834', None, 'trade', 'spend'),  # noqa: E501
+        (173, 1, 'TXZSDG-IUSNH2-OOAIE3U', 0, 1679243606179, 'B', 'kraken', 'BTC', '0.0922995600', '1391.564299579200', None, 'trade', 'spend'),  # noqa: E501
+        (174, 1, 'TXZSDG-IUSNH2-OOAIE3U', 1, 1679243606179, 'B', 'kraken', 'EUR', '1100', '1391.564299579200', None, 'trade', 'receive'),  # noqa: E501
+        (175, 1, 'TXZSDG-IUSNH2-OOAIE3U', 2, 1679243606179, 'B', 'kraken', 'EUR', '8.00', '8.53312', None, 'trade', 'fee'),  # noqa: E501
+        (176, 1, 'KRAKEN-ETH2-EVENT', 0, 1681826144996, 'B', 'kraken', 'ETH2', '0.0032936117', '6.930681228076', 'Automatic virtual conversion of staked ETH rewards to ETH', 'informational', 'none'),  # noqa: E501
+        (177, 1, 'KRAKEN-ETH-EVENT-STAKING', 0, 1681967948701, 'B', 'kraken', 'ETH', '0.0000355988', '0.069824910272', None, 'staking', 'reward'),  # noqa: E501
+        (1113, 1, 'TSTLG5', 0, 1621508243539, 'B', 'Kraken 1', 'EUR', '37.7000', '0', '', 'trade', 'spend'),  # noqa: E501
+        (1114, 1, 'TSTLG5', 2, 1621508243539, 'B', 'Kraken 1', 'EUR', '0.5500', '0', '', 'spend', 'fee'),  # noqa: E501
+        (1115, 1, 'TSTLG5', 1, 1621508243543, 'B', 'Kraken 1', 'ETH', '0.0169800000', '0', '', 'trade', 'receive'),  # noqa: E501
     }
     assert new_kraken_events == updated_kraken_events
 
     new_evm_info = cursor.execute('SELECT * FROM evm_events_info;').fetchall()
     assert len(new_evm_info) == len(custom_events)
-    new_history_events = cursor.execute('SELECT * FROM history_events;').fetchall()
+    new_history_events = set(cursor.execute('SELECT * FROM history_events;'))
     for entry in custom_events:
         prefix = '10x' if entry[4] == 'f' else '100x'  # chain id prefix depending on location
-        assert (entry[0], 1, prefix + entry[1].hex(), *entry[2:12]) in new_history_events
+        assert (entry[0], 2, prefix + entry[1].hex(), *entry[2:12]) in new_history_events
         assert (entry[0], entry[1], entry[12], None, None, entry[13]) in new_evm_info
+    expected_imported_event = (1116, 1, 'rotki_eventsf3d3c9cc11e3442c91662c24ed7b3554', 0, 1638706007440, 'P', 'crypto.com', 'ETH', '12', '12000', None, 'receive', 'none')  # noqa: E501
+    assert expected_imported_event in new_history_events
 
     new_ens_mappings = cursor.execute('SELECT * FROM ens_mappings').fetchall()
     expected_ens_mappings = [(*mapping, 0) for mapping in old_ens_mappings]
