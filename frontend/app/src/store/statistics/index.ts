@@ -139,10 +139,20 @@ export const useStatisticsStore = defineStore('statistics', () => {
       };
 
       const { times, data } = get(netValue);
-      const nv: NetValue = { times: [], data: [] };
+
+      const now = Math.floor(Date.now() / 1000);
+      const netWorth = get(totalNetWorth).toNumber();
+
       if (times.length === 0 && data.length === 0) {
-        return nv;
+        const oneDayTimestamp = 24 * 60 * 60;
+
+        return {
+          times: [now - oneDayTimestamp, now],
+          data: [0, netWorth]
+        };
       }
+
+      const nv: NetValue = { times: [], data: [] };
 
       for (const [i, time] of times.entries()) {
         if (time < startingDate) {
@@ -152,8 +162,6 @@ export const useStatisticsStore = defineStore('statistics', () => {
         nv.data.push(convert(data[i]));
       }
 
-      const now = Math.floor(Date.now() / 1000);
-      const netWorth = get(totalNetWorth).toNumber();
       return {
         times: [...nv.times, now],
         data: [...nv.data, netWorth]

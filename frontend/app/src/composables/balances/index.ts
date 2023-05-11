@@ -19,7 +19,7 @@ export const useBalances = createSharedComposable(() => {
   const { assetPrice, fetchPrices, fetchExchangeRates, exchangeRate } =
     priceStore;
   const { notify } = useNotificationsStore();
-  const { isTaskRunning, addTask } = useTaskStore();
+  const { isTaskRunning, awaitTask } = useTaskStore();
   const { tc } = useI18n();
   const { currencySymbol, currency } = storeToRefs(useGeneralSettingsStore());
 
@@ -89,14 +89,14 @@ export const useBalances = createSharedComposable(() => {
   );
 
   const fetchBalances = async (payload: Partial<AllBalancePayload> = {}) => {
-    if (get(isTaskRunning(TaskType.QUERY_BALANCES))) {
+    const taskType = TaskType.QUERY_BALANCES;
+    if (get(isTaskRunning(taskType))) {
       return;
     }
     try {
       const { taskId } = await queryBalancesAsync(payload);
-      await addTask(taskId, TaskType.QUERY_BALANCES, {
-        title: tc('actions.balances.all_balances.task.title'),
-        ignoreResult: true
+      await awaitTask(taskId, taskType, {
+        title: tc('actions.balances.all_balances.task.title')
       });
     } catch (e: any) {
       notify({
@@ -111,7 +111,7 @@ export const useBalances = createSharedComposable(() => {
 
   const fetch = async (): Promise<void> => {
     await fetchExchangeRates();
-    await fetchBalances();
+    startPromise(fetchBalances());
     await Promise.allSettled([
       fetchManualBalances(),
       refreshAccounts(),
