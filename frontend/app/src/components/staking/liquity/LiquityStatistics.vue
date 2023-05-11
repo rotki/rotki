@@ -65,8 +65,18 @@ const statisticWithAdjustedPrice: ComputedRef<LiquityStatisticDetails | null> =
       }
     );
 
+    const totalUsdGainsStabilityPool = bigNumberSum(
+      stabilityPoolGains.map(({ usdValue }) => usdValue)
+    );
+
+    const totalUsdGainsStaking = bigNumberSum(
+      stakingGains.map(({ usdValue }) => usdValue)
+    );
+
     return {
       ...statisticVal,
+      totalUsdGainsStabilityPool,
+      totalUsdGainsStaking,
       totalDepositedStabilityPoolUsdValue:
         statisticVal.totalDepositedStabilityPool.multipliedBy(
           get(lusdPrice) ?? One
@@ -136,31 +146,32 @@ const calculatePnl = (
   poolGains: AssetBalance,
   poolRewards: AssetBalance,
   poolDeposited: AssetBalance
-): BigNumber => {
-  const expectedAmount = totalDepositedStabilityPool.minus(
-    totalWithdrawnStabilityPool
-  );
+): ComputedRef<BigNumber> =>
+  computed(() => {
+    const expectedAmount = totalDepositedStabilityPool.minus(
+      totalWithdrawnStabilityPool
+    );
 
-  const liquidationGainsInCurrentPrice = poolGains.amount.multipliedBy(
-    get(assetPrice(poolGains.asset)) ?? One
-  );
+    const liquidationGainsInCurrentPrice = poolGains.amount.multipliedBy(
+      get(assetPrice(poolGains.asset)) ?? One
+    );
 
-  const rewardsInCurrentPrice = poolRewards.amount.multipliedBy(
-    get(assetPrice(poolRewards.asset)) ?? One
-  );
+    const rewardsInCurrentPrice = poolRewards.amount.multipliedBy(
+      get(assetPrice(poolRewards.asset)) ?? One
+    );
 
-  const totalWithdrawals = totalUsdGainsStabilityPool
-    .plus(liquidationGainsInCurrentPrice)
-    .plus(rewardsInCurrentPrice);
+    const totalWithdrawals = totalUsdGainsStabilityPool
+      .plus(liquidationGainsInCurrentPrice)
+      .plus(rewardsInCurrentPrice);
 
-  const diffDeposited = expectedAmount.minus(poolDeposited.amount);
+    const diffDeposited = expectedAmount.minus(poolDeposited.amount);
 
-  const diffDepositedInCurrentUsdPrice = diffDeposited.multipliedBy(
-    get(lusdPrice) ?? One
-  );
+    const diffDepositedInCurrentUsdPrice = diffDeposited.multipliedBy(
+      get(lusdPrice) ?? One
+    );
 
-  return totalWithdrawals.minus(diffDepositedInCurrentUsdPrice);
-};
+    return totalWithdrawals.minus(diffDepositedInCurrentUsdPrice);
+  });
 
 const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
   const statisticVal = get(statistic);
@@ -170,13 +181,15 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
     return null;
   }
 
-  return calculatePnl(
-    statisticVal.totalDepositedStabilityPool,
-    statisticVal.totalWithdrawnStabilityPool,
-    statisticVal.totalUsdGainsStabilityPool,
-    poolVal.gains,
-    poolVal.rewards,
-    poolVal.deposited
+  return get(
+    calculatePnl(
+      statisticVal.totalDepositedStabilityPool,
+      statisticVal.totalWithdrawnStabilityPool,
+      statisticVal.totalUsdGainsStabilityPool,
+      poolVal.gains,
+      poolVal.rewards,
+      poolVal.deposited
+    )
   );
 });
 
