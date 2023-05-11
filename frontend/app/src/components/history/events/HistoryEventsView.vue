@@ -120,6 +120,8 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 ]);
 
 const { isTaskRunning } = useTaskStore();
+const { txEvmChains, getEvmChainName } = useSupportedChains();
+const txChains = useArrayMap(txEvmChains, x => x.id);
 
 const {
   refreshTransactions,
@@ -413,9 +415,6 @@ const showDeleteConfirmation = () => {
     resetPendingDeletion
   );
 };
-
-const { txEvmChains, getEvmChainName } = useSupportedChains();
-const txChains = useArrayMap(txEvmChains, x => x.id);
 
 onMounted(async () => {
   startPromise(Promise.all([fetchData(), fetchAssociatedLocations()]));
