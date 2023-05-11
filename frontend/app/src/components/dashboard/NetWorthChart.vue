@@ -187,7 +187,7 @@ const transformData = ({ times, data }: NetValue) => {
     const rangeVal = getRange();
     rangeVal.data!.datasets![0].data = newBalances;
   }
-  resetZoom();
+  resetZoom(true);
 };
 
 const clearData = () => {
@@ -491,7 +491,7 @@ const canvasClicked = (event: MouseEvent) => {
   }, 200);
 };
 
-const resetZoom = () => {
+const resetZoom = (updateRange = false) => {
   set(isDblClick, true);
 
   const chart = getChart();
@@ -504,7 +504,7 @@ const resetZoom = () => {
 
   xAxis.min = min;
   xAxis.max = max;
-  updateChart(false, true);
+  updateChart(updateRange, true);
 };
 
 type ActiveRangeButton = 'start' | 'end' | 'both';

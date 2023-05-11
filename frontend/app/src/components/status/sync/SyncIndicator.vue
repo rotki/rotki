@@ -45,6 +45,8 @@ const message = computed<string>(() =>
     : t('sync_indicator.upload_confirmation.message_download').toString()
 );
 
+const { fetchNetValue } = useStatisticsStore();
+
 const refreshAllAndSave = async () => {
   set(visible, false);
   const payload: Writeable<Partial<AllBalancePayload>> = {
@@ -55,6 +57,7 @@ const refreshAllAndSave = async () => {
     payload.ignoreErrors = true;
   }
   await fetchBalances(payload);
+  await fetchNetValue();
 };
 
 const showConfirmation = (action: SyncAction) => {
