@@ -1,5 +1,4 @@
 import logging
-from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Optional
 
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -163,14 +162,14 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
 
     def get_db_nft_balances(self, filter_query: 'NFTFilterQuery') -> dict[str, Any]:
         """Filters (with `filter_query`) and returns cached nft balances in the nfts table"""
-        entries = defaultdict(list)
+        entries: list[dict[str, Any]] = []
         query, bindings = filter_query.prepare()
         total_usd_value = ZERO
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(NFT_INFO_SQL_QUERY + query, bindings)
             for db_entry in cursor:
                 row_data = _deserialize_nft_from_db(entry=db_entry)
-                entries[db_entry[5]].append(row_data)
+                entries.append(row_data)
 
             query, bindings = filter_query.prepare(with_pagination=False)
             cursor.execute(
