@@ -23,7 +23,9 @@ const props = defineProps({
   outlined: { required: false, type: Boolean, default: false }
 });
 
-const emit = defineEmits(['input']);
+const emit = defineEmits<{
+  (e: 'input', tags: string[]): void;
+}>();
 
 const { t } = useI18n();
 const { value } = toRefs(props);
@@ -111,9 +113,10 @@ const filteredValue = computed<Tag[]>(() =>
   get(tags).filter(({ name }) => get(value).includes(name))
 );
 
-watch(filteredValue, filteredValue => {
-  if (filteredValue.length !== get(value).length) {
-    input(filteredValue);
+watch(tags, () => {
+  const filtered = get(filteredValue);
+  if (get(value).length > filtered.length) {
+    input(filtered);
   }
 });
 </script>
