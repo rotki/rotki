@@ -1,21 +1,21 @@
 <script setup lang="ts">
 import { type ComputedRef, type Ref } from 'vue';
-import { OtherPurge } from '@/types/session/purge';
+import { PurgeableImageCache } from '@/types/session/purge';
 
 const { tc } = useI18n();
 
 const purgable = [
   {
-    id: OtherPurge.ASSET_ICONS,
+    id: PurgeableImageCache.ASSET_ICONS,
     text: tc('data_management.purge_images_cache.label.asset_icons')
   },
   {
-    id: OtherPurge.ENS_AVATARS,
+    id: PurgeableImageCache.ENS_AVATARS,
     text: tc('data_management.purge_images_cache.label.ens_avatars')
   }
 ];
 
-const source: Ref<OtherPurge> = ref(OtherPurge.ASSET_ICONS);
+const source: Ref<PurgeableImageCache> = ref(PurgeableImageCache.ASSET_ICONS);
 
 const assetToClear: Ref<string> = ref('');
 const ensToClear: Ref<string[]> = ref([]);
@@ -31,8 +31,8 @@ const { setLastRefreshedAssetIcon } = useAssetIcon();
 const { clearEnsAvatarCache } = useAddressesNamesApi();
 const { setLastRefreshedAvatar } = useAddressesNamesStore();
 
-const purgeSource = async (source: OtherPurge) => {
-  if (source === OtherPurge.ASSET_ICONS) {
+const purgeSource = async (source: PurgeableImageCache) => {
+  if (source === PurgeableImageCache.ASSET_ICONS) {
     const asset = get(assetToClear);
     await clearIconCache(asset ? [asset] : null);
     setLastRefreshedAssetIcon();
@@ -45,24 +45,25 @@ const purgeSource = async (source: OtherPurge) => {
   }
 };
 
-const { status, pending, showConfirmation } = useCacheRefresh(
-  purgable,
-  purgeSource,
-  (source: string) => ({
-    success: tc('data_management.purge_images_cache.success', 0, {
-      source
+const { status, pending, showConfirmation } =
+  useCacheClear<PurgeableImageCache>(
+    purgable,
+    purgeSource,
+    (source: string) => ({
+      success: tc('data_management.purge_images_cache.success', 0, {
+        source
+      }),
+      error: tc('data_management.purge_images_cache.error', 0, {
+        source
+      })
     }),
-    error: tc('data_management.purge_images_cache.error', 0, {
-      source
+    (source: string) => ({
+      title: tc('data_management.purge_images_cache.confirm.title'),
+      message: tc('data_management.purge_images_cache.confirm.message', 0, {
+        source
+      })
     })
-  }),
-  (source: string) => ({
-    title: tc('data_management.purge_images_cache.confirm.title'),
-    message: tc('data_management.purge_images_cache.confirm.message', 0, {
-      source
-    })
-  })
-);
+  );
 
 const css = useCssModule();
 </script>
@@ -92,7 +93,7 @@ const css = useCssModule();
       </v-col>
       <v-col md="6">
         <asset-select
-          v-if="source === OtherPurge.ASSET_ICONS"
+          v-if="source === PurgeableImageCache.ASSET_ICONS"
           v-model="assetToClear"
           outlined
           persistent-hint

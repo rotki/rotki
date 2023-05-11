@@ -1,10 +1,9 @@
 import { type Ref } from 'vue';
 import { type BaseMessage } from '@/types/messages';
-import { type OtherPurge } from '@/types/session/purge';
 
-export const useCacheRefresh = (
-  purgable: { id: OtherPurge; text: string }[],
-  purgeSource: (source: OtherPurge) => Promise<void>,
+export const useCacheClear = <T>(
+  clearable: { id: T; text: string }[],
+  clearHandle: (source: T) => Promise<void>,
   message: (source: string) => {
     success: string;
     error: string;
@@ -18,14 +17,14 @@ export const useCacheRefresh = (
   const confirm: Ref<boolean> = ref(false);
   const pending: Ref<boolean> = ref(false);
 
-  const text = (source: OtherPurge): string =>
-    purgable.find(({ id }) => id === source)?.text || '';
+  const text = (source: T): string =>
+    clearable.find(({ id }) => id === source)?.text || '';
 
-  const purge = async (source: OtherPurge) => {
+  const clear = async (source: T) => {
     set(confirm, false);
     try {
       set(pending, true);
-      await purgeSource(source);
+      await clearHandle(source);
       set(status, {
         success: message(text(source)).success,
         error: ''
@@ -42,8 +41,8 @@ export const useCacheRefresh = (
   };
 
   const { show } = useConfirmStore();
-  const showConfirmation = (source: OtherPurge) => {
-    show(confirmText(text(source)), async () => purge(source));
+  const showConfirmation = (source: T) => {
+    show(confirmText(text(source)), async () => clear(source));
     set(confirm, true);
   };
 
