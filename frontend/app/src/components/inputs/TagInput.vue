@@ -23,7 +23,9 @@ const props = defineProps({
   outlined: { required: false, type: Boolean, default: false }
 });
 
-const emit = defineEmits(['input']);
+const emit = defineEmits<{
+  (e: 'input', tags: string[]): void;
+}>();
 
 const { t } = useI18n();
 const { value } = toRefs(props);
@@ -107,15 +109,22 @@ const newTagForeground = computed<string>(
   () => `#${get(colorScheme).foregroundColor}`
 );
 
-const values = computed<Tag[]>(() =>
+const filteredValue = computed<Tag[]>(() =>
   get(tags).filter(({ name }) => get(value).includes(name))
 );
+
+watch(tags, () => {
+  const filtered = get(filteredValue);
+  if (get(value).length > filtered.length) {
+    input(filtered);
+  }
+});
 </script>
 
 <template>
   <div>
     <v-combobox
-      :value="values"
+      :value="filteredValue"
       :disabled="disabled"
       :items="tags"
       class="tag-input"

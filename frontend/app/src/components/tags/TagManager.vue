@@ -2,11 +2,18 @@
 import { type DataTableHeader } from 'vuetify';
 import { type Tag, defaultTag } from '@/types/tags';
 
-defineProps({
-  dialog: { required: false, type: Boolean, default: false }
-});
+withDefaults(
+  defineProps<{
+    dialog?: boolean;
+  }>(),
+  {
+    dialog: false
+  }
+);
 
-const emit = defineEmits(['close']);
+const emit = defineEmits<{
+  (e: 'close'): void;
+}>();
 
 const store = useTagStore();
 const { addTag, editTag, deleteTag } = store;
