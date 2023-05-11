@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`3973` Users will now be able to track their profit in Liquity staking and stability pool.
 * :feature:`5473` Block production rewards for your validators will now be properly detected, displayed and accounted for in the PnL report.
 * :feature:`4886` Staking MEV rewards for your validators will now be properly detected, displayed and accounted for in the PnL report.
 * :feature:`5933` FTX and FTX US support is removed since the exchanges no longer exist
@@ -10,7 +11,7 @@ Changelog
 * :feature:`5816` The NFT images will not be automatically rendered now. It is made so to prevent a known security issue, that may result in leakage of your privacy (read https://medium.com/@alxlpsc/critical-privacy-vulnerability-getting-exposed-by-metamask-693c63c2ce94 ). You can add domains you trust to the whitelisted domain in the NFT setting.
 * :feature:`5696` Transactions interacting with Curve Zap Deposit contracts are now decoded properly.
 * :feature:`5761` Liquity transactions that were made via DSProxies will now be properly decoded.
-* :feature:`5798` Users will now be able to see the avatar of the ENS.
+* :feature:`5798` Users will now be able to see ENS avatars for addresses.
 * :feature:`5676` Curve gauge deposit, withdrawal and claim rewards actions will now be correctly decoded.
 * :feature:`5677` Swaps made on Curve in ethereum mainnet will now be properly decoded as trades.
 * :feature:`1505` Users will now be able to see breakdown of Binance/Binance US exchange balances, which are in account balances, and which are in savings/lending. The interest history also will be taken into account in the PnL report.
