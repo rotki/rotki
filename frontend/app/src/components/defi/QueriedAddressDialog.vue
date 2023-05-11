@@ -66,7 +66,7 @@ const addAddress = async function () {
     module: currentModule,
     address: currentAccount[0].address
   });
-  set(selectedAccounts, null);
+  set(selectedAccounts, []);
 };
 
 const getAccount = (address: string): GeneralAccount => {
@@ -76,7 +76,7 @@ const getAccount = (address: string): GeneralAccount => {
 };
 
 const close = () => {
-  set(selectedAccounts, null);
+  set(selectedAccounts, []);
   emit('close');
 };
 </script>
@@ -114,7 +114,7 @@ const close = () => {
             <v-btn
               icon
               color="primary"
-              :disabled="selectedAccounts === null"
+              :disabled="selectedAccounts.length === 0"
               @click="addAddress()"
             >
               <v-icon>mdi-plus</v-icon>
