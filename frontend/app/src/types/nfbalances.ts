@@ -16,23 +16,13 @@ export const NonFungibleBalance = PriceInformation.merge(
 export type NonFungibleBalance = z.infer<typeof NonFungibleBalance>;
 
 const NonFungibleBalanceArray = z.array(NonFungibleBalance);
-type NonFungibleBalanceArray = z.infer<typeof NonFungibleBalanceArray>;
 
 export const NonFungibleBalances = z.record(NonFungibleBalanceArray);
 export type NonFungibleBalances = z.infer<typeof NonFungibleBalances>;
 
 export const NonFungibleBalancesCollectionResponse =
   CollectionCommonFields.extend({
-    entries: NonFungibleBalances
-  }).transform(response => {
-    const mappedEntries: NonFungibleBalanceArray = Object.values(
-      response.entries
-    ).flat();
-
-    return {
-      ...response,
-      entries: mappedEntries
-    };
+    entries: NonFungibleBalanceArray
   });
 
 export type NonFungibleBalancesCollectionResponse = z.infer<
