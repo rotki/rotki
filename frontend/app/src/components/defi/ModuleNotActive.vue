@@ -53,14 +53,12 @@ const { t } = useI18n();
             class="text-center"
           >
             <template #link>
-              <router-link
+              <internal-link
                 class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
-                text
                 to="/settings/modules"
-                small
               >
                 {{ t('module_not_active.settings_link') }}
-              </router-link>
+              </internal-link>
             </template>
             <template #text>
               <div v-if="modules.length > 1">

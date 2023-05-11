@@ -14,9 +14,9 @@ const { t } = useI18n();
       <li>{{ t('import_data.cointracking.line_one') }}</li>
       <li>{{ t('import_data.cointracking.line_two') }}</li>
       <i18n path="import_data.cointracking.line_three">
-        <router-link to="/accounts-balance">
+        <internal-link to="/accounts-balance">
           {{ t('import_data.cointracking.link') }}
-        </router-link>
+        </internal-link>
       </i18n>
     </ul>
   </import-source>

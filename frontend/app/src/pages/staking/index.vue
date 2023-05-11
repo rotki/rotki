@@ -135,32 +135,32 @@ onBeforeMount(async () => {
             </v-row>
             <v-row justify="center" class="mt-md-12 mt-4">
               <v-col cols="auto" class="mx-4">
-                <router-link to="/staking/eth2">
+                <internal-link to="/staking/eth2">
                   <v-img
                     :width="iconSize"
                     :height="iconSize"
                     contain
                     src="/assets/images/protocols/ethereum.svg"
                   />
-                </router-link>
+                </internal-link>
               </v-col>
               <v-col cols="auto" class="mx-4">
-                <router-link to="/staking/liquity">
+                <internal-link to="/staking/liquity">
                   <v-img
                     :width="iconSize"
                     contain
                     src="/assets/images/protocols/liquity.png"
                   />
-                </router-link>
+                </internal-link>
               </v-col>
               <v-col cols="auto" class="mx-4">
-                <router-link to="/staking/kraken">
+                <internal-link to="/staking/kraken">
                   <v-img
                     :width="iconSize"
                     contain
                     src="/assets/images/protocols/kraken.svg"
                   />
-                </router-link>
+                </internal-link>
               </v-col>
             </v-row>
 
