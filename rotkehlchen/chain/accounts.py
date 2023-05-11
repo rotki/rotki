@@ -13,7 +13,7 @@ from rotkehlchen.types import (
 )
 
 
-@dataclass(init=True, repr=False, eq=True, order=False, unsafe_hash=False, frozen=False)
+@dataclass(init=True, repr=False, eq=True, order=False, unsafe_hash=False, frozen=True)
 class BlockchainAccounts:
     eth: list[ChecksumEvmAddress] = field(default_factory=list)
     optimism: list[ChecksumEvmAddress] = field(default_factory=list)
