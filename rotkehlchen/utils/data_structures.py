@@ -38,8 +38,9 @@ class LRUCacheWithRemove(Generic[RT]):
 class LRUSetCache(Generic[RT]):
     """
     LRU cache that works like a set.
-    Internally it uses an OrderedDict to keep the order that maps to None.
-    None is constant in python and it uses the minimum space possible.
+    Internally it uses an OrderedDict In order to be able to keep the order of insertion
+    so that the LRU mechanism can function. None used as value since is constant in python
+    and it uses the minimum space possible.
     """
 
     def __init__(self, maxsize: int = 512):
