@@ -10863,31 +10863,30 @@ Show NFT Balances
 
         {
             "result": {
-                "entries": {
-                    "0xeE3766e4F996DC0e0F8c929954EAAFef3441de87": [
-                        {
-                            "id": "unique id",
-                            "name": "a name",
-                            "collection_name": "A collection name",
-                            "manually_input": true,
-                            "price_asset": "ETH",
-                            "price_in_asset": "1",
-                            "usd_price": "2501.15"
-                            "image_url": "https://storage.opensea.io/files/305952feb5321a50d5d4f6ab6c16da1f.mov",
-                            "is_lp": false
-                        }, {
-                            "id": "unique id 2",
-                            "name": null,
-                            "collection_name": "A collection name",
-                            "manually_input": false,
-                            "price_asset": "USD",
-                            "price_in_asset": "150.55",
-                            "usd_price": "150.55"
-                            "image_url": "https://lh3.googleusercontent.com/xJpOAw7P96jdPgs91w7ZQMTq91tvcCva4J2RYHh7LjFufod_UP9FE0bVjhp1cYpbx2p1qFFj2NDFf3oS0eEcNI3L5w",
-                            "is_lp": true
-                    }],
-                },
-                "entries_found": 5,
+                "entries": [
+                  {
+                    "id": "unique id",
+                    "name": "a name",
+                    "collection_name": "A collection name",
+                    "manually_input": true,
+                    "price_asset": "ETH",
+                    "price_in_asset": "1",
+                    "usd_price": "2501.15"
+                    "image_url": "https://storage.opensea.io/files/305952feb5321a50d5d4f6ab6c16da1f.mov",
+                    "is_lp": false
+                  }, {
+                    "id": "unique id 2",
+                    "name": null,
+                    "collection_name": "A collection name",
+                    "manually_input": false,
+                    "price_asset": "USD",
+                    "price_in_asset": "150.55",
+                    "usd_price": "150.55"
+                    "image_url": "https://lh3.googleusercontent.com/xJpOAw7P96jdPgs91w7ZQMTq91tvcCva4J2RYHh7LjFufod_UP9FE0bVjhp1cYpbx2p1qFFj2NDFf3oS0eEcNI3L5w",
+                    "is_lp": true
+                  },
+                ],
+                "entries_found": 2,
                 "entries_total": 10,
                 "total_usd_value": "2651.70"
             },
@@ -10895,7 +10894,7 @@ Show NFT Balances
         }
 
 
-   :resjson object entries: A mapping of ethereum addresses to list assets and balances. ``name`` can also be null. ``collection_name`` can be null if nft does not have a collection.
+   :resjson object entries: A list of nfts balances. ``name`` can also be null. ``collection_name`` can be null if nft does not have a collection.
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_total: The number of total entries ignoring all filters.
    :resjson int total_usd_value: Total usd value of the nfts in the filter.

@@ -18,5 +18,4 @@ def test_addresses_queried_for_nfts(blockchain):
         uniswap_nfts=None,
     )
     balances = nft_module.get_db_nft_balances(filter_query=NFTFilterQuery.make())['entries']
-    assert TEST_ACC1 in balances
-    assert TEST_ACC2 not in balances
+    assert len(balances) == 1 and balances[0]['name'] == 'yabir.eth'

@@ -910,26 +910,25 @@ class Rotkehlchen():
         nfts = self.chains_aggregator.get_module('nfts')
         if nfts is not None:
             try:
-                nft_mapping = nfts.get_db_nft_balances(filter_query=NFTFilterQuery.make())['entries']  # noqa: E501
+                nft_balances = nfts.get_db_nft_balances(filter_query=NFTFilterQuery.make())['entries']  # noqa: E501
             except RemoteError as e:
                 log.error(
                     f'At balance snapshot NFT balances query failed due to {str(e)}. Error '
                     f'is ignored and balance snapshot will still be saved.',
                 )
             else:
-                if len(nft_mapping) != 0:
+                if len(nft_balances) != 0:
                     if str(Location.BLOCKCHAIN) not in balances:
                         balances[str(Location.BLOCKCHAIN)] = {}
 
-                    for nft_balances in nft_mapping.values():
-                        for balance_entry in nft_balances:
-                            if balance_entry['usd_price'] == ZERO:
-                                continue
-                            balances[str(Location.BLOCKCHAIN)][CryptoAsset(
-                                balance_entry['id'])] = Balance(
-                                amount=ONE,
-                                usd_value=balance_entry['usd_price'],
-                            )
+                    for balance_entry in nft_balances:
+                        if balance_entry['usd_price'] == ZERO:
+                            continue
+                        balances[str(Location.BLOCKCHAIN)][CryptoAsset(
+                            balance_entry['id'])] = Balance(
+                            amount=ONE,
+                            usd_value=balance_entry['usd_price'],
+                        )
 
         balances = account_for_manually_tracked_asset_balances(db=self.data.db, balances=balances)
 

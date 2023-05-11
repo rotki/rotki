@@ -210,37 +210,36 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
         'nftsbalanceresource',
     ), json={'async_query': False, 'ignore_cache': False})
     result = assert_proper_response_with_result(response)
-    assert result['entries'] == {}, 'nothing should be returned with ignore_cache=False until nfts are queried'  # noqa: E501
+    assert result['entries'] == [], 'nothing should be returned with ignore_cache=False until nfts are queried'  # noqa: E501
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'nftsbalanceresource',
     ), json={'async_query': False, 'ignore_cache': True})
     result_ignored_cache = assert_proper_response_with_result(response)
     assert result_ignored_cache['entries_found'] == 4
-    for nfts_balances in result_ignored_cache['entries'].values():
-        for nft_balance in nfts_balances:
-            if nft_balance['id'] == NFT_ID_FOR_TEST_ACC4:
-                assert nft_balance['name'] == 'yabir.eth'
-                assert nft_balance['collection_name'] == 'ENS: Ethereum Name Service'
-                assert nft_balance['is_lp'] is False
-                assert FVal(nft_balance['usd_price']) > ZERO
-            elif nft_balance['id'] == NFT_ID_FOR_TEST_ACC5:
-                assert nft_balance['name'] == 'nebolax.eth'
-                assert nft_balance['collection_name'] == 'ENS: Ethereum Name Service'
-                assert nft_balance['is_lp'] is False
-                assert FVal(nft_balance['usd_price']) > ZERO
-            elif nft_balance['id'] == NFT_ID_FOR_TEST_ACC6_1:
-                assert nft_balance['name'] == 'Uniswap - 0.3% - USDT/WETH - 224.56<>2445.5'
-                assert nft_balance['collection_name'] == 'Uniswap V3 Positions'
-                assert nft_balance['is_lp'] is True
-                assert FVal(nft_balance['usd_price']) > ZERO
-            elif nft_balance['id'] == NFT_ID_FOR_TEST_ACC6_2:
-                assert nft_balance['name'] == 'Uniswap - 0.3% - SHIB/WETH - 79010000<>166260000'
-                assert nft_balance['collection_name'] == 'Uniswap V3 Positions'
-                assert nft_balance['is_lp'] is True
-                assert FVal(nft_balance['usd_price']) > ZERO
-            else:
-                raise AssertionError('NFT has to be one of the expected')
+    for nft_balance in result_ignored_cache['entries']:
+        if nft_balance['id'] == NFT_ID_FOR_TEST_ACC4:
+            assert nft_balance['name'] == 'yabir.eth'
+            assert nft_balance['collection_name'] == 'ENS: Ethereum Name Service'
+            assert nft_balance['is_lp'] is False
+            assert FVal(nft_balance['usd_price']) > ZERO
+        elif nft_balance['id'] == NFT_ID_FOR_TEST_ACC5:
+            assert nft_balance['name'] == 'nebolax.eth'
+            assert nft_balance['collection_name'] == 'ENS: Ethereum Name Service'
+            assert nft_balance['is_lp'] is False
+            assert FVal(nft_balance['usd_price']) > ZERO
+        elif nft_balance['id'] == NFT_ID_FOR_TEST_ACC6_1:
+            assert nft_balance['name'] == 'Uniswap - 0.3% - USDT/WETH - 224.56<>2445.5'
+            assert nft_balance['collection_name'] == 'Uniswap V3 Positions'
+            assert nft_balance['is_lp'] is True
+            assert FVal(nft_balance['usd_price']) > ZERO
+        elif nft_balance['id'] == NFT_ID_FOR_TEST_ACC6_2:
+            assert nft_balance['name'] == 'Uniswap - 0.3% - SHIB/WETH - 79010000<>166260000'
+            assert nft_balance['collection_name'] == 'Uniswap V3 Positions'
+            assert nft_balance['is_lp'] is True
+            assert FVal(nft_balance['usd_price']) > ZERO
+        else:
+            raise AssertionError('NFT has to be one of the expected')
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -256,7 +255,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
     ), json={'async_query': False, 'ignore_cache': False, 'name': 'nebolax'})
     result = assert_proper_response_with_result(response)
     assert result['entries_found'] == 1
-    assert result['entries'][TEST_ACC5][0]['id'] == NFT_ID_FOR_TEST_ACC5
+    assert result['entries'][0]['id'] == NFT_ID_FOR_TEST_ACC5
 
     # check that pagination works as expected
     response = requests.get(api_url_for(
@@ -298,10 +297,12 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
     # Check that filtering ignored nfts works
     assert result_with_cache['entries_found'] == 4
     assert result_with_cache['entries_total'] == 4
-    assert result_with_cache['entries'][TEST_ACC4][0]['id'] == NFT_ID_FOR_TEST_ACC4
-    assert result_with_cache['entries'][TEST_ACC5][0]['id'] == NFT_ID_FOR_TEST_ACC5
-    assert result_with_cache['entries'][TEST_ACC6][0]['id'] == NFT_ID_FOR_TEST_ACC6_1
-    assert result_with_cache['entries'][TEST_ACC6][1]['id'] == NFT_ID_FOR_TEST_ACC6_2
+    assert {entry['id'] for entry in result_with_cache['entries']} == {
+        NFT_ID_FOR_TEST_ACC4,
+        NFT_ID_FOR_TEST_ACC5,
+        NFT_ID_FOR_TEST_ACC6_1,
+        NFT_ID_FOR_TEST_ACC6_2,
+    }
 
     # Make sure that after invalidating NFTs cache ignored NFTs remain ignored
     response_with_cache = requests.get(api_url_for(
@@ -320,7 +321,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
     assert result_with_cache['entries_found'] == 2
     assert result_with_cache['entries_total'] == 4
     expected_nfts_without_ignored = {NFT_ID_FOR_TEST_ACC5, NFT_ID_FOR_TEST_ACC6_1}
-    assert {entry[0]['id'] for entry in result_with_cache['entries'].values()} == expected_nfts_without_ignored  # noqa: E501
+    assert {entry['id'] for entry in result_with_cache['entries']} == expected_nfts_without_ignored  # noqa: E501
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'nftsbalanceresource',
@@ -328,8 +329,10 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert result['entries_found'] == 2
     assert result['entries_total'] == 4
-    assert result['entries'][TEST_ACC4][0]['id'] == NFT_ID_FOR_TEST_ACC4
-    assert result['entries'][TEST_ACC6][0]['id'] == NFT_ID_FOR_TEST_ACC6_2
+    assert {entry['id'] for entry in result['entries']} == {
+        NFT_ID_FOR_TEST_ACC4,
+        NFT_ID_FOR_TEST_ACC6_2,
+    }
 
     response = requests.post(api_url_for(
         rotkehlchen_api_server,
@@ -395,8 +398,8 @@ def test_edit_delete_nft(rotkehlchen_api_server):
         )
         result = assert_proper_response_with_result(response)
         assert result['entries_found'] == 2
-        assert result['entries'][TEST_ACC5][0]['price_in_asset'] == '0.0012'
-        assert result['entries'][TEST_ACC5][0]['image_url'] == 'https://openseauserdata.com/files/8fd18b22e4c81aff3998956e7a712d93.svg'  # noqa: E501
+        assert result['entries'][1]['price_in_asset'] == '0.0012'
+        assert result['entries'][1]['image_url'] == 'https://openseauserdata.com/files/8fd18b22e4c81aff3998956e7a712d93.svg'  # noqa: E501
 
         # Also check that db was updated properly
         with db.conn.read_ctx() as cursor:
@@ -437,8 +440,8 @@ def test_edit_delete_nft(rotkehlchen_api_server):
         )
         result = assert_proper_response_with_result(response)
         assert result['entries_found'] == 2
-        assert result['entries'][TEST_ACC5][0]['price_in_asset'] == '0.5'
-        assert result['entries'][TEST_ACC5][0]['image_url'] == 'https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg'  # noqa: E501
+        assert result['entries'][1]['price_in_asset'] == '0.5'
+        assert result['entries'][1]['image_url'] == 'https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg'  # noqa: E501
 
         # Also check that db was updated properly
         with db.conn.read_ctx() as cursor:
@@ -463,8 +466,7 @@ def test_edit_delete_nft(rotkehlchen_api_server):
             json={'async_query': False, 'ignore_cache': True},
         )
         result = assert_proper_response_with_result(response)
-        assert result['entries_found'] == 1
-        assert TEST_ACC4 in result['entries']
+        assert result['entries_found'] == 1 and result['entries'][0]['name'] == 'yabir.eth'
 
         # Also check that db was updated properly
         with db.conn.read_ctx() as cursor:
@@ -513,7 +515,7 @@ def test_nfts_ignoring_works(rotkehlchen_api_server, endpoint):
             assert NFT_ID_FOR_TEST_ACC4 not in all_nfts_ids
         else:
             assert result == {
-                'entries': {},
+                'entries': [],
                 'entries_found': 0,
                 'entries_total': 0,
                 'total_usd_value': '0',
@@ -543,7 +545,7 @@ def test_nfts_ignoring_works(rotkehlchen_api_server, endpoint):
         if endpoint == 'nftsresource':
             all_nfts_ids = {nft['token_identifier'] for nft in result['addresses'][TEST_ACC4]}
         else:
-            all_nfts_ids = {nft['id'] for nft in result['entries'][TEST_ACC4]}
+            all_nfts_ids = {nft['id'] for nft in result['entries']}
         assert NFT_ID_FOR_TEST_ACC4 in all_nfts_ids
 
 
@@ -689,7 +691,7 @@ def test_nft_no_price(rotkehlchen_api_server):
         )
     result = assert_proper_response_with_result(response)
     assert result == {
-        'entries': {'0x7277F7849966426d345D8F6B9AFD1d3d89183083': [{
+        'entries': [{
             'collection_name': 'Devcon VI Souvenir V4',
             'id': '_nft_0x7522dc5a357891b4daec194e285551ea5ea66d09_336510496872176433120578',
             'image_url': 'https://i.seadn.io/gae/-N3ctyPYwIF0s-pShI-Zcg96KJr7dYG05KyFtI25WG0yIZeOpBxjAIIUBiBmHcbviAFkY57Xfo0-MRaonHHx4a53LS-q2yOoEwzF?w=500&auto=format',  # noqa: E501
@@ -698,7 +700,7 @@ def test_nft_no_price(rotkehlchen_api_server):
             'name': 'Devcon VI Souvenir',
             'price_asset': 'ETH',
             'price_in_asset': '0',
-            'usd_price': '0.0'}]},
+            'usd_price': '0.0'}],
         'entries_found': 1,
         'entries_total': 1,
         'total_usd_value': '0.0',
@@ -852,7 +854,7 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert result['entries_found'] == 2
-    for entry in result['entries'][TEST_ACC6]:
+    for entry in result['entries']:
         assert entry['is_lp'] is True
 
     # Test that non lp + filter works
@@ -939,5 +941,4 @@ def test_customized_queried_addresses(rotkehlchen_api_server):
         json={'async_query': False, 'ignore_cache': False},
     )
     result = assert_proper_response_with_result(response)
-    assert result['entries'].keys() == {TEST_ACC5}, 'There should be no NFTs for TEST_ACC_4'
-    assert len(result['entries'][TEST_ACC5]) == 1
+    assert len(result['entries']) == 1 and result['entries'][0]['name'] == TEST_NFT_NEBOLAX_ETH.name  # noqa: E501
