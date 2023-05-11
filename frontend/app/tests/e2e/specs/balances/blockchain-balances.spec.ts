@@ -1,15 +1,15 @@
 import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Zero } from '@/utils/bignumbers';
-import { Guid } from '../../../common/guid';
-import { AccountBalancesPage } from '../../../pages/account-balances-page';
+import { Guid } from '../../common/guid';
+import { AccountBalancesPage } from '../../pages/account-balances-page';
 import {
   BlockchainBalancesPage,
   type FixtureBlockchainBalance
-} from '../../../pages/account-balances-page/blockchain-balances-page';
-import { DashboardPage } from '../../../pages/dashboard-page';
-import { RotkiApp } from '../../../pages/rotki-app';
-import { TagManager } from '../../../pages/tag-manager';
+} from '../../pages/account-balances-page/blockchain-balances-page';
+import { DashboardPage } from '../../pages/dashboard-page';
+import { RotkiApp } from '../../pages/rotki-app';
+import { TagManager } from '../../pages/tag-manager';
 
 describe('blockchain balances', () => {
   let blockchainBalances: FixtureBlockchainBalance[];

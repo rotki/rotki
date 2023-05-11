@@ -1,15 +1,15 @@
 import { BigNumber } from '@rotki/common';
 import { Zero } from '@/utils/bignumbers';
-import { Guid } from '../../../common/guid';
-import { AccountBalancesPage } from '../../../pages/account-balances-page';
+import { Guid } from '../../common/guid';
+import { AccountBalancesPage } from '../../pages/account-balances-page';
 import {
   type FixtureManualBalance,
   ManualBalancesPage
-} from '../../../pages/account-balances-page/manual-balances-page';
-import { DashboardPage } from '../../../pages/dashboard-page';
-import { GeneralSettingsPage } from '../../../pages/general-settings-page';
-import { RotkiApp } from '../../../pages/rotki-app';
-import { waitForAsyncQuery } from '../../../support/utils';
+} from '../../pages/account-balances-page/manual-balances-page';
+import { DashboardPage } from '../../pages/dashboard-page';
+import { GeneralSettingsPage } from '../../pages/general-settings-page';
+import { RotkiApp } from '../../pages/rotki-app';
+import { waitForAsyncQuery } from '../../support/utils';
 
 describe('balances', () => {
   let username: string;

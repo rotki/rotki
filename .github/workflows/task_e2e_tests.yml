@@ -5,7 +5,7 @@ on:
 
 jobs:
   e2e:
-    name: 'Frontend e2e tests: ${{ matrix.group }}'
+    name: '${{ matrix.group }}'
     env:
       CI: true
       GROUP: ${{ matrix.group }}
@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [1, 2]
+        group: [app, balances, history]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
