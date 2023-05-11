@@ -15,6 +15,21 @@ export const toSentenceCase = (string: string): string => {
 /**
  *
  * @param {string} string - String to convert
+ * @return {string} - String converted to snake case
+ * @example
+ * toSnakeCase('this is a sentence'); // this_is_a_sentence
+ */
+export const toSnakeCase = (string: string): string => {
+  if (!string) {
+    return '';
+  }
+
+  return string.toLowerCase().replace(/ /g, '_');
+};
+
+/**
+ *
+ * @param {string} string - String to convert
  * @return {string} - String converted to capital case
  * @example
  * toCapitalCase('this is a sentence'); // This Is A Sentence

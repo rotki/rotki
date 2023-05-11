@@ -141,6 +141,7 @@ declare global {
   const isReactive: typeof import('vue')['isReactive']
   const isReadonly: typeof import('vue')['isReadonly']
   const isRef: typeof import('vue')['isRef']
+  const isTransactionEvent: typeof import('./utils/report')['isTransactionEvent']
   const isValidDate: typeof import('./utils/date')['isValidDate']
   const isValidEthAddress: typeof import('./utils/text')['isValidEthAddress']
   const isValidTxHash: typeof import('./utils/text')['isValidTxHash']
@@ -250,6 +251,7 @@ declare global {
   const toRef: typeof import('vue')['toRef']
   const toRefs: typeof import('vue')['toRefs']
   const toSentenceCase: typeof import('./utils/text')['toSentenceCase']
+  const toSnakeCase: typeof import('./utils/text')['toSnakeCase']
   const toSortedAssetBalanceArray: typeof import('./utils/balances')['toSortedAssetBalanceArray']
   const toSortedAssetBalanceWithPrice: typeof import('./utils/balances')['toSortedAssetBalanceWithPrice']
   const toUnit: typeof import('./utils/calculation')['toUnit']
@@ -810,6 +812,7 @@ declare module 'vue' {
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
+    readonly isTransactionEvent: UnwrapRef<typeof import('./utils/report')['isTransactionEvent']>
     readonly isValidDate: UnwrapRef<typeof import('./utils/date')['isValidDate']>
     readonly isValidEthAddress: UnwrapRef<typeof import('./utils/text')['isValidEthAddress']>
     readonly isValidTxHash: UnwrapRef<typeof import('./utils/text')['isValidTxHash']>
@@ -919,6 +922,7 @@ declare module 'vue' {
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
     readonly toSentenceCase: UnwrapRef<typeof import('./utils/text')['toSentenceCase']>
+    readonly toSnakeCase: UnwrapRef<typeof import('./utils/text')['toSnakeCase']>
     readonly toSortedAssetBalanceArray: UnwrapRef<typeof import('./utils/balances')['toSortedAssetBalanceArray']>
     readonly toSortedAssetBalanceWithPrice: UnwrapRef<typeof import('./utils/balances')['toSortedAssetBalanceWithPrice']>
     readonly toUnit: UnwrapRef<typeof import('./utils/calculation')['toUnit']>

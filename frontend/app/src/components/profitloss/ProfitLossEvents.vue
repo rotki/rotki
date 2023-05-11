@@ -1,12 +1,8 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
-import {
-  type ProfitLossEvent,
-  ProfitLossEventTypeEnum,
-  type ProfitLossEvents,
-  type SelectedReport
-} from '@/types/reports';
+import { type ProfitLossEvents, type SelectedReport } from '@/types/reports';
+import { isTransactionEvent } from '@/utils/report';
 
 interface PaginationOptions {
   page: number;
@@ -157,9 +153,6 @@ const updatePagination = async (options: PaginationOptions | null) => {
     offset: itemsPerPage * (page - 1)
   });
 };
-
-const isTransactionEvent = (item: ProfitLossEvent) =>
-  item.type === ProfitLossEventTypeEnum.TRANSACTION_EVENT;
 
 watch(options, updatePagination);
 
