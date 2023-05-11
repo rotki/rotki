@@ -23,6 +23,7 @@ const Eth2Detail = z.object({
   eth1Depositor: z.string().nullable(),
   publicKey: z.string(),
   index: z.number(),
+  hasExited: z.boolean(),
   balance: Balance,
   performance1d: Balance,
   performance1w: Balance,
