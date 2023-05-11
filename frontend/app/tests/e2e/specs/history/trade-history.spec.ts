@@ -1,8 +1,8 @@
-import { Guid } from '../../../common/guid';
-import { HistoryPage } from '../../../pages/history-page';
-import { TradeHistoryPage } from '../../../pages/history-page/trade-history-page';
-import { RotkiApp } from '../../../pages/rotki-app';
-import { type ExternalTrade } from '../../../support/types';
+import { Guid } from '../../common/guid';
+import { HistoryPage } from '../../pages/history-page';
+import { TradeHistoryPage } from '../../pages/history-page/trade-history-page';
+import { RotkiApp } from '../../pages/rotki-app';
+import { type ExternalTrade } from '../../support/types';
 
 describe('trade history', () => {
   let username: string;
