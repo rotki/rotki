@@ -32,19 +32,23 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-NFT_INFO_SQL_QUERY = (
-    'SELECT identifier, name, last_price, last_price_asset, manual_price, owner_address, is_lp, '
-    'image_url, collection_name FROM nfts '
-)
-
-
-NFT_DB_TUPLE = tuple[
+NFT_DB_WRITE_TUPLE = tuple[
     str,  # identifier
     Optional[str],  # name
     Optional[str],  # price_in_asset
     Optional[str],  # price_asset
     bool,  # whether the price is manually input
     ChecksumEvmAddress,  # owner address
+    bool,  # whether is an lp
+    Optional[str],  # image_url
+    Optional[str],  # collection_name
+]
+NFT_DB_READ_TUPLE = tuple[
+    str,  # identifier
+    Optional[str],  # name
+    Optional[str],  # price_in_asset
+    Optional[str],  # price_asset
+    bool,  # whether the price is manually input
     bool,  # whether is an lp
     Optional[str],  # image_url
     Optional[str],  # collection_name
@@ -66,7 +70,7 @@ def _deserialize_nft_price(
     return price_in_asset, price_asset, usd_price
 
 
-def _deserialize_nft_from_db(entry: NFT_DB_TUPLE) -> dict[str, Any]:
+def _deserialize_nft_from_db(entry: NFT_DB_READ_TUPLE) -> dict[str, Any]:
     """From a db tuple extract the information required by the API for a NFT"""
     price_in_asset, price_asset, usd_price = _deserialize_nft_price(
         last_price=entry[2],
@@ -78,10 +82,10 @@ def _deserialize_nft_from_db(entry: NFT_DB_TUPLE) -> dict[str, Any]:
         'price_in_asset': price_in_asset,
         'price_asset': price_asset,
         'manually_input': bool(entry[4]),
-        'is_lp': bool(entry[6]),
-        'image_url': entry[7],
+        'is_lp': bool(entry[5]),
+        'image_url': entry[6],
         'usd_price': usd_price,
-        'collection_name': entry[8],
+        'collection_name': entry[7],
     }
 
 
@@ -166,10 +170,13 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
         query, bindings = filter_query.prepare()
         total_usd_value = ZERO
         with self.db.conn.read_ctx() as cursor:
-            cursor.execute(NFT_INFO_SQL_QUERY + query, bindings)
+            cursor.execute(
+                'SELECT identifier, name, last_price, last_price_asset, manual_price, is_lp, '
+                'image_url, collection_name FROM nfts ' + query,
+                bindings,
+            )
             for db_entry in cursor:
-                row_data = _deserialize_nft_from_db(entry=db_entry)
-                entries.append(row_data)
+                entries.append(_deserialize_nft_from_db(entry=db_entry))
 
             query, bindings = filter_query.prepare(with_pagination=False)
             cursor.execute(
@@ -210,7 +217,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
         # Be sure that the only addresses queried already exist in the database. Fix for #4456
         queried_addresses = sorted(set(accounts.eth) & set(addresses))  # Sorting for consistency in tests  # noqa: E501
         nft_results, _ = self._get_all_nft_data(queried_addresses, ignore_cache=True)
-        db_data: list[NFT_DB_TUPLE] = []
+        db_data: list[NFT_DB_WRITE_TUPLE] = []
         # get uniswap v3 lp balances and update nfts that are LPs with their worth.
         for address, nfts in nft_results.items():
             for nft in nfts:
