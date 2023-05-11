@@ -3729,7 +3729,25 @@
       "example": "开始 = 26/05/2022"
     },
     "hint_filter": "组合过滤器将同时应用",
+    "exclusion": {
+      "description": "使用运算符 `!=` 过滤掉选项，例如",
+      "example": "type != evm event"
+    },
     "no_suggestions": "没有找到{search}的建议",
+    "saved_filters": {
+      "actions": {
+        "list": "打开保存的过滤器列表",
+        "add": "将当前过滤器保存到列表",
+        "apply": "应用这个保存的过滤器",
+        "remove": "移除这个已保存的过滤器"
+      },
+      "added": "过滤器已保存",
+      "empty": "您没有任何已保存的过滤器。 照常应用过滤器，然后单击此按钮 {button} 保存过滤器。",
+      "saving": {
+        "title": "未能保存过滤器",
+        "limited": "您最多只能保存 {limit} 个过滤器。 删除其他过滤器以便能够再次添加。"
+      }
+    },
     "title": "可用过滤器",
     "unsupported_filter": "不支持的过滤器："
   },
@@ -3885,7 +3903,7 @@
       "end_date": "按交易周期结束日期筛选",
       "entry_type": "按条目类型过滤",
       "location": "按活动地点过滤",
-      "protocol": "按事件的协议/交易对手过滤",
+      "protocol": "按事件的协议过滤",
       "start_date": "按交易周期开始日期筛选",
       "tx_hash": "按 tx hash (es) 过滤",
       "validator_index": "按 validator_index(s) 过滤"

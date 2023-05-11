@@ -3874,9 +3874,9 @@
       "example": "start = 26/05/2022"
     },
     "hint_filter": "The combined filters will be applied at the same time",
-    "negation": {
+    "exclusion": {
       "description": "Use operator `!=` to filter out option, e.g.",
-      "example": "entry_types != evm event"
+      "example": "type != evm event"
     },
     "no_suggestions": "No suggestions found for {search}",
     "saved_filters": {
@@ -4063,7 +4063,7 @@
       "end_date": "filter by the end date of the transaction period",
       "entry_type": "filter by entry type",
       "location": "filter by event location",
-      "protocol": "filter by the protocol / counterparty of the events",
+      "protocol": "filter by the protocol of the events",
       "start_date": "filter by the start date of the transaction period",
       "tx_hash": "filter by tx hash(es)",
       "validator_index": "filter by validator index(es)"
