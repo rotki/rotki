@@ -23,9 +23,9 @@ const { t } = useI18n();
       <li>{{ t('import_data.cryptocom.line_three') }}</li>
       <li>
         <i18n path="import_data.cryptocom.line_four" tag="span">
-          <router-link to="/accounts-balance/manual-balances">
+          <internal-link to="/accounts-balance/manual-balances">
             {{ t('import_data.cryptocom.line_four_link') }}
-          </router-link>
+          </internal-link>
         </i18n>
       </li>
     </ul>

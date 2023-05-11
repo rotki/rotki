@@ -51,13 +51,13 @@ const refresh = () => load(true);
           </v-row>
           <v-row justify="center" class="mt-md-12 mt-4">
             <v-col cols="auto" class="mx-4">
-              <router-link to="/settings/api-keys/exchanges">
+              <internal-link to="/settings/api-keys/exchanges">
                 <v-img
                   width="64px"
                   contain
                   src="/assets/images/protocols/kraken.svg"
                 />
-              </router-link>
+              </internal-link>
             </v-col>
           </v-row>
 
@@ -69,9 +69,9 @@ const refresh = () => load(true);
               >
                 <i18n path="kraken_page.page.description">
                   <template #link>
-                    <router-link to="/settings/api-keys/exchanges">
+                    <internal-link to="/settings/api-keys/exchanges">
                       {{ t('kraken_page.page.api_key') }}
-                    </router-link>
+                    </internal-link>
                   </template>
                 </i18n>
               </div>

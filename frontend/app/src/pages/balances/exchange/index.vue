@@ -217,9 +217,12 @@ const isBinance = computed(() => {
     <v-row v-else class="px-4 py-8">
       <v-col>
         <i18n path="exchange_balances.no_connected_exchanges">
-          <router-link to="/settings/api-keys/exchanges">
+          <internal-link
+            to="/settings/api-keys/exchanges"
+            class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
+          >
             {{ t('exchange_balances.click_here') }}
-          </router-link>
+          </internal-link>
         </i18n>
       </v-col>
     </v-row>
