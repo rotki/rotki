@@ -6,9 +6,10 @@ import {
 import { type ComputedRef } from 'vue';
 import { Eth2Staking } from '@/premium/premium';
 import { Module } from '@/types/modules';
-import { Section } from '@/types/status';
+import { Section, Status } from '@/types/status';
 
 const module = Module.ETH2;
+const section = Section.STAKING_ETH2;
 
 const defaultSelection = () => ({
   accounts: [],
@@ -34,10 +35,10 @@ const {
 } = useEth2DailyStats();
 const { rewards, fetchRewards, loading: rewardsLoading } = useEth2Rewards();
 
-const { isLoading, shouldShowLoadingScreen } = useStatusStore();
+const { isLoading, shouldShowLoadingScreen, setStatus } = useStatusStore();
 
-const detailsLoading = shouldShowLoadingScreen(Section.STAKING_ETH2);
-const primaryRefreshing = isLoading(Section.STAKING_ETH2);
+const detailsLoading = shouldShowLoadingScreen(section);
+const primaryRefreshing = isLoading(section);
 
 const { eth2Validators } = storeToRefs(useEthAccountsStore());
 
@@ -87,6 +88,10 @@ onMounted(async () => {
 
 onUnmounted(() => {
   store.$reset();
+  setStatus({
+    section,
+    status: Status.NONE
+  });
 });
 
 watch(filter, async filter => {

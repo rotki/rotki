@@ -1953,7 +1953,7 @@
     "label": "Select Depositor address"
   },
   "eth2_validator_limit_row": {
-    "label": "Beacon chain validators"
+    "label": "Validators"
   },
   "evm_rpc_node_manager": {
     "activate_error": {
@@ -3379,10 +3379,6 @@
     "eth2_staking": {
       "based_of_performance": "Based of performance of",
       "corresponds_to_percentage_of_the_validator_pnl": "This corresponds to {percentage} % of the validator pnl.",
-      "current": {
-        "description": "Based on the current price of ETH",
-        "title": "Current"
-      },
       "daily": {
         "description": "Based on the daily prices of ETH",
         "title": "Daily"
@@ -3402,9 +3398,13 @@
       },
       "rewards": {
         "withdrawn_cl": "Withdrawn from consensus layer",
-        "el": "Execution Layer"
+        "el": "Execution Layer",
+        "consensus": {
+          "description": "Based on the current price of ETH",
+          "title": "Consensus Layer Rewards"
+        }
       },
-      "staking_per_beacon_chain": "Staking per beacon chain validator",
+      "staking_per_beacon_chain": "Staking per Validator",
       "staking_per_eth1_address": "Staking per ETH1 address",
       "total_based_on_eth_daily_prices": "The total is based on the daily prices of ETH",
       "validator_index": "Validator index"
