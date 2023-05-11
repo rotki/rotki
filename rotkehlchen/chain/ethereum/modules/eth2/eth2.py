@@ -13,6 +13,7 @@ from rotkehlchen.accounting.structures.eth2 import EthBlockEvent, EthWithdrawalE
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -342,6 +343,17 @@ class Eth2(EthereumModule):
         - RemoteError due to problems querying beaconcha.in API
         """
         with self.withdrawals_query_lock:
+            # First check if the withdrawals were queried within the last 3 hours to
+            # not query them again. This is just an extra optimization check since our logic
+            # can get us in here multipel times both from periodic and frontend and
+            # we only remember last withdrawal per each validator which can take 4-7 days
+            now = ts_now()
+            with self.database.conn.read_ctx() as cursor:
+                last_query = self.database.get_used_query_range(cursor, LAST_WITHDRAWALS_QUERY_TS)
+                if last_query is not None and now - last_query[1] <= HOUR_IN_SECONDS * 3:
+                    log.debug('Got in query_services_for_validator_withdrawals too soon. Doing nothing')  # noqa: E501
+                    return
+
             log.debug(f'Querying for validator withdrawals up to {to_ts=}')
             dbeth2 = DBEth2(self.database)
             dbevents = DBHistoryEvents(self.database)
