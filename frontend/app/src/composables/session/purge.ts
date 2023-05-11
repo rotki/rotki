@@ -13,10 +13,14 @@ import {
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
+import { TaskType } from '@/types/task-type';
+import { type TaskMeta } from '@/types/task';
 
 export const useSessionPurge = () => {
   const { resetState } = useDefiStore();
   const { reset } = useStaking();
+
+  const { refreshGeneralCacheTask } = useSessionApi();
 
   const purgeExchange = async (
     exchange: SupportedExchange | typeof ALL_CENTRALIZED_EXCHANGES
@@ -59,7 +63,19 @@ export const useSessionPurge = () => {
     }
   };
 
+  const { awaitTask } = useTaskStore();
+  const { tc } = useI18n();
+
+  const refreshGeneralCache = async () => {
+    const taskType = TaskType.REFRESH_GENERAL_CACHE;
+    const { taskId } = await refreshGeneralCacheTask();
+    await awaitTask<boolean, TaskMeta>(taskId, taskType, {
+      title: tc('actions.session.refresh_general_cache.task.title')
+    });
+  };
+
   return {
-    purgeCache
+    purgeCache,
+    refreshGeneralCache
   };
 };

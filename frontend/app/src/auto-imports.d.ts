@@ -351,6 +351,7 @@ declare global {
   const useBtcAccountBalances: typeof import('./composables/blockchain/account-balances/btc')['useBtcAccountBalances']
   const useBtcAccountsStore: typeof import('./store/blockchain/accounts/btc')['useBtcAccountsStore']
   const useBtcBalancesStore: typeof import('./store/blockchain/balances/btc')['useBtcBalancesStore']
+  const useCacheClear: typeof import('./composables/session/cache-clear')['useCacheClear']
   const useCached: typeof import('@vueuse/core')['useCached']
   const useCeil: typeof import('@vueuse/math')['useCeil']
   const useChainAccountBalances: typeof import('./composables/blockchain/account-balances/chain')['useChainAccountBalances']
@@ -1022,6 +1023,7 @@ declare module 'vue' {
     readonly useBtcAccountBalances: UnwrapRef<typeof import('./composables/blockchain/account-balances/btc')['useBtcAccountBalances']>
     readonly useBtcAccountsStore: UnwrapRef<typeof import('./store/blockchain/accounts/btc')['useBtcAccountsStore']>
     readonly useBtcBalancesStore: UnwrapRef<typeof import('./store/blockchain/balances/btc')['useBtcBalancesStore']>
+    readonly useCacheClear: UnwrapRef<typeof import('./composables/session/cache-clear')['useCacheClear']>
     readonly useCached: UnwrapRef<typeof import('@vueuse/core')['useCached']>
     readonly useCeil: UnwrapRef<typeof import('@vueuse/math')['useCeil']>
     readonly useChainAccountBalances: UnwrapRef<typeof import('./composables/blockchain/account-balances/chain')['useChainAccountBalances']>

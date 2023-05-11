@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
-import { type BaseMessage } from '@/types/messages';
 import { Module, SUPPORTED_MODULES } from '@/types/modules';
 import {
   ALL_CENTRALIZED_EXCHANGES,
@@ -8,33 +7,15 @@ import {
   ALL_MODULES,
   ALL_TRANSACTIONS,
   PURGABLE,
-  type PurgeParams,
   type Purgeable
 } from '@/types/session/purge';
 import { SUPPORTED_EXCHANGES, type SupportedExchange } from '@/types/exchanges';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
+import { useCacheClear } from '@/composables/session/cache-clear';
 
 const source: Ref<Purgeable> = ref(ALL_TRANSACTIONS);
-const status: Ref<BaseMessage | null> = ref(null);
-const confirm: Ref<boolean> = ref(false);
-const pending: Ref<boolean> = ref(false);
 
 const { purgeCache } = useSessionPurge();
-
-const { show } = useConfirmStore();
-
-const showConfirmation = (source: PurgeParams) => {
-  show(
-    {
-      title: tc('data_management.purge_data.confirm.title'),
-      message: tc('data_management.purge_data.confirm.message', 0, {
-        source: source.text
-      })
-    },
-    async () => purge(source)
-  );
-  set(confirm, true);
-};
 
 const { deleteModuleData } = useBlockchainBalancesApi();
 const { deleteEvmTransactions } = useHistoryEventsApi();
@@ -61,30 +42,6 @@ const purgeSource = async (source: Purgeable) => {
     await deleteModuleData(source as Module);
   }
   await purgeCache(source);
-};
-
-const purge = async (source: PurgeParams) => {
-  set(confirm, false);
-  try {
-    set(pending, true);
-    await purgeSource(source.source);
-    set(status, {
-      success: tc('data_management.purge_data.success', 0, {
-        source: source.text
-      }),
-      error: ''
-    });
-    setTimeout(() => set(status, null), 5000);
-  } catch {
-    set(status, {
-      error: tc('data_management.purge_data.error', 0, {
-        source: source.text
-      }),
-      success: ''
-    });
-  } finally {
-    set(pending, false);
-  }
 };
 
 const { tc } = useI18n();
@@ -124,6 +81,25 @@ const purgable = PURGABLE.map(id => ({
   id,
   text: text(id)
 })).sort((a, b) => (a.text < b.text ? -1 : 1));
+
+const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
+  purgable,
+  purgeSource,
+  (source: string) => ({
+    success: tc('data_management.purge_data.success', 0, {
+      source
+    }),
+    error: tc('data_management.purge_data.error', 0, {
+      source
+    })
+  }),
+  (source: string) => ({
+    title: tc('data_management.purge_data.confirm.title'),
+    message: tc('data_management.purge_data.confirm.message', 0, {
+      source
+    })
+  })
+);
 </script>
 
 <template>
@@ -159,7 +135,7 @@ const purgable = PURGABLE.map(id => ({
               :disabled="!source || pending"
               :loading="pending"
               v-on="on"
-              @click="showConfirmation({ source: source, text: text(source) })"
+              @click="showConfirmation(source)"
             >
               <v-icon>mdi-delete</v-icon>
             </v-btn>

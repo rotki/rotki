@@ -724,6 +724,11 @@
           "title": "定期客户端查询"
         }
       },
+      "refresh_general_cache": {
+        "task": {
+          "title": "刷新通用缓存 (Curve, MakerDAO, Yearn)"
+        }
+      },
       "tag_add": {
         "error": {
           "title": "添加标签"
@@ -1659,6 +1664,40 @@
       "subtitle": "允许您清除 rotki 缓存的数据",
       "success": "数据删除成功",
       "title": "清除數据"
+    },
+    "purge_images_cache": {
+      "confirm": {
+        "message": "您确定要清除为 {source} 缓存的图像吗？",
+        "title": "确认缓存的清晰图像"
+      },
+      "label": {
+        "asset_icons": "资产图标",
+        "asset_to_clear": "搜索资产图标以清除",
+        "ens_avatars": "ENS头像",
+        "ens_to_clear": "ENS头像清零"
+      },
+      "hint": "清空此字段以删除所有缓存",
+      "error": "清除 {source} 的缓存图像失败：{message}",
+      "success": "缓存已成功清除",
+      "select_image_source": "选择要清除的图像缓存源",
+      "subtitle": "允许您清除 rotki 缓存的图像",
+      "title": "清除图像缓存",
+      "tooltip": "清除所选来源的缓存图像"
+    },
+    "refresh_cache": {
+      "confirm": {
+        "message": "您确定要刷新 {source} 的缓存吗？",
+        "title": "确认刷新缓存"
+      },
+      "label": {
+        "general_cache": "通用缓存 (Curve, MakerDAO, Yearn)"
+      },
+      "error": "清除 {source} 的缓存失败：{message}",
+      "success": "缓存已成功清除",
+      "select_cache": "选择要刷新的缓存",
+      "subtitle": "允许您刷新 rotki 缓存的数据",
+      "title": "刷新缓存",
+      "tooltip": "刷新选定源的缓存"
     },
     "title": "管理数据"
   },

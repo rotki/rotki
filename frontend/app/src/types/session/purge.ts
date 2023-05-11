@@ -22,3 +22,12 @@ export interface PurgeParams {
   readonly source: Purgeable;
   readonly text: string;
 }
+
+export enum PurgeableImageCache {
+  ASSET_ICONS = 'asset_icons',
+  ENS_AVATARS = 'ens_avatars'
+}
+
+export enum RefreshableCache {
+  GENERAL_CACHE = 'general_cache'
+}
