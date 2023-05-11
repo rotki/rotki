@@ -21,7 +21,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-WITHDRAWALS_RECHECK_PERIOD = 3 * 3600 * 1000  # 3 hours in milliseconds
+# How much time more than the last time a withdrawal happened to have allowed to pass
+# in order to recheck withdrawals for a given validator. In average at time of writing
+# withdrawals occur every 3-5 days for a single validator
+WITHDRAWALS_RECHECK_PERIOD = 3 * DAY_IN_SECONDS * 1000  # 3 days in milliseconds
 
 
 class DBEth2():
@@ -42,7 +45,7 @@ class DBEth2():
             LEFT JOIN eth_staking_events_info S ON S.validator_index = V.validator_index
             LEFT JOIN history_events E ON
             E.identifier = S.identifier WHERE ? - (SELECT MAX(timestamp) FROM history_events WHERE identifier=S.identifier) > ? AND S.validator_index IS NOT NULL
-            AND E.entry_type=?
+            AND E.entry_type=? GROUP BY V.validator_index HAVING MAX(E.timestamp)
             UNION
             SELECT DISTINCT V2.validator_index, 0 FROM eth2_validators V2 WHERE
             V2.validator_index NOT IN (

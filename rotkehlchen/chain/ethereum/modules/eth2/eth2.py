@@ -346,6 +346,7 @@ class Eth2(EthereumModule):
             dbeth2 = DBEth2(self.database)
             dbevents = DBHistoryEvents(self.database)
             result = dbeth2.get_validators_to_query_for_withdrawals(up_to_tsms=ts_sec_to_ms(to_ts))
+            log.debug(f'Got the following validator data to query for withdrawals: {result}')
 
             # first get all validator indices to see which validators have exited and when
             validator_indices = {x[0] for x in result}

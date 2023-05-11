@@ -566,53 +566,80 @@ def test_get_validators_to_query_for_withdrawals(database):
                 index=42,
                 public_key=Eth2PubKey('0xf0042'),
                 ownership_proportion=ONE,
+            ), Eth2Validator(
+                index=69,
+                public_key=Eth2PubKey('0xf0069'),
+                ownership_proportion=ONE,
             ),
         ])
 
     # now check that all need to be queried since we have no withdrawals
-    assert db.get_validators_to_query_for_withdrawals(now_ms) == [(1, 0), (2, 0), (3, 0), (42, 0)]
+    assert db.get_validators_to_query_for_withdrawals(now_ms) == [(1, 0), (2, 0), (3, 0), (42, 0), (69, 0)]  # noqa: E501
 
     with database.user_write() as write_cursor:  # now add some withdrawals in the DB
-        withdrawal1 = EthWithdrawalEvent(
-            validator_index=1,
-            timestamp=TimestampMS(1),
-            balance=Balance(1, 1),
-            withdrawal_address=address1,
-            is_exit=False,
-        )
-        withdrawal1.identifier = dbevents.add_history_event(write_cursor, withdrawal1)
-        withdrawal2 = EthWithdrawalEvent(
-            validator_index=42,
-            timestamp=TimestampMS(now_ms - 3600 * 1000),
-            balance=Balance(1, 1),
-            withdrawal_address=address2,
-            is_exit=False,
-        )
-        withdrawal2.identifier = dbevents.add_history_event(write_cursor, withdrawal2)
-        withdrawal3 = EthWithdrawalEvent(
-            validator_index=2,
-            timestamp=TimestampMS(20),
-            balance=Balance(2, 1),
-            withdrawal_address=address1,
-            is_exit=False,
-        )
-        withdrawal3.identifier = dbevents.add_history_event(write_cursor, withdrawal3)
-        exit1 = EthWithdrawalEvent(
-            validator_index=3,
-            timestamp=TimestampMS(30),
-            balance=Balance(FVal('32.0023'), 1),
-            withdrawal_address=address1,
-            is_exit=True,
-        )
-        exit1.identifier = dbevents.add_history_event(write_cursor, exit1)
-        exit2 = EthWithdrawalEvent(
-            validator_index=46,
-            timestamp=TimestampMS(now_ms - 3600 * 1000 * 1.5),
-            balance=Balance(FVal('32.0044'), 1),
-            withdrawal_address=address2,
-            is_exit=True,
-        )
-        exit2.identifier = dbevents.add_history_event(write_cursor, exit2)
+        dbevents.add_history_events(write_cursor, [
+            EthWithdrawalEvent(
+                validator_index=1,
+                timestamp=TimestampMS(1),
+                balance=Balance(1, 1),
+                withdrawal_address=address1,
+                is_exit=False,
+            ), EthWithdrawalEvent(
+                validator_index=1,
+                timestamp=TimestampMS(25000),
+                balance=Balance(1, 1),
+                withdrawal_address=address1,
+                is_exit=False,
+            ), EthWithdrawalEvent(
+                validator_index=1,
+                timestamp=TimestampMS(55000),
+                balance=Balance(1, 1),
+                withdrawal_address=address1,
+                is_exit=False,
+            ), EthWithdrawalEvent(
+                validator_index=42,
+                timestamp=TimestampMS(now_ms - 25 * 3600 * 1000),
+                balance=Balance(1, 1),
+                withdrawal_address=address2,
+                is_exit=False,
+            ), EthWithdrawalEvent(
+                validator_index=42,
+                timestamp=TimestampMS(now_ms - 3600 * 1000),
+                balance=Balance(1, 1),
+                withdrawal_address=address2,
+                is_exit=False,
+            ), EthWithdrawalEvent(
+                validator_index=2,
+                timestamp=TimestampMS(22000),
+                balance=Balance(2, 1),
+                withdrawal_address=address1,
+                is_exit=False,
+            ), EthWithdrawalEvent(
+                validator_index=2,
+                timestamp=TimestampMS(69000),
+                balance=Balance(2, 1),
+                withdrawal_address=address1,
+                is_exit=False,
+            ), EthWithdrawalEvent(
+                validator_index=3,
+                timestamp=TimestampMS(14000),
+                balance=Balance(1, 1),
+                withdrawal_address=address1,
+                is_exit=False,
+            ), EthWithdrawalEvent(
+                validator_index=3,
+                timestamp=TimestampMS(30000),
+                balance=Balance(FVal('32.0023'), 1),
+                withdrawal_address=address1,
+                is_exit=True,
+            ), EthWithdrawalEvent(
+                validator_index=46,
+                timestamp=TimestampMS(now_ms - 3600 * 1000 * 1.5),
+                balance=Balance(FVal('32.0044'), 1),
+                withdrawal_address=address2,
+                is_exit=True,
+            ),
+        ])  # no withdrawals for validator 69, to see logic works for it too
 
         # add some other events to make sure table populated with non-withdrawals doesn't mess up
         dbevents.add_history_event(write_cursor, HistoryEvent(
@@ -637,7 +664,7 @@ def test_get_validators_to_query_for_withdrawals(database):
         ))
 
     result = db.get_validators_to_query_for_withdrawals(now_ms)
-    assert result == [(1, 1), (2, 20), (3, 30)]
+    assert result == [(1, 55000), (2, 69000), (3, 30000), (69, 0)]
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b', '0xF4fEae08C1Fa864B64024238E33Bfb4A3Ea7741d']])  # noqa: E501
