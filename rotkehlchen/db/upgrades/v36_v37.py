@@ -50,6 +50,37 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     )
 
 
+def _move_event_locations(write_cursor: 'DBCursor') -> None:
+    """
+    Create location ethereum and optimism and move the blockchain events to those locations
+    """
+    log.debug('Enter _move_event_locations')
+    write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("f", 38);')
+    write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("g", 39);')
+
+    write_cursor.execute(
+        'SELECT chain_id, tx_hash FROM evm_transactions WHERE '
+        'tx_hash IN (SELECT event_identifier FROM history_events)',
+    )
+    update_tuples = []
+    for chain_id, tx_hash in write_cursor:
+        if chain_id == 1:
+            location = 'f'  # ethereum
+        elif chain_id == 10:
+            location = 'g'  # optimism
+        else:  # unexpected -- skip entry from editing
+            log.error(f'Found unexpected chain id {chain_id} in the DB for transaction {tx_hash}')
+            continue
+
+        update_tuples.append((location, tx_hash))
+
+    write_cursor.executemany(
+        'UPDATE history_events SET location=? WHERE event_identifier=?', update_tuples,
+    )
+    write_cursor.execute('DELETE FROM history_events_mappings WHERE name="chain_id"')
+    log.debug('Exit _move_event_locations')
+
+
 def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection') -> None:
     """
     1. Reset all decoded events
@@ -94,10 +125,11 @@ def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection'
                 # start with 'rotki_events'
                 event_identifier = db_event_identifier.decode()
             else:
-                # this shouldn't happen, leaving it here to avoid losing information or
-                # failing during the upgrade
-                log.critical(f'Unexpected event found with {event_identifier=} and {location=}')
-                event_identifier = db_event_identifier
+                # this shouldn't happen, leaving it here to avoid failing during the upgrade
+                # _move_event_locations should have moved already all the events that are related
+                # to evm transactions with the wrong location
+                log.critical(f'Unexpected event found with {db_event_identifier=} and {location=}. {entry=} Skipping')  # noqa: E501
+                continue
 
             if location == Location.KRAKEN or event_identifier.startswith('rotki_events'):  # This is the rule at 1.27.1   # noqa: E501
                 entry_type = HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db()
@@ -399,8 +431,10 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Replace null history event subtype
     """
     log.debug('Entered userdb v36->v37 upgrade')
-    progress_handler.set_total_steps(8)
+    progress_handler.set_total_steps(9)
     with db.user_write() as write_cursor:
+        _move_event_locations(write_cursor)
+        progress_handler.new_step()
         _create_new_tables(write_cursor)
         progress_handler.new_step()
         _update_history_events_schema(write_cursor, db.conn)
