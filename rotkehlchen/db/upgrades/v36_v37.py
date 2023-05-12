@@ -2,8 +2,8 @@ import json
 import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any
-from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 
+from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.constants.assets import A_ETH2
 from rotkehlchen.constants.misc import ZERO
@@ -53,6 +53,11 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
 def _move_event_locations(write_cursor: 'DBCursor') -> None:
     """
     Create location ethereum and optimism and move the blockchain events to those locations
+
+    This used to be DB data migration 9 which was added only for when upgrading from 1.27.0 to
+    1.27.1. So it only exists in 1.27.1 and has from now on (1.28.0) moved to this DB upgrade
+
+    This should always be at the start of this DB upgrade as it relies on the old schema.
     """
     log.debug('Enter _move_event_locations')
     write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("f", 38);')
@@ -128,7 +133,7 @@ def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection'
                 # this shouldn't happen, leaving it here to avoid failing during the upgrade
                 # _move_event_locations should have moved already all the events that are related
                 # to evm transactions with the wrong location
-                log.critical(f'Unexpected event found with {db_event_identifier=} and {location=}. {entry=} Skipping')  # noqa: E501
+                log.critical(f'Unexpected event {entry=} found. Skipping')
                 continue
 
             if location == Location.KRAKEN or event_identifier.startswith('rotki_events'):  # This is the rule at 1.27.1   # noqa: E501
