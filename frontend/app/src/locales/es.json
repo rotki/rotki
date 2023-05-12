@@ -798,7 +798,7 @@
         "title": "Evm Transactions Events Retrieval"
       },
       "error": {
-        "description": "Failed to retrieving events from transactions: {error}",
+        "description": "Failed to retrieve events from transactions: {error}",
         "title": "Retrieving events from transactions"
       }
     },
@@ -808,7 +808,7 @@
         "title": "Evm Transaction Missing Events Retrieval"
       },
       "error": {
-        "description": "Failed to retrieving missing events from transactions for address {address} ({evmChain}): {error}",
+        "description": "Failed to retrieve missing events from transactions for address {address} ({evmChain}): {error}",
         "title": "Retrieving missing events from transactions"
       }
     },
