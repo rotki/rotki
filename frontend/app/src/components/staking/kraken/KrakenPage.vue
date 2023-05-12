@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { SupportedExchange } from '@/types/exchanges';
 import { Section } from '@/types/status';
+import { Routes } from '@/router/routes';
 
 const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 const { load, $reset } = useKrakenStakingStore();
@@ -51,7 +52,7 @@ const refresh = () => load(true);
           </v-row>
           <v-row justify="center" class="mt-md-12 mt-4">
             <v-col cols="auto" class="mx-4">
-              <internal-link to="/settings/api-keys/exchanges">
+              <internal-link :to="Routes.API_KEYS_EXCHANGES">
                 <v-img
                   width="64px"
                   contain
@@ -69,7 +70,7 @@ const refresh = () => load(true);
               >
                 <i18n path="kraken_page.page.description">
                   <template #link>
-                    <internal-link to="/settings/api-keys/exchanges">
+                    <internal-link :to="Routes.API_KEYS_EXCHANGES">
                       {{ t('kraken_page.page.api_key') }}
                     </internal-link>
                   </template>

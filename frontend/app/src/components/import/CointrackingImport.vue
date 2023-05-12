@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Routes } from '@/router/routes';
+
 const { t } = useI18n();
 </script>
 
@@ -14,7 +16,7 @@ const { t } = useI18n();
       <li>{{ t('import_data.cointracking.line_one') }}</li>
       <li>{{ t('import_data.cointracking.line_two') }}</li>
       <i18n path="import_data.cointracking.line_three">
-        <internal-link to="/accounts-balance">
+        <internal-link :to="Routes.ACCOUNTS_BALANCES">
           {{ t('import_data.cointracking.link') }}
         </internal-link>
       </i18n>
