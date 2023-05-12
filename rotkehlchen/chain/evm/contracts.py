@@ -176,7 +176,7 @@ class EvmContracts(Generic[T]):
                 return None
 
             # Try to find the contract in the packaged db
-            with globaldb.packaged_db_lock:
+            with globaldb.conn.transaction_lock:  # detach fails if there is an active transaction
                 log.debug(f'Using packaged globaldb to get contract {address} information')
                 cursor.execute(f'ATTACH DATABASE "{self.builtin_database_path}" AS packaged_db;')
                 result = cursor.execute(
@@ -242,12 +242,12 @@ class EvmContracts(Generic[T]):
                 return None
 
             # Try to find the ABI in the packaged db
-            with globaldb.packaged_db_lock:
-                cursor.execute(f'ATTACH DATABASE "{self.builtin_database_path}" AS packaged_db;')
-                result = cursor.execute(
-                    'SELECT value FROM packaged_db.contract_abi WHERE name=?',
-                    (name,),
-                ).fetchone()
+            cursor.execute(f'ATTACH DATABASE "{self.builtin_database_path}" AS packaged_db;')
+            result = cursor.execute(
+                'SELECT value FROM packaged_db.contract_abi WHERE name=?',
+                (name,),
+            ).fetchone()
+            with globaldb.conn.transaction_lock:
                 cursor.execute('DETACH DATABASE "packaged_db"')
             if result is None:
                 return None
