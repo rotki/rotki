@@ -38,10 +38,6 @@ const css = useCssModule();
         {{ toSentenceCase(event.location) }}
       </template>
 
-      <template #type>
-        {{ toSentenceCase(event.eventType || '') }}
-      </template>
-
       <template #blockNumber>
         <span v-if="blockEvent" :class="css.address" class="d-inline-flex">
           <hash-link

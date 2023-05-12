@@ -343,11 +343,13 @@ const css = useCssModule();
               :xl="xl"
             />
           </div>
-          <copy-tooltip
-            :copied="copied"
-            :value="renderedValue"
-            :tooltip="tooltip"
-          />
+          <div>
+            <copy-tooltip
+              :copied="copied"
+              :value="renderedValue"
+              :tooltip="tooltip"
+            />
+          </div>
           <div
             v-if="shouldShowCurrency && currencyLocation === 'after'"
             class="ml-1"

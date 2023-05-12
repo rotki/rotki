@@ -30,6 +30,7 @@ import { TaskType } from '@/types/task-type';
 import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { Module } from '@/types/modules';
+import { defaultCollectionState } from '@/utils/collection';
 
 export const useHistoryEvents = () => {
   const { t, tc } = useI18n();
@@ -212,10 +213,10 @@ export const useHistoryEvents = () => {
       ]);
 
       const taskMeta = {
-        title: t('actions.transactions_events.task.title').toString(),
+        title: t('actions.transactions_redecode_missing.task.title').toString(),
         description: tc(
-          'actions.transactions_events.task.description',
-          2,
+          'actions.transactions_redecode_missing.task.description',
+          0,
           account
         ),
         ...payload
@@ -225,10 +226,17 @@ export const useHistoryEvents = () => {
     } catch (e) {
       logger.error(e);
       notify({
-        title: t('actions.transaction_redecode.error.title').toString(),
-        message: t('actions.transaction_redecode.error.description', {
-          error: e
-        }).toString(),
+        title: t(
+          'actions.transactions_redecode_missing.error.title'
+        ).toString(),
+        message: tc(
+          'actions.transactions_redecode_missing.error.description',
+          0,
+          {
+            error: e,
+            ...account
+          }
+        ),
         display: true
       });
     }
@@ -238,38 +246,50 @@ export const useHistoryEvents = () => {
   const fetchHistoryEvents = async (
     payload: MaybeRef<HistoryEventRequestPayload>
   ): Promise<Collection<HistoryEventEntry>> => {
-    const result = await fetchHistoryEventsCaller(
-      omit(get(payload), 'accounts')
-    );
+    try {
+      const result = await fetchHistoryEventsCaller(
+        omit(get(payload), 'accounts')
+      );
 
-    const { data, ...other } = mapCollectionResponse<
-      HistoryEventEntryWithMeta,
-      HistoryEventsCollectionResponse
-    >(result);
+      const { data, ...other } = mapCollectionResponse<
+        HistoryEventEntryWithMeta,
+        HistoryEventsCollectionResponse
+      >(result);
 
-    const notesList: string[] = [];
+      const notesList: string[] = [];
 
-    const mappedData = data.map((event: HistoryEventEntryWithMeta) => {
-      const { entry, ...entriesMeta } = event;
+      const mappedData = data.map((event: HistoryEventEntryWithMeta) => {
+        const { entry, ...entriesMeta } = event;
 
-      if (entry.notes) {
-        notesList.push(entry.notes);
+        if (entry.notes) {
+          notesList.push(entry.notes);
+        }
+
+        return {
+          ...entry,
+          ...entriesMeta
+        };
+      });
+
+      if (!get(payload).groupByEventIds) {
+        startPromise(fetchEnsNames(getEthAddressesFromText(notesList)));
       }
 
       return {
-        ...entry,
-        ...entriesMeta
+        ...other,
+        data: mappedData
       };
-    });
-
-    if (!get(payload).groupByEventIds) {
-      startPromise(fetchEnsNames(getEthAddressesFromText(notesList)));
+    } catch (e: any) {
+      logger.error(e);
+      notify({
+        title: t('actions.history_events.error.title').toString(),
+        message: t('actions.history_events.error.description', {
+          error: e
+        }).toString(),
+        display: true
+      });
+      return defaultCollectionState();
     }
-
-    return {
-      ...other,
-      data: mappedData
-    };
   };
 
   const addTransactionEvent = async (
@@ -347,17 +367,30 @@ export const useHistoryEvents = () => {
       );
     }
 
-    const taskType = TaskType.TX_EVENTS;
-    const { taskId } = await decodeHistoryEvents({
-      data: payloads,
-      ignoreCache
-    });
-    const taskMeta = {
-      title: t('actions.transactions_events.task.title').toString(),
-      description: tc('actions.transactions_events.task.description', 1)
-    };
+    try {
+      const taskType = TaskType.TX_EVENTS;
+      const { taskId } = await decodeHistoryEvents({
+        data: payloads,
+        ignoreCache
+      });
+      const taskMeta = {
+        title: t('actions.transactions_redecode.task.title').toString(),
+        description: t(
+          'actions.transactions_redecode.task.description'
+        ).toString()
+      };
 
-    await awaitTask(taskId, taskType, taskMeta, true);
+      await awaitTask(taskId, taskType, taskMeta, true);
+    } catch (e: any) {
+      logger.error(e);
+      notify({
+        title: t('actions.transactions_redecode.error.title').toString(),
+        message: tc('actions.transactions_redecode.error.description', 0, {
+          error: e
+        }),
+        display: true
+      });
+    }
   };
 
   const addTransactionHash = async (
