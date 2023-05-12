@@ -64,6 +64,8 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
     shouldShowPercentage,
     scrambleMultiplier,
     connectedExchanges,
+    // return settings on development for state persistence
+    ...(checkIfDevelopment() ? { settings } : {}),
     setAnimationsEnabled,
     setConnectedExchanges,
     update

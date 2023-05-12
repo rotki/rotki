@@ -94,6 +94,8 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     nonSyncingExchanges,
     treatEth2AsEth,
     addressNamePriority,
+    // return settings on development for state persistence
+    ...(checkIfDevelopment() ? { settings } : {}),
     update
   };
 });
