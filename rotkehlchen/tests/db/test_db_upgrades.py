@@ -1313,14 +1313,19 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     cursor = db_v36.conn.cursor()
     # Test state of DB before upgrade is as expected
     result = cursor.execute('SELECT COUNT(*) FROM history_events;')
-    assert result.fetchone()[0] == 181
+    assert result.fetchone()[0] == 186
     result = cursor.execute('SELECT COUNT(*) FROM history_events WHERE subtype IS NULL;')
     assert result.fetchone()[0] == 5
     result = cursor.execute('SELECT * from history_events_mappings;')
     assert result.fetchall() == [  # customized events
         (1, 'state', 1),
         (74, 'state', 1),
+        (238, 'state', 1),
     ]
+    # get events from 1.27.0 that didn't have the ethereum/optimism location
+    cursor.execute('SELECT COUNT(*) FROM history_events WHERE location = "J";')
+    assert cursor.fetchone()[0] == 5
+
     old_history_events = cursor.execute('SELECT * FROM history_events;').fetchall()
     kraken_events = {
         (171, b'SDASD-DSAD-DSAD', 0, 1638706007439, 'B', 'kraken', 'ETH', '-10.996', '-11843.777435000000', None, 'withdrawal', None, None, None),  # noqa: E501
@@ -1337,6 +1342,7 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     custom_events = {
         (1, b'\xf1\xe0SX\xcbe\xed{3\xa6\xbb\x0f"\x8am>E\x9a\xf8\x18e\xccc6\x99M\xeciw\xc3\x1aM', 0, 1676042975000, 'g', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'ETH', '0.0000004061904', '0.000609801461808', 'Burned 0.0000004061904 ETH for gas for greater justice', 'spend', 'fee', 'gas', None),  # noqa: E501
         (74, b'\xd1\x81W\xff\x16\xd3D\xcf-"\xf1D\xeb\xcf\xc3;\xff\x0b0\xcd\xcd\xddY\x97?\xd2\xf9\xf9%\xb3\xf5\xa3', 474, 1669664867000, 'f', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F', '125.835582561728229714', '125.6594127461418101924004', 'Receive 125.835582561728229714 DAI from 0x73043143e0A6418cc45d82D4505B096b802FD365 to 0xc37b40ABdB939635068d3c5f13E7faF686F03B65 because I am cool', 'receive', 'none', '0x73043143e0A6418cc45d82D4505B096b802FD365', None),  # noqa: E501
+        (238, b'\xe9T\xa3\x96\xa0.\xbb\xeaE\xa1\xd2\x06\xc9\x91\x8fq|UP\x9c\x818\xfc\xccc\x15]\x02b\xefM\xc4', 76, 1675186487000, 'J', '0x6Bb553FFC5716782051f51b564Bb149D9946f0d2', 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F', '10', '9.9970', 'Deposit 10 DAI in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD', 'deposit', 'deposit asset', 'curve', ''),  # noqa: E501
     }
     imported_event = (1116, b'rotki_eventsf3d3c9cc11e3442c91662c24ed7b3554', 0, 1638706007440, 'P', 'crypto.com', 'ETH', '12', '12000', None, 'receive', None, None, None)  # noqa: E501
     assert all(x in old_history_events for x in kraken_events)
@@ -1418,6 +1424,7 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     assert result.fetchall() == [  # customized events mapping should persist
         (1, 'state', 1),
         (74, 'state', 1),
+        (238, 'state', 1),
     ]
 
     new_kraken_events = set(cursor.execute('SELECT * FROM history_events WHERE location="B";'))
@@ -1438,10 +1445,17 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     new_evm_info = cursor.execute('SELECT * FROM evm_events_info;').fetchall()
     assert len(new_evm_info) == len(custom_events)
     new_history_events = set(cursor.execute('SELECT * FROM history_events;'))
-    for entry in custom_events:
+    for original_entry in custom_events:
+        entry = original_entry
+        if entry[0] == 238:
+            # the event with location blockchain needs to update the location to ethereum.
+            # This is the same row modifying the location to 'f' in order to build the new
+            # expected event
+            entry = (238, b'\xe9T\xa3\x96\xa0.\xbb\xeaE\xa1\xd2\x06\xc9\x91\x8fq|UP\x9c\x818\xfc\xccc\x15]\x02b\xefM\xc4', 76, 1675186487000, 'f', '0x6Bb553FFC5716782051f51b564Bb149D9946f0d2', 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F', '10', '9.9970', 'Deposit 10 DAI in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD', 'deposit', 'deposit asset', 'curve', '')  # noqa: E501
         prefix = '10x' if entry[4] == 'f' else '100x'  # chain id prefix depending on location
         assert (entry[0], 2, prefix + entry[1].hex(), *entry[2:12]) in new_history_events
         assert (entry[0], entry[1], entry[12], None, None, entry[13]) in new_evm_info
+
     expected_imported_event = (1116, 1, 'rotki_eventsf3d3c9cc11e3442c91662c24ed7b3554', 0, 1638706007440, 'P', 'crypto.com', 'ETH', '12', '12000', None, 'receive', 'none')  # noqa: E501
     assert expected_imported_event in new_history_events
 
