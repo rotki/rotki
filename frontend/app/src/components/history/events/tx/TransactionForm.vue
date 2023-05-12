@@ -69,7 +69,7 @@ const { txEvmChains, getEvmChainName } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
 
 const { setMessage } = useMessageStore();
-const { addTransactionHash } = useHistoryEvents();
+const { addTransactionHash } = useHistoryTransactions();
 
 const save = async (): Promise<EvmChainAndTxHash | null> => {
   const accountsVal = get(accounts);

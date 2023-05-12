@@ -23,7 +23,6 @@ import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { type Writeable } from '@/types';
-import { isEvmEventType } from '@/utils/history/events';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
 import type { Filters, Matcher } from '@/composables/filters/events';
 
@@ -123,12 +122,10 @@ const { isTaskRunning } = useTaskStore();
 const { txEvmChains, getEvmChainName } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
 
-const {
-  refreshTransactions,
-  fetchTransactionEvents,
-  deleteTransactionEvent,
-  fetchHistoryEvents
-} = useHistoryEvents();
+const { fetchHistoryEvents } = useHistoryEvents();
+
+const { refreshTransactions, fetchTransactionEvents, deleteTransactionEvent } =
+  useHistoryTransactions();
 
 const {
   options,

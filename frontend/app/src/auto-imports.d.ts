@@ -443,6 +443,7 @@ declare global {
   const useHistoryEventsApi: typeof import('./composables/api/history/events')['useHistoryEventsApi']
   const useHistoryIgnoringApi: typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']
   const useHistoryStore: typeof import('./store/history/index')['useHistoryStore']
+  const useHistoryTransactions: typeof import('./composables/history/events/tx')['useHistoryTransactions']
   const useI18n: typeof import('vue-i18n-composable')['useI18n']
   const useIdle: typeof import('@vueuse/core')['useIdle']
   const useIgnore: typeof import('./composables/history/index')['useIgnore']
@@ -1115,6 +1116,7 @@ declare module 'vue' {
     readonly useHistoryEventsApi: UnwrapRef<typeof import('./composables/api/history/events')['useHistoryEventsApi']>
     readonly useHistoryIgnoringApi: UnwrapRef<typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']>
     readonly useHistoryStore: UnwrapRef<typeof import('./store/history/index')['useHistoryStore']>
+    readonly useHistoryTransactions: UnwrapRef<typeof import('./composables/history/events/tx')['useHistoryTransactions']>
     readonly useI18n: UnwrapRef<typeof import('vue-i18n-composable')['useI18n']>
     readonly useIdle: UnwrapRef<typeof import('@vueuse/core')['useIdle']>
     readonly useIgnore: UnwrapRef<typeof import('./composables/history/index')['useIgnore']>

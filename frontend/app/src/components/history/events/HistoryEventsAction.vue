@@ -5,7 +5,6 @@ import {
   type HistoryEventEntry
 } from '@/types/history/events';
 import { toEvmChainAndTxHash } from '@/utils/history';
-import { isEvmEventRef } from '@/utils/history/events';
 
 const props = defineProps<{
   event: HistoryEventEntry;
