@@ -128,14 +128,15 @@ export const useExchangeApi = () => {
   };
 
   const deleteExchangeData = async (
-    name: SupportedExchange | '' = ''
+    name?: SupportedExchange
   ): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(
-      `/exchanges/data/${name}`,
-      {
-        validateStatus: validStatus
-      }
-    );
+    let url = `/exchanges/data`;
+    if (name) {
+      url += `/${name}`;
+    }
+    const response = await api.instance.delete<ActionResult<boolean>>(url, {
+      validateStatus: validStatus
+    });
 
     return handleResponse(response);
   };
