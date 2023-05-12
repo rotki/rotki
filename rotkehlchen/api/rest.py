@@ -4290,8 +4290,10 @@ class RestAPI():
             # If avatar for this ens name has never been checked or the avatar has expired
             # then we try to download.
             try:
+                nft_module = self.rotkehlchen.chains_aggregator.get_module('nfts')
                 try_download_ens_avatar(
                     eth_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+                    opensea=nft_module.opensea if nft_module is not None else None,
                     avatars_dir=avatars_dir,
                     ens_name=ens_name,
                 )

@@ -2,7 +2,7 @@ import tempfile
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Optional
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from freezegun import freeze_time
@@ -115,8 +115,8 @@ def test_uses_sources_only_when_needed(evm_address, database: 'DBHandler'):
 
 
 @pytest.mark.vcr()
-@freeze_time('2023-05-05')  # freezing time just to make sure comparisons of timestamps won't fail
-def test_download_ens_avatar(ethereum_inquirer):
+@freeze_time('2023-05-12')  # freezing time just to make sure comparisons of timestamps won't fail
+def test_download_ens_avatar(ethereum_inquirer, opensea):
     """
     Tests that detection and downloading of ens avatars works properly for all resolvers
     """
@@ -131,19 +131,32 @@ def test_download_ens_avatar(ethereum_inquirer):
         dbens.add_ens_mapping(
             write_cursor=write_cursor,
             address=make_evm_address(),
-            name='nebolax.eth',
+            name='nebolax.eth',  # resolver v2
             now=ts_now(),
         )
         dbens.add_ens_mapping(
             write_cursor=write_cursor,
             address=make_evm_address(),
-            name='tewshi.eth',
+            name='tewshi.eth',  # resolver v3
+            now=ts_now(),
+        )
+        dbens.add_ens_mapping(
+            write_cursor=write_cursor,
+            address=make_evm_address(),
+            name='arpit59.eth',  # got an NFT image
+            now=ts_now(),
+        )
+        dbens.add_ens_mapping(
+            write_cursor=write_cursor,
+            address=make_evm_address(),
+            name='mafeoza.eth',  # got an NFT image
             now=ts_now(),
         )
     with tempfile.TemporaryDirectory() as tempdir_str:
         tempdir = Path(tempdir_str)
         try_download_ens_avatar(
             eth_inquirer=ethereum_inquirer,
+            opensea=opensea,
             avatars_dir=tempdir,
             ens_name='random.ens.name.eth',  # a random ens name, and thus there is no avatar
         )
@@ -151,17 +164,43 @@ def test_download_ens_avatar(ethereum_inquirer):
         assert list(tempdir.iterdir()) == []
         try_download_ens_avatar(
             eth_inquirer=ethereum_inquirer,
+            opensea=opensea,
             avatars_dir=tempdir,
             ens_name='nebolax.eth',  # an avatar should be downloaded. Resolver v2.
         )
         assert dbens.get_last_avatar_update('nebolax.eth') <= ts_now(), 'Last update timestamp should have been set'  # noqa: E501
         try_download_ens_avatar(
             eth_inquirer=ethereum_inquirer,
+            opensea=opensea,
             avatars_dir=tempdir,
             ens_name='tewshi.eth',  # an avatar should be downloaded. Resolver v3
         )
         assert dbens.get_last_avatar_update('tewshi.eth') <= ts_now(), 'Last update timestamp should have been set'  # noqa: E501
         assert set(tempdir.iterdir()) == {tempdir / 'tewshi.eth.png', tempdir / 'nebolax.eth.png'}
+        try_download_ens_avatar(
+            eth_inquirer=ethereum_inquirer,
+            opensea=opensea,
+            avatars_dir=tempdir,
+            ens_name='arpit59.eth',  # avatar should be downloaded. NFT image using ensapp metadata
+        )
+        assert dbens.get_last_avatar_update('arpit59.eth') <= ts_now(), 'Last update timestamp should have been set'  # noqa: E501
+
+        with patch('rotkehlchen.chain.ethereum.utils.ENS_METADATA_URL', new='dsad'):
+            # Make it so that ens app metadata fails and we try opensea hee
+            try_download_ens_avatar(
+                eth_inquirer=ethereum_inquirer,
+                opensea=opensea,
+                avatars_dir=tempdir,
+                ens_name='mafeoza.eth',  # avatar should be downloaded. NFT image using opensea
+            )
+        assert dbens.get_last_avatar_update('mafeoza.eth') <= ts_now(), 'Last update timestamp should have been set'  # noqa: E501
+
+        assert set(tempdir.iterdir()) == {
+            tempdir / 'mafeoza.eth.png',
+            tempdir / 'arpit59.eth.png',
+            tempdir / 'tewshi.eth.png',
+            tempdir / 'nebolax.eth.png',
+        }
         downloaded_hash = file_md5(tempdir / 'nebolax.eth.png')
         expected_hash = file_md5(Path(__file__).parent.parent / 'data' / 'example_ens_avatar.png')
         assert downloaded_hash == expected_hash, 'Downloaded avatar should match the expected avatar'  # noqa: E501
