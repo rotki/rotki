@@ -1,4 +1,3 @@
-import copy
 import logging
 import random
 from collections import defaultdict
@@ -27,13 +26,7 @@ from rotkehlchen.constants.timing import (
     HOUR_IN_SECONDS,
 )
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import (
-    DBEqualsFilter,
-    DBIgnoreValuesFilter,
-    EvmTransactionsFilterQuery,
-    HistoryBaseEntryFilterQuery,
-    HistoryEventFilterQuery,
-)
+from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.updates import LAST_DATA_UPDATES_KEY
 from rotkehlchen.errors.api import PremiumAuthenticationError
@@ -408,7 +401,11 @@ class TaskManager():
 
     def _maybe_query_missing_prices(self) -> Optional[list[gevent.Greenlet]]:
         query_filter = HistoryEventFilterQuery.make(limit=100)
-        entries = self.get_base_entries_missing_prices(query_filter)
+        db = DBHistoryEvents(self.database)
+        entries = db.get_base_entries_missing_prices(
+            query_filter=query_filter,
+            ignored_assets=list(self.base_entries_ignore_set),
+        )
         if len(entries) == 0:
             return None
 
@@ -421,29 +418,6 @@ class TaskManager():
             method=self.query_missing_prices_of_base_entries,
             entries_missing_prices=entries,
         )]
-
-    def get_base_entries_missing_prices(
-            self,
-            query_filter: HistoryBaseEntryFilterQuery,
-    ) -> list[tuple[str, FVal, Asset, Timestamp]]:
-        """
-        Searches base entries missing usd prices that have not previously been checked in
-        this session.
-        """
-        # Use a deepcopy to avoid mutations in the filter query if it is used later
-        db = DBHistoryEvents(self.database)
-        new_query_filter = copy.deepcopy(query_filter)
-        new_query_filter.filters.append(
-            DBEqualsFilter(and_op=True, column='usd_value', value='0'),
-        )
-        new_query_filter.filters.append(
-            DBIgnoreValuesFilter(
-                and_op=True,
-                column='history_events.identifier',
-                values=list(self.base_entries_ignore_set),
-            ),
-        )
-        return db.rows_missing_prices_in_base_entries(filter_query=new_query_filter)
 
     def query_missing_prices_of_base_entries(
             self,
