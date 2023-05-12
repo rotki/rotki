@@ -486,6 +486,11 @@ class DBConnection:
                 logger.trace(f'exiting critical section for {self.connection_type}')
             self._set_progress_handler()
 
+    @contextmanager
+    def critical_section_and_transaction_lock(self) -> Generator[None, None, None]:
+        with self.critical_section(), self.transaction_lock:
+            yield
+
     @property
     def total_changes(self) -> int:
         """total number of database rows that have been modified, inserted,
