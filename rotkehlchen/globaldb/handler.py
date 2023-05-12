@@ -1615,7 +1615,7 @@ class GlobalDBHandler():
                 log.error(f'Failed to restore assets in globaldb due to {str(e)}')
                 return False, 'Failed to restore assets. Read logs to get more information.'
             finally:  # on the way out always detach the DB. Make sure no transaction is active
-                with self.conn.transaction_lock:
+                with self.conn.critical_section_and_transaction_lock():
                     read_cursor.execute('DETACH DATABASE "clean_db";')
 
         return True, ''
@@ -1706,7 +1706,7 @@ class GlobalDBHandler():
         # Get built in identifiers
         query = cursor.execute('SELECT identifier from clean_db.assets;')
         shipped_ids = {tup[0] for tup in query}
-        with GlobalDBHandler().conn.transaction_lock:
+        with GlobalDBHandler().conn.critical_section_and_transaction_lock():
             cursor.execute('DETACH DATABASE clean_db;')
         return user_ids - shipped_ids
 
