@@ -6,6 +6,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast, overload
 
+from gevent.lock import Semaphore
+
 from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
@@ -189,6 +191,7 @@ class GlobalDBHandler():
     _packaged_db_conn: Optional[DBConnection] = None
     conn: DBConnection
     used_backup: bool  # specifies if the global DB was restored from a backup
+    packaged_db_lock: Semaphore
 
     def __new__(
             cls,
@@ -210,6 +213,7 @@ class GlobalDBHandler():
         GlobalDBHandler.__instance = object.__new__(cls)
         GlobalDBHandler.__instance._data_directory = data_dir
         GlobalDBHandler.__instance.conn, GlobalDBHandler.__instance.used_backup = _initialize_global_db_directory(data_dir, sql_vm_instructions_cb)  # noqa: E501
+        GlobalDBHandler.__instance.packaged_db_lock = Semaphore()
         return GlobalDBHandler.__instance
 
     @staticmethod
@@ -1541,8 +1545,8 @@ class GlobalDBHandler():
                  'to_timestamp': entry[3],
                  } for entry in query]
 
-    @staticmethod
     def hard_reset_assets_list(
+            self,
             user_db: 'DBHandler',
             force: bool = False,
     ) -> tuple[bool, str]:
@@ -1550,138 +1554,135 @@ class GlobalDBHandler():
         Delete all custom asset entries and repopulate from the last
         builtin version
         """
-        detach_database = 'DETACH DATABASE "clean_db";'
-
         root_dir = Path(__file__).resolve().parent.parent
         builtin_database = root_dir / 'data' / 'global.db'
         # Update owned assets
         with user_db.conn.read_ctx() as cursor:
             user_db.update_owned_assets_in_globaldb(cursor)
 
-        try:
-            with GlobalDBHandler().conn.read_ctx() as read_cursor:
-                # First check that the operation can be made. If the difference is not the
-                # empty set the operation is dangerous and the user should be notified.
-                with user_db.user_write() as user_db_cursor:
-                    diff_ids = GlobalDBHandler().get_user_added_assets(
-                        cursor=read_cursor,
-                        user_db_write_cursor=user_db_cursor,
-                        user_db=user_db,
-                        only_owned=True,
-                    )
-                if len(diff_ids) != 0 and not force:
-                    msg = 'There are assets that can not be deleted. Check logs for more details.'  # noqa: E501
-                    return False, msg
-                read_cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
-                # Check that versions match
-                query = read_cursor.execute('SELECT value from clean_db.settings WHERE name="version";')  # noqa: E501
-                version = query.fetchone()
-                if version is None or int(version[0]) != globaldb_get_setting_value(read_cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
-                    read_cursor.execute(detach_database)
-                    msg = (
-                        'Failed to restore assets. Global database is not '
-                        'updated to the latest version'
-                    )
-                    return False, msg
+        with self.conn.read_ctx() as read_cursor:
+            # First check that the operation can be made. If the difference is not the
+            # empty set the operation is dangerous and the user should be notified.
+            # This is not under the packaged_db_lock since get_user_added_assets() acquires that
+            # lock.
+            with user_db.user_write() as user_db_cursor:
+                diff_ids = self.get_user_added_assets(
+                    cursor=read_cursor,
+                    user_db_write_cursor=user_db_cursor,
+                    user_db=user_db,
+                    only_owned=True,
+                )
+            if len(diff_ids) != 0 and not force:
+                msg = 'There are assets that can not be deleted. Check logs for more details.'  # noqa: E501
+                return False, msg
 
-            with GlobalDBHandler().conn.write_ctx() as write_cursor:
-                # If versions match drop tables
-                write_cursor.execute('DELETE FROM assets')
-                write_cursor.execute('DELETE FROM asset_collections')
-                # Copy assets
-                write_cursor.switch_foreign_keys('OFF')
-                write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
-                write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
-                write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
-                write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
-                write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
-                write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
-                # Don't copy custom_assets since there are no custom assets in clean_db
-                write_cursor.switch_foreign_keys('ON')
+        with self.packaged_db_lock:
+            try:
+                with self.conn.read_ctx() as read_cursor:
+                    read_cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
+                    # Check that versions match
+                    query = read_cursor.execute('SELECT value from clean_db.settings WHERE name="version";')  # noqa: E501
+                    version = query.fetchone()
+                    if version is None or int(version[0]) != globaldb_get_setting_value(read_cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
+                        msg = (
+                            'Failed to restore assets. Global database is not '
+                            'updated to the latest version'
+                        )
+                        return False, msg
 
-                with user_db.user_write() as user_db_cursor:
-                    user_db_cursor.switch_foreign_keys('OFF')
-                    user_db_cursor.execute('DELETE FROM assets;')
-                    # Get ids for assets to insert them in the user db
-                    write_cursor.execute('SELECT identifier from assets')
-                    ids = write_cursor.fetchall()
-                    ids_proccesed = ', '.join([f'("{id[0]}")' for id in ids])
-                    user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_proccesed};')  # noqa: E501
-                    user_db_cursor.switch_foreign_keys('ON')
+                with self.conn.write_ctx() as write_cursor:
+                    # If versions match drop tables
+                    write_cursor.execute('DELETE FROM assets')
+                    write_cursor.execute('DELETE FROM asset_collections')
+                    # Copy assets
+                    write_cursor.switch_foreign_keys('OFF')
+                    write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
+                    write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
+                    write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
+                    write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
+                    write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
+                    write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
+                    # Don't copy custom_assets since there are no custom assets in clean_db
+                    write_cursor.switch_foreign_keys('ON')
 
-            with user_db.conn.read_ctx() as cursor:
-                # Update the owned assets table
-                user_db.update_owned_assets_in_globaldb(cursor)
+                    with user_db.user_write() as user_db_cursor:
+                        user_db_cursor.switch_foreign_keys('OFF')
+                        user_db_cursor.execute('DELETE FROM assets;')
+                        # Get ids for assets to insert them in the user db
+                        write_cursor.execute('SELECT identifier from assets')
+                        ids = write_cursor.fetchall()
+                        ids_proccesed = ', '.join([f'("{id[0]}")' for id in ids])
+                        user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_proccesed};')  # noqa: E501
+                        user_db_cursor.switch_foreign_keys('ON')
 
-        except sqlite3.Error as e:
-            with GlobalDBHandler().conn.read_ctx() as read_cursor:
-                read_cursor.execute(detach_database)
-            log.error(f'Failed to restore assets in globaldb due to {str(e)}')
-            return False, 'Failed to restore assets. Read logs to get more information.'
+                with user_db.conn.read_ctx() as cursor:
+                    # Update the owned assets table
+                    user_db.update_owned_assets_in_globaldb(cursor)
 
-        with GlobalDBHandler().conn.read_ctx() as read_cursor:
-            read_cursor.execute(detach_database)
+            except sqlite3.Error as e:
+                log.error(f'Failed to restore assets in globaldb due to {str(e)}')
+                return False, 'Failed to restore assets. Read logs to get more information.'
+            finally:  # on the way out always detach the DB
+                with self.conn.read_ctx() as read_cursor:
+                    read_cursor.execute('DETACH DATABASE "clean_db";')
 
         return True, ''
 
-    @staticmethod
-    def soft_reset_assets_list() -> tuple[bool, str]:
+    def soft_reset_assets_list(self) -> tuple[bool, str]:
         """
         Resets assets to the state in the packaged global db. Custom assets added by the user
         won't be affected by this reset.
         """
         root_dir = Path(__file__).resolve().parent.parent
         builtin_database = root_dir / 'data' / 'global.db'
-        detach_database = 'DETACH DATABASE "clean_db";'
 
-        try:
-            with GlobalDBHandler().conn.read_ctx() as read_cursor:
-                read_cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
-                # Check that versions match
-                query = read_cursor.execute('SELECT value from clean_db.settings WHERE name="version";')  # noqa: E501
-                version = query.fetchone()
-                if version is None or int(version[0]) != globaldb_get_setting_value(read_cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
-                    read_cursor.execute(detach_database)
-                    msg = (
-                        'Failed to restore assets. Global database is not '
-                        'updated to the latest version'
-                    )
-                    return False, msg
+        with self.packaged_db_lock:
+            try:
+                with self.conn.read_ctx() as read_cursor:
+                    read_cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
+                    # Check that versions match
+                    query = read_cursor.execute('SELECT value from clean_db.settings WHERE name="version";')  # noqa: E501
+                    version = query.fetchone()
+                    if version is None or int(version[0]) != globaldb_get_setting_value(read_cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
+                        msg = (
+                            'Failed to restore assets. Global database is not '
+                            'updated to the latest version'
+                        )
+                        return False, msg
 
-                # Get the list of ids that we will restore
-                query = read_cursor.execute('SELECT identifier from clean_db.assets;')
-                shipped_asset_ids = set(query.fetchall())
-                asset_ids = ', '.join([f'"{id[0]}"' for id in shipped_asset_ids])
-                query = read_cursor.execute('SELECT id FROM clean_db.asset_collections')
-                shipped_collection_ids = set(query.fetchall())
-                collection_ids = ', '.join([f'"{id[0]}"' for id in shipped_collection_ids])
+                    # Get the list of ids that we will restore
+                    query = read_cursor.execute('SELECT identifier from clean_db.assets;')
+                    shipped_asset_ids = set(query.fetchall())
+                    asset_ids = ', '.join([f'"{id[0]}"' for id in shipped_asset_ids])
+                    query = read_cursor.execute('SELECT id FROM clean_db.asset_collections')
+                    shipped_collection_ids = set(query.fetchall())
+                    collection_ids = ', '.join([f'"{id[0]}"' for id in shipped_collection_ids])
 
-            with GlobalDBHandler().conn.write_ctx() as write_cursor:
-                # If versions match drop tables
-                write_cursor.switch_foreign_keys('OFF')
-                write_cursor.execute(f'DELETE FROM assets WHERE identifier IN ({asset_ids});')
-                write_cursor.execute(f'DELETE FROM evm_tokens WHERE identifier IN ({asset_ids});')
-                write_cursor.execute(f'DELETE FROM underlying_tokens_list WHERE parent_token_entry IN ({asset_ids});')  # noqa: E501
-                write_cursor.execute(f'DELETE FROM common_asset_details WHERE identifier IN ({asset_ids});')  # noqa: E501
-                write_cursor.execute(f'DELETE FROM asset_collections WHERE id IN ({collection_ids})')  # noqa: E501
-                write_cursor.execute(f'DELETE FROM multiasset_mappings WHERE collection_id IN ({collection_ids})')  # noqa: E501
-                # Copy assets
-                write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
-                write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
-                write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
-                write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
-                write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
-                write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
-                # TODO: think about how to implement multiassets insertion
-                write_cursor.switch_foreign_keys('ON')
-        except sqlite3.Error as e:
-            log.error(f'Failed to restore assets in globaldb due to {str(e)}')
-            with GlobalDBHandler().conn.read_ctx() as read_cursor:
-                read_cursor.execute(detach_database)
-            return False, 'Failed to restore assets. Read logs to get more information.'
+                with self.conn.write_ctx() as write_cursor:
+                    # If versions match drop tables
+                    write_cursor.switch_foreign_keys('OFF')
+                    write_cursor.execute(f'DELETE FROM assets WHERE identifier IN ({asset_ids});')
+                    write_cursor.execute(f'DELETE FROM evm_tokens WHERE identifier IN ({asset_ids});')  # noqa: E501
+                    write_cursor.execute(f'DELETE FROM underlying_tokens_list WHERE parent_token_entry IN ({asset_ids});')  # noqa: E501
+                    write_cursor.execute(f'DELETE FROM common_asset_details WHERE identifier IN ({asset_ids});')  # noqa: E501
+                    write_cursor.execute(f'DELETE FROM asset_collections WHERE id IN ({collection_ids})')  # noqa: E501
+                    write_cursor.execute(f'DELETE FROM multiasset_mappings WHERE collection_id IN ({collection_ids})')  # noqa: E501
+                    # Copy assets
+                    write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
+                    write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
+                    write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
+                    write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
+                    write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
+                    write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
+                    # TODO: think about how to implement multiassets insertion
+                    write_cursor.switch_foreign_keys('ON')
+            except sqlite3.Error as e:
+                log.error(f'Failed to restore assets in globaldb due to {str(e)}')
+                return False, 'Failed to restore assets. Read logs to get more information.'
+            finally:  # on the way out always detach the DB
+                with self.conn.read_ctx() as read_cursor:
+                    read_cursor.execute('DETACH DATABASE "clean_db";')
 
-        with GlobalDBHandler().conn.read_ctx() as read_cursor:
-            read_cursor.execute(detach_database)
         return True, ''
 
     @staticmethod
@@ -1710,11 +1711,12 @@ class GlobalDBHandler():
             query = cursor.execute('SELECT identifier from assets;')
         user_ids = {tup[0] for tup in query}
         # Attach to the clean db packaged with rotki
-        cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
-        # Get built in identifiers
-        query = cursor.execute('SELECT identifier from clean_db.assets;')
-        shipped_ids = {tup[0] for tup in query}
-        cursor.execute('DETACH DATABASE clean_db;')
+        with GlobalDBHandler().packaged_db_lock:
+            cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
+            # Get built in identifiers
+            query = cursor.execute('SELECT identifier from clean_db.assets;')
+            shipped_ids = {tup[0] for tup in query}
+            cursor.execute('DETACH DATABASE clean_db;')
         return user_ids - shipped_ids
 
     @staticmethod
