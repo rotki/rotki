@@ -1,3 +1,4 @@
+import copy
 import logging
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
@@ -23,6 +24,8 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_
 from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
     EVM_EVENT_JOIN,
+    DBEqualsFilter,
+    DBIgnoreValuesFilter,
     EthDepositEventFilterQuery,
     EvmEventFilterQuery,
     HistoryBaseEntryFilterQuery,
@@ -492,6 +495,30 @@ class DBHistoryEvents():
             group_by_event_ids=group_by_event_ids,
         )
         return events, count
+
+    def get_base_entries_missing_prices(
+            self,
+            query_filter: HistoryBaseEntryFilterQuery,
+            ignored_assets: Optional[list[str]] = None,
+    ) -> list[tuple[str, FVal, Asset, Timestamp]]:
+        """
+        Searches base entries missing usd prices that have not previously been checked in
+        this session.
+        """
+        # Use a deepcopy to avoid mutations in the filter query if it is used later
+        new_query_filter = copy.deepcopy(query_filter)
+        new_query_filter.filters.append(
+            DBEqualsFilter(and_op=True, column='usd_value', value='0'),
+        )
+        if ignored_assets is not None:
+            new_query_filter.filters.append(
+                DBIgnoreValuesFilter(
+                    and_op=True,
+                    column='history_events.identifier',
+                    values=ignored_assets,
+                ),
+            )
+        return self.rows_missing_prices_in_base_entries(filter_query=new_query_filter)
 
     def rows_missing_prices_in_base_entries(
             self,

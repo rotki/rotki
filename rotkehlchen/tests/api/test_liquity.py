@@ -249,6 +249,12 @@ def test_staking_stats(rotkehlchen_api_server, ethereum_accounts):
     information and that the stats combining all the data are consistent with the
     information for each tracked address
     """
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'evmpendingtransactionsdecodingresource',
+        ), json={'async_query': False, 'data': [{'evm_chain': 'ethereum'}]},
+    )
     async_query = random.choice([False])
     response = requests.get(api_url_for(
         rotkehlchen_api_server,

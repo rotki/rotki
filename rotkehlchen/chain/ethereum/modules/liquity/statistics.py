@@ -109,8 +109,11 @@ def get_stats(database: 'DBHandler', addresses: list[ChecksumEvmAddress]) -> dic
     and the stability pool. It returns a dictionary combining the information from all
     the addresses and stats per address.
     """
+    result: dict[str, Any] = {}
+    if len(addresses) == 0:
+        return result
+
     history_events_db = DBHistoryEvents(database)
-    result = {}
     with database.conn.read_ctx() as cursor:
         result['global_stats'] = _get_stats(
             cursor=cursor,
@@ -123,9 +126,6 @@ def get_stats(database: 'DBHandler', addresses: list[ChecksumEvmAddress]) -> dic
             deposit_pool_bindings=[A_LUSD.identifier, HistoryEventType.STAKING.serialize(), HistoryEventSubType.DEPOSIT_ASSET.serialize()],  # noqa: E501
             withdrawal_pool_bindings=[A_LUSD.identifier, HistoryEventType.STAKING.serialize(), HistoryEventSubType.REMOVE_ASSET.serialize()],  # noqa: E501
         )
-
-        if len(addresses) == 0:
-            return result
 
         result['by_address'] = {}
         query_staking_events_with_address = QUERY_STAKING_EVENTS + ' AND location_label=?'

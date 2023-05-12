@@ -63,6 +63,7 @@ from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
+from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as get_liquity_stats
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
@@ -2720,6 +2721,15 @@ class RestAPI():
     @async_api_call()
     def get_liquity_stats(self) -> dict[str, Any]:
         liquity_addresses = self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity')  # noqa: E501
+        # make sure that all the entries that need it have the usd value queried
+        task_manager = self.rotkehlchen.task_manager
+        if task_manager is not None:
+            history_events_db = DBHistoryEvents(task_manager.database)
+            entries_missing_prices = history_events_db.get_base_entries_missing_prices(
+                query_filter=EvmEventFilterQuery.make(counterparties=[CPT_LIQUITY]),
+            )
+            task_manager.query_missing_prices_of_base_entries(entries_missing_prices)
+
         stats = get_liquity_stats(
             database=self.rotkehlchen.data.db,
             addresses=liquity_addresses,
@@ -2862,7 +2872,8 @@ class RestAPI():
                     events_filter = EvmEventFilterQuery.make(
                         tx_hashes=[event.tx_hash for event in decoded_events],
                     )
-                    entries = task_manager.get_base_entries_missing_prices(events_filter)
+                    history_events_db = DBHistoryEvents(task_manager.database)
+                    entries = history_events_db.get_base_entries_missing_prices(events_filter)
                     task_manager.query_missing_prices_of_base_entries(
                         entries_missing_prices=entries,
                     )
