@@ -9,71 +9,75 @@ import {
   type OnlineHistoryEvent
 } from '@/types/history/events';
 
-export const isEvmEventType = (
-  type: MaybeRef<HistoryEventEntryType>
-): boolean => get(type) === HistoryEventEntryType.EVM_EVENT;
+export const isEvmEventType = (type: HistoryEventEntryType): boolean =>
+  type === HistoryEventEntryType.EVM_EVENT;
 
-export const isEvmEvent = (
-  event: MaybeRef<HistoryEvent>
-): event is MaybeRef<EvmHistoryEvent> => isEvmEventType(get(event).entryType);
+export const isEvmEvent = (event: HistoryEvent): event is EvmHistoryEvent =>
+  isEvmEventType(event.entryType);
 
 export const isEvmEventRef = (
   event: MaybeRef<HistoryEvent>
 ): ComputedRef<EvmHistoryEvent | undefined> =>
-  computed(() => (isEvmEvent(event) ? get(event) : undefined));
+  computed(() => {
+    const eventVal = get(event);
+    return isEvmEvent(eventVal) ? eventVal : undefined;
+  });
 
-export const isWithdrawalEventType = (
-  type: MaybeRef<HistoryEventEntryType>
-): boolean => get(type) === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT;
+export const isWithdrawalEventType = (type: HistoryEventEntryType): boolean =>
+  type === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT;
 
 export const isWithdrawalEvent = (
-  event: MaybeRef<HistoryEvent>
-): event is MaybeRef<EthWithdrawalEvent> =>
-  isWithdrawalEventType(get(event).entryType);
+  event: HistoryEvent
+): event is EthWithdrawalEvent => isWithdrawalEventType(event.entryType);
 
 export const isWithdrawalEventRef = (
   event: MaybeRef<HistoryEvent>
 ): ComputedRef<EthWithdrawalEvent | undefined> =>
-  computed(() => (isWithdrawalEvent(event) ? get(event) : undefined));
+  computed(() => {
+    const eventVal = get(event);
+    return isWithdrawalEvent(eventVal) ? eventVal : undefined;
+  });
 
-export const isEthBlockEventType = (
-  type: MaybeRef<HistoryEventEntryType>
-): boolean => get(type) === HistoryEventEntryType.ETH_BLOCK_EVENT;
+export const isEthBlockEventType = (type: HistoryEventEntryType): boolean =>
+  type === HistoryEventEntryType.ETH_BLOCK_EVENT;
 
-export const isEthBlockEvent = (
-  event: MaybeRef<HistoryEvent>
-): event is MaybeRef<EthBlockEvent> =>
-  isEthBlockEventType(get(event).entryType);
+export const isEthBlockEvent = (event: HistoryEvent): event is EthBlockEvent =>
+  isEthBlockEventType(event.entryType);
 
 export const isEthBlockEventRef = (
   event: MaybeRef<HistoryEvent>
 ): ComputedRef<EthBlockEvent | undefined> =>
-  computed(() => (isEthBlockEvent(event) ? get(event) : undefined));
+  computed(() => {
+    const eventVal = get(event);
+    return isEthBlockEvent(eventVal) ? eventVal : undefined;
+  });
 
-export const isOnlineHistoryEventType = (
-  type: MaybeRef<HistoryEventEntryType>
-) => get(type) === HistoryEventEntryType.HISTORY_EVENT;
+export const isOnlineHistoryEventType = (type: HistoryEventEntryType) =>
+  type === HistoryEventEntryType.HISTORY_EVENT;
 
 export const isOnlineHistoryEvent = (
-  event: MaybeRef<HistoryEvent>
-): event is MaybeRef<OnlineHistoryEvent> =>
-  isOnlineHistoryEventType(get(event).entryType);
+  event: HistoryEvent
+): event is OnlineHistoryEvent => isOnlineHistoryEventType(event.entryType);
 
 export const isOnlineHistoryEventRef = (
   event: MaybeRef<HistoryEvent>
 ): ComputedRef<OnlineHistoryEvent | undefined> =>
-  computed(() => (isOnlineHistoryEvent(event) ? get(event) : undefined));
+  computed(() => {
+    const eventVal = get(event);
+    return isOnlineHistoryEvent(eventVal) ? eventVal : undefined;
+  });
 
-export const isEthDepositEventType = (
-  type: MaybeRef<HistoryEventEntryType>
-): boolean => get(type) === HistoryEventEntryType.ETH_DEPOSIT_EVENT;
+export const isEthDepositEventType = (type: HistoryEventEntryType): boolean =>
+  type === HistoryEventEntryType.ETH_DEPOSIT_EVENT;
 
 export const isEthDepositEvent = (
-  event: MaybeRef<HistoryEvent>
-): event is MaybeRef<EthDepositEvent> =>
-  isEthDepositEventType(get(event).entryType);
+  event: HistoryEvent
+): event is EthDepositEvent => isEthDepositEventType(event.entryType);
 
 export const isEthDepositEventRef = (
   event: MaybeRef<HistoryEvent>
 ): ComputedRef<EthDepositEvent | undefined> =>
-  computed(() => (isEthDepositEvent(event) ? get(event) : undefined));
+  computed(() => {
+    const eventVal = get(event);
+    return isEthDepositEvent(eventVal) ? eventVal : undefined;
+  });

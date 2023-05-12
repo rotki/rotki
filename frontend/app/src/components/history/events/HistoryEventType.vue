@@ -5,7 +5,7 @@ import HistoryEventTypeCounterparty from '@/components/history/events/HistoryEve
 import {
   isEthDepositEventRef,
   isEvmEventRef,
-  isOnlineHistoryEventType
+  isOnlineHistoryEventRef
 } from '@/utils/history/events';
 
 const props = defineProps<{
@@ -21,8 +21,7 @@ const attrs = getEventTypeData(event);
 
 const { t } = useI18n();
 
-const entryType = useRefMap(event, ({ entryType }) => entryType);
-const onlineEvent = isOnlineHistoryEventType(entryType);
+const onlineEvent = isOnlineHistoryEventRef(event);
 const evmOrEthDepositEvent = computed(
   () => get(isEvmEventRef(event)) || get(isEthDepositEventRef(event))
 );
@@ -60,7 +59,7 @@ const { locationData } = useLocations();
           v-if="onlineEvent"
           icon
           no-padding
-          :item="locationData(event.location)"
+          :item="locationData(onlineEvent.location)"
           size="16px"
           class="mr-1"
         />

@@ -14,7 +14,7 @@ const { getItemTranslationKey } = useEventsQueryStatus();
   >
     <template #name>
       <div class="font-weight-bold px-2 text-no-wrap">
-        <hash-link :text="item.name" no-link />
+        <hash-link :text="item.name" no-link :show-icon="false" />
       </div>
     </template>
     <template #start>

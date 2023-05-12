@@ -2,12 +2,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type HistoryEventEntry } from '@/types/history/events';
 import { toSentenceCase } from '@/utils/text';
-import {
-  isEthBlockEventRef,
-  isEthDepositEventRef,
-  isEvmEventRef,
-  isWithdrawalEventRef
-} from '@/utils/history/events';
 
 const props = defineProps<{
   event: HistoryEventEntry;
@@ -16,7 +10,7 @@ const props = defineProps<{
 const { event } = toRefs(props);
 
 const translationKey: ComputedRef<string> = computed(
-  () => `transactions.events.headers.${get(event).entryType.replace(/ /g, '_')}`
+  () => `transactions.events.headers.${toSnakeCase(get(event).entryType)}`
 );
 
 const { getChain } = useSupportedChains();
@@ -36,10 +30,6 @@ const css = useCssModule();
     <i18n :path="translationKey" tag="span" class="d-flex align-center">
       <template #location>
         {{ toSentenceCase(event.location) }}
-      </template>
-
-      <template #type>
-        {{ toSentenceCase(event.eventType || '') }}
       </template>
 
       <template #blockNumber>

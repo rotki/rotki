@@ -446,6 +446,7 @@
     "useHistoryEventsApi": true,
     "useHistoryIgnoringApi": true,
     "useHistoryStore": true,
+    "useHistoryTransactions": true,
     "useI18n": true,
     "useIdle": true,
     "useIgnore": true,

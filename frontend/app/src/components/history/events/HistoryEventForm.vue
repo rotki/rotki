@@ -197,7 +197,7 @@ const setEditMode = async () => {
 
 const { setMessage } = useMessageStore();
 
-const { editTransactionEvent, addTransactionEvent } = useHistoryEvents();
+const { editTransactionEvent, addTransactionEvent } = useHistoryTransactions();
 
 const save = async (): Promise<boolean> => {
   const timestamp = convertToTimestamp(get(datetime));

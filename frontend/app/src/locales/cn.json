@@ -559,6 +559,12 @@
         }
       }
     },
+    "history_events": {
+      "error": {
+        "description": "无法查询历史事件：{error}",
+        "title": "历史事件查询"
+      }
+    },
     "ignore": {
       "error": {
         "description": "无法忽略所选操作：{error}",
@@ -784,10 +790,24 @@
         "title": "EVM 交易"
       }
     },
-    "transactions_events": {
+    "transactions_redecode": {
       "task": {
         "description": "检索交易事件",
-        "title": "EVM 交易事件"
+        "title": "Evm 交易事件检索"
+      },
+      "error": {
+        "description": "无法从交易中检索事件：{error}",
+        "title": "从交易中检索事件"
+      }
+    },
+    "transactions_redecode_missing": {
+      "task": {
+        "description": "检索地址的交易事件：{address} ({evmChain})",
+        "title": "Evm 事务丢失事件检索"
+      },
+      "error": {
+        "description": "无法从地址 {address} ({evmChain}) 的交易中检索丢失的事件：{error}",
+        "title": "从交易中检索丢失的事件"
       }
     },
     "unignore": {

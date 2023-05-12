@@ -586,6 +586,12 @@
         }
       }
     },
+    "history_events": {
+      "error": {
+        "description": "Failed to query history events: {error}",
+        "title": "History Events Query"
+      }
+    },
     "ignore": {
       "error": {
         "description": "Failed to ignore the selected actions: {error}",
@@ -821,16 +827,24 @@
         "title": "Evm Transactions"
       }
     },
-    "transactions_events": {
+    "transactions_redecode": {
       "task": {
-        "description": "Retrieving transactions events | Retrieving transactions events for address: {address} ({evmChain})",
-        "title": "Evm Transactions Events"
+        "description": "Retrieving transactions events",
+        "title": "Evm Transactions Events Retrieval"
+      },
+      "error": {
+        "description": "Failed to retrieve events from transactions: {error}",
+        "title": "Retrieving events from transactions"
       }
     },
-    "transaction_redecode": {
+    "transactions_redecode_missing": {
+      "task": {
+        "description": "Retrieving transactions events for address: {address} ({evmChain})",
+        "title": "Evm Transaction Missing Events Retrieval"
+      },
       "error": {
-        "description": "Failed to redecode missing events from transactions: {error}",
-        "title": "Redecode missing events from transactions"
+        "description": "Failed to retrieve missing events from transactions for address {address} ({evmChain}): {error}",
+        "title": "Retrieving missing events from transactions"
       }
     },
     "unignore": {
