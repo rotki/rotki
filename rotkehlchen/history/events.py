@@ -294,13 +294,13 @@ class EventsHistorian:
 
         # After 3865 we have a recurring task that queries for missing prices, but
         # we make sure that the returned values have their correct value calculated
+        db = DBHistoryEvents(self.db)
         if task_manager is not None:
-            entries = task_manager.get_base_entries_missing_prices(filter_query)
+            entries = db.get_base_entries_missing_prices(filter_query)
             task_manager.query_missing_prices_of_base_entries(
                 entries_missing_prices=entries,
             )
 
-        db = DBHistoryEvents(self.db)
         has_premium = self.chains_aggregator.premium is not None
         events, filter_total_found = db.get_history_events_and_limit_info(
             cursor=cursor,
