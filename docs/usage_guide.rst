@@ -283,6 +283,25 @@ Here you can customize the precedence of querying that price oracles will have. 
 DeFi oracles like Uniswap V2 and Uniswap V3 use only on chain information to get current prices, this means that it is a bit slower to query information from them but you depend only on the ethereum chain to query the prices.
 Also prices for some assets may differ from Coingecko or CryptoCompare depending on the conditions of the pools at the moment of making the query.
 
+
+NFT settings
+-----------------------
+
+.. image:: images/sc_nf_settings.png
+   :alt: Customizing the app's NFT settings
+   :align: center
+
+Include NFTs in graphs and total amounts
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Configure whether to include NFTs in the calculation for the total net worth and the graphs displayed in the dashboard and statistic section.
+
+NFT images rendering setting
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For privacy concerns, it is possible to allow all or only a certain list of domains for images rendered.
+
+
 Frontend only settings
 -----------------------
 
@@ -314,12 +333,6 @@ Graph basis
 ^^^^^^^^^^^^^^^^^^^^^
 
 Configure whether the graph y-axis will start at 0 or the minimum amount for the period.
-
-Include NFTs in graphs and total amounts
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Configure whether to include NFTs in the calculation for the total net worth and the graphs displayed in the dashboard and statistic section.
-
 
 Automatic balance refresh
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -996,6 +1009,32 @@ An estimation of the value of the NFTs you own is counted into your total net wo
    :align: center
 
 If a price cannot be found for an NFT asset or if you want to change the calculated price estimate you can easily set the price for an NFT asset manually. You can do this by either clicking on the ``>`` in the NFTs table in the dashboard or by going to ``Blockchains & Accounts`` -> ``Non-fungible balances``. And then click on the pen icon for the NFT you are interested in.
+
+For privacy concerns, it is possible to allow all or only a certain list of domains for images rendered, this can be done here by clicking on this icon
+
+.. image:: images/sc_nf_image_render_settings_btn.png
+   :alt: NFT Image Render Settings Toggle
+   :align: center
+
+the configuration menu:
+
+.. image:: images/sc_nf_image_render_settings.png
+   :alt: NFT Image Render Settings
+   :align: center
+
+highlight details:
+
+1. Link to blog post about image rendering and privacy.
+2. Option to allow all NFT images to be rendered.
+3. Option to allow only whitelisted domains.
+4. If only whitelist, input list of allowed domains.
+5. Save button.
+
+.. image:: images/sc_nf_image_render_settings_whitelist.png
+   :alt: NFT Image Render Settings
+   :align: center
+
+This will enable image rendering of only whitelisted NFT domains.
 
 ETH2 Staking
 =====================
