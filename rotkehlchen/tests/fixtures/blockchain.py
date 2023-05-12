@@ -24,6 +24,7 @@ from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.covalent import Covalent
+from rotkehlchen.externalapis.opensea import Opensea
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
@@ -466,6 +467,11 @@ def fixture_ethereum_modules() -> list[str]:
 @pytest.fixture(name='beaconchain')
 def fixture_beaconchain(database, messages_aggregator):
     return BeaconChain(database=database, msg_aggregator=messages_aggregator)
+
+
+@pytest.fixture(name='opensea')
+def fixture_opensea(database, messages_aggregator):
+    return Opensea(database=database, msg_aggregator=messages_aggregator)
 
 
 @pytest.fixture(name='btc_derivation_gap_limit')

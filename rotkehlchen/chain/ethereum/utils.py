@@ -1,4 +1,5 @@
 import logging
+from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
@@ -11,9 +12,10 @@ from web3 import Web3
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE, ethaddress_to_identifier
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, ETH_PROTOCOLS_CACHE_REFRESH
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_last_queried_ts_by_key
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -24,10 +26,13 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.externalapis.opensea import Opensea
 
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+ENS_METADATA_URL = 'https://metadata.ens.domains/mainnet'
 
 
 # TODO: remove this once web3.py updates ENS library for supporting multichain
@@ -176,8 +181,23 @@ def should_update_protocol_cache(cache_key: GeneralCacheType, *args: str) -> boo
     return ts_now() - last_update_ts >= ETH_PROTOCOLS_CACHE_REFRESH
 
 
+def _get_response_image(response: requests.adapters.Response) -> bytes:
+    """
+    Check the response contains an image content type.
+    If not raises a RemoteError. If yes it returns the image bytes
+    """
+    if response.status_code != HTTPStatus.OK:
+        raise RemoteError(f'{response.url} failed with {response.status_code}')
+    content_type = response.headers.get('Content-Type')
+    if content_type is None or content_type.startswith('image') is False:
+        raise RemoteError(f'{response.url} return non-image content type {content_type}')
+
+    return response.content
+
+
 def try_download_ens_avatar(
         eth_inquirer: 'EthereumInquirer',
+        opensea: Optional['Opensea'],
         avatars_dir: Path,
         ens_name: str,
 ) -> None:
@@ -208,11 +228,27 @@ def try_download_ens_avatar(
     if avatar_url == '':
         return  # Avatar is not set
 
-    try:
-        avatar = requests.get(avatar_url, timeout=DEFAULT_TIMEOUT_TUPLE).content
-    except RequestException as e:
-        log.error(f'Got error {str(e)} during querying ens avatar for {ens_name}.')
-        return
+    avatar = None
+    if avatar_url.startswith(EVM_CHAIN_DIRECTIVE):  # an NFT is set
+        try:  # Let's try first ENS app's own metadata
+            response = requests.get(f'{ENS_METADATA_URL}/avatar/{ens_name}', timeout=DEFAULT_TIMEOUT_TUPLE)  # noqa: E501
+            avatar = _get_response_image(response)
+        except (RequestException, RemoteError) as e:  # Try opensea -- if we got it
+            log.error(f'Got error {str(e)} during querying ENS app for NFT avatar for {ens_name}. May fall back to opensea')  # noqa: E501
+            if opensea is None:
+                return  # no opensea
+            avatar_url = opensea.get_nft_image(avatar_url)
+            if avatar_url is None:
+                return  # no luck with opensea
+            # proceed to query the new avatar url
+
+    if avatar is None:  # we have not populated it via an NFT query above yet
+        try:
+            response = requests.get(avatar_url, timeout=DEFAULT_TIMEOUT_TUPLE)
+            avatar = _get_response_image(response)
+        except (RequestException, RemoteError) as e:
+            log.error(f'Got error {str(e)} while querying ens avatar {avatar_url} for {ens_name}.')  # noqa: E501
+            return
 
     avatars_dir.mkdir(exist_ok=True)  # Ensure that the avatars directory exists
     with open(avatars_dir / f'{ens_name}.png', 'wb') as f:

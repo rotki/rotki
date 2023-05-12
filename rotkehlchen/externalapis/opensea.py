@@ -1,5 +1,6 @@
 import dataclasses
 import logging
+import re
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, Union, overload
 
@@ -30,6 +31,9 @@ if TYPE_CHECKING:
 
 ASSETS_MAX_LIMIT = 50  # according to opensea docs
 CONTRACTS_MAX_LIMIT = 300  # according to opensea docs
+
+
+ERC721_RE = re.compile(r'eip155:1/erc721:(.*?)/(.*)')
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -84,10 +88,13 @@ class Opensea(ExternalServiceWithApiKey):
         super().__init__(database=database, service_name=ExternalService.OPENSEA)
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
-        # Their API seems to get limited by cloudflare after 1-2 requests ... unless
-        # the user agent is a browser. We lose nothing by doing this and may revert if they fix
-        # https://twitter.com/LefterisJP/status/1483017589869711364
-        self.session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'})  # noqa: E501
+        self.session.headers.update({
+            'Content-Type': 'application/json',
+            # Their API seems to get limited by cloudflare after 1-2 requests ... unless
+            # the user agent is a browser. We lose nothing by doing this and may revert if they fix
+            # https://twitter.com/LefterisJP/status/1483017589869711364
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36',  # noqa: E501
+        })
         self.collections: dict[str, Collection] = {}
         self.backup_key: Optional[str] = None
         self.eth_asset = A_ETH.resolve_to_crypto_asset()
@@ -136,7 +143,7 @@ class Opensea(ExternalServiceWithApiKey):
     @overload
     def _query(
             self,
-            endpoint: Literal['assets', 'collectionstats'],
+            endpoint: Literal['assets', 'collectionstats', 'asset'],
             options: Optional[dict[str, Any]] = None,
             timeout: Optional[tuple[int, int]] = None,
     ) -> dict[str, Any]:
@@ -153,7 +160,7 @@ class Opensea(ExternalServiceWithApiKey):
 
     def _query(
             self,
-            endpoint: Literal['assets', 'collections', 'collectionstats'],
+            endpoint: Literal['assets', 'collections', 'collectionstats', 'asset'],
             options: Optional[dict[str, Any]] = None,
             timeout: Optional[tuple[int, int]] = None,
     ) -> Union[list[dict[str, Any]], dict[str, Any]]:
@@ -164,6 +171,9 @@ class Opensea(ExternalServiceWithApiKey):
 
         if endpoint == 'collectionstats':
             query_str = f'https://api.opensea.io/api/v1/collection/{options["name"]}/stats'  # type: ignore  # noqa: E501
+        elif endpoint == 'asset':
+            query_str = f'https://api.opensea.io/api/v1/asset/{options["address"]}/{options["item_id"]}'  # type: ignore  # noqa: E501
+            options = None
         else:
             query_str = f'https://api.opensea.io/api/v1/{endpoint}'
 
@@ -371,3 +381,30 @@ class Opensea(ExternalServiceWithApiKey):
                 )
 
         return nfts
+
+    def get_nft_image(
+            self,
+            nft_address: str,
+    ) -> Optional[str]:
+        """Returns the url of the image of an nft or None in error"""
+        match = ERC721_RE.search(nft_address)
+        if match is None:
+            return None
+
+        address = match.group(1)
+        item_id = match.group(2)
+        try:
+            result = self._query(
+                endpoint='asset',
+                options={
+                    'address': address,
+                    'item_id': item_id,
+                },
+            )
+            return result['image_url']
+        except (RemoteError, KeyError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Failed to find key {msg} in opensea result'
+            log.error(f'Could not query {nft_address} opensea nft image due to {msg}')
+            return None
