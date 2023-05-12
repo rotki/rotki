@@ -4,7 +4,11 @@ import { type DataTableHeader } from 'vuetify';
 import { type ActionStatus } from '@/types/action';
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { type Module } from '@/types/modules';
-import { type NonFungibleBalance } from '@/types/nfbalances';
+import {
+  type NonFungibleBalance,
+  type NonFungibleBalanceWithLastPrice,
+  type NonFungibleBalancesRequestPayload
+} from '@/types/nfbalances';
 import { type ManualPriceFormPayload } from '@/types/prices';
 import { Section } from '@/types/status';
 
@@ -54,10 +58,9 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   },
   {
     text: tc('common.price_in_symbol', 0, { symbol: get(currencySymbol) }),
-    value: 'usdPrice',
+    value: 'lastPrice',
     align: 'end',
-    class: 'text-no-wrap',
-    sortable: false
+    class: 'text-no-wrap'
   },
   {
     text: tc('non_fungible_balances.column.custom_price'),
@@ -179,22 +182,20 @@ const {
   options,
   setPage,
   setOptions
-} = usePaginationFilters<NonFungibleBalance>(
-  null,
-  true,
-  useEmptyFilter,
-  fetchNonFungibleBalances,
-  {
-    onUpdateFilters(query) {
-      set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
-    },
-    extraParams,
-    defaultSortBy: {
-      key: 'name',
-      ascending: [true]
-    }
+} = usePaginationFilters<
+  NonFungibleBalance,
+  NonFungibleBalancesRequestPayload,
+  NonFungibleBalanceWithLastPrice
+>(null, true, useEmptyFilter, fetchNonFungibleBalances, {
+  onUpdateFilters(query) {
+    set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
+  },
+  extraParams,
+  defaultSortBy: {
+    key: 'lastPrice',
+    ascending: [false]
   }
-);
+});
 
 onMounted(async () => {
   await fetchData();
@@ -261,8 +262,6 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
           :server-items-length="itemLength"
           :loading="isLoading"
           show-select
-          multi-sort
-          :must-sort="false"
           @update:options="setOptions($event)"
         >
           <template #item.name="{ item }">
@@ -284,7 +283,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
             />
             <span v-else>-</span>
           </template>
-          <template #item.usdPrice="{ item }">
+          <template #item.lastPrice="{ item }">
             <amount-display
               :price-asset="item.priceAsset"
               :amount="item.priceInAsset"
