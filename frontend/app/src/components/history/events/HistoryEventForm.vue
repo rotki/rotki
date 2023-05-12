@@ -475,7 +475,7 @@ const evmEvent = isEvmEventRef(transaction);
           v-model="location"
           required
           outlined
-          :disabled="evmEvent"
+          :disabled="!!evmEvent"
           data-cy="location"
           :label="t('common.location')"
           :error-messages="toMessages(v$.location)"
@@ -625,7 +625,7 @@ const evmEvent = isEvmEventRef(transaction);
       <v-col cols="12" md="4">
         <v-text-field
           v-model="locationLabel"
-          :disabled="evmEvent"
+          :disabled="!!evmEvent"
           outlined
           data-cy="locationLabel"
           :label="t('transactions.events.form.location_label.label')"
