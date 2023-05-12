@@ -3,7 +3,8 @@ import {
   type Eth2DailyStatsPayload,
   Eth2Details,
   type Eth2StakingRewards,
-  type EthStakingPayload
+  type EthStakingPayload,
+  type EthStakingRewardsPayload
 } from '@rotki/common/lib/staking/eth2';
 import { type MaybeRef } from '@vueuse/core';
 import { Section, Status } from '@/types/status';
@@ -32,15 +33,16 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
       Section.STAKING_ETH2
     );
 
-    if (fetchDisabled(refresh)) {
-      return;
-    }
+    const ignoreCache = !fetchDisabled(refresh);
 
     setStatus(refresh ? Status.REFRESHING : Status.LOADING);
 
     try {
       const taskType = TaskType.STAKING_ETH2;
-      const { taskId } = await api.fetchStakingDetails(payload);
+      const { taskId } = await api.fetchStakingDetails({
+        ...payload,
+        ignoreCache
+      });
       const { result } = await awaitTask<Eth2Details, TaskMeta>(
         taskId,
         taskType,
@@ -65,7 +67,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
   };
 
   const fetchStakingRewards = async (
-    payload: MaybeRef<EthStakingPayload> = {}
+    payload: MaybeRef<EthStakingRewardsPayload> = {}
   ): Promise<Eth2StakingRewards> => api.fetchStakingDetailRewards(get(payload));
 
   const syncStakingStats = async (userInitiated = false): Promise<boolean> => {

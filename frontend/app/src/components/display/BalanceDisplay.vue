@@ -57,7 +57,7 @@ const valueInCurrency = computed(() => {
   }
 
   const owned = get(amount);
-  const ethPrice = assetPrice('ETH');
+  const ethPrice = assetPrice(get(asset));
 
   if (isDefined(ethPrice)) {
     return owned.multipliedBy(get(ethPrice));

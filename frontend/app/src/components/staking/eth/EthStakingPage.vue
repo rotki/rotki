@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import {
+  type Eth2DailyStatsPayload,
   type Eth2StakingFilter,
-  type EthStakingPayload
+  type EthStakingPayload,
+  type EthStakingPeriod
 } from '@rotki/common/lib/staking/eth2';
 import { type ComputedRef } from 'vue';
-import { Eth2Staking } from '@/premium/premium';
+import { EthStaking } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 
 const module = Module.ETH2;
 const section = Section.STAKING_ETH2;
 
-const defaultSelection = () => ({
+const period: Ref<EthStakingPeriod> = ref({});
+const selection: Ref<Eth2StakingFilter> = ref({
   accounts: [],
   validators: []
 });
-
-const selection: Ref<Eth2StakingFilter> = ref(defaultSelection());
-const filterType: Ref<'address' | 'key'> = ref('key');
 
 const store = useEth2StakingStore();
 const { details } = storeToRefs(store);
@@ -51,7 +51,7 @@ const ownership = computed(() => {
   return ownership;
 });
 
-const filter: ComputedRef<EthStakingPayload> = computed(() => {
+const validatorFilter: ComputedRef<EthStakingPayload> = computed(() => {
   const { accounts, validators } = get(selection);
   return {
     addresses: accounts.map(({ address }) => address),
@@ -59,24 +59,34 @@ const filter: ComputedRef<EthStakingPayload> = computed(() => {
   };
 });
 
+const dailyStatsPayload: ComputedRef<Eth2DailyStatsPayload> = computed(() => {
+  const payload = get(pagination);
+  const { fromTimestamp, toTimestamp } = get(period);
+  return {
+    ...payload,
+    fromTimestamp,
+    toTimestamp
+  };
+});
+
 const premium = usePremium();
-const { t, tc } = useI18n();
+const { tc } = useI18n();
 
 const refreshStats = async (userInitiated: boolean): Promise<void> => {
-  await fetchDailyStats(get(pagination));
+  await fetchDailyStats(get(dailyStatsPayload));
   const success = await syncStakingStats(userInitiated);
   if (success) {
     // We unref here to make sure that we use the latest pagination
-    await fetchDailyStats(get(pagination));
+    await fetchDailyStats(get(dailyStatsPayload));
   }
 };
 
 const refresh = async (userInitiated = false): Promise<void> => {
-  const filterBy = get(filter);
+  const filterBy = get(validatorFilter);
   await Promise.allSettled([
     refreshStats(userInitiated),
     fetchRewards(filterBy),
-    fetchStakingDetails(userInitiated, filterBy)
+    fetchStakingDetails(userInitiated, { ...filterBy, ...get(period) })
   ]);
 };
 
@@ -94,14 +104,16 @@ onUnmounted(() => {
   });
 });
 
-watch(filter, async filter => {
+watch(validatorFilter, async filter => {
   await Promise.allSettled([
-    fetchRewards(filter),
+    fetchRewards({ ...filter, ...get(period) }),
     fetchStakingDetails(false, filter)
   ]);
 });
 
-watch(filterType, () => set(selection, defaultSelection()));
+watch(period, async period => {
+  await fetchRewards({ ...get(validatorFilter), ...period });
+});
 </script>
 
 <template>
@@ -112,12 +124,13 @@ watch(filterType, () => set(selection, defaultSelection()));
     />
     <module-not-active v-else-if="!enabled" :modules="[module]" />
 
-    <eth2-staking
+    <eth-staking
       v-else
       :refreshing="primaryRefreshing"
       :secondary-refreshing="false"
       :validators="eth2Validators.entries"
       :filter="selection"
+      :period="period"
       :rewards="rewards"
       :rewards-loading="rewardsLoading"
       :eth2-details="details"
@@ -129,33 +142,14 @@ watch(filterType, () => set(selection, defaultSelection()));
       @update:stats-pagination="pagination = $event"
     >
       <template #selection>
-        <v-row>
-          <v-col>
-            <v-tooltip open-delay="400" top>
-              <template #activator="{ on, attrs }">
-                <div v-bind="attrs" v-on="on">
-                  <v-btn-toggle v-model="filterType" dense mandatory>
-                    <v-btn value="key">{{ t('eth2_page.toggle.key') }}</v-btn>
-                    <v-btn value="address">
-                      {{ t('eth2_page.toggle.depositor') }}
-                    </v-btn>
-                  </v-btn-toggle>
-                </div>
-              </template>
-              <span>{{ t('eth2_page.toggle.hint') }}</span>
-            </v-tooltip>
-          </v-col>
-          <v-col cols="12" md="6">
-            <eth2-validator-filter
-              v-model="selection"
-              :filter-type="filterType"
-            />
-          </v-col>
-        </v-row>
+        <eth-validator-filter
+          v-model="selection"
+          @update:period="period = $event"
+        />
       </template>
       <template #modules>
         <active-modules :modules="[module]" />
       </template>
-    </eth2-staking>
+    </eth-staking>
   </div>
 </template>
