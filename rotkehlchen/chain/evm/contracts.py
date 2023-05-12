@@ -15,7 +15,6 @@ from typing import (
 )
 
 from eth_typing.abi import Decodable
-from gevent.lock import Semaphore
 from web3 import Web3
 from web3._utils.abi import get_abi_output_types
 from web3.types import BlockIdentifier
@@ -147,7 +146,6 @@ class EvmContracts(Generic[T]):
     def __init__(self, chain_id: T) -> None:
         self.chain_id = chain_id
         self.builtin_database_path = Path(__file__).resolve().parent.parent.parent / 'data' / 'global.db'  # noqa: E501
-        self.packaged_db_lock = Semaphore()
 
     def contract_by_address(
             self,
@@ -158,7 +156,8 @@ class EvmContracts(Generic[T]):
         Returns contract data by address if found. Can fall back to packaged global db if
         not found in the normal global DB
         """
-        with GlobalDBHandler().conn.read_ctx() as cursor:
+        globaldb = GlobalDBHandler()
+        with globaldb.conn.read_ctx() as cursor:
             bindings = (self.chain_id.serialize_for_db(), address)
             result = cursor.execute(
                 'SELECT contract_abi.value, contract_data.deployed_block FROM '
@@ -177,7 +176,7 @@ class EvmContracts(Generic[T]):
                 return None
 
             # Try to find the contract in the packaged db
-            with self.packaged_db_lock:
+            with globaldb.packaged_db_lock:
                 log.debug(f'Using packaged globaldb to get contract {address} information')
                 cursor.execute(f'ATTACH DATABASE "{self.builtin_database_path}" AS packaged_db;')
                 result = cursor.execute(
@@ -194,11 +193,11 @@ class EvmContracts(Generic[T]):
                 return None
 
         # Copy the contract to the global db
-        abi_id = GlobalDBHandler().get_or_write_abi(
+        abi_id = globaldb.get_or_write_abi(
             serialized_abi=result[4],
             abi_name=result[3],
         )
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        with globaldb.conn.write_ctx() as write_cursor:
             write_cursor.execute(
                 'INSERT OR IGNORE INTO contract_data(address, chain_id, abi, deployed_block) '
                 'VALUES (?, ?, ?, ?)',
@@ -230,7 +229,8 @@ class EvmContracts(Generic[T]):
 
         Returns None if missing
         """
-        with GlobalDBHandler().conn.read_ctx() as cursor:
+        globaldb = GlobalDBHandler()
+        with globaldb.conn.read_ctx() as cursor:
             result = cursor.execute(
                 'SELECT value FROM contract_abi WHERE name=?',
                 (name,),
@@ -242,15 +242,16 @@ class EvmContracts(Generic[T]):
                 return None
 
             # Try to find the ABI in the packaged db
-            cursor.execute(f'ATTACH DATABASE "{self.builtin_database_path}" AS packaged_db;')
-            result = cursor.execute(
-                'SELECT value FROM packaged_db.contract_abi WHERE name=?',
-                (name,),
-            ).fetchone()
-            cursor.execute('DETACH DATABASE "packaged_db"')
+            with globaldb.packaged_db_lock:
+                cursor.execute(f'ATTACH DATABASE "{self.builtin_database_path}" AS packaged_db;')
+                result = cursor.execute(
+                    'SELECT value FROM packaged_db.contract_abi WHERE name=?',
+                    (name,),
+                ).fetchone()
+                cursor.execute('DETACH DATABASE "packaged_db"')
             if result is None:
                 return None
-            GlobalDBHandler().get_or_write_abi(
+            globaldb.get_or_write_abi(
                 serialized_abi=result[0],
                 abi_name=name,
             )
