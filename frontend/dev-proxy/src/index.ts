@@ -238,7 +238,7 @@ function onProxyReq(
   req: Request,
   _res: Response
 ) {
-  if (!req.body || Object.keys(req.body).length === 0) {
+  if (!req.body) {
     return;
   }
 
