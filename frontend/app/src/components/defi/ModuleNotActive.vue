@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type PropType, getCurrentInstance, onMounted, ref } from 'vue';
 import { Module, SUPPORTED_MODULES } from '@/types/modules';
+import { Routes } from '@/router/routes';
 
 defineProps({
   modules: {
@@ -55,7 +56,7 @@ const { t } = useI18n();
             <template #link>
               <internal-link
                 class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
-                to="/settings/modules"
+                :to="Routes.SETTINGS_MODULES"
               >
                 {{ t('module_not_active.settings_link') }}
               </internal-link>

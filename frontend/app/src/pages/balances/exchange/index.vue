@@ -218,7 +218,7 @@ const isBinance = computed(() => {
       <v-col>
         <i18n path="exchange_balances.no_connected_exchanges">
           <internal-link
-            to="/settings/api-keys/exchanges"
+            :to="Routes.API_KEYS_EXCHANGES"
             class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
           >
             {{ t('exchange_balances.click_here') }}

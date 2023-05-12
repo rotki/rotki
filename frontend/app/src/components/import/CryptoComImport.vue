@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Routes } from '@/router/routes';
+
 const { t } = useI18n();
 </script>
 
@@ -23,7 +25,7 @@ const { t } = useI18n();
       <li>{{ t('import_data.cryptocom.line_three') }}</li>
       <li>
         <i18n path="import_data.cryptocom.line_four" tag="span">
-          <internal-link to="/accounts-balance/manual-balances">
+          <internal-link :to="Routes.ACCOUNTS_BALANCES_MANUAL">
             {{ t('import_data.cryptocom.line_four_link') }}
           </internal-link>
         </i18n>
