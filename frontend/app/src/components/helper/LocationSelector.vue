@@ -1,25 +1,16 @@
 <script setup lang="ts">
-import { type PropType, useListeners } from 'vue';
+import { useListeners } from 'vue';
 import { type TradeLocationData } from '@/types/history/trade/location';
 
-const props = defineProps({
-  value: { required: false, type: String, default: '' },
-  items: {
-    required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
-  },
-  excludes: {
-    required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
-  },
-  attach: {
-    required: false,
-    type: String,
-    default: undefined
-  }
-});
+const props = withDefaults(
+  defineProps<{
+    value?: string;
+    items?: string[];
+    excludes?: string[];
+    attach?: string;
+  }>(),
+  { value: '', items: () => [], excludes: () => [], attach: undefined }
+);
 
 const emit = defineEmits<{
   (e: 'change', value: string): void;
