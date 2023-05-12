@@ -52,14 +52,14 @@ All accounts are created in the rotki directory, see the section :ref:`rotki_dat
 Create a new account that restores a backed up database (premium user only)
 =============================================================================
 
-You may need to move the rotki database to a new device, for example after your old one was destroyed and left no backups. Normally you can do that manually, so long as you keep backups (which is something you should always do!). But as a premum user, you can restore the encrypted database that is backed up at the `rotki.com <https://rotki.com/>`__ server.
+You may need to move the rotki database to a new device, for example after your old one was destroyed and left no backups. Normally you can do that manually, so long as you keep backups (which is something you should always do!). But as a premium user, you can restore the encrypted database that is backed up at the `rotki.com <https://rotki.com/>`__ server.
 To do that you must follow the instructions described in the previous section, add the **API key/secret** and :red:`use the same password` that you were using for the local user of that database. If the password is not the same, opening the database will fail. Do not use the password of your `rotki.com <https://rotki.com/>`__ account here.
 
 .. image:: images/rotki_premium_signup_failed.png
    :alt: Sign-up with existing premium subscription using a wrong password
    :align: center
 
-See the section :ref:`sync-data-with-rotki-server` to know more about how the premium subscription will behave with multiple accounts/devices and how to sync your data with Roki Server (this option is disabled by default).
+See the section :ref:`sync-data-with-rotki-server` to know more about how the premium subscription will behave with multiple accounts/devices and how to sync your data with Rotki Server (this option is disabled by default).
 
 
 Use an account from a different installation
@@ -626,7 +626,7 @@ Press the plus button to open the exchange addition menu.
 
 Then copy and paste the ``API Key`` and the ``API Secret`` in the respective text fields and press Save.
 
-If all went well, you should be able to see your newly added exchange. If not please doublecheck that the key and secret are correct.
+If all went well, you should be able to see your newly added exchange. If not please double check that the key and secret are correct.
 
 You also have the option to enable/disable synchronization for the connected exchanges. Usually, you may want to disable the synchronization to prevent your IP getting banned because of too many syncs.
 
