@@ -94,6 +94,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
         'hop-protocol',
         '1inch',
         'gitcoin',
+        'kraken',
         'makerdao migration',
         'uniswap-v1',
         'uniswap-v2',
