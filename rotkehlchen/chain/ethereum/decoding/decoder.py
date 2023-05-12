@@ -67,6 +67,11 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                     label='Gnosis Chain',
                     image='gnosis.svg',
                 ),
+                CounterpartyDetails(
+                    identifier=CPT_KRAKEN,
+                    label='Kraken',
+                    image='kraken.svg',
+                ),
             ],
         )
 
