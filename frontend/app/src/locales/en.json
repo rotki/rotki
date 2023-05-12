@@ -2836,7 +2836,6 @@
     "trove_events": "Trove Events"
   },
   "liquity_page": {
-    "loading": "Liquity Staking information is loading",
     "no_premium": "Liquity Staking"
   },
   "liquity_pools": {
@@ -4077,7 +4076,7 @@
       },
       "headers": {
         "event_identifier": "Event information",
-        "history_event": "{location} {type} Events",
+        "history_event": "{location} trade",
         "eth_block_event": "Block {blockNumber} produced",
         "eth_withdrawal_event": "Withdrawal for validator {validatorIndex}",
         "evm_event": "Transaction {txHash}",

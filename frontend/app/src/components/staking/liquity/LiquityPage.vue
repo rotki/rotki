@@ -7,7 +7,6 @@ const { isModuleEnabled } = useModules();
 const { fetchStaking, fetchPools, fetchStatistics } = useLiquityStore();
 const { shouldShowLoadingScreen } = useStatusStore();
 const moduleEnabled = isModuleEnabled(modules[0]);
-const loading = shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING);
 const premium = usePremium();
 const { fetchPrices } = useBalancePricesStore();
 
@@ -38,6 +37,33 @@ watch(moduleEnabled, async enabled => {
   }
 });
 
+watch(
+  shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING),
+  async (current, old) => {
+    if (!old && current) {
+      await fetchStaking();
+    }
+  }
+);
+
+watch(
+  shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING_POOLS),
+  async (current, old) => {
+    if (!old && current) {
+      await fetchPools();
+    }
+  }
+);
+
+watch(
+  shouldShowLoadingScreen(Section.DEFI_LIQUITY_STATISTICS),
+  async (current, old) => {
+    if (!old && current) {
+      await fetchStatistics();
+    }
+  }
+);
+
 const { tc } = useI18n();
 </script>
 
@@ -48,17 +74,10 @@ const { tc } = useI18n();
       :text="tc('liquity_page.no_premium')"
     />
     <module-not-active v-else-if="!moduleEnabled" :modules="modules" />
-    <progress-screen v-else-if="loading">
-      <template #message>
-        {{ tc('liquity_page.loading') }}
+    <liquity-staking-details v-else @refresh="fetch($event)">
+      <template #modules>
+        <active-modules :modules="modules" />
       </template>
-    </progress-screen>
-    <div v-else>
-      <liquity-staking-details @refresh="fetch($event)">
-        <template #modules>
-          <active-modules :modules="modules" />
-        </template>
-      </liquity-staking-details>
-    </div>
+    </liquity-staking-details>
   </div>
 </template>

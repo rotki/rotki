@@ -185,6 +185,12 @@ export const useHistoryTransactions = () => {
     }
   };
 
+  const clearDependedSection = () => {
+    resetStatus(Section.DEFI_LIQUITY_STAKING);
+    resetStatus(Section.DEFI_LIQUITY_STAKING_POOLS);
+    resetStatus(Section.DEFI_LIQUITY_STATISTICS);
+  };
+
   const reDecodeMissingTransactionEventsTask = async (
     account: EvmChainAddress
   ) => {
@@ -215,6 +221,7 @@ export const useHistoryTransactions = () => {
       };
 
       await awaitTask(taskId, taskType, taskMeta, true);
+      clearDependedSection();
     } catch (e) {
       logger.error(e);
       notify({
@@ -322,7 +329,16 @@ export const useHistoryTransactions = () => {
         ).toString()
       };
 
-      await awaitTask(taskId, taskType, taskMeta, true);
+      const { result } = await awaitTask<boolean, TaskMeta>(
+        taskId,
+        taskType,
+        taskMeta,
+        true
+      );
+
+      if (result) {
+        clearDependedSection();
+      }
     } catch (e: any) {
       logger.error(e);
       notify({
