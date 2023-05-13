@@ -270,7 +270,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def iterate_modules(self) -> Iterator[tuple[str, EthereumModule]]:
         yield from self.eth_modules.items()
 
-    def queried_addresses_for_module(self, module: ModuleName) -> list[ChecksumEvmAddress]:
+    def queried_addresses_for_module(self, module: ModuleName) -> tuple[ChecksumEvmAddress, ...]:
         """Returns the addresses to query for the given module/protocol"""
         with self.database.conn.read_ctx() as cursor:
             result = QueriedAddresses(self.database).get_queried_addresses_for_module(cursor, module)  # noqa: E501
@@ -707,10 +707,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         """Add or remove a list of blockchain accounts.
 
        May raise:
-        - InputError if any of the accounts exists while trying to append or any of the
+        - InputError if any of the accounts exist while trying to append or any of the
         accounts doesn't exist while trying to remove
         - RemoteError if there is a problem querying an external service such
-          as etherscan or blockchain.info or couldn't connect to a node (for polkadot and kusama)
+        as etherscan or blockchain.info or couldn't connect to a node (for polkadot and kusama)
         """
         self.check_accounts_existence(
             blockchain=blockchain,
@@ -719,7 +719,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         )
         chain_key = blockchain.get_key()
         lock = getattr(self, f'{chain_key}_lock')
-        saved_accounts = self.accounts.get(blockchain=blockchain)
         balances = self.balances.get(chain=blockchain)
         with lock:
             self.flush_cache(f'query_{chain_key}_balances')
@@ -728,13 +727,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 chain_modify_init(blockchain, append_or_remove)
             for account in accounts:
                 if append_or_remove == 'append':
-                    saved_accounts.append(account)  # type: ignore  # mypy can't understand each account has same type  # noqa: E501
+                    self.accounts.add(blockchain=blockchain, address=account)
                     chain_modify_append = self.chain_modify_append.get(blockchain)
                     if chain_modify_append is not None:
                         chain_modify_append(blockchain, account)
                 else:  # remove
                     balances.pop(account, None)  # type: ignore  # mypy can't understand each account has same type  # noqa: E501
-                    saved_accounts.remove(account)  # type: ignore  # mypy can't understand each account has same type  # noqa: E501
+                    self.accounts.remove(blockchain=blockchain, address=account)
                     chain_modify_remove = self.chain_modify_remove.get(blockchain)
                     if chain_modify_remove is not None:
                         chain_modify_remove(blockchain, account)
@@ -744,6 +743,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.flush_cache('query_balances', blockchain=blockchain)
         self.flush_cache('query_balances', blockchain=None, ignore_cache=False)
         self.flush_cache('query_balances', blockchain=blockchain, ignore_cache=False)
+        self.flush_cache(f'query_{chain_key}_balances')
 
         # recalculate totals
         if append_or_remove == 'remove':  # at addition no balances are queried so no need
@@ -1004,7 +1004,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if liquity_module is not None:
             liquity_addresses = self.queried_addresses_for_module('liquity')
             # Get trove information
-            liquity_balances = liquity_module.get_positions(addresses_list=liquity_addresses)
+            liquity_balances = liquity_module.get_positions(given_addresses=liquity_addresses)
             for address, deposits in liquity_balances.items():
                 collateral = deposits.collateral.balance
                 if collateral.amount > ZERO:

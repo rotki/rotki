@@ -6,6 +6,7 @@ import sys
 import tempfile
 import traceback
 from collections import defaultdict
+from collections.abc import Sequence
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, get_args, overload
@@ -2698,7 +2699,7 @@ class RestAPI():
             module_name='liquity',
             method='get_positions',
             query_specific_balances_before=None,
-            addresses_list=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity'),  # noqa: E501
+            given_addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity'),  # noqa: E501
         )
 
     @async_api_call()
@@ -3964,7 +3965,7 @@ class RestAPI():
     def detect_evm_tokens(
             self,
             only_cache: bool,
-            addresses: Optional[list[ChecksumEvmAddress]],
+            addresses: Optional[Sequence[ChecksumEvmAddress]],
             blockchain: SUPPORTED_EVM_CHAINS,
     ) -> dict[str, Any]:
         manager: EvmManager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)

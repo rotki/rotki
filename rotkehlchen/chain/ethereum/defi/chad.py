@@ -1,4 +1,5 @@
 from collections import defaultdict
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
@@ -28,7 +29,7 @@ class DefiChad():
 
     def query_defi_balances(
             self,
-            addresses: list[ChecksumEvmAddress],
+            addresses: Sequence[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, list[DefiProtocolBalances]]:
         defi_balances = defaultdict(list)
         for account in addresses:

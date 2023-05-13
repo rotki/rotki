@@ -1244,10 +1244,10 @@ class DBHandler:
 
     def get_blockchain_accounts(self, cursor: 'DBCursor') -> BlockchainAccounts:
         """Returns a Blockchain accounts instance containing all blockchain account addresses"""
-        accounts = BlockchainAccounts()
         cursor.execute(
             'SELECT blockchain, account FROM blockchain_accounts;',
         )
+        accounts_lists = defaultdict(list)
         for entry in cursor:
             try:
                 blockchain = SupportedBlockchain.deserialize(entry[0])
@@ -1264,10 +1264,9 @@ class DBHandler:
                 )
                 continue
 
-            accounts_list = getattr(accounts, blockchain.get_key())
-            accounts_list.append(entry[1])
+            accounts_lists[blockchain.get_key()].append(entry[1])
 
-        return accounts
+        return BlockchainAccounts(**{x: tuple(y) for x, y in accounts_lists.items()})
 
     def get_blockchain_account_data(
             self,

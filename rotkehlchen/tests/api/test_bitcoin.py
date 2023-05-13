@@ -247,8 +247,8 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     else:
         assert_proper_response(response)
 
-    assert rotki.chains_aggregator.accounts.btc[:2] == [UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]
-    assert rotki.chains_aggregator.accounts.btc == [UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]
+    assert set(rotki.chains_aggregator.accounts.btc[:2]) == {UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2}
+    assert set(rotki.chains_aggregator.accounts.btc) == {UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2}
 
     # Also make sure all mappings are gone from the DB
     cursor = rotki.data.db.conn.cursor()
@@ -293,8 +293,8 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server):
             gevent.sleep(1)
 
     # Check that bch accounts were detected while btc accounts were not affected
-    assert rotki.chains_aggregator.accounts.bch != []
-    assert rotki.chains_aggregator.accounts.btc == []
+    assert len(rotki.chains_aggregator.accounts.bch) != 0
+    assert len(rotki.chains_aggregator.accounts.btc) == 0
     with rotki.data.db.conn.read_ctx() as cursor:
         result = rotki.data.db.get_addresses_to_xpub_mapping(
             cursor=cursor,
@@ -404,7 +404,7 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server):
     result = cursor.execute('SELECT object_reference from tag_mappings;').fetchall()
     assert len(result) == 0, 'all tag mappings should have been deleted'
     result = cursor.execute('SELECT * from xpub_mappings WHERE xpub=?', (xpub,)).fetchall()
-    assert rotki.chains_aggregator.accounts.bch == []
+    assert len(rotki.chains_aggregator.accounts.bch) == 0
     # Check that we still have derived BTC addresses
     assert len(result) >= 23
     for address, xpub_result, _, _, _, blockchain in result:

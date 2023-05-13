@@ -284,7 +284,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
     def get_multi_balance(
             self,
-            accounts: list[ChecksumEvmAddress],
+            accounts: Sequence[ChecksumEvmAddress],
             call_order: Optional[Sequence[WeightedNode]] = None,
     ) -> dict[ChecksumEvmAddress, FVal]:
         """Returns a dict with keys being accounts and balances in ETH

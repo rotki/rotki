@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 from typing import Any, Optional
 
 from eth_utils import to_checksum_address
@@ -70,7 +71,7 @@ class AvalancheManager():
 
     def get_multiavax_balance(
             self,
-            accounts: list[ChecksumEvmAddress],
+            accounts: Sequence[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, FVal]:
         """Returns a dict with keys being accounts and balances in AVAX
 

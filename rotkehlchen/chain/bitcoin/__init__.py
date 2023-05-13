@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 import requests
 
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
@@ -9,12 +11,12 @@ from rotkehlchen.utils.misc import satoshis_to_btc
 from rotkehlchen.utils.network import request_get_dict
 
 
-def _have_bc1_accounts(accounts: list[BTCAddress]) -> bool:
+def _have_bc1_accounts(accounts: Sequence[BTCAddress]) -> bool:
     return any(account.lower()[0:3] == 'bc1' for account in accounts)
 
 
 def _query_blockstream_or_mempool(
-        accounts: list[BTCAddress],
+        accounts: Sequence[BTCAddress],
         base_url: str,
 ) -> dict[BTCAddress, FVal]:
     """Queries balances from blockstream.info
@@ -47,21 +49,21 @@ def _query_blockstream_or_mempool(
     return balances
 
 
-def _query_blockstream_info(accounts: list[BTCAddress]) -> dict[BTCAddress, FVal]:
+def _query_blockstream_info(accounts: Sequence[BTCAddress]) -> dict[BTCAddress, FVal]:
     return _query_blockstream_or_mempool(
         accounts=accounts,
         base_url='https://blockstream.info/api/address/',
     )
 
 
-def _query_mempool_space(accounts: list[BTCAddress]) -> dict[BTCAddress, FVal]:
+def _query_mempool_space(accounts: Sequence[BTCAddress]) -> dict[BTCAddress, FVal]:
     return _query_blockstream_or_mempool(
         accounts=accounts,
         base_url='https://mempool.space/api/address/',
     )
 
 
-def _query_blockchain_info(accounts: list[BTCAddress]) -> dict[BTCAddress, FVal]:
+def _query_blockchain_info(accounts: Sequence[BTCAddress]) -> dict[BTCAddress, FVal]:
     """Queries balances from blockchain.info
     May raise:
     - RemoteError if got problems with querying the API
@@ -91,7 +93,7 @@ def _query_blockchain_info(accounts: list[BTCAddress]) -> dict[BTCAddress, FVal]
 
 
 def get_bitcoin_addresses_balances(
-        accounts: list[BTCAddress],
+        accounts: Sequence[BTCAddress],
 ) -> dict[BTCAddress, FVal]:
     """Queries bitcoin balance APIs for the balances of accounts
 

@@ -181,6 +181,11 @@ ListOfBlockchainAddresses = Union[
     list[ChecksumEvmAddress],
     list[SubstrateAddress],
 ]
+TuplesOfBlockchainAddresses = Union[
+    tuple[BTCAddress, ...],
+    tuple[ChecksumEvmAddress, ...],
+    tuple[SubstrateAddress, ...],
+]
 
 
 T_Fee = FVal

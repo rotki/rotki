@@ -1,7 +1,7 @@
 import csv
 import logging
 from collections import defaultdict
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import Any
@@ -277,7 +277,7 @@ def get_poap_airdrop_data(name: str, data_dir: Path) -> dict[str, Any]:
 
 
 def check_airdrops(
-        addresses: list[ChecksumEvmAddress],
+        addresses: Sequence[ChecksumEvmAddress],
         data_dir: Path,
 ) -> dict[ChecksumEvmAddress, dict]:
     """Checks airdrop data for the given list of ethereum addresses
