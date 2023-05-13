@@ -35,106 +35,108 @@ const loading = isAccountOperationRunning();
 </script>
 
 <template>
-  <div class="mb-5">
-    <v-btn-toggle
-      :value="inputMode"
-      class="input-mode-select"
-      mandatory
-      @change="update($event)"
-    >
-      <v-btn
-        :value="InputMode.MANUAL_ADD"
-        data-cy="input-mode-manual"
-        :disabled="loading"
+  <div>
+    <div v-if="isEth || isBtc || isBch" class="mb-5">
+      <v-btn-toggle
+        :value="inputMode"
+        class="input-mode-select"
+        mandatory
+        @change="update($event)"
       >
-        <v-icon>mdi-pencil-plus</v-icon>
-        <span class="hidden-sm-and-down ml-1">
-          {{ t('input_mode_select.manual_add.label') }}
-        </span>
-      </v-btn>
-      <v-btn
-        v-if="isEth"
-        :value="InputMode.METAMASK_IMPORT"
-        :disabled="!isMetaMaskSupported() || loading"
+        <v-btn
+          :value="InputMode.MANUAL_ADD"
+          data-cy="input-mode-manual"
+          :disabled="loading"
+        >
+          <v-icon>mdi-pencil-plus</v-icon>
+          <span class="hidden-sm-and-down ml-1">
+            {{ t('input_mode_select.manual_add.label') }}
+          </span>
+        </v-btn>
+        <v-btn
+          v-if="isEth"
+          :value="InputMode.METAMASK_IMPORT"
+          :disabled="!isMetaMaskSupported() || loading"
+        >
+          <v-img
+            contain
+            max-width="24px"
+            :src="`./assets/images/metamask-fox.svg`"
+          />
+          <span class="hidden-sm-and-down ml-1">
+            {{ t('input_mode_select.metamask_import.label') }}
+          </span>
+        </v-btn>
+        <v-btn v-if="isBtc || isBch" :value="InputMode.XPUB_ADD">
+          <v-icon>mdi-key-plus</v-icon>
+          <span class="hidden-sm-and-down ml-1">
+            {{ t('input_mode_select.xpub_add.label') }}
+          </span>
+        </v-btn>
+      </v-btn-toggle>
+      <p
+        v-if="isEth && isMetaMask"
+        class="mt-3 info--text text-caption"
+        v-text="t('input_mode_select.metamask_import.metamask')"
+      />
+      <div
+        v-if="isEth && !isPackaged && !isMetaMaskSupported()"
+        class="mt-3 warning--text text-caption"
       >
-        <v-img
-          contain
-          max-width="24px"
-          :src="`./assets/images/metamask-fox.svg`"
-        />
-        <span class="hidden-sm-and-down ml-1">
-          {{ t('input_mode_select.metamask_import.label') }}
-        </span>
-      </v-btn>
-      <v-btn v-if="isBtc || isBch" :value="InputMode.XPUB_ADD">
-        <v-icon>mdi-key-plus</v-icon>
-        <span class="hidden-sm-and-down ml-1">
-          {{ t('input_mode_select.xpub_add.label') }}
-        </span>
-      </v-btn>
-    </v-btn-toggle>
-    <p
-      v-if="isEth && isMetaMask"
-      class="mt-3 info--text text-caption"
-      v-text="t('input_mode_select.metamask_import.metamask')"
-    />
-    <div
-      v-if="isEth && !isPackaged && !isMetaMaskSupported()"
-      class="mt-3 warning--text text-caption"
-    >
-      {{ t('input_mode_select.metamask_import.missing') }}
+        {{ t('input_mode_select.metamask_import.missing') }}
 
-      <v-menu open-on-hover right offset-x close-delay="400" max-width="300">
-        <template #activator="{ on }">
-          <v-icon class="px-1" small v-on="on">mdi-help-circle</v-icon>
-        </template>
-        <div class="pa-4 text-caption">
-          <div>
-            {{ t('input_mode_select.metamask_import.missing_tooltip.title') }}
+        <v-menu open-on-hover right offset-x close-delay="400" max-width="300">
+          <template #activator="{ on }">
+            <v-icon class="px-1" small v-on="on">mdi-help-circle</v-icon>
+          </template>
+          <div class="pa-4 text-caption">
+            <div>
+              {{ t('input_mode_select.metamask_import.missing_tooltip.title') }}
+            </div>
+            <ol>
+              <li>
+                <i18n
+                  path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_installed"
+                >
+                  <template #link>
+                    <external-link :url="metamaskDownloadLink">
+                      {{ t('common.here') }}
+                    </external-link>
+                  </template>
+                </i18n>
+              </li>
+              <li>
+                {{
+                  t(
+                    'input_mode_select.metamask_import.missing_tooltip.metamask_is_not_enabled'
+                  )
+                }}
+              </li>
+              <li>
+                <i18n
+                  path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_supported_by_browser"
+                >
+                  <template #link>
+                    <external-link :url="metamaskDownloadLink">
+                      {{ t('common.here') }}
+                    </external-link>
+                  </template>
+
+                  <template #copy>
+                    <a href="#" @click="copyPageUrl()">
+                      {{
+                        t(
+                          'input_mode_select.metamask_import.missing_tooltip.copy_url'
+                        )
+                      }}
+                    </a>
+                  </template>
+                </i18n>
+              </li>
+            </ol>
           </div>
-          <ol>
-            <li>
-              <i18n
-                path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_installed"
-              >
-                <template #link>
-                  <external-link :url="metamaskDownloadLink">
-                    {{ t('common.here') }}
-                  </external-link>
-                </template>
-              </i18n>
-            </li>
-            <li>
-              {{
-                t(
-                  'input_mode_select.metamask_import.missing_tooltip.metamask_is_not_enabled'
-                )
-              }}
-            </li>
-            <li>
-              <i18n
-                path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_supported_by_browser"
-              >
-                <template #link>
-                  <external-link :url="metamaskDownloadLink">
-                    {{ t('common.here') }}
-                  </external-link>
-                </template>
-
-                <template #copy>
-                  <a href="#" @click="copyPageUrl()">
-                    {{
-                      t(
-                        'input_mode_select.metamask_import.missing_tooltip.copy_url'
-                      )
-                    }}
-                  </a>
-                </template>
-              </i18n>
-            </li>
-          </ol>
-        </div>
-      </v-menu>
+        </v-menu>
+      </div>
     </div>
   </div>
 </template>

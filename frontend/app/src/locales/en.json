@@ -2839,9 +2839,9 @@
     "no_premium": "Liquity Staking"
   },
   "liquity_pools": {
-    "liquidation_gains": "Liquidation gains",
+    "liquidation_gains": "Unclaimed liquidation gains",
     "no_lusd_deposited": "No LUSD deposited",
-    "rewards": "@:common.rewards",
+    "rewards": "Unclaimed @:common.rewards",
     "title": "Stability pool deposits"
   },
   "liquity_staking_details": {
@@ -2870,8 +2870,8 @@
     },
     "title": "Statistics",
     "total_deposited_stability_pool": "Total Deposited Stability Pool",
-    "total_gains_stability_pool": "Total Gains Stability Pool",
-    "total_gains_staking": "Total Gains Staking",
+    "total_gains_stability_pool": "Total Gains Stability Pool (Claimed)",
+    "total_gains_staking": "Total Gains Staking (Claimed)",
     "total_withdrawn_stability_pool": "Total Withdrawn Stability Pool",
     "view": {
       "show": "Show more",
@@ -4076,7 +4076,7 @@
       },
       "headers": {
         "event_identifier": "Event information",
-        "history_event": "{location} trade",
+        "history_event": "{location} event",
         "eth_block_event": "Block {blockNumber} produced",
         "eth_withdrawal_event": "Withdrawal for validator {validatorIndex}",
         "evm_event": "Transaction {txHash}",

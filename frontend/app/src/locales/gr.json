@@ -1406,6 +1406,7 @@
     "price": "Price",
     "price_in_symbol": "Price in {symbol}",
     "protocol": "Protocol",
+    "rewards": "Rewards",
     "total": "Total",
     "tx": "Tx",
     "tx_hash": "Tx Hash",
@@ -2712,9 +2713,9 @@
     "no_premium": "Liquity Staking"
   },
   "liquity_pools": {
-    "liquidation_gains": "Liquidation gains",
+    "liquidation_gains": "Unclaimed iquidation gains",
     "no_lusd_deposited": "No LUSD deposited",
-    "rewards": "Rewards",
+    "rewards": "Unclaimed @:common.rewards",
     "title": "Stability pool deposits"
   },
   "liquity_staking_details": {
@@ -2767,7 +2768,7 @@
   },
   "loan_stake": {
     "no_lqty_staked": "No LQTY staked",
-    "rewards": "Rewards",
+    "rewards": "@:common.rewards",
     "title": "Stake"
   },
   "locations": {
