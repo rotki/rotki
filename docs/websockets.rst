@@ -1,4 +1,4 @@
-rotki Websockets API
+Rotki Websockets API
 ##################################################
 .. toctree::
   :maxdepth: 2

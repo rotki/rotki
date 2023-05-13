@@ -1,4 +1,4 @@
-rotki Usage Guide
+Rotki Usage Guide
 #####################
 .. toctree::
   :maxdepth: 2
@@ -13,7 +13,7 @@ In this section we are going to see how to use various parts of the rotki applic
 First time sign-up
 ====================
 
-When you start rotki you are greeted with a sign-in/signup prompt. rotki is a local app and the user will exist only in your local system. The account used in `rotki.com <https://rotki.com/>`__ doesn't exist locally and is used only to manage your payments for the premium subscription.
+When you start rotki you are greeted with a sign-in/signup prompt. Rotki is a local app and the user will exist only in your local system. The account used in `rotki.com <https://rotki.com/>`__ doesn't exist locally and is used only to manage your payments for the premium subscription.
 
 .. image:: images/rotki_login_screen.png
    :alt: Creating a new account
@@ -139,7 +139,7 @@ This section contains information about how to customize the application through
 Changing the Profit Currency
 =============================
 
-rotki calculates everything, including your total profit/loss during the PnL report into a given fiat currency. This is what we call the ``profit_currency``. By default this is USD. You can easily change this setting by clicking on the currency icon in the top right menu and changing it to the currency you are using.
+Rotki calculates everything, including your total profit/loss during the PnL report into a given fiat currency. This is what we call the ``profit_currency``. By default this is USD. You can easily change this setting by clicking on the currency icon in the top right menu and changing it to the currency you are using.
 
 .. image:: images/sc_profit_currency.png
    :alt: Changing the profit currency
@@ -509,7 +509,7 @@ There is two options to reset assets database:
 Purging data
 -----------------
 
-rotki keeps a lot of data cached locally in the user's DB. There may be the need to clean some of these data from time to time. You can do so from the "Manage Data" section of the settings, by clicking on the dropdown list, selecting the type of data you want to delete and then pressing the Trash button.
+Rotki keeps a lot of data cached locally in the user's DB. There may be the need to clean some of these data from time to time. You can do so from the "Manage Data" section of the settings, by clicking on the dropdown list, selecting the type of data you want to delete and then pressing the Trash button.
 
 .. image:: images/sc_purge_data.png
    :alt: Purging user data
@@ -641,7 +641,7 @@ You also have the option to enable/disable synchronization for the connected exc
 API key permissions
 --------------------
 
-rotki only needs read-only permissions for your accounts. As a general rule, exchanges (e.g. Binance, Coinbase Pro) group all the read-only permissions as "read" or "view".
+Rotki only needs read-only permissions for your accounts. As a general rule, exchanges (e.g. Binance, Coinbase Pro) group all the read-only permissions as "read" or "view".
 
 .. image:: images/add_exchange_api_keys_binance.png
    :alt: Simple API key permissions
@@ -677,7 +677,7 @@ Once finished click on save.
 Adding an external service API Key
 =====================================
 
-rotki relies on various external services for data such as historical crypto prices or EVM transactions. To get that data some of these services require API keys. So you should go to their webpage, create a free account and generate an API key. Once this is done you can enter the API key in the section of the API keys page.
+Rotki relies on various external services for data such as historical crypto prices or EVM transactions. To get that data some of these services require API keys. So you should go to their webpage, create a free account and generate an API key. Once this is done you can enter the API key in the section of the API keys page.
 
 .. image:: images/add_external_service.png
    :alt: Add API keys for an external service
@@ -690,7 +690,7 @@ Cointracking.info
 
 You can also import data from `cointracking.info <https://cointracking.info/>`_ into rotki by clicking on "Import Data" on the left sidebar and then following the instructions.
 
-rotki can import any trade CSV data exported from cointracking.info. But in general it's not recommended to utilize cointracking as their exported data are missing a lot of information.
+Rotki can import any trade CSV data exported from cointracking.info. But in general it's not recommended to utilize cointracking as their exported data are missing a lot of information.
 
 .. image:: images/sc_data_import.png
    :alt: Importing data from cointracking.info
@@ -701,7 +701,7 @@ Binance.com
 
 You can import data from `binance.com <https://binance.com/>`_ into rotki by clicking on "Import Data" on the left sidebar and then following the instructions.
 
-rotki can import a CSV data file exported from Binance. But due to Binance's csv format some data may be not importable. You will see warnings if this happens.
+Rotki can import a CSV data file exported from Binance. But due to Binance's csv format some data may be not importable. You will see warnings if this happens.
 
 By importing a csv file you are able to import more than with the API. Particularly: Trades, Deposits and Withdrawals, Small assets exchange BNB, ETH 2.0 Staking and ETH 2.0 Staking Rewards, Launchpool Interests, POS savings interest, POS savings purchase, POS savings redemption.
 
@@ -744,16 +744,16 @@ The loopring account balances are also visible in the blockchain accounts view.
    :alt: Loopring balances for an account
    :align: center
 
-rotki Generic Import
+Rotki Generic Import
 =====================
 
 You can import data(trades & events) from exchanges not supported by rotki by clicking "Import Data" on the left sidebar, select "Custom Import" and following the prompt. This involves the user converting the source(a not directly supported exchange, protocol etc.) data to match the import format of rotki.
 The import is split into two types:
 
-1. rotki Generic Trades
-2. rotki Generic Events
+1. Rotki Generic Trades
+2. Rotki Generic Events
 
-rotki Generic Trades Import
+Rotki Generic Trades Import
 ---------------------------
 This is solely for importing generic trades. The expected file format is **CSV** with the following headers and description as a guide:
 
@@ -775,7 +775,7 @@ A sample generic trades template can be found below
        :class: longtable
        :header-rows: 1
 
-rotki Generic Events Import
+Rotki Generic Events Import
 ----------------------------
 This is for importing generic events. Supported events are ``"Deposit"``, ``"Withdrawal"``, ``"Income"``, ``"Loss"`` and ``"Staking"``. The expected file format is **CSV** with the following headers and description as a guide:
 
@@ -790,7 +790,7 @@ This is for importing generic events. Supported events are ``"Deposit"``, ``"Wit
 
 A sample generic events template can be found below
 
-    .. csv-table:: rotki Generic Events Template
+    .. csv-table:: Rotki Generic Events Template
        :file: files/rotki_generic_events.csv
        :header-rows: 1
        :class: longtable
@@ -830,7 +830,7 @@ There choose the asset from the dropdown menu, input a unique label for the acco
 Adding and Removing Blockchain Accounts
 ============================================
 
-rotki allows to track balances of blockchain accounts.
+Rotki allows to track balances of blockchain accounts.
 
 To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account (for now only Bitcoin, Bitcoin Cash, Ethereum, Optimism, Kusama, Polkadot and Avalanche chains are supported). Then type or paste the address in the "Account" textbox and press the "Save" Button. Note that you can add multiple accounts if you click the "Add multiple addresses" checkbox and provide a comma separated list of addresses.
 
@@ -865,7 +865,7 @@ An xpub does not allow spending your coins but provides information about your w
 ENS names resolution
 =====================
 
-rotki automatically resolves ens name for each of your evm accounts. If there is a primary ens name specified for an account, this name will be shown instead of a raw blockchain address across the app. You can find the blockchain address by hovering the mouse over the ens name.
+Rotki automatically resolves ens name for each of your evm accounts. If there is a primary ens name specified for an account, this name will be shown instead of a raw blockchain address across the app. You can find the blockchain address by hovering the mouse over the ens name.
 
 .. image:: images/ens_resolution.png
    :alt: Example of resolving an ens name
@@ -884,7 +884,7 @@ For every evm address it is possible to trigger the process of detecting tokens 
 EVM Transactions
 =====================
 
-rotki is capable of getting and decoding (understand what is happening) your EVM (Ethereum Virtual Machine) transactions. Currently transactions are queried and decoded for Ethereum and Optimism. When you visit the ``EVM Transactions`` section the process to obtain all the information will start. You will be able to check the status in an informative breakdown per address. Free users are limited to the 100 latest transactions.
+Rotki is capable of getting and decoding (understand what is happening) your EVM (Ethereum Virtual Machine) transactions. Currently transactions are queried and decoded for Ethereum and Optimism. When you visit the ``EVM Transactions`` section the process to obtain all the information will start. You will be able to check the status in an informative breakdown per address. Free users are limited to the 100 latest transactions.
 
 .. image:: images/eth_tx_query_process.png
    :alt: EVM transactions query status breakdown
@@ -992,7 +992,7 @@ From the balances section you can quickly get an overview of the accounts having
 
 NFTs
 =====================
-rotki provides an NFT gallery where you can view the NFTs owned by your accounts.
+Rotki provides an NFT gallery where you can view the NFTs owned by your accounts.
 
 .. image:: images/sc_nfts.png
    :alt: NFT Gallery
@@ -1099,7 +1099,7 @@ If you stake on Kraken you can see your gains, and events in the various staked 
 Airdrops
 ==========
 
-rotki can detect some airdrops for you
+Rotki can detect some airdrops for you
 
 .. image:: images/rotki_airdrops.png
    :alt: rotki airdrops detection
@@ -1160,7 +1160,7 @@ Historical events
 Adding manual trades
 ====================
 
-rotki will pull all your trade history from the exchanges whenever it needs it. But most of us have probably also done some OTC trades or taxable events at some point. Such events could even just be mining tokens, depending on your jurisdiction, participating in an ICO or getting paid in crypto.
+Rotki will pull all your trade history from the exchanges whenever it needs it. But most of us have probably also done some OTC trades or taxable events at some point. Such events could even just be mining tokens, depending on your jurisdiction, participating in an ICO or getting paid in crypto.
 
 On the left sidebar click on History and then the Trades button from the dropdown menu. This will take you to the Trades page. Clicking on the ``+`` button will open a menu like the following.
 
@@ -1205,7 +1205,7 @@ When generating a profit and loss report some ledger actions might be taxable in
 Filtering trades
 ================
 
-rotki supports filtering your trades with a combination of filters. All of the filters are applied at the same time
+Rotki supports filtering your trades with a combination of filters. All of the filters are applied at the same time
 limiting the trades to the ones that satisfy all the applied filters.
 
 .. image:: images/sc_history_trades_filter.png
@@ -1367,7 +1367,7 @@ on the frontend.
 Special assets
 ==============
 
-rotki allows you to track special assets like:
+Rotki allows you to track special assets like:
 
 1. *Uniswap/Sushiswap LP tokens*: You can track LP tokens by adding them and using `UNI-V2` as protocol. This will make the app query balances and prices. As for now historical prices are not queried so you will need to add missing prices manually.
 2. *Yearn vaults*: To add a yearn vault you need to add a new ethereum token and use `yearn_vaults_v2` as protocol. In addition you need to specify the underlying token that the vault uses with a 100% weight.
@@ -1425,7 +1425,7 @@ To track and analyze your DeFi actions use the Decentralized Finance tab from th
 Overview
 ===========
 
-rotki provides an overview of your assets in the different Defi protocols.
+Rotki provides an overview of your assets in the different Defi protocols.
 
 .. image:: images/defi_overview.png
    :alt: Defi Overview
@@ -1476,7 +1476,7 @@ Liquidity Pools
   :alt: Defi LP positions in the dashboard
   :align: center
 
-rotki allows its users to keep track of their Liquidity Pools. An overview is available in the dashboard and it is also possible to get a per protocol view in the deposits section.
+Rotki allows its users to keep track of their Liquidity Pools. An overview is available in the dashboard and it is also possible to get a per protocol view in the deposits section.
 
 .. image:: images/sc_decentralized_lp.png
   :alt: Defi Liquidity Pools
@@ -1554,10 +1554,10 @@ Below you can see a small demonstration of the usage of makerdao vaults by a pre
 Creating a profit/loss report
 *****************************
 
-rotki creates a profit/loss report (called PnL for short) for you based on your trades and other events and the provided accounting settings. This is essentially a calculation of profit or loss for all your events based on the given dates. Before getting into the details of generating a report, here's a few important details regarding the report generation algorithm:
+Rotki creates a profit/loss report (called PnL for short) for you based on your trades and other events and the provided accounting settings. This is essentially a calculation of profit or loss for all your events based on the given dates. Before getting into the details of generating a report, here's a few important details regarding the report generation algorithm:
 
 - By default, rotki uses an accounting strategy called "First In - First Out" (short: FIFO). There are plans to implement other strategies (e.g. `"Last In - First Out" <https://github.com/rotki/rotki/issues/44>`_).
-- rotki allows users in jurisdictions offering a tax free holding period (e.g. Germany with 1 year) to specify the period in days. To adjust this value, see the section `Customizing the account settings <#tax-free-period>`_.
+- Rotki allows users in jurisdictions offering a tax free holding period (e.g. Germany with 1 year) to specify the period in days. To adjust this value, see the section `Customizing the account settings <#tax-free-period>`_.
 - When generating a report for a custom period, where rotki is aware of the user's previous crypto holdings (e.g. we trade BTC between the years 2017 - 2019 but we ask for a report between 2018 - 2019), it takes all prior crypto holdings into account to calculate a starting balance for the given period. For example, say you traded BTC between 2017 - 2019 with a balance of 0.1 BTC on December 31, 2017. When generating a pnl report for 2018 - 2019, rotki will take the 0.1 BTC from December 31, 2017 as a start balance for its calculations in the period of 2018.
 
 How to run the PnL report
@@ -1801,7 +1801,7 @@ To pin a note to the top, click on the button labelled as **2** in the screensho
 Evm Address Book
 ******************************
 
-rotki provides an addressbook for EVM blockchains. This replaces addresses with names provided by the user across the application. You can click on "Save this name for all chains" to use the name for the provided address on all chains where that address appears. Addressbook is split into two different kinds:
+Rotki provides an addressbook for EVM blockchains. This replaces addresses with names provided by the user across the application. You can click on "Save this name for all chains" to use the name for the provided address on all chains where that address appears. Addressbook is split into two different kinds:
 
 1. **Global Addressbook**: It replaces addresses with the names provided across the entire application irrespective of user logged in.
 2. **Private Addressbook**: It replaces addresses with the names provided for the user currently logged in. It takes precedence over names found in the global addressbook.
@@ -1822,7 +1822,7 @@ rotki provides an addressbook for EVM blockchains. This replaces addresses with 
 Set the backend's arguments
 *******************************
 
-rotki runs a python daemon on the backend. Most times you won't need to customize its arguments but if you need to do so, especially for debugging purposes this is how you can.
+Rotki runs a python daemon on the backend. Most times you won't need to customize its arguments but if you need to do so, especially for debugging purposes this is how you can.
 
 Create or edit if there exists a file with the name ``rotki_config.json`` in the same directory as the rotki executable. Add to the json object any arguments that are also arguments of rotki. Then when rotki starts these will be passed as arguments to the backend. An example ``rotki_config.json`` follows::
 
@@ -1849,10 +1849,10 @@ The above arguments are:
 
 .. _rotki_data_directory:
 
-rotki data directory
+Rotki data directory
 ***********************
 
-rotki saves user data by default in a different directory per OS. For each OS data is stored in the respective standards compliant equivalent directory.
+Rotki saves user data by default in a different directory per OS. For each OS data is stored in the respective standards compliant equivalent directory.
 
 - **Linux**: ``~/.local/share/rotki/data/``
 - **OSX**: ``~/Library/Application Support/rotki/data``
