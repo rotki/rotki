@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 import requests
 
 from rotkehlchen.chain.bitcoin.bch.utils import cash_to_legacy_address
@@ -12,7 +14,7 @@ from rotkehlchen.utils.network import request_get, request_get_dict
 HASKOIN_BASE_URL = 'https://api.haskoin.com'
 
 
-def get_bitcoin_cash_addresses_balances(accounts: list[BTCAddress]) -> dict[BTCAddress, FVal]:
+def get_bitcoin_cash_addresses_balances(accounts: Sequence[BTCAddress]) -> dict[BTCAddress, FVal]:
     """Queries api.haskoin.com for the balances of BCH accounts.
 
     May raise:
@@ -65,7 +67,7 @@ def get_bitcoin_cash_addresses_balances(accounts: list[BTCAddress]) -> dict[BTCA
 
 
 def _check_haskoin_for_transactions(
-        accounts: list[BTCAddress],
+        accounts: Sequence[BTCAddress],
 ) -> dict[BTCAddress, tuple[bool, FVal]]:
     """Checks if the BCH addresses have at least a transaction.
     May raise RemoteError or KeyError or DeserializationError"""
@@ -92,7 +94,7 @@ def _check_haskoin_for_transactions(
     return have_transactions
 
 
-def have_bch_transactions(accounts: list[BTCAddress]) -> dict[BTCAddress, tuple[bool, FVal]]:
+def have_bch_transactions(accounts: Sequence[BTCAddress]) -> dict[BTCAddress, tuple[bool, FVal]]:
     """
     Takes a list of BCH addresses and returns a mapping of which addresses have had transactions
     and also their current balance

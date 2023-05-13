@@ -8,31 +8,45 @@ from rotkehlchen.types import (
     BlockchainAddress,
     BTCAddress,
     ChecksumEvmAddress,
-    ListOfBlockchainAddresses,
     SupportedBlockchain,
+    TuplesOfBlockchainAddresses,
 )
 
 
 @dataclass(init=True, repr=False, eq=True, order=False, unsafe_hash=False, frozen=True)
 class BlockchainAccounts:
-    eth: list[ChecksumEvmAddress] = field(default_factory=list)
-    optimism: list[ChecksumEvmAddress] = field(default_factory=list)
-    btc: list[BTCAddress] = field(default_factory=list)
-    bch: list[BTCAddress] = field(default_factory=list)
-    ksm: list[SubstrateAddress] = field(default_factory=list)
-    dot: list[SubstrateAddress] = field(default_factory=list)
-    avax: list[ChecksumEvmAddress] = field(default_factory=list)
+    eth: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
+    optimism: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
+    btc: tuple[BTCAddress, ...] = field(default_factory=tuple)
+    bch: tuple[BTCAddress, ...] = field(default_factory=tuple)
+    ksm: tuple[SubstrateAddress, ...] = field(default_factory=tuple)
+    dot: tuple[SubstrateAddress, ...] = field(default_factory=tuple)
+    avax: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
 
     @overload
-    def get(self, blockchain: SUPPORTED_EVM_CHAINS) -> list[ChecksumEvmAddress]:
+    def get(self, blockchain: SUPPORTED_EVM_CHAINS) -> tuple[ChecksumEvmAddress, ...]:
         ...
 
     @overload
-    def get(self, blockchain: SupportedBlockchain) -> ListOfBlockchainAddresses:
+    def get(self, blockchain: SupportedBlockchain) -> TuplesOfBlockchainAddresses:
         ...
 
-    def get(self, blockchain: SupportedBlockchain) -> ListOfBlockchainAddresses:
+    def get(self, blockchain: SupportedBlockchain) -> TuplesOfBlockchainAddresses:
         return getattr(self, blockchain.get_key())
+
+    def add(self, blockchain: SupportedBlockchain, address: BlockchainAddress) -> None:
+        """Adds an address to the given blockchain set of addresses"""
+        bkey = blockchain.get_key()
+        current_addresses = getattr(self, bkey)
+        # class is frozen to disallow arbitrarily changing the tuple. But here we do it knowingly
+        object.__setattr__(self, bkey, current_addresses + (address,))
+
+    def remove(self, blockchain: SupportedBlockchain, address: BlockchainAddress) -> None:
+        """Removes an address from the given blockchain set of addresses"""
+        bkey = blockchain.get_key()
+        current_addresses = getattr(self, bkey)
+        # class is frozen to disallow arbitrarily changing the tuple. But here we do it knowingly
+        object.__setattr__(self, bkey, tuple(x for x in current_addresses if x != address))
 
 
 class BlockchainAccountData(NamedTuple):

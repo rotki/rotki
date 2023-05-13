@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
@@ -73,7 +74,7 @@ class EthereumTokens(EvmTokens):
 
         return exceptions
 
-    def maybe_detect_proxies_tokens(self, addresses: list[ChecksumEvmAddress]) -> None:
+    def maybe_detect_proxies_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
         """Detect tokens for proxies that are owned by the given addresses"""
         # Add Makerdao vault collateral tokens
         with GlobalDBHandler().conn.read_ctx() as cursor:

@@ -233,7 +233,7 @@ def session_database(
         return None
 
     # No sessions blockchain accounts given
-    blockchain_accounts = BlockchainAccounts([], [], [], [], [], [])
+    blockchain_accounts = BlockchainAccounts()
     return _init_database(
         data_dir=session_user_data_dir,
         msg_aggregator=messages_aggregator,

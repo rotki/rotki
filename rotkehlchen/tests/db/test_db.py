@@ -294,7 +294,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
     with data.db.conn.read_ctx() as cursor:
         accounts = data.db.get_blockchain_accounts(cursor)
         assert isinstance(accounts, BlockchainAccounts)
-        assert accounts.btc == ['1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS']
+        assert accounts.btc == ('1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS',)
         # See that after addition the address has been checksummed
         assert set(accounts.eth) == {
             '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
@@ -322,7 +322,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
             ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
         )
         accounts = data.db.get_blockchain_accounts(write_cursor)
-        assert accounts.eth == ['0x80B369799104a47e98A553f3329812a44A7FaCDc']
+        assert accounts.eth == ('0x80B369799104a47e98A553f3329812a44A7FaCDc',)
 
     result, _ = data.add_ignored_assets([A_DAO])
     assert result
@@ -1390,7 +1390,7 @@ def test_remove_queried_address_on_account_remove(data_dir, username, sql_vm_ins
 
     with data.db.conn.read_ctx() as cursor:
         addresses = queried_addresses.get_queried_addresses_for_module(cursor, 'makerdao_vaults')
-    assert not addresses
+    assert addresses is None
 
 
 def test_int_overflow_at_tuple_insertion(database, caplog):

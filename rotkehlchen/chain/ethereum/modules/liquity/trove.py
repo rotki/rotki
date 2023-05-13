@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypedDict, cast
 
 from gevent.lock import Semaphore
@@ -82,11 +83,10 @@ class Liquity(HasDSProxy):
 
     def get_positions(
             self,
-            addresses_list: list[ChecksumEvmAddress],
+            given_addresses: Sequence[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, Trove]:
         """Query liquity contract to detect open troves"""
-        # make a copy of the list to avoid modifications in the list that is passed as argument
-        addresses = addresses_list.copy()
+        addresses = list(given_addresses)  # turn to a mutable list copy to add proxies
         proxied_addresses = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
         proxies_to_address = {v: k for k, v in proxied_addresses.items()}
         addresses += proxied_addresses.values()
@@ -164,7 +164,7 @@ class Liquity(HasDSProxy):
     def _query_deposits_and_rewards(
             self,
             contract: 'EvmContract',
-            addresses: list[ChecksumEvmAddress],
+            given_addresses: Sequence[ChecksumEvmAddress],
             methods: tuple[str, str, str],
             keys: tuple[str, str, str],
             assets: tuple['Asset', 'Asset', 'Asset'],
@@ -174,13 +174,12 @@ class Liquity(HasDSProxy):
         for rewards. This method abstracts the logic of querying the staked amount and the
         rewards for both the stability pool and the LQTY staking.
 
-        - addresses: The addresses that will be queried
+        - given_addresses: The addresses that will be queried
         - methods: the methods that need to be queried to get the staked amount and rewards
         - keys: the keys used in the dict response to map each method
         - assets: the asset associated with each method called
         """
-        # make a copy of the list to avoid modifications in the list that is passed as argument
-        addresses = addresses.copy()
+        addresses = list(given_addresses)  # turn to a mutable list copy to add proxies
         proxied_addresses = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
         addresses += proxied_addresses.values()
 
@@ -257,7 +256,7 @@ class Liquity(HasDSProxy):
 
     def get_stability_pool_balances(
             self,
-            addresses: list[ChecksumEvmAddress],
+            addresses: Sequence[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, LiquityBalanceWithProxy]:
         """Returns the balances of the liquity stability pool
 
@@ -266,7 +265,7 @@ class Liquity(HasDSProxy):
         """
         return self._query_deposits_and_rewards(
             contract=self.stability_pool_contract,
-            addresses=addresses,
+            given_addresses=addresses,
             methods=('getDepositorETHGain', 'getDepositorLQTYGain', 'getCompoundedLUSDDeposit'),
             keys=('gains', 'rewards', 'deposited'),
             assets=(A_ETH, A_LQTY, A_LUSD),
@@ -274,7 +273,7 @@ class Liquity(HasDSProxy):
 
     def liquity_staking_balances(
             self,
-            addresses: list[ChecksumEvmAddress],
+            addresses: Sequence[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, LiquityBalanceWithProxy]:
         """Query the ethereum chain to retrieve information about staked assets.
 
@@ -283,7 +282,7 @@ class Liquity(HasDSProxy):
         """
         return self._query_deposits_and_rewards(
             contract=self.staking_contract,
-            addresses=addresses,
+            given_addresses=addresses,
             methods=('stakes', 'getPendingLUSDGain', 'getPendingETHGain'),
             keys=('staked', 'lusd_rewards', 'eth_rewards'),
             assets=(A_LQTY, A_LUSD, A_ETH),
@@ -314,7 +313,7 @@ class Liquity(HasDSProxy):
     def enrich_staking_balances(
             self,
             balances: defaultdict[ChecksumEvmAddress, BalanceSheet],
-            queried_addresses: list[ChecksumEvmAddress],
+            queried_addresses: Sequence[ChecksumEvmAddress],
     ) -> None:
         """Include LQTY and LUSD staking balances in the balances mapping"""
         liquity_staked = self.liquity_staking_balances(addresses=queried_addresses)

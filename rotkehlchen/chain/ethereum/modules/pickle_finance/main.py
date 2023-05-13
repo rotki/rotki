@@ -1,4 +1,5 @@
 from collections import defaultdict
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
@@ -50,7 +51,7 @@ class PickleFinance(EthereumModule):
 
     def get_dill_balances(
             self,
-            addresses: list[ChecksumEvmAddress],
+            addresses: Sequence[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, DillBalance]:
         """
         Query information for amount locked, pending rewards and time until unlock
@@ -122,7 +123,7 @@ class PickleFinance(EthereumModule):
 
     def balances_in_protocol(
             self,
-            addresses: list[ChecksumEvmAddress],
+            addresses: Sequence[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, list['AssetBalance']]:
         """Queries all the pickles deposited and available to claim in the protocol"""
         dill_balances = self.get_dill_balances(addresses)

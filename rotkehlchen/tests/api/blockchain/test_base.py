@@ -530,12 +530,12 @@ def test_add_blockchain_accounts(
         {'address': '12tkqA9xSoowkzoERHMWNKsTey55YEBqkv'},
         {'address': 'pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g'},
     ]})
-    expected_bch_accounts = [
+    expected_bch_accounts = {
         '1H9EndxvYSibvnDSsxZRYvuqZaCcRXdRcB',
         '12tkqA9xSoowkzoERHMWNKsTey55YEBqkv',
         'pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g',
-    ]
-    assert rotki.chains_aggregator.accounts.bch == expected_bch_accounts
+    }
+    assert set(rotki.chains_aggregator.accounts.bch) == expected_bch_accounts
     assert_proper_response(response)
 
     # Check that the BCH accounts are present in the DB
@@ -1744,7 +1744,7 @@ def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_ser
     ), json={'accounts': [UNIT_BTC_ADDRESS1]})
     assert_proper_response(response)
 
-    assert rotki.chains_aggregator.accounts.btc == [UNIT_BTC_ADDRESS2]
+    assert set(rotki.chains_aggregator.accounts.btc) == {UNIT_BTC_ADDRESS2}
 
     # Now check the DB directly and see that tag mappings of the deleted account are gone
     cursor = rotki.data.db.conn.cursor()

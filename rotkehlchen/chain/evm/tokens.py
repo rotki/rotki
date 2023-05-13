@@ -224,7 +224,7 @@ class EvmTokens(metaclass=ABCMeta):
             total_token_balances = combine_dicts(total_token_balances, new_token_balances)
         return total_token_balances
 
-    def _compute_detected_tokens_info(self, addresses: list[ChecksumEvmAddress]) -> DetectedTokensType:  # noqa: E501
+    def _compute_detected_tokens_info(self, addresses: Sequence[ChecksumEvmAddress]) -> DetectedTokensType:  # noqa: E501
         """
         Generate a structure that contains information about the addresses that tokens
         were requested for.
@@ -265,7 +265,7 @@ class EvmTokens(metaclass=ABCMeta):
     def detect_tokens(
             self,
             only_cache: bool,
-            addresses: list[ChecksumEvmAddress],
+            addresses: Sequence[ChecksumEvmAddress],
     ) -> DetectedTokensType:
         """
         Detect tokens for the given addresses.
@@ -294,7 +294,7 @@ class EvmTokens(metaclass=ABCMeta):
 
     def _detect_tokens(
             self,
-            addresses: list[ChecksumEvmAddress],
+            addresses: Sequence[ChecksumEvmAddress],
             tokens_to_check: list[EvmToken],
     ) -> None:
         """
@@ -325,7 +325,7 @@ class EvmTokens(metaclass=ABCMeta):
 
     def query_tokens_for_addresses(
             self,
-            addresses: list[ChecksumEvmAddress],
+            addresses: Sequence[ChecksumEvmAddress],
     ) -> TokenBalancesType:
         """Queries token balances for a list of addresses
         Returns the token balances of each address and the usd prices of the tokens.
@@ -381,6 +381,6 @@ class EvmTokens(metaclass=ABCMeta):
         Each chain needs to implement any chain-specific exceptions here.
         """
 
-    def maybe_detect_proxies_tokens(self, addresses: list[ChecksumEvmAddress]) -> None:  # pylint: disable=unused-argument  # noqa: E501
+    def maybe_detect_proxies_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:  # pylint: disable=unused-argument  # noqa: E501
         """Subclasses may implement this method to detect tokens for proxies"""
         return None

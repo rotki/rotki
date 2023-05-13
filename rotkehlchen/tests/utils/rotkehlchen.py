@@ -164,7 +164,7 @@ def setup_balances(
                     if balance == ZERO:
                         continue
 
-                    account = ethereum_accounts[idx]
+                    account = rotki.chains_aggregator.accounts.eth[idx]
                     rotki.chains_aggregator.balances.eth[account].liabilities[token] = Balance(balance)  # noqa: E501
 
             # need this to not get randomized behaviour when defi balances are added or not

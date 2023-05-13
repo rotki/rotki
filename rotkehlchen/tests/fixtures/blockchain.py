@@ -143,13 +143,13 @@ def fixture_blockchain_accounts(
         dot_accounts: list[SubstrateAddress],
 ) -> BlockchainAccounts:
     return BlockchainAccounts(
-        eth=ethereum_accounts,
-        optimism=optimism_accounts.copy(),
-        avax=avax_accounts.copy(),
-        btc=btc_accounts.copy(),
-        bch=bch_accounts.copy(),
-        ksm=ksm_accounts.copy(),
-        dot=dot_accounts.copy(),
+        eth=tuple(ethereum_accounts),
+        optimism=tuple(optimism_accounts),
+        avax=tuple(avax_accounts),
+        btc=tuple(btc_accounts),
+        bch=tuple(bch_accounts),
+        ksm=tuple(ksm_accounts),
+        dot=tuple(dot_accounts),
     )
 
 

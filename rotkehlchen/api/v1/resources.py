@@ -1,4 +1,5 @@
 import sys
+from collections.abc import Sequence
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
@@ -2766,7 +2767,7 @@ class DetectTokensResource(BaseMethodView):
             blockchain: SUPPORTED_EVM_CHAINS,
             async_query: bool,
             only_cache: bool,
-            addresses: Optional[list[ChecksumEvmAddress]],
+            addresses: Optional[Sequence[ChecksumEvmAddress]],
     ) -> Response:
         return self.rest_api.detect_evm_tokens(
             async_query=async_query,

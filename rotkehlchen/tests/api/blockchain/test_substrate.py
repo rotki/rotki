@@ -196,7 +196,7 @@ def test_add_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
         result = assert_proper_response_with_result(response)
 
     assert result == [ENS_BRUNO_KSM_ADDR]
-    assert rotki.chains_aggregator.accounts.ksm == [ENS_BRUNO_KSM_ADDR]
+    assert set(rotki.chains_aggregator.accounts.ksm) == {ENS_BRUNO_KSM_ADDR}
     # check that we did connect to the nodes after account addition
     assert rotki.chains_aggregator.kusama.available_nodes_call_order != []
 
@@ -227,7 +227,7 @@ def test_remove_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
     else:
         assert_proper_response(response)
 
-    assert rotki.chains_aggregator.accounts.ksm == [SUBSTRATE_ACC1_KSM_ADDR]
+    assert set(rotki.chains_aggregator.accounts.ksm) == {SUBSTRATE_ACC1_KSM_ADDR}
 
     # Also make sure it's removed from the DB
     with rotki.data.db.conn.read_ctx() as cursor:

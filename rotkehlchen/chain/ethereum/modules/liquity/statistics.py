@@ -1,4 +1,6 @@
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
+
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.constants.assets import A_LQTY, A_LUSD
@@ -103,7 +105,7 @@ def _get_stats(
     }
 
 
-def get_stats(database: 'DBHandler', addresses: list[ChecksumEvmAddress]) -> dict[str, Any]:
+def get_stats(database: 'DBHandler', addresses: Sequence[ChecksumEvmAddress]) -> dict[str, Any]:
     """
     Query staking information for the liquity module related to both the LQTY staking
     and the stability pool. It returns a dictionary combining the information from all

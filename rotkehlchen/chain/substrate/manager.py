@@ -557,7 +557,7 @@ class SubstrateManager():
 
     def get_accounts_balance(
             self,
-            accounts: list[SubstrateAddress],
+            accounts: Sequence[SubstrateAddress],
     ) -> dict[SubstrateAddress, FVal]:
         """Given a list of accounts get their amount of chain native token.
 

@@ -2,6 +2,7 @@ import json
 import logging
 import re
 from collections import defaultdict
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import gevent
@@ -82,7 +83,7 @@ class Eth2(EthereumModule):
 
     def fetch_and_update_eth1_validator_data(
             self,
-            addresses: list[ChecksumEvmAddress],
+            addresses: Sequence[ChecksumEvmAddress],
     ) -> list[ValidatorID]:
         """Query all eth1 addresses for their validators and any newly detected validators
         are added to the DB.
@@ -128,7 +129,7 @@ class Eth2(EthereumModule):
 
     def get_balances(
             self,
-            addresses: list[ChecksumEvmAddress],
+            addresses: Sequence[ChecksumEvmAddress],
             fetch_validators_for_eth1: bool,
     ) -> dict[Eth2PubKey, Balance]:
         """
@@ -177,7 +178,7 @@ class Eth2(EthereumModule):
 
         return balance_mapping
 
-    def get_details(self, addresses: list[ChecksumEvmAddress]) -> list[ValidatorDetails]:
+    def get_details(self, addresses: Sequence[ChecksumEvmAddress]) -> list[ValidatorDetails]:
         """Go through the list of eth1 addresses and find all eth2 validators associated
         with them along with their details.
 

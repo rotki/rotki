@@ -101,7 +101,7 @@ def test_deleting_ens_account_works(rotkehlchen_api_server):
         blockchain='ETH',
     ), json=request_data)
     assert_proper_response(response)
-    assert rotki.chains_aggregator.accounts.eth == []
+    assert rotki.chains_aggregator.accounts.eth == ()
 
     request_data = {'accounts': ['ishouldnotexistforrealz.eth']}
     response = requests.delete(api_url_for(
@@ -375,4 +375,4 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
     # retrieve ethereum accounts from the DB and see they are deleted
     with rotki.data.db.conn.read_ctx() as cursor:
         accounts = rotki.data.db.get_blockchain_accounts(cursor)
-        assert accounts.eth == [api_addies[1]]
+        assert set(accounts.eth) == {api_addies[1]}

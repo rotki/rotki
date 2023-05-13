@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Optional
 
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -202,7 +203,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
 
     def query_balances(
             self,
-            addresses: list[ChecksumEvmAddress],
+            addresses: Sequence[ChecksumEvmAddress],
             uniswap_nfts: Optional[AddressToUniswapV3LPBalances],
     ) -> None:
         """Queries NFT balances for the specified addresses and saves them to the db.
@@ -239,7 +240,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
                 f'DELETE FROM nfts WHERE owner_address IN '
                 f'({",".join("?"*len(addresses))}) AND identifier NOT IN '
                 f'({",".join("?"*len(fresh_nfts_identifiers))})',
-                addresses + fresh_nfts_identifiers,
+                tuple(addresses) + tuple(fresh_nfts_identifiers),
             )
 
             # Add new NFTs to the DB cache

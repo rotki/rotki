@@ -96,7 +96,6 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server):
             token_type=EvmTokenKind.ERC20,
         ) for x in [
             '0x4200000000000000000000000000000000000042',  # OP token
-            '0x625E7708f30cA75bfd92586e17077590C60eb4cD',  # aOPTUSDC
             '0x026B623Eb4AaDa7de37EF25256854f9235207178',  # spam token
             '0x15992f382D8c46d667B10DC8456dc36651Af1452',  # spam token
         ]
