@@ -1,5 +1,6 @@
 
 import logging
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -60,7 +61,7 @@ class EvmProxiesInquirer():
 
     def get_accounts_proxy(
             self,
-            addresses: list[ChecksumEvmAddress],
+            addresses: Sequence[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, ChecksumEvmAddress]:
         """
         Returns DSProxy if it exists for a list of addresses using only one call
@@ -110,8 +111,7 @@ class EvmProxiesInquirer():
 
         with self.node_inquirer.database.conn.read_ctx() as cursor:
             accounts = self.node_inquirer.database.get_blockchain_accounts(cursor)
-        eth_accounts = accounts.eth
-        mapping = self.get_accounts_proxy(eth_accounts)
+        mapping = self.get_accounts_proxy(accounts.get(self.node_inquirer.blockchain))
 
         self.last_proxy_mapping_query_ts = ts_now()
         self.address_to_proxy = mapping
