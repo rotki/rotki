@@ -59,7 +59,7 @@ To do that you must follow the instructions described in the previous section, a
    :alt: Sign-up with existing premium subscription using a wrong password
    :align: center
 
-See the section :ref:`sync-data-with-rotki-server` to know more about how the premium subscription will behave with multiple accounts/devices and how to sync your data with Rotki Server (this option is disabled by default).
+See the section :ref:`sync-data-with-rotki-server` to know more about how the premium subscription will behave with multiple accounts/devices and how to sync your data with rotki Server (this option is disabled by default).
 
 
 Use an account from a different installation
@@ -300,6 +300,8 @@ NFT images rendering setting
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For privacy concerns, it is possible to allow all or only a certain list of domains for images rendered.
+
+More details here `<https://medium.com/@alxlpsc/critical-privacy-vulnerability-getting-exposed-by-metamask-693c63c2ce94>`_
 
 
 Frontend only settings
@@ -742,20 +744,20 @@ The loopring account balances are also visible in the blockchain accounts view.
    :alt: Loopring balances for an account
    :align: center
 
-Rotki Generic Import
+rotki Generic Import
 =====================
 
-You can import data(trades & events) from exchanges not supported by Rotki by clicking "Import Data" on the left sidebar, select "Custom Import" and following the prompt. This involves the user converting the source(a not directly supported exchange, protocol etc.) data to match the import format of Rotki.
+You can import data(trades & events) from exchanges not supported by rotki by clicking "Import Data" on the left sidebar, select "Custom Import" and following the prompt. This involves the user converting the source(a not directly supported exchange, protocol etc.) data to match the import format of rotki.
 The import is split into two types:
 
-1. Rotki Generic Trades
-2. Rotki Generic Events
+1. rotki Generic Trades
+2. rotki Generic Events
 
-Rotki Generic Trades Import
+rotki Generic Trades Import
 ---------------------------
 This is solely for importing generic trades. The expected file format is **CSV** with the following headers and description as a guide:
 
-1. **Location**: This is the source of the data. It should be one of Rotki's `supported locations`_. If it is not supported, use ``"external"``.
+1. **Location**: This is the source of the data. It should be one of rotki's `supported locations`_. If it is not supported, use ``"external"``.
 2. **Base Currency**: The currency bought in a ``"Buy"`` and sold in a ``"Sell"``. e.g BTC/ETH where BTC is the base currency.
 3. **Quote Currency**: The currency sold in a ``"Buy"`` and bought in a ``"Sell"`` e.g BTC/ETH where ETH is the quote currency.
 4. **Type**: The type of trade made. It can either be a ``"Buy"`` or a  ``"Sell"``.
@@ -768,17 +770,17 @@ This is solely for importing generic trades. The expected file format is **CSV**
 
 A sample generic trades template can be found below
 
-    .. csv-table:: Rotki Generic Trades Template
+    .. csv-table:: rotki Generic Trades Template
        :file: files/rotki_generic_trades.csv
        :class: longtable
        :header-rows: 1
 
-Rotki Generic Events Import
+rotki Generic Events Import
 ----------------------------
 This is for importing generic events. Supported events are ``"Deposit"``, ``"Withdrawal"``, ``"Income"``, ``"Loss"`` and ``"Staking"``. The expected file format is **CSV** with the following headers and description as a guide:
 
 1. **Type**: The event type. It can be one of ``"Deposit"``, ``"Withdrawal"``, ``"Income"``, ``"Loss"`` or ``"Staking"``.
-2. **Location**: This is the source of the data. It should be one of Rotki's `supported locations`_. If it is not supported, use ``"external"``.
+2. **Location**: This is the source of the data. It should be one of rotki's `supported locations`_. If it is not supported, use ``"external"``.
 3. **Currency**: The currency used during the specified event.
 4. **Amount**: The amount of the currency used by the event.
 5. **Fee**: The amount charged for the event. This is optional.
@@ -788,14 +790,14 @@ This is for importing generic events. Supported events are ``"Deposit"``, ``"Wit
 
 A sample generic events template can be found below
 
-    .. csv-table:: Rotki Generic Events Template
+    .. csv-table:: rotki Generic Events Template
        :file: files/rotki_generic_events.csv
        :header-rows: 1
        :class: longtable
 
 Supported Locations
 --------------------
-A list of supported locations in Rotki are ``"external"``, ``"kraken"``, ``"poloniex"``, ``"bittrex"``, ``"binance"``, ``"bitmex"``, ``"coinbase"``, ``"banks"``, ``"blockchain"``, ``"coinbasepro"``, ``"gemini"``, ``"equities"``, ``"realestate"``, ``"commodities"``, ``"cryptocom"``, ``"uniswap"``, ``"bitstamp"``, ``"binanceus"``, ``"bitfinex"``, ``"bitcoinde"``, ``"iconomi"``, ``"kucoin"``, ``"balancer"``, ``"loopring"``, ``"ftx"``, ``"nexo"``, ``"blockfi"``, ``"independentreserve"``, ``"gitcoin"``, ``"sushiswap"``, ``"shapeshift"``, ``"uphold"``, ``"bitpanda"``, ``"bisq"``, ``"ftxus"`` and ``"okx"``.
+A list of supported locations in rotki are ``"external"``, ``"kraken"``, ``"poloniex"``, ``"bittrex"``, ``"binance"``, ``"bitmex"``, ``"coinbase"``, ``"banks"``, ``"blockchain"``, ``"coinbasepro"``, ``"gemini"``, ``"equities"``, ``"realestate"``, ``"commodities"``, ``"cryptocom"``, ``"uniswap"``, ``"bitstamp"``, ``"binanceus"``, ``"bitfinex"``, ``"bitcoinde"``, ``"iconomi"``, ``"kucoin"``, ``"balancer"``, ``"loopring"``, ``"ftx"``, ``"nexo"``, ``"blockfi"``, ``"independentreserve"``, ``"gitcoin"``, ``"sushiswap"``, ``"shapeshift"``, ``"uphold"``, ``"bitpanda"``, ``"bisq"``, ``"ftxus"`` and ``"okx"``.
 
 **NOTE**: In the columns where an asset is expected you will need to use the identifier that such asset has in rotki otherwise the row won't be read.
 **NOTE**: If at any point, you're confused as regards the csv format, feel free to send us a message on `Discord <https://discord.gg/aGCxHG7>`_.
@@ -990,7 +992,7 @@ From the balances section you can quickly get an overview of the accounts having
 
 NFTs
 =====================
-Rotki provides an NFT gallery where you can view the NFTs owned by your accounts.
+rotki provides an NFT gallery where you can view the NFTs owned by your accounts.
 
 .. image:: images/sc_nfts.png
    :alt: NFT Gallery
@@ -1010,7 +1012,9 @@ An estimation of the value of the NFTs you own is counted into your total net wo
 
 If a price cannot be found for an NFT asset or if you want to change the calculated price estimate you can easily set the price for an NFT asset manually. You can do this by either clicking on the ``>`` in the NFTs table in the dashboard or by going to ``Blockchains & Accounts`` -> ``Non-fungible balances``. And then click on the pen icon for the NFT you are interested in.
 
-For privacy concerns, it is possible to allow all or only a certain list of domains for images rendered, this can be done here by clicking on this icon
+For privacy concerns, it is possible to allow all or only a certain list of domains for images rendered, this can be done here by clicking on the icon highlighted below.
+
+More details here `<https://medium.com/@alxlpsc/critical-privacy-vulnerability-getting-exposed-by-metamask-693c63c2ce94>`_
 
 .. image:: images/sc_nf_image_render_settings_btn.png
    :alt: NFT Image Render Settings Toggle
@@ -1201,7 +1205,7 @@ When generating a profit and loss report some ledger actions might be taxable in
 Filtering trades
 ================
 
-Rotki supports filtering your trades with a combination of filters. All of the filters are applied at the same time
+rotki supports filtering your trades with a combination of filters. All of the filters are applied at the same time
 limiting the trades to the ones that satisfy all the applied filters.
 
 .. image:: images/sc_history_trades_filter.png
@@ -1421,7 +1425,7 @@ To track and analyze your DeFi actions use the Decentralized Finance tab from th
 Overview
 ===========
 
-Rotki provides an overview of your assets in the different Defi protocols.
+rotki provides an overview of your assets in the different Defi protocols.
 
 .. image:: images/defi_overview.png
    :alt: Defi Overview
@@ -1472,13 +1476,13 @@ Liquidity Pools
   :alt: Defi LP positions in the dashboard
   :align: center
 
-Rotki allows its users to keep track of their Liquidity Pools. An overview is available in the dashboard and it is also possible to get a per protocol view in the deposits section.
+rotki allows its users to keep track of their Liquidity Pools. An overview is available in the dashboard and it is also possible to get a per protocol view in the deposits section.
 
 .. image:: images/sc_decentralized_lp.png
   :alt: Defi Liquidity Pools
   :align: center
 
-These are the supported Liquidity Pools balances by Rotki:
+These are the supported Liquidity Pools balances by rotki:
 
 - Uniswap v2
 - Uniswap v3 (Underlying assets available to premium users only)
@@ -1797,7 +1801,7 @@ To pin a note to the top, click on the button labelled as **2** in the screensho
 Evm Address Book
 ******************************
 
-Rotki provides an addressbook for EVM blockchains. This replaces addresses with names provided by the user across the application. You can click on "Save this name for all chains" to use the name for the provided address on all chains where that address appears. Addressbook is split into two different kinds:
+rotki provides an addressbook for EVM blockchains. This replaces addresses with names provided by the user across the application. You can click on "Save this name for all chains" to use the name for the provided address on all chains where that address appears. Addressbook is split into two different kinds:
 
 1. **Global Addressbook**: It replaces addresses with the names provided across the entire application irrespective of user logged in.
 2. **Private Addressbook**: It replaces addresses with the names provided for the user currently logged in. It takes precedence over names found in the global addressbook.
@@ -1888,7 +1892,7 @@ you can activate the VPN connection on your device. With the VPN activated you w
 on ``http://rotki.dappnode``.
 
 .. image:: images/rotki_dappnode_mobile.png
-   :alt: Rotki running on DAppNode accessed from a mobile device
+   :alt: rotki running on DAppNode accessed from a mobile device
    :align: center
 
 This way you can get the full rotki functionality on mobile.
@@ -1909,7 +1913,7 @@ Alternatively if you already have a VPN setup to your private network or on the 
 to securely connect to the rotki instance that runs in this network machine.
 
 .. image:: images/rotki_docker_warning.png
-   :alt: Rotki warning for docker
+   :alt: rotki warning for docker
    :align: center
 
 

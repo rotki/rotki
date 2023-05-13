@@ -156,7 +156,7 @@ EVM Token Detection
 
 While we are processing EVM transactions new tokens may be detected and added to the database. Some of them can be spam tokens. Using this message we can let the frontend know which tokens are detected. Then they can in turn allow the user to see an aggregated list of all detected tokens and using that list, easily mark spam assets if any.
 
-This also contains two optional, mutually exclude keys. If one exists the other should not. But also both can be missing.
+This also contains two optional, mutually excluded keys. If one exists the other should not. But also both can be missing.
 
 ::
 
