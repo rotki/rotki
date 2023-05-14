@@ -176,7 +176,7 @@ class EvmContracts(Generic[T]):
                 return None
 
             # Try to find the contract in the packaged db
-            with globaldb.conn.critical_section_and_transaction_lock():  # detach fails if there is an active transaction  # noqa: E501
+            with globaldb.packaged_db_lock:
                 log.debug(f'Using packaged globaldb to get contract {address} information')
                 cursor.execute(f'ATTACH DATABASE "{self.builtin_database_path}" AS packaged_db;')
                 result = cursor.execute(
@@ -187,7 +187,9 @@ class EvmContracts(Generic[T]):
                     'contract_data.address=?',
                     bindings,
                 ).fetchone()
-                cursor.execute('DETACH DATABASE "packaged_db"')
+                with globaldb.conn.critical_section_and_transaction_lock():  # detach fails if there is an active transaction  # noqa: E501
+                    log.debug(f'About to detach packaged DB for contract with {globaldb.conn._conn.in_transaction=}')  # noqa: E501
+                    cursor.execute('DETACH DATABASE "packaged_db"')
             if result is None:
                 log.debug(f"Couldn't find contract {address} in the packaged globaldb")
                 return None
@@ -242,15 +244,19 @@ class EvmContracts(Generic[T]):
                 return None
 
             # Try to find the ABI in the packaged db
-            cursor.execute(f'ATTACH DATABASE "{self.builtin_database_path}" AS packaged_db;')
-            result = cursor.execute(
-                'SELECT value FROM packaged_db.contract_abi WHERE name=?',
-                (name,),
-            ).fetchone()
-            with globaldb.conn.critical_section_and_transaction_lock():
-                cursor.execute('DETACH DATABASE "packaged_db"')
-            if result is None:
-                return None
+            with globaldb.packaged_db_lock:
+                log.debug(f'Using packaged globaldb to get abi {name=} information')
+                cursor.execute(f'ATTACH DATABASE "{self.builtin_database_path}" AS packaged_db;')
+                result = cursor.execute(
+                    'SELECT value FROM packaged_db.contract_abi WHERE name=?',
+                    (name,),
+                ).fetchone()
+                with globaldb.conn.critical_section_and_transaction_lock():
+                    log.debug(f'About to detach packaged DB for ABI with {globaldb.conn._conn.in_transaction=}')  # noqa: E501
+                    cursor.execute('DETACH DATABASE "packaged_db"')
+                if result is None:
+                    return None
+
             globaldb.get_or_write_abi(
                 serialized_abi=result[0],
                 abi_name=name,

@@ -37,11 +37,12 @@ def test_evm_abi_data(globaldb):
             abis_set.add(entry[1])
 
 
-def keep_open_globaldb_write():
+def keep_open_globaldb_write(builtin_db_path):
     """Silly way to keep a transaction open in another greenlet"""
-    with GlobalDBHandler().conn.write_ctx():
+    with GlobalDBHandler().packaged_db_lock, GlobalDBHandler().conn.write_ctx() as cursor:
+        cursor.execute(f'ATTACH DATABASE "{builtin_db_path}" AS packaged_db;')
         gevent.sleep(1.5)
-        gevent.sleep(1.5)
+        cursor.execute('DETACH DATABASE "packaged_db"')
 
 
 def test_fallback_to_packaged_db(ethereum_inquirer: 'EthereumInquirer'):
@@ -60,7 +61,7 @@ def test_fallback_to_packaged_db(ethereum_inquirer: 'EthereumInquirer'):
 
     # open and keep open a write context, to make sure we are in a transaction
     # long enough to last when we do attach/detach in contracts.contract()
-    gevent.spawn(keep_open_globaldb_write)
+    gevent.spawn(keep_open_globaldb_write, ethereum_inquirer.contracts.builtin_database_path)
     gevent.sleep(.3)  # context switch for a bit to let the other greenlet run
     # Now query the contract, let it get to packaged global DB and also see that
     # database packaged_db is locked is also not raised
