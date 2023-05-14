@@ -276,7 +276,7 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
                 ),
             )
         except KeyError as e:
-            raise DeserializationError(f'Did not find key {str(e)} in event data') from e
+            raise DeserializationError(f'Did not find key {e!s} in event data') from e
 
     @classmethod
     @abstractmethod

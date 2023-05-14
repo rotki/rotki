@@ -88,7 +88,7 @@ class ExchangeManager:
         """
         exchangeobj = self.get_exchange(name=name, location=location)
         if not exchangeobj:
-            return False, f'Could not find {str(location)} exchange {name} for editing'
+            return False, f'Could not find {location!s} exchange {name} for editing'
 
         # First validate exchange credentials
         edited = exchangeobj.edit_exchange_credentials(ExchangeAuthCredentials(
@@ -134,7 +134,7 @@ class ExchangeManager:
             exchangeobj.reset_to_db_credentials()  # DB is already rolled back at this point
             if isinstance(exchangeobj, ExchangeWithExtras):
                 exchangeobj.reset_to_db_extras()
-            return False, f"Couldn't update exchange properties in the DB. {str(e)}"
+            return False, f"Couldn't update exchange properties in the DB. {e!s}"
 
         # Finally edit the name of the exchange object
         if new_name is not None:
@@ -148,11 +148,11 @@ class ExchangeManager:
         and the DB.
         """
         if self.get_exchange(name=name, location=location) is None:
-            return False, f'{str(location)} exchange {name} is not registered'
+            return False, f'{location!s} exchange {name} is not registered'
 
         exchanges_list = self.connected_exchanges.get(location)
         if exchanges_list is None:
-            return False, f'{str(location)} exchange {name} is not registered'
+            return False, f'{location!s} exchange {name} is not registered'
 
         if len(exchanges_list) == 1:  # if is last exchange of this location
             self.connected_exchanges.pop(location)
@@ -189,7 +189,7 @@ class ExchangeManager:
         except ModuleNotFoundError:
             # This should never happen
             raise AssertionError(
-                f'Tried to initialize unknown exchange {str(location)}. Should not happen',
+                f'Tried to initialize unknown exchange {location!s}. Should not happen',
             ) from None
 
         return module
@@ -213,7 +213,7 @@ class ExchangeManager:
             return False, f'Attempted to register unsupported exchange {name}'
 
         if self.get_exchange(name=name, location=location) is not None:
-            return False, f'{str(location)} exchange {name} is already registered'
+            return False, f'{location!s} exchange {name} is already registered'
 
         api_credentials = ExchangeApiCredentials(
             name=name,
@@ -236,7 +236,7 @@ class ExchangeManager:
 
         if not result:
             log.error(
-                f'Failed to validate API key for {str(location)} exchange {name}'
+                f'Failed to validate API key for {location!s} exchange {name}'
                 f' due to {message}',
             )
             return False, message

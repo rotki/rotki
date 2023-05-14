@@ -237,7 +237,7 @@ class ZerionSDK():
             )
         except RemoteError as e:
             log.warning(
-                f'Failed to query zerion adapter contract for protocol names due to {str(e)}'
+                f'Failed to query zerion adapter contract for protocol names due to {e!s}'
                 f'Falling back to known list of names.',
             )
             return list(KNOWN_ZERION_PROTOCOL_NAMES)

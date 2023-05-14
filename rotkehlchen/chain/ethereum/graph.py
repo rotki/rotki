@@ -65,7 +65,7 @@ class Graph():
         try:
             self.client = Client(transport=transport, fetch_schema_from_transport=False)
         except (requests.exceptions.RequestException) as e:
-            raise RemoteError(f'Failed to connect to the graph at {url} due to {str(e)}') from e
+            raise RemoteError(f'Failed to connect to the graph at {url} due to {e!s}') from e
 
     def query(
             self,

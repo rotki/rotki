@@ -91,7 +91,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                 NAME_REGISTERED_SINGLE_COST_ABI if context.tx_log.topics[0] == NAME_REGISTERED_SINGLE_COST else NAME_REGISTERED_BASE_COST_AND_PREMIUM_ABI,  # noqa: E501
             )
         except DeserializationError as e:
-            log.debug(f'Failed to decode ENS name registered event due to {str(e)}')
+            log.debug(f'Failed to decode ENS name registered event due to {e!s}')
             return DEFAULT_DECODING_OUTPUT
 
         name = decoded_data[0]
@@ -141,7 +141,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
         try:
             _, decoded_data = decode_event_data_abi_str(context.tx_log, NAME_RENEWED_ABI)
         except DeserializationError as e:
-            log.error(f'Failed to decode ENS name renewed event due to {str(e)}')
+            log.error(f'Failed to decode ENS name renewed event due to {e!s}')
             return DEFAULT_DECODING_OUTPUT
 
         name = decoded_data[0]
@@ -177,7 +177,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                     arguments=[node],
                 )
             except RemoteError as e:
-                log.debug(f'Failed to decode ENS set-text event due to {str(e)}')
+                log.debug(f'Failed to decode ENS set-text event due to {e!s}')
                 return DEFAULT_DECODING_OUTPUT
 
             if ens_name == '':
@@ -212,7 +212,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                 TEXT_CHANGED_KEY_ONLY_ABI if context.tx_log.topics[0] == TEXT_CHANGED_KEY_ONLY else TEXT_CHANGED_KEY_AND_VALUE_ABI,  # noqa: E501
             )
         except DeserializationError as e:
-            log.error(f'Failed to decode ENS set-text event due to {str(e)}')
+            log.error(f'Failed to decode ENS set-text event due to {e!s}')
             return DEFAULT_DECODING_OUTPUT
 
         changed_key = decoded_data[0]
@@ -235,7 +235,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                     arguments=[node],
                 )
             except RemoteError as e:
-                log.debug(f'Failed to query ENS name of node {node.hex()} due to: {str(e)}')
+                log.debug(f'Failed to query ENS name of node {node.hex()} due to: {e!s}')
             else:
                 address = to_checksum_address(address)
                 ens_mapping = find_ens_mappings(

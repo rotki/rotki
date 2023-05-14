@@ -63,7 +63,7 @@ def deserialize_bpt_event(
         raw_pool_tokens = raw_pool['tokens']
         total_weight = deserialize_asset_amount(raw_pool['totalWeight'])
     except KeyError as e:
-        raise DeserializationError(f'Missing key: {str(e)}.') from e
+        raise DeserializationError(f'Missing key: {e!s}.') from e
 
     if total_weight == ZERO:
         raise DeserializationError('Pool weight is zero.')
@@ -80,7 +80,7 @@ def deserialize_bpt_event(
             token_decimals = raw_token['decimals']
             token_weight = deserialize_asset_amount(raw_token['denormWeight'])
         except KeyError as e:
-            raise DeserializationError(f'Missing key: {str(e)}.') from e
+            raise DeserializationError(f'Missing key: {e!s}.') from e
 
         token_address = deserialize_evm_address(raw_token_address)
 
@@ -145,7 +145,7 @@ def deserialize_invest_event(
             raise AssertionError(f'Unexpected event type: {event_type}.')
 
     except KeyError as e:
-        raise DeserializationError(f'Missing key: {str(e)}.') from e
+        raise DeserializationError(f'Missing key: {e!s}.') from e
 
     user_address = deserialize_evm_address(raw_user_address)
     pool_address = deserialize_evm_address(raw_pool_address)
@@ -184,7 +184,7 @@ def deserialize_pool_share(
         raw_tokens = raw_pool['tokens']
         total_weight = deserialize_asset_amount(raw_pool['totalWeight'])
     except KeyError as e:
-        raise DeserializationError(f'Missing key: {str(e)}.') from e
+        raise DeserializationError(f'Missing key: {e!s}.') from e
 
     if total_weight == ZERO:
         raise DeserializationError('Pool weight is zero.')
@@ -203,7 +203,7 @@ def deserialize_pool_share(
             token_total_amount = deserialize_asset_amount(raw_token['balance'])
             token_weight = deserialize_asset_amount(raw_token['denormWeight'])
         except KeyError as e:
-            raise DeserializationError(f'Missing key: {str(e)}.') from e
+            raise DeserializationError(f'Missing key: {e!s}.') from e
 
         token_address = deserialize_evm_address(raw_token_address)
 
@@ -281,7 +281,7 @@ def deserialize_token_price(
         token_address = raw_token_price['id']
         usd_price = deserialize_price(raw_token_price['price'])
     except KeyError as e:
-        raise DeserializationError(f'Missing key: {str(e)}.') from e
+        raise DeserializationError(f'Missing key: {e!s}.') from e
 
     token_address = deserialize_evm_address(token_address)
 
@@ -296,7 +296,7 @@ def deserialize_token_day_data(
         token_address = raw_token_day_data['token']['id']
         usd_price = deserialize_price(raw_token_day_data['priceUSD'])
     except KeyError as e:
-        raise DeserializationError(f'Missing key: {str(e)}.') from e
+        raise DeserializationError(f'Missing key: {e!s}.') from e
 
     token_address = deserialize_evm_address(token_address)
 

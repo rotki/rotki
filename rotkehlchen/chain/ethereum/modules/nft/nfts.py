@@ -326,7 +326,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
                     except RemoteError as e:
                         log.error(
                             f'Error querying current usd price of {target_asset} in custom nft '
-                            f'price api call due to {str(e)}. Ignoring.',
+                            f'price api call due to {e!s}. Ignoring.',
                         )
                         continue
                     if to_asset_usd_price == ZERO:
@@ -361,7 +361,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
                     (str(price), to_asset.identifier, 1, from_asset.identifier),
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-                raise InputError(f'Failed to write price for {from_asset.identifier} due to {str(e)}') from e  # noqa: E501
+                raise InputError(f'Failed to write price for {from_asset.identifier} due to {e!s}') from e  # noqa: E501
 
             if cursor.rowcount != 1:
                 raise InputError(f'Failed to write price for {from_asset.identifier}')
@@ -376,7 +376,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
                     (None, None, asset.identifier),
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-                raise InputError(f'Failed to delete price for {asset.identifier} due to {str(e)}') from e  # noqa: E501
+                raise InputError(f'Failed to delete price for {asset.identifier} due to {e!s}') from e  # noqa: E501
             if cursor.rowcount != 1:
                 raise InputError(f'Failed to delete price for unknown asset {asset.identifier}')
 

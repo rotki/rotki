@@ -82,7 +82,7 @@ class Aave(EthereumModule):
             )
         except RemoteError as e:
             self.msg_aggregator.add_error(
-                f'Could not initialize the Aave subgraph due to {str(e)}. '
+                f'Could not initialize the Aave subgraph due to {e!s}. '
                 f' All aave historical queries are not functioning until this is fixed. '
                 f'Probably will get fixed with time. If not report it to rotkis support channel ',
             )

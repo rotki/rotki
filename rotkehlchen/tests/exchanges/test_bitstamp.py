@@ -46,7 +46,7 @@ def test_bitstamp_exchange_assets_are_known(mock_bitstamp):
         response = requests.get(request_url)
     except requests.exceptions.RequestException as e:
         raise RemoteError(
-            f'Bitstamp get request at {request_url} connection error: {str(e)}.',
+            f'Bitstamp get request at {request_url} connection error: {e!s}.',
         ) from e
 
     if response.status_code != 200:

@@ -234,7 +234,7 @@ def try_download_ens_avatar(
             response = requests.get(f'{ENS_METADATA_URL}/avatar/{ens_name}', timeout=DEFAULT_TIMEOUT_TUPLE)  # noqa: E501
             avatar = _get_response_image(response)
         except (RequestException, RemoteError) as e:  # Try opensea -- if we got it
-            log.error(f'Got error {str(e)} during querying ENS app for NFT avatar for {ens_name}. May fall back to opensea')  # noqa: E501
+            log.error(f'Got error {e!s} during querying ENS app for NFT avatar for {ens_name}. May fall back to opensea')  # noqa: E501
             if opensea is None:
                 return  # no opensea
             avatar_url = opensea.get_nft_image(avatar_url)
@@ -247,7 +247,7 @@ def try_download_ens_avatar(
             response = requests.get(avatar_url, timeout=DEFAULT_TIMEOUT_TUPLE)
             avatar = _get_response_image(response)
         except (RequestException, RemoteError) as e:
-            log.error(f'Got error {str(e)} while querying ens avatar {avatar_url} for {ens_name}.')  # noqa: E501
+            log.error(f'Got error {e!s} while querying ens avatar {avatar_url} for {ens_name}.')  # noqa: E501
             return
 
     avatars_dir.mkdir(exist_ok=True)  # Ensure that the avatars directory exists

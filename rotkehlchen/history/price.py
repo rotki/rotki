@@ -43,7 +43,7 @@ def query_usd_price_or_use_default(
     except (RemoteError, NoPriceForGivenTimestamp):
         log.error(
             f'Could not query usd price for {asset.identifier} and time {time} '
-            f'when processing {location}. Assuming price of ${str(default_value)}',
+            f'when processing {location}. Assuming price of ${default_value!s}',
         )
         usd_price = Price(default_value)
 
@@ -64,7 +64,7 @@ def query_usd_price_zero_if_error(
         )
     except (RemoteError, NoPriceForGivenTimestamp):
         msg_aggregator.add_error(
-            f'Could not query usd price for {str(asset)} and time {time} '
+            f'Could not query usd price for {asset!s} and time {time} '
             f'when processing {location}. Using zero price',
         )
         usd_price = ZERO_PRICE
@@ -112,7 +112,7 @@ class PriceHistorian():
         )
         instance = PriceHistorian()
         instance._oracles = oracles
-        instance._oracle_instances = [getattr(instance, f'_{str(oracle)}') for oracle in oracles]
+        instance._oracle_instances = [getattr(instance, f'_{oracle!s}') for oracle in oracles]
 
     @staticmethod
     def get_price_for_special_asset(

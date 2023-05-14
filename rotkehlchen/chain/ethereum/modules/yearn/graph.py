@@ -99,7 +99,7 @@ class YearnVaultsV2Graph:
             except (ValueError, DeserializationError) as e:
                 log.debug(
                     f'Failed to extract transaction hash and log index from {event_type} event '
-                    f'in yearn vaults v2 graph query. Got {entry["id"]}. {str(e)}.',
+                    f'in yearn vaults v2 graph query. Got {entry["id"]}. {e!s}.',
                 )
                 self.msg_aggregator.add_warning(
                     f'Ignoring {event_type} in yearn vault V2. Failed to read id {entry["id"]}',
@@ -128,7 +128,7 @@ class YearnVaultsV2Graph:
             except KeyError as e:
                 log.debug(
                     f'Failed to extract token information from {event_type} event '
-                    f'in yearn vaults v2 graph query. {str(e)}.',
+                    f'in yearn vaults v2 graph query. {e!s}.',
                 )
                 self.msg_aggregator.add_warning(
                     f'Ignoring {event_type} {tx_hash.hex()} in yearn vault V2 Failed to decode'  # noqa: 501 pylint: disable=no-member

@@ -73,7 +73,7 @@ def create_binance_symbols_to_pair(
                 location=location,
             )
         except (UnknownAsset, UnsupportedAsset) as e:
-            log.debug(f'Found binance pair with no processable asset. {str(e)}')
+            log.debug(f'Found binance pair with no processable asset. {e!s}')
     return result
 
 

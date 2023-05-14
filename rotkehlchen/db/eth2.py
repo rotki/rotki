@@ -98,8 +98,8 @@ class DBEth2():
                     )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                 log.debug(
-                    f'Cant insert Eth2 staking detail entry {str(entry)} to the DB '
-                    f'due to {str(e)}. Skipping ...',
+                    f'Cant insert Eth2 staking detail entry {entry!s} to the DB '
+                    f'due to {e!s}. Skipping ...',
                 )
 
     def get_validator_daily_stats_and_limit_info(

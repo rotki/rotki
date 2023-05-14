@@ -47,8 +47,8 @@ class HistoricalPrice(NamedTuple):
 
     def __str__(self) -> str:
         return (
-            f'Price entry {str(self.price)} of {self.from_asset} -> {self.to_asset} '
-            f'at {self.timestamp} from {str(self.source)}'
+            f'Price entry {self.price!s} of {self.from_asset} -> {self.to_asset} '
+            f'at {self.timestamp} from {self.source!s}'
         )
 
     def serialize_for_db(self) -> tuple[str, str, str, int, str]:

@@ -82,7 +82,7 @@ def _query_page(url: str, event: Literal['stats', 'withdrawals']) -> requests.Re
         try:
             response = requests.get(url, timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Beaconcha.in api request {url} failed due to {str(e)}') from e
+            raise RemoteError(f'Beaconcha.in api request {url} failed due to {e!s}') from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS and tries <= max_tries:
             sleep_secs = backoff * tries / max_tries

@@ -245,7 +245,7 @@ class Kucoin(ExchangeInterface):
                 response = self.session.get(url=request_url, timeout=DEFAULT_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
-                    f'Kucoin {method} request at {request_url} connection error: {str(e)}.',
+                    f'Kucoin {method} request at {request_url} connection error: {e!s}.',
                 ) from e
 
             log.debug('Kucoin API response', text=response.text)
@@ -378,7 +378,7 @@ class Kucoin(ExchangeInterface):
                 current_page = response_data['currentPage']
                 raw_results = response_data['items']
             except KeyError as e:
-                msg = f'Kucoin {case} JSON response is missing key: {str(e)}'
+                msg = f'Kucoin {case} JSON response is missing key: {e!s}'
                 log.error(msg, response_dict)
                 if case == KucoinCase.OLD_TRADES and response_dict.get('code', '') == '400100':
                     if current_query_ts + time_step >= end_ts:
@@ -405,7 +405,7 @@ class Kucoin(ExchangeInterface):
                     UnprocessableTradePair,
                     UnsupportedAsset,
                 ) as e:
-                    error_msg = f'Missing key: {str(e)}.' if isinstance(e, KeyError) else str(e)
+                    error_msg = f'Missing key: {e!s}.' if isinstance(e, KeyError) else str(e)
                     log.error(
                         f'Failed to deserialize a kucoin {case} result',
                         error=error_msg,
@@ -541,7 +541,7 @@ class Kucoin(ExchangeInterface):
             fee_currency_symbol = raw_result['currency']
             link_id = raw_result.get('id', '')  # NB: id only exists for withdrawals
         except KeyError as e:
-            raise DeserializationError(f'Missing key: {str(e)}.') from e
+            raise DeserializationError(f'Missing key: {e!s}.') from e
 
         fee_asset = asset_from_kucoin(fee_currency_symbol)
 
@@ -596,7 +596,7 @@ class Kucoin(ExchangeInterface):
                 trade_id = raw_result['id']
 
         except KeyError as e:
-            raise DeserializationError(f'Missing key: {str(e)}.') from e
+            raise DeserializationError(f'Missing key: {e!s}.') from e
 
         trade = Trade(
             timestamp=timestamp,

@@ -417,7 +417,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 return False, msg
 
             # else
-            log.error(f'Kraken API key validation error: {str(e)}')
+            log.error(f'Kraken API key validation error: {e!s}')
             msg = (
                 'Unknown error at Kraken API key validation. Perhaps API '
                 'Key/Secret combination invalid?'
@@ -448,7 +448,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         try:
             response = self.session.post(urlpath, data=req, timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Kraken API request failed due to {str(e)}') from e
+            raise RemoteError(f'Kraken API request failed due to {e!s}') from e
 
         self._manage_call_counter(method)
         return _check_and_get_response(response, method)
@@ -536,7 +536,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 timeout=DEFAULT_TIMEOUT_TUPLE,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Kraken API request failed due to {str(e)}') from e
+            raise RemoteError(f'Kraken API request failed due to {e!s}') from e
         self._manage_call_counter(method)
 
         return _check_and_get_response(response, method)
@@ -595,7 +595,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing kraken balance entry due to inability to '
-                        f'query USD price: {str(e)}. Skipping balance entry',
+                        f'query USD price: {e!s}. Skipping balance entry',
                     )
                     continue
 
@@ -659,7 +659,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 with_errors = True
                 log.error(
                     f'One of krakens queries when querying endpoint for period failed '
-                    f'with {str(e)}. Returning only results we have.',
+                    f'with {e!s}. Returning only results we have.',
                 )
                 break
 
@@ -1134,7 +1134,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Failed to query kraken ledger between {query_start_ts} and '
-                    f'{query_end_ts}. {str(e)}',
+                    f'{query_end_ts}. {e!s}',
                 )
                 return True
 
@@ -1153,7 +1153,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 except DeserializationError as e:
                     self.msg_aggregator.add_error(
                         f'Failed to read timestamp in kraken event group '
-                        f'due to {str(e)}. For more information read the logs. Skipping event',
+                        f'due to {e!s}. For more information read the logs. Skipping event',
                     )
                     log.error(f'Failed to read timestamp for {raw_events}')
                     continue
@@ -1174,7 +1174,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                     except InputError as e:  # not catching IntegrityError. event asset is resolved
                         self.msg_aggregator.add_error(
                             f'Failed to save kraken events from {query_start_ts} '
-                            f'to {query_end_ts} in database. {str(e)}',
+                            f'to {query_end_ts} in database. {e!s}',
                         )
 
                     ranges.update_used_query_range(

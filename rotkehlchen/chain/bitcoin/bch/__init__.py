@@ -49,7 +49,7 @@ def get_bitcoin_cash_addresses_balances(accounts: list[BTCAddress]) -> dict[BTCA
                             location='bitcoin cash balance querying',
                         ))
     except requests.exceptions.RequestException as e:
-        raise RemoteError(f'Bitcoin Cash external API request for balances failed due to {str(e)}') from e  # noqa: E501
+        raise RemoteError(f'Bitcoin Cash external API request for balances failed due to {e!s}') from e  # noqa: E501
     except KeyError as e:
         raise RemoteError(
             f'Malformed response when querying Bitcoin Cash blockchain via {HASKOIN_BASE_URL}. '
@@ -103,11 +103,11 @@ def have_bch_transactions(accounts: list[BTCAddress]) -> dict[BTCAddress, tuple[
     try:
         have_transactions = _check_haskoin_for_transactions(accounts)
     except requests.exceptions.RequestException as e:
-        raise RemoteError(f'bitcoin cash external API request for transactions failed due to {str(e)}') from e  # noqa: E501
+        raise RemoteError(f'bitcoin cash external API request for transactions failed due to {e!s}') from e  # noqa: E501
     except KeyError as e:
         raise RemoteError(
             f'Malformed response when querying BCH blockchain via {HASKOIN_BASE_URL}. '
-            f'Did not find key {str(e)}',
+            f'Did not find key {e!s}',
         ) from e
     except DeserializationError as e:
         raise RemoteError(

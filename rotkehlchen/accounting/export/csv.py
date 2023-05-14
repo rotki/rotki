@@ -59,7 +59,7 @@ def _dict_to_csv_file(path: Path, dictionary_list: list) -> None:
             for dic in dictionary_list:
                 w.writerow(dic)
         except ValueError as e:
-            raise CSVWriteError(f'Failed to write {path} CSV due to {str(e)}') from e
+            raise CSVWriteError(f'Failed to write {path} CSV due to {e!s}') from e
 
 
 class CSVExporter(CustomizableDateMixin):
@@ -156,7 +156,7 @@ class CSVExporter(CustomizableDateMixin):
                     else:
                         cost_basis += '+'
 
-                    cost_basis += f'{str(acquisition.amount)}*H{index}'
+                    cost_basis += f'{acquisition.amount!s}*H{index}'
 
         dict_event[f'cost_basis_{name}'] = cost_basis
 
@@ -196,16 +196,16 @@ class CSVExporter(CustomizableDateMixin):
                 continue
             sums += 1
             entry = template.copy()
-            entry['free_amount'] = f'{str(name)} total'
+            entry['free_amount'] = f'{name!s} total'
             entry['taxable_amount'] = self._add_sumif_formula(
                 check_range=f'A2:A{length}',
-                condition=f'"{str(name)}"',
+                condition=f'"{name!s}"',
                 sum_range=f'I2:I{length}',
                 actual_value=value.taxable,
             )
             entry['price'] = self._add_sumif_formula(
                 check_range=f'A2:A{length}',
-                condition=f'"{str(name)}"',
+                condition=f'"{name!s}"',
                 sum_range=f'J2:J{length}',
                 actual_value=value.free,
             )

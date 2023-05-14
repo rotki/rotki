@@ -100,7 +100,7 @@ def parse_import_snapshot_data(
         error_msg = f'snapshot contains an unknown asset ({err.identifier}). Try adding this asset manually.'  # noqa: 501
         return error_msg, [], []
     except DeserializationError as err:
-        error_msg = f'Error occured while importing snapshot due to: {str(err)}'
+        error_msg = f'Error occured while importing snapshot due to: {err!s}'
         return error_msg, [], []
 
     try:
@@ -117,7 +117,7 @@ def parse_import_snapshot_data(
                 ),
             )
     except DeserializationError as err:
-        error_msg = f'Error occured while importing snapshot due to: {str(err)}'
+        error_msg = f'Error occured while importing snapshot due to: {err!s}'
         return error_msg, [], []
 
     return '', processed_balances_list, processed_location_data_list

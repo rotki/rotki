@@ -214,7 +214,7 @@ class Bitcoinde(ExchangeInterface):
         try:
             response = getattr(self.session, verb)(request_url, data=data, headers=headers)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Bitcoin.de API request failed due to {str(e)}') from e
+            raise RemoteError(f'Bitcoin.de API request failed due to {e!s}') from e
 
         try:
             json_ret = json.loads(response.text)
@@ -282,7 +282,7 @@ class Bitcoinde(ExchangeInterface):
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing Bitcoin.de balance entry due to inability to '
-                    f'query USD price: {str(e)}. Skipping balance entry',
+                    f'query USD price: {e!s}. Skipping balance entry',
                 )
                 continue
 
@@ -291,7 +291,7 @@ class Bitcoinde(ExchangeInterface):
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing Bitcoin.de {asset} balance entry due to inability to '
-                    f'deserialize the amount due to {str(e)}. Skipping balance entry',
+                    f'deserialize the amount due to {e!s}. Skipping balance entry',
                 )
                 continue
 

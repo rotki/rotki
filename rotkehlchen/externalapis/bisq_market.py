@@ -23,12 +23,12 @@ def get_bisq_market_price(asset: CryptoAsset) -> Price:
     try:
         response = requests.get(url, timeout=DEFAULT_TIMEOUT_TUPLE)
     except requests.exceptions.RequestException as e:
-        raise RemoteError(f'bisq.markets request {url} failed due to {str(e)}') from e
+        raise RemoteError(f'bisq.markets request {url} failed due to {e!s}') from e
     try:
         data = response.json()
     except json.decoder.JSONDecodeError as e:
         raise RemoteError(
-            f'Failed to read json response from bisq.markets. {response.text}. {str(e)}',
+            f'Failed to read json response from bisq.markets. {response.text}. {e!s}',
         ) from e
 
     if 'error' in data:

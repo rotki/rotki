@@ -111,13 +111,13 @@ class Opensea(ExternalServiceWithApiKey):
                 timeout=DEFAULT_TIMEOUT_TUPLE,
             )
         except requests.exceptions.RequestException as e:
-            log.error(f'Could not connect to rotki server for fetching backup opensea key due to {str(e)}')  # noqa: E501
+            log.error(f'Could not connect to rotki server for fetching backup opensea key due to {e!s}')  # noqa: E501
             return None
 
         try:
             json_ret = response.json()
         except JSONDecodeError as e:
-            log.error(f'Could not decode rotki server response for opensea key: {response.text} due to {str(e)}')  # noqa: E501
+            log.error(f'Could not decode rotki server response for opensea key: {response.text} due to {e!s}')  # noqa: E501
             return None
 
         if response.status_code != 200:
@@ -189,7 +189,7 @@ class Opensea(ExternalServiceWithApiKey):
                 )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
-                    f'Opensea API request {query_str} failed due to {str(e)}',
+                    f'Opensea API request {query_str} failed due to {e!s}',
                 ) from e
 
             if response.status_code != 200:
@@ -291,7 +291,7 @@ class Opensea(ExternalServiceWithApiKey):
             price_in_usd = price_in_eth * eth_usd_price
             token_id = entry['asset_contract']['address'] + '_' + entry['token_id']
             if entry['asset_contract']['asset_contract_type'] == 'semi-fungible':
-                token_id += f'_{str(owner_address)}'
+                token_id += f'_{owner_address!s}'
             return NFT(  # can raise KeyError due to arg init
                 token_identifier=NFT_DIRECTIVE + token_id,
                 background_color=entry['background_color'],
@@ -304,7 +304,7 @@ class Opensea(ExternalServiceWithApiKey):
                 collection=collection,
             )
         except KeyError as e:
-            raise DeserializationError(f'Could not find key {str(e)} when processing Opensea NFT data') from e  # noqa: E501
+            raise DeserializationError(f'Could not find key {e!s} when processing Opensea NFT data') from e  # noqa: E501
 
     def gather_account_collections(self, account: ChecksumEvmAddress) -> None:
         """Gathers account collection information and keeps them in memory"""
@@ -372,11 +372,11 @@ class Opensea(ExternalServiceWithApiKey):
                 ))
             except (UnknownAsset, DeserializationError) as e:
                 self.msg_aggregator.add_warning(
-                    f'Skipping detected NFT for {account} due to {str(e)}. '
+                    f'Skipping detected NFT for {account} due to {e!s}. '
                     f'Check out logs for more details',
                 )
                 log.warning(
-                    f'Skipping detected NFT for {account} due to {str(e)}. '
+                    f'Skipping detected NFT for {account} due to {e!s}. '
                     f'Problematic entry: {entry} ',
                 )
 

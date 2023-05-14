@@ -233,7 +233,7 @@ class DBReportDataReportIDFilter(DBFilter):
             try:
                 value = int(self.report_id)
             except DeserializationError as e:
-                log.error(f'Failed to filter a DB transaction query by report_id: {str(e)}')
+                log.error(f'Failed to filter a DB transaction query by report_id: {e!s}')
                 return [], []
         else:
             value = self.report_id
@@ -253,7 +253,7 @@ class DBReportDataEventTypeFilter(DBFilter):
             try:
                 value = SchemaEventType.deserialize_from_db(self.event_type)
             except DeserializationError as e:
-                log.error(f'Failed to filter a DB transaction query by event_type: {str(e)}')
+                log.error(f'Failed to filter a DB transaction query by event_type: {e!s}')
                 return [], []
         else:
             value = self.event_type

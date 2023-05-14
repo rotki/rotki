@@ -30,7 +30,7 @@ def _ws_send_impl(
         with lock:
             websocket.send(to_send_msg)
     except WebSocketError as e:
-        log.error(f'Websocket send with message {to_send_msg} failed due to {str(e)}')
+        log.error(f'Websocket send with message {to_send_msg} failed due to {e!s}')
 
         if failure_callback:
             failure_callback_args = {} if failure_callback_args is None else failure_callback_args  # noqa: E501
@@ -77,7 +77,7 @@ class RotkiNotifier():
         try:
             message = json.dumps(message_data)
         except TypeError as e:
-            log.error(f'Failed to broadcast websocket {message_type} message due to {str(e)}')
+            log.error(f'Failed to broadcast websocket {message_type} message due to {e!s}')
             if failure_callback is not None:
                 failure_callback_args = {} if failure_callback_args is None else failure_callback_args  # noqa: E501
                 failure_callback(**failure_callback_args)
@@ -129,7 +129,7 @@ class RotkiWSApp(WebSocketApplication):
             self.ws.send(message, **kwargs)
         except WebSocketError as e:
             log.warning(
-                f'Got WebSocketError {str(e)} for sending message {message} to a websocket',
+                f'Got WebSocketError {e!s} for sending message {message} to a websocket',
             )
 
     def on_close(self, *args: Any, **kwargs: Any) -> None:

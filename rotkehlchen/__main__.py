@@ -16,7 +16,7 @@ def main() -> None:
     try:
         rotkehlchen_server = RotkehlchenServer()
     except (SystemPermissionError, DBSchemaError) as e:
-        print(f'ERROR at initialization: {str(e)}')
+        print(f'ERROR at initialization: {e!s}')
         sys.exit(1)
     except SystemExit as e:
         if e.code is None or e.code == 0 or e.code == 2:

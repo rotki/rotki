@@ -79,7 +79,7 @@ class DataHandler():
                 user_data_dir.mkdir(exist_ok=True)
             except PermissionError as e:
                 raise SystemPermissionError(
-                    f'Failed to create directory for user: {str(e)}',
+                    f'Failed to create directory for user: {e!s}',
                 ) from e
 
         else:

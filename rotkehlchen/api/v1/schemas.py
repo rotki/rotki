@@ -1564,7 +1564,7 @@ class XpubAddSchema(AsyncQueryArgumentSchema, TagsSettingSchema):
             xpub_hdkey = HDKey.from_xpub(data['xpub'], xpub_type=xpub_type, path=derivation_path)
         except XPUBError as e:
             raise ValidationError(
-                f'Failed to initialize an xpub due to {str(e)}',
+                f'Failed to initialize an xpub due to {e!s}',
                 field_name='xpub',
             ) from e
 
@@ -1680,7 +1680,7 @@ def _transform_btc_or_bch_address(
     except (RemoteError, InputError) as e:
         raise ValidationError(
             f'Given ENS address {given_address} could not be resolved '
-            f'for {blockchain.value} due to: {str(e)}',
+            f'for {blockchain.value} due to: {e!s}',
             field_name='address',
         ) from None
 
@@ -1718,7 +1718,7 @@ def _transform_evm_address(
         except (RemoteError, InputError) as e:
             raise ValidationError(
                 f'Given ENS address {given_address} could not be resolved for Ethereum'
-                f' due to: {str(e)}',
+                f' due to: {e!s}',
                 field_name='address',
             ) from None
 
@@ -1764,7 +1764,7 @@ def _transform_substrate_address(
     except (RemoteError, InputError) as e:
         raise ValidationError(
             f'Given ENS address {given_address} could not be resolved '
-            f'for {chain} due to: {str(e)}',
+            f'for {chain} due to: {e!s}',
             field_name='address',
         ) from None
 
@@ -1934,7 +1934,7 @@ class IgnoredActionsModifySchema(Schema):
                     chain_id = EvmChainNameField()._deserialize(entry['evm_chain'], None, None)
                     tx_hash = EVMTransactionHashField()._deserialize(entry['tx_hash'], None, None)
                 except KeyError as e:
-                    raise ValidationError(f'Did not find {str(e)} at the given data') from e
+                    raise ValidationError(f'Did not find {e!s} at the given data') from e
                 new_data.append(f'{chain_id.value}{tx_hash.hex()}')  # pylint: disable=no-member
         else:
             if not all(isinstance(x, str) for x in given_data):
@@ -1971,7 +1971,7 @@ def _validate_single_oracle_id(
         except RemoteError as e:
             raise ValidationError(
                 f'Could not validate {oracle_name} identifer {coin_key} due to '
-                f'problem communicating with {oracle_name}: {str(e)}',
+                f'problem communicating with {oracle_name}: {e!s}',
             ) from e
 
         if coin_key not in all_coins:

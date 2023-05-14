@@ -214,7 +214,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     except (UnknownAsset, WrongAssetType) as e:
                         self.msg_aggregator.add_error(
                             f'Failed at initialization of {self.evm_inquirer.chain_name} '
-                            f'{class_name} decoder due to asset mismatch: {str(e)}',
+                            f'{class_name} decoder due to asset mismatch: {e!s}',
                         )
                         continue
 
@@ -310,7 +310,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         except (DeserializationError, ConversionError, UnknownAsset) as e:
             log.debug(
                 f'Decoding tx log with index {tx_log.log_index} of transaction '
-                f'{transaction.tx_hash.hex()} through {method.__name__} failed due to {str(e)}')
+                f'{transaction.tx_hash.hex()} through {method.__name__} failed due to {e!s}')
             return DEFAULT_DECODING_OUTPUT
 
         return result

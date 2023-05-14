@@ -336,7 +336,7 @@ class RestAPI():
         if isinstance(greenlet.exception, GreenletKilledError):
             log.debug(
                 f'Greenlet for task id {task_id} with name {task_str} was killed. '
-                f'{str(greenlet.exception)}',
+                f'{greenlet.exception!s}',
             )
             # Setting empty message to signify that the death of the greenlet is expected.
             self._write_task_result(task_id, {'result': None, 'message': ''})
@@ -352,7 +352,7 @@ class RestAPI():
         if task_id is not None:
             result = {
                 'result': None,
-                'message': f'The backend query task died unexpectedly: {str(greenlet.exception)}',
+                'message': f'The backend query task died unexpectedly: {greenlet.exception!s}',
             }
             self._write_task_result(task_id, result)
 
@@ -623,7 +623,7 @@ class RestAPI():
         if exchanges_list is None:
             return {
                 'result': None,
-                'message': f'Could not query balances for {str(location)} since it is not registered',  # noqa: E501
+                'message': f'Could not query balances for {location!s} since it is not registered',  # noqa: E501
                 'status_code': HTTPStatus.CONFLICT,
             }
 
@@ -930,7 +930,7 @@ class RestAPI():
                     },
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-                error_msg = f'Failed to add event to the DB due to a DB error: {str(e)}'
+                error_msg = f'Failed to add event to the DB due to a DB error: {e!s}'
                 return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)  # noqa: E501
 
         if identifier is None:
@@ -1159,7 +1159,7 @@ class RestAPI():
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
             return wrap_in_fail_result(
-                message=f'Unexpected database error: {str(e)}',
+                message=f'Unexpected database error: {e!s}',
                 status_code=HTTP_STATUS_INTERNAL_DB_ERROR,  # type: ignore  # Is a custom status code, not a member of HTTPStatus  # noqa: E501
             )
 
@@ -1354,7 +1354,7 @@ class RestAPI():
         if identifiers is not None:
             return api_response(
                 result=wrap_in_fail_result(
-                    f'Failed to add {str(asset_type)} {kwargs["name"]} '
+                    f'Failed to add {asset_type!s} {kwargs["name"]} '
                     f'since it already exists. Existing ids: {",".join(identifiers)}'),
                 status_code=HTTPStatus.CONFLICT,
             )
@@ -2880,11 +2880,11 @@ class RestAPI():
                     )
             except (RemoteError, DeserializationError) as e:
                 status_code = HTTPStatus.BAD_GATEWAY
-                message = f'Failed to request evm transaction decoding due to {str(e)}'
+                message = f'Failed to request evm transaction decoding due to {e!s}'
                 break
             except InputError as e:
                 status_code = HTTPStatus.CONFLICT
-                message = f'Failed to request evm transaction decoding due to {str(e)}'
+                message = f'Failed to request evm transaction decoding due to {e!s}'
                 break
         else:  # no break in the for loop, success
             result = True
@@ -3052,7 +3052,7 @@ class RestAPI():
             except (RemoteError, NoPriceForGivenTimestamp) as e:
                 log.error(
                     f'Could not query the historical {target_asset.identifier} price for '
-                    f'{asset.identifier} at time {timestamp} due to: {str(e)}. Using zero price',
+                    f'{asset.identifier} at time {timestamp} due to: {e!s}. Using zero price',
                 )
                 price = ZERO_PRICE
 
@@ -3190,7 +3190,7 @@ class RestAPI():
         except InputError as e:
             return api_response(
                 wrap_in_fail_result(
-                    f'Failed to handle binance markets internally. {str(e)}',
+                    f'Failed to handle binance markets internally. {e!s}',
                     status_code=HTTPStatus.BAD_GATEWAY,
                 ),
             )
@@ -3465,7 +3465,7 @@ class RestAPI():
         try:
             db_backup_path = self.rotkehlchen.data.db.create_db_backup()
         except OSError as e:
-            error_msg = f'Failed to create a DB backup due to {str(e)}'
+            error_msg = f'Failed to create a DB backup due to {e!s}'
             return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
 
         return api_response(_wrap_in_ok_result(str(db_backup_path)), status_code=HTTPStatus.OK)
@@ -3690,7 +3690,7 @@ class RestAPI():
             )
         except PermissionError as e:
             return api_response(
-                result=wrap_in_fail_result(f'Failed to create asset export file. {str(e)}'),
+                result=wrap_in_fail_result(f'Failed to create asset export file. {e!s}'),
                 status_code=HTTPStatus.INSUFFICIENT_STORAGE,
             )
 
@@ -3730,13 +3730,13 @@ class RestAPI():
         except ValidationError as e:
             return api_response(
                 result=wrap_in_fail_result(
-                    f'Provided file does not have the expected format. {str(e)}',
+                    f'Provided file does not have the expected format. {e!s}',
                 ),
                 status_code=HTTPStatus.CONFLICT,
             )
         except InputError as e:
             return api_response(
-                result=wrap_in_fail_result(f'{str(e)}'),
+                result=wrap_in_fail_result(f'{e!s}'),
                 status_code=HTTPStatus.CONFLICT,
             )
 
@@ -4139,7 +4139,7 @@ class RestAPI():
             return wrap_in_fail_result(
                 message=(
                     f'Unable to add transaction with hash {tx_hash.hex()} for chain '
-                    f'{evm_chain} and associated address {associated_address} due to {str(e)}'
+                    f'{evm_chain} and associated address {associated_address} due to {e!s}'
                 ),
                 status_code=status_code,
             )
@@ -4200,7 +4200,7 @@ class RestAPI():
                 )
             except sqlcipher.OperationalError as e:  # pylint: disable=no-member
                 return wrap_in_fail_result(
-                    message=f'Database query error retrieving missing prices {str(e)}',
+                    message=f'Database query error retrieving missing prices {e!s}',
                     status_code=HTTPStatus.CONFLICT,
                 )
 
@@ -4209,7 +4209,7 @@ class RestAPI():
                 try:
                     staking_event = StakingEvent.from_history_base_entry(event)
                 except DeserializationError as e:
-                    log.warning(f'Could not deserialize staking event: {event} due to {str(e)}')  # noqa: E501
+                    log.warning(f'Could not deserialize staking event: {event} due to {e!s}')  # noqa: E501
                     continue
                 events.append(staking_event)
 
@@ -4310,7 +4310,7 @@ class RestAPI():
                     ens_name=ens_name,
                 )
             except RemoteError as e:
-                log.error(f'Got a remote error during querying an ens avatar: {str(e)}')
+                log.error(f'Got a remote error during querying an ens avatar: {e!s}')
                 return make_response(
                     (
                         b'',
@@ -4412,14 +4412,14 @@ class RestAPI():
             query_yearn_vaults(self.rotkehlchen.data.db)
         except RemoteError as e:
             return wrap_in_fail_result(
-                message=f'Failed to refresh yearn vaults cache due to: {str(e)}',
+                message=f'Failed to refresh yearn vaults cache due to: {e!s}',
                 status_code=HTTPStatus.CONFLICT,
             )
         try:
             query_ilk_registry_and_maybe_update_cache(eth_node_inquirer)
         except RemoteError as e:
             return wrap_in_fail_result(
-                message=f'Failed to refresh makerdao vault ilk cache due to: {str(e)}',
+                message=f'Failed to refresh makerdao vault ilk cache due to: {e!s}',
                 status_code=HTTPStatus.CONFLICT,
             )
         return OK_RESULT

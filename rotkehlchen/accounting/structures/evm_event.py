@@ -185,7 +185,7 @@ class EvmEvent(HistoryBaseEntry):
             except json.JSONDecodeError as e:
                 log.debug(
                     f'Failed to read extra_data when reading EvmEvent entry '
-                    f'{entry} from the DB due to {str(e)}. Setting it to null',
+                    f'{entry} from the DB due to {e!s}. Setting it to null',
                 )
 
         amount = deserialize_fval(entry[7], 'amount', 'evm event')
@@ -233,7 +233,7 @@ class EvmEvent(HistoryBaseEntry):
                 product=deserialize_optional(data['product'], EvmProduct.deserialize),
             )
         except KeyError as e:
-            raise DeserializationError(f'Did not find key {str(e)} in Evm Event data') from e
+            raise DeserializationError(f'Did not find key {e!s} in Evm Event data') from e
 
     def get_type_identifier(self, include_counterparty: bool = True) -> str:
         """

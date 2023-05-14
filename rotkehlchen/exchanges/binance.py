@@ -140,7 +140,7 @@ def trade_from_binance(
     rate = deserialize_price(binance_trade['price'])
     if binance_trade['symbol'] not in binance_symbols_to_pair:
         raise DeserializationError(
-            f'Error reading a {str(location)} trade. Could not find '
+            f'Error reading a {location!s} trade. Could not find '
             f'{binance_trade["symbol"]} in binance_symbols_to_pair',
         )
 
@@ -160,7 +160,7 @@ def trade_from_binance(
     fee = deserialize_fee(binance_trade['commission'])
 
     log.debug(
-        f'Processing {str(location)} Trade',
+        f'Processing {location!s} Trade',
         amount=amount,
         rate=rate,
         timestamp=timestamp,
@@ -240,7 +240,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         except InputError as e:
             self.msg_aggregator.add_error(
                 f'Binance exchange couldnt be properly initialized. '
-                f'Missing the exchange markets. {str(e)}',
+                f'Missing the exchange markets. {e!s}',
             )
             self._symbols_to_pair = {}
 
@@ -338,7 +338,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
             api_subdomain = api_type if is_new_futures_api else 'api'
             request_url = (
-                f'https://{api_subdomain}.{self.uri}{api_type}/v{str(api_version)}/{method}?'
+                f'https://{api_subdomain}.{self.uri}{api_type}/v{api_version!s}/{method}?'
             )
             request_url += urlencode(call_options)
             log.debug(f'{self.name} API request', request_url=request_url)
@@ -346,7 +346,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 response = self.session.get(request_url, timeout=DEFAULT_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
-                    f'{self.name} API request failed due to {str(e)}',
+                    f'{self.name} API request failed due to {e!s}',
                 ) from e
 
             if response.status_code not in (200, 418, 429):
@@ -483,7 +483,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 free = deserialize_asset_amount(entry['free'])
                 locked = deserialize_asset_amount(entry['locked'])
             except KeyError as e:
-                raise RemoteError(f'Binance spot balance asset entry did not contain key {str(e)}') from e  # noqa: E501
+                raise RemoteError(f'Binance spot balance asset entry did not contain key {e!s}') from e  # noqa: E501
             except DeserializationError as e:
                 raise RemoteError('Failed to deserialize an amount from binance spot balance asset entry') from e  # noqa: E501
 
@@ -522,7 +522,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} balance entry due to inability to '
-                    f'query USD price: {str(e)}. Skipping balance entry',
+                    f'query USD price: {e!s}. Skipping balance entry',
                 )
                 continue
 
@@ -584,7 +584,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} balance entry due to inability to '
-                    f'query USD price: {str(e)}. Skipping balance entry',
+                    f'query USD price: {e!s}. Skipping balance entry',
                 )
                 continue
 
@@ -643,7 +643,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 except (RemoteError, BinancePermissionError) as e:
                     self.msg_aggregator.add_error(
                         f'Failed to query binance lending interest history between '
-                        f'{query_start_ts} and {query_end_ts}. {str(e)}',
+                        f'{query_start_ts} and {query_end_ts}. {e!s}',
                     )
                     return True
 
@@ -657,13 +657,13 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                         notes = f'Interest paid from {entry["lendingType"]} {entry["productName"]} savings'  # noqa: E501
                     except KeyError as e:
                         self.msg_aggregator.add_error(
-                            f'Missing key entry for {str(e)} in {self.name} {entry}. '
+                            f'Missing key entry for {e!s} in {self.name} {entry}. '
                             f'Ignoring its lending interest history query.',
                         )
                         continue
                     except DeserializationError as e:
                         self.msg_aggregator.add_error(
-                            f'Error at deserializing {self.name} asset. {str(e)}. '
+                            f'Error at deserializing {self.name} asset. {e!s}. '
                             f'Ignoring its lending interest history query.',
                         )
                         continue
@@ -687,7 +687,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                         usd_value = usd_price * interest_received
                     except NoPriceForGivenTimestamp as e:
                         log.warning(
-                            f'Could not find USD price of {asset} at {timestamp}. {str(e)} '
+                            f'Could not find USD price of {asset} at {timestamp}. {e!s} '
                             f'Using zero usd_value for lending history entry.',
                         )
                         usd_value = ZERO
@@ -717,7 +717,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     except InputError as e:
                         self.msg_aggregator.add_error(
                             f'Failed to save Binance {self.name} lending interest history from '
-                            f'{query_start_ts} to {query_end_ts} in the database. {str(e)}',
+                            f'{query_start_ts} to {query_end_ts} in the database. {e!s}',
                         )
 
             with self.db.user_write() as write_cursor:
@@ -772,7 +772,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing {self.name} balance entry due to inability to '
-                        f'query USD price: {str(e)}. Skipping balance entry',
+                        f'query USD price: {e!s}. Skipping balance entry',
                     )
                     continue
 
@@ -784,7 +784,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         except KeyError as e:
             self.msg_aggregator.add_error(
                 f'At {self.name} futures balance query did not find expected key '
-                f'{str(e)}. Skipping futures query...',
+                f'{e!s}. Skipping futures query...',
             )
 
         return balances
@@ -812,7 +812,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         except BinancePermissionError as e:
             log.warning(
                 f'Insufficient permission to query {self.name} {api_type} balances.'
-                f'Skipping query. Response details: {str(e)}',
+                f'Skipping query. Response details: {e!s}',
             )
             return balances
 
@@ -848,7 +848,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing {self.name} balance entry due to inability to '
-                        f'query USD price: {str(e)}. Skipping margined futures balance entry',
+                        f'query USD price: {e!s}. Skipping margined futures balance entry',
                     )
                     continue
 
@@ -860,7 +860,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         except KeyError as e:
             self.msg_aggregator.add_error(
                 f'At {self.name} margined futures balance query did not find '
-                f'expected key {str(e)}. Skipping margined futures query...',
+                f'expected key {e!s}. Skipping margined futures query...',
             )
 
         return balances
@@ -884,19 +884,19 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found unsupported {self.name} asset {asset_name}. '
-                    f'Ignoring its {self.name} pool balance query. {str(e)}',
+                    f'Ignoring its {self.name} pool balance query. {e!s}',
                 )
                 return None
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found unknown {self.name} asset {asset_name}. '
-                    f'Ignoring its {self.name} pool balance query. {str(e)}',
+                    f'Ignoring its {self.name} pool balance query. {e!s}',
                 )
                 return None
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'{self.name} balance deserialization error '
-                    f'for asset {asset_name}: {str(e)}. Skipping entry.',
+                    f'for asset {asset_name}: {e!s}. Skipping entry.',
                 )
                 return None
 
@@ -905,7 +905,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} balance entry due to inability to '
-                    f'query USD price: {str(e)}. Skipping {self.name} pool balance entry',
+                    f'query USD price: {e!s}. Skipping {self.name} pool balance entry',
                 )
                 return None
 
@@ -920,7 +920,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         except BinancePermissionError as e:
             log.warning(
                 f'Insufficient permission to query {self.name} pool balances.'
-                f'Skipping query. Response details: {str(e)}',
+                f'Skipping query. Response details: {e!s}',
             )
             return balances
 
@@ -934,7 +934,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 f'Skipping them in the balance query. Check logs for details',
             )
             if isinstance(e, KeyError):
-                msg = f'Missing key {str(e)}'
+                msg = f'Missing key {e!s}'
             else:
                 msg = str(e)
             log.error(
@@ -962,12 +962,12 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     try:
                         returned_balances = method(returned_balances)
                     except RemoteError as e:  # errors in any of these methods should not be fatal
-                        log.warning(f'Failed to query binance method {method.__name__} due to {str(e)}')  # noqa: E501
+                        log.warning(f'Failed to query binance method {method.__name__} due to {e!s}')  # noqa: E501
 
         except RemoteError as e:
             msg = (
                 f'{self.name} account API request failed. '
-                f'Could not reach binance due to {str(e)}'
+                f'Could not reach binance due to {e!s}'
             )
             self.msg_aggregator.add_error(msg)
             return None, msg
@@ -1124,7 +1124,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         try:
             if 'status' not in raw_data or raw_data['status'] != 'Completed':
                 log.error(
-                    f'Found {str(self.location)} fiat payment with failed status. Ignoring it.',
+                    f'Found {self.location!s} fiat payment with failed status. Ignoring it.',
                 )
                 return None
 
@@ -1140,12 +1140,12 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             rate = deserialize_price(raw_data['price'])
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
-                f'Found {str(self.location)} fiat payment with unknown asset '
+                f'Found {self.location!s} fiat payment with unknown asset '
                 f'{e.identifier}. Ignoring it.',
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
-                f'Found {str(self.location)} fiat payment with unsupported asset '
+                f'Found {self.location!s} fiat payment with unsupported asset '
                 f'{e.identifier}. Ignoring it.',
             )
         except (DeserializationError, KeyError) as e:
@@ -1153,11 +1153,11 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             if isinstance(e, KeyError):
                 msg = f'Missing key entry for {msg}.'
             self.msg_aggregator.add_error(
-                f'Error processing a {str(self.location)} fiat payment. Check logs '
+                f'Error processing a {self.location!s} fiat payment. Check logs '
                 f'for details. Ignoring it.',
             )
             log.error(
-                f'Error processing a {str(self.location)} fiat payment',
+                f'Error processing a {self.location!s} fiat payment',
                 asset_movement=raw_data,
                 error=msg,
             )
@@ -1191,7 +1191,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         try:
             if 'status' not in raw_data or raw_data['status'] not in ('Successful', 'Finished'):
                 log.error(
-                    f'Found {str(self.location)} fiat deposit/withdrawal with failed status. Ignoring it.',  # noqa: E501
+                    f'Found {self.location!s} fiat deposit/withdrawal with failed status. Ignoring it.',  # noqa: E501
                 )
                 return None
 
@@ -1204,12 +1204,12 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             address = deserialize_asset_movement_address(raw_data, 'address', asset)
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
-                f'Found {str(self.location)} fiat deposit/withdrawal with unknown asset '
+                f'Found {self.location!s} fiat deposit/withdrawal with unknown asset '
                 f'{e.identifier}. Ignoring it.',
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
-                f'Found {str(self.location)} fiat deposit/withdrawal with unsupported asset '
+                f'Found {self.location!s} fiat deposit/withdrawal with unsupported asset '
                 f'{e.identifier}. Ignoring it.',
             )
         except (DeserializationError, KeyError) as e:
@@ -1217,11 +1217,11 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             if isinstance(e, KeyError):
                 msg = f'Missing key entry for {msg}.'
             self.msg_aggregator.add_error(
-                f'Error processing a {str(self.location)} fiat deposit/withdrawal. Check logs '
+                f'Error processing a {self.location!s} fiat deposit/withdrawal. Check logs '
                 f'for details. Ignoring it.',
             )
             log.error(
-                f'Error processing a {str(self.location)} fiat deposit/withdrawal',
+                f'Error processing a {self.location!s} fiat deposit/withdrawal',
                 asset_movement=raw_data,
                 error=msg,
             )
@@ -1269,12 +1269,12 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             amount = deserialize_asset_amount_force_positive(raw_data['amount'])
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
-                f'Found {str(self.location)} deposit/withdrawal with unknown asset '
+                f'Found {self.location!s} deposit/withdrawal with unknown asset '
                 f'{e.identifier}. Ignoring it.',
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
-                f'Found {str(self.location)} deposit/withdrawal with unsupported asset '
+                f'Found {self.location!s} deposit/withdrawal with unsupported asset '
                 f'{e.identifier}. Ignoring it.',
             )
         except (DeserializationError, KeyError) as e:
@@ -1282,11 +1282,11 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             if isinstance(e, KeyError):
                 msg = f'Missing key entry for {msg}.'
             self.msg_aggregator.add_error(
-                f'Error processing a {str(self.location)} deposit/withdrawal. Check logs '
+                f'Error processing a {self.location!s} deposit/withdrawal. Check logs '
                 f'for details. Ignoring it.',
             )
             log.error(
-                f'Error processing a {str(self.location)} deposit/withdrawal',
+                f'Error processing a {self.location!s} deposit/withdrawal',
                 asset_movement=raw_data,
                 error=msg,
             )

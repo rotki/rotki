@@ -55,7 +55,7 @@ def get_yearn_vaults_events(
         try:
             events.append(YearnVaultEvent.deserialize_from_db(result))
         except (DeserializationError, UnknownAsset) as e:
-            msg = f'Failed to read yearn vault event from database due to {str(e)}'
+            msg = f'Failed to read yearn vault event from database due to {e!s}'
             msg_aggregator.add_warning(msg)
 
     return events
@@ -78,7 +78,7 @@ def get_yearn_vaults_v2_events(
         try:
             events.append(YearnVaultEvent.deserialize_from_db(result))
         except (DeserializationError, UnknownAsset) as e:
-            msg = f'Failed to read yearn vault event from database due to {str(e)}'
+            msg = f'Failed to read yearn vault event from database due to {e!s}'
             msg_aggregator.add_warning(msg)
 
     return events

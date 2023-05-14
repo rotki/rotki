@@ -53,12 +53,12 @@ class DBSnapshot:
             except UnknownAsset as e:
                 self.msg_aggregator.add_error(
                     f'Failed to include balance for asset {data[2]}. Verify that the '
-                    f'asset is in your list of known assets. Skipping this entry. {str(e)}',
+                    f'asset is in your list of known assets. Skipping this entry. {e!s}',
                 )
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Failed to read location {data[0]} during balances retrieval.'
-                    f'Skipping. {str(e)}',
+                    f'Skipping. {e!s}',
                 )
         return balances_data
 

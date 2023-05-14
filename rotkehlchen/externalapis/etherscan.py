@@ -220,7 +220,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                         ) from e
                     continue
 
-                raise RemoteError(f'{self.chain} Etherscan API request failed due to {str(e)}') from e  # noqa: E501
+                raise RemoteError(f'{self.chain} Etherscan API request failed due to {e!s}') from e  # noqa: E501
 
             if response.status_code != 200:
                 raise RemoteError(
@@ -287,7 +287,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             except KeyError as e:
                 raise RemoteError(
                     f'Unexpected format of {self.chain} Etherscan response for request {response.url}. '  # noqa: E501
-                    f'Missing key entry for {str(e)}. Response was: {response.text}',
+                    f'Missing key entry for {e!s}. Response was: {response.text}',
                 ) from e
 
             # success, break out of the loop and return result
@@ -409,7 +409,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                                 (GENESIS_HASH, self.chain.to_chain_id().serialize_for_db(), HISTORY_MAPPING_STATE_DECODED),  # noqa: E501
                             )
                 except DeserializationError as e:
-                    self.msg_aggregator.add_warning(f'{str(e)}. Skipping transaction')
+                    self.msg_aggregator.add_warning(f'{e!s}. Skipping transaction')
                     continue
 
                 if tx.timestamp > last_ts and len(transactions) >= TRANSACTIONS_BATCH_NUM:

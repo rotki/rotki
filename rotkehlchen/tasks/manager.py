@@ -320,7 +320,7 @@ class TaskManager():
 
             evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
             address = random.choice(queriable_accounts)
-            task_name = f'Query {str(blockchain)} transactions for {address}'
+            task_name = f'Query {blockchain!s} transactions for {address}'
             log.debug(f'Scheduling task to {task_name}')
             self.last_evm_tx_query_ts[(address, blockchain)] = now
             # Since this task is heavy we spawn it only for one chain at a time.
@@ -354,7 +354,7 @@ class TaskManager():
                 return None
 
             evm_inquirer = self.chains_aggregator.get_chain_manager(blockchain)
-            task_name = f'Query {len(hash_results)} {str(blockchain)} transactions receipts'
+            task_name = f'Query {len(hash_results)} {blockchain!s} transactions receipts'
             log.debug(f'Scheduling task to {task_name}')
             # Since this task is heavy we spawn it only for one chain at a time.
             return [self.greenlet_manager.spawn_and_track(
@@ -377,7 +377,7 @@ class TaskManager():
             for exchange in self.exchange_manager.iterate_exchanges():
                 if exchange.location in (Location.BINANCE, Location.BINANCEUS):
                     continue  # skip binance due to the way their history is queried
-                queried_range = self.database.get_used_query_range(cursor, f'{str(exchange.location)}_trades')  # noqa: E501
+                queried_range = self.database.get_used_query_range(cursor, f'{exchange.location!s}_trades')  # noqa: E501
                 end_ts = queried_range[1] if queried_range else 0
                 if now - max(self.last_exchange_query_ts[exchange.location_id()], end_ts) > EXCHANGE_QUERY_FREQUENCY:  # noqa: E501
                     queriable_exchanges.append(exchange)
@@ -439,7 +439,7 @@ class TaskManager():
             except (NoPriceForGivenTimestamp, RemoteError) as e:
                 log.error(
                     f'Failed to find price for {asset} at {timestamp} in history '
-                    f'event with {identifier=}. {str(e)}.',
+                    f'event with {identifier=}. {e!s}.',
                 )
                 self.base_entries_ignore_set.add(identifier)
                 continue
@@ -470,7 +470,7 @@ class TaskManager():
                 return None
 
             evm_inquirer = self.chains_aggregator.get_chain_manager(blockchain)
-            task_name = f'decode {number_of_tx_to_decode} {str(blockchain)} trasactions'
+            task_name = f'decode {number_of_tx_to_decode} {blockchain!s} trasactions'
             log.debug(f'Scheduling periodic task to {task_name}')
             # Since this task is heavy we spawn it only for one chain at a time.
             return [self.greenlet_manager.spawn_and_track(

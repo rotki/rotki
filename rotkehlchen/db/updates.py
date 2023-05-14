@@ -83,7 +83,7 @@ class RotkiDataUpdater:
         try:
             response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Failed to query {url} during assets update: {str(e)}') from e
+            raise RemoteError(f'Failed to query {url} during assets update: {e!s}') from e
 
         try:
             json_data = response.json()
@@ -238,7 +238,7 @@ class RotkiDataUpdater:
                     self.msg_aggregator.add_error(
                         f'Could not deserialize address {raw_entry["address"]} or blockchain '
                         f'{raw_entry["blockchain"]} that was seen in a global addressbook update. '
-                        f'Please report it to the rotki team. {str(e)}',
+                        f'Please report it to the rotki team. {e!s}',
                     )
                     continue
 
@@ -345,7 +345,7 @@ class RotkiDataUpdater:
         try:
             updates = query_file(file_url, is_json=True)
         except RemoteError as e:
-            log.warning(f'Failed to update {update_type.value} due to {str(e)}')
+            log.warning(f'Failed to update {update_type.value} due to {e!s}')
             return False, []
 
         update_content = updates.get(update_type.value)

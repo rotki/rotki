@@ -312,7 +312,7 @@ class GlobalDBHandler():
                 )
         except sqlite3.IntegrityError as e:
             raise InputError(
-                f'Failed to add asset {asset_id} into the assets table due to {str(e)}',
+                f'Failed to add asset {asset_id} into the assets table due to {e!s}',
             ) from e
 
     @staticmethod
@@ -609,7 +609,7 @@ class GlobalDBHandler():
             except DeserializationError as e:
                 log.debug(
                     f'Failed to read asset {identifier} from the DB due to '
-                    f'{str(e)}. Skipping',
+                    f'{e!s}. Skipping',
                 )
                 return None
 
@@ -717,7 +717,7 @@ class GlobalDBHandler():
                 except sqlite3.IntegrityError as e:
                     raise InputError(
                         f'Failed to add underlying tokens for {parent_token_identifier} '
-                        f'due to {str(e)}',
+                        f'due to {e!s}',
                     ) from e
             try:
                 write_cursor.execute(
@@ -732,7 +732,7 @@ class GlobalDBHandler():
             except sqlite3.IntegrityError as e:
                 raise InputError(
                     f'Failed to add underlying tokens for {parent_token_identifier} '
-                    f'due to {str(e)}',
+                    f'due to {e!s}',
                 ) from e
 
     @staticmethod
@@ -806,7 +806,7 @@ class GlobalDBHandler():
             )
         except UnknownAsset as e:
             log.error(
-                f'Found unknown swapped_for asset {str(e)} in '
+                f'Found unknown swapped_for asset {e!s} in '
                 f'the DB when deserializing an EvmToken',
             )
             return None
@@ -858,7 +858,7 @@ class GlobalDBHandler():
                     tokens.append(token)
                 except UnknownAsset as e:
                     log.error(
-                        f'Found unknown swapped_for asset {str(e)} in '
+                        f'Found unknown swapped_for asset {e!s} in '
                         f'the DB when deserializing an EvmToken',
                     )
 
@@ -1095,7 +1095,7 @@ class GlobalDBHandler():
                 )
         except sqlite3.IntegrityError as e:
             log.error(
-                f'One of the following asset ids caused a DB IntegrityError ({str(e)}): '
+                f'One of the following asset ids caused a DB IntegrityError ({e!s}): '
                 f'{",".join([x.identifier for x in assets])}',
             )  # should not ever happen but need to handle with informative log if it does
 
@@ -1162,10 +1162,10 @@ class GlobalDBHandler():
                         underlying_tokens=underlying_tokens,
                     )
                 except UnknownAsset as e:
-                    log.error(f'Asset with identifier {entry[0]} is missing either name, symbol or decimals. {str(e)}')  # noqa: E501
+                    log.error(f'Asset with identifier {entry[0]} is missing either name, symbol or decimals. {e!s}')  # noqa: E501
                     continue
                 except (DeserializationError, WrongAssetType) as e:
-                    log.error(f'Asset with identifier {entry[0]} has wrong asset type. {str(e)}')
+                    log.error(f'Asset with identifier {entry[0]} has wrong asset type. {e!s}')
                     continue
 
                 assets.append(asset)
@@ -1221,7 +1221,7 @@ class GlobalDBHandler():
         except sqlite3.IntegrityError as e:
             # roll back any of the executemany that may have gone in
             log.error(
-                f'One of the given historical price entries caused a DB error. {str(e)}. '
+                f'One of the given historical price entries caused a DB error. {e!s}. '
                 f'Will attempt to input them one by one',
             )
 
@@ -1236,7 +1236,7 @@ class GlobalDBHandler():
                         )
                     except sqlite3.IntegrityError as entry_error:
                         log.error(
-                            f'Failed to add {str(entry)} due to {str(entry_error)}. Skipping entry addition',  # noqa: E501
+                            f'Failed to add {entry!s} due to {entry_error!s}. Skipping entry addition',  # noqa: E501
                         )
 
     @staticmethod
@@ -1259,7 +1259,7 @@ class GlobalDBHandler():
                 )
         except sqlite3.IntegrityError as e:
             log.error(
-                f'Failed to add single historical price. {str(e)}. ',
+                f'Failed to add single historical price. {e!s}. ',
             )
             return False
 
@@ -1320,7 +1320,7 @@ class GlobalDBHandler():
                 )
             except sqlite3.IntegrityError as e:
                 # Means foreign keys failure. Should not happen since is checked by marshmallow
-                raise InputError(f'Failed to add manual current price due to: {str(e)}') from e
+                raise InputError(f'Failed to add manual current price due to: {e!s}') from e
 
             write_cursor.execute(
                 'SELECT from_asset, to_asset FROM price_history WHERE from_asset=? OR to_asset=?',
@@ -1387,7 +1387,7 @@ class GlobalDBHandler():
             )
             if write_cursor.rowcount != 1:
                 raise InputError(
-                    f'Not found manual current price to delete for asset {str(asset)}',
+                    f'Not found manual current price to delete for asset {asset!s}',
                 )
 
             return pairs_to_invalidate
@@ -1446,7 +1446,7 @@ class GlobalDBHandler():
         except sqlite3.IntegrityError as e:
             log.error(
                 f'Failed to edit manual historical prices from {entry.from_asset} '
-                f'to {entry.to_asset} at timestamp: {str(entry.timestamp)} due to {str(e)}',
+                f'to {entry.to_asset} at timestamp: {entry.timestamp!s} due to {e!s}',
             )
             return False
 
@@ -1477,7 +1477,7 @@ class GlobalDBHandler():
             if write_cursor.rowcount != 1:
                 log.error(
                     f'Failed to delete historical price from {from_asset} to {to_asset} '
-                    f'and timestamp: {str(timestamp)}.',
+                    f'and timestamp: {timestamp!s}.',
                 )
                 return False
 
@@ -1501,7 +1501,7 @@ class GlobalDBHandler():
         except sqlite3.IntegrityError as e:
             log.error(
                 f'Failed to delete historical prices from {from_asset} to {to_asset} '
-                f'and source: {str(source)} due to {str(e)}',
+                f'and source: {source!s} due to {e!s}',
             )
 
     @staticmethod
@@ -1612,7 +1612,7 @@ class GlobalDBHandler():
                     user_db.update_owned_assets_in_globaldb(cursor)
 
             except sqlite3.Error as e:
-                log.error(f'Failed to restore assets in globaldb due to {str(e)}')
+                log.error(f'Failed to restore assets in globaldb due to {e!s}')
                 return False, 'Failed to restore assets. Read logs to get more information.'
             finally:  # on the way out always detach the DB. Make sure no transaction is active
                 with self.conn.critical_section_and_transaction_lock():
@@ -1668,7 +1668,7 @@ class GlobalDBHandler():
                 # TODO: think about how to implement multiassets insertion
                 write_cursor.switch_foreign_keys('ON')
         except sqlite3.Error as e:
-            log.error(f'Failed to restore assets in globaldb due to {str(e)}')
+            log.error(f'Failed to restore assets in globaldb due to {e!s}')
             return False, 'Failed to restore assets. Read logs to get more information.'
         finally:  # on the way out always detach the DB. Make sure no transaction is active
             with self.conn.transaction_lock, self.conn.read_ctx() as read_cursor:

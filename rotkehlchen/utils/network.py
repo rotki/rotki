@@ -47,7 +47,7 @@ def request_get(
     try:
         result = json.loads(response.text)
     except json.decoder.JSONDecodeError as e:
-        raise UnableToDecryptRemoteData(f'{url} returned malformed json. Error: {str(e)}') from e
+        raise UnableToDecryptRemoteData(f'{url} returned malformed json. Error: {e!s}') from e
 
     return result
 
@@ -111,7 +111,7 @@ def retry_calls(
         except requests.exceptions.RequestException as e:
             tries -= 1
             log.debug(
-                f'In retry_call for {location}-{method_name}. Got error {str(e)} '
+                f'In retry_call for {location}-{method_name}. Got error {e!s} '
                 f'Trying again ... with {tries} tries left',
             )
             if tries == 0:
@@ -144,7 +144,7 @@ def query_file(url: str, is_json: bool = False) -> Union[str, dict[str, Any]]:
     try:
         response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
     except requests.exceptions.RequestException as e:
-        raise RemoteError(f'Failed to query file {url} due to: {str(e)}') from e
+        raise RemoteError(f'Failed to query file {url} due to: {e!s}') from e
 
     if response.status_code != 200:
         raise RemoteError(

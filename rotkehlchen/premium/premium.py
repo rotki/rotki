@@ -159,7 +159,7 @@ class Premium():
         try:
             self.reset_credentials(credentials)
         except BinasciiError as e:
-            raise IncorrectApiKeyFormat(f'Secret Key formatting error: {str(e)}') from e
+            raise IncorrectApiKeyFormat(f'Secret Key formatting error: {e!s}') from e
 
         active = self.is_active()
         if not active:
@@ -236,7 +236,7 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT * 10,
             )
         except requests.exceptions.RequestException as e:
-            msg = f'Could not connect to rotki server due to {str(e)}'
+            msg = f'Could not connect to rotki server due to {e!s}'
             log.error(msg)
             raise RemoteError(msg) from e
 
@@ -264,7 +264,7 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            msg = f'Could not connect to rotki server due to {str(e)}'
+            msg = f'Could not connect to rotki server due to {e!s}'
             log.error(msg)
             raise RemoteError(msg) from e
 
@@ -291,7 +291,7 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            msg = f'Could not connect to rotki server due to {str(e)}'
+            msg = f'Could not connect to rotki server due to {e!s}'
             log.error(msg)
             raise RemoteError(msg) from e
 
@@ -324,7 +324,7 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            msg = f'Could not connect to rotki server due to {str(e)}'
+            msg = f'Could not connect to rotki server due to {e!s}'
             log.error(msg)
             raise RemoteError(msg) from e
 
@@ -352,7 +352,7 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            msg = f'Could not connect to rotki server due to {str(e)}'
+            msg = f'Could not connect to rotki server due to {e!s}'
             log.error(msg)
             raise RemoteError(msg) from e
 

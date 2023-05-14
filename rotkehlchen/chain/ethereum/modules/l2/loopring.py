@@ -338,7 +338,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
         try:
             response = self.session.get(querystr, timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Loopring api query {querystr} failed due to {str(e)}') from e
+            raise RemoteError(f'Loopring api query {querystr} failed due to {e!s}') from e
         if response.status_code == HTTPStatus.BAD_REQUEST:
             try:
                 json_ret = json.loads(response.text)
@@ -436,7 +436,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
             except KeyError as e:
                 raise RemoteError(
                     f'Failed to query loopring balances because a balance entry '
-                    f'{balance_entry} did not contain key {str(e)}',
+                    f'{balance_entry} did not contain key {e!s}',
                 ) from e
             except DeserializationError as e:
                 raise RemoteError(
@@ -462,7 +462,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing loopring balance entry due to inability to '
-                    f'query USD price: {str(e)}. Skipping balance entry',
+                    f'query USD price: {e!s}. Skipping balance entry',
                 )
                 continue
 
@@ -500,7 +500,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
                 self.msg_aggregator.add_warning('The Loopring API key is not a valid key.')
                 continue
             except RemoteError as e:
-                log.debug(f'Skipping loopring query of address {address} due to {str(e)}')
+                log.debug(f'Skipping loopring query of address {address} due to {e!s}')
                 continue
 
             try:

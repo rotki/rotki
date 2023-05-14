@@ -138,7 +138,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             try:
                 _, decoded_data = decode_event_data_abi_str(tx_log, GOVERNORALPHA_PROPOSE_ABI)
             except DeserializationError as e:
-                log.debug(f'Failed to decode governor alpha event due to {str(e)}')
+                log.debug(f'Failed to decode governor alpha event due to {e!s}')
                 return DEFAULT_DECODING_OUTPUT
 
             proposal_id = decoded_data[0]
@@ -169,7 +169,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
             except (UnknownAsset, WrongAssetType) as e:
                 log.error(
                     f'Failed to enrich transfer due to unknown asset '
-                    f'{context.event.asset}. {str(e)}',
+                    f'{context.event.asset}. {e!s}',
                 )
                 # Don't try other rules since all of them will fail to resolve the asset
                 return FAILED_ENRICHMENT_OUTPUT

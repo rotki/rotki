@@ -696,7 +696,7 @@ class AaveGraphInquirer(AaveInquirer):
         """
         if 'users' not in query or len(query['users']) == 0:
             # If there is no information on the query finish the execution
-            log.debug(f'Aave subgraph query has no information for user. {str(query)}')
+            log.debug(f'Aave subgraph query has no information for user. {query!s}')
             return
         user_result = query['users'][0]
         msg = 'Failed to obtain a valid result from Aave graph.'
@@ -715,7 +715,7 @@ class AaveGraphInquirer(AaveInquirer):
                 to_ts=to_ts,
             )
         except KeyError as e:
-            self.msg_aggregator.add_warning(msg + f' Missing key {str(e)}')
+            self.msg_aggregator.add_warning(msg + f' Missing key {e!s}')
             return
 
         for key, value in user_result.items():

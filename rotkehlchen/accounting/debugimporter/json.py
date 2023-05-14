@@ -35,7 +35,7 @@ class DebugHistoryImporter:
             with open(filepath, encoding='utf-8') as f:
                 debug_data = json.load(f)
         except (PermissionError, json.JSONDecodeError) as e:
-            error_msg = f'Failed to import history events due to: {str(e)}'
+            error_msg = f'Failed to import history events due to: {e!s}'
             return False, error_msg, {}
 
         has_required_types = (
@@ -67,7 +67,7 @@ class DebugHistoryImporter:
                 elif event_type == AccountingEventType.STAKING:
                     events.append(ValidatorDailyStats.deserialize(event))
         except (DeserializationError, KeyError, UnknownAsset) as e:
-            error_msg = f'Error while adding events due to: {str(e)}'
+            error_msg = f'Error while adding events due to: {e!s}'
             log.exception(error_msg)
             return False, error_msg, {}
 
@@ -75,7 +75,7 @@ class DebugHistoryImporter:
         try:
             settings = ModifiableSettingsSchema().load(debug_data['settings'], unknown=EXCLUDE)
         except (ValidationError, KeyError) as e:
-            error_msg = f'Error while adding settings due to: {str(e)}'
+            error_msg = f'Error while adding settings due to: {e!s}'
             log.error(error_msg)
             return False, error_msg, {}
         with self.db.user_write() as cursor:
@@ -95,11 +95,11 @@ class DebugHistoryImporter:
                             identifiers=action_ids,
                         )
                 except (DeserializationError, InputError) as e:
-                    error_msg = f'Error while adding ignored action identifiers due to: {str(e)}'
+                    error_msg = f'Error while adding ignored action identifiers due to: {e!s}'
                     log.error(error_msg)
                     return False, error_msg, {}
         except KeyError as e:
-            error_msg = f'Error while adding history events due to: {str(e)}'
+            error_msg = f'Error while adding history events due to: {e!s}'
             log.error(error_msg)
             return False, error_msg, {}
 
@@ -111,7 +111,7 @@ class DebugHistoryImporter:
                 error_msg = 'Expected integers as type for `from_timestamp` & `to_timestamp`'
                 return False, error_msg, {}
         except KeyError as e:
-            error_msg = f'Error while validating pnl settings due to: {str(e)}'
+            error_msg = f'Error while validating pnl settings due to: {e!s}'
             return False, error_msg, {}
 
         return True, '', {'events': events, 'pnl_settings': debug_data['pnl_settings']}

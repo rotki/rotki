@@ -61,7 +61,7 @@ def collateral_type_to_underlying_asset(collateral_type: str) -> Optional[Crypto
     try:
         underlying_asset = Asset(info[1]).resolve_to_crypto_asset()
     except (WrongAssetType, UnknownAsset) as e:
-        log.error(f'Ilk {collateral_type} asset {info[0]} could not be initialized due to {str(e)}.')  # noqa: E501
+        log.error(f'Ilk {collateral_type} asset {info[0]} could not be initialized due to {e!s}.')  # noqa: E501
         return None
 
     # note sure if special case needed but this makes it equivalent with how code was with mappings
@@ -100,7 +100,7 @@ def ilk_cache_foreach(
         try:
             underlying_asset = Asset(info[1]).resolve_to_crypto_asset()
         except (WrongAssetType, UnknownAsset) as e:
-            log.error(f'Ilk {ilk} asset {info[1]} could not be initialized due to {str(e)}. Skipping')  # noqa: E501
+            log.error(f'Ilk {ilk} asset {info[1]} could not be initialized due to {e!s}. Skipping')  # noqa: E501
             continue
 
         yield ilk, int(info[0]), underlying_asset, info[2]
@@ -194,7 +194,7 @@ def update_ilk_registry(
                 deployed_block = ethereum.get_contract_deployed_block(join_address)
                 abi = ethereum.etherscan.get_contract_abi(join_address)
             except RemoteError as e:
-                log.error(f'Did not add ilk {ilk} due to inability to query contract {join_address} metadata: {str(e)}')  # noqa: E501
+                log.error(f'Did not add ilk {ilk} due to inability to query contract {join_address} metadata: {e!s}')  # noqa: E501
                 continue
 
             if None in (deployed_block, abi):

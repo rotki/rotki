@@ -399,11 +399,11 @@ def _remove_ftx_data(write_cursor: 'DBCursor') -> None:
     )
     write_cursor.execute(
         'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-        (f'{str(Location.FTX)}\\_%', '\\'),
+        (f'{Location.FTX!s}\\_%', '\\'),
     )
     write_cursor.execute(
         'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-        (f'{str(Location.FTXUS)}\\_%', '\\'),
+        (f'{Location.FTXUS!s}\\_%', '\\'),
     )
     non_syncing_exchanges_in_db = write_cursor.execute(
         'SELECT value FROM settings WHERE name="non_syncing_exchanges"',

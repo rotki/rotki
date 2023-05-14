@@ -190,8 +190,8 @@ Activity from uphold with uphold transaction id:
                 except DeserializationError as e:
                     self.db.msg_aggregator.add_warning(
                         f'Deserialization error during uphold CSV import. '
-                        f'{str(e)}. Ignoring entry',
+                        f'{e!s}. Ignoring entry',
                     )
                     continue
                 except KeyError as e:
-                    raise InputError(f'Could not find key {str(e)} in csv row {str(row)}') from e
+                    raise InputError(f'Could not find key {e!s} in csv row {row!s}') from e

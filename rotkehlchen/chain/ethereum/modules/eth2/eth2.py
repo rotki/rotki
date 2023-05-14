@@ -394,7 +394,7 @@ class Eth2(EthereumModule):
                         with self.database.user_write() as write_cursor:
                             dbevents.add_history_event(write_cursor, event=withdrawal)
                     except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                        log.error(f'Could not write withdrawal: {withdrawal} to the DB due to {str(e)}')  # noqa: E501
+                        log.error(f'Could not write withdrawal: {withdrawal} to the DB due to {e!s}')  # noqa: E501
 
             with self.database.user_write() as write_cursor:
                 self.database.update_used_query_range(  # update last withdrawal query timestamp
@@ -567,7 +567,7 @@ class Eth2(EthereumModule):
         try:
             results = self.beaconchain.get_validator_data(indices_or_pubkeys=list(pubkey_to_data))  # noqa: E501
         except RemoteError as e:
-            log.error(f'During refreshing activated validator deposits got error: {str(e)}')
+            log.error(f'During refreshing activated validator deposits got error: {e!s}')
             return
 
         staking_changes = []
@@ -578,7 +578,7 @@ class Eth2(EthereumModule):
                 identifier, amount = pubkey_to_data[result['pubkey']]
                 validator_index = result['validatorindex']
             except KeyError as e:
-                log.error(f'During refreshing activated validator deposits missing key {str(e)} in result')  # noqa: E501
+                log.error(f'During refreshing activated validator deposits missing key {e!s} in result')  # noqa: E501
                 return
 
             staking_changes.append((validator_index, identifier))
@@ -613,7 +613,7 @@ class Eth2(EthereumModule):
             self.fetch_and_update_eth1_validator_data([address])
         except RemoteError as e:
             self.msg_aggregator.add_error(
-                f'Did not manage to query beaconcha.in api for address {address} due to {str(e)}.'
+                f'Did not manage to query beaconcha.in api for address {address} due to {e!s}.'
                 f' If you have Eth2 staked balances the final balance results may not be accurate',
             )
 

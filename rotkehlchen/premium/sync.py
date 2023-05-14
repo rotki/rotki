@@ -103,7 +103,7 @@ class PremiumSyncManager():
             result = self.premium.pull_data()
         except (RemoteError, PremiumAuthenticationError) as e:
             log.debug('sync from server -- pulling failed.', error=str(e))
-            return False, f'Pulling failed: {str(e)}'
+            return False, f'Pulling failed: {e!s}'
 
         if result['data'] is None:
             log.debug('sync from server -- no data found.')
@@ -247,7 +247,7 @@ class PremiumSyncManager():
             self.data.data_directory / f'auto_backup_{username}_{ts_now()}',
         )
         raise PremiumAuthenticationError(
-            f'Could not verify keys for the new account. {str(original_exception)}',
+            f'Could not verify keys for the new account. {original_exception!s}',
         ) from original_exception
 
     def try_premium_at_start(
@@ -286,7 +286,7 @@ class PremiumSyncManager():
             except (PremiumAuthenticationError, RemoteError) as e:
                 message = (
                     f'Could not authenticate with the rotkehlchen server with '
-                    f'the API keys found in the Database. Error: {str(e)}'
+                    f'the API keys found in the Database. Error: {e!s}'
                 )
                 log.error(message)
                 raise PremiumAuthenticationError(message) from e

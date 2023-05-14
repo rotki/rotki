@@ -56,7 +56,7 @@ def find_ens_mappings(
     try:
         query_results = ethereum_inquirer.ens_reverse_lookup(addresses_to_query)
     except (RemoteError, BlockchainQueryError) as e:
-        raise RemoteError(f'Error occurred while querying ens names: {str(e)}') from e
+        raise RemoteError(f'Error occurred while querying ens names: {e!s}') from e
 
     with dbens.db.user_write() as write_cursor:
         ens_mappings = dbens.update_values(

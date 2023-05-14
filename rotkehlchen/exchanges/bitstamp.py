@@ -202,7 +202,7 @@ class Bitstamp(ExchangeInterface):
                 log.error(str(e))
                 self.msg_aggregator.add_error(
                     f'Error processing Bitstamp balance result due to inability to '
-                    f'query USD price: {str(e)}. Skipping balance entry.',
+                    f'query USD price: {e!s}. Skipping balance entry.',
                 )
                 continue
 
@@ -358,7 +358,7 @@ class Bitstamp(ExchangeInterface):
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(
-                f'Bitstamp {method} request at {request_url} connection error: {str(e)}.',
+                f'Bitstamp {method} request at {request_url} connection error: {e!s}.',
             ) from e
 
         return response

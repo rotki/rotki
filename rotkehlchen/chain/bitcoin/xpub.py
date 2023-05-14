@@ -323,7 +323,7 @@ class XpubManager():
                 except RemoteError as e:
                     log.warning(
                         f'Failed to derive new xpub addresses from xpub: {xpub_data.xpub.xpub} '
-                        f'and derivation_path: {xpub_data.derivation_path} due to: {str(e)}',
+                        f'and derivation_path: {xpub_data.derivation_path} due to: {e!s}',
                     )
                     continue
 

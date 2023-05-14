@@ -157,7 +157,7 @@ class Liquity(HasDSProxy):
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(
                         f'Ignoring Liquity trove information. '
-                        f'Failed to decode contract information. {str(e)}.',
+                        f'Failed to decode contract information. {e!s}.',
                     )
         return data
 
@@ -199,7 +199,7 @@ class Liquity(HasDSProxy):
             )
         except (RemoteError, BlockchainQueryError) as e:
             self.msg_aggregator.add_error(
-                f'Failed to query information about stability pool {str(e)}',
+                f'Failed to query information about stability pool {e!s}',
             )
             return {}
 

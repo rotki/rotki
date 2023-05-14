@@ -296,7 +296,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 **kwargs,
             )
         except (ModuleInitializationFailure, UnknownAsset, WrongAssetType) as e:
-            self.msg_aggregator.add_error(f'Failed to activate {module_name} due to: {str(e)}')
+            self.msg_aggregator.add_error(f'Failed to activate {module_name} due to: {e!s}')
             return None
 
         self.eth_modules[module_name] = instance
@@ -818,7 +818,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         except BadFunctionCallOutput as e:
             log.error(
                 f'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
-                f'exception: {str(e)}',
+                f'exception: {e!s}',
             )
             raise EthSyncError(
                 f'Tried to use the {manager.node_inquirer.blockchain.value} chain of the provided '
@@ -968,7 +968,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             except BadFunctionCallOutput as e:
                 log.error(
                     f'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
-                    f'exception: {str(e)}',
+                    f'exception: {e!s}',
                 )
                 raise EthSyncError(
                     'Tried to use the ethereum chain of the provided client to query '
@@ -1291,7 +1291,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 elif chain_manager.node_inquirer.etherscan.has_activity(address) is False:  # noqa: E501
                     continue
             except RemoteError as e:
-                log.error(f'{str(e)} when checking if {address} is active at {chain}')
+                log.error(f'{e!s} when checking if {address} is active at {chain}')
                 continue
 
             active_chains.append(chain)
@@ -1319,7 +1319,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 log.debug(f'Not adding {address} to {chain} since it already exists')
                 continue
             except RemoteError as e:
-                log.error(f'Not adding {address} to {chain} due to {str(e)}')
+                log.error(f'Not adding {address} to {chain} due to {e!s}')
                 continue
 
             added_chains.append(chain)

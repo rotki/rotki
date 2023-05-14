@@ -91,7 +91,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         self.first_connection_made = False
         self.session = requests.session()
         set_user_agent(self.session)
-        log.info(f'Initialized {str(location)} exchange {name}')
+        log.info(f'Initialized {location!s} exchange {name}')
 
     def reset_to_db_credentials(self) -> None:
         """Resets the exchange credentials to the ones saved in the DB"""
@@ -254,7 +254,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         log.debug(f'Querying trade history for {self.name} exchange')
         if only_cache is False:
             ranges = DBQueryRanges(self.db)
-            location_string = f'{str(self.location)}_trades_{self.name}'
+            location_string = f'{self.location!s}_trades_{self.name}'
             with self.db.conn.read_ctx() as cursor:
                 ranges_to_query = ranges.get_location_query_ranges(
                     cursor=cursor,
@@ -319,7 +319,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 location=self.location,
             )
             ranges = DBQueryRanges(self.db)
-            location_string = f'{str(self.location)}_margins_{self.name}'
+            location_string = f'{self.location!s}_margins_{self.name}'
             ranges_to_query = ranges.get_location_query_ranges(
                 cursor=cursor,
                 location_string=location_string,
@@ -381,7 +381,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 return asset_movements
 
             ranges = DBQueryRanges(self.db)
-            location_string = f'{str(self.location)}_asset_movements_{self.name}'
+            location_string = f'{self.location!s}_asset_movements_{self.name}'
             ranges_to_query = ranges.get_location_query_ranges(
                 cursor=cursor,
                 location_string=location_string,
@@ -437,7 +437,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 return ledger_actions
 
             ranges = DBQueryRanges(self.db)
-            location_string = f'{str(self.location)}_ledger_actions_{self.name}'
+            location_string = f'{self.location!s}_ledger_actions_{self.name}'
             ranges_to_query = ranges.get_location_query_ranges(
                 cursor=cursor,
                 location_string=location_string,

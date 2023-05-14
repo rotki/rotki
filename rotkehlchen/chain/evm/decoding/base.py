@@ -168,7 +168,7 @@ class BaseDecoderTools():
             except IndexError as e:
                 log.debug(
                     f'At decoding of token {token.evm_address} as ERC721 got '
-                    f'insufficient number of topics: {tx_log.topics} and error: {str(e)}',
+                    f'insufficient number of topics: {tx_log.topics} and error: {e!s}',
                 )
                 return None
 

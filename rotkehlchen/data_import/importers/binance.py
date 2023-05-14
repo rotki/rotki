@@ -404,10 +404,10 @@ def _group_binance_rows(
             csv_row['Change'] = deserialize_asset_amount(csv_row['Change'])
             multirows[timestamp].append(csv_row)
         except (DeserializationError, UnknownAsset) as e:
-            log.warning(f'Skipped binance csv row {csv_row} because of {str(e)}')
+            log.warning(f'Skipped binance csv row {csv_row} because of {e!s}')
             skipped_count += 1
         except KeyError as e:
-            log.error(f'Malformed binance csv columns! Broke on row {csv_row}. {str(e)}')
+            log.error(f'Malformed binance csv columns! Broke on row {csv_row}. {e!s}')
             return len(rows), {}
 
     return skipped_count, multirows

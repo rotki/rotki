@@ -200,7 +200,7 @@ class Bitmex(ExchangeInterface):
         try:
             response = getattr(self.session, verb)(request_url, data=data)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Bitmex API request failed due to {str(e)}') from e
+            raise RemoteError(f'Bitmex API request failed due to {e!s}') from e
 
         if response.status_code not in (200, 401):
             raise RemoteError(
@@ -249,7 +249,7 @@ class Bitmex(ExchangeInterface):
             # Bitmex shows only BTC balance
             usd_price = Inquirer().find_usd_price(self.btc)
         except RemoteError as e:
-            msg = f'Bitmex API request failed due to: {str(e)}'
+            msg = f'Bitmex API request failed due to: {e!s}'
             log.error(msg)
             return None, msg
 
@@ -257,7 +257,7 @@ class Bitmex(ExchangeInterface):
         try:
             amount = satoshis_to_btc(deserialize_asset_amount(resp['amount']))
         except DeserializationError as e:
-            msg = f'Bitmex API request failed. Failed to deserialized amount due to {str(e)}'
+            msg = f'Bitmex API request failed. Failed to deserialized amount due to {e!s}'
             log.error(msg)
             return None, msg
 

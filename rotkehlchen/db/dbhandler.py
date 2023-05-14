@@ -267,7 +267,7 @@ class DBHandler:
             dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
         except (SystemPermissionError, FileNotFoundError) as e:
             # If there is problems opening the DB at destruction just log and exit
-            log.error(f'At DB teardown could not open the DB: {str(e)}')
+            log.error(f'At DB teardown could not open the DB: {e!s}')
             return
 
         with open(self.user_data_dir / DBINFO_FILENAME, 'w') as f:
@@ -456,7 +456,7 @@ class DBHandler:
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             log.error(
                 f'At change password could not re-key the open {conn_attribute} '
-                f'database: {str(e)}',
+                f'database: {e!s}',
             )
             return False
         return True
@@ -526,7 +526,7 @@ class DBHandler:
             self._connect()
         except SystemPermissionError as e:
             raise AssertionError(
-                f'Permission error when reopening the DB. {str(e)}. Should never happen here',
+                f'Permission error when reopening the DB. {e!s}. Should never happen here',
             ) from e
         self._run_actions_after_first_connection()
         # all went okay, remove the original temp backup
@@ -871,7 +871,7 @@ class DBHandler:
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing AMM event from the DB. Skipping event. '
-                    f'Error was: {str(e)}',
+                    f'Error was: {e!s}',
                 )
                 continue
             except UnknownAsset as e:
@@ -986,7 +986,7 @@ class DBHandler:
             exchange_name: Optional[str] = None,
     ) -> None:
         """Delete the query ranges for the given exchange name"""
-        names_to_delete = f'{str(location)}\\_%'
+        names_to_delete = f'{location!s}\\_%'
         if exchange_name is not None:
             names_to_delete += f'\\_{exchange_name}'
         write_cursor.execute(
@@ -1049,7 +1049,7 @@ class DBHandler:
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                 raise InputError(
                     f'Tried to add a timed_location_data for '
-                    f'{str(Location.deserialize_from_db(entry.location))} at'
+                    f'{Location.deserialize_from_db(entry.location)!s} at'
                     f' already existing timestamp {entry.time}.',
                 ) from e
 
@@ -1330,7 +1330,7 @@ class DBHandler:
             except (DeserializationError, UnknownAsset, UnsupportedAsset, ValueError) as e:
                 # ValueError would be due to FVal failing
                 self.msg_aggregator.add_warning(
-                    f'Unexpected data in a ManuallyTrackedBalance entry in the DB: {str(e)}',
+                    f'Unexpected data in a ManuallyTrackedBalance entry in the DB: {e!s}',
                 )
 
         return data
@@ -1351,7 +1351,7 @@ class DBHandler:
                 entry.id = write_cursor.lastrowid
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
-                f'One of the manually tracked balance entries already exists in the DB. {str(e)}',
+                f'One of the manually tracked balance entries already exists in the DB. {e!s}',
             ) from e
 
         insert_tag_mappings(write_cursor=write_cursor, data=data, object_reference_keys=['id'])
@@ -1423,7 +1423,7 @@ class DBHandler:
         locations = []
 
         for key, val in data['assets'].items():
-            msg = f'at this point the key should be of Asset type and not {type(key)} {str(key)}'
+            msg = f'at this point the key should be of Asset type and not {type(key)} {key!s}'
             assert isinstance(key, Asset), msg
             balances.append(DBAssetBalance(
                 category=BalanceType.ASSET,
@@ -1434,7 +1434,7 @@ class DBHandler:
             ))
 
         for key, val in data['liabilities'].items():
-            msg = f'at this point the key should be of Asset type and not {type(key)} {str(key)}'
+            msg = f'at this point the key should be of Asset type and not {type(key)} {key!s}'
             assert isinstance(key, Asset), msg
             balances.append(DBAssetBalance(
                 category=BalanceType.LIABILITY,
@@ -1473,7 +1473,7 @@ class DBHandler:
             binance_selected_trade_pairs: Optional[list[str]] = None,
     ) -> None:
         if location not in SUPPORTED_EXCHANGES:
-            raise InputError(f'Unsupported exchange {str(location)}')
+            raise InputError(f'Unsupported exchange {location!s}')
 
         with self.user_write() as cursor:
             cursor.execute(
@@ -1507,7 +1507,7 @@ class DBHandler:
     ) -> None:
         """May raise InputError if something is wrong with editing the DB"""
         if location not in SUPPORTED_EXCHANGES:
-            raise InputError(f'Unsupported exchange {str(location)}')
+            raise InputError(f'Unsupported exchange {location!s}')
 
         if any(x is not None for x in (new_name, passphrase, api_key, api_secret)):
             querystr = 'UPDATE user_credentials SET '
@@ -1534,7 +1534,7 @@ class DBHandler:
             try:
                 write_cursor.execute(querystr, bindings)
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-                raise InputError(f'Could not update DB user_credentials due to {str(e)}') from e
+                raise InputError(f'Could not update DB user_credentials due to {e!s}') from e
 
         if location == Location.KRAKEN and kraken_account_type is not None:
             try:
@@ -1550,7 +1550,7 @@ class DBHandler:
                     ),
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-                raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501
+                raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
 
         location_is_binance = location in (Location.BINANCE, Location.BINANCEUS)
         if location_is_binance and binance_selected_trade_pairs is not None:
@@ -1561,16 +1561,16 @@ class DBHandler:
                 # from the possible new pairs
                 write_cursor.execute(
                     'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-                    (f'{str(location)}\\_trades\\_{name}', '\\'),
+                    (f'{location!s}\\_trades\\_{name}', '\\'),
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-                raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501
+                raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
 
         if new_name is not None:
             exchange_re = re.compile(r'(.*?)_(trades|margins|asset_movements|ledger_actions).*')
             used_ranges = write_cursor.execute(
                 'SELECT * from used_query_ranges WHERE name LIKE ?',
-                (f'{str(location)}_%_{name}',),
+                (f'{location!s}_%_{name}',),
             )
             entry_types = set()
             for used_range in used_ranges:
@@ -1582,7 +1582,7 @@ class DBHandler:
             write_cursor.executemany(
                 'UPDATE used_query_ranges SET name=? WHERE name=?',
                 [
-                    (f'{str(location)}_{entry_type}_{new_name}', f'{str(location)}_{entry_type}_{name}')  # noqa: E501
+                    (f'{location!s}_{entry_type}_{new_name}', f'{location!s}_{entry_type}_{name}')  # noqa: E501
                     for entry_type in entry_types
                 ],
             )
@@ -1628,7 +1628,7 @@ class DBHandler:
                 self.msg_aggregator.add_error(
                     f'Found unknown location {entry[1]} for exchange {entry[0]} at '
                     f'get_exchange_credentials. This could mean that you are opening '
-                    f'the app with an older version. {str(e)}',
+                    f'the app with an older version. {e!s}',
                 )
                 continue
             credentials[location].append(ExchangeApiCredentials(
@@ -1662,7 +1662,7 @@ class DBHandler:
                     try:
                         extras[key] = KrakenAccountType.deserialize(entry[1])
                     except DeserializationError as e:
-                        log.error(f'Couldnt deserialize kraken account type from DB. {str(e)}')
+                        log.error(f'Couldnt deserialize kraken account type from DB. {e!s}')
                         continue
                 else:
                     extras[key] = entry[1]
@@ -1750,14 +1750,14 @@ class DBHandler:
                             )
                         string_repr = db_tuple_to_str(entry, tuple_type)
                         log.debug(
-                            f'Did not add "{string_repr}" to the DB due to "{str(e)}". '
+                            f'Did not add "{string_repr}" to the DB due to "{e!s}". '
                             f'Either it already exists or some constraint was hit.',
                         )
                         continue
 
                     string_repr = db_tuple_to_str(entry, tuple_type)
                     log.warning(
-                        f'Did not add "{string_repr}" to the DB due to "{str(e)}".'
+                        f'Did not add "{string_repr}" to the DB due to "{e!s}".'
                         f'It either already exists or some other constraint was hit.',
                     )
                 except sqlcipher.InterfaceError:  # pylint: disable=no-member
@@ -1830,7 +1830,7 @@ class DBHandler:
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing margin position from the DB. '
-                    f'Skipping it. Error was: {str(e)}',
+                    f'Skipping it. Error was: {e!s}',
                 )
                 continue
             except UnknownAsset as e:
@@ -1919,7 +1919,7 @@ class DBHandler:
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing asset movement from the DB. '
-                    f'Skipping it. Error was: {str(e)}',
+                    f'Skipping it. Error was: {e!s}',
                 )
                 continue
             except UnknownAsset as e:
@@ -2108,7 +2108,7 @@ class DBHandler:
                 trade = Trade.deserialize_from_db(result)
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
-                    f'Error deserializing trade from the DB. Skipping trade. Error was: {str(e)}',
+                    f'Error deserializing trade from the DB. Skipping trade. Error was: {e!s}',
                 )
                 continue
             except UnknownAsset as e:
@@ -2156,7 +2156,7 @@ class DBHandler:
                     'DELETE FROM user_credentials WHERE name=?', ('rotkehlchen',),
                 )
             except sqlcipher.OperationalError as e:  # pylint: disable=no-member
-                log.error(f'Could not delete rotki premium credentials: {str(e)}')
+                log.error(f'Could not delete rotki premium credentials: {e!s}')
                 return False
         return True
 
@@ -2310,7 +2310,7 @@ class DBHandler:
                     bindings,
                 )
             except sqlcipher.OperationalError as e:    # pylint: disable=no-member
-                log.error(f'Could not fetch assets from table {table_name}. {str(e)}')
+                log.error(f'Could not fetch assets from table {table_name}. {e!s}')
                 continue
 
             for result in cursor:
@@ -2521,7 +2521,7 @@ class DBHandler:
                 foreground_color = deserialize_hex_color_code(result[3])
             except DeserializationError as e:
                 self.msg_aggregator.add_warning(
-                    f'Tag {name} with invalid color code found in the DB. {str(e)}. Skipping tag',
+                    f'Tag {name} with invalid color code found in the DB. {e!s}. Skipping tag',
                 )
                 continue
 

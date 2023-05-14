@@ -42,7 +42,7 @@ def maybe_apply_globaldb_migrations(connection: 'DBConnection') -> None:
                 migration.function(connection)
             except BaseException as e:
                 stacktrace = traceback.format_exc()
-                error = f'Failed to run globaldb soft data migration to version {migration.version} due to {str(e)}'  # noqa: E501
+                error = f'Failed to run globaldb soft data migration to version {migration.version} due to {e!s}'  # noqa: E501
                 log.error(f'{error}\n{stacktrace}')
                 break
 

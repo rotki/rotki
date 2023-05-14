@@ -337,7 +337,7 @@ def _populate_multiasset_mappings(cursor: 'DBCursor', root_dir: Path) -> None:
                     root_dir=root_dir,
                 )
             except sqlite3.OperationalError as e:
-                log.error(f'Failed to add missing assets for collections. Missing assets were {assets_to_add}. {str(e)}')  # noqa: E501
+                log.error(f'Failed to add missing assets for collections. Missing assets were {assets_to_add}. {e!s}')  # noqa: E501
                 return
 
         cursor.execute(sql_sentences)

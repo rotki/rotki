@@ -163,7 +163,7 @@ class Okx(ExchangeInterface):
         try:
             response = self.session.request(method=method, url=url)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'{self.name} API request failed due to {str(e)}') from e
+            raise RemoteError(f'{self.name} API request failed due to {e!s}') from e
         try:
             json_response = response.json()
         except requests.exceptions.JSONDecodeError as e:
@@ -241,7 +241,7 @@ class Okx(ExchangeInterface):
         try:
             currencies_data = data[0]['details']
         except KeyError as e:
-            msg = f'Missing key: {str(e)}'
+            msg = f'Missing key: {e!s}'
             raise RemoteError(
                 f'{self.name} balance API request failed due to unexpected response {msg}',
             ) from e
@@ -268,7 +268,7 @@ class Okx(ExchangeInterface):
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} {asset.name} balance result due to inability '
-                    f'to query USD price: {str(e)}. Skipping balance result.',
+                    f'to query USD price: {e!s}. Skipping balance result.',
                 )
                 continue
 
@@ -277,7 +277,7 @@ class Okx(ExchangeInterface):
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} {asset.name} balance result due to inability '
-                    f'to deserialize asset amount due to {str(e)}. Skipping balance result.',
+                    f'to deserialize asset amount due to {e!s}. Skipping balance result.',
                 )
                 continue
 

@@ -75,7 +75,7 @@ def convert_transaction_from_covalent(
         )
     except KeyError as e:
         raise DeserializationError(
-            f'Covalent avalanche transaction missing expected key {str(e)}',
+            f'Covalent avalanche transaction missing expected key {e!s}',
         ) from e
 
 
@@ -133,7 +133,7 @@ class Covalent(ExternalServiceWithApiKey):
                         return None
                     retry += 1
                     continue
-                raise RemoteError(f'Covalent API request failed due to {str(e)}') from e
+                raise RemoteError(f'Covalent API request failed due to {e!s}') from e
 
             try:
                 result = response.json()
@@ -200,7 +200,7 @@ class Covalent(ExternalServiceWithApiKey):
                     formatstr=DATE_FORMAT_COVALENT,
                 )
             except KeyError as e:
-                raise RemoteError(f'Missing key {str(e)} from Covalent response: {result}') from e
+                raise RemoteError(f'Missing key {e!s} from Covalent response: {result}') from e
 
             if last_timestamp <= from_ts:
                 break
@@ -224,7 +224,7 @@ class Covalent(ExternalServiceWithApiKey):
             try:
                 tx = convert_transaction_from_covalent(transaction)
             except DeserializationError as e:
-                self.msg_aggregator.add_warning(f'{str(e)}. Skipping transaction')
+                self.msg_aggregator.add_warning(f'{e!s}. Skipping transaction')
                 continue
             transactions.append(tx)
 

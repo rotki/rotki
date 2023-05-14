@@ -278,7 +278,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
                 response = self.session.get(querystr, timeout=DEFAULT_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
                 self.penalty_info.note_failure_or_penalize()
-                raise RemoteError(f'Cryptocompare API request failed due to {str(e)}') from e
+                raise RemoteError(f'Cryptocompare API request failed due to {e!s}') from e
 
             try:
                 json_ret = jsonloads_dict(response.text)
@@ -327,7 +327,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
             except KeyError as e:
                 raise RemoteError(
                     f'Unexpected format of Cryptocompare json_response. '
-                    f'Missing key entry for {str(e)}',
+                    f'Missing key entry for {e!s}',
                 ) from e
 
         raise AssertionError('We should never get here')

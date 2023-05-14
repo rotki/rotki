@@ -19,6 +19,6 @@ def file_md5(filepath: Path) -> str:
             for byte_block in iter(lambda: f.read(4096), b''):
                 md5_hash.update(byte_block)
     except PermissionError as e:
-        raise SystemPermissionError(f'Failed to open: {filepath}. {str(e)}') from e
+        raise SystemPermissionError(f'Failed to open: {filepath}. {e!s}') from e
 
     return md5_hash.hexdigest()

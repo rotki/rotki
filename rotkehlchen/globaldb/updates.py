@@ -135,7 +135,7 @@ class AssetsUpdater:
         try:
             response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Failed to query Github {url} during assets update: {str(e)}') from e  # noqa: E501
+            raise RemoteError(f'Failed to query Github {url} during assets update: {e!s}') from e  # noqa: E501
 
         try:
             json_data = response.json()
@@ -166,9 +166,9 @@ class AssetsUpdater:
                 if applicable_update:
                     new_asset_changes += entry['changes']
         except KeyError as e:
-            raise RemoteError(f'Didnt find expected key {str(e)} in github assets json during update') from e  # noqa: E501
+            raise RemoteError(f'Didnt find expected key {e!s} in github assets json during update') from e  # noqa: E501
         except ValueError as e:
-            raise RemoteError(f'{str(e)} in github assets json during update') from e
+            raise RemoteError(f'{e!s} in github assets json during update') from e
 
         self.last_remote_checked_version = remote_version
         return self.local_assets_version, remote_version, new_asset_changes
@@ -352,7 +352,7 @@ class AssetsUpdater:
             except sqlite3.Error as e:
                 log.error(
                     f'Failed to edit or add asset collection with name {groups[1]} and id '
-                    f'{groups[0]}. {action}. Error: {str(e)}',
+                    f'{groups[0]}. {action}. Error: {e!s}',
                 )
 
     def _process_multiasset_mapping(
@@ -406,7 +406,7 @@ class AssetsUpdater:
             except sqlite3.Error as e:
                 log.error(
                     f'Failed to edit asset collection mapping with asset {groups[1]} '
-                    f'and id {groups[0]}. {action}. Error: {str(e)}',
+                    f'and id {groups[0]}. {action}. Error: {e!s}',
                 )
 
     def _handle_asset_update(
@@ -441,7 +441,7 @@ class AssetsUpdater:
                     self.msg_aggregator.add_warning(
                         f'Failed to add asset {remote_asset_data.identifier} in the '
                         f'DB during the v{version} assets update. Skipping entry. '
-                        f'Error: {str(e)}',
+                        f'Error: {e!s}',
                     )
                 return  # fail or succeed continue to next entry
 
@@ -461,7 +461,7 @@ class AssetsUpdater:
                     self.msg_aggregator.add_warning(
                         f'Failed to resolve conflict for {remote_asset_data.identifier} in '
                         f'the DB during the v{version} assets update. Skipping entry. '
-                        f'Error: {str(e)}',
+                        f'Error: {e!s}',
                     )
                 return  # fail or succeed continue to next entry
 
@@ -504,7 +504,7 @@ class AssetsUpdater:
                     )
                     self.msg_aggregator.add_warning(
                         f'Skipping entry during assets update to v{version} due '
-                        f'to a deserialization error. {str(e)}',
+                        f'to a deserialization error. {e!s}',
                     )
 
                 if remote_asset_data is not None:
@@ -526,7 +526,7 @@ class AssetsUpdater:
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(
                         f'Skipping entry during assets collection update to v{version} due '
-                        f'to a deserialization error. {str(e)}',
+                        f'to a deserialization error. {e!s}',
                     )
             elif update_file_type == UpdateFileType.ASSET_COLLECTIONS_MAPPINGS:
                 try:
@@ -538,7 +538,7 @@ class AssetsUpdater:
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(
                         f'Skipping entry during assets collection multimapping update to '
-                        f'v{version} due to a deserialization error. {str(e)}',
+                        f'v{version} due to a deserialization error. {e!s}',
                     )
                 except UnknownAsset as e:
                     self.msg_aggregator.add_warning(
@@ -712,7 +712,7 @@ class AssetsUpdater:
             except KeyError as e:
                 log.error(
                     f'Remote info.json for version {version} did not contain '
-                    f'key "{str(e)}". Skipping update.',
+                    f'key "{e!s}". Skipping update.',
                 )
                 continue
 

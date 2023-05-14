@@ -187,7 +187,7 @@ def find_uniswap_v2_lp_price(
     except RemoteError as e:
         log.error(
             f'Remote error calling multicall contract for uniswap v2 lp '
-            f'token {token.evm_address} properties: {str(e)}',
+            f'token {token.evm_address} properties: {e!s}',
         )
         return None
 
@@ -228,7 +228,7 @@ def find_uniswap_v2_lp_price(
     except ValueError as e:
         log.debug(
             f'Failed to deserialize token amounts for token {address} '
-            f'with values {str(decoded)}. f{str(e)}',
+            f'with values {decoded!s}. f{e!s}',
         )
         return None
     token0_price = token_price_func(token0, *token_price_func_args)
