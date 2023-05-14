@@ -173,7 +173,7 @@ def memory_timeline(output, data_list):
         timestamp = [line[TIMESTAMP] for line in data]
         memory = [line[MEMORY] for line in data]
 
-        memory_max = max(max(memory), memory_max)
+        memory_max = max(memory, memory_max)
 
         memory_axes.plot(timestamp, memory, color='b')
 
