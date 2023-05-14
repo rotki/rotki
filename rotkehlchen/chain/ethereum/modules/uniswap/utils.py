@@ -315,7 +315,7 @@ def decode_basic_uniswap_info(
             # If what described in the comment above is not met then it is an error.
             log.debug(
                 f'Found unexpected event {event.serialize()} during decoding a uniswap swap in '
-                f'transaction {event.tx_hash.hex()}. Either uniswap router or an aggregator was'
+                f'transaction {event.tx_hash.hex()}. Either uniswap router or an aggregator was '
                 f'used and decoding needs to happen in the aggregator-specific decoder.',
             )
             break
