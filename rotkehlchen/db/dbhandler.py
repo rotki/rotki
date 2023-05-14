@@ -1166,10 +1166,14 @@ class DBHandler:
         """
         ignored_asset_ids = self.get_ignored_asset_ids(cursor)
         last_queried_ts = None
-        cursor.execute(
-            'SELECT key, value FROM evm_accounts_details WHERE account=? AND chain_id=? AND (key=? OR key=?)',  # noqa: E501
-            (address, blockchain.to_chain_id().serialize_for_db(), EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS, EVM_ACCOUNTS_DETAILS_TOKENS),  # noqa: E501
-        )
+        querystr = 'SELECT key, value FROM evm_accounts_details WHERE account=? AND chain_id=? AND (key=? OR key=?)'  # noqa: E501
+        bindings = (address, blockchain.to_chain_id().serialize_for_db(), EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS, EVM_ACCOUNTS_DETAILS_TOKENS)  # noqa: E501
+        try:
+            cursor.execute(querystr, bindings)
+        except sqlcipher.InterfaceError:  # pylint: disable=no-member
+            # Long story. Don't judge me. https://github.com/rotki/rotki/issues/5432
+            log.debug(f'{querystr} with {bindings} failed due to https://github.com/rotki/rotki/issues/5432. Retrying')  # noqa: E501
+            cursor.execute(querystr, bindings)
 
         returned_list = []
         for (key, value) in cursor:
