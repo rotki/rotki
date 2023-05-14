@@ -123,7 +123,7 @@ def test_setup_exchange(rotkehlchen_api_server):
     for location in SUPPORTED_EXCHANGES:
         data = {
             'location': str(location),
-            'name': f'my_{str(location)}',
+            'name': f'my_{location!s}',
             'api_key': api_key,
             'api_secret': api_secret,
         }
@@ -1047,14 +1047,14 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
     # add some exchanges ranges
     start_ts, end_ts = Timestamp(0), Timestamp(9999)
     with db.user_write() as cursor:
-        db.update_used_query_range(cursor, name=f'{str(Location.KRAKEN)}_trades_mockkraken', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{str(Location.KRAKEN)}_margins_mockkraken', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{str(Location.KRAKEN)}_asset_movements_mockkraken', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{str(Location.KRAKEN)}_margins_kraken_boi', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{str(Location.KRAKEN)}_asset_movements_kraken_boi', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{str(Location.POLONIEX)}_trades_poloniex', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{str(Location.POLONIEX)}_margins_poloniex', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{str(Location.POLONIEX)}_asset_movements_poloniex', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_trades_mockkraken', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_margins_mockkraken', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_asset_movements_mockkraken', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_margins_kraken_boi', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_asset_movements_kraken_boi', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{Location.POLONIEX!s}_trades_poloniex', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{Location.POLONIEX!s}_margins_poloniex', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{Location.POLONIEX!s}_asset_movements_poloniex', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
         db.update_used_query_range(cursor, name='uniswap_trades', start_ts=start_ts, end_ts=end_ts)
         test_event_id = event_db.add_history_event(write_cursor=cursor, event=test_event)
 

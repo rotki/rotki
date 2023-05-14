@@ -49,7 +49,7 @@ class FVal():
         return f'{self.num:f}'
 
     def __repr__(self) -> str:
-        return f'FVal({str(self.num)})'
+        return f'FVal({self.num!s})'
 
     def __hash__(self) -> int:
         return hash(self.num)

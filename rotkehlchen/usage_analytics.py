@@ -50,13 +50,13 @@ def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
             location='Analytics',
         )
     except requests.exceptions.RequestException as e:
-        log.debug(f'Failed to get metadata information for geoip file. {str(e)}')
+        log.debug(f'Failed to get metadata information for geoip file. {e!s}')
         metadata_query_failed = True
     except (DeserializationError, JSONDecodeError) as e:
-        log.debug(f'Failed to deserialize date in metadata information for geoip file. {str(e)}')
+        log.debug(f'Failed to deserialize date in metadata information for geoip file. {e!s}')
         metadata_query_failed = True
     except KeyError as e:
-        log.debug(f'Github response for geoip file had missing key {str(e)}')
+        log.debug(f'Github response for geoip file had missing key {e!s}')
         metadata_query_failed = True
 
     if metadata_query_failed:
@@ -80,7 +80,7 @@ def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
                 stream=True,
             )
         except requests.exceptions.RequestException as e:
-            log.debug(f'Failed to download geoip database file. {str(e)}')
+            log.debug(f'Failed to download geoip database file. {e!s}')
             return None
         with open(filename, 'wb') as outfile:
             response.raw.decode_content = True
@@ -95,7 +95,7 @@ def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
         user_ip = u.externalipaddress()
     except Exception as e:  # pylint: disable=broad-except
         # can raise base exception so we catch it
-        log.debug(f'Failed to get ip via UPnP for analytics. {str(e)}')
+        log.debug(f'Failed to get ip via UPnP for analytics. {e!s}')
         return None
 
     try:
@@ -107,9 +107,9 @@ def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
             return GeolocationData(country_code=location)
     except maxminddb.errors.InvalidDatabaseError as e:
         filename.unlink()
-        log.debug(f'Failed to read database {str(e)}')
+        log.debug(f'Failed to read database {e!s}')
     except ValueError as e:
-        log.debug(f'Wrong ip search {str(e)}')
+        log.debug(f'Wrong ip search {e!s}')
     return None
 
 

@@ -199,7 +199,7 @@ class DBUpgradeManager():
                 # Problem .. restore DB backup, log all info and bail out
                 error_message = (
                     f'Failed at database upgrade from version {upgrade.from_version} to '
-                    f'{to_version}: {str(e)}'
+                    f'{to_version}: {e!s}'
                 )
                 stacktrace = traceback.format_exc()
                 log.error(f'{error_message}\n{stacktrace}')

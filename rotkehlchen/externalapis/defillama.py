@@ -66,7 +66,7 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
             )
         except requests.exceptions.RequestException as e:
             self.penalty_info.note_failure_or_penalize()
-            raise RemoteError(f'Defillama API request failed due to {str(e)}') from e
+            raise RemoteError(f'Defillama API request failed due to {e!s}') from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
             self.last_rate_limit = ts_now()
@@ -97,7 +97,7 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         """
         if asset.is_evm_token() is True:
             asset = asset.resolve_to_evm_token()
-            return f'{str(asset.chain_id)}:{asset.evm_address}'
+            return f'{asset.chain_id!s}:{asset.evm_address}'
 
         return f'coingecko:{asset.to_coingecko()}'
 

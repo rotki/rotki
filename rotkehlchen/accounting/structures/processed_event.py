@@ -164,7 +164,7 @@ class ProcessedAccountingEvent:
             string_data = rlk_jsondumps(json_data)
         except (OverflowError, ValueError, TypeError) as e:
             raise DeserializationError(
-                f'Could not dump json to string for NamedJson. Error was {str(e)}',
+                f'Could not dump json to string for NamedJson. Error was {e!s}',
             ) from e
 
         return string_data
@@ -178,7 +178,7 @@ class ProcessedAccountingEvent:
             data = json.loads(stringified_json)
         except json.decoder.JSONDecodeError as e:
             raise DeserializationError(
-                f'Could not decode processed accounting event json from the DB due to {str(e)}',
+                f'Could not decode processed accounting event json from the DB due to {e!s}',
             ) from e
 
         try:
@@ -205,7 +205,7 @@ class ProcessedAccountingEvent:
             event.count_cost_basis_pnl = data['count_cost_basis_pnl']
             event.count_entire_amount_spend = data['count_entire_amount_spend']
         except KeyError as e:
-            raise DeserializationError(f'Could not decode processed accounting event json from the DB due to missing key {str(e)}') from e  # noqa: E501
+            raise DeserializationError(f'Could not decode processed accounting event json from the DB due to missing key {e!s}') from e  # noqa: E501
         except UnknownAsset as e:
             raise DeserializationError(f'Couldnt deserialize processed accounting event due to unkown asset {e.identifier}') from e  # noqa: E501
         else:

@@ -273,7 +273,7 @@ class DBHistoryEvents():
         try:
             deserialized = EvmEvent.deserialize_from_db(event_data[1:])
         except (DeserializationError, UnknownAsset) as e:
-            log.debug(f'Failed to deserialize evm event {event_data} due to {str(e)}')
+            log.debug(f'Failed to deserialize evm event {event_data} due to {e!s}')
             return None
 
         return deserialized
@@ -429,7 +429,7 @@ class DBHistoryEvents():
                     data = entry[data_start_idx:HISTORY_BASE_ENTRY_LENGTH + 1]
                     deserialized_event = HistoryEvent.deserialize_from_db(entry[data_start_idx:])
             except (DeserializationError, UnknownAsset) as e:
-                log.debug(f'Failed to deserialize history event {entry} due to {str(e)}')
+                log.debug(f'Failed to deserialize history event {entry} due to {e!s}')
                 continue
 
             if group_by_event_ids is True:
@@ -550,12 +550,12 @@ class DBHistoryEvents():
             except DeserializationError as e:
                 log.error(
                     f'Failed to read value from historic base entry {identifier} '
-                    f'with amount. {str(e)}',
+                    f'with amount. {e!s}',
                 )
             except UnknownAsset as e:
                 log.error(
                     f'Failed to read asset from historic base entry {identifier} '
-                    f'with asset identifier {asset_identifier}. {str(e)}',
+                    f'with asset identifier {asset_identifier}. {e!s}',
                 )
         return result
 
@@ -575,7 +575,7 @@ class DBHistoryEvents():
             except (UnknownAsset, DeserializationError) as e:
                 self.db.msg_aggregator.add_error(
                     f'Found asset {asset_id} in the base history events table and '
-                    f'is not in the assets database. {str(e)}',
+                    f'is not in the assets database. {e!s}',
                 )
         return assets
 
@@ -619,7 +619,7 @@ class DBHistoryEvents():
                     location='get_value_stats',
                 )
         except DeserializationError as e:
-            log.error(f'Didnt get correct valid usd_value for history_events query. {str(e)}')
+            log.error(f'Didnt get correct valid usd_value for history_events query. {e!s}')
 
         query = (
             f'SELECT asset, SUM(CAST(amount AS REAL)), SUM(CAST(usd_value AS REAL)) '
@@ -643,7 +643,7 @@ class DBHistoryEvents():
                 )
                 assets_amounts.append((asset, amount, sum_of_usd_values))
             except DeserializationError as e:
-                log.debug(f'Failed to deserialize amount {row[1]}. {str(e)}')
+                log.debug(f'Failed to deserialize amount {row[1]}. {e!s}')
         return usd_value, assets_amounts
 
     def get_hidden_event_ids(self, cursor: 'DBCursor') -> list[int]:

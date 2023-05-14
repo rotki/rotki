@@ -111,7 +111,7 @@ def mock_jug_ilks(_, ilk) -> tuple[int, int]:
     elif 'BAT-A' in str(ilk):
         duty = 1000000000236936036262880196  # 0.75%
     else:
-        raise AssertionError(f'Unexpected ilk {str(ilk)} in unit tests')
+        raise AssertionError(f'Unexpected ilk {ilk!s} in unit tests')
 
     whatever = 1
     return duty, whatever

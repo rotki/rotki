@@ -41,7 +41,7 @@ class GlobalDBBinance:
             self.db.add_setting_value(name=f'binance_pairs_queried_at_{location}', value=ts_now())
         except sqlite3.IntegrityError as e:
             raise InputError(
-                f'Tried to add a binance pair to the database but failed due to {str(e)}',
+                f'Tried to add a binance pair to the database but failed due to {e!s}',
             ) from e
 
     def get_all_binance_pairs(self, location: Location) -> list[BinancePair]:
@@ -58,5 +58,5 @@ class GlobalDBBinance:
             try:
                 pairs.append(BinancePair.deserialize_from_db(pair))
             except (DeserializationError, UnsupportedAsset, UnknownAsset) as e:
-                log.debug(f'Failed to deserialize binance pair {pair}. {str(e)}')
+                log.debug(f'Failed to deserialize binance pair {pair}. {e!s}')
         return pairs

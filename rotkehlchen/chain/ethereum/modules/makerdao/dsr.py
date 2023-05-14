@@ -244,7 +244,7 @@ class MakerdaoDsr(HasDSProxy):
                 wad_val = hexstr_to_int(join_event['topics'][2])
                 tx_hash = deserialize_evm_tx_hash(join_event['transactionHash'])
             except DeserializationError as e:
-                msg = f'Error at reading DSR join event topics. {str(e)}. Skipping event...'
+                msg = f'Error at reading DSR join event topics. {e!s}. Skipping event...'
                 self.msg_aggregator.add_error(msg)
                 continue
             join_normalized_balances.append(wad_val)
@@ -297,7 +297,7 @@ class MakerdaoDsr(HasDSProxy):
                 wad_val = hexstr_to_int(exit_event['topics'][2])
                 tx_hash = deserialize_evm_tx_hash(exit_event['transactionHash'])
             except DeserializationError as e:
-                msg = f'Error at reading DSR exit event topics. {str(e)}. Skipping event...'
+                msg = f'Error at reading DSR exit event topics. {e!s}. Skipping event...'
                 self.msg_aggregator.add_error(msg)
                 continue
             exit_normalized_balances.append(wad_val)

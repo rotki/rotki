@@ -480,7 +480,7 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
             )
         except requests.exceptions.RequestException as e:
             self.penalty_info.note_failure_or_penalize()
-            raise RemoteError(f'Coingecko API request failed due to {str(e)}') from e
+            raise RemoteError(f'Coingecko API request failed due to {e!s}') from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
             self.last_rate_limit = ts_now()
@@ -629,7 +629,7 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         except KeyError as e:
             log.warning(
                 f'Queried coingecko simple price from {from_asset.identifier} '
-                f'to {to_asset.identifier}. But got key error for {str(e)} when '
+                f'to {to_asset.identifier}. But got key error for {e!s} when '
                 f'processing the result.',
             )
             return ZERO_PRICE, False
@@ -720,7 +720,7 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         except KeyError as e:
             log.warning(
                 f'Queried coingecko historical price from {from_asset.identifier} '
-                f'to {to_asset.identifier}. But got key error for {str(e)} when '
+                f'to {to_asset.identifier}. But got key error for {e!s} when '
                 f'processing the result.',
             )
             raise NoPriceForGivenTimestamp(

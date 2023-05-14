@@ -29,7 +29,7 @@ def _scrape_xratescom_exchange_rates(url: str) -> dict[FiatAsset, Price]:
     try:
         response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
     except requests.exceptions.RequestException as e:
-        raise RemoteError(f'x-rates.com request {url} failed due to {str(e)}') from e
+        raise RemoteError(f'x-rates.com request {url} failed due to {e!s}') from e
 
     if response.status_code != 200:
         raise RemoteError(
@@ -70,7 +70,7 @@ def _scrape_xratescom_exchange_rates(url: str) -> dict[FiatAsset, Price]:
         try:
             price = deserialize_price(secondtd.a.text)
         except DeserializationError as e:
-            log.debug(f'Could not parse x-rates.com rate of {to_asset.identifier} due to {str(e)}. Skipping ...')  # noqa: E501
+            log.debug(f'Could not parse x-rates.com rate of {to_asset.identifier} due to {e!s}. Skipping ...')  # noqa: E501
             tr = tr.find_next_sibling()
             continue
 

@@ -372,7 +372,7 @@ class Coinbase(ExchangeInterface):
             try:
                 response = self.session.get(full_url, timeout=DEFAULT_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Coinbase API request failed due to {str(e)}') from e
+                raise RemoteError(f'Coinbase API request failed due to {e!s}') from e
 
             if response.status_code == 403:
                 raise CoinbasePermissionError(f'API key does not have permission for {endpoint}')
@@ -445,7 +445,7 @@ class Coinbase(ExchangeInterface):
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing coinbase balance entry due to inability to '
-                        f'query USD price: {str(e)}. Skipping balance entry',
+                        f'query USD price: {e!s}. Skipping balance entry',
                     )
                     continue
 

@@ -42,7 +42,7 @@ def test_kucoin_exchange_assets_are_known(mock_kucoin):
         response = requests.get(request_url)
     except requests.exceptions.RequestException as e:
         raise RemoteError(
-            f'Kucoin get request at {request_url} connection error: {str(e)}.',
+            f'Kucoin get request at {request_url} connection error: {e!s}.',
         ) from e
 
     if response.status_code != HTTPStatus.OK:

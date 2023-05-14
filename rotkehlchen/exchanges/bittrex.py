@@ -283,7 +283,7 @@ class Bittrex(ExchangeInterface):
                 json=options if method != 'get' else None,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Bittrex API request failed due to {str(e)}') from e
+            raise RemoteError(f'Bittrex API request failed due to {e!s}') from e
 
         return response
 
@@ -324,7 +324,7 @@ class Bittrex(ExchangeInterface):
                 continue
             except DeserializationError as e:
                 msg = (
-                    f'Failed to parse bittrex balance entry due to {str(e)}.'
+                    f'Failed to parse bittrex balance entry due to {e!s}.'
                     f' Ignoring its balance query. Check logs for more details'
                 )
                 self.msg_aggregator.add_error(msg)
@@ -344,7 +344,7 @@ class Bittrex(ExchangeInterface):
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing bittrex balance entry due to inability to '
-                    f'query USD price: {str(e)}. Skipping balance entry',
+                    f'query USD price: {e!s}. Skipping balance entry',
                 )
                 continue
 
@@ -502,7 +502,7 @@ class Bittrex(ExchangeInterface):
             )
             log.error(
                 f'Unexpected data encountered during deserialization of bittrex '
-                f'asset_movement {raw_data}. Error was: {str(e)}',
+                f'asset_movement {raw_data}. Error was: {e!s}',
             )
 
         return None

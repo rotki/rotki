@@ -87,7 +87,7 @@ def get_balancer_events(
         except DeserializationError as e:
             msg_aggregator.add_error(
                 f'Error deserializing Balancer event from the DB. Skipping event. '
-                f'Error was: {str(e)}',
+                f'Error was: {e!s}',
             )
             continue
         events.append(event)

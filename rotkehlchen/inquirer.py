@@ -356,7 +356,7 @@ class Inquirer():
             Inquirer.usd = A_USD.resolve_to_fiat_asset()
             Inquirer.weth = A_WETH.resolve_to_evm_token()
         except (UnknownAsset, WrongAssetType) as e:
-            message = f'One of the base assets was deleted/modified from the DB: {str(e)}'
+            message = f'One of the base assets was deleted/modified from the DB: {e!s}'
             log.critical(message)
             raise RuntimeError(message + '. Add it back manually or contact support') from e
 
@@ -418,7 +418,7 @@ class Inquirer():
         )
         instance = Inquirer()
         instance._oracles = oracles
-        instance._oracle_instances = [getattr(instance, f'_{str(oracle)}') for oracle in oracles]
+        instance._oracle_instances = [getattr(instance, f'_{oracle!s}') for oracle in oracles]
         instance._oracles_not_onchain = []
         instance._oracle_instances_not_onchain = []
         for oracle, oracle_instance in zip(instance._oracles, instance._oracle_instances):
@@ -483,7 +483,7 @@ class Inquirer():
             except (DefiPoolError, PriceQueryUnsupportedAsset, RemoteError) as e:
                 log.warning(
                     f'Current price oracle {oracle} failed to request {to_asset.identifier} '
-                    f'price for {from_asset.identifier} due to: {str(e)}.',
+                    f'price for {from_asset.identifier} due to: {e!s}.',
                 )
                 continue
             except RecursionError:
@@ -496,7 +496,7 @@ class Inquirer():
                 # Infinite loop can happen if user creates a loop of manual current prices
                 # (e.g. said that 1 BTC costs 2 ETH and 1 ETH costs 5 BTC).
                 instance._msg_aggregator.add_warning(
-                    f'Was not able to find price from {str(from_asset)} to {str(to_asset)} since your '  # noqa: E501
+                    f'Was not able to find price from {from_asset!s} to {to_asset!s} since your '  # noqa: E501
                     f'manual latest prices form a loop. For now, other oracles will be used.',
                 )
                 continue
@@ -731,7 +731,7 @@ class Inquirer():
                     used_main_currency=False,  # this is for usd only, so it doesn't matter
                 )
             except (RemoteError, DeserializationError) as e:
-                msg = f'Could not find price for BSQ. {str(e)}'
+                msg = f'Could not find price for BSQ. {e!s}'
                 instance._msg_aggregator.add_warning(msg)
                 return Price(BTC_PER_BSQ * price_in_btc), CurrentPriceOracle.BLOCKCHAIN, False
             else:
@@ -904,7 +904,7 @@ class Inquirer():
             try:
                 remote_underlying_token = contract.call(ethereum.node_inquirer, 'token')
             except (RemoteError, BlockchainQueryError) as e:
-                log.error(f'Failed to query underlying token method in Yearn v2 Vault. {str(e)}')
+                log.error(f'Failed to query underlying token method in Yearn v2 Vault. {e!s}')
                 return None
 
             try:
@@ -923,7 +923,7 @@ class Inquirer():
             except NotERC20Conformant as e:
                 log.error(
                     f'Error fetching ethereum token {underlying_token_address} while '
-                    f'detecting underlying tokens of {str(token.evm_address)}: {str(e)}',
+                    f'detecting underlying tokens of {token.evm_address!s}: {e!s}',
                 )
             # store it in the DB, so next time no need to query chain
             with globaldb.conn.write_ctx() as write_cursor:
@@ -951,7 +951,7 @@ class Inquirer():
         try:
             price_per_share = contract.call(ethereum.node_inquirer, 'pricePerShare')
         except (RemoteError, BlockchainQueryError) as e:
-            log.error(f'Failed to query pricePerShare method in Yearn v2 Vault. {str(e)}')
+            log.error(f'Failed to query pricePerShare method in Yearn v2 Vault. {e!s}')
         else:
             return Price(price_per_share * underlying_token_price / 10 ** token.decimals)
 

@@ -157,7 +157,7 @@ class Compound(EthereumModule):
         except RemoteError as e:
             self.graph = None
             self.msg_aggregator.add_error(
-                f'Could not initialize the Compound subgraph due to {str(e)}. '
+                f'Could not initialize the Compound subgraph due to {e!s}. '
                 f' All compound historical queries are not functioning until this is fixed. '
                 f'Probably will get fixed with time. If not report it to rotkis support channel ',
             )
@@ -172,7 +172,7 @@ class Compound(EthereumModule):
                 method_name=method_name,
             )
         except (RemoteError, BlockchainQueryError) as e:
-            log.error(f'Could not query cToken {address} for supply/borrow rate: {str(e)}')
+            log.error(f'Could not query cToken {address} for supply/borrow rate: {e!s}')
             return None
 
         apy = ((FVal(rate) / ETH_MANTISSA * BLOCKS_PER_DAY) + 1) ** (DAYS_PER_YEAR - 1) - 1  # noqa: E501

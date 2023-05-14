@@ -99,7 +99,7 @@ def request_available_nodes(func: Callable) -> Callable:
                 endpoint = node_attributes.node_interface.url
                 log.warning(
                     f'{manager.chain} {func.__name__!r} failed to request via '
-                    f'{node} node at endpoint {endpoint} due to: {str(e)}.',
+                    f'{node} node at endpoint {endpoint} due to: {e!s}.',
                     args=args[1:],
                     kwargs=kwargs_,
                 )
@@ -214,7 +214,7 @@ class SubstrateManager():
                 ),
             )
         except (KeyError, DeserializationError) as e:
-            message = f'{self.chain} failed to deserialize the chain metadata response: {str(e)}.'
+            message = f'{self.chain} failed to deserialize the chain metadata response: {e!s}.'
             log.error(message, chain_metadata=chain_metadata)
             raise RemoteError(message) from e
 
@@ -255,7 +255,7 @@ class SubstrateManager():
         except RemoteError as e:
             message = (
                 f'{self.chain} failed to connect to {node} at endpoint {endpoint}, '
-                f'due to {str(e)}.'
+                f'due to {e!s}.'
             )
             return False, message
 
@@ -344,7 +344,7 @@ class SubstrateManager():
         ) as e:
             message = (
                 f'{self.chain} failed to request chain ID '
-                f'at endpoint: {node_interface.url} due to: {str(e)}.'
+                f'at endpoint: {node_interface.url} due to: {e!s}.'
             )
             log.error(message)
             raise RemoteError(message) from e
@@ -367,7 +367,7 @@ class SubstrateManager():
         ) as e:
             message = (
                 f'{self.chain} failed to request chain properties '
-                f'at endpoint: {node_interface.url} due to: {str(e)}.'
+                f'at endpoint: {node_interface.url} due to: {e!s}.'
             )
             log.error(message)
             raise RemoteError(message) from e
@@ -380,7 +380,7 @@ class SubstrateManager():
                 token_decimals=FVal(properties['tokenDecimals']),
             )
         except (KeyError, UnknownAsset) as e:
-            message = f'{self.chain} failed to deserialize properties due to: {str(e)}.'
+            message = f'{self.chain} failed to deserialize properties due to: {e!s}.'
             log.error(message, properties=properties)
             raise RemoteError(message) from e
 
@@ -409,7 +409,7 @@ class SubstrateManager():
         ) as e:
             message = (
                 f'{self.chain} failed to request last block '
-                f'at endpoint: {node_interface.url} due to: {str(e)}.'
+                f'at endpoint: {node_interface.url} due to: {e!s}.'
             )
             log.error(message)
             raise RemoteError(message) from e
@@ -442,14 +442,14 @@ class SubstrateManager():
         except (requests.exceptions.RequestException, WebSocketException, SubstrateRequestException) as e:  # noqa: E501
             message = (
                 f'{self.chain} could not connect to node at endpoint: {endpoint}. '
-                f'Connection error: {str(e)}.'
+                f'Connection error: {e!s}.'
             )
             log.error(message)
             raise RemoteError(message) from e
         except (FileNotFoundError, ValueError, TypeError) as e:
             message = (
                 f'{self.chain} could not connect to node at endpoint: {endpoint}. '
-                f'Unexpected error during SubstrateInterface instantiation: {str(e)}.'
+                f'Unexpected error during SubstrateInterface instantiation: {e!s}.'
             )
             log.error(message)
             raise RemoteError('Invalid SubstrateInterface instantiation') from e
@@ -465,7 +465,7 @@ class SubstrateManager():
         try:
             response = requests.post(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
-            message = f'{self.chain} failed to post request at {url}. Connection error: {str(e)}.'
+            message = f'{self.chain} failed to post request at {url}. Connection error: {e!s}.'
             log.error(message)
             raise RemoteError(message) from e
 

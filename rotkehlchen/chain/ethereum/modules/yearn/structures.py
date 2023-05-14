@@ -131,7 +131,7 @@ class YearnVaultEvent:
             block_number = int(result[10])
         except ValueError as e:
             raise DeserializationError(
-                f'Failed to deserialize block number {result[10]} in yearn vault event: {str(e)}',
+                f'Failed to deserialize block number {result[10]} in yearn vault event: {e!s}',
             ) from e
         from_asset = CryptoAsset(result[2])
         to_asset = CryptoAsset(result[5])

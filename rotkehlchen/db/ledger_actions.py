@@ -67,7 +67,7 @@ class DBLedgerActions():
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing Ledger Action from the DB. Skipping it.'
-                    f'Error was: {str(e)}',
+                    f'Error was: {e!s}',
                 )
                 continue
             except UnknownAsset as e:

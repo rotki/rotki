@@ -83,11 +83,11 @@ class Accountant():
             f'Skipping event with id {identifier} at '
             f'{self.csvexporter.timestamp_to_date(ts)} '
             f'during history processing due to {reason}: '
-            f'{str(exception)}. Check the logs for more details',
+            f'{exception!s}. Check the logs for more details',
         )
         log.error(
             f'Skipping event with id {identifier}  during history processing due to '
-            f'{reason}: {str(exception)}',
+            f'{reason}: {exception!s}',
         )
         return count + 1
 
@@ -265,7 +265,7 @@ class Accountant():
             return 1, prev_time
         except UnprocessableTradePair as e:
             self.msg_aggregator.add_error(
-                f'At history processing found event with unprocessable trade pair {str(e)} '
+                f'At history processing found event with unprocessable trade pair {e!s} '
                 f'Ignoring the event.',
             )
             return 1, prev_time

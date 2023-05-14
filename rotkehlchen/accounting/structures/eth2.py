@@ -162,7 +162,7 @@ class EthWithdrawalEvent(EthStakingEvent):
             withdrawal_address = deserialize_evm_address(data['location_label'])
             is_exit = data['is_exit']
         except KeyError as e:
-            raise DeserializationError(f'Did not find expected withdrawal event key {str(e)}') from e  # noqa: E501
+            raise DeserializationError(f'Did not find expected withdrawal event key {e!s}') from e  # noqa: E501
 
         if not isinstance(validator_index, int):
             raise DeserializationError(f'Found non-int validator index {validator_index}')
@@ -289,7 +289,7 @@ class EthBlockEvent(EthStakingEvent):
             fee_recipient = deserialize_evm_address(data['location_label'])
             block_number = data['block_number']
         except KeyError as e:
-            raise DeserializationError(f'Did not find expected eth block event key {str(e)}') from e  # noqa: E501
+            raise DeserializationError(f'Did not find expected eth block event key {e!s}') from e  # noqa: E501
 
         if not isinstance(validator_index, int):
             raise DeserializationError(f'Found non-int validator index {validator_index}')
@@ -447,7 +447,7 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):
             tx_hash = deserialize_evm_tx_hash(data['tx_hash'])
             validator_index = data['validator_index']
         except KeyError as e:
-            raise DeserializationError(f'Could not find key {str(e)} for EthDepositEvent') from e
+            raise DeserializationError(f'Could not find key {e!s} for EthDepositEvent') from e
 
         if not isinstance(validator_index, int):
             raise DeserializationError(f'Found non-int validator index {validator_index}')

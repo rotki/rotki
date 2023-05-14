@@ -375,7 +375,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 credited_row = m_row['credited']
             except KeyError as e:
                 self.db.msg_aggregator.add_warning(
-                    f'Failed to get {str(e)} event at timestamp {timestamp}.',
+                    f'Failed to get {e!s} event at timestamp {timestamp}.',
                 )
                 continue
             total_debited_usd = functools.reduce(
@@ -537,9 +537,9 @@ class CryptocomImporter(BaseExchangeImporter):
                 csvfile.seek(0)
                 next(data)
             except KeyError as e:
-                raise InputError(f'Crypto.com csv missing entry for {str(e)}') from e
+                raise InputError(f'Crypto.com csv missing entry for {e!s}') from e
             except UnknownAsset as e:
-                raise InputError(f'Encountered unknown asset {str(e)} at crypto.com csv import') from e  # noqa: E501
+                raise InputError(f'Encountered unknown asset {e!s} at crypto.com csv import') from e  # noqa: E501
 
             for row in data:
                 try:
@@ -553,11 +553,11 @@ class CryptocomImporter(BaseExchangeImporter):
                 except DeserializationError as e:
                     self.db.msg_aggregator.add_warning(
                         f'Error during cryptocom CSV import deserialization. '
-                        f'Error was {str(e)}. Ignoring entry',
+                        f'Error was {e!s}. Ignoring entry',
                     )
                     continue
                 except UnsupportedCSVEntry as e:
                     self.db.msg_aggregator.add_warning(str(e))
                     continue
                 except KeyError as e:
-                    raise InputError(f'Could not find key {str(e)} in csv row {str(row)}') from e
+                    raise InputError(f'Could not find key {e!s} in csv row {row!s}') from e

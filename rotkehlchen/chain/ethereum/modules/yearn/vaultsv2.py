@@ -89,7 +89,7 @@ class YearnVaultsV2(EthereumModule):
         except RemoteError as e:
             self.msg_aggregator.add_error(
                 f'Failed to query ROI for vault {vault.evm_address}. '
-                f'Etherscan error {str(e)}.',
+                f'Etherscan error {e!s}.',
             )
             return ZERO, price_per_full_share
         return FVal(nominator) / FVal(denonimator) * BLOCKS_PER_YEAR / EXP18, price_per_full_share

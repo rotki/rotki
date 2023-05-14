@@ -172,6 +172,6 @@ class AvalancheManager():
             result = method(*arguments if arguments else [])
         except (ValueError, BadFunctionCallOutput) as e:
             raise BlockchainQueryError(
-                f'Error doing call on contract {contract_address}: {str(e)}',
+                f'Error doing call on contract {contract_address}: {e!s}',
             ) from e
         return result

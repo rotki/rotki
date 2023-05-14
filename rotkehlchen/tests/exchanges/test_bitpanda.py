@@ -32,7 +32,7 @@ def test_bitpanda_exchange_assets_are_known():
         response = requests.get(request_url)
     except requests.exceptions.RequestException as e:
         raise RemoteError(
-            f'Bitpanda get request at {request_url} connection error: {str(e)}.',
+            f'Bitpanda get request at {request_url} connection error: {e!s}.',
         ) from e
 
     if response.status_code != 200:

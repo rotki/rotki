@@ -88,7 +88,7 @@ class EvmProxiesInquirer():
                 if proxy_address != ZERO_ADDRESS:
                     mapping[address] = proxy_address
             except DeserializationError as e:
-                msg = f'Failed to deserialize {result} DSproxy for address {address}. {str(e)}'
+                msg = f'Failed to deserialize {result} DSproxy for address {address}. {e!s}'
                 log.error(msg)
         return mapping
 

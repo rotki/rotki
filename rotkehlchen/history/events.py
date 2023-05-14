@@ -435,7 +435,7 @@ class EventsHistorian:
                 history.extend(eth2_events)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
-                    f'Eth2 events are not included in the PnL report due to {str(e)}',
+                    f'Eth2 events are not included in the PnL report due to {e!s}',
                 )
 
         step = self._increase_progress(step, total_steps)

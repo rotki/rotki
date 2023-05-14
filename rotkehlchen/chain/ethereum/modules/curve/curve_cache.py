@@ -152,7 +152,7 @@ def ensure_curve_tokens_existence(
                 except NotERC20Conformant as e:
                     log.error(
                         f'Skipping pool {pool} because {token_address} is not a '
-                        f'valid ERC20 token. {str(e)}',
+                        f'valid ERC20 token. {e!s}',
                     )
                     continue
         elif len(pool.coins) == len(pool.underlying_coins):
@@ -173,7 +173,7 @@ def ensure_curve_tokens_existence(
                 except NotERC20Conformant as e:
                     log.error(
                         f'Skipping pool {pool} because {underlying_token_address} is not a '
-                        f'valid ERC20 token. {str(e)}',
+                        f'valid ERC20 token. {e!s}',
                     )
                     continue
 
@@ -194,7 +194,7 @@ def ensure_curve_tokens_existence(
                 except NotERC20Conformant as e:
                     log.error(
                         f'Skipping pool {pool} because {token_address} is not a '
-                        f'valid ERC20 token. {str(e)}',
+                        f'valid ERC20 token. {e!s}',
                     )
                     continue
         else:
@@ -213,7 +213,7 @@ def ensure_curve_tokens_existence(
                 except NotERC20Conformant as e:
                     log.error(
                         f'Skipping coin {token_address} because it is not a '
-                        f'valid ERC20 token. {str(e)}',
+                        f'valid ERC20 token. {e!s}',
                     )
                     continue
 
@@ -256,7 +256,7 @@ def save_curve_data_to_cache(
         except InputError as e:
             log.debug(
                 f'Curve address book names for pool {pool.pool_address} were not added. '
-                f'Probably names were added by the user earlier. {str(e)}')
+                f'Probably names were added by the user earlier. {e!s}')
 
         globaldb_set_general_cache_values(
             write_cursor=write_cursor,
@@ -305,7 +305,7 @@ def query_curve_data_from_api(existing_pools: list[ChecksumEvmAddress]) -> list[
         try:
             all_api_pools.extend(response_json['data']['poolData'])
         except KeyError as e:
-            raise RemoteError(f'Curve api endpoint {api_url} response is missing {str(e)} key') from e  # noqa: E501
+            raise RemoteError(f'Curve api endpoint {api_url} response is missing {e!s} key') from e  # noqa: E501
 
     processed_new_pools = []
     for api_pool_data in all_api_pools:
@@ -332,11 +332,11 @@ def query_curve_data_from_api(existing_pools: list[ChecksumEvmAddress]) -> list[
                 underlying_coins=underlying_coins,
             ))
         except KeyError as e:
-            raise RemoteError(f'Curve pool data {api_pool_data} are missing key {str(e)}') from e
+            raise RemoteError(f'Curve pool data {api_pool_data} are missing key {e!s}') from e
         except DeserializationError as e:
             log.error(
                 f'Could not deserialize evm address while decoding curve pool {pool_address} '
-                f'information from curve api: {str(e)}',
+                f'information from curve api: {e!s}',
             )
 
     return processed_new_pools
@@ -360,7 +360,7 @@ def query_curve_data_from_chain(
             arguments=[7],
         ))
     except DeserializationError as e:
-        log.error(f'Curve address provider returned an invalid address for metaregistry. {str(e)}')
+        log.error(f'Curve address provider returned an invalid address for metaregistry. {e!s}')
         return None
 
     metaregistry = EvmContract(
@@ -378,7 +378,7 @@ def query_curve_data_from_chain(
                 arguments=[pool_index],
             ))
         except DeserializationError as e:
-            log.error(f'Could not deserialize curve pool address {pool_address}. {str(e)}')
+            log.error(f'Could not deserialize curve pool address {pool_address}. {e!s}')
             continue
 
         if pool_address in IGNORED_CURVE_POOLS or pool_address in existing_pools:
@@ -424,7 +424,7 @@ def query_curve_data_from_chain(
         except DeserializationError as e:
             log.error(
                 f'Could not deserialize evm address while decoding curve pool {pool_address} '
-                f'information from metaregistry: {str(e)}',
+                f'information from metaregistry: {e!s}',
             )
 
     return new_pools
@@ -452,13 +452,13 @@ def query_curve_data(ethereum: 'EthereumInquirer') -> Optional[list[CurvePoolDat
     try:
         pools_data = query_curve_data_from_api(existing_pools=existing_pools)
     except (RemoteError, UnableToDecryptRemoteData) as e:
-        log.error(f'Could not query curve api due to: {str(e)}. Will query metaregistry on chain')
+        log.error(f'Could not query curve api due to: {e!s}. Will query metaregistry on chain')
         try:
             pools_data = query_curve_data_from_chain(
                 ethereum=ethereum,
                 existing_pools=existing_pools,
             )
         except RemoteError as err:
-            log.error(f'Could not query chain for curve pools due to: {str(err)}')
+            log.error(f'Could not query chain for curve pools due to: {err!s}')
 
     return pools_data

@@ -115,7 +115,7 @@ class PickleFinance(EthereumModule):
                     api_output[address] = balance
                 except (DeserializationError, IndexError) as e:
                     self.msg_aggregator.add_error(
-                        f'Failed to query dill information for address {address}. {str(e)}',
+                        f'Failed to query dill information for address {address}. {e!s}',
                     )
 
         return api_output

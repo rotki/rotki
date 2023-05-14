@@ -69,7 +69,7 @@ class ConvexBalances(ProtocolWithBalance):
                 ) for address in addresses_with_stake],
             )
         except RemoteError as e:
-            log.error(f'Failed to query convex balances due to {str(e)}')
+            log.error(f'Failed to query convex balances due to {e!s}')
             return None
 
         for idx, result in enumerate(call_output):

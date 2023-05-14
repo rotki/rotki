@@ -63,7 +63,7 @@ class AssetAcquisitionEvent:
                 index=data['index'],
             )
         except KeyError as e:
-            raise DeserializationError(f'Missing key {str(e)}') from e
+            raise DeserializationError(f'Missing key {e!s}') from e
 
     def serialize(self) -> dict[str, Any]:
         return {
@@ -95,7 +95,7 @@ class AssetSpendEvent:
 
     def __str__(self) -> str:
         return (
-            f'AssetSpendEvent in {str(self.location)} @ {self.timestamp}.'
+            f'AssetSpendEvent in {self.location!s} @ {self.timestamp}.'
             f'amount: {self.amount} rate: {self.rate}'
         )
 
@@ -465,7 +465,7 @@ class MatchedAcquisition(NamedTuple):
             )
             taxable = data['taxable']
         except KeyError as e:
-            raise DeserializationError(f'Missing key {str(e)}') from e
+            raise DeserializationError(f'Missing key {e!s}') from e
 
         return MatchedAcquisition(amount=amount, event=event, taxable=taxable)
 
@@ -516,7 +516,7 @@ class CostBasisInfo(NamedTuple):
             for entry in data['matched_acquisitions']:
                 matched_acquisitions.append(MatchedAcquisition.deserialize(entry))
         except KeyError as e:
-            raise DeserializationError(f'Could not decode CostBasisInfo json from the DB due to missing key {str(e)}') from e  # noqa: E501
+            raise DeserializationError(f'Could not decode CostBasisInfo json from the DB due to missing key {e!s}') from e  # noqa: E501
 
         return CostBasisInfo(  # the 0 are not serialized and not used at recall so is okay to skip
             taxable_amount=ZERO,

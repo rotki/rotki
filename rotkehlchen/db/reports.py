@@ -259,7 +259,7 @@ class DBAccountingReports():
                 cursor.execute(query, (report_id, time, data))
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                 raise InputError(
-                    f'Could not write {event} data to the DB due to {str(e)}. '
+                    f'Could not write {event} data to the DB due to {e!s}. '
                     f'Probably report {report_id} does not exist?',
                 ) from e
 
@@ -295,7 +295,7 @@ class DBAccountingReports():
             except DeserializationError as e:
                 self.db.msg_aggregator.add_error(
                     f'Error deserializing AccountingEvent from the DB. Skipping it.'
-                    f'Error was: {str(e)}',
+                    f'Error was: {e!s}',
                 )
                 continue
 

@@ -36,7 +36,7 @@ def data_migration_1(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressH
             except DeserializationError as e:
                 log.error(
                     f'During data migration 1 found location {result[1]} '
-                    f'that could not be deserialized due to {str(e)}',
+                    f'that could not be deserialized due to {e!s}',
                 )
                 continue
 
@@ -58,7 +58,7 @@ def data_migration_1(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressH
         except DeserializationError as e:
             log.error(
                 f'During data migration 1 could not deserialize location '
-                f'string {location_str} to location due to {str(e)}',
+                f'string {location_str} to location due to {e!s}',
             )
             continue
 

@@ -261,7 +261,7 @@ def test_kraken_to_world_pair(kraken):
             kraken_to_world_pair(pair)
         except (UnknownAsset, UnprocessableTradePair, DeserializationError) as e:
             test_warnings.warn(UserWarning(
-                f'Could not process kraken pair {pair} due to {str(e)}',
+                f'Could not process kraken pair {pair} due to {e!s}',
             ))
 
     # Finally test that wrong pairs raise proper exception

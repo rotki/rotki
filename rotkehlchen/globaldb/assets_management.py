@@ -81,7 +81,7 @@ def import_assets_from_file(
         except InputError as e:
             log.error(
                 f'Failed to import asset with {asset_data["identifier"]=}',
-                f'{asset_type=} and {asset_data=}. {str(e)}',
+                f'{asset_type=} and {asset_data=}. {e!s}',
             )
             msg_aggregator.add_error(
                 f'Failed to save import with identifier '

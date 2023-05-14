@@ -86,7 +86,7 @@ class Bitpanda(ExchangeInterface):
             fiat_wallets, _, _ = self._api_query('fiatwallets')
         except RemoteError as e:
             self.msg_aggregator.add_error(
-                f'Failed to query Bitpanda wallets at first connection. {str(e)}',
+                f'Failed to query Bitpanda wallets at first connection. {e!s}',
             )
             return
 
@@ -141,7 +141,7 @@ class Bitpanda(ExchangeInterface):
         try:
             self._api_query('wallets')
         except RemoteError as e:
-            return False, f'Error validating Bitpanda API Key due to {str(e)}'
+            return False, f'Error validating Bitpanda API Key due to {e!s}'
         return True, ''
 
     def _deserialize_wallettx(
@@ -360,7 +360,7 @@ class Bitpanda(ExchangeInterface):
             try:
                 response = self.session.get(request_url, timeout=DEFAULT_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Bitpanda API request failed due to {str(e)}') from e
+                raise RemoteError(f'Bitpanda API request failed due to {e!s}') from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 backoff_in_seconds = int(20 / retries_left)
@@ -470,7 +470,7 @@ class Bitpanda(ExchangeInterface):
             wallets, _, _ = self._api_query('wallets')
             fiat_wallets, _, _ = self._api_query('fiatwallets')
         except RemoteError as e:
-            msg = f'Failed to query Bitpanda balances. {str(e)}'
+            msg = f'Failed to query Bitpanda balances. {e!s}'
             return None, msg
 
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
@@ -514,7 +514,7 @@ class Bitpanda(ExchangeInterface):
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing Bitpanda balance entry due to inability to '
-                    f'query USD price: {str(e)}. Skipping balance entry',
+                    f'query USD price: {e!s}. Skipping balance entry',
                 )
                 continue
             assets_balance[asset] += Balance(

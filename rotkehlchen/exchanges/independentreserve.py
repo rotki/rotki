@@ -307,7 +307,7 @@ class Independentreserve(ExchangeInterface):
                     timeout=DEFAULT_TIMEOUT_TUPLE,
                 )
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'IndependentReserve API request failed due to {str(e)}') from e
+                raise RemoteError(f'IndependentReserve API request failed due to {e!s}') from e
 
             if response.status_code not in (200, 429):
                 raise RemoteError(
@@ -353,7 +353,7 @@ class Independentreserve(ExchangeInterface):
         try:
             response = self._api_query(verb='post', method_type='Private', path='GetAccounts')
         except RemoteError as e:
-            msg = f'IndependentReserve request failed. Could not reach the exchange due to {str(e)}'  # noqa: E501
+            msg = f'IndependentReserve request failed. Could not reach the exchange due to {e!s}'  # noqa: E501
             log.error(msg)
             return None, msg
 
@@ -374,7 +374,7 @@ class Independentreserve(ExchangeInterface):
             except RemoteError as e:  # raised only by find_usd_price
                 self.msg_aggregator.add_error(
                     f'Error processing IndependentReserve balance entry due to inability to '
-                    f'query USD price: {str(e)}. Skipping balance entry',
+                    f'query USD price: {e!s}. Skipping balance entry',
                 )
                 continue
             except (DeserializationError, KeyError) as e:
@@ -427,7 +427,7 @@ class Independentreserve(ExchangeInterface):
         except KeyError as e:
             self.msg_aggregator.add_error(
                 f'Error processing independentreserve trades response. '
-                f'Missing key: {str(e)}.',
+                f'Missing key: {e!s}.',
             )
             return [], (start_ts, end_ts)
 
@@ -485,7 +485,7 @@ class Independentreserve(ExchangeInterface):
             except KeyError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing IndependentReserve transactions response. '
-                    f'Missing key: {str(e)}.',
+                    f'Missing key: {e!s}.',
                 )
                 return []
 

@@ -105,7 +105,7 @@ class BeaconChain(ExternalServiceWithApiKey):
             try:
                 response = self.session.get(query_str, timeout=BEACONCHAIN_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Querying {query_str} failed due to {str(e)}') from e
+                raise RemoteError(f'Querying {query_str} failed due to {e!s}') from e
 
             if response.status_code == 429:
                 minute_rate_limit = response.headers.get('x-ratelimit-limit-minute', 'unknown')
@@ -280,7 +280,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                 )
         except KeyError as e:
             raise RemoteError(
-                f'Beaconcha.in performance response processing error. Missing key entry {str(e)}',
+                f'Beaconcha.in performance response processing error. Missing key entry {e!s}',
             ) from e
 
         return performance
@@ -378,7 +378,7 @@ class BeaconChain(ExternalServiceWithApiKey):
 
         except KeyError as e:  # raising and not continuing since if 1 key missing something is off  # noqa: E501
             raise RemoteError(
-                f'Beaconcha.in produced blocks response error. Missing key entry {str(e)}',
+                f'Beaconcha.in produced blocks response error. Missing key entry {e!s}',
             ) from e
 
     def get_eth1_address_validators(self, address: ChecksumEvmAddress) -> list[ValidatorID]:
@@ -409,6 +409,6 @@ class BeaconChain(ExternalServiceWithApiKey):
             ]
         except KeyError as e:
             raise RemoteError(
-                f'Beaconcha.in eth1 response processing error. Missing key entry {str(e)}',
+                f'Beaconcha.in eth1 response processing error. Missing key entry {e!s}',
             ) from e
         return validators

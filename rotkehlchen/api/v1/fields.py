@@ -399,7 +399,7 @@ class BlockchainField(fields.Field):
             raise ValidationError(str(e)) from e
 
         if self.exclude_types and chain_type in self.exclude_types:
-            raise ValidationError(f'Blockchain name {str(value)} is not allowed in this endpoint')
+            raise ValidationError(f'Blockchain name {value!s} is not allowed in this endpoint')
         return chain_type
 
 
@@ -671,7 +671,7 @@ class AssetTypeField(fields.Field):
             raise ValidationError(str(e)) from e
 
         if self.exclude_types and asset_type in self.exclude_types:
-            raise ValidationError(f'Asset type {str(asset_type)} is not allowed in this endpoint')
+            raise ValidationError(f'Asset type {asset_type!s} is not allowed in this endpoint')
 
         return asset_type
 

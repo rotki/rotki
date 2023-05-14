@@ -14,7 +14,7 @@ def evm_address_to_identifier(
         collectible_id: Optional[str] = None,
 ) -> str:
     """Format EVM token information into the CAIPs identifier format"""
-    ident = f'{EVM_CHAIN_DIRECTIVE}:{chain_id.value}/{str(token_type)}:{address}'
+    ident = f'{EVM_CHAIN_DIRECTIVE}:{chain_id.value}/{token_type!s}:{address}'
     if collectible_id is not None:
         return ident + f'/{collectible_id}'
     return ident

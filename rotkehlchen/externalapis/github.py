@@ -20,7 +20,7 @@ class Github():
         try:
             response = requests.get(url=f'{self.prefix}{path}', timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Failed to query Github: {str(e)}') from e
+            raise RemoteError(f'Failed to query Github: {e!s}') from e
 
         if response.status_code != 200:
             raise RemoteError(

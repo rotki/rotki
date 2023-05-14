@@ -75,14 +75,14 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
                 except DeserializationError as e:
                     self.db.msg_aggregator.add_warning(
                         f'Deserialization error during rotki generic trades CSV import. '
-                        f'{str(e)}. Ignoring entry',
+                        f'{e!s}. Ignoring entry',
                     )
                     continue
                 except DivisionByZero:
                     self.db.msg_aggregator.add_warning(
-                        f'During rotki generic trades import, csv row {str(row)} has zero '
+                        f'During rotki generic trades import, csv row {row!s} has zero '
                         f'amount bought. Ignoring entry',
                     )
                     continue
                 except KeyError as e:
-                    raise InputError(f'Could not find key {str(e)} in csv row {str(row)}') from e
+                    raise InputError(f'Could not find key {e!s} in csv row {row!s}') from e

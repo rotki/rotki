@@ -81,7 +81,7 @@ def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> Trade:
         timestamp = deserialize_timestamp_from_intms(poloniex_trade['createTime'])
     except KeyError as e:
         raise DeserializationError(
-            f'Poloniex trade deserialization error. Missing key entry for {str(e)} in trade dict',
+            f'Poloniex trade deserialization error. Missing key entry for {e!s} in trade dict',
         ) from e
 
     log.debug(
@@ -259,7 +259,7 @@ class Poloniex(ExchangeInterface):
             try:
                 response = self._single_query(command, req)
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Poloniex API request failed due to {str(e)}') from e
+                raise RemoteError(f'Poloniex API request failed due to {e!s}') from e
 
             if response is None and tries >= 1:
                 backoff_seconds = 20 / tries
@@ -422,7 +422,7 @@ class Poloniex(ExchangeInterface):
                     except RemoteError as e:
                         self.msg_aggregator.add_error(
                             f'Error processing poloniex balance entry due to inability to '
-                            f'query USD price: {str(e)}. Skipping balance entry',
+                            f'query USD price: {e!s}. Skipping balance entry',
                         )
                         continue
 
@@ -532,12 +532,12 @@ class Poloniex(ExchangeInterface):
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
-                f'Found {str(movement_type)} of unsupported poloniex asset '
+                f'Found {movement_type!s} of unsupported poloniex asset '
                 f'{e.identifier}. Ignoring it.',
             )
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
-                f'Found {str(movement_type)} of unknown poloniex asset '
+                f'Found {movement_type!s} of unknown poloniex asset '
                 f'{e.identifier}. Ignoring it.',
             )
         except (DeserializationError, KeyError) as e:
@@ -550,7 +550,7 @@ class Poloniex(ExchangeInterface):
             )
             log.error(
                 f'Unexpected data encountered during deserialization of poloniex '
-                f'{str(movement_type)}: {movement_data}. Error was: {msg}',
+                f'{movement_type!s}: {movement_data}. Error was: {msg}',
             )
 
         return None

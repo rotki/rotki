@@ -240,7 +240,7 @@ class Coinbasepro(ExchangeInterface):
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'Coinbase Pro {request_method} query at '
-                    f'{full_url} connection error: {str(e)}',
+                    f'{full_url} connection error: {e!s}',
                 ) from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
@@ -308,7 +308,7 @@ class Coinbasepro(ExchangeInterface):
                 continue
             except KeyError as e:
                 self.msg_aggregator.add_warning(
-                    f'Found coinbase pro account entry with missing {str(e)} field. '
+                    f'Found coinbase pro account entry with missing {e!s} field. '
                     f'Ignoring it',
                 )
                 continue
@@ -321,7 +321,7 @@ class Coinbasepro(ExchangeInterface):
         try:
             accounts, _ = self._api_query('accounts')
         except (CoinbaseProPermissionError, RemoteError) as e:
-            msg = f'Coinbase Pro API request failed. {str(e)}'
+            msg = f'Coinbase Pro API request failed. {e!s}'
             log.error(msg)
             return None, msg
 
@@ -340,7 +340,7 @@ class Coinbasepro(ExchangeInterface):
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing coinbasepro balance result due to inability to '
-                        f'query USD price: {str(e)}. Skipping balance entry',
+                        f'query USD price: {e!s}. Skipping balance entry',
                     )
                     continue
 

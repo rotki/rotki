@@ -877,7 +877,7 @@ class Rotkehlchen():
         except (RemoteError, EthSyncError) as e:
             problem_free = False
             liabilities = {}
-            log.error(f'Querying blockchain balances failed due to: {str(e)}')
+            log.error(f'Querying blockchain balances failed due to: {e!s}')
             self.msg_aggregator.add_message(
                 message_type=WSMessageType.BALANCE_SNAPSHOT_ERROR,
                 data={'location': 'blockchain balances query', 'error': str(e)},
@@ -913,7 +913,7 @@ class Rotkehlchen():
                 nft_balances = nfts.get_db_nft_balances(filter_query=NFTFilterQuery.make())['entries']  # noqa: E501
             except RemoteError as e:
                 log.error(
-                    f'At balance snapshot NFT balances query failed due to {str(e)}. Error '
+                    f'At balance snapshot NFT balances query failed due to {e!s}. Error '
                     f'is ignored and balance snapshot will still be saved.',
                 )
             else:

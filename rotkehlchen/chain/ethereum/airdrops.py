@@ -230,7 +230,7 @@ def get_airdrop_data(name: str, data_dir: Path) -> Iterator[list[str]]:
         try:
             response = requests.get(url=AIRDROPS[name][0], timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Airdrops Gist request failed due to {str(e)}') from e
+            raise RemoteError(f'Airdrops Gist request failed due to {e!s}') from e
         try:
             content = response.text
             if (
@@ -261,12 +261,12 @@ def get_poap_airdrop_data(name: str, data_dir: Path) -> dict[str, Any]:
         try:
             request = requests.get(url=POAP_AIRDROPS[name][0], timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'POAP airdrops Gist request failed due to {str(e)}') from e
+            raise RemoteError(f'POAP airdrops Gist request failed due to {e!s}') from e
 
         try:
             json_data = jsonloads_dict(request.content.decode('utf-8'))
         except JSONDecodeError as e:
-            raise RemoteError(f'POAP airdrops Gist contains an invalid JSON {str(e)}') from e
+            raise RemoteError(f'POAP airdrops Gist contains an invalid JSON {e!s}') from e
 
         with open(filename, 'w') as outfile:
             outfile.write(rlk_jsondumps(json_data))

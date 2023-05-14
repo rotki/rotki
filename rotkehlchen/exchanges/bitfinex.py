@@ -216,7 +216,7 @@ class Bitfinex(ExchangeInterface):
                 )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
-                    f'{self.name} {method} request at {request_url} connection error: {str(e)}.',
+                    f'{self.name} {method} request at {request_url} connection error: {e!s}.',
                 ) from e
 
         return response
@@ -912,7 +912,7 @@ class Bitfinex(ExchangeInterface):
             except (UnknownAsset, UnsupportedAsset) as e:
                 asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
                 self.msg_aggregator.add_warning(
-                    f'Found {asset_tag} {self.name} asset {e.identifier} due to: {str(e)}. '
+                    f'Found {asset_tag} {self.name} asset {e.identifier} due to: {e!s}. '
                     f'Ignoring its balance query.',
                 )
                 continue
@@ -922,7 +922,7 @@ class Bitfinex(ExchangeInterface):
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} {asset.name} balance result due to inability '
-                    f'to query USD price: {str(e)}. Skipping balance result.',
+                    f'to query USD price: {e!s}. Skipping balance result.',
                 )
                 continue
 
@@ -931,7 +931,7 @@ class Bitfinex(ExchangeInterface):
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} {asset.name} balance result due to inability '
-                    f'to deserialize asset amount due to {str(e)}. Skipping balance result.',
+                    f'to deserialize asset amount due to {e!s}. Skipping balance result.',
                 )
                 continue
 

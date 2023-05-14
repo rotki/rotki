@@ -74,7 +74,7 @@ def add_blockchain_accounts_to_db(db: DBHandler, blockchain_accounts: Blockchain
                 )
     except InputError as e:
         raise AssertionError(
-            f'Got error at test setup blockchain account addition: {str(e)} '
+            f'Got error at test setup blockchain account addition: {e!s} '
             f'Probably using two different databases or too many fixtures initialized. '
             f'For example do not initialize both a rotki api server and another DB at same time',
         ) from e

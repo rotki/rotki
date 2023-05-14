@@ -47,9 +47,9 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
         response = requests.get(YEARN_OLD_API, timeout=DEFAULT_TIMEOUT_TUPLE)
         data = response.json()
     except requests.exceptions.RequestException as e:
-        raise RemoteError(f'Failed to obtain yearn vault information. {str(e)}') from e
+        raise RemoteError(f'Failed to obtain yearn vault information. {e!s}') from e
     except (DeserializationError, JSONDecodeError) as e:
-        raise RemoteError(f"Failed to deserialize data from yearn's old api. {str(e)}") from e
+        raise RemoteError(f"Failed to deserialize data from yearn's old api. {e!s}") from e
 
     if not isinstance(data, list):
         raise RemoteError(f'Unexpected format from yearn vaults reponse. Expected a list, got {data}')  # noqa: E501
@@ -118,7 +118,7 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
         except KeyError as e:
             log.error(
                 f'Failed to store token information for yearn {vault_type} vault due to '
-                f'missing key {str(e)}. Vault: {vault}. Skipping...',
+                f'missing key {e!s}. Vault: {vault}. Skipping...',
             )
             continue
 

@@ -49,7 +49,7 @@ def deserialize_fee(fee: Optional[str]) -> Fee:
     try:
         result = Fee(FVal(fee))
     except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize a fee entry due to: {str(e)}') from e
+        raise DeserializationError(f'Failed to deserialize a fee entry due to: {e!s}') from e
 
     return result
 
@@ -213,7 +213,7 @@ def deserialize_fval(
     try:
         result = FVal(value)
     except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize value entry: {str(e)} for {name} during {location}') from e  # noqa: E501
+        raise DeserializationError(f'Failed to deserialize value entry: {e!s} for {name} during {location}') from e  # noqa: E501
 
     return result
 
@@ -266,7 +266,7 @@ def deserialize_asset_amount(amount: AcceptableFValInitInput) -> AssetAmount:
     try:
         result = AssetAmount(FVal(amount))
     except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize an amount entry: {str(e)}') from e
+        raise DeserializationError(f'Failed to deserialize an amount entry: {e!s}') from e
 
     return result
 
@@ -602,7 +602,7 @@ def deserialize_evm_transaction(
         nonce = read_integer(data, 'nonce', source)
     except KeyError as e:
         raise DeserializationError(
-            f'evm {"internal" if internal else ""}transaction from {source} missing expected key {str(e)}',  # noqa: E501
+            f'evm {"internal" if internal else ""}transaction from {source} missing expected key {e!s}',  # noqa: E501
         ) from e
     else:
         return EvmTransaction(

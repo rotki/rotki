@@ -108,7 +108,7 @@ def uniswap_v3_lp_token_balances(
     except RemoteError as e:
         raise RemoteError(
             f'Error calling nft manager contract to fetch of LP positions count for '
-            f'an address with properties: {str(e)}',
+            f'an address with properties: {e!s}',
         ) from e
 
     if amount_of_positions == 0:
@@ -210,7 +210,7 @@ def uniswap_v3_lp_token_balances(
             except (BadFunctionCallOutput, ValueError) as e:
                 log.error(
                     f'Error retrieving contract information for address: {position[2]} '
-                    f'due to: {str(e)}',
+                    f'due to: {e!s}',
                 )
                 continue
         # Get the ranges of price for which each position is valid for.
@@ -282,7 +282,7 @@ def uniswap_v3_lp_token_balances(
                     ),
                 )
             except UnrecognizedFeeTierException as e:
-                error_msg = f'Error calculating total amount of tokens in pool due to: {str(e)}'
+                error_msg = f'Error calculating total amount of tokens in pool due to: {e!s}'
                 log.error(error_msg)
                 msg_aggregator.add_error(error_msg)
                 continue
@@ -495,8 +495,8 @@ def _decode_uniswap_v3_result(
             asset_balance = token.amount
         except NotERC20Conformant as e:
             log.error(
-                f'Error fetching ethereum token {str(token.address)} while decoding Uniswap V3 LP '
-                f'position due to: {str(e)}',
+                f'Error fetching ethereum token {token.address!s} while decoding Uniswap V3 LP '
+                f'position due to: {e!s}',
             )
         # Classify the asset either as price known or unknown
         if asset.has_oracle():
@@ -533,8 +533,8 @@ def get_unknown_asset_price_chain(
             asset_price[from_token.evm_address] = price
         except (PriceQueryUnsupportedAsset, RemoteError) as e:
             log.error(
-                f'Failed to find price for {str(from_token)}/{str(A_USDC) } LP using '
-                f'Uniswap V3 oracle due to: {str(e)}.',
+                f'Failed to find price for {from_token!s}/{A_USDC!s} LP using '
+                f'Uniswap V3 oracle due to: {e!s}.',
             )
             asset_price[from_token.evm_address] = ZERO_PRICE
 

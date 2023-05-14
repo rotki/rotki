@@ -56,8 +56,8 @@ class NamedJson(NamedTuple):
             jsonschema.validate(data, schema)
         except (jsonschema.exceptions.ValidationError, jsonschema.exceptions.SchemaError) as e:
             raise DeserializationError(
-                f'Failed jsonschema validation of {str(event_type)} data {data}. '
-                f'Error was {str(e)}',
+                f'Failed jsonschema validation of {event_type!s} data {data}. '
+                f'Error was {e!s}',
             ) from e
 
         return NamedJson(
@@ -85,7 +85,7 @@ class NamedJson(NamedTuple):
             data = json.loads(json_tuple[1])
         except json.decoder.JSONDecodeError as e:
             raise DeserializationError(
-                f'Could not decode json for {json_tuple} at NamedJson deserialization: {str(e)}',
+                f'Could not decode json for {json_tuple} at NamedJson deserialization: {e!s}',
             ) from e
 
         return cls.deserialize(event_type=event_type, data=data)
@@ -100,7 +100,7 @@ class NamedJson(NamedTuple):
             string_data = rlk_jsondumps(self.data)
         except (OverflowError, ValueError, TypeError) as e:
             raise DeserializationError(
-                f'Could not dump json to string for NamedJson. Error was {str(e)}',
+                f'Could not dump json to string for NamedJson. Error was {e!s}',
             ) from e
 
         return event_type, string_data

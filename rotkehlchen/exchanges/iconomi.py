@@ -172,7 +172,7 @@ class Iconomi(ExchangeInterface):
                 headers=headers,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'ICONOMI API request failed due to {str(e)}') from e
+            raise RemoteError(f'ICONOMI API request failed due to {e!s}') from e
 
         try:
             json_ret = json.loads(response.text)
@@ -270,7 +270,7 @@ class Iconomi(ExchangeInterface):
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing ICONOMI balance entry due to inability to '
-                        f'query USD price: {str(e)}. Skipping balance entry',
+                        f'query USD price: {e!s}. Skipping balance entry',
                     )
                     continue
 
@@ -338,7 +338,7 @@ class Iconomi(ExchangeInterface):
                 except UnknownAsset as e:
                     self.msg_aggregator.add_warning(
                         f'Ignoring an iconomi transaction because of unsupported '
-                        f'asset {str(e)}')
+                        f'asset {e!s}')
                 except (DeserializationError, KeyError) as e:
                     msg = str(e)
                     if isinstance(e, KeyError):

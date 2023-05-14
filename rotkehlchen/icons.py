@@ -153,7 +153,7 @@ class IconManager:
             data = self.coingecko.asset_data(coingecko_id)
         except (UnsupportedAsset, RemoteError) as e:
             log.warning(
-                f'Problem querying coingecko for asset data of {asset.identifier}: {str(e)}',
+                f'Problem querying coingecko for asset data of {asset.identifier}: {e!s}',
             )
             # If a query fails (99% of fails will be 404s) don't repeat them
             self.failed_asset_ids.add(asset.identifier)

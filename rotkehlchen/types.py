@@ -667,7 +667,7 @@ class ExchangeLocationID(NamedTuple):
                 location=Location.deserialize(data['location']),
             )
         except KeyError as e:
-            raise DeserializationError(f'Missing key {str(e)}') from e
+            raise DeserializationError(f'Missing key {e!s}') from e
 
 
 class EnsMapping(NamedTuple):
@@ -763,7 +763,7 @@ class UserNote(NamedTuple):
                 is_pinned=entry['is_pinned'],
             )
         except KeyError as e:
-            raise DeserializationError(f'Failed to deserialize dict due to missing key: {str(e)}') from e  # noqa: E501
+            raise DeserializationError(f'Failed to deserialize dict due to missing key: {e!s}') from e  # noqa: E501
 
     @classmethod
     def deserialize_from_db(cls, entry: tuple[int, str, str, str, int, int]) -> 'UserNote':

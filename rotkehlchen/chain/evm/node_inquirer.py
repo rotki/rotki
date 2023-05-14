@@ -405,7 +405,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                     except requests.exceptions.RequestException as e:
                         msg = (
                             f'Connected to node {node} at endpoint {rpc_endpoint} but'
-                            f'failed to request node version due to {str(e)}'
+                            f'failed to request node version due to {e!s}'
                         )
                         log.warning(msg)
                         return False, msg
@@ -423,7 +423,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                         current_block = web3.eth.block_number  # pylint: disable=no-member
                         latest_block = self.query_highest_block()
                     except (requests.exceptions.RequestException, RemoteError) as e:
-                        msg = f'Could not query latest block due to {str(e)}'
+                        msg = f'Could not query latest block due to {e!s}'
                         log.warning(msg)
                         synchronized = False
                     else:
@@ -431,7 +431,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             except ValueError as e:
                 message = (
                     f'Failed to connect to {self.chain_name} node {node} at endpoint '
-                    f'{rpc_endpoint} due to {str(e)}'
+                    f'{rpc_endpoint} due to {e!s}'
                 )
                 return False, message
 
@@ -465,7 +465,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             if weighted_node.node_info.name == self.etherscan_node_name:
                 continue
 
-            task_name = f'Attempt connection to {str(weighted_node.node_info.name)} {self.chain_name} node'  # noqa: E501
+            task_name = f'Attempt connection to {weighted_node.node_info.name!s} {self.chain_name} node'  # noqa: E501
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=task_name,
@@ -505,7 +505,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 BadResponseFormat,
                 ValueError,  # Yabir saw this happen with mew node for unavailable method at node. Since it's generic we should replace if web3 implements https://github.com/ethereum/web3.py/issues/2448  # noqa: E501
             ) as e:
-                log.warning(f'Failed to query {node_info} for {str(method)} due to {str(e)}')
+                log.warning(f'Failed to query {node_info} for {method!s} due to {e!s}')
                 # Catch all possible errors here and just try next node call
                 continue
             except TransactionNotFound:
@@ -515,7 +515,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
         # no node in the call order list was succesfully queried
         raise RemoteError(
-            f'Failed to query {str(method)} after trying the following '
+            f'Failed to query {method!s} after trying the following '
             f'nodes: {[str(x) for x in call_order]}. Check logs for details.',
         )
 
@@ -605,7 +605,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         if result == '0x':
             raise BlockchainQueryError(
                 f'Error doing call on contract {contract_address} for {method_name} '
-                f'and chain {self.chain_name} with arguments: {str(arguments)} '
+                f'and chain {self.chain_name} with arguments: {arguments!s} '
                 f'via etherscan. Returned 0x result',
             )
 
@@ -670,7 +670,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             result = method(*arguments if arguments else [])
         except (ValueError, BadFunctionCallOutput) as e:
             raise BlockchainQueryError(
-                f'Error doing call on contract {contract_address}: {str(e)}',
+                f'Error doing call on contract {contract_address}: {e!s}',
             ) from e
         return result
 
@@ -769,7 +769,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             )
         except (DeserializationError, ValueError) as e:
             raise RemoteError(
-                f'Couldnt deserialize evm transaction data from {tx_data}. Error: {str(e)}',
+                f'Couldnt deserialize evm transaction data from {tx_data}. Error: {e!s}',
             ) from e
 
         assert receipt_data, 'receipt_data should exist here as etherscan getTransactionByHash does not contains gasUsed'  # noqa: E501
@@ -1103,7 +1103,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             # the fallback function. old WETH contract is such a case
             log.error(
                 f'{address} failed to decode as ERC20 token. '
-                f'Trying with token ABI using bytes. {str(e)}',
+                f'Trying with token ABI using bytes. {e!s}',
             )
             abi = self.contracts.abi('UNIV1_LP')
             contract = EvmContract(address=address, abi=abi, deployed_block=0)

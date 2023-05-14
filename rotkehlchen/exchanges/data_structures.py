@@ -191,7 +191,7 @@ class AssetMovement(AccountingEventMixin):
 
         accounting.add_spend(
             event_type=AccountingEventType.ASSET_MOVEMENT,
-            notes=f'{self.location} {str(self.category)}',
+            notes=f'{self.location} {self.category!s}',
             location=self.location,
             timestamp=self.timestamp,
             asset=self.fee_asset,
@@ -301,9 +301,9 @@ class Trade(AccountingEventMixin):
 
     def __str__(self) -> str:
         return (
-            f'trade at {str(self.location)} location and date '
+            f'trade at {self.location!s} location and date '
             f'{datetime.datetime.fromtimestamp(self.timestamp, tz=datetime.timezone.utc)} '
-            f'of type {str(self.trade_type)} with base asset: {self.base_asset.symbol_or_name()} '
+            f'of type {self.trade_type!s} with base asset: {self.base_asset.symbol_or_name()} '
             f'and quote asset: {self.quote_asset.symbol_or_name()}'
         )
 

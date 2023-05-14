@@ -205,7 +205,7 @@ class DBEvmTx():
             except DeserializationError as e:
                 self.db.msg_aggregator.add_error(
                     f'Error deserializing evm transaction from the DB. '
-                    f'Skipping it. Error was: {str(e)}',
+                    f'Skipping it. Error was: {e!s}',
                 )
                 continue
 
@@ -279,7 +279,7 @@ class DBEvmTx():
             try:
                 hashes.append(deserialize_evm_tx_hash(entry[0]))
             except DeserializationError as e:
-                log.debug(f'Got error {str(e)} while deserializing tx_hash {entry[0]} from the DB')
+                log.debug(f'Got error {e!s} while deserializing tx_hash {entry[0]} from the DB')
 
         return hashes
 

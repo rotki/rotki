@@ -218,7 +218,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
 
             except RemoteError as e:
                 self.msg_aggregator.add_error(
-                    f'Got error "{str(e)}" while querying {self.evm_inquirer.chain_name} '
+                    f'Got error "{e!s}" while querying {self.evm_inquirer.chain_name} '
                     f'transactions from Etherscan. Some transactions not added to the DB '
                     f'address: {address} '
                     f'from_ts: {query_start_ts} '
@@ -343,7 +343,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 )
             except RemoteError as e:
                 self.msg_aggregator.add_error(
-                    f'Got error "{str(e)}" while querying internal {self.evm_inquirer.chain_name} '
+                    f'Got error "{e!s}" while querying internal {self.evm_inquirer.chain_name} '
                     f'transactions from Etherscan. Transactions not added to the DB '
                     f'address: {address} '
                     f'from_ts: {query_start_ts} '
@@ -432,7 +432,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                         )
             except RemoteError as e:
                 self.msg_aggregator.add_error(
-                    f'Got error "{str(e)}" while querying {self.evm_inquirer.chain_name} '
+                    f'Got error "{e!s}" while querying {self.evm_inquirer.chain_name} '
                     f'token transactions from Etherscan. Transactions not added to the DB '
                     f'address: {address} '
                     f'from_ts: {query_start_ts} '
@@ -494,7 +494,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
 
             if len(added_tx) == 0:
                 raise InputError(
-                    f'There is no tracked {str(self.evm_inquirer.chain_id)} address that '
+                    f'There is no tracked {self.evm_inquirer.chain_id!s} address that '
                     f'would have a genesis transaction',
                 )
         elif len(result) == 0:  # normal functionality
@@ -587,7 +587,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 try:
                     tx_receipt_data = self.evm_inquirer.get_transaction_receipt(tx_hash=entry)
                 except RemoteError as e:
-                    self.msg_aggregator.add_warning(f'Failed to query information for {self.evm_inquirer.chain_name} transaction {entry.hex()} due to {str(e)}. Skipping...')  # noqa: E501
+                    self.msg_aggregator.add_warning(f'Failed to query information for {self.evm_inquirer.chain_name} transaction {entry.hex()} due to {e!s}. Skipping...')  # noqa: E501
                     continue
 
                 try:
@@ -599,7 +599,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                         )
                 except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                     if 'UNIQUE constraint failed: evmtx_receipts.tx_hash' not in str(e):
-                        log.error(f'Failed to store transaction {entry.hex()} receipt due to {str(e)}')  # noqa: E501
+                        log.error(f'Failed to store transaction {entry.hex()} receipt due to {e!s}')  # noqa: E501
                         raise  # if receipt is already added by other greenlet it's fine
 
     def add_transaction_by_hash(

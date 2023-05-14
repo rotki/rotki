@@ -91,8 +91,8 @@ class LedgerAction(AccountingEventMixin):
     def __str__(self) -> str:
         return (
             f'<LedgerAction '
-            f'id={self.identifier} timestamp={self.timestamp} action_type={str(self.action_type)} '
-            f'location={str(self.location)} amount={str(self.amount)} '
+            f'id={self.identifier} timestamp={self.timestamp} action_type={self.action_type!s} '
+            f'location={self.location!s} amount={self.amount!s} '
             f'asset={self.asset.identifier} rate={str(self.rate) if self.rate else None}'
             f'rate_asset={self.rate_asset.identifier if self.rate_asset else None} '
             f'link={self.link} notes={self.notes}>'

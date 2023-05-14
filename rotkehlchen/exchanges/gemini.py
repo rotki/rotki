@@ -203,7 +203,7 @@ class Gemini(ExchangeInterface):
                 )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
-                    f'Gemini {method} query at {url} connection error: {str(e)}',
+                    f'Gemini {method} query at {url} connection error: {e!s}',
                 ) from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
@@ -308,7 +308,7 @@ class Gemini(ExchangeInterface):
             balances = self._private_api_query('balances')
             balances.extend(self._private_api_query('balances/earn'))
         except (GeminiPermissionError, RemoteError) as e:
-            msg = f'Gemini API request failed. {str(e)}'
+            msg = f'Gemini API request failed. {e!s}'
             log.error(msg)
             return None, msg
 
@@ -330,7 +330,7 @@ class Gemini(ExchangeInterface):
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing gemini {balance_type} balance result due to '
-                        f'inability to query USD price: {str(e)}. Skipping balance entry',
+                        f'inability to query USD price: {e!s}. Skipping balance entry',
                     )
                     continue
 
@@ -431,12 +431,12 @@ class Gemini(ExchangeInterface):
             )
         except GeminiPermissionError as e:
             self.msg_aggregator.add_error(
-                f'Got permission error while querying Gemini for trades: {str(e)}',
+                f'Got permission error while querying Gemini for trades: {e!s}',
             )
             return []
         except RemoteError as e:
             self.msg_aggregator.add_error(
-                f'Got remote error while querying Gemini for trades: {str(e)}',
+                f'Got remote error while querying Gemini for trades: {e!s}',
             )
             return []
         return trades

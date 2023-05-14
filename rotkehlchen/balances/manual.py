@@ -54,7 +54,7 @@ def get_manually_tracked_balances(
         except RemoteError as e:
             db.msg_aggregator.add_warning(
                 f'Could not find price for {entry.asset.identifier} during '
-                f'manually tracked balance querying due to {str(e)}',
+                f'manually tracked balance querying due to {e!s}',
             )
             price = ZERO_PRICE
 

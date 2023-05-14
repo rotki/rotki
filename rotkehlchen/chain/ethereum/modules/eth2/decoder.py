@@ -53,7 +53,7 @@ class Eth2Decoder(DecoderInterface):
                 try:
                     beaconchain = BeaconChain(self.base.database, self.msg_aggregator)
                 except RemoteError as e:
-                    log.error(f'Failed to query validator index for {public_key} due to {str(e)}')
+                    log.error(f'Failed to query validator index for {public_key} due to {e!s}')
                     extra_data = {'public_key': public_key}
                 else:
                     result = beaconchain.get_validator_data([public_key])
