@@ -1,6 +1,7 @@
 import datetime
 from unittest.mock import MagicMock, patch
 
+import gevent
 import pytest
 
 from rotkehlchen.assets.utils import _query_or_get_given_token_info
@@ -12,7 +13,7 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_LPT
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import ChainID, EvmTokenKind
+from rotkehlchen.types import ChainID, EvmTokenKind, SupportedBlockchain
 from rotkehlchen.utils.misc import ts_now
 
 ERC20_INFO_RESPONSE = ((True, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06'), (True, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04USDT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'), (True, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\nTether USD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'))  # noqa: E501
@@ -197,3 +198,58 @@ def test_cache_is_per_token_type(ethereum_inquirer):
 
     assert erc20_token_data == erc20_cached_data == ('Tether USD', 'USDT', 6)
     assert erc721_token_data == erc721_cached_data == ('Art Blocks', 'BLOCKS', 0)
+
+
+def _do_read(database):
+    with database.conn.read_ctx() as cursor:
+        database.get_settings(cursor)
+        database.get_all_external_service_credentials()
+        database.get_blockchain_accounts(cursor)
+
+
+def _do_spawn(database):
+    while True:
+        gevent.spawn(_do_read, database)
+        with database.user_write() as write_cursor:
+            database.set_setting(write_cursor, 'last_write_ts', 15)
+            gevent.sleep(0.1)
+            database.set_setting(write_cursor, 'last_write_ts', 15)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [100])
+@pytest.mark.parametrize('sql_vm_instructions_cb', [10])
+def test_flaky_binding_parameter_zero(database, ethereum_accounts):
+    """Test that reproduces https://github.com/rotki/rotki/issues/5432 reliably.
+
+    Seems to be an sqlite driver implementation error that causes a wrong instance of
+    "Error binding parameter 0 - probably unsupported type" flakily. Happened once
+    in a blue moon for our users so was hard to reproduce.
+
+    Happens only if opening a parallel write context in the same connection from which
+    the read only get_tokens_for_address is done. Makes no sense. As a read context
+    should not be affected. Our current fix in the code is to repeat the cursor.execute()
+    without any delay. It works splendid. Same solution the coveragepy people used:
+    https://github.com/nedbat/coveragepy/issues/1010
+    """
+    stuff = []
+    # Populate some data in the evm_accounts_details table, since this is what's used in the bug
+    for idx, address in enumerate(ethereum_accounts):
+        if idx % 2 == 0:
+            stuff.append((address, 1, 'last_queried_timestamp', 42))
+        else:
+            stuff.append((address, 1, 'tokens', 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'))  # noqa: E501
+            stuff.append((address, 1, 'tokens', 'eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96'))  # noqa: E501
+
+    with database.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO evm_accounts_details '
+            '(account, chain_id, key, value) VALUES (?, ?, ?, ?)',
+            stuff,
+        )
+
+    # Create the conditions for the bug to hit. Can verify by removing the retry in dbhandler.py
+    gevent.spawn(_do_spawn, database)
+    gevent.sleep(.1)
+    with database.conn.read_ctx() as cursor:
+        for address in ethereum_accounts:
+            database.get_tokens_for_address(cursor, address, SupportedBlockchain.ETHEREUM)
