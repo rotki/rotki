@@ -2,7 +2,6 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.assets.types import AssetType
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -54,11 +53,7 @@ def _save_or_update_spam_assets(
         try:
             evm_token.check_existence()
         except UnknownAsset:  # token does not exist
-            GlobalDBHandler().add_asset(
-                asset_id=evm_token.identifier,
-                asset_type=AssetType.EVM_TOKEN,
-                data=evm_token,
-            )
+            GlobalDBHandler().add_asset(evm_token)
             # add the asset to the asset table in the user's db
             with db.user_write() as cursor:
                 db.add_asset_identifiers(cursor, [evm_token.identifier])

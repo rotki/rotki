@@ -254,61 +254,51 @@ class GlobalDBHandler():
             )
 
     @staticmethod
-    def add_asset(
-            asset_id: str,
-            asset_type: AssetType,
-            data: Union[EvmToken, dict[str, Any]],
-    ) -> None:
+    def add_asset(asset: AssetWithNameAndType) -> None:
         """
-        Add an asset in the DB. Either an ethereum token or a user asset.
-
-        If it's a user asset the data should be typed. As given in by marshmallow.
+        Add an asset in the DB.
 
         May raise InputError in case of error, meaning asset exists or some constraint hit"""
-        if asset_type == AssetType.EVM_TOKEN:
-            token = cast(EvmToken, data)
-            forked_asset = token.forked
-            name = token.name
-            symbol = token.symbol
-            started = token.started
-            swapped_for = token.swapped_for.identifier if token.swapped_for else None
-            coingecko = token.coingecko
-            cryptocompare = token.cryptocompare
-        else:
-            token = None
-            data = cast(dict[str, Any], data)
-            forked_asset = data.get('forked', None)
-            # The data should already be typed (as given in by marshmallow)
-            name = data.get('name', None)
-            symbol = data.get('symbol', None)
-            started = data.get('started', None)
-            swapped_for_asset = data.get('swapped_for', None)
-            swapped_for = swapped_for_asset.identifier if swapped_for_asset else None
-            coingecko = data.get('coingecko', None)
-            cryptocompare = data.get('cryptocompare', '')
-
-        forked = forked_asset.identifier if forked_asset is not None else None
         try:
             with GlobalDBHandler().conn.write_ctx() as write_cursor:
                 write_cursor.execute(
                     'INSERT INTO assets(identifier, name, type) '
                     'VALUES(?, ?, ?);',
                     (
-                        asset_id,
-                        name,
-                        asset_type.serialize_for_db(),
+                        asset.identifier,
+                        asset.name,
+                        asset.asset_type.serialize_for_db(),
                     ),
                 )
-                if token is not None:
-                    GlobalDBHandler.add_evm_token_data(write_cursor, token)
+                if asset.asset_type == AssetType.CUSTOM_ASSET:
+                    write_cursor.execute(
+                        'INSERT INTO custom_assets(identifier, type, notes) VALUES(?, ?, ?)',
+                        cast(CustomAsset, asset).serialize_for_db(),
+                    )
+                    return
+
+                # since the asset is not a custom asset it can only be an asset with oracles
+                asset = cast(AssetWithOracles, asset)
+                forked, started, swapped_for = None, None, None
+                if asset.is_crypto():
+                    if asset.is_evm_token():
+                        asset = cast(EvmToken, asset)
+                        GlobalDBHandler.add_evm_token_data(write_cursor, asset)
+                    else:
+                        asset = cast(CryptoAsset, asset)
+
+                    forked = asset.forked.identifier if asset.forked else None
+                    started = asset.started
+                    swapped_for = asset.swapped_for.identifier if asset.swapped_for else None
+
                 write_cursor.execute(
                     'INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for)'  # noqa: E501
                     'VALUES(?, ?, ?, ?, ?, ?, ?);',
                     (
-                        asset_id,
-                        symbol,
-                        coingecko,
-                        cryptocompare,
+                        asset.identifier,
+                        asset.symbol,
+                        asset.coingecko,
+                        asset.cryptocompare,
                         forked,
                         started,
                         swapped_for,
@@ -316,7 +306,7 @@ class GlobalDBHandler():
                 )
         except sqlite3.IntegrityError as e:
             raise InputError(
-                f'Failed to add asset {asset_id} into the assets table due to {e!s}',
+                f'Failed to add asset {asset.identifier} into the assets table due to {e!s}',
             ) from e
 
     @staticmethod
@@ -1769,20 +1759,19 @@ class GlobalDBHandler():
                 underlying_tokens=underlying_tokens,
             )
 
-    @staticmethod
-    def resolve_asset_from_packaged_and_store(identifier: str) -> AssetWithNameAndType:
+    def resolve_asset_from_packaged_and_store(self, identifier: str) -> AssetWithNameAndType:
         """
         Reads an asset from the packaged globaldb and adds it to the database if missing or edits
         the local version of the asset.
         May raise:
         - UnknownAsset
         """
-        asset = GlobalDBHandler().resolve_asset(
+        asset = self.resolve_asset(
             identifier=identifier,
             use_packaged_db=True,
         )
         # make sure that the asset is saved on the user's global db. First check if it exists
-        with GlobalDBHandler().conn.read_ctx() as cursor:
+        with self.conn.read_ctx() as cursor:
             asset_count = cursor.execute(
                 'SELECT COUNT(*) FROM assets WHERE identifier=?',
                 (identifier,),
@@ -1799,16 +1788,12 @@ class GlobalDBHandler():
 
         if asset_count == 0:
             # the asset doesn't exist and need to be added
-            GlobalDBHandler().add_asset(
-                asset_id=asset.identifier,
-                asset_type=asset.asset_type,
-                data=asset_data,
-            )
+            self.add_asset(asset)
         elif asset.asset_type == AssetType.EVM_TOKEN:
             # in this case the asset exists and needs to be updated
-            GlobalDBHandler().edit_evm_token(cast(EvmToken, asset_data))
+            self.edit_evm_token(cast(EvmToken, asset))
         else:
-            GlobalDBHandler().edit_user_asset(cast(dict[str, Any], asset_data))
+            self.edit_user_asset(cast(CryptoAsset, asset))
 
         return asset
 

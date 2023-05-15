@@ -8,7 +8,6 @@ import requests
 from freezegun import freeze_time
 
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, UnderlyingToken
-from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
     A_1INCH,
@@ -320,11 +319,7 @@ def test_price_underlying_tokens(inquirer, globaldb):
             UnderlyingToken(address=A_CRV.resolve_to_evm_token().evm_address, token_kind=EvmTokenKind.ERC20, weight=crv_weight),  # noqa: E501
         ],
     )
-    globaldb.add_asset(
-        asset_id=identifier,
-        asset_type=AssetType.EVM_TOKEN,
-        data=token,
-    )
+    globaldb.add_asset(token)
 
     price = inquirer.find_price(EvmToken(identifier), A_USD)
     assert price == FVal(67)
@@ -425,7 +420,7 @@ def test_price_non_ethereum_evm_token(inquirer_defi, globaldb):
     https://github.com/rotki/rotki/blob/a2cc1676f874ece1ddfe84686d8dfcc82ed6ffcf/rotkehlchen/inquirer.py#L611
     """
     address = string_to_evm_address('0x2656f02bc30427Ed9d380E20CEc5E04F5a7A50FE')
-    identifier = evm_address_to_identifier(
+    evm_address_to_identifier(
         address=address,
         chain_id=ChainID.BINANCE,
         token_type=EvmTokenKind.ERC20,
@@ -439,11 +434,7 @@ def test_price_non_ethereum_evm_token(inquirer_defi, globaldb):
         symbol='SLOUGI',
         underlying_tokens=None,
     )
-    globaldb.add_asset(
-        asset_id=identifier,
-        asset_type=AssetType.EVM_TOKEN,
-        data=token,
-    )
+    globaldb.add_asset(token)
 
     # Since the asset is not from a valid chain the query will fail and return zero
     assert inquirer_defi.find_usd_price(EvmToken(token.identifier)) == ZERO

@@ -6,7 +6,14 @@ from uuid import uuid4
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.asset import (
+    Asset,
+    CryptoAsset,
+    CustomAsset,
+    EvmToken,
+    FiatAsset,
+    UnderlyingToken,
+)
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.assets.utils import get_or_create_evm_token, symbol_to_asset_or_token
@@ -166,11 +173,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
         symbol='DELME',
     )
     token_to_delete_id = token_to_delete.identifier
-    globaldb.add_asset(
-        asset_id=token_to_delete_id,
-        asset_type=AssetType.EVM_TOKEN,
-        data=token_to_delete,
-    )
+    globaldb.add_asset(token_to_delete)
     asset_to_delete = Asset(token_to_delete_id)
     assert globaldb.delete_evm_token(
         address=address_to_delete,
@@ -179,16 +182,12 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
 
     # now try to add a new token with swapped_for pointing to a non existing token in the DB
     with pytest.raises(InputError):
-        globaldb.add_asset(
-            asset_id='NEWID',
-            asset_type=AssetType.EVM_TOKEN,
-            data=EvmToken.initialize(
-                address=make_evm_address(),
-                chain_id=ChainID.ETHEREUM,
-                token_kind=EvmTokenKind.ERC20,
-                swapped_for=asset_to_delete,
-            ),
-        )
+        globaldb.add_asset(EvmToken.initialize(
+            address=make_evm_address(),
+            chain_id=ChainID.ETHEREUM,
+            token_kind=EvmTokenKind.ERC20,
+            swapped_for=asset_to_delete,
+        ))
 
     # now edit a new token with swapped_for pointing to a non existing token in the DB
     resolved_bat = A_BAT.resolve_to_evm_token()
@@ -213,49 +212,36 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_check_asset_exists(globaldb):
-    globaldb.add_asset(
-        asset_id='1',
+    globaldb.add_asset(CryptoAsset.initialize(
+        identifier='1',
         asset_type=AssetType.OWN_CHAIN,
-        data={
-            'name': 'Lolcoin',
-            'symbol': 'LOLZ',
-            'started': 0,
-        },
-    )
-    globaldb.add_asset(
-        asset_id='2',
-        asset_type=AssetType.FIAT,
-        data={
-            'name': 'Lolcoin',
-            'symbol': 'LOLZ',
-            'started': 0,
-        },
-    )
-    globaldb.add_asset(
-        asset_id='3',
+        name='Lolcoin',
+        symbol='LOLZ',
+        started=0,
+    ))
+    globaldb.add_asset(FiatAsset.initialize(
+        identifier='2',
+        name='Lolcoin',
+        symbol='LOLZ',
+    ))
+    globaldb.add_asset(CryptoAsset.initialize(
+        identifier='3',
         asset_type=AssetType.OMNI_TOKEN,
-        data={
-            'name': 'Lolcoin',
-            'symbol': 'LOLZ',
-            'started': 0,
-        },
-    )
-
+        name='Lolcoin',
+        symbol='LOLZ',
+        started=0,
+    ))
     assert not globaldb.check_asset_exists(AssetType.TRON_TOKEN, name='foo', symbol='FOO')
     assert not globaldb.check_asset_exists(AssetType.TRON_TOKEN, name='Lolcoin', symbol='LOLZ')
     assert globaldb.check_asset_exists(AssetType.FIAT, name='Lolcoin', symbol='LOLZ') == ['2']
     assert globaldb.check_asset_exists(AssetType.OMNI_TOKEN, name='Lolcoin', symbol='LOLZ') == ['3']  # noqa: E501
 
     # now add another asset already existing, but with different ID. See both returned
-    globaldb.add_asset(
-        asset_id='4',
-        asset_type=AssetType.FIAT,
-        data={
-            'name': 'Euro',
-            'symbol': 'EUR',
-            'started': 0,
-        },
-    )
+    globaldb.add_asset(FiatAsset.initialize(
+        identifier='4',
+        name='Euro',
+        symbol='EUR',
+    ))
     assert globaldb.check_asset_exists(AssetType.FIAT, name='Euro', symbol='EUR') == ['EUR', '4']  # noqa: E501
 
 
@@ -566,11 +552,7 @@ def test_global_db_restore(globaldb, database):
         name='willdell',
         symbol='DELME',
     )
-    globaldb.add_asset(
-        asset_id=token_to_delete.identifier,
-        asset_type=AssetType.EVM_TOKEN,
-        data=token_to_delete,
-    )
+    globaldb.add_asset(token_to_delete)
     # Add a token with underlying token
     with_underlying_address = make_evm_address()
     with_underlying = EvmToken.initialize(
@@ -587,33 +569,23 @@ def test_global_db_restore(globaldb, database):
             weight=1,
         )],
     )
-    globaldb.add_asset(
-        asset_id=with_underlying.identifier,
-        asset_type=AssetType.EVM_TOKEN,
-        data=with_underlying,
-    )
+    globaldb.add_asset(with_underlying)
     # Add asset that is not a token
-    globaldb.add_asset(
-        asset_id='1',
+    globaldb.add_asset(CryptoAsset.initialize(
+        identifier='1',
         asset_type=AssetType.OWN_CHAIN,
-        data={
-            'name': 'Lolcoin',
-            'symbol': 'LOLZ',
-            'started': 0,
-        },
-    )
-
+        name='Lolcoin',
+        symbol='LOLZ',
+        started=0,
+    ))
     # Add asset that is not a token
-    globaldb.add_asset(
-        asset_id='2',
+    globaldb.add_asset(CryptoAsset.initialize(
+        identifier='2',
         asset_type=AssetType.OWN_CHAIN,
-        data={
-            'name': 'Lolcoin2',
-            'symbol': 'LOLZ2',
-            'started': 0,
-        },
-    )
-
+        name='Lolcoin2',
+        symbol='LOLZ2',
+        started=0,
+    ))
     with database.user_write() as write_cursor:
         database.add_asset_identifiers(write_cursor, '1')
         database.add_asset_identifiers(write_cursor, '2')
@@ -704,11 +676,7 @@ def test_global_db_reset(globaldb, database):
         name='willdell',
         symbol='DELME',
     )
-    globaldb.add_asset(
-        asset_id=token_to_delete.identifier,
-        asset_type=AssetType.EVM_TOKEN,
-        data=token_to_delete,
-    )
+    globaldb.add_asset(token_to_delete)
     # Add a token with underlying token
     with_underlying_address = make_evm_address()
     with_underlying = EvmToken.initialize(
@@ -725,21 +693,15 @@ def test_global_db_reset(globaldb, database):
             weight=1,
         )],
     )
-    globaldb.add_asset(
-        asset_id=with_underlying.identifier,
-        asset_type=AssetType.EVM_TOKEN,
-        data=with_underlying,
-    )
+    globaldb.add_asset(with_underlying)
     # Add asset that is not a token
-    globaldb.add_asset(
-        asset_id='1',
+    globaldb.add_asset(CryptoAsset.initialize(
+        identifier='1',
         asset_type=AssetType.OWN_CHAIN,
-        data={
-            'name': 'Lolcoin',
-            'symbol': 'LOLZ',
-            'started': 0,
-        },
-    )
+        name='Lolcoin',
+        symbol='LOLZ',
+        started=0,
+    ))
     # Edit one token
     one_inch_update = EvmToken.initialize(
         address='0x111111111117dC0aa78b770fA6A738034120C302',
@@ -933,11 +895,7 @@ def test_asset_deletion(globaldb):
         )],
     )
     # Create token
-    globaldb.add_asset(
-        asset_id=token_data.identifier,
-        asset_type=AssetType.EVM_TOKEN,
-        data=token_data,
-    )
+    globaldb.add_asset(token_data)
     # Check that it was created
     check_tables(
         asset_id=token_data.identifier,
@@ -1175,11 +1133,7 @@ def test_get_assets_missing_information_by_symbol(globaldb):
         name=None,
         symbol='BPTTT',
     )
-    globaldb.add_asset(
-        asset_id=token.identifier,
-        asset_type=AssetType.EVM_TOKEN,
-        data=token,
-    )
+    globaldb.add_asset(token)
 
     assets = globaldb.get_assets_with_symbol('BPTTT')
     assert assets[0].name == token.identifier

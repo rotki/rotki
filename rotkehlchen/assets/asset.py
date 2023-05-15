@@ -100,6 +100,9 @@ class Asset:
     def is_evm_token(self) -> bool:
         return AssetResolver().get_asset_type(self.identifier) == AssetType.EVM_TOKEN
 
+    def is_crypto(self) -> bool:
+        return self.is_asset_with_oracles() and not self.is_fiat()
+
     def resolve(self) -> 'Asset':
         """
         Returns the final representation for the current asset identifier. For example if we do

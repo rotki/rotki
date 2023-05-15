@@ -8,7 +8,7 @@ import requests
 from polyleven import levenshtein
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.assets.asset import Asset, CustomAsset
+from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_SAI, A_USD
@@ -785,6 +785,7 @@ def test_search_assets(rotkehlchen_api_server):
 
 def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     """Test that searching for assets using a keyword works(levenshtein approach)."""
+    globaldb = GlobalDBHandler()
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -806,21 +807,20 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     # but add assets without name/symbol and see that nothing breaks
     asset_without_name_id = str(uuid4())
     asset_without_symbol_id = str(uuid4())
-    GlobalDBHandler().add_asset(
-        asset_id=asset_without_name_id,
+    globaldb.add_asset(CryptoAsset.initialize(
+        identifier=asset_without_name_id,
         asset_type=AssetType.OWN_CHAIN,
-        data={'symbol': 'ETH'},
-    )
-    GlobalDBHandler().add_asset(
-        asset_id=asset_without_symbol_id,
+        symbol='ETH',
+    ))
+    globaldb.add_asset(CryptoAsset.initialize(
+        identifier=asset_without_symbol_id,
         asset_type=AssetType.OWN_CHAIN,
-        data={'name': 'ETH'},
-    )
-    GlobalDBHandler().add_asset(
-        asset_id=str(uuid4()),
+        name='ETH',
+    ))
+    globaldb.add_asset(CryptoAsset.initialize(
+        identifier=str(uuid4()),
         asset_type=AssetType.OWN_CHAIN,
-        data={},
-    )
+    ))
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,

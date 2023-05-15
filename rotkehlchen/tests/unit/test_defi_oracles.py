@@ -5,7 +5,6 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DOGE, A_ETH, A_LINK, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO_PRICE
@@ -150,11 +149,7 @@ def test_invalid_token_kind_price_query(inquirer_defi: 'Inquirer'):
         decimals=18,
         token_kind=EvmTokenKind.ERC721,
     )
-    GlobalDBHandler().add_asset(
-        asset_id=nft_token.identifier,
-        asset_type=AssetType.EVM_TOKEN,
-        data=nft_token,
-    )
+    GlobalDBHandler().add_asset(nft_token)
     ethereum_inquirer = inquirer_defi.get_ethereum_manager().node_inquirer
     assert ethereum_inquirer is not None
     assert inquirer_defi._uniswapv3 is not None
