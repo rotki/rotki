@@ -276,6 +276,12 @@ def test_validator_daily_stats(network_mocking, price_historian):  # pylint: dis
     stats.reverse()
     assert stats[:len(expected_stats)] == expected_stats
 
+    # make sure that the 24/25 Dec 2022 0 stat, which is after exit is not there
+    assert stats[-1].timestamp <= 1671753600
+    assert stats[-1].pnl != ZERO
+    assert stats[-2].timestamp <= 1671753600
+    assert stats[-2].pnl != ZERO
+
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
 def test_validator_daily_stats_with_last_known_timestamp(network_mocking, price_historian):  # pylint: disable=unused-argument  # noqa: E501
