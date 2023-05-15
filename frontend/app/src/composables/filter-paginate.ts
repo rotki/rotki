@@ -14,19 +14,19 @@ import {
 } from '@/types/route';
 import { getUpdatedKey } from '@/services/axios-tranformers';
 
-interface FilterSchema<F, M, O> {
+interface FilterSchema<F, M> {
   filters: Ref<F>;
   matchers: ComputedRef<M[]>;
   updateFilter: (filter: F) => void;
   RouteFilterSchema: ZodSchema;
-  transformFilters?: (filter: F) => O;
+  transformFilters?: (filter: F) => F;
 }
 
 /**
  * Creates a universal pagination and filter structure
  * given the required fields, can manage pagination and filtering and data
  * fetching when params change
- * @template T,U,V,S,W,X,Y
+ * @template T,U,V,S,W,X
  * @param {MaybeRef<string | null>} locationOverview
  * @param {MaybeRef<boolean>} mainPage
  * @param {() => FilterSchema<W, X, Y>} filterSchema
@@ -39,12 +39,11 @@ export const usePaginationFilters = <
   V extends Object = T,
   S extends Collection<V> = Collection<V>,
   W extends Object | void = undefined,
-  X = undefined,
-  Y = W
+  X = undefined
 >(
   locationOverview: MaybeRef<string | null>,
   mainPage: MaybeRef<boolean>,
-  filterSchema: () => FilterSchema<W, X, Y>,
+  filterSchema: () => FilterSchema<W, X>,
   fetchAssetData: (payload: MaybeRef<U>) => Promise<S>,
   options: {
     onUpdateFilters?: (query: LocationQuery) => void;
@@ -90,13 +89,7 @@ export const usePaginationFilters = <
     const { itemsPerPage, page, sortBy, sortDesc } = get(paginationOptions);
     const offset = (page - 1) * itemsPerPage;
 
-    let selectedFilters = get(filters);
-    if (transformFilters) {
-      selectedFilters = {
-        ...selectedFilters,
-        ...transformFilters(selectedFilters)
-      };
-    }
+    const selectedFilters = get(filters);
     const overview = get(locationOverview);
     if (
       overview &&
@@ -106,13 +99,24 @@ export const usePaginationFilters = <
       selectedFilters.location = overview;
     }
 
+    let transformedFilters = {
+      ...selectedFilters,
+      ...get(extraParams),
+      ...nonEmptyProperties(get(customPageParams) ?? {})
+    };
+
+    if (transformFilters) {
+      transformedFilters = {
+        ...transformedFilters,
+        ...transformFilters(transformedFilters)
+      };
+    }
+
     const orderByAttributes =
       sortBy?.length > 0 ? sortBy : [defaultSortBy?.key ?? 'timestamp'];
 
     return {
-      ...selectedFilters,
-      ...get(extraParams),
-      ...nonEmptyProperties(get(customPageParams) ?? {}),
+      ...transformedFilters,
       limit: itemsPerPage,
       offset,
       orderByAttributes: orderByAttributes.map(item =>

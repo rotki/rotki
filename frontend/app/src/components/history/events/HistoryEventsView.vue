@@ -10,7 +10,7 @@ import { not } from '@vueuse/math';
 import { type HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type ComputedRef } from 'vue';
 import { type Collection } from '@/types/collection';
-import { FilterBehaviour, SavedFilterLocation } from '@/types/filtering';
+import { SavedFilterLocation } from '@/types/filtering';
 import { IgnoreActionType } from '@/types/history/ignored';
 import {
   type EvmChainAndTxHash,
@@ -24,11 +24,7 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { type Writeable } from '@/types';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
-import type {
-  Filters,
-  FiltersWithBehaviour,
-  Matcher
-} from '@/composables/filters/events';
+import type { Filters, Matcher } from '@/composables/filters/events';
 
 const props = withDefaults(
   defineProps<{
@@ -151,8 +147,7 @@ const {
   HistoryEventEntry,
   Collection<HistoryEventEntry>,
   Filters,
-  Matcher,
-  FiltersWithBehaviour
+  Matcher
 >(
   null,
   mainPage,
@@ -196,7 +191,6 @@ const {
 
       if (isDefined(entryTypes)) {
         params.entryTypes = {
-          behaviour: FilterBehaviour.INCLUDE,
           values: get(entryTypes)
         };
       }

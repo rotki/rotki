@@ -4,11 +4,7 @@ import { type Ref } from 'vue';
 import { RouterAccountsSchema } from '@/types/route';
 import { useMainStore } from '@/store/main';
 import { FilterBehaviour } from '@/types/filtering';
-import type {
-  Filters,
-  FiltersWithBehaviour,
-  Matcher
-} from '@/composables/filters/events';
+import type { Filters, Matcher } from '@/composables/filters/events';
 import type { Collection } from '@/types/collection';
 import type {
   HistoryEvent,
@@ -116,8 +112,7 @@ describe('composables::history/filter-paginate', () => {
         HistoryEvent,
         Collection<HistoryEvent>,
         Filters,
-        Matcher,
-        FiltersWithBehaviour
+        Matcher
       >(
         locationOverview,
         mainPage,
@@ -153,8 +148,7 @@ describe('composables::history/filter-paginate', () => {
         HistoryEvent,
         Collection<HistoryEvent>,
         Filters,
-        Matcher,
-        FiltersWithBehaviour
+        Matcher
       >(
         locationOverview,
         mainPage,
@@ -186,8 +180,7 @@ describe('composables::history/filter-paginate', () => {
         HistoryEvent,
         Collection<HistoryEvent>,
         Filters,
-        Matcher,
-        FiltersWithBehaviour
+        Matcher
       >(
         locationOverview,
         mainPage,
@@ -239,8 +232,7 @@ describe('composables::history/filter-paginate', () => {
         HistoryEvent,
         Collection<HistoryEvent>,
         Filters,
-        Matcher,
-        FiltersWithBehaviour
+        Matcher
       >(
         locationOverview,
         mainPage,
@@ -274,8 +266,7 @@ describe('composables::history/filter-paginate', () => {
           HistoryEvent,
           Collection<HistoryEvent>,
           Filters,
-          Matcher,
-          FiltersWithBehaviour
+          Matcher
         >(
           locationOverview,
           mainPage,

@@ -3,7 +3,6 @@ import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type MaybeRef } from '@vueuse/core';
 import {
   FilterBehaviour,
-  type MatchedKeyword,
   type MatchedKeywordWithBehaviour,
   type SearchMatcher,
   assetDeserializer,
@@ -47,9 +46,7 @@ export type Matcher = SearchMatcher<
   HistoryEventFilterKeys,
   HistoryEventFilterValueKeys
 >;
-export type Filters = MatchedKeyword<HistoryEventFilterValueKeys>;
-export type FiltersWithBehaviour =
-  MatchedKeywordWithBehaviour<HistoryEventFilterValueKeys>;
+export type Filters = MatchedKeywordWithBehaviour<HistoryEventFilterValueKeys>;
 
 export const useHistoryEventFilter = (
   disabled: {
@@ -210,12 +207,12 @@ export const useHistoryEventFilter = (
     [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString
   });
 
-  const transformFilters = (filters: Filters): FiltersWithBehaviour => {
+  const transformFilters = (filters: Filters): Filters => {
     const matchersVal: Matcher[] = get(matchers).filter(
       item => 'string' in item && item.behaviourRequired
     );
 
-    const newFilters: FiltersWithBehaviour = { ...filters };
+    const newFilters: Filters = { ...filters };
     matchersVal.forEach(matcher => {
       if (!('string' in matcher)) {
         return;
@@ -224,6 +221,16 @@ export const useHistoryEventFilter = (
       if (keyValue && keyValue in filters) {
         const data = filters[keyValue];
         if (!data) {
+          return;
+        }
+
+        if (typeof data === 'object' && !Array.isArray(data)) {
+          if (data.values) {
+            newFilters[keyValue] = {
+              behaviour: data.behaviour ?? FilterBehaviour.INCLUDE,
+              values: data.values
+            };
+          }
           return;
         }
 

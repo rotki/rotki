@@ -10,7 +10,7 @@ export enum FilterBehaviour {
 }
 
 export type FilterObjectWithBehaviour<T> = {
-  behaviour: FilterBehaviour;
+  behaviour?: FilterBehaviour;
   values: T;
 };
 
