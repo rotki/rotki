@@ -829,20 +829,16 @@ def test_exporting_user_assets_list(rotkehlchen_api_server, globaldb, with_custo
     """Test that the endpoint for exporting user assets works correctly"""
     eth_address = make_evm_address()
     identifier = ethaddress_to_identifier(eth_address)
-    globaldb.add_asset(
-        asset_id=identifier,
-        asset_type=AssetType.EVM_TOKEN,
-        data=EvmToken.initialize(
-            address=eth_address,
-            chain_id=ChainID.ETHEREUM,
-            token_kind=EvmTokenKind.ERC20,
-            decimals=18,
-            name='yabirtoken',
-            symbol='YAB',
-            coingecko='YAB',
-            cryptocompare='YAB',
-        ),
-    )
+    globaldb.add_asset(EvmToken.initialize(
+        address=eth_address,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        decimals=18,
+        name='yabirtoken',
+        symbol='YAB',
+        coingecko='YAB',
+        cryptocompare='YAB',
+    ))
     with tempfile.TemporaryDirectory() as path:
         if with_custom_path:
             response = requests.put(

@@ -28,12 +28,7 @@ def add_evm_token_to_db(token_data: EvmToken) -> EvmToken:
     May raise:
     - InputError if token already exists in the DB
     """
-    globaldb = GlobalDBHandler()
-    globaldb.add_asset(
-        asset_id=token_data.identifier,
-        asset_type=AssetType.EVM_TOKEN,
-        data=token_data,
-    )
+    GlobalDBHandler().add_asset(token_data)
     # This can, but should not raise UnknownAsset, DeserializationError
     return EvmToken(token_data.identifier)
 

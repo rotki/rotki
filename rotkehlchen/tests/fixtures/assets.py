@@ -2,8 +2,6 @@
 import pytest
 
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.types import AssetType
-from rotkehlchen.constants.resolver import evm_address_to_identifier
 
 
 @pytest.fixture(name='force_reinitialize_asset_resolver')
@@ -41,11 +39,6 @@ def asset_resolver(
         else:  # a callable was given
             given_user_tokens = user_ethereum_tokens()
         for entry in given_user_tokens:
-            asset_id = evm_address_to_identifier(
-                address=entry.evm_address,
-                chain_id=entry.chain_id,
-                token_type=entry.token_kind,
-            )
-            globaldb.add_asset(asset_id=asset_id, asset_type=AssetType.EVM_TOKEN, data=entry)
+            globaldb.add_asset(entry)
 
     return resolver

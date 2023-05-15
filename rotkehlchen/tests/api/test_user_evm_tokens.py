@@ -7,7 +7,6 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
-from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -663,7 +662,6 @@ def test_adding_evm_token_with_underlying_token(rotkehlchen_api_server):
     new_token_address = make_evm_address()
     underlying_token_1 = make_evm_address()
     underlying_token_2 = make_evm_address()
-    new_token_id = ethaddress_to_identifier(new_token_address)
     bp_token_2 = EvmToken.initialize(
         name='my balancer token b',
         symbol='BPT',
@@ -683,11 +681,7 @@ def test_adding_evm_token_with_underlying_token(rotkehlchen_api_server):
             ),
         ],
     )
-    GlobalDBHandler().add_asset(
-        asset_id=new_token_id,
-        asset_type=AssetType.EVM_TOKEN,
-        data=bp_token_2,
-    )
+    GlobalDBHandler().add_asset(bp_token_2)
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
