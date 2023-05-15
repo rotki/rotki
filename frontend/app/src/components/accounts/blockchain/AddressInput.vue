@@ -86,7 +86,7 @@ const rules = [
 </script>
 
 <template>
-  <v-row no-gutters class="mt-2">
+  <v-row no-gutters>
     <v-col>
       <v-row v-if="multi" no-gutters align="center">
         <v-col cols="auto">
