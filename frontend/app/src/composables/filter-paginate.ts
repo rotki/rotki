@@ -14,22 +14,22 @@ import {
 } from '@/types/route';
 import { getUpdatedKey } from '@/services/axios-tranformers';
 
-interface FilterSchema<F, M> {
+interface FilterSchema<F, M, O> {
   filters: Ref<F>;
   matchers: ComputedRef<M[]>;
   updateFilter: (filter: F) => void;
   RouteFilterSchema: ZodSchema;
-  transformExclusionFilters?: (filter: F) => F;
+  transformFilters?: (filter: F) => O;
 }
 
 /**
  * Creates a universal pagination and filter structure
  * given the required fields, can manage pagination and filtering and data
  * fetching when params change
- * @template T,U,V,S,W,X
+ * @template T,U,V,S,W,X,Y
  * @param {MaybeRef<string | null>} locationOverview
  * @param {MaybeRef<boolean>} mainPage
- * @param {() => FilterSchema<W, X>} filterSchema
+ * @param {() => FilterSchema<W, X, Y>} filterSchema
  * @param {(payload: MaybeRef<U>) => Promise<Collection<V>>} fetchAssetData
  * @param {{onUpdateFilters?: (query: LocationQuery) => void, extraParams?: ComputedRef<LocationQuery>, customPageParams?: ComputedRef<Partial<U>>, defaultSortBy?: {pagination?: keyof T, pageParams?: (keyof T)[], pageParamsAsc?: boolean[]}}} options
  */
@@ -39,11 +39,12 @@ export const usePaginationFilters = <
   V extends Object = T,
   S extends Collection<V> = Collection<V>,
   W extends Object | void = undefined,
-  X = undefined
+  X = undefined,
+  Y = W
 >(
   locationOverview: MaybeRef<string | null>,
   mainPage: MaybeRef<boolean>,
-  filterSchema: () => FilterSchema<W, X>,
+  filterSchema: () => FilterSchema<W, X, Y>,
   fetchAssetData: (payload: MaybeRef<U>) => Promise<S>,
   options: {
     onUpdateFilters?: (query: LocationQuery) => void;
@@ -82,7 +83,7 @@ export const usePaginationFilters = <
     matchers,
     updateFilter,
     RouteFilterSchema,
-    transformExclusionFilters
+    transformFilters
   } = filterSchema();
 
   const pageParams: ComputedRef<U> = computed(() => {
@@ -90,10 +91,10 @@ export const usePaginationFilters = <
     const offset = (page - 1) * itemsPerPage;
 
     let selectedFilters = get(filters);
-    if (transformExclusionFilters) {
+    if (transformFilters) {
       selectedFilters = {
         ...selectedFilters,
-        ...transformExclusionFilters(selectedFilters)
+        ...transformFilters(selectedFilters)
       };
     }
     const overview = get(locationOverview);

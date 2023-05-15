@@ -4,6 +4,16 @@ import { z } from 'zod';
 import { AssetInfoWithId, type AssetsWithId } from '@/types/asset';
 import { type DateFormat } from '@/types/date-format';
 
+export enum FilterBehaviour {
+  INCLUDE = 'include',
+  EXCLUDE = 'exclude'
+}
+
+export type FilterObjectWithBehaviour<T> = {
+  behaviour: FilterBehaviour;
+  values: T;
+};
+
 export type StringSuggestion = () => string[];
 export type AssetSuggestion = (value: string) => Promise<AssetsWithId>;
 
@@ -23,6 +33,7 @@ export interface StringSuggestionMatcher<K, KV = void>
   readonly serializer?: (value: string) => string;
   readonly deserializer?: (value: string) => string;
   readonly allowExclusion?: boolean;
+  readonly behaviourRequired?: boolean;
 }
 
 interface AssetSuggestionMatcher<K, KV = void> extends BaseMatcher<K, KV> {
@@ -37,6 +48,10 @@ export type SearchMatcher<K, KV = void> =
 
 export type MatchedKeyword<T extends string> = {
   [key in T]?: string | string[];
+};
+
+export type MatchedKeywordWithBehaviour<T extends string> = {
+  [key in T]?: string | string[] | FilterObjectWithBehaviour<string | string[]>;
 };
 
 export const BaseSuggestion = z.object({

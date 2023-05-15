@@ -2,7 +2,9 @@ import { z } from 'zod';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type MaybeRef } from '@vueuse/core';
 import {
+  FilterBehaviour,
   type MatchedKeyword,
+  type MatchedKeywordWithBehaviour,
   type SearchMatcher,
   assetDeserializer,
   assetSuggestions,
@@ -46,6 +48,8 @@ export type Matcher = SearchMatcher<
   HistoryEventFilterValueKeys
 >;
 export type Filters = MatchedKeyword<HistoryEventFilterValueKeys>;
+export type FiltersWithBehaviour =
+  MatchedKeywordWithBehaviour<HistoryEventFilterValueKeys>;
 
 export const useHistoryEventFilter = (
   disabled: {
@@ -150,7 +154,8 @@ export const useHistoryEventFilter = (
         suggestions: () =>
           entryTypesVal ?? Object.values(HistoryEventEntryType),
         validate: (type: string) => !!type,
-        allowExclusion: true
+        allowExclusion: true,
+        behaviourRequired: true
       });
     }
 
@@ -205,42 +210,48 @@ export const useHistoryEventFilter = (
     [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString
   });
 
-  const transformExclusionFilters = (filters: Filters) => {
+  const transformFilters = (filters: Filters): FiltersWithBehaviour => {
     const matchersVal: Matcher[] = get(matchers).filter(
-      item => 'string' in item && item.allowExclusion
+      item => 'string' in item && item.behaviourRequired
     );
 
-    const newFilters = { ...filters };
+    const newFilters: FiltersWithBehaviour = { ...filters };
     matchersVal.forEach(matcher => {
       if (!('string' in matcher)) {
         return;
       }
       const keyValue = matcher.keyValue;
-      if (keyValue && keyValue in newFilters) {
-        const data = newFilters[keyValue];
+      if (keyValue && keyValue in filters) {
+        const data = filters[keyValue];
         if (!data) {
           return;
         }
 
         let formattedData: string | string[] = data;
+        let exclude = false;
 
-        const allData = matcher.suggestions();
-
-        if (typeof data === 'string' && data.startsWith('!')) {
-          formattedData = allData.filter(item => item !== data.substring(1));
-        } else if (
-          Array.isArray(data) &&
-          data.length > 0 &&
-          data[0].startsWith('!')
-        ) {
-          const newArray = data.map(item =>
-            item.startsWith('!') ? item.substring(1) : item
-          );
-
-          formattedData = allData.filter(item => !newArray.includes(item));
+        if (matcher.allowExclusion) {
+          if (typeof data === 'string' && data.startsWith('!')) {
+            exclude = true;
+            formattedData = data.substring(1);
+          } else if (
+            Array.isArray(data) &&
+            data.length > 0 &&
+            data[0].startsWith('!')
+          ) {
+            exclude = true;
+            formattedData = data.map(item =>
+              item.startsWith('!') ? item.substring(1) : item
+            );
+          }
         }
 
-        newFilters[keyValue] = formattedData;
+        newFilters[keyValue] = {
+          behaviour: exclude
+            ? FilterBehaviour.EXCLUDE
+            : FilterBehaviour.INCLUDE,
+          values: formattedData
+        };
       }
     });
 
@@ -251,7 +262,7 @@ export const useHistoryEventFilter = (
     matchers,
     filters,
     updateFilter,
-    transformExclusionFilters,
+    transformFilters,
     RouteFilterSchema
   };
 };
