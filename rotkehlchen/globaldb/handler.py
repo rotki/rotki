@@ -1698,8 +1698,6 @@ class GlobalDBHandler():
         May raise:
         - sqlite3.Error if the user_db couldn't be correctly attached
         """
-        root_dir = Path(__file__).resolve().parent.parent
-        builtin_database = root_dir / 'data' / 'global.db'
         # Update the list of owned assets
         user_db.update_owned_assets_in_globaldb(user_db_write_cursor)
         if only_owned:
@@ -1707,14 +1705,12 @@ class GlobalDBHandler():
         else:
             query = cursor.execute('SELECT identifier from assets;')
         user_ids = {tup[0] for tup in query}
-        # Attach to the clean db packaged with rotki
-        with GlobalDBHandler().packaged_db_lock:
-            cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
-            # Get built in identifiers
-            query = cursor.execute('SELECT identifier from clean_db.assets;')
+
+        # Get built in identifiers
+        with GlobalDBHandler().packaged_db_conn().read_ctx() as packaged_cursor:
+            query = packaged_cursor.execute('SELECT identifier from assets;')
             shipped_ids = {tup[0] for tup in query}
-            with GlobalDBHandler().conn.critical_section_and_transaction_lock():
-                cursor.execute('DETACH DATABASE clean_db;')
+
         return user_ids - shipped_ids
 
     @staticmethod
