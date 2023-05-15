@@ -14,7 +14,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, Timestamp
 
-from .types import ASSETS_WITH_NO_CRYPTO_ORACLES, AssetType
+from .types import ASSETS_WITH_NO_CRYPTO_ORACLES, NON_CRYPTO_ASSETS, AssetType
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -75,6 +75,13 @@ class Asset:
     def serialize(self) -> str:
         return self.identifier
 
+    def get_asset_type(self) -> AssetType:
+        """Returns type of the asset. Prefers to use the asset_type field if it exists"""
+        if isinstance(self, AssetWithNameAndType):
+            return self.asset_type
+
+        return AssetResolver().get_asset_type(self.identifier)
+
     def check_existence(self, query_packaged_db: bool = True) -> 'Asset':
         """
         If this asset exists, returns the instance. If it doesn't, throws an error.
@@ -92,16 +99,16 @@ class Asset:
         return self.identifier.startswith(NFT_DIRECTIVE)
 
     def is_fiat(self) -> bool:
-        return AssetResolver().get_asset_type(self.identifier) == AssetType.FIAT
+        return self.get_asset_type() == AssetType.FIAT
 
     def is_asset_with_oracles(self) -> bool:
-        return AssetResolver().get_asset_type(self.identifier) not in ASSETS_WITH_NO_CRYPTO_ORACLES
+        return self.get_asset_type() not in ASSETS_WITH_NO_CRYPTO_ORACLES
 
     def is_evm_token(self) -> bool:
-        return AssetResolver().get_asset_type(self.identifier) == AssetType.EVM_TOKEN
+        return self.get_asset_type() == AssetType.EVM_TOKEN
 
     def is_crypto(self) -> bool:
-        return self.is_asset_with_oracles() and not self.is_fiat()
+        return self.get_asset_type() not in NON_CRYPTO_ASSETS
 
     def resolve(self) -> 'Asset':
         """
