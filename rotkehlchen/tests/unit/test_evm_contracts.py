@@ -1,6 +1,6 @@
 import json
 
-import gevent
+import pytest
 from eth_utils import is_checksum_address
 
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -37,14 +37,7 @@ def test_evm_abi_data(globaldb):
             abis_set.add(entry[1])
 
 
-def keep_open_globaldb_write(builtin_db_path):
-    """Silly way to keep a transaction open in another greenlet"""
-    with GlobalDBHandler().packaged_db_lock, GlobalDBHandler().conn.write_ctx() as cursor:
-        cursor.execute(f'ATTACH DATABASE "{builtin_db_path}" AS packaged_db;')
-        gevent.sleep(1.5)
-        cursor.execute('DETACH DATABASE "packaged_db"')
-
-
+@pytest.mark.parametrize('sql_vm_instructions_cb', [2])
 def test_fallback_to_packaged_db(ethereum_inquirer: 'EthereumInquirer'):
     """
     Test that if a contract / abi is missing in the globaldb, it is searched in the packaged db.
@@ -59,10 +52,6 @@ def test_fallback_to_packaged_db(ethereum_inquirer: 'EthereumInquirer'):
         cursor.execute('DELETE FROM contract_data WHERE address=? AND chain_id=1', (address,))
         cursor.execute('DELETE FROM contract_abi WHERE value=?', (abi,))
 
-    # open and keep open a write context, to make sure we are in a transaction
-    # long enough to last when we do attach/detach in contracts.contract()
-    gevent.spawn(keep_open_globaldb_write, ethereum_inquirer.contracts.builtin_database_path)
-    gevent.sleep(.3)  # context switch for a bit to let the other greenlet run
     # Now query the contract, let it get to packaged global DB and also see that
     # database packaged_db is locked is also not raised
     ethereum_inquirer.contracts.contract(address)

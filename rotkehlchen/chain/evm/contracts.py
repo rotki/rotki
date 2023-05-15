@@ -1,7 +1,6 @@
 import json
 import logging
 from collections.abc import Sequence
-from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -145,7 +144,6 @@ class EvmContracts(Generic[T]):
 
     def __init__(self, chain_id: T) -> None:
         self.chain_id = chain_id
-        self.builtin_database_path = Path(__file__).resolve().parent.parent.parent / 'data' / 'global.db'  # noqa: E501
 
     def contract_by_address(
             self,
@@ -175,24 +173,21 @@ class EvmContracts(Generic[T]):
             if fallback_to_packaged_db is False:
                 return None
 
-            # Try to find the contract in the packaged db
-            with globaldb.packaged_db_lock:
-                log.debug(f'Using packaged globaldb to get contract {address} information')
-                cursor.execute(f'ATTACH DATABASE "{self.builtin_database_path}" AS packaged_db;')
-                result = cursor.execute(
-                    'SELECT contract_data.address, contract_data.chain_id, '
-                    'contract_data.deployed_block, contract_abi.name, contract_abi.value FROM '
-                    'packaged_db.contract_data LEFT JOIN packaged_db.contract_abi ON '
-                    'contract_data.abi=contract_abi.id WHERE contract_data.chain_id=? AND '
-                    'contract_data.address=?',
-                    bindings,
-                ).fetchone()
-                with globaldb.conn.critical_section_and_transaction_lock():  # detach fails if there is an active transaction  # noqa: E501
-                    log.debug(f'About to detach packaged DB for contract with {globaldb.conn._conn.in_transaction=}')  # noqa: E501
-                    cursor.execute('DETACH DATABASE "packaged_db"')
-            if result is None:
-                log.debug(f"Couldn't find contract {address} in the packaged globaldb")
-                return None
+        # Try to find the contract in the packaged db
+        with globaldb.packaged_db_conn().read_ctx() as packaged_cursor:
+            log.debug(f'Using packaged globaldb to get contract {address} information')
+            result = packaged_cursor.execute(
+                'SELECT contract_data.address, contract_data.chain_id, '
+                'contract_data.deployed_block, contract_abi.name, contract_abi.value FROM '
+                'contract_data LEFT JOIN contract_abi ON '
+                'contract_data.abi=contract_abi.id WHERE contract_data.chain_id=? AND '
+                'contract_data.address=?',
+                bindings,
+            ).fetchone()
+
+        if result is None:
+            log.debug(f"Couldn't find contract {address} in the packaged globaldb")
+            return None
 
         # Copy the contract to the global db
         abi_id = globaldb.get_or_write_abi(
@@ -243,24 +238,20 @@ class EvmContracts(Generic[T]):
             if fallback_to_packaged_db is False:
                 return None
 
-            # Try to find the ABI in the packaged db
-            with globaldb.packaged_db_lock:
-                log.debug(f'Using packaged globaldb to get abi {name=} information')
-                cursor.execute(f'ATTACH DATABASE "{self.builtin_database_path}" AS packaged_db;')
-                result = cursor.execute(
-                    'SELECT value FROM packaged_db.contract_abi WHERE name=?',
-                    (name,),
-                ).fetchone()
-                with globaldb.conn.critical_section_and_transaction_lock():
-                    log.debug(f'About to detach packaged DB for ABI with {globaldb.conn._conn.in_transaction=}')  # noqa: E501
-                    cursor.execute('DETACH DATABASE "packaged_db"')
-                if result is None:
-                    return None
+        # Try to find the ABI in the packaged db
+        with globaldb.packaged_db_conn().read_ctx() as packaged_cursor:
+            log.debug(f'Using packaged globaldb to get abi {name=} information')
+            result = packaged_cursor.execute(
+                'SELECT value FROM contract_abi WHERE name=?',
+                (name,),
+            ).fetchone()
+            if result is None:
+                return None
 
-            globaldb.get_or_write_abi(
-                serialized_abi=result[0],
-                abi_name=name,
-            )
+        globaldb.get_or_write_abi(
+            serialized_abi=result[0],
+            abi_name=name,
+        )
 
         return json.loads(result[0])
 
