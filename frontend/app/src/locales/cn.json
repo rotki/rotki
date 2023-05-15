@@ -167,11 +167,11 @@
   "actions": {
     "add_eth2_validator": {
       "error": {
-        "description": "添加 Eth 2 验证器 {id}: {message} 时出错",
-        "title": "添加 ETH2 验证器"
+        "description": "添加 ETH 質押驗證器 {id} 時出錯：{message}",
+        "title": "添加 ETH 質押驗證器"
       },
       "task": {
-        "description": "添加 ETH2 验证器",
+        "description": "添加 ETH 質押驗證器",
         "title": "添加验证器：{id}"
       }
     },
@@ -525,24 +525,24 @@
     },
     "delete_eth2_validator": {
       "error": {
-        "description": "删除 Eth2 验证器失败：{message}",
-        "title": "删除 Eth2 验证器"
+        "description": "刪除 ETH 質押驗證器失敗：{message}",
+        "title": "刪除 ETH 抵押驗證器"
       }
     },
     "edit_eth2_validator": {
       "error": {
-        "description": "编辑 Eth2 验证器 {id}: {message} 时出错",
-        "title": "编辑 ETH2 验证器"
+        "description": "編輯 ETH 質押驗證器 {id} 時出錯：{message}",
+        "title": "編輯 ETH 質押驗證器"
       }
     },
     "eth2_staking_stats": {
       "error": {
         "message": "查询失败，出现以下错误：{message}",
-        "title": "查询 Eth2 每日统计数据"
+        "title": "查詢 ETH 質押每日統計數據"
       },
       "task": {
-        "description": "查询你的 Eth2 每日统计数据",
-        "title": "Eth2 每日统计数据"
+        "description": "查詢您的 ETH 質押每日統計數據",
+        "title": "ETH 質押每日統計數據"
       }
     },
     "get_accounts": {
@@ -754,11 +754,11 @@
     "staking": {
       "eth2": {
         "error": {
-          "description": "查询 Eth2 质押详情失败：{error}",
-          "title": "查询 Eth2 质押详情"
+          "description": "查詢 ETH 質押詳情失敗：{error}",
+          "title": "查詢 ETH 質押詳情"
         },
         "task": {
-          "title": "查询 Eth2 质押详情"
+          "title": "查詢 ETH 質押詳情"
         }
       }
     },
@@ -1273,7 +1273,7 @@
       "btc": "Bitcoin 余额",
       "dot": "Polkadot 余额",
       "eth": "Ethereum 余额",
-      "eth2": "Eth2 余额",
+      "eth2": "ETH staking 余额",
       "ksm": "Kusama 余额",
       "loopring": "Loopring 余额",
       "optimism": "Optimism"
@@ -1300,7 +1300,7 @@
     "btc": "Bitcoin",
     "dot": "Polkadot",
     "eth": "Ethereum",
-    "eth2": "Eth2",
+    "eth2": "ETH Staking",
     "ksm": "Kusama",
     "optimism": "Optimism"
   },
@@ -1900,10 +1900,10 @@
     "public_key": "公钥"
   },
   "eth2_page": {
-    "no_premium": "ETH2 质押是",
+    "no_premium": "ETH 質押是",
     "toggle": {
       "depositor": "存款人",
-      "hint": "在 ETH2 验证器和 ETH1 地址之间切换过滤和显示模式",
+      "hint": "在 ETH 抵押驗證器和 ETH1 地址之間切換過濾和顯示模式",
       "key": "验证器"
     }
   },
@@ -2033,7 +2033,7 @@
   "external_services": {
     "beaconchain": {
       "delete_tooltip": "删除 Beaconcha.in API 密钥",
-      "description": "rotki 使用 Beaconcha.in 获取有关在你的投资组合中抵押 eth2 的信息。只有在你受到速率限制时才需要 API 密钥。",
+      "description": "rotki 使用 Beaconcha.in 獲取有關您投資組合中 ETH 質押的信息。 只有在您受到速率限制時才需要 API 密鑰。",
       "hint": "输入您的 Beaconcha.in API 密钥",
       "label": "API key",
       "title": "Beaconcha.in"
@@ -2279,7 +2279,7 @@
       "force_saved_language_setting_in_machine_hint": "此设置保存在您的用户设置中。激活此设置可在您注销时保留此设置。",
       "ksm_rpc_endpoint": "Kusama 节点 RPC 端点",
       "language": "选择的语言",
-      "treat_eth2_as_eth": "应将 ETH2(Staked ETH)视为 ETH",
+      "treat_eth2_as_eth": "应将 ETH2 (Staked ETH) 视为 ETH",
       "version_update_check": "在应用中设置版本更新检查周期",
       "version_update_check_enabled": "启用"
     },
@@ -2459,7 +2459,7 @@
   },
   "import_data": {
     "binance": {
-      "line_one": "导入:存款、取款、交易、ETH 2.0 Staking、小资产交易所 BNB、ETH 2.0 Staking 奖励、Launchpool 利息、POS 储蓄利息、POS 储蓄购买、POS 储蓄赎回。",
+      "line_one": "导入:存款、取款、交易、ETH Staking、小资产交易所 BNB、ETH Staking 奖励、Launchpool 利息、POS 储蓄利息、POS 储蓄购买、POS 储蓄赎回。",
       "line_two": "由于 binance 的 csv 格式，有可能不会导入所有数据。如果发生这种情况，您将收到警告。",
       "name": "币安",
       "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
@@ -3717,7 +3717,7 @@
     }
   },
   "staking": {
-    "eth2": "ETH2",
+    "eth2": "ETH",
     "kraken": "Kraken",
     "liquity": "Liquity"
   },

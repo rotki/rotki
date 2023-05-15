@@ -2411,7 +2411,7 @@
   },
   "import_data": {
     "binance": {
-      "line_one": "Imports: Deposits, Withdrawals, Trades, ETH 2.0 Staking, Small assets exchange BNB, ETH 2.0 Staking Rewards, Launchpool Interest, POS savings interest, POS savings purchase, POS savings redemption.",
+      "line_one": "Imports: Deposits, Withdrawals, Trades, ETH Staking, Small assets exchange BNB, ETH Staking Rewards, Launchpool Interest, POS savings interest, POS savings purchase, POS savings redemption.",
       "line_two": "Because of binance's csv format there is a chance that not all data will be imported. If this will happen, you will get warning.",
       "name": "Binance",
       "note": "Important notes for importing data from {0}'s CSV exports.",
