@@ -3,6 +3,7 @@ import flushPromises from 'flush-promises';
 import { type Ref } from 'vue';
 import { RouterAccountsSchema } from '@/types/route';
 import { useMainStore } from '@/store/main';
+import { FilterBehaviour } from '@/types/filtering';
 import type { Filters, Matcher } from '@/composables/filters/events';
 import type { Collection } from '@/types/collection';
 import type {
@@ -292,12 +293,10 @@ describe('composables::history/filter-paginate', () => {
       expect(fetchHistoryEvents).toHaveBeenCalledWith(
         expect.objectContaining({
           value: expect.objectContaining({
-            entryTypes: [
-              'history event',
-              'eth withdrawal event',
-              'eth block event',
-              'eth deposit event'
-            ]
+            entryTypes: {
+              behaviour: FilterBehaviour.EXCLUDE,
+              values: ['evm event']
+            }
           })
         })
       );

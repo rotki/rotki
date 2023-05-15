@@ -4,6 +4,7 @@ import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type PaginationRequestPayload } from '@/types/common';
 import { EntryMeta } from '@/types/history/meta';
 import { CollectionCommonFields } from '@/types/collection';
+import { type FilterObjectWithBehaviour } from '@/types/filtering';
 
 const LiquityStakingEventExtraData = z.object({
   asset: z.string(),
@@ -151,7 +152,7 @@ export interface HistoryEventRequestPayload
   readonly counterparties?: string | string[];
   readonly location?: string | string[];
   readonly product?: string | string[];
-  readonly entryTypes?: string | string[];
+  readonly entryTypes?: FilterObjectWithBehaviour<string | string[]>;
   readonly txHashes?: string | string[];
   readonly validatorIndices?: string | string[];
 }

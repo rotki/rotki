@@ -19,7 +19,7 @@ interface FilterSchema<F, M> {
   matchers: ComputedRef<M[]>;
   updateFilter: (filter: F) => void;
   RouteFilterSchema: ZodSchema;
-  transformExclusionFilters?: (filter: F) => F;
+  transformFilters?: (filter: F) => F;
 }
 
 /**
@@ -29,7 +29,7 @@ interface FilterSchema<F, M> {
  * @template T,U,V,S,W,X
  * @param {MaybeRef<string | null>} locationOverview
  * @param {MaybeRef<boolean>} mainPage
- * @param {() => FilterSchema<W, X>} filterSchema
+ * @param {() => FilterSchema<W, X, Y>} filterSchema
  * @param {(payload: MaybeRef<U>) => Promise<Collection<V>>} fetchAssetData
  * @param {{onUpdateFilters?: (query: LocationQuery) => void, extraParams?: ComputedRef<LocationQuery>, customPageParams?: ComputedRef<Partial<U>>, defaultSortBy?: {pagination?: keyof T, pageParams?: (keyof T)[], pageParamsAsc?: boolean[]}}} options
  */
@@ -82,20 +82,14 @@ export const usePaginationFilters = <
     matchers,
     updateFilter,
     RouteFilterSchema,
-    transformExclusionFilters
+    transformFilters
   } = filterSchema();
 
   const pageParams: ComputedRef<U> = computed(() => {
     const { itemsPerPage, page, sortBy, sortDesc } = get(paginationOptions);
     const offset = (page - 1) * itemsPerPage;
 
-    let selectedFilters = get(filters);
-    if (transformExclusionFilters) {
-      selectedFilters = {
-        ...selectedFilters,
-        ...transformExclusionFilters(selectedFilters)
-      };
-    }
+    const selectedFilters = get(filters);
     const overview = get(locationOverview);
     if (
       overview &&
@@ -105,13 +99,24 @@ export const usePaginationFilters = <
       selectedFilters.location = overview;
     }
 
+    let transformedFilters = {
+      ...selectedFilters,
+      ...get(extraParams),
+      ...nonEmptyProperties(get(customPageParams) ?? {})
+    };
+
+    if (transformFilters) {
+      transformedFilters = {
+        ...transformedFilters,
+        ...transformFilters(transformedFilters)
+      };
+    }
+
     const orderByAttributes =
       sortBy?.length > 0 ? sortBy : [defaultSortBy?.key ?? 'timestamp'];
 
     return {
-      ...selectedFilters,
-      ...get(extraParams),
-      ...nonEmptyProperties(get(customPageParams) ?? {}),
+      ...transformedFilters,
       limit: itemsPerPage,
       offset,
       orderByAttributes: orderByAttributes.map(item =>

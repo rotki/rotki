@@ -190,7 +190,9 @@ const {
       }
 
       if (isDefined(entryTypes)) {
-        params.entryTypes = get(entryTypes);
+        params.entryTypes = {
+          values: get(entryTypes)
+        };
       }
 
       if (accounts.length > 0) {
