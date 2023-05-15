@@ -12,6 +12,8 @@ from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
     AssetWithOracles,
+    CryptoAsset,
+    CustomAsset,
     EvmToken,
     Nft,
     UnderlyingToken,
@@ -1017,60 +1019,57 @@ class GlobalDBHandler():
         return asset_identifier
 
     @staticmethod
-    def edit_user_asset(data: dict[str, Any]) -> None:
-        """Edits an already existing user asset in the DB
-
-        The data should already be typed (as given in by marshmallow).
+    def edit_user_asset(asset: AssetWithOracles) -> None:
+        """Edits an already existing user asset in the DB. Atm only AssetWithOracles are supported.
 
         May raise InputError if the token already exists or other error
-
-        Returns the asset's identifier
         """
-        identifier = data['identifier']
-        forked_asset = data.get('forked', None)
-        forked = forked_asset.identifier if forked_asset else None
-        swapped_for_asset = data.get('swapped_for', None)
-        swapped_for = swapped_for_asset.identifier if swapped_for_asset else None
+        try:
+            asset.check_existence()
+        except UnknownAsset as e:
+            raise InputError(
+                f'Tried to edit non existing asset with identifier {asset.identifier}',
+            ) from e
+
+        details_update_query = 'UPDATE common_asset_details SET symbol=?, coingecko=?, cryptocompare=?'  # noqa: E501
+        details_update_bindings: tuple = (asset.symbol, asset.coingecko, asset.cryptocompare)
+        if asset.is_crypto():
+            asset = cast(CryptoAsset, asset)
+            details_update_query += ', forked=?, started=?, swapped_for=?'
+            details_update_bindings += (
+                asset.forked.identifier if asset.forked else None,
+                asset.started,
+                asset.swapped_for.identifier if asset.swapped_for else None,
+            )
+        details_update_query += ' WHERE identifier=?'
+        details_update_bindings += (asset.identifier,)
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             try:
-                write_cursor.execute(
-                    'UPDATE common_asset_details SET symbol=?, '
-                    'coingecko=?, cryptocompare=?, forked=?, started=?, swapped_for=? '
-                    'WHERE identifier=?',
-                    (
-                        data.get('symbol'),
-                        data.get('coingecko'),
-                        data.get('cryptocompare', ''),
-                        forked,
-                        data.get('started'),
-                        swapped_for,
-                        identifier,
-                    ),
-                )
+                write_cursor.execute(details_update_query, details_update_bindings)
             except sqlite3.IntegrityError as e:
                 raise InputError(
                     f'Failed to update DB entry for common_asset_details with identifier '
-                    f'{identifier} due to a constraint being hit. Make sure the new values '
+                    f'{asset.identifier} due to a constraint being hit. Make sure the new values '
                     f'are valid.',
                 ) from e
 
             if write_cursor.rowcount != 1:
                 raise InputError(
-                    f'Tried to edit non existing asset with identifier {identifier}',
+                    f'Tried to edit non existing asset with identifier {asset.identifier}',
                 )
 
             try:
                 write_cursor.execute(
                     'UPDATE assets SET name=?, type=? WHERE identifier=?',
                     (
-                        data.get('name'),
-                        data['asset_type'].serialize_for_db(),
-                        identifier,
+                        asset.name,
+                        asset.asset_type.serialize_for_db(),
+                        asset.identifier,
                     ),
                 )
             except sqlite3.IntegrityError as e:
                 raise InputError(
-                    f'Failed to update DB entry for asset with identifier {identifier} '
+                    f'Failed to update DB entry for asset with identifier {asset.identifier} '
                     f'due to a constraint being hit. Make sure the new values are valid.',
                 ) from e
 
@@ -1776,15 +1775,6 @@ class GlobalDBHandler():
                 'SELECT COUNT(*) FROM assets WHERE identifier=?',
                 (identifier,),
             ).fetchone()[0]
-
-        asset_data: Union[EvmToken, dict[str, Any]]
-        if asset.asset_type == AssetType.EVM_TOKEN:
-            asset_data = cast(EvmToken, asset)
-        else:
-            asset_data = asset.to_dict()
-            asset_data['asset_type'] = asset.asset_type
-            asset_data['forked'] = getattr(asset, 'forked', None)
-            asset_data['swapped_for'] = getattr(asset, 'swapped_for', None)
 
         if asset_count == 0:
             # the asset doesn't exist and need to be added

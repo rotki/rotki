@@ -10,7 +10,6 @@ from collections.abc import Sequence
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, get_args, overload
-from uuid import uuid4
 from zipfile import ZipFile
 
 import gevent
@@ -48,6 +47,7 @@ from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
     AssetWithOracles,
+    CryptoAsset,
     CustomAsset,
     EvmToken,
     FiatAsset,
@@ -1343,52 +1343,44 @@ class RestAPI():
         types = [str(x) for x in AssetType if x not in ASSET_TYPES_EXCLUDED_FOR_USERS]
         return api_response(_wrap_in_ok_result(types), status_code=HTTPStatus.OK)
 
-    def add_user_asset(self, asset_type: AssetType, **kwargs: Any) -> Response:
+    def add_user_asset(self, crypto_asset: CryptoAsset) -> Response:
         globaldb = GlobalDBHandler()
         # There is no good way to figure out if an asset already exists in the DB
         # Best approximation we can do is this.
         identifiers = globaldb.check_asset_exists(
-            asset_type=asset_type,
-            name=kwargs['name'],  # no key error possible. Checked by marshmallow
-            symbol=kwargs['symbol'],  # no key error possible. Checked by marshmallow
+            asset_type=crypto_asset.asset_type,
+            name=crypto_asset.name,
+            symbol=crypto_asset.symbol,
         )
         if identifiers is not None:
             return api_response(
                 result=wrap_in_fail_result(
-                    f'Failed to add {asset_type!s} {kwargs["name"]} '
+                    f'Failed to add {crypto_asset.asset_type!s} {crypto_asset.name} '
                     f'since it already exists. Existing ids: {",".join(identifiers)}'),
                 status_code=HTTPStatus.CONFLICT,
             )
-
-        # asset id needs to be unique but no combination of asset data is guaranteed to be unique.
-        # And especially with the ability to edit assets we need an external uuid
-        asset_id = str(uuid4())
         try:
-            GlobalDBHandler().add_asset(
-                asset_id=asset_id,
-                asset_type=asset_type,
-                data=kwargs,
-            )
+            globaldb.add_asset(crypto_asset)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         with self.rotkehlchen.data.db.user_write() as cursor:
-            self.rotkehlchen.data.db.add_asset_identifiers(cursor, [asset_id])
+            self.rotkehlchen.data.db.add_asset_identifiers(cursor, [crypto_asset.identifier])
         return api_response(
-            _wrap_in_ok_result({'identifier': asset_id}),
+            _wrap_in_ok_result({'identifier': crypto_asset.identifier}),
             status_code=HTTPStatus.OK,
         )
 
-    def edit_user_asset(self, data: dict[str, Any]) -> Response:
+    def edit_user_asset(self, crypto_asset: CryptoAsset) -> Response:
         try:
-            GlobalDBHandler().edit_user_asset(data)
+            GlobalDBHandler().edit_user_asset(crypto_asset)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Also clear the in-memory cache of the asset resolver to requery DB
-        AssetResolver().assets_cache.remove(data['identifier'])
+        AssetResolver().assets_cache.remove(crypto_asset.identifier)
         # clear the icon cache in case the coingecko id was edited
-        self.rotkehlchen.icon_manager.failed_asset_ids.remove(data['identifier'])
+        self.rotkehlchen.icon_manager.failed_asset_ids.remove(crypto_asset.identifier)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def delete_asset(self, identifier: str) -> Response:
@@ -1449,11 +1441,7 @@ class RestAPI():
 
     def add_custom_evm_token(self, token: EvmToken) -> Response:
         try:
-            GlobalDBHandler().add_asset(
-                asset_id=token.identifier,
-                asset_type=AssetType.EVM_TOKEN,
-                data=token,
-            )
+            GlobalDBHandler().add_asset(token)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
