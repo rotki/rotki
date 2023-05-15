@@ -2752,9 +2752,9 @@
     "no_premium": "流动性质押"
   },
   "liquity_pools": {
-    "liquidation_gains": "清算收益",
+    "liquidation_gains": "无人认领的清算收益",
     "no_lusd_deposited": "没有存入 LUSD",
-    "rewards": "@:common.rewards",
+    "rewards": "无人认领 @:common.rewards",
     "title": "稳定池存款"
   },
   "liquity_staking_details": {

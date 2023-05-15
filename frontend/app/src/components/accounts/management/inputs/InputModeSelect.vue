@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { isBtcChain } from '@/types/blockchain/chains';
 import { InputMode } from '@/types/input-mode';
 import { isMetaMaskSupported } from '@/utils/metamask';
 
@@ -15,9 +16,10 @@ const { blockchain, inputMode } = toRefs(props);
 
 const update = (value: InputMode) => emit('update:input-mode', value);
 
-const isEth = computed(() => get(blockchain) === Blockchain.ETH);
-const isBtc = computed(() => get(blockchain) === Blockchain.BTC);
-const isBch = computed(() => get(blockchain) === Blockchain.BCH);
+const { isEvm } = useSupportedChains();
+
+const isSupportedEvmChain = isEvm(blockchain);
+const isBitcoin = computed(() => isBtcChain(get(blockchain)));
 const isMetaMask = computed(() => get(inputMode) === InputMode.METAMASK_IMPORT);
 
 const metamaskDownloadLink = 'https://metamask.io/download/';
@@ -53,7 +55,7 @@ const loading = isAccountOperationRunning();
         </span>
       </v-btn>
       <v-btn
-        v-if="isEth"
+        v-if="isSupportedEvmChain"
         :value="InputMode.METAMASK_IMPORT"
         :disabled="!isMetaMaskSupported() || loading"
       >
@@ -66,7 +68,7 @@ const loading = isAccountOperationRunning();
           {{ t('input_mode_select.metamask_import.label') }}
         </span>
       </v-btn>
-      <v-btn v-if="isBtc || isBch" :value="InputMode.XPUB_ADD">
+      <v-btn v-if="isBitcoin" :value="InputMode.XPUB_ADD">
         <v-icon>mdi-key-plus</v-icon>
         <span class="hidden-sm-and-down ml-1">
           {{ t('input_mode_select.xpub_add.label') }}
@@ -74,12 +76,12 @@ const loading = isAccountOperationRunning();
       </v-btn>
     </v-btn-toggle>
     <p
-      v-if="isEth && isMetaMask"
+      v-if="isSupportedEvmChain && isMetaMask"
       class="mt-3 info--text text-caption"
       v-text="t('input_mode_select.metamask_import.metamask')"
     />
     <div
-      v-if="isEth && !isPackaged && !isMetaMaskSupported()"
+      v-if="isSupportedEvmChain && !isPackaged && !isMetaMaskSupported()"
       class="mt-3 warning--text text-caption"
     >
       {{ t('input_mode_select.metamask_import.missing') }}

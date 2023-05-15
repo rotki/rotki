@@ -9,6 +9,7 @@ const { context } = toRefs(props);
 
 const blockchain = ref<Blockchain>(Blockchain.ETH);
 const inputMode = ref<InputMode>(InputMode.MANUAL_ADD);
+const allEvmChains = ref(true);
 
 const { accountToEdit } = useAccountDialog();
 
@@ -37,12 +38,28 @@ watch(context, ctx => {
       @update:blockchain="blockchain = $event"
       @update:input-mode="inputMode = $event"
     />
-    <metamask-account-form v-if="inputMode === InputMode.METAMASK_IMPORT" />
+    <metamask-account-form
+      v-if="inputMode === InputMode.METAMASK_IMPORT"
+      :blockchain="blockchain"
+      :all-evm-chains="allEvmChains"
+    >
+      <template #selector="{ loading }">
+        <all-evm-chains-selector v-model="allEvmChains" :disabled="loading" />
+      </template>
+    </metamask-account-form>
     <validator-account-form v-else-if="blockchain === Blockchain.ETH2" />
     <xpub-account-form
       v-else-if="isBtcChain(blockchain) && inputMode === InputMode.XPUB_ADD"
       :blockchain="blockchain"
     />
-    <address-account-form v-else :blockchain="blockchain" />
+    <address-account-form
+      v-else
+      :blockchain="blockchain"
+      :all-evm-chains="allEvmChains"
+    >
+      <template #selector="{ loading }">
+        <all-evm-chains-selector v-model="allEvmChains" :disabled="loading" />
+      </template>
+    </address-account-form>
   </div>
 </template>

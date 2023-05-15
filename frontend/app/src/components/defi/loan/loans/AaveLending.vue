@@ -18,8 +18,10 @@ const { isLoading } = useStatusStore();
 const aaveHistoryLoading = isLoading(Section.DEFI_AAVE_HISTORY);
 
 const { assetSymbol } = useAssetInfoRetrieval();
+const asset = useRefMap(loan, ({ asset }) => asset);
+const symbol = assetSymbol(asset);
+
 const { tc } = useI18n();
-const symbol = asyncComputed(() => assetSymbol(get(loan).asset));
 </script>
 
 <template>

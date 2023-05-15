@@ -65,7 +65,7 @@ const { locationData } = useLocations();
         />
         <hash-link
           :show-icon="!onlineEvent"
-          :no-link="onlineEvent"
+          :no-link="!!onlineEvent"
           :text="event.locationLabel"
           :chain="chain"
         />

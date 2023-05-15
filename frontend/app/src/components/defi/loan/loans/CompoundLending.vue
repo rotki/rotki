@@ -27,7 +27,8 @@ const assets = computed(() => {
 });
 
 const { assetSymbol } = useAssetInfoRetrieval();
-const symbol = asyncComputed(() => assetSymbol(get(loan).asset));
+const asset = useRefMap(loan, ({ asset }) => asset);
+const symbol = assetSymbol(asset);
 
 const { tc } = useI18n();
 </script>

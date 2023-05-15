@@ -7,16 +7,18 @@ import {
 } from '@/types/blockchain/accounts';
 import { ApiValidationError } from '@/types/api/errors';
 
-const props = defineProps<{ blockchain: Blockchain }>();
+const props = defineProps<{
+  blockchain: Blockchain;
+  allEvmChains: boolean;
+}>();
 
-const { blockchain } = toRefs(props);
+const { blockchain, allEvmChains } = toRefs(props);
 
 const addresses = ref<string[]>([]);
 const label = ref('');
 const tags = ref<string[]>([]);
 const selectedModules = ref<Module[]>([]);
 
-const allEvmChains = ref(true);
 const errorMessages = ref<Record<string, string[]>>({});
 
 const { addAccounts, addEvmAccounts, fetchAccounts } = useBlockchains();
@@ -66,16 +68,18 @@ const save = async () => {
         tags: get(tags)
       }));
 
+      const modules = get(selectedModules);
+
       if (get(logicAnd(allEvmChains, isEvm(chain)))) {
         await addEvmAccounts({
           payload,
-          modules: get(selectedModules)
+          modules
         });
       } else {
         await addAccounts({
           blockchain: chain,
           payload,
-          modules: isEth ? get(selectedModules) : undefined
+          modules: isEth ? modules : undefined
         });
       }
     }
@@ -137,21 +141,11 @@ onMounted(() => {
       @update:selection="selectedModules = $event"
     />
 
-    <v-sheet
+    <slot
       v-if="evmChain && !accountToEdit"
-      outlined
-      rounded
-      data-cy="account-all-evm-chains"
-    >
-      <v-checkbox
-        v-model="allEvmChains"
-        :disabled="loading"
-        class="py-4 px-4 my-0"
-        :label="tc('address_account_form.label')"
-        persistent-hint
-        :hint="tc('address_account_form.hint')"
-      />
-    </v-sheet>
+      name="selector"
+      :loading="loading"
+    />
 
     <address-input
       :addresses="addresses"
