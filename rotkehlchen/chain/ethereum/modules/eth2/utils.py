@@ -207,7 +207,7 @@ def scrape_validator_daily_stats(
     """
     url = f'{BEACONCHAIN_ROOT_URL}/validator/{validator_index}/stats'
     response = _query_page(url, 'stats')
-    log.debug('Got beaconcha.in stats results. Processing it.')
+    log.debug(f'Got beaconcha.in stats results for {validator_index=}. Processing it.')
     soup = BeautifulSoup(response.text, 'html.parser', parse_only=SoupStrainer('tbod'))
     if soup is None:
         raise RemoteError('Could not find <tbod> while parsing beaconcha.in stats page')
@@ -221,7 +221,7 @@ def scrape_validator_daily_stats(
     column_pos = 1
     stats: list[ValidatorDailyStats] = []
     while tr is not None:
-
+        skip_row = False
         for column in tr.children:
             if column.name != 'td':
                 continue
@@ -246,15 +246,39 @@ def scrape_validator_daily_stats(
                 if pnl > ONE and timestamp == DAY_AFTER_ETH2_GENESIS:
                     pnl -= INITIAL_ETH_DEPOSIT
 
-                break
+                column_pos += 1
+
+            elif column_pos == 3:
+                start = _parse_fval(column.string, 'start')
+                if start == ZERO:
+                    column_pos += 1  # keep checking columns for all zeros
+                else:
+                    break  # next row
+
+            elif column_pos == 4:
+                end = _parse_fval(column.string, 'end')
+                if end == ZERO:
+                    column_pos += 1  # keep checking columns for all zeros
+                else:
+                    break  # next row
+
+            elif 5 <= column_pos <= 12:
+                column_pos += 1  # skip columns
+
+            elif column_pos == 13:
+                amount = _parse_fval(column.string, 'deposit amount')
+                if amount == ZERO:
+                    skip_row = True  # This is a zero row. Validator has exited. Skip it
+                else:
+                    break  # next row
 
         column_pos = 1
-        stats.append(ValidatorDailyStats(
-            validator_index=validator_index,
-            timestamp=timestamp,
-            pnl=pnl,
-        ))
+        if skip_row is False:
+            stats.append(ValidatorDailyStats(
+                validator_index=validator_index,
+                timestamp=timestamp,
+                pnl=pnl,
+            ))
         tr = tr.find_next_sibling()
 
-    log.debug('Processed beaconcha.in stats results. Returning it.')
     return stats
