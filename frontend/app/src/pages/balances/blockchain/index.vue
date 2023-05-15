@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import pickBy from 'lodash/pickBy';
 import { type ComputedRef, type Ref } from 'vue';
-import { type BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
 
 type Intersections = {
   [key in Blockchain]: boolean;
@@ -14,18 +14,6 @@ type Observers = {
 type Busy = {
   [key in Blockchain]: ComputedRef<boolean>;
 };
-
-interface BlockchainData {
-  btcAccounts: Ref<BlockchainAccountWithBalance[]>;
-  bchAccounts: Ref<BlockchainAccountWithBalance[]>;
-  dotAccounts: Ref<BlockchainAccountWithBalance[]>;
-  ethAccounts: Ref<BlockchainAccountWithBalance[]>;
-  eth2Accounts: Ref<BlockchainAccountWithBalance[]>;
-  avaxAccounts: Ref<BlockchainAccountWithBalance[]>;
-  ksmAccounts: Ref<BlockchainAccountWithBalance[]>;
-  loopringAccounts: Ref<BlockchainAccountWithBalance[]>;
-  optimismAccounts: Ref<BlockchainAccountWithBalance[]>;
-}
 
 const { t, tc } = useI18n();
 
@@ -46,10 +34,10 @@ const intersections = ref<Intersections>({
   [Blockchain.ETH2]: false,
   [Blockchain.BTC]: false,
   [Blockchain.BCH]: false,
-  [Blockchain.OPTIMISM]: false,
   [Blockchain.KSM]: false,
   [Blockchain.DOT]: false,
-  [Blockchain.AVAX]: false
+  [Blockchain.AVAX]: false,
+  [Blockchain.OPTIMISM]: false
 });
 
 const updateWhenRatio = (
@@ -67,47 +55,16 @@ const { ksmAccounts, dotAccounts, avaxAccounts, optimismAccounts } =
   useChainAccountBalances();
 const { btcAccounts, bchAccounts } = useBtcAccountBalances();
 
-const blockchainData: BlockchainData = {
-  btcAccounts,
-  bchAccounts,
-  dotAccounts,
-  ethAccounts,
-  eth2Accounts,
-  avaxAccounts,
-  ksmAccounts,
-  loopringAccounts,
-  optimismAccounts
-};
-
 const { blockchainAssets } = useBlockchainAggregatedBalances();
-
-const getFirstContext = (data: BlockchainData) => {
-  const hasData = (data: Ref<BlockchainAccountWithBalance[]>) =>
-    get(data).length > 0;
-
-  if (hasData(data.btcAccounts)) {
-    return Blockchain.BTC;
-  } else if (hasData(data.bchAccounts)) {
-    return Blockchain.BCH;
-  } else if (hasData(data.ksmAccounts)) {
-    return Blockchain.KSM;
-  } else if (hasData(data.dotAccounts)) {
-    return Blockchain.DOT;
-  } else if (hasData(data.avaxAccounts)) {
-    return Blockchain.AVAX;
-  } else if (hasData(data.optimismAccounts)) {
-    return Blockchain.OPTIMISM;
-  }
-
-  return Blockchain.ETH;
-};
 
 const context: ComputedRef<Blockchain> = computed(() => {
   const intersect = get(intersections);
-  let currentContext = getFirstContext(blockchainData);
+  let currentContext = Blockchain.ETH;
+  // pick only intersections that are visible (at least 50%)
+  const activeObservers = pickBy(intersect, e => e);
 
-  for (const current in Blockchain) {
-    if (intersect[current as Blockchain]) {
+  for (const current in activeObservers) {
+    if (activeObservers[current]) {
       currentContext = current as Blockchain;
     }
   }
@@ -146,7 +103,7 @@ const busy: Busy = {
   [Blockchain.OPTIMISM]: isAccountOperationRunning(Blockchain.OPTIMISM)
 };
 
-const threshold = [0];
+const threshold = [0.5];
 
 const { createAccount, editAccount } = useAccountDialog();
 
