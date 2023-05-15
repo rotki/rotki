@@ -1233,4 +1233,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 HistoryEventSubType.SPEND: EventCategory.SEND,
                 HistoryEventSubType.RECEIVE: EventCategory.RECEIVE,
             },
+            HistoryEventType.WITHDRAWAL: {
+                HistoryEventSubType.FEE: EventCategory.FEE,
+            },
+            HistoryEventType.DEPOSIT: {
+                HistoryEventSubType.FEE: EventCategory.FEE,
+            },
         }
