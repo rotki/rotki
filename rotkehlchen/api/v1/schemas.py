@@ -1,7 +1,6 @@
 import logging
 from enum import auto
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, get_args
-from uuid import uuid4
 
 import marshmallow
 import webargs
@@ -19,15 +18,7 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.accounting.types import SchemaEventType
-from rotkehlchen.assets.asset import (
-    Asset,
-    AssetWithNameAndType,
-    AssetWithOracles,
-    CryptoAsset,
-    CustomAsset,
-    EvmToken,
-    UnderlyingToken,
-)
+from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracles, CryptoAsset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.bch.utils import validate_bch_address_input
@@ -75,6 +66,7 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.schemas import EvmTokenSchema, _validate_single_oracle_id
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     DEFAULT_ADDRESS_NAME_PRIORITY,
@@ -90,7 +82,6 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     CostBasisMethod,
-    EvmTokenKind,
     ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -112,7 +103,6 @@ from .fields import (
     ApiSecretField,
     AssetConflictsField,
     AssetField,
-    AssetTypeField,
     BlockchainField,
     ColorField,
     CurrentPriceOracleField,
@@ -145,7 +135,6 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
-    from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -240,11 +229,6 @@ class RequiredEvmAddressOptionalChainSchema(Schema):
             **_kwargs: Any,
     ) -> Any:
         return EvmAccount(data['address'], chain_id=data['evm_chain'])
-
-
-class RequiredEvmAddressSchema(Schema):
-    address = EvmAddressField(required=True)
-    evm_chain = EvmChainNameField(required=True)
 
 
 class EvmTransactionPurgingSchema(Schema):
@@ -1948,81 +1932,6 @@ class IgnoredActionsModifySchema(Schema):
         return data
 
 
-class OptionalEvmTokenInformationSchema(Schema):
-    address = EvmAddressField(required=False)
-    evm_chain = EvmChainNameField(required=False)
-    token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=False)
-
-
-class UnderlyingTokenInfoSchema(Schema):
-    address = EvmAddressField(required=True)
-    token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=True)
-    weight = FloatingPercentageField(required=True)
-
-
-def _validate_single_oracle_id(
-        data: dict[str, Any],
-        oracle_name: Literal['coingecko', 'cryptocompare'],
-        oracle_obj: 'HistoricalPriceOracleInterface',
-) -> None:
-    coin_key = data.get(oracle_name)
-    if coin_key:
-        try:
-            all_coins = oracle_obj.all_coins()
-        except RemoteError as e:
-            raise ValidationError(
-                f'Could not validate {oracle_name} identifer {coin_key} due to '
-                f'problem communicating with {oracle_name}: {e!s}',
-            ) from e
-
-        if coin_key not in all_coins:
-            raise ValidationError(
-                f'Given {oracle_name} identifier {coin_key} is not valid. Make sure the '
-                f'identifier is correct and in the list of valid {oracle_name} identifiers',
-                field_name=oracle_name,
-            )
-
-
-class BaseCryptoAssetSchema(Schema):
-    name = fields.String(required=True)
-    symbol = fields.String(required=True)
-    started = TimestampField(load_default=None)
-    swapped_for = AssetField(expected_type=CryptoAsset, load_default=None)
-    coingecko = fields.String(load_default=None)
-    cryptocompare = fields.String(load_default=None)
-
-
-class CryptoAssetSchema(BaseCryptoAssetSchema):
-    identifier = fields.String(required=False, load_default=None)
-    asset_type = AssetTypeField(
-        required=True,
-        exclude_types=(AssetType.EVM_TOKEN, AssetType.NFT),
-    )
-    forked = AssetField(expected_type=CryptoAsset, load_default=None)
-
-    def __init__(
-            self,
-            identifier_required: bool,
-            coingecko: 'Coingecko',
-            cryptocompare: 'Cryptocompare',
-    ) -> None:
-        super().__init__()
-        self.identifier_required = identifier_required
-        self.coingecko_obj = coingecko
-        self.cryptocompare_obj = cryptocompare
-
-    @validates_schema
-    def validate_schema(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        if self.identifier_required is True and data['identifier'] is None:
-            raise ValidationError(message='Asset schema identifier should be given', field_name='identifier')  # noqa: E501
-        _validate_single_oracle_id(data, 'coingecko', self.coingecko_obj)
-        _validate_single_oracle_id(data, 'cryptocompare', self.cryptocompare_obj)
-
-
 class IgnoredAssetsHandling(SerializableEnumNameMixin):
     NONE = auto()
     EXCLUDE = auto()
@@ -2179,83 +2088,6 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
 
 class AssetsMappingSchema(Schema):
     identifiers = DelimitedOrNormalList(fields.String(required=True), required=True)
-
-
-class EvmTokenSchema(BaseCryptoAssetSchema, RequiredEvmAddressSchema):
-    token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=True)
-    decimals = fields.Integer(
-        strict=True,
-        validate=webargs.validate.Range(
-            min=0,
-            max=18,
-            error='Evm token decimals should range from 0 to 18',
-        ),
-        required=True,
-    )
-    protocol = fields.String(load_default=None)
-    underlying_tokens = fields.List(fields.Nested(UnderlyingTokenInfoSchema), load_default=None)
-
-    def __init__(
-            self,
-            coingecko: Optional['Coingecko'] = None,
-            cryptocompare: Optional['Cryptocompare'] = None,
-            **kwargs: Any,
-    ) -> None:
-        super().__init__(**kwargs)
-        self.coingecko_obj = coingecko
-        self.cryptocompare_obj = cryptocompare
-
-    @validates_schema
-    def validate_ethereum_token_schema(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        given_underlying_tokens = data.get('underlying_tokens', None)
-        if given_underlying_tokens is not None:
-            if given_underlying_tokens == []:
-                raise ValidationError(
-                    f'Gave an empty list for underlying tokens of {data["address"]}. '
-                    f'If you need to specify no underlying tokens give a null value',
-                )
-            weight_sum = sum(x['weight'] for x in given_underlying_tokens)
-            if weight_sum > ONE:
-                raise ValidationError(
-                    f'The sum of underlying token weights for {data["address"]} '
-                    f'is {weight_sum * 100} and exceeds 100%',
-                )
-            if weight_sum < ONE:
-                raise ValidationError(
-                    f'The sum of underlying token weights for {data["address"]} '
-                    f'is {weight_sum * 100} and does not add up to 100%',
-                )
-
-        if self.coingecko_obj is not None:
-            # most probably validation happens at ModifyEvmTokenSchema
-            # so this is not needed. Kind of an ugly way to do this but can't
-            # find a way around it at the moment
-            _validate_single_oracle_id(data, 'coingecko', self.coingecko_obj)
-            _validate_single_oracle_id(data, 'cryptocompare', self.cryptocompare_obj)  # type: ignore  # noqa: E501
-
-    @post_load
-    def transform_data(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> EvmToken:
-        given_underlying_tokens = data.pop('underlying_tokens', None)
-        chain_id = data.pop('evm_chain')
-        data['chain_id'] = chain_id
-        underlying_tokens = None
-        if given_underlying_tokens is not None:
-            underlying_tokens = []
-            for entry in given_underlying_tokens:
-                underlying_tokens.append(UnderlyingToken(
-                    address=entry['address'],
-                    token_kind=entry['token_kind'],
-                    weight=entry['weight'],
-                ))
-        return EvmToken.initialize(**data, underlying_tokens=underlying_tokens)
 
 
 class ModifyEvmTokenSchema(Schema):
@@ -2987,44 +2819,6 @@ class CustomAssetsQuerySchema(DBPaginationSchema, DBOrderBySchema):
             custom_asset_type=data['custom_asset_type'],
         )
         return {'filter_query': filter_query}
-
-
-class BaseCustomAssetSchema(Schema):
-    name = fields.String(required=True)
-    notes = fields.String(load_default=None)
-    custom_asset_type = fields.String(required=True)
-
-    @post_load
-    def make_custom_asset(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> dict[str, CustomAsset]:
-        custom_asset = CustomAsset.initialize(
-            identifier=str(uuid4()),
-            name=data['name'],
-            notes=data['notes'],
-            custom_asset_type=data['custom_asset_type'],
-        )
-        return {'custom_asset': custom_asset}
-
-
-class EditCustomAssetSchema(BaseCustomAssetSchema):
-    identifier = fields.UUID(required=True)
-
-    @post_load
-    def make_custom_asset(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> dict[str, CustomAsset]:
-        custom_asset = CustomAsset.initialize(
-            identifier=str(data['identifier']),
-            name=data['name'],
-            notes=data['notes'],
-            custom_asset_type=data['custom_asset_type'],
-        )
-        return {'custom_asset': custom_asset}
 
 
 class NFTLpFilterSchema(Schema):

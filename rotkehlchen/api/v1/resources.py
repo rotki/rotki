@@ -41,7 +41,6 @@ from rotkehlchen.api.v1.schemas import (
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
     AvalancheTransactionQuerySchema,
-    BaseCustomAssetSchema,
     BaseXpubSchema,
     BinanceMarketsSchema,
     BinanceMarketsUserSchema,
@@ -54,12 +53,10 @@ from rotkehlchen.api.v1.schemas import (
     ClearAvatarsCacheSchema,
     ClearCacheSchema,
     ClearIconsCacheSchema,
-    CryptoAssetSchema,
     CurrentAssetsPriceSchema,
     CustomAssetsQuerySchema,
     DataImportSchema,
     DetectTokensSchema,
-    EditCustomAssetSchema,
     EditEvmEventSchema,
     EditSettingsSchema,
     EnsAvatarsSchema,
@@ -119,7 +116,6 @@ from rotkehlchen.api.v1.schemas import (
     OptionalAddressesWithBlockchainsListSchema,
     OptionalEthereumAddressSchema,
     QueriedAddressesSchema,
-    RequiredEvmAddressSchema,
     ReverseEnsSchema,
     RpcAddNodeSchema,
     RpcNodeEditSchema,
@@ -160,10 +156,10 @@ from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
     AssetWithOracles,
+    CryptoAsset,
     CustomAsset,
     EvmToken,
 )
-from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -190,6 +186,12 @@ from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.types import HistoricalPriceOracle
+from rotkehlchen.serialization.schemas import (
+    BaseCustomAssetSchema,
+    CryptoAssetSchema,
+    CustomAssetWithIdentifierSchema,
+    RequiredEvmAddressSchema,
+)
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
@@ -727,6 +729,10 @@ class DatabaseBackupsResource(BaseMethodView):
 
 
 class AllAssetsResource(BaseMethodView):
+    """
+    Supports querying of all assets and modification of crypto assets / evm tokens.
+    TODO: Support editing of fiat assets.
+    """
 
     delete_schema = StringIdentifierSchema()
 
@@ -755,12 +761,12 @@ class AllAssetsResource(BaseMethodView):
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_add_schema, location='json')
-    def put(self, asset_type: AssetType, **kwargs: Any) -> Response:
-        return self.rest_api.add_user_asset(asset_type, **kwargs)
+    def put(self, crypto_asset: CryptoAsset) -> Response:
+        return self.rest_api.add_user_asset(crypto_asset)
 
     @resource_parser.use_kwargs(make_edit_schema, location='json')
-    def patch(self, **kwargs: Any) -> Response:
-        return self.rest_api.edit_user_asset(data=kwargs)
+    def patch(self, crypto_asset: CryptoAsset) -> Response:
+        return self.rest_api.edit_user_asset(crypto_asset)
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
@@ -2822,7 +2828,7 @@ class UserNotesResource(BaseMethodView):
 class CustomAssetsResource(BaseMethodView):
     post_schema = CustomAssetsQuerySchema()
     put_schema = BaseCustomAssetSchema()
-    patch_schema = EditCustomAssetSchema()
+    patch_schema = CustomAssetWithIdentifierSchema()
     delete_schema = StringIdentifierSchema()
 
     @require_loggedin_user()
