@@ -12,6 +12,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp, TimestampMS
+from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -60,13 +61,14 @@ class DBEth2():
             ).fetchall()
         return result
 
-    def get_validators_to_query_for_stats(self, up_to_ts: Timestamp) -> list[tuple[int, Timestamp]]:  # noqa: E501
+    def get_validators_to_query_for_stats(self, up_to_ts: Timestamp) -> list[tuple[int, Timestamp, Timestamp]]:  # noqa: E501
         """Gets a list of validators that need to be queried for new daily stats
 
         Validators need to be queried if last time they are queried was more than 2 days.
 
-        Returns a list of tuples. First entry is validator index and second entry is
-        last queried timestamp for daily stats of that validator.
+        Returns a list of tuples. First entry is validator index, second entry is
+        last queried timestamp for daily stats of that validator and third one is
+        an optional timestamp of the validator's exit.
         """
         query_str = """
             SELECT D.validator_index, D.timestamp FROM eth2_validators V LEFT JOIN
@@ -77,13 +79,31 @@ class DBEth2():
             V2.validator_index NOT IN (SELECT validator_index FROM eth2_daily_staking_details)
         """  # noqa: E501
         with self.db.conn.read_ctx() as cursor:
-            result = cursor.execute(
+            stats_data = cursor.execute(
                 query_str,
                 # 2 days since stats page only appears once day is over. So if today is
                 # 27/10 19:46 the last full day it has is 26/10 00:00, which is more than a day
                 # but less than 2
                 (up_to_ts, DAY_IN_SECONDS * 2 + 1),
             ).fetchall()
+            exited_data = {}
+            cursor.execute(
+                'SELECT S.validator_index, H.timestamp FROM eth_staking_events_info S '
+                'LEFT JOIN history_events H ON S.identifier=H.identifier '
+                'WHERE S.is_exit_or_blocknumber=1',
+            )
+            for entry in cursor:
+                exited_data[entry[0]] = ts_ms_to_sec(entry[1])
+
+        result = []
+        for data in stats_data:
+            exit_ts = exited_data.get(data[0])
+            if exit_ts is not None and exit_ts <= data[1]:
+                # skip query for validators that exited and last stats is around exit
+                continue
+
+            result.append(data + (exit_ts,))
+
         return result
 
     def add_validator_daily_stats(self, stats: list[ValidatorDailyStats]) -> None:
