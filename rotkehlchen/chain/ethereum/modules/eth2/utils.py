@@ -2,7 +2,7 @@ import json
 import logging
 import re
 from http import HTTPStatus
-from typing import Literal, NamedTuple
+from typing import Literal, NamedTuple, Optional
 
 import gevent
 import requests
@@ -189,6 +189,7 @@ def scrape_validator_withdrawals(
 def scrape_validator_daily_stats(
         validator_index: int,
         last_known_timestamp: Timestamp,
+        exit_ts: Optional[Timestamp],
 ) -> list[ValidatorDailyStats]:
     """Scrapes the website of beaconcha.in and parses the data directly out of the data table.
 
@@ -232,7 +233,7 @@ def scrape_validator_daily_stats(
                 except ValueError as e:
                     raise RemoteError(f'Failed to parse {date} to timestamp') from e
 
-                if timestamp <= last_known_timestamp:
+                if timestamp <= last_known_timestamp or (exit_ts is not None and timestamp > exit_ts):  # noqa: E501
                     return stats  # we are done
 
                 column_pos += 1

@@ -48,7 +48,7 @@ from rotkehlchen.types import (
     TimestampMS,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.misc import ts_now, ts_now_in_ms
+from rotkehlchen.utils.misc import ts_now, ts_now_in_ms, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.history.price import PriceHistorian
@@ -72,7 +72,7 @@ def test_get_validators_to_query_for_stats(database):
     assert db.get_validators_to_query_for_stats(now) == []
     with database.user_write() as cursor:
         db.add_validators(cursor, [Eth2Validator(index=1, public_key='0xfoo1', ownership_proportion=ONE)])  # noqa: E501
-    assert db.get_validators_to_query_for_stats(now) == [(1, 0)]
+    assert db.get_validators_to_query_for_stats(now) == [(1, 0, None)]
 
     db.add_validator_daily_stats([ValidatorDailyStats(
         validator_index=1,
@@ -83,7 +83,7 @@ def test_get_validators_to_query_for_stats(database):
         timestamp=1607212800,
         pnl=ZERO,
     )])
-    assert db.get_validators_to_query_for_stats(now) == [(1, 1607212800)]
+    assert db.get_validators_to_query_for_stats(now) == [(1, 1607212800, None)]
 
     # now add a daily stats entry closer than a day in the past and see we don't query anything
     db.add_validator_daily_stats([ValidatorDailyStats(
@@ -117,8 +117,38 @@ def test_get_validators_to_query_for_stats(database):
         timestamp=now - 7200,
         pnl=ZERO,
     )])
-    assert db.get_validators_to_query_for_stats(now) == [(2, 0), (3, 1617512800)]
-    assert db.get_validators_to_query_for_stats(1617512800 + DAY_IN_SECONDS * 2 + 2) == [(2, 0), (3, 1617512800)]  # noqa: E501
+    assert db.get_validators_to_query_for_stats(now) == [(2, 0, None), (3, 1617512800, None)]
+    assert db.get_validators_to_query_for_stats(1617512800 + DAY_IN_SECONDS * 2 + 2) == [(2, 0, None), (3, 1617512800, None)]  # noqa: E501
+
+    # Let's make validator 3 have an exit after its last stat
+    dbevents = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=EthWithdrawalEvent(
+                validator_index=3,
+                timestamp=ts_sec_to_ms(1617512800 + DAY_IN_SECONDS),
+                balance=Balance(amount=ONE),
+                withdrawal_address=make_evm_address(),
+                is_exit=True,
+            ),
+        )
+    assert db.get_validators_to_query_for_stats(now) == [(2, 0, None), (3, 1617512800, 1617512800 + DAY_IN_SECONDS)]  # noqa: E501
+
+    # this is invalid as a validator can't have 2 exits but this is for the unit test
+    # make sure the validator exits and stats exists up to the exit
+    with database.user_write() as write_cursor:
+        dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=EthWithdrawalEvent(
+                validator_index=3,
+                timestamp=ts_sec_to_ms(1617512800),
+                balance=Balance(amount=ONE),
+                withdrawal_address=make_evm_address(),
+                is_exit=True,
+            ),
+        )
+    assert db.get_validators_to_query_for_stats(now) == [(2, 0, None)]
 
 
 DAILY_STATS_RE = re.compile(r'https://beaconcha.in/validator/(\d+)/stats')
@@ -154,6 +184,7 @@ def test_validator_daily_stats(network_mocking, price_historian):  # pylint: dis
         stats = scrape_validator_daily_stats(
             validator_index=validator_index,
             last_known_timestamp=0,
+            exit_ts=None,
         )
 
     assert len(stats) >= 81
@@ -253,6 +284,7 @@ def test_validator_daily_stats_with_last_known_timestamp(network_mocking, price_
         stats = scrape_validator_daily_stats(
             validator_index=validator_index,
             last_known_timestamp=1613520000,
+            exit_ts=None,
         )
 
     assert len(stats) >= 6
@@ -389,6 +421,7 @@ def test_validator_daily_stats_with_genesis_event(
         stats = scrape_validator_daily_stats(
             validator_index=validator_index,
             last_known_timestamp=Timestamp(0),
+            exit_ts=None,
         )
     assert stats == [
         ValidatorDailyStats(
@@ -413,6 +446,7 @@ def test_scrape_genesis_validator_stats_all(price_historian):  # pylint: disable
     stats = scrape_validator_daily_stats(
         validator_index=1,
         last_known_timestamp=Timestamp(0),
+        exit_ts=None,
     )
     assert len(stats) >= 861
     assert stats[-1].timestamp == 1606694400

@@ -321,11 +321,12 @@ class Eth2(EthereumModule):
         dbeth2 = DBEth2(self.database)
         result = dbeth2.get_validators_to_query_for_stats(up_to_ts=to_ts)
 
-        for validator_index, last_ts in result:
+        for validator_index, last_ts, exit_ts in result:
             self._maybe_backoff_beaconchain(now=now, name='stats')
             new_stats = scrape_validator_daily_stats(
                 validator_index=validator_index,
                 last_known_timestamp=last_ts,
+                exit_ts=exit_ts,
             )
             self.validator_stats_queried += 1
             self.last_stats_query_ts = now
