@@ -40,7 +40,7 @@ export const useNftBalancesApi = () => {
   ): Promise<NonFungibleBalancesCollectionResponse> => {
     const response =
       await internalNfBalances<NonFungibleBalancesCollectionResponse>(
-        payload,
+        snakeCaseTransformer(payload),
         false
       );
 

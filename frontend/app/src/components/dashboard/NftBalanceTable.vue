@@ -4,7 +4,11 @@ import { type DataTableHeader } from 'vuetify';
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { Routes } from '@/router/routes';
 import { DashboardTableType } from '@/types/frontend-settings';
-import { type NonFungibleBalance } from '@/types/nfbalances';
+import {
+  type NonFungibleBalance,
+  type NonFungibleBalanceWithLastPrice,
+  type NonFungibleBalancesRequestPayload
+} from '@/types/nfbalances';
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
 
@@ -31,19 +35,17 @@ const {
   fetchData,
   setPage,
   setOptions
-} = usePaginationFilters<NonFungibleBalance>(
-  null,
-  false,
-  useEmptyFilter,
-  fetchNonFungibleBalances,
-  {
-    extraParams,
-    defaultSortBy: {
-      key: 'name',
-      ascending: [true]
-    }
+} = usePaginationFilters<
+  NonFungibleBalance,
+  NonFungibleBalancesRequestPayload,
+  NonFungibleBalanceWithLastPrice
+>(null, false, useEmptyFilter, fetchNonFungibleBalances, {
+  extraParams,
+  defaultSortBy: {
+    key: 'lastPrice',
+    ascending: [false]
   }
-);
+});
 
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
@@ -69,10 +71,9 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       text: tc('common.price_in_symbol', 0, {
         symbol: get(currencySymbol)
       }),
-      value: 'usdPrice',
+      value: 'lastPrice',
       align: 'end',
-      class: 'text-no-wrap',
-      sortable: false
+      class: 'text-no-wrap'
     }
   ];
 
@@ -190,7 +191,7 @@ watch(loading, async (isLoading, wasLoading) => {
             />
             <span v-else>-</span>
           </template>
-          <template #item.usdPrice="{ item }">
+          <template #item.lastPrice="{ item }">
             <amount-display
               no-scramble
               :price-asset="item.priceAsset"

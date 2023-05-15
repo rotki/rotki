@@ -12,6 +12,7 @@ import {
   type LocationQuery,
   RouterPaginationOptionsSchema
 } from '@/types/route';
+import { getUpdatedKey } from '@/services/axios-tranformers';
 
 interface FilterSchema<F, M> {
   filters: Ref<F>;
@@ -35,7 +36,7 @@ interface FilterSchema<F, M> {
 export const usePaginationFilters = <
   T extends Object,
   U = PaginationRequestPayload<T>,
-  V = T,
+  V extends Object = T,
   S extends Collection<V> = Collection<V>,
   W extends Object | void = undefined,
   X = undefined
@@ -50,15 +51,15 @@ export const usePaginationFilters = <
     customPageParams?: ComputedRef<Partial<U>>;
     defaultCollection?: () => S;
     defaultSortBy?: {
-      key?: keyof T;
+      key?: keyof V;
       ascending?: boolean[];
     };
   } = {}
 ) => {
   const router = useRouter();
   const route = useRoute();
-  const paginationOptions: Ref<TablePagination<T>> = ref(
-    defaultOptions<T>(options.defaultSortBy)
+  const paginationOptions: Ref<TablePagination<V>> = ref(
+    defaultOptions<V>(options.defaultSortBy)
   );
   const selected: Ref<V[]> = ref([]);
   const openDialog: Ref<boolean> = ref(false);
@@ -104,14 +105,18 @@ export const usePaginationFilters = <
       selectedFilters.location = overview;
     }
 
+    const orderByAttributes =
+      sortBy?.length > 0 ? sortBy : [defaultSortBy?.key ?? 'timestamp'];
+
     return {
       ...selectedFilters,
       ...get(extraParams),
       ...nonEmptyProperties(get(customPageParams) ?? {}),
       limit: itemsPerPage,
       offset,
-      orderByAttributes:
-        sortBy?.length > 0 ? sortBy : [defaultSortBy?.key ?? 'timestamp'],
+      orderByAttributes: orderByAttributes.map(item =>
+        typeof item === 'string' ? getUpdatedKey(item, false) : item
+      ),
       ascending:
         sortBy?.length > 0
           ? sortDesc.map(bool => !bool)
@@ -152,7 +157,7 @@ export const usePaginationFilters = <
       // for empty query, we reset the filters, and pagination to defaults
       onUpdateFilters?.(query);
       updateFilter(RouteFilterSchema.parse({}));
-      return setOptions(defaultOptions<T>(options.defaultSortBy));
+      return setOptions(defaultOptions<V>(options.defaultSortBy));
     }
 
     const parsedOptions = RouterPaginationOptionsSchema.parse(query);
@@ -219,7 +224,7 @@ export const usePaginationFilters = <
    * @template T
    * @param {TablePagination<T>} newOptions
    */
-  const setOptions = (newOptions: TablePagination<T>) => {
+  const setOptions = (newOptions: TablePagination<V>) => {
     set(userAction, true);
     set(paginationOptions, newOptions);
   };

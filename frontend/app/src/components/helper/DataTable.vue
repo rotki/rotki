@@ -6,7 +6,24 @@ import { type TablePagination } from '@/types/pagination';
 const props = withDefaults(
   defineProps<{
     sortDesc?: boolean;
+    /**
+     * Disables the triple (asc/desc/neutral) state sorting.
+     *
+     * Default: true
+     *
+     * This option has been disabled by default since it was confusing to users.
+     * It should be turned off if multiSort is set to true since multiSort
+     * relies on the neutral state to change the multi-sort order.
+     */
     mustSort?: boolean;
+    /**
+     * Enables the ability to sort by multiple columns.
+     *
+     * Default: false
+     *
+     * Does not work well with mustSort.
+     */
+    multiSort?: boolean;
     items: any[];
     headers: DataTableHeader[];
     expanded?: any[];
@@ -20,6 +37,7 @@ const props = withDefaults(
   {
     sortDesc: true,
     mustSort: true,
+    multiSort: false,
     expanded: () => [],
     itemClass: '',
     hideDefaultFooter: false,
@@ -37,6 +55,13 @@ const { itemsPerPage: itemsPerPageFromFrontendSetting } = storeToRefs(
   frontendSettingsStore
 );
 const { container, options } = toRefs(props);
+
+if (props.multiSort && props.mustSort) {
+  logger.warn(
+    'Both multi-sort and must-sort were enabled, ' +
+      'check <data-table/> for more information why this might be a problem'
+  );
+}
 
 const tableRef = ref<any>(null);
 const currentPage = ref<number>(1);
@@ -123,6 +148,7 @@ onMounted(() => {
     ref="tableRef"
     v-bind="rootAttrs"
     :must-sort="mustSort"
+    :multi-sort="multiSort"
     :sort-desc="sortDesc"
     :items="items"
     :item-class="itemClass"
