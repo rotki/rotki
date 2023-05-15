@@ -1086,6 +1086,32 @@ If you stake LQTY in the protocol you can see stability pool deposits, staked am
    :alt: See your Liquity staking gains
    :align: center
 
+On the left side, we display information for your current deposited amount of ``LUSD`` in the stability pool along with the ``ETH`` and ``LQTY`` rewards that you haven't claimed yet. In the right side, we display the staked ``LQTY`` and the ``ETH`` and ``LUSD`` that are available to claim. 
+
+The Liquity statistics are calculated using the queried events and you might need to wait for some time until all the events are queried to get the final values. The values in terms of USD can be displayed using prices at the moment of the different events (``historical``) or using prices at the present (``current``).
+
+- Total Gains Stability Pool: This is the value of Ether and ``LQTY`` claimed from the stability pool.
+- Total Deposited Stability Pool: This is the value of ``LUSD`` deposited in the stability pool.
+- Total Withdrawn Stability Pool: This is the value of ``LUSD`` withdrawn from the stability pool.
+- Stability Pool Gains: A breakdown of the gains already claimed from the pool.
+- Estimated PnL: This value represents your returns from the stability pool after losing LUSD in exchange for ``ETH`` and ``LQTY``. For more information on how the stability pool works check `the Liquity docs <https://docs.liquity.org/faq/stability-pool-and-liquidations#how-do-i-benefit-as-a-stability-provider-from-liquidations>`_. This amount is calculated in rotki as follows:
+
+::
+
+   A = Total Deposited Stability Pool - Total Withdrawn Stability Pool
+   LG = Claimed Liquity gains in current price.
+   R = Not claimed rewards in current price.
+   B = Total Gains Stability Pool + LG + R
+   C = (A - Current deposited amount) in current price
+   PnL = B - C
+
+
+For ``LQTY`` staking we display the claimed rewards.
+
+.. image:: images/liquity_stats.png
+   :alt: Liquity Statistics
+   :align: center
+
 Kraken Staking
 ===============
 
