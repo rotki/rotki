@@ -245,6 +245,7 @@
         "error": {
           "description": "Failed to add {addresses} new {blockchain} accounts: {error}",
           "failed_list_description": "Failed to add {addresses} new {blockchain} accounts. Please check again if these account(s) are valid:\n {list}",
+          "empty_addresses_description": "Address {address} was not added because it is either a contract or doesn't have any activity in any of the supported EVM chains",
           "title": "Adding {blockchain} accounts"
         },
         "no_new": {

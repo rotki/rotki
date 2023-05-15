@@ -234,6 +234,7 @@
         "error": {
           "description": "Failed to add {addresses} new {blockchain} accounts: {error}",
           "failed_list_description": "Failed to add {addresses} new {blockchain} accounts. Please check again if these account(s) are valid:\n {list}",
+          "empty_addresses_description": "Η διεύθυνση {address} δεν προστέθηκε επειδή είτε είναι contract είτε δεν έχει καμία δραστηριότητα σε καμία από τις υποστηριζόμενες EVM chains",
           "title": "Adding {blockchain} accounts"
         },
         "no_new": {
