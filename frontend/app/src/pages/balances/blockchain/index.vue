@@ -58,17 +58,14 @@ const { btcAccounts, bchAccounts } = useBtcAccountBalances();
 const { blockchainAssets } = useBlockchainAggregatedBalances();
 
 const context: ComputedRef<Blockchain> = computed(() => {
-  const intersect = get(intersections);
-  let currentContext = Blockchain.ETH;
   // pick only intersections that are visible (at least 50%)
-  const activeObservers = pickBy(intersect, e => e);
+  const activeObservers = Object.keys(pickBy(get(intersections), e => e));
 
-  for (const current in activeObservers) {
-    if (activeObservers[current]) {
-      currentContext = current as Blockchain;
-    }
+  if (activeObservers.length > 0) {
+    return activeObservers[activeObservers.length - 1] as Blockchain;
   }
-  return currentContext;
+
+  return Blockchain.ETH;
 });
 
 const observers: Observers = {
