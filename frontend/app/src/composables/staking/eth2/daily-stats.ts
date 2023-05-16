@@ -27,7 +27,7 @@ export const useEth2DailyStats = () => {
       entries: [],
       entriesFound: 0,
       entriesTotal: 0,
-      sumPnl: zeroBalance()
+      sumPnl: Zero
     },
     {
       immediate: false,
