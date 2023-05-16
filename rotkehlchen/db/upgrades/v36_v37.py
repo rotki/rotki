@@ -377,7 +377,7 @@ def _trim_daily_stats(write_cursor: 'DBCursor') -> None:
     if table_exists is True:
         write_cursor.execute(
             'INSERT INTO eth2_daily_staking_details_new SELECT validator_index, timestamp, pnl '
-            'FROM eth2_daily_staking_details',
+            'FROM eth2_daily_staking_details WHERE start_amount != 0 OR end_amount !=0 OR amount_deposited != 0',  # noqa: E501
         )
         write_cursor.execute('DROP TABLE eth2_daily_staking_details')
         write_cursor.execute(
