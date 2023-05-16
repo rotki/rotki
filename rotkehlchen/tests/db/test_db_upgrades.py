@@ -1382,8 +1382,9 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     cursor.execute('SELECT amount, asset FROM history_events WHERE event_identifier IN (?, ?)', (b'KRAKEN-ETH2-EVENT', b'KRAKEN-ETH-EVENT-STAKING'))  # noqa: E501
     assert cursor.fetchall() == [('0.0000355988', 'ETH'), ('-0.0032936117', 'ETH2')]
     assert cursor.execute('SELECT * FROM eth2_daily_staking_details').fetchall() == [
-        (12345, 1682519933, '1000.0', '1001.0', '0.00001', '32.0', '32.00001', None, None, None, None, None, None, None, None, None),  # noqa: E501
-        (67890, 1682519934, '1200.5', '1200.6', '0.00003', '32.01', '32.01003', None, None, None, None, None, None, None, None, None),  # noqa: E501
+        (67890, 1692519934, '0', '0', '0', '0', '0', 0, 0, 0, 0, 0, 0, 0, 0, '0'),
+        (12345, 1682519933, '1000.0', '1001.0', '0.00001', '32.0', '32.00001', 0, 0, 0, 0, 0, 0, 0, 0, '0'),  # noqa: E501
+        (67890, 1682519934, '1200.5', '1200.6', '0.00003', '32.01', '32.01003', 0, 0, 0, 0, 0, 0, 0, 0, '0.0'),  # noqa: E501
     ]
     assert cursor.execute('select * from user_credentials').fetchall() == [
         ('ftx1', 'Z', 'api-key-1', 'api-secret-1', None),
