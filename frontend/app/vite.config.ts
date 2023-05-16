@@ -50,6 +50,7 @@ export default defineConfig({
       'lodash/isEmpty',
       'lodash/dropRight',
       'lodash/omitBy',
+      'lodash/pickBy',
       'lodash/pick',
       'lodash/keys',
       '@vueuse/math'

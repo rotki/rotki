@@ -245,6 +245,7 @@
         "error": {
           "description": "无法添加 {addresses} 个新的 {blockchain} 账户： {error}",
           "failed_list_description": "无法添加 {addresses} 个新的 {blockchain} 账户。请再次检查这些账户是否有效：\n {list}",
+          "empty_addresses_description": "地址 {address} 未添加，因为它是合约或在任何受支持的 EVM 链中没有任何活动",
           "title": "添加 {blockchain} 账户"
         },
         "no_new": {

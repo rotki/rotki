@@ -238,6 +238,7 @@
       "blockchain_accounts_add": {
         "error": {
           "description": "Failed to add {addresses} new {blockchain} accounts: {error}",
+          "empty_addresses_description": "La dirección {address} no se agregó porque es un contrato o no tiene ninguna actividad en ninguna de las cadenas EVM admitidas",
           "title": "Adding {blockchain} accounts"
         },
         "no_new": {

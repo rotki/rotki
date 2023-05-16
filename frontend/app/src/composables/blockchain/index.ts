@@ -1,6 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Severity } from '@rotki/common/lib/messages';
 import { type MaybeRef } from '@vueuse/core';
+import isEmpty from 'lodash/isEmpty';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain, isTokenChain } from '@/types/blockchain/chains';
 import {
@@ -111,8 +112,23 @@ export const useBlockchains = () => {
     };
 
     const promiseResult = await Promise.allSettled(
-      payload.payload.map(async p => {
-        const addresses = await addEvmAccount(p);
+      payload.payload.map(async account => {
+        const addresses = await addEvmAccount(account);
+        if (isEmpty(addresses)) {
+          return notify({
+            title: tc(
+              'actions.balances.blockchain_accounts_add.error.title',
+              0,
+              { blockchain: 'EVM' }
+            ),
+            message: tc(
+              'actions.balances.blockchain_accounts_add.error.empty_addresses_description',
+              0,
+              { address: account.address }
+            ),
+            display: true
+          });
+        }
         for (const chain in addresses) {
           if (!isBlockchain(chain)) {
             logger.error(`${chain} was not a valid blockchain`);

@@ -20,6 +20,8 @@ onMounted(() => {
     if ('xpub' in account) {
       set(inputMode, InputMode.XPUB_ADD);
     }
+  } else {
+    set(blockchain, get(context));
   }
 });
 
