@@ -3108,7 +3108,7 @@ class DBHandler:
         """Checks if a a given node is an etherscan node (ethereum, optimism, etc)"""
         with self.conn.read_ctx() as cursor:
             return bool(cursor.execute(
-                'SELECT COUNT(*)=1 FROM rpc_nodes WHERE identifier=? AND endpoint=""',
+                'SELECT COUNT(*) FROM rpc_nodes WHERE identifier=? AND endpoint=""',
                 (node_identifier,),
             ).fetchone()[0])
 

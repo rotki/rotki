@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 import pytest
 import requests
-from rotkehlchen.accounting.mixins.event import AccountingEventType
 
+from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_SQL_VM_INSTRUCTIONS_CB
@@ -349,7 +349,7 @@ def test_manage_nodes(rotkehlchen_api_server):
         },
     )
     assert_proper_response_with_result(response)
-    response = requests.patch(
+    response = requests.patch(  # test that editing optimism etherscan weight works
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='OPTIMISM'),
         json={
             'identifier': 6,
