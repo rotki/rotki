@@ -34,7 +34,7 @@ const props = withDefaults(
     eventSubTypes?: string[];
     entryTypes?: HistoryEventEntryType[];
     period?: { fromTimestamp?: string; toTimestamp?: string };
-    validators: number[];
+    validators?: number[];
     externalAccountFilter?: Account[];
     useExternalAccountFilter?: boolean;
     sectionTitle?: string;
