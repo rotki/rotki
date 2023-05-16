@@ -288,6 +288,12 @@ def validate_timestamp(
         display_date_in_localtime: bool,
         is_for_import: bool,
 ):
+    """Validate exported timestamp.
+
+    If is_for_import is True, then the timestamp should be a utc timestamp in seconds.
+    If display_date_in_localtime is True, then timestamp should be stringified in local timezone.
+    Otherwise the timestamp should be stringified in utc.
+    """
     if is_for_import:  # Should always be a numeric utc timestamp
         deserialized_timestamp = deserialize_timestamp(received_serialized_timestamp)
         assert deserialized_timestamp == expected_utc_timestamp
