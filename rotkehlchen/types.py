@@ -408,6 +408,11 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     def is_substrate(self) -> bool:
         return self in get_args(SUPPORTED_SUBSTRATE_CHAINS)
 
+    def __str__(self) -> str:
+        if self == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
+            return 'Ethereum Staking'
+        return super().__str__()
+
     def get_chain_type(self) -> str:
         """Chain type to return to the API supported chains endpoint"""
         if self.is_evm():
