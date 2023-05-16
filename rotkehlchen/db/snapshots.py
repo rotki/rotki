@@ -165,8 +165,8 @@ class DBSnapshot:
             main_currency_price=main_currency_price,
         )
 
-    @staticmethod
     def _export(
+            self,
             timed_balances: list[DBAssetBalance],
             timed_location_data: list[LocationData],
             directory: Path,
@@ -176,9 +176,24 @@ class DBSnapshot:
         """Serializes the balances and location_data snapshots into a dictionary.
         It then writes the serialized data to a csv file.
         """
-        serialized_timed_balances = [balance.serialize(currency_and_price=(main_currency, main_currency_price)) for balance in timed_balances]  # noqa: E501
+        with self.db.conn.read_ctx() as cursor:
+            display_date_in_localtime = self.db.get_settings(cursor).display_date_in_localtime
+
+        serialized_timed_balances = [
+            balance.serialize(
+                currency_and_price=(main_currency, main_currency_price),
+                display_date_in_localtime=display_date_in_localtime,
+            )
+            for balance in timed_balances
+        ]
         serialized_timed_balances_for_import = [balance.serialize() for balance in timed_balances]
-        serialized_timed_location_data = [loc_data.serialize(currency_and_price=(main_currency, main_currency_price)) for loc_data in timed_location_data]  # noqa: E501
+        serialized_timed_location_data = [
+            loc_data.serialize(
+                currency_and_price=(main_currency, main_currency_price),
+                display_date_in_localtime=display_date_in_localtime,
+            )
+            for loc_data in timed_location_data
+        ]
         serialized_timed_location_data_for_import = [loc_data.serialize() for loc_data in timed_location_data]  # noqa: E501
 
         try:
