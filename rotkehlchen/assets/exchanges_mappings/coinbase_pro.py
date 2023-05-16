@@ -21,7 +21,7 @@ WORLD_TO_COINBASE_PRO = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0x27702a26126e0B3702af63Ee09aC4d1A084EF628'): 'ALEPH',
     strethaddress_to_identifier('0xFE2786D7D1cCAb8B015f6Ef7392F67d778f8d8D7'): 'PRQ',
     strethaddress_to_identifier('0x0258F474786DdFd37ABCE6df6BBb1Dd5dfC4434a'): 'ORN',
-    strethaddress_to_identifier('0xdd974D5C2e2928deA5F71b9825b8b646686BD200'): 'KNC',
+    strethaddress_to_identifier('0xdeFA4e8a7bcBA345F687a2f1456F5Edd9CE97202'): 'KNC',
     strethaddress_to_identifier('0xEcE83617Db208Ad255Ad4f45Daf81E25137535bb'): 'INV',
     strethaddress_to_identifier('0xa117000000f279D81A1D3cc75430fAA017FA5A2e'): 'ANT',
     evm_address_to_identifier('0xe28b3B32B6c345A34Ff64674606124Dd5Aceca30', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'INJ',  # noqa: E501

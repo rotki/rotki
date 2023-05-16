@@ -140,7 +140,7 @@ WORLD_TO_POLONIEX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xb3999F658C0391d94A37f7FF328F3feC942BcADC', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'HFT',  # noqa: E501
     evm_address_to_identifier('0xbB95cc1c662D89822bda29D2e147B124406e6e42', ChainID.BINANCE, EvmTokenKind.ERC20): 'TRR',  # noqa: E501
     evm_address_to_identifier('0xaaAEBE6Fe48E54f431b0C390CfaF0b017d09D42d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CEL',  # noqa: E501
-    evm_address_to_identifier('0x8dAEBADE922dF735c38C80C7eBD708Af50815fAa', ChainID.BINANCE, EvmTokenKind.ERC20): 'TBTC',  # noqa: E501
+    evm_address_to_identifier('0x8dAEBADE922dF735c38C80C7eBD708Af50815fAa', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TBTC',  # noqa: E501
     evm_address_to_identifier('0x7db5af2B9624e1b3B4Bb69D6DeBd9aD1016A58Ac', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'VOLT',  # noqa: E501
     evm_address_to_identifier('0xE5417Af564e4bFDA1c483642db72007871397896', ChainID.MATIC, EvmTokenKind.ERC20): 'GNS1',  # noqa: E501
     evm_address_to_identifier('0x8F0528cE5eF7B51152A59745bEfDD91D97091d2F', ChainID.BINANCE, EvmTokenKind.ERC20): 'ALPACA',  # noqa: E501
