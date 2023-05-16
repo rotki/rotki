@@ -11,7 +11,8 @@ import { TaskType } from '@/types/task-type';
 const { isTaskRunning } = useTaskStore();
 const reportsStore = useReportsStore();
 const { reportError } = storeToRefs(reportsStore);
-const { generateReport, clearError, exportReportData } = reportsStore;
+const { generateReport, clearError, exportReportData, fetchReports } =
+  reportsStore;
 const isRunning = isTaskRunning(TaskType.TRADE_HISTORY);
 const importDataDialog = ref<boolean>(false);
 const reportDebugData = ref<File | null>(null);
@@ -154,6 +155,7 @@ const importData = async () => {
       description: tc('profit_loss_reports.debug.import_message.success'),
       success: true
     });
+    await fetchReports();
   }
 
   set(importDataLoading, false);
