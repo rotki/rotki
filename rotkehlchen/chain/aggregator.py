@@ -1100,7 +1100,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self,
             filter_query: Eth2DailyStatsFilterQuery,
             only_cache: bool,
-    ) -> tuple[list['ValidatorDailyStats'], int, Balance]:
+    ) -> tuple[list['ValidatorDailyStats'], int, FVal]:
         """May raise:
         - ModuleInactive if eth2 module is not activated
         """
@@ -1108,14 +1108,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if eth2 is None:
             raise ModuleInactive('Cant query eth2 daily stats details since eth2 module is not active')  # noqa: E501
         with self.database.conn.read_ctx() as cursor:
-            daily_stats, total_found = eth2.get_validator_daily_stats(
+            daily_stats, total_found, sum_pnl = eth2.get_validator_daily_stats(
                 cursor=cursor,
                 filter_query=filter_query,
                 only_cache=only_cache,
             )
-            sum_pnl = Balance()
-            for stats_entry in daily_stats:
-                sum_pnl += stats_entry.pnl_balance
             return daily_stats, total_found, sum_pnl
 
     @protect_with_lock()
@@ -1145,7 +1142,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         }
         # And now get all daily stats and create defi events for them
         with self.database.conn.read_ctx() as cursor:
-            stats, _ = eth2.get_validator_daily_stats(
+            stats, _, _ = eth2.get_validator_daily_stats(
                 cursor=cursor,
                 filter_query=Eth2DailyStatsFilterQuery.make(from_ts=from_timestamp, to_ts=to_timestamp),  # noqa: E501
                 only_cache=False,

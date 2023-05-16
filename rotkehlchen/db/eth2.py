@@ -126,18 +126,21 @@ class DBEth2():
             self,
             cursor: 'DBCursor',
             filter_query: 'Eth2DailyStatsFilterQuery',
-    ) -> tuple[list[ValidatorDailyStats], int]:
+    ) -> tuple[list[ValidatorDailyStats], int, FVal]:
         """Gets all eth2 daily stats for the query from the DB
 
         Returns a tuple with the following in order:
          - A list of the daily stats
          - How many are the total entries found for the filter
+         - Sum of ETH gained/lost for the filter
         """
         stats = self.get_validator_daily_stats(cursor, filter_query=filter_query)
         query, bindings = filter_query.prepare(with_pagination=False)
-        query = 'SELECT COUNT(*) from eth2_daily_staking_details ' + query
-        count = cursor.execute(query, bindings).fetchone()[0]
-        return stats, count
+        # TODO: A weakness of this query is that it does not take into account the
+        # ownership proportion of the validator in the PnL here
+        query = 'SELECT COUNT(*), SUM(pnl) from eth2_daily_staking_details ' + query
+        count, eth_sum_str = cursor.execute(query, bindings).fetchone()
+        return stats, count, FVal(eth_sum_str)
 
     def get_validator_daily_stats(
             self,
