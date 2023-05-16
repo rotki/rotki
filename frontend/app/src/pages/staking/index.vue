@@ -13,7 +13,7 @@ const iconSize = '64px';
 
 const pages = {
   eth2: defineAsyncComponent(
-    () => import('@/components/staking/eth2/Eth2Page.vue')
+    () => import('@/components/staking/eth/EthStakingPage.vue')
   ),
   liquity: defineAsyncComponent(
     () => import('@/components/staking/liquity/LiquityPage.vue')

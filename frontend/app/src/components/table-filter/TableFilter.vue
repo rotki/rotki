@@ -308,12 +308,15 @@ onMounted(() => {
 watch(matches, matches => {
   restoreSelection(matches);
 });
+
+const css = useCssModule();
 </script>
 
 <template>
-  <div class="d-flex" data-cy="table-filter">
+  <v-card flat class="d-flex" data-cy="table-filter">
     <v-combobox
       ref="input"
+      :class="css.filter"
       :value="selection"
       outlined
       dense
@@ -373,5 +376,11 @@ watch(matches, matches => {
         @update:matches="updateMatches($event)"
       />
     </div>
-  </div>
+  </v-card>
 </template>
+
+<style module lang="css">
+.filter {
+  border-radius: 4px !important;
+}
+</style>

@@ -13,6 +13,7 @@ const props = withDefaults(
     ticker?: boolean;
     loading?: boolean;
     iconSize?: string;
+    calculateValue?: boolean;
   }>(),
   {
     value: null,
@@ -23,11 +24,12 @@ const props = withDefaults(
     assetPadding: 0,
     ticker: true,
     loading: false,
-    iconSize: '24px'
+    iconSize: '24px',
+    calculateValue: false
   }
 );
 
-const { asset, value } = toRefs(props);
+const { asset, value, calculateValue } = toRefs(props);
 
 const amount = useValueOrDefault(
   useRefMap(value, value => value?.amount),
@@ -37,6 +39,31 @@ const usdValue = useValueOrDefault(
   useRefMap(value, value => value?.usdValue),
   Zero
 );
+
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { assetPrice } = useBalancePricesStore();
+
+const valueCurrency = computed(() => {
+  if (!get(calculateValue)) {
+    return 'USD';
+  }
+
+  return get(currencySymbol);
+});
+
+const valueInCurrency = computed(() => {
+  if (!get(calculateValue)) {
+    return get(usdValue);
+  }
+
+  const owned = get(amount);
+  const ethPrice = assetPrice(get(asset));
+
+  if (isDefined(ethPrice)) {
+    return owned.multipliedBy(get(ethPrice));
+  }
+  return Zero;
+});
 
 const css = useCssModule();
 </script>
@@ -59,9 +86,9 @@ const css = useCssModule();
         class="d-block font-weight-medium"
       />
       <amount-display
-        fiat-currency="USD"
+        :fiat-currency="valueCurrency"
         :asset-padding="assetPadding"
-        :value="usdValue"
+        :value="valueInCurrency"
         :show-currency="ticker ? 'ticker' : 'none'"
         :loading="loading"
         class="d-block grey--text"

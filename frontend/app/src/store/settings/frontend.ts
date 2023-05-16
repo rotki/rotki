@@ -202,6 +202,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     enableAliasNames,
     blockchainRefreshButtonBehaviour,
     savedFilters,
+    // return settings on development for state persistence
+    ...(checkIfDevelopment() ? { settings } : {}),
     updateSetting,
     update
   };

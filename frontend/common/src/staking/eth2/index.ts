@@ -44,15 +44,20 @@ export interface Eth2DailyStatsPayload {
   readonly orderByAttributes: string[];
   readonly ascending: boolean[];
   readonly validators?: number[];
-  readonly fromTimestamp?: number;
-  readonly toTimestamp?: number;
+  readonly fromTimestamp?: string;
+  readonly toTimestamp?: string;
   readonly onlyCache?: boolean;
 }
 
 export interface EthStakingPayload {
   validatorIndices?: number[];
   addresses?: string[];
+  ignoreCache?: boolean;
 }
+
+export interface EthStakingRewardsPayload
+  extends EthStakingPayload,
+    EthStakingPeriod {}
 
 const Validator = z.object({
   validatorIndex: z.number(),
@@ -83,3 +88,8 @@ export interface Eth2StakingFilter {
 }
 
 export type Eth2StakingFilterType = 'address' | 'validator';
+
+export type EthStakingPeriod = {
+  fromTimestamp?: string;
+  toTimestamp?: string;
+};

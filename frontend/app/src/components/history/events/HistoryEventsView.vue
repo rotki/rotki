@@ -33,6 +33,8 @@ const props = withDefaults(
     eventTypes?: string[];
     eventSubTypes?: string[];
     entryTypes?: HistoryEventEntryType[];
+    period?: { fromTimestamp?: string; toTimestamp?: string };
+    validators: number[];
     externalAccountFilter?: Account[];
     useExternalAccountFilter?: boolean;
     sectionTitle?: string;
@@ -45,6 +47,8 @@ const props = withDefaults(
     eventTypes: () => [],
     eventSubTypes: () => [],
     entryTypes: undefined,
+    period: undefined,
+    validators: undefined,
     externalAccountFilter: () => [],
     useExternalAccountFilter: false,
     sectionTitle: '',
@@ -59,6 +63,8 @@ const {
   location,
   protocols,
   entryTypes,
+  period,
+  validators,
   useExternalAccountFilter,
   externalAccountFilter,
   sectionTitle,
@@ -155,7 +161,9 @@ const {
     useHistoryEventFilter(
       {
         protocols: get(protocols).length > 0,
-        locations: !!get(location)
+        locations: !!get(location),
+        period: !!get(period),
+        validators: !!get(validators)
       },
       entryTypes
     ),
@@ -203,6 +211,16 @@ const {
         }
 
         params.locationLabels = accounts.map(({ address }) => address);
+      }
+
+      if (isDefined(period)) {
+        const { fromTimestamp, toTimestamp } = get(period);
+        params.fromTimestamp = fromTimestamp;
+        params.toTimestamp = toTimestamp;
+      }
+
+      if (isDefined(validators)) {
+        params.validatorIndices = get(validators).map(v => v.toString());
       }
 
       return params;

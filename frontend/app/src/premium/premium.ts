@@ -105,7 +105,7 @@ export const AaveBorrowingDetails = () =>
 
 export const AaveEarnedDetails = () => createFactory(load('AaveEarnedDetails'));
 
-export const Eth2Staking = () => createFactory(load('Eth2Staking'));
+export const EthStaking = () => createFactory(load('EthStaking'));
 
 export const UniswapDetails = () => createFactory(load('UniswapDetails'));
 

@@ -38,6 +38,8 @@ export const useAccountingSettingsStore = defineStore(
       taxableLedgerActions,
       ethStakingTaxableAfterWithdrawalEnabled,
       costBasisMethod,
+      // return settings on development for state persistence
+      ...(checkIfDevelopment() ? { settings } : {}),
       update
     };
   }

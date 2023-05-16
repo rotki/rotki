@@ -52,6 +52,8 @@ export const useHistoryEventFilter = (
   disabled: {
     protocols?: boolean;
     locations?: boolean;
+    period?: boolean;
+    validators?: boolean;
   },
   entryTypes?: MaybeRef<HistoryEventEntryType[]>
 ) => {
@@ -66,32 +68,36 @@ export const useHistoryEventFilter = (
 
   const matchers: ComputedRef<Matcher[]> = computed(() => {
     const data: Matcher[] = [
-      {
-        key: HistoryEventFilterKeys.START,
-        keyValue: HistoryEventFilterValueKeys.START,
-        description: tc('transactions.filter.start_date'),
-        string: true,
-        hint: tc('transactions.filter.date_hint', 0, {
-          format: getDateInputISOFormat(get(dateInputFormat))
-        }),
-        suggestions: () => [],
-        validate: dateValidator(dateInputFormat),
-        serializer: dateSerializer(dateInputFormat),
-        deserializer: dateDeserializer(dateInputFormat)
-      },
-      {
-        key: HistoryEventFilterKeys.END,
-        keyValue: HistoryEventFilterValueKeys.END,
-        description: tc('transactions.filter.end_date'),
-        string: true,
-        hint: tc('transactions.filter.date_hint', 0, {
-          format: getDateInputISOFormat(get(dateInputFormat))
-        }),
-        suggestions: () => [],
-        validate: dateValidator(dateInputFormat),
-        serializer: dateSerializer(dateInputFormat),
-        deserializer: dateDeserializer(dateInputFormat)
-      },
+      ...(disabled?.period
+        ? []
+        : ([
+            {
+              key: HistoryEventFilterKeys.START,
+              keyValue: HistoryEventFilterValueKeys.START,
+              description: tc('transactions.filter.start_date'),
+              string: true,
+              hint: tc('transactions.filter.date_hint', 0, {
+                format: getDateInputISOFormat(get(dateInputFormat))
+              }),
+              suggestions: () => [],
+              validate: dateValidator(dateInputFormat),
+              serializer: dateSerializer(dateInputFormat),
+              deserializer: dateDeserializer(dateInputFormat)
+            },
+            {
+              key: HistoryEventFilterKeys.END,
+              keyValue: HistoryEventFilterValueKeys.END,
+              description: tc('transactions.filter.end_date'),
+              string: true,
+              hint: tc('transactions.filter.date_hint', 0, {
+                format: getDateInputISOFormat(get(dateInputFormat))
+              }),
+              suggestions: () => [],
+              validate: dateValidator(dateInputFormat),
+              serializer: dateSerializer(dateInputFormat),
+              deserializer: dateDeserializer(dateInputFormat)
+            }
+          ] satisfies Matcher[])),
       {
         key: HistoryEventFilterKeys.ASSET,
         keyValue: HistoryEventFilterValueKeys.ASSET,
@@ -168,7 +174,7 @@ export const useHistoryEventFilter = (
       });
     }
 
-    if (eventsWithValidatorIndexIncluded) {
+    if (eventsWithValidatorIndexIncluded && !disabled?.validators) {
       data.push({
         key: HistoryEventFilterKeys.VALIDATOR_INDICES,
         keyValue: HistoryEventFilterValueKeys.VALIDATOR_INDICES,
