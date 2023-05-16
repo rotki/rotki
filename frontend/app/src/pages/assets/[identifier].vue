@@ -29,10 +29,20 @@ const toggleIgnoreAsset = async () => {
 
 const premium = usePremium();
 
-const { assetName, assetSymbol, assetInfo } = useAssetInfoRetrieval();
+const { assetName, assetSymbol, assetInfo, tokenAddress } =
+  useAssetInfoRetrieval();
+const { getChain } = useSupportedChains();
 const name = assetName(identifier);
 const symbol = assetSymbol(identifier);
 const asset = assetInfo(identifier);
+const address = tokenAddress(identifier);
+const chain = computed(() => {
+  const evmChain = get(asset)?.evmChain;
+  if (evmChain) {
+    return getChain(evmChain);
+  }
+  return undefined;
+});
 const isCustomAsset = computed(() => get(asset)?.isCustomAsset);
 
 const { t } = useI18n();
@@ -91,6 +101,15 @@ const collectionBalance: ComputedRef<AssetBalanceWithPrice[]> = computed(() => {
             <span class="text-subtitle-2 text--secondary">
               {{ asset?.customAssetType }}
             </span>
+          </v-col>
+          <v-col v-if="address" cols="auto">
+            <hash-link
+              :chain="chain"
+              type="address"
+              :text="address"
+              link-only
+              :show-icon="false"
+            />
           </v-col>
           <v-col v-if="!isCollectionParent" cols="auto">
             <v-btn icon :to="editRoute">
