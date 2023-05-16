@@ -298,7 +298,7 @@ def validate_timestamp(
         deserialized_timestamp = deserialize_timestamp(received_serialized_timestamp)
         assert deserialized_timestamp == expected_utc_timestamp
     else:
-        if display_date_in_localtime:  # Check that respects the timezone
+        if display_date_in_localtime:  # Check that it respects the timezone
             expected_datetime = datetime.datetime.fromtimestamp(
                 expected_utc_timestamp,
                 tz=datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo,
