@@ -78,23 +78,7 @@ export const useSupportedChains = createSharedComposable(() => {
   const getChainInfoById = (
     chain: MaybeRef<Blockchain>
   ): ComputedRef<ChainInfo | null> =>
-    computed(() => {
-      const chainVal = get(chain);
-      const found = get(supportedChains).find(x => x.id === chainVal);
-
-      if (!found) {
-        return null;
-      }
-
-      if (chainVal === Blockchain.ETH2) {
-        return {
-          ...found,
-          name: 'ETH Staking'
-        };
-      }
-
-      return found;
-    });
+    computed(() => get(supportedChains).find(x => x.id === get(chain)) || null);
 
   const getChainName = (chain: MaybeRef<Blockchain>): ComputedRef<string> =>
     computed(() => {
