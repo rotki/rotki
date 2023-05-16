@@ -1295,16 +1295,6 @@
     },
     "title": "每项资产的区块链余额"
   },
-  "blockchains": {
-    "avax": "Avalanche",
-    "bch": "Bitcoin Cash",
-    "btc": "Bitcoin",
-    "dot": "Polkadot",
-    "eth": "Ethereum",
-    "eth2": "ETH Staking",
-    "ksm": "Kusama",
-    "optimism": "Optimism"
-  },
   "borrowing": {
     "header": "抵押贷款",
     "loading": "正在加载您的债务，请稍候...",

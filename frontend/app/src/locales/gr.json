@@ -1268,16 +1268,6 @@
     },
     "title": "Blockchain Balances per asset"
   },
-  "blockchains": {
-    "avax": "Avalanche",
-    "bch": "Bitcoin Cash",
-    "btc": "Bitcoin",
-    "dot": "Polkadot",
-    "eth": "Ethereum",
-    "eth2": "ETH Staking",
-    "ksm": "Kusama",
-    "optimism": "Optimism"
-  },
   "borrowing": {
     "header": "Collateralized Loans",
     "loading": "Please wait while your liabilities are getting loaded...",
