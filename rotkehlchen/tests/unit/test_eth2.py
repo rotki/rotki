@@ -350,15 +350,15 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             to_ts=1614038500,
         )
         with database.conn.read_ctx() as cursor:
-            stats, filter_total_found = eth2.get_validator_daily_stats(
+            stats, filter_total_found, sum_pnl = eth2.get_validator_daily_stats(
                 cursor=cursor,
                 filter_query=filter_query,
                 only_cache=False,
             )
 
         assert stats_call.call_count == 1
-        assert len(stats) >= 6
-        assert filter_total_found >= 6
+        assert len(stats) == 6
+        assert filter_total_found == 6
         expected_stats = [ValidatorDailyStats(
             validator_index=validator_index,
             timestamp=1613606400,    # 2021/02/18
@@ -384,12 +384,12 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             timestamp=1614038400,    # 2021/02/23
             pnl=FVal('0.00772'),
         )]
-        # TODO: doesn't seem to be related to the refactoring. Need to check.
-        assert stats[:len(expected_stats)] == expected_stats
+        assert stats == expected_stats
+        assert sum_pnl == sum(x.pnl for x in expected_stats)
 
         with database.conn.read_ctx() as cursor:
             # Make sure that calling it again does not make an external call
-            stats, filter_total_found = eth2.get_validator_daily_stats(
+            stats, filter_total_found, sum_pnl = eth2.get_validator_daily_stats(
                 cursor=cursor,
                 filter_query=filter_query,
                 only_cache=False,
@@ -398,18 +398,20 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
         assert stats[:len(expected_stats)] == expected_stats
 
         # Check that changing ownership proportion works
+        proportion = FVal(0.45)
         dbeth2.edit_validator(
             validator_index=validator_index,
-            ownership_proportion=FVal(0.45),
+            ownership_proportion=proportion,
         )
         with database.conn.read_ctx() as cursor:
-            stats, filter_total_found = eth2.get_validator_daily_stats(
+            stats, filter_total_found, _ = eth2.get_validator_daily_stats(
                 cursor=cursor,
                 filter_query=filter_query,
                 only_cache=False,
             )
-        last_stat = stats[:len(expected_stats)][-1]
-        assert last_stat.pnl == expected_stats[-1].pnl * FVal(0.45)
+        last_stat = stats[-1]
+        assert last_stat.pnl == expected_stats[-1].pnl * proportion
+        # TODO: The new sum_pnl here is not changing as ownership proportion is not taken into account here  # noqa: E501
 
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])

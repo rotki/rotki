@@ -2203,7 +2203,7 @@ class RestAPI():
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             result = {
                 'entries': [x.serialize() for x in stats],
-                'sum_pnl': sum_pnl.serialize(),
+                'sum_pnl': str(sum_pnl),
                 'entries_found': filter_total_found,
                 'entries_total': self.rotkehlchen.data.db.get_entries_count(cursor, 'eth2_daily_staking_details'),  # noqa: E501
             }

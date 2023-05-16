@@ -412,7 +412,7 @@ class Eth2(EthereumModule):
             cursor: 'DBCursor',
             filter_query: 'Eth2DailyStatsFilterQuery',
             only_cache: bool,
-    ) -> tuple[list[ValidatorDailyStats], int]:
+    ) -> tuple[list[ValidatorDailyStats], int, FVal]:
         """Gets the daily stats eth2 validators depending on the given filter.
 
         This won't detect new validators
