@@ -128,6 +128,7 @@ class DBAssetBalance:
     def serialize(
             self,
             currency_and_price: Optional[tuple[AssetWithOracles, Price]] = None,
+            display_date_in_localtime: bool = True,
     ) -> dict[str, Union[str, int]]:
         """Serializes a `DBAssetBalance` to dict.
         It accepts an `export_data` tuple of the user's local currency and the value of the
@@ -135,7 +136,11 @@ class DBAssetBalance:
         """
         if currency_and_price:
             return {
-                'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
+                'timestamp': timestamp_to_date(
+                    ts=self.time,
+                    formatstr='%Y-%m-%d %H:%M:%S',
+                    treat_as_local=display_date_in_localtime,
+                ),
                 'category': self.category.serialize(),
                 'asset': str(self.asset),
                 'amount': str(self.amount),
@@ -193,10 +198,15 @@ class LocationData(NamedTuple):
     def serialize(
             self,
             currency_and_price: Optional[tuple[AssetWithOracles, Price]] = None,
+            display_date_in_localtime: bool = True,
     ) -> dict[str, Union[str, int]]:
         if currency_and_price:
             return {
-                'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
+                'timestamp': timestamp_to_date(
+                    ts=self.time,
+                    formatstr='%Y-%m-%d %H:%M:%S',
+                    treat_as_local=display_date_in_localtime,
+                ),
                 'location': Location.deserialize_from_db(self.location).serialize(),
                 f'{currency_and_price[0].symbol.lower()}_value': str(FVal(self.usd_value) * currency_and_price[1]),   # noqa: 501
             }

@@ -1,4 +1,5 @@
 import csv
+import datetime
 import os
 import tempfile
 import zipfile
@@ -8,6 +9,7 @@ from typing import TYPE_CHECKING, Optional
 
 import pytest
 import requests
+from freezegun import freeze_time
 
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.constants.assets import A_AVAX, A_BTC, A_ETH, A_EUR, A_USD
@@ -21,6 +23,7 @@ from rotkehlchen.db.snapshots import (
 )
 from rotkehlchen.db.utils import BalanceType, DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
+from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -279,12 +282,37 @@ def _create_snapshot_with_invalid_headers(directory: str, timestamp: Timestamp) 
         _write_location_data_csv_row_with_invalid_headers(writer, timestamp)
 
 
+def validate_timestamp(
+        received_serialized_timestamp: str,
+        expected_utc_timestamp: Timestamp,
+        display_date_in_localtime: bool,
+        is_for_import: bool,
+):
+    if is_for_import:  # Should always be a numeric utc timestamp
+        deserialized_timestamp = deserialize_timestamp(received_serialized_timestamp)
+        assert deserialized_timestamp == expected_utc_timestamp
+    else:
+        if display_date_in_localtime:  # Check that respects the timezone
+            expected_datetime = datetime.datetime.fromtimestamp(
+                expected_utc_timestamp,
+                tz=datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo,
+            ).strftime('%Y-%m-%d %H:%M:%S')
+        else:  # Should be a stringified utc timestamp
+            expected_datetime = datetime.datetime.fromtimestamp(
+                expected_utc_timestamp,
+                tz=datetime.timezone.utc,
+            ).strftime('%Y-%m-%d %H:%M:%S')
+
+        assert received_serialized_timestamp == expected_datetime
+
+
 def assert_csv_export_response(
         response,
         csv_dir,
         main_currency: AssetWithOracles,
         is_download=False,
         expected_entries=2,
+        timestamp_validation_data: Optional[tuple[Timestamp, bool]] = None,
 ):
     if is_download:
         assert response.status_code == HTTPStatus.OK
@@ -302,7 +330,15 @@ def assert_csv_export_response(
             )
             assert row['amount'] is not None
             assert row['asset'] is not None
-            assert row['timestamp'] is not None
+            if timestamp_validation_data is None:
+                assert row['timestamp'] is not None
+            else:
+                validate_timestamp(
+                    received_serialized_timestamp=row['timestamp'],
+                    expected_utc_timestamp=timestamp_validation_data[0],
+                    display_date_in_localtime=timestamp_validation_data[1],
+                    is_for_import=False,
+                )
             assert row[f'{main_currency.symbol.lower()}_value'] is not None
             count += 1
         assert count == expected_entries
@@ -318,7 +354,15 @@ def assert_csv_export_response(
             )
             assert row['amount'] is not None
             assert row['asset_identifier'] is not None
-            assert row['timestamp'] is not None
+            if timestamp_validation_data is None:
+                assert row['timestamp'] is not None
+            else:
+                validate_timestamp(
+                    received_serialized_timestamp=row['timestamp'],
+                    expected_utc_timestamp=timestamp_validation_data[0],
+                    display_date_in_localtime=timestamp_validation_data[1],
+                    is_for_import=True,
+                )
             assert row['usd_value'] is not None
             count += 1
         assert count == expected_entries
@@ -328,7 +372,15 @@ def assert_csv_export_response(
         count = 0
         for row in reader:
             assert len(row) == 3
-            assert row['timestamp'] is not None
+            if timestamp_validation_data is None:
+                assert row['timestamp'] is not None
+            else:
+                validate_timestamp(
+                    received_serialized_timestamp=row['timestamp'],
+                    expected_utc_timestamp=timestamp_validation_data[0],
+                    display_date_in_localtime=timestamp_validation_data[1],
+                    is_for_import=False,
+                )
             assert Location.deserialize(row['location']) is not None
             assert row[f'{main_currency.symbol.lower()}_value'] is not None
             count += 1
@@ -339,7 +391,15 @@ def assert_csv_export_response(
         count = 0
         for row in reader:
             assert len(row) == 3
-            assert row['timestamp'] is not None
+            if timestamp_validation_data is None:
+                assert row['timestamp'] is not None
+            else:
+                validate_timestamp(
+                    received_serialized_timestamp=row['timestamp'],
+                    expected_utc_timestamp=timestamp_validation_data[0],
+                    display_date_in_localtime=timestamp_validation_data[1],
+                    is_for_import=True,
+                )
             assert Location.deserialize(row['location']) is not None
             assert row['usd_value'] is not None
             count += 1
@@ -347,8 +407,16 @@ def assert_csv_export_response(
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
+@pytest.mark.parametrize('db_settings', [
+    {'display_date_in_localtime': True},
+    {'display_date_in_localtime': False},
+])
+@freeze_time('2023-05-16 19:00:00', tz_offset=6)  # Set timezone to something different than UTC
 def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with db.conn.read_ctx() as cursor:
+        display_date_in_localtime = db.get_settings(cursor).display_date_in_localtime
+
     ts = ts_now()
     csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
     csv_dir2 = str(tmpdir_factory.mktemp('test_csv_dir2'))
@@ -370,6 +438,7 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
             csv_dir=csv_dir,
             main_currency=A_EUR.resolve_to_asset_with_oracles(),
             is_download=False,
+            timestamp_validation_data=(ts, display_date_in_localtime),
         )
 
         db.set_settings(cursor, ModifiableDBSettings(main_currency=A_ETH))
@@ -387,6 +456,7 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
             csv_dir=csv_dir2,
             main_currency=A_ETH.resolve_to_asset_with_oracles(),
             is_download=False,
+            timestamp_validation_data=(ts, display_date_in_localtime),
         )
 
         db.set_settings(cursor, ModifiableDBSettings(main_currency=A_USD))
