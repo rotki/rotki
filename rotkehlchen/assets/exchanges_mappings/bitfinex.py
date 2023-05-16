@@ -74,5 +74,4 @@ WORLD_TO_BITFINEX = COMMON_ASSETS_MAPPINGS | {
     'ONE-2': 'ONE',
     evm_address_to_identifier('0x4922a015c4407F87432B179bb209e125432E4a2A', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'XAUT',  # noqa: E501
     evm_address_to_identifier('0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LDO',  # noqa: E501
-    evm_address_to_identifier('0xfb5B838b6cfEEdC2873aB27866079AC55363D37E', ChainID.BINANCE, EvmTokenKind.ERC20): 'FLOKI',  # noqa: E501
 }

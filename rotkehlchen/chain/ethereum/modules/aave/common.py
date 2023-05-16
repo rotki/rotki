@@ -4,13 +4,14 @@ from typing import TYPE_CHECKING, NamedTuple, Optional, Union
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
-from rotkehlchen.constants.assets import A_AETH_V1, A_AREP_V1, A_ETH, A_REP
+from rotkehlchen.constants.assets import A_AETH_V1, A_AREP_V1, A_ETH, A_KNC, A_REP
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
+from rotkehlchen.tests.utils.aave import A_AKNC_V1, A_AKNC_V2
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -79,6 +80,8 @@ def atoken_to_asset(atoken: EvmToken) -> Optional[CryptoAsset]:
         return A_ETH.resolve_to_crypto_asset()
     if atoken == A_AREP_V1:
         return A_REP.resolve_to_crypto_asset()
+    if atoken in (A_AKNC_V1, A_AKNC_V2):
+        return A_KNC.resolve_to_crypto_asset()
 
     asset_symbol = atoken.symbol[1:]
     with GlobalDBHandler().conn.read_ctx() as cursor:
