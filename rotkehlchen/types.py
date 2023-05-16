@@ -395,6 +395,11 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     POLKADOT = 'DOT'
     OPTIMISM = 'OPTIMISM'
 
+    def __str__(self) -> str:
+        if self == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
+            return 'Ethereum Staking'
+        return super().__str__()
+
     def get_key(self) -> str:
         """Returns the key to be used as attribute for this chain in the code"""
         return self.value.lower()
