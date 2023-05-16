@@ -2752,7 +2752,6 @@
   },
   "loan_stake": {
     "no_lqty_staked": "No LQTY staked",
-    "rewards": "@:common.rewards",
     "unclaimed_rewards": "Recompensas pendientes",
     "title": "Stake"
   },

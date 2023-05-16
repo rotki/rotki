@@ -2759,7 +2759,6 @@
   },
   "loan_stake": {
     "no_lqty_staked": "No LQTY staked",
-    "rewards": "@:common.rewards",
     "unclaimed_rewards": "Αζήτητες ανταμοιβές",
     "title": "Stake"
   },
