@@ -7,6 +7,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetData, AssetType
+from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -53,26 +54,31 @@ def import_assets_from_file(
         # for ethereum tokens comparing by identifier. The edge case of a non-ethereum token
         # with same name and symbol will make this fail.
         asset_type = asset_data['asset_type']
-        asset_ref: Union[Optional[list[str]], Optional[AssetData]]
-        if asset_type == AssetType.EVM_TOKEN:
-            asset_ref = globaldb.get_asset_data(
-                identifier=asset_data['identifier'],
-                form_with_incomplete_data=True,
-            )
-        else:
-            asset_ref = globaldb.check_asset_exists(
-                asset_type=asset_type,
-                name=asset_data['name'],
-                symbol=asset_data['symbol'],
-            )
-        if asset_ref is not None:
-            msg_aggregator.add_warning(
-                f'Tried to import existing asset {asset_data["identifier"]} with '
-                f'name {asset_data["name"]}',
-            )
-            continue
-
         try:
+            if asset_type == AssetType.CUSTOM_ASSET:
+                custom_assets_db = DBCustomAssets(db_handler)
+                custom_assets_db.add_custom_asset(asset_data['extra_information'])
+                continue
+
+            asset_ref: Union[Optional[list[str]], Optional[AssetData]]
+            if asset_type == AssetType.EVM_TOKEN:
+                asset_ref = globaldb.get_asset_data(
+                    identifier=asset_data['identifier'],
+                    form_with_incomplete_data=True,
+                )
+            else:
+                asset_ref = globaldb.check_asset_exists(
+                    asset_type=asset_type,
+                    name=asset_data['name'],
+                    symbol=asset_data['symbol'],
+                )
+            if asset_ref is not None:
+                msg_aggregator.add_warning(
+                    f'Tried to import existing asset {asset_data["identifier"]} with '
+                    f'name {asset_data["name"]}',
+                )
+                continue
+
             globaldb.add_asset(
                 asset_id=asset_data['identifier'],
                 asset_type=asset_type,
