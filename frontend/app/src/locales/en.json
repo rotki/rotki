@@ -2330,7 +2330,7 @@
       "btc_derivation_gap": "BTC derivation gap limit",
       "date_display_format": "Date display format",
       "date_input_format": "Date input format",
-      "display_date_in_localtime": "Display date in localtime and not in UTC for CSV export and backend logs.",
+      "display_date_in_localtime": "Display date in localtime and not in UTC for CSV export.",
       "dot_rpc_endpoint": "Polkadot Node RPC Endpoint",
       "force_saved_language_setting_in_machine_hint": "This setting is saved on your user settings. Activate this to keep this setting when you logged out.",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
