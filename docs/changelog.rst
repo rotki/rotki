@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :release:`1.28.0 <2023-05-17>`
+* :feature:`2469` History events have now been unified under a common history events section. At the moment it features all kraken exchange events, evm events, custom imported events, block productions, staking withdrawals. Missing events retain their own sections and will be merged into the unified history in subsequent releases.
 * :feature:`3973` Users will now be able to track their profit in Liquity staking and stability pool.
 * :feature:`5473` Block production rewards for your validators will now be properly detected, displayed and accounted for in the PnL report.
 * :feature:`4886` Staking MEV rewards for your validators will now be properly detected, displayed and accounted for in the PnL report.
