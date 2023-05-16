@@ -14,7 +14,7 @@ export const Eth2DailyStats = z.object({
   entries: z.array(Eth2DailyStat),
   entriesFound: z.number().nonnegative(),
   entriesTotal: z.number().nonnegative(),
-  sumPnl: Balance
+  sumPnl: NumericString
 });
 
 export type Eth2DailyStats = z.infer<typeof Eth2DailyStats>;
