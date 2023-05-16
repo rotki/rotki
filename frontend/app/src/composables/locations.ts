@@ -21,7 +21,7 @@ export const useLocations = createSharedComposable(() => {
   };
 
   const { getAssetImageUrl } = useAssetIcon();
-  const { getChainInfoById } = useSupportedChains();
+  const { getChainName } = useSupportedChains();
 
   const locationData = (
     identifier: MaybeRef<string>
@@ -33,7 +33,7 @@ export const useLocations = createSharedComposable(() => {
         const assetId = getIdentifierFromSymbolMap(id);
 
         return {
-          name: get(getChainInfoById(id))?.name || id,
+          name: get(getChainName(id)),
           identifier: assetId,
           image: getAssetImageUrl(assetId),
           detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}#blockchain-balances-${id}`

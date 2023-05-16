@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { type BigNumber } from '@rotki/common';
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type ComputedRef, type PropType } from 'vue';
+import { type PropType } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
 import {
@@ -17,37 +15,18 @@ const props = defineProps({
 
 const { total } = toRefs(props);
 
-const { t } = useI18n();
+const { getChainName } = useSupportedChains();
 
-const name = computed<string>(() => {
-  const chain = get(total).chain;
-
-  return (
-    {
-      [Blockchain.ETH]: t('blockchains.eth').toString(),
-      [Blockchain.ETH2]: t('blockchains.eth2').toString(),
-      [Blockchain.BTC]: t('blockchains.btc').toString(),
-      [Blockchain.BCH]: t('blockchains.bch').toString(),
-      [Blockchain.OPTIMISM]: t('blockchains.optimism').toString(),
-      [Blockchain.KSM]: t('blockchains.ksm').toString(),
-      [Blockchain.DOT]: t('blockchains.dot').toString(),
-      [Blockchain.AVAX]: t('blockchains.avax').toString()
-    }[chain] ?? ''
-  );
-});
+const chain = useRefMap(total, ({ chain }) => chain);
+const name = getChainName(chain);
 
 const childData = (identifier: string): ActionDataEntry | null =>
   SupportedSubBlockchainProtocolData.find(
     item => item.identifier === identifier
   ) || null;
 
-const amount: ComputedRef<BigNumber> = computed<BigNumber>(
-  () => get(total).usdValue
-);
-
-const chain = computed<Blockchain>(() => get(total).chain);
-
-const loading = computed<boolean>(() => get(total).loading);
+const amount = useRefMap(total, ({ usdValue }) => usdValue);
+const loading = useRefMap(total, ({ loading }) => loading);
 
 const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
 </script>
