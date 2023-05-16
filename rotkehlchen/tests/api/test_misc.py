@@ -156,7 +156,7 @@ def test_query_version_when_update_required(rotkehlchen_api_server):
     )
 
 
-def test_manage_ethereum_nodes(rotkehlchen_api_server):
+def test_manage_nodes(rotkehlchen_api_server):
     """Test that list of nodes can be correctly updated and queried"""
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     blockchain = SupportedBlockchain.ETHEREUM
@@ -342,6 +342,18 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
         json={
             'identifier': 1,
             'name': 'etherscan',
+            'endpoint': '',
+            'owned': False,
+            'weight': '20',
+            'active': True,
+        },
+    )
+    assert_proper_response_with_result(response)
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='OPTIMISM'),
+        json={
+            'identifier': 6,
+            'name': 'optimism etherscan',
             'endpoint': '',
             'owned': False,
             'weight': '20',

@@ -3104,6 +3104,14 @@ class DBHandler:
             new_weights,
         )
 
+    def is_etherscan_node(self, node_identifier: int) -> bool:
+        """Checks if a a given node is an etherscan node (ethereum, optimism, etc)"""
+        with self.conn.read_ctx() as cursor:
+            return bool(cursor.execute(
+                'SELECT COUNT(*)=1 FROM rpc_nodes WHERE identifier=? AND endpoint=""',
+                (node_identifier,),
+            ).fetchone()[0])
+
     def add_rpc_node(self, node: WeightedNode) -> None:
         """
         Adds a new rpc node.

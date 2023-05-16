@@ -39,6 +39,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.types import EvmAccount
+from rotkehlchen.chain.optimism.constants import OPTIMISM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.substrate.types import SubstrateAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_substrate_address_from_public_key,
@@ -2854,6 +2855,10 @@ class RpcAddNodeSchema(Schema):
 
 
 class RpcNodeEditSchema(RpcAddNodeSchema):
+    def __init__(self, dbhandler: 'DBHandler') -> None:
+        super().__init__()
+        self.dbhandler = dbhandler
+
     name = fields.String(
         required=True,
         validate=webargs.validate.NoneOf(
@@ -2869,16 +2874,22 @@ class RpcNodeEditSchema(RpcAddNodeSchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        if data['identifier'] == 1 and data['name'] != ETHEREUM_ETHERSCAN_NODE_NAME:
+        endpoint_is_given = len(data['endpoint'].strip()) != 0
+        if self.dbhandler.is_etherscan_node(data['identifier']):
+            if endpoint_is_given:
+                raise ValidationError(
+                    field_name='endpoint',
+                    message='It is not allowed to modify the etherscan node endpoint',
+                )
+            if data['name'] not in (ETHEREUM_ETHERSCAN_NODE_NAME, OPTIMISM_ETHERSCAN_NODE_NAME):
+                raise ValidationError(
+                    message="Can't change the etherscan node name",
+                    field_name='name',
+                )
+        elif endpoint_is_given is False:
             raise ValidationError(
-                message="Can't change the etherscan node name",
-                field_name='name',
-            )
-        # verify that if the node is not etherscan the endpoint field has valid information
-        if data['identifier'] != 1 and len(data['endpoint'].strip()) == 0:
-            raise ValidationError(
-                message="endpoint can't be empty",
                 field_name='endpoint',
+                message='endpoint can be empty only for etherscan',
             )
 
 
