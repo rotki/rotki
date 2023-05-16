@@ -524,12 +524,12 @@ The following recipe has been tested using `Anaconda <https://conda.io>`_. `Virt
 
 Install `Homebrew <https://brew.sh/>`_ first if not installed yet.
 
-If you wish to use Conda, use the following commands::
+If you wish to use Conda, use the following commands (replace bash_profile with zshrc for Zsh)::
 
     $ brew tap homebrew/cask
     $ brew install --cask homebrew/cask/anaconda
-    $ echo "export PATH=$PATH:/usr/local/anaconda3/bin" >> ~/.bash_profile
-    $ echo ". /usr/local/anaconda3/etc/profile.d/conda.sh" >> ~/.bash_profile
+    $ echo "export PATH=/opt/homebrew/anaconda3/bin:$PATH" >> ~/.bash_profile
+    $ echo ". /opt/homebrew/anaconda3/etc/profile.d/conda.sh" >> ~/.bash_profile
     $ source ~/.bash_profile
     $ conda create python=3.9 --name rotki
     $ conda activate rotki
