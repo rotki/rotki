@@ -2908,7 +2908,7 @@
   },
   "loan_stake": {
     "no_lqty_staked": "No LQTY staked",
-    "rewards": "@:common.rewards",
+    "unclaimed_rewards": "Unclaimed rewards",
     "title": "Stake"
   },
   "locations": {

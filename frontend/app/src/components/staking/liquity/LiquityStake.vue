@@ -31,7 +31,7 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
       <v-divider />
       <div class="pt-4">
         <div class="d-flex align-center mb-1 justify-space-between">
-          <div class="grey--text">{{ tc('loan_stake.rewards') }}</div>
+          <div class="grey--text">{{ tc('loan_stake.unclaimed_rewards') }}</div>
           <div>
             <balance-display
               :asset="stake.lusdRewards.asset"

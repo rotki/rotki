@@ -2798,7 +2798,7 @@
   },
   "loan_stake": {
     "no_lqty_staked": "没有质押的 LQTY",
-    "rewards": "@:common.rewards",
+    "unclaimed_rewards": "无人认领的奖励",
     "title": "Stake"
   },
   "locations": {
