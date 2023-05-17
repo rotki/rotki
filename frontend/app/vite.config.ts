@@ -35,13 +35,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(PACKAGE_ROOT, 'src'),
-      '~@': resolve(PACKAGE_ROOT, 'src'),
-      ...(process.env.VITEST
-        ? {
-            vue: 'vue/dist/vue.runtime.mjs'
-          }
-        : {})
-    }
+      '~@': resolve(PACKAGE_ROOT, 'src')
+    },
+    dedupe: ['vue']
   },
   optimizeDeps: {
     include: [
