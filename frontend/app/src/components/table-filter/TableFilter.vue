@@ -13,9 +13,11 @@ const props = withDefaults(
     matches: MatchedKeyword<any>;
     matchers: SearchMatcher<any, any>[];
     location?: SavedFilterLocation | null;
+    disabled?: boolean;
   }>(),
   {
-    location: null
+    location: null,
+    disabled: false
   }
 );
 
@@ -310,77 +312,96 @@ watch(matches, matches => {
 });
 
 const css = useCssModule();
+const slots = useSlots();
 </script>
 
 <template>
-  <v-card flat class="d-flex" data-cy="table-filter">
-    <v-combobox
-      ref="input"
-      :class="css.filter"
-      :value="selection"
-      outlined
-      dense
-      chips
-      small-chips
-      deletable-chips
-      multiple
-      clearable
-      hide-details
-      :menu-props="{ maxHeight: '390px' }"
-      prepend-inner-icon="mdi-filter-variant"
-      :search-input.sync="search"
-      @input="updateMatches($event)"
-      @keydown.enter="applySuggestion()"
-      @keydown.up.prevent
-      @keydown.up="moveSuggestion(true)"
-      @keydown.down.prevent
-      @keydown.down="moveSuggestion(false)"
-    >
-      <template #selection="{ item, selected }">
-        <v-chip
-          label
-          small
-          class="font-weight-medium px-2"
-          :input-value="selected"
-          close
-          @click:close="removeSelection(item)"
-          @click="
-            removeSelection(item);
-            selectItem(item);
-          "
-        >
-          <suggested-item chip :suggestion="item" />
-        </v-chip>
-      </template>
-      <template #no-data>
-        <filter-dropdown
-          :matchers="filteredMatchers"
-          :used="usedKeys"
-          :keyword="search"
-          :selected-matcher="selectedMatcher"
-          :selection="selection"
-          :selected-suggestion="selectedSuggestion"
-          :location="location"
-          @apply:filter="applyFilter($event)"
-          @suggest="suggestedFilter = $event"
-          @click="setSearchToMatcherKey($event)"
-        />
-      </template>
-    </v-combobox>
+  <v-tooltip
+    :disabled="!disabled || !slots.tooltip"
+    open-delay="400"
+    close-delay="2500"
+    top
+  >
+    <template #activator="{ on }">
+      <div v-on="on">
+        <v-card flat class="d-flex" data-cy="table-filter" :disabled="disabled">
+          <v-combobox
+            ref="input"
+            :class="css.filter"
+            :value="selection"
+            outlined
+            dense
+            chips
+            small-chips
+            deletable-chips
+            multiple
+            clearable
+            hide-details
+            :menu-props="{ maxHeight: '390px' }"
+            prepend-inner-icon="mdi-filter-variant"
+            :search-input.sync="search"
+            @input="updateMatches($event)"
+            @keydown.enter="applySuggestion()"
+            @keydown.up.prevent
+            @keydown.up="moveSuggestion(true)"
+            @keydown.down.prevent
+            @keydown.down="moveSuggestion(false)"
+          >
+            <template #selection="{ item, selected }">
+              <v-chip
+                label
+                small
+                class="font-weight-medium px-2"
+                :input-value="selected"
+                close
+                @click:close="removeSelection(item)"
+                @click="
+                  removeSelection(item);
+                  selectItem(item);
+                "
+              >
+                <suggested-item chip :suggestion="item" />
+              </v-chip>
+            </template>
+            <template #no-data>
+              <filter-dropdown
+                :matchers="filteredMatchers"
+                :used="usedKeys"
+                :keyword="search"
+                :selected-matcher="selectedMatcher"
+                :selection="selection"
+                :selected-suggestion="selectedSuggestion"
+                :location="location"
+                @apply:filter="applyFilter($event)"
+                @suggest="suggestedFilter = $event"
+                @click="setSearchToMatcherKey($event)"
+              />
+            </template>
+          </v-combobox>
 
-    <div v-if="location" class="ml-2 mt-1">
-      <saved-filter-management
-        :selection="selection"
-        :location="location"
-        :matchers="matchers"
-        @update:matches="updateMatches($event)"
-      />
-    </div>
-  </v-card>
+          <div v-if="location" class="ml-2 mt-1">
+            <saved-filter-management
+              :selection="selection"
+              :location="location"
+              :matchers="matchers"
+              @update:matches="updateMatches($event)"
+            />
+          </div>
+        </v-card>
+      </div>
+    </template>
+    <span :class="css.tooltip">
+      <slot name="tooltip" />
+    </span>
+  </v-tooltip>
 </template>
 
 <style module lang="css">
 .filter {
   border-radius: 4px !important;
+}
+
+.tooltip {
+  pointer-events: initial !important;
 }
 </style>
