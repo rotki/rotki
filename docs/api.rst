@@ -5215,25 +5215,25 @@ Querying online events
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :reqjson string query_type: The name of the type of events to query for. Valid values are: ``"eth_withdrawals"``, ``"block_productions"``, ``"exchanges"``
 
-    **Example Response**
+   **Example Response**:
 
-    .. sourcecode:: http
+   .. sourcecode:: http
 
-        HTTP/1.1 200 OK
-        Content-Type: application/json
+      HTTP/1.1 200 OK
+      Content-Type: application/json
 
-        {
-            "result": True,
-            "message": ""
-        }
+      {
+         "result": true,
+         "message": ""
+      }
 
-    :resjson bool result: A boolean for success or failure
-    :resjson str message: Error message if any errors occurred.
-    :statuscode 200: Events were queried succesfully
-    :statuscode 400: Provided JSON is in some way malformed.
-    :statuscode 409: Module for the given events is not active.
-    :statuscode 500: Internal rotki error.
-    :statuscode 502: An external service used in the query such as beaconchain could not be reached or returned an unexpected response.
+   :resjson bool result: A boolean for success or failure
+   :resjson str message: Error message if any errors occurred.
+   :statuscode 200: Events were queried succesfully
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: Module for the given events is not active.
+   :statuscode 500: Internal rotki error.
+   :statuscode 502: An external service used in the query such as beaconchain could not be reached or returned an unexpected response.
 
 Querying messages to show to the user
 =====================================
@@ -11643,7 +11643,7 @@ Insert mappings into addressbook
         Content-Type: application/zip
 
         {
-            "result": True,
+            "result": true,
             "message": ""
         }
 
@@ -11690,7 +11690,7 @@ Update mappings in the addressbook
         Content-Type: application/zip
 
         {
-            "result": True,
+            "result": true,
             "message": ""
         }
 
@@ -11736,7 +11736,7 @@ Delete mappings in the addressbook
         Content-Type: application/zip
 
         {
-            "result": True,
+            "result": true,
             "message": ""
         }
 
@@ -12565,6 +12565,7 @@ Event Mappings
           }
         }
       }
+
   :resjson object global_mappings: keys of this object are the history event types names and values are mappings of subtypes' names to the ``EventCategory`` name. Contains mappings that should be applied if there is no a specific protocol rule.
   :resjson object per_protocol_mappings: same as global_mappings but contains specific mappings per chain and protocol.
   :resjson object event_category_details: Properties for ``EventCategory``.
@@ -12644,7 +12645,7 @@ Get all valid locations
 
       {
         "result":{
-          "locations: {
+          "locations": {
             "ethereum": {"image": "ethereum.svg"},
             "optimism": {"image": "optimism.svg"},
             "kraken": {"image": "kraken.svg"},
@@ -12683,8 +12684,8 @@ Refresh general cache
       Content-Type: application/json
 
       {
-        "result": True,
-        "message": """
+        "result": true,
+        "message": ""
       }
 
   :resjson bool result: Is true if all the caches were refreshed successfully.

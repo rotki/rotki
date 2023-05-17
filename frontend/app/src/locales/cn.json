@@ -3958,7 +3958,6 @@
       "validator_index": "按 validator_index(s) 过滤"
     },
     "ignore": "在会计中忽略 Tx",
-    "label": "交易",
     "query_status": {
       "date_range": "在 {start} 和 {end} 之间查询 {address} 的 {status}",
       "done_date_range": "完成查询 {address} 在 {start} 和 {end} 之间的所有交易",

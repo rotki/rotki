@@ -654,7 +654,7 @@ const { locationData } = useLocations();
                 :limit="limit"
                 :total="total"
                 :colspan="headers.length"
-                :label="tc('transactions.label')"
+                :label="tc('common.events')"
               />
             </template>
           </data-table>
