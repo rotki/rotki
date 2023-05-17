@@ -29,7 +29,7 @@ export class AssetsManagerPage {
   }
 
   searchAsset(asset: string) {
-    cy.get('[data-cy=asset_table_filter]').type(
+    cy.get('[data-cy="table-filter"]').type(
       `{selectall}{backspace}symbol: ${asset}{enter}{esc}`
     );
     cy.get('.v-data-table__empty-wrapper').should('not.exist');
@@ -37,7 +37,7 @@ export class AssetsManagerPage {
   }
 
   searchAsseAddress(address: string) {
-    cy.get('[data-cy=asset_table_filter]').type(
+    cy.get('[data-cy="table-filter"]').type(
       `{selectall}{backspace}address: ${address}{enter}{esc}`
     );
     cy.get('.v-data-table__empty-wrapper').should('not.exist');
