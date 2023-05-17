@@ -26,6 +26,11 @@ const config = {
     output: "build",
     buildResources: "buildResources"
   },
+  files: [
+    'dist/**',
+    '!node_modules/**',
+    'node_modules/csv'
+  ],
   publish: {
     provider: "github",
     vPrefixedTagName: true,
