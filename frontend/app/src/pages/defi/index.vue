@@ -17,13 +17,23 @@ const tabs: ComputedRef<TabContent[]> = computed(() => {
 
 const { defiSetupDone } = storeToRefs(useFrontendSettingsStore());
 
+const defi = useDefiStore();
+const yearn = useYearnStore();
+const aave = useAaveStore();
+const compound = useCompoundStore();
+const maker = useMakerDaoStore();
+const airdrops = useAirdropStore();
+
+const { resetDefiStatus } = useStatusStore();
+
 onUnmounted(() => {
-  useDefiStore().$reset();
-  useYearnStore().$reset();
-  useAaveStore().$reset();
-  useCompoundStore().$reset();
-  useMakerDaoStore().$reset();
-  useAirdropStore().$reset();
+  defi.$reset();
+  yearn.$reset();
+  aave.$reset();
+  compound.$reset();
+  maker.$reset();
+  airdrops.$reset();
+  resetDefiStatus();
 });
 </script>
 
