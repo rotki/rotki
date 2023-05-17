@@ -81,6 +81,7 @@ export const useAirdropStore = defineStore('defi/airdrops', () => {
       );
       set(airdrops, Airdrops.parse(result));
     } catch (e: any) {
+      logger.error(e);
       notify({
         title: t('actions.defi.airdrops.error.title').toString(),
         message: t('actions.defi.airdrops.error.description', {
