@@ -140,7 +140,7 @@ class DBEth2():
         # ownership proportion of the validator in the PnL here
         query = 'SELECT COUNT(*), SUM(pnl) from eth2_daily_staking_details ' + query
         count, eth_sum_str = cursor.execute(query, bindings).fetchone()
-        return stats, count, FVal(eth_sum_str)
+        return stats, count, FVal(eth_sum_str) if eth_sum_str is not None else ZERO
 
     def get_validator_daily_stats(
             self,
