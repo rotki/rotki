@@ -78,7 +78,10 @@ class RotkiDataUpdater:
             self.branch = 'develop'
 
     def _get_remote_info_json(self) -> dict[str, Any]:
-        """Retrieve remote file with information for different updates"""
+        """Retrieve remote file with information for different updates
+
+        May raise RemoteError if anything is wrong contacting github
+        """
         url = f'https://raw.githubusercontent.com/rotki/data/{self.branch}/updates/info.json'
         try:
             response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
@@ -282,21 +285,25 @@ class RotkiDataUpdater:
 
     def check_for_updates(self) -> None:
         """Retrieve the information about the latest available update"""
-        remote_information = self._get_remote_info_json()
+        try:
+            remote_information = self._get_remote_info_json()
+        except RemoteError as e:
+            log.error(f'Could not retrieve json update information due to {e!s}')
+            # skip updates, but write last date update to not spam periodic tasks
+        else:
+            for update_type in UpdateType:
+                # Get latest applied version
+                with self.user_db.conn.read_ctx() as cursor:
+                    local_version = self._check_for_last_version(
+                        cursor=cursor,
+                        update_type=update_type,
+                    )
 
-        for update_type in UpdateType:
-            # Get latest applied version
-            with self.user_db.conn.read_ctx() as cursor:
-                local_version = self._check_for_last_version(
-                    cursor=cursor,
-                    update_type=update_type,
-                )
-
-            # Update all remote data
-            latest_version = remote_information[update_type.value]['latest']
-            if local_version < latest_version:
-                update_function = getattr(self, f'update_{update_type.value}')
-                update_function(from_version=local_version, to_version=latest_version)
+                # Update all remote data
+                latest_version = remote_information[update_type.value]['latest']
+                if local_version < latest_version:
+                    update_function = getattr(self, f'update_{update_type.value}')
+                    update_function(from_version=local_version, to_version=latest_version)
 
         with self.user_db.user_write() as cursor:
             cursor.execute(  # remember last time data updates were detected
