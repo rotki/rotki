@@ -41,23 +41,23 @@ class DataMigrationManager:
     def maybe_migrate_data(self) -> None:
         with self.rotki.data.db.conn.read_ctx() as cursor:
             settings = self.rotki.data.db.get_settings(cursor)
-        current_migration = settings.last_data_migration
+        last_migration_version = settings.last_data_migration
 
         self.progress_handler = MigrationProgressHandler(
             messages_aggregator=self.rotki.msg_aggregator,
             target_version=LAST_DATA_MIGRATION,
         )
         for migration in MIGRATION_LIST:
-            if current_migration < migration.version:
+            if last_migration_version < migration.version:
                 if self._perform_migration(migration) is False:
                     break  # a migration failed -- no point continuing
 
-                log.debug(f'Successfuly applied migration {current_migration}')
-                current_migration += 1
+                log.debug(f'Successfuly applied migration {migration.version}')
+                last_migration_version = migration.version
                 with self.rotki.data.db.user_write() as write_cursor:
                     write_cursor.execute(
                         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                        ('last_data_migration', current_migration),
+                        ('last_data_migration', last_migration_version),
                     )
         else:  # no break -- all migrations completed okay, so remember last one
             with self.rotki.data.db.user_write() as write_cursor:
