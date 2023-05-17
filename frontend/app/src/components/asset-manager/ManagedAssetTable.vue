@@ -254,7 +254,6 @@ const massIgnore = async (ignored: boolean) => {
           <table-filter
             :matches="filters"
             :matchers="matchers"
-            data-cy="asset_table_filter"
             @update:matches="updateFilter($event)"
           />
         </v-col>
