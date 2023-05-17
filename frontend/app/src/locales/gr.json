@@ -3860,7 +3860,6 @@
       "validator_index": "filter by validator index(es)"
     },
     "ignore": "Ignore Tx in Accounting",
-    "label": "transactions",
     "query_status": {
       "date_range": "Querying {status} for {address} between {start} and {end}",
       "done_date_range": "Done querying all transactions for {address} between {start} and {end}",

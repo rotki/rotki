@@ -1065,7 +1065,7 @@ If you are an ETH2 staker you can see the total value earned both in the current
    :alt: See ETH2 value earned
    :align: center
 
-Moreover you can see a breakout of daily stats of validating. How much ETH was earned per day, attestation stats, block proposing stats and more.
+You can see the summary of how much ETH was earned each day, on the daily stats section.
 
 .. image:: images/rotki_eth2_daily_stats.png
    :alt: See ETH2 value earned
