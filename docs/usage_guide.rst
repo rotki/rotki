@@ -865,7 +865,7 @@ An xpub does not allow spending your coins but provides information about your w
 ENS names resolution
 =====================
 
-Rotki automatically resolves ens name for each of your evm accounts. If there is a primary ens name specified for an account, this name will be shown instead of a raw blockchain address across the app. You can find the blockchain address by hovering the mouse over the ens name.
+Rotki automatically resolves ens name and ens avatar for every evm address that has ens name set in ethereum mainnet. If there is a primary ens name specified for an address, this name will be shown instead of a raw blockchain address across the app. You can find the blockchain address by hovering the mouse over the ens name. If an ens avatar is set, it will be shown instead of the address blockie.
 
 .. image:: images/ens_resolution.png
    :alt: Example of resolving an ens name
@@ -881,16 +881,16 @@ For every evm address it is possible to trigger the process of detecting tokens 
    :align: center
 
 
-EVM Transactions
+History events
 =====================
 
-Rotki is capable of getting and decoding (understand what is happening) your EVM (Ethereum Virtual Machine) transactions. Currently transactions are queried and decoded for Ethereum and Optimism. When you visit the ``EVM Transactions`` section the process to obtain all the information will start. You will be able to check the status in an informative breakdown per address. Free users are limited to the 100 latest transactions.
+Rotki is capable of pulling and decoding a bunch of different events, ranging from EVM chain transactions to exchanges events and more. When you visit the ``History Events`` section the process to obtain all the information will start. You will be able to check the status in an informative breakdown per blockchain address. Free users are limited to a number of latest events.
 
-.. image:: images/eth_tx_query_process.png
-   :alt: EVM transactions query status breakdown
+.. image:: images/events_query_process.png
+   :alt: History events query status breakdown
    :align: center
 
-It is possible that you need to redecode some transactions if the set of decoding rules is modified. To redecode a transaction you have two possibilities. The first of them is to click on the three dots to display the options for an EVM transaction and click on ``Redecode events``. This will start the process to read the transaction's events again and try to understand what happened in them.
+It is possible that you need to redecode events for an evm transaction. To do that you have two options. The first of them is to click on the three dots to display the options for an EVM transaction and click on ``Redecode events``. This will start the process to read the transaction's events again and try to understand what happened in them.
 
 .. image:: images/redecode_events.png
    :alt: Menu to redecode events for an EVM transaction
@@ -904,7 +904,7 @@ The second option is to redecode all the transactions in one page or all the tra
 
 Events in a transaction might need to be edited if they were not properly decoded or if they have a special meaning to you (like OTC trades, transfers between accounts...). To edit one event click on the pencil icon and a menu will appear.
 
-.. image:: images/edit_eth_event.png
+.. image:: images/edit_evm_event.png
    :alt: Menu to edit EVM events
    :align: center
 
@@ -940,11 +940,16 @@ Events that have been modified will appear marked in the UI.
    :align: center
 
 
-EVM transactions can be filtered by account and by:
+History events can be filtered if you have a premium subscription activated. You can filter by:
 
+- Account (a tracked blockchain address)
 - Time range
 - Asset involved in the transaction
 - Protocol that interacted in the transaction
+- Location of the event (ethereum, optimism, kraken, etc.)
+- Event type (deposit, withdrawal, etc.)
+- Tx hash of a particualar transaction that you want to check
+- Index of an eth2 validator that you want to see events for
 
 
 Checking Exchange Balances
@@ -1053,7 +1058,7 @@ is also possible to customize the proportion of the validator owned for users wh
    :alt: Track an ETH2 validator
    :align: center
 
-After adding a new validator you should be able to see the list of balances for each of these validators.
+After adding a new validator you will see the list of balances for each of these validators.
 
 .. image:: images/rotki_eth2_balances.png
    :alt: ETH2 validator balances
