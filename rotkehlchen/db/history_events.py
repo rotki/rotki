@@ -25,6 +25,7 @@ from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
     EVM_EVENT_JOIN,
     DBEqualsFilter,
+    DBIgnoredAssetsFilter,
     DBIgnoreValuesFilter,
     EthDepositEventFilterQuery,
     EvmEventFilterQuery,
@@ -371,17 +372,35 @@ class DBHistoryEvents():
         TODO: To not query all columns with all joins for all cases, we perhaps can
         peek on the entry type of the filter and adjust the SELECT fields accordingly?
         """
-        prepared_query, bindings = filter_query.prepare(with_group_by=group_by_event_ids)
+        free_query_group_by = ''
+        free_query_count = ''
         base_prefix = 'SELECT '
         type_idx = 0
+        special_free_query = False
         if group_by_event_ids is True:
-            base_prefix += 'COUNT(*), '
+            if has_premium:
+                base_prefix += 'COUNT(*), '
+            else:  # a bit ugly conditions to keep limit at groups for free users
+                free_query_count = 'COUNT(*), '
+                for fil in filter_query.filters:
+                    if isinstance(fil, DBIgnoredAssetsFilter):
+                        # Also don't count spam asset transactions in the limit
+                        free_query_group_by = 'WHERE (asset IS NULL OR asset NOT IN (SELECT value FROM multisettings WHERE name="ignored_asset")) '  # noqa: E501
+                        break
+                free_query_group_by += 'GROUP BY event_identifier'
+                special_free_query = True
+
             type_idx = 1
+
+        prepared_query, bindings = filter_query.prepare(
+            with_group_by=group_by_event_ids,
+            special_free_query=special_free_query,
+        )
 
         if has_premium is True:
             base_query = f'{base_prefix} {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
         else:
-            base_query = f'{base_prefix} * FROM (SELECT {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
+            base_query = f'{base_prefix} * FROM (SELECT {free_query_count} {HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN} {free_query_group_by} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '  # noqa: E501
             bindings.insert(0, FREE_HISTORY_EVENTS_LIMIT)
 
         cursor.execute(base_query + prepared_query, bindings)

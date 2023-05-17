@@ -1019,3 +1019,11 @@ def test_query_chunked_endpoint_with_offset_pagination(eth2):
         limit=50,
     )
     assert len(result) == 474  # with the offset bug it was 251 (only first chunk worked)
+
+
+def test_validator_daily_stats_empty(database):
+    dbeth2 = DBEth2(database)
+    with database.conn.read_ctx() as cursor:
+        result = dbeth2.get_validator_daily_stats_and_limit_info(cursor, Eth2DailyStatsFilterQuery.make())  # noqa: E501
+
+    assert result == ([], 0, ZERO)

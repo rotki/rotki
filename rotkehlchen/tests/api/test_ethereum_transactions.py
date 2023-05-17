@@ -15,7 +15,7 @@ from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_MKR, A_USDT, A_WETH
-from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
+from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT, FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery
@@ -1309,7 +1309,8 @@ def test_query_transactions_check_decoded_events(
 @patch.object(EthereumTransactions, '_get_transactions_for_range', lambda *args, **kargs: None)
 @patch.object(EthereumTransactions, '_get_internal_transactions_for_ranges', lambda *args, **kargs: None)  # noqa: E501
 @patch.object(EthereumTransactions, '_get_erc20_transfers_for_ranges', lambda *args, **kargs: None)
-def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
+@pytest.mark.parametrize('start_with_valid_premium', [True])  # TODO: Test for whichever filters we allow in free  # noqa: E501
+def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts, start_with_valid_premium):
     """Tests filtering by transaction's events' properties
     Test cases:
         - Filtering by asset
@@ -1360,6 +1361,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
             contained_in_msg=f'{{"{attribute}": ["List cant be empty"]}}',
         )
 
+    entries_limit = -1 if start_with_valid_premium else FREE_HISTORY_EVENTS_LIMIT
     returned_events = query_events(
         rotkehlchen_api_server,
         json={
@@ -1369,7 +1371,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         },
         expected_num_with_grouping=2,
         expected_totals_with_grouping=3,
-        entries_limit=100,
+        entries_limit=entries_limit,
     )
     expected = generate_events_response([event4, event3])
     assert returned_events == expected
@@ -1379,7 +1381,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         json={'asset': A_ETH.serialize(), 'location': 'ethereum'},
         expected_num_with_grouping=1,
         expected_totals_with_grouping=3,
-        entries_limit=100,
+        entries_limit=entries_limit,
     )
     expected = generate_events_response([event1, event2])
     assert returned_events == expected
@@ -1389,7 +1391,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         json={'asset': A_WETH.serialize(), 'location': 'ethereum'},
         expected_num_with_grouping=2,
         expected_totals_with_grouping=3,
-        entries_limit=100,
+        entries_limit=entries_limit,
     )
     expected = generate_events_response([event4, event3])
     assert returned_events == expected
@@ -1399,7 +1401,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         json={'counterparties': ['EXAMPLE_PROTOCOL'], 'location': 'ethereum'},
         expected_num_with_grouping=1,
         expected_totals_with_grouping=3,
-        entries_limit=100,
+        entries_limit=entries_limit,
     )
     expected = generate_events_response([event2, event3])
     assert returned_events == expected
@@ -1413,7 +1415,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         },
         expected_num_with_grouping=1,
         expected_totals_with_grouping=3,
-        entries_limit=100,
+        entries_limit=entries_limit,
     )
     expected = generate_events_response([event3])
     assert returned_events == expected
@@ -1427,7 +1429,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         },
         expected_num_with_grouping=1,
         expected_totals_with_grouping=3,
-        entries_limit=100,
+        entries_limit=entries_limit,
     )
     expected = generate_events_response([event5, event6])
     assert returned_events == expected
@@ -1442,7 +1444,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         },
         expected_num_with_grouping=1,
         expected_totals_with_grouping=3,
-        entries_limit=100,
+        entries_limit=entries_limit,
     )
     expected = generate_events_response([event5])
     assert returned_events == expected
