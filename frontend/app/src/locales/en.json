@@ -1481,7 +1481,8 @@
     "type": "Type",
     "validator_index": "Validator Index",
     "value_in_symbol": "{symbol} Value",
-    "visit_website": "To get a premium subscription please visit our {0}"
+    "visit_website": "To get a premium subscription please visit our {0}",
+    "website": "website"
   },
   "compound_lending": {
     "header": "Compound Loan ({asset})",
@@ -4092,6 +4093,7 @@
       "tx_hash": "filter by tx hash(es)",
       "validator_index": "filter by validator index(es)"
     },
+    "filtering_premium_hint": "@:common.available_to_premium @:common.visit_website {link}",
     "form": {
       "account": {
         "label": "Account to be associated with the transaction",

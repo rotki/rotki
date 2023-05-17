@@ -364,6 +364,7 @@ watch(
   }
 );
 
+const premium = usePremium();
 const { isLoading: isSectionLoading } = useStatusStore();
 const sectionLoading = isSectionLoading(Section.TX);
 const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
@@ -544,8 +545,21 @@ const { locationData } = useLocations();
                 :matches="filters"
                 :matchers="matchers"
                 :location="SavedFilterLocation.HISTORY_EVENTS"
+                :disabled="!premium"
                 @update:matches="setFilter($event)"
-              />
+              >
+                <template #tooltip>
+                  <i18n tag="span" path="transactions.filtering_premium_hint">
+                    <template #link>
+                      <b>
+                        <external-link url="https://rotki.com/products">
+                          {{ tc('common.website') }}
+                        </external-link>
+                      </b>
+                    </template>
+                  </i18n>
+                </template>
+              </table-filter>
             </div>
           </v-col>
         </v-row>
