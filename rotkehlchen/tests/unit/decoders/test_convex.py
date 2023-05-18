@@ -1010,3 +1010,50 @@ def test_claimzap_cvx_locker(database, ethereum_inquirer, eth_transactions):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x983488580460155d43B6b82096eE17C640A7DCac']])
+def test_convex_claim_pending_rewards(database, ethereum_inquirer, ethereum_accounts):
+    """
+    Tests a transaction that collects pending rewards but also compounds the pending CRV
+    in the pool. In this case the user is rewarded for performing this action.
+    """
+    user_address = ethereum_accounts[0]
+    evmhash = deserialize_evm_tx_hash('0xf3b8bbb2996515bc276626378ad85bc241051cac5d09c709ae9447665a3babd6')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    timestamp = TimestampMS(1683871727000)
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.050474707401697742')),
+            location_label=user_address,
+            notes='Burned 0.050474707401697742 ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=471,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_CRV,
+            balance=Balance(amount=FVal('20.239941211089735958')),
+            location_label=user_address,
+            notes='Claim 20.239941211089735958 CRV after compounding Convex pool',
+            counterparty=CPT_CONVEX,
+            address=string_to_evm_address('0xF403C135812408BFbE8713b5A23a04b3D48AAE31'),
+        ),
+    ]
+    assert events == expected_events
