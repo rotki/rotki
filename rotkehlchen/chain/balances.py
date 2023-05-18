@@ -76,15 +76,14 @@ class BlockchainBalances:
             chain_key = supported_chain.get_key()
             yield (chain_key, getattr(self, chain_key))
 
-    def chains_with_tokens(self) -> Iterator[tuple[SupportedBlockchain, str, dict]]:
+    def chains_with_tokens(self) -> Iterator[tuple[SupportedBlockchain, dict]]:
         """
         Easy way to iterate through all but the bitcoin based chains
 
         Each iteration returns the chain shortname used in the code and the balances dict
         """
         for supported_chain in get_args(SUPPORTED_NON_BITCOIN_CHAINS):
-            chain_key = supported_chain.get_key()
-            yield (supported_chain, chain_key, getattr(self, chain_key))
+            yield (supported_chain, getattr(self, supported_chain.get_key()))
 
     def bitcoin_chains(self) -> Iterator[tuple[Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH], dict]]:  # noqa: E501
         """
@@ -107,7 +106,7 @@ class BlockchainBalances:
     def __post_init__(self) -> None:
         for supported_chain in SupportedBlockchain:
             chain_key = supported_chain.get_key()
-            if chain_key in ('btc', 'bch'):
+            if supported_chain in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
                 setattr(self, chain_key, defaultdict(Balance))
             else:
                 setattr(self, chain_key, defaultdict(BalanceSheet))
@@ -115,7 +114,7 @@ class BlockchainBalances:
     def recalculate_totals(self) -> BalanceSheet:
         """Calculate and return new balance totals based on per-account data"""
         new_totals = BalanceSheet()
-        for _, _, chain_attribute in self.chains_with_tokens():
+        for _, chain_attribute in self.chains_with_tokens():
             for chain_balances in chain_attribute.values():
                 new_totals += chain_balances
 
@@ -132,11 +131,11 @@ class BlockchainBalances:
         If no chain is given then all balances are serialized, while if a chain
         is given the only that chain's balances are"""
         blockchain_balances: dict[str, dict] = {}
-        for chain, chain_name, chain_attribute in self.chains_with_tokens():
+        for chain, chain_attribute in self.chains_with_tokens():
             if len(chain_attribute) == 0 or (given_chain is not None and given_chain != chain):
                 continue
 
-            blockchain_balances[chain_name.upper()] = {k: v.serialize() for k, v in chain_attribute.items()}  # noqa: E501
+            blockchain_balances[chain.serialize()] = {k: v.serialize() for k, v in chain_attribute.items()}  # noqa: E501
 
         for chain, chain_attribute in self.bitcoin_chains():
             if given_chain is not None and given_chain != chain:
@@ -155,7 +154,7 @@ class BlockchainBalances:
                     blockchain=chain,
                 )
                 if len(balances) != 0:
-                    blockchain_balances[chain.value] = balances
+                    blockchain_balances[chain.serialize()] = balances
 
         return blockchain_balances
 
@@ -166,7 +165,7 @@ class BlockchainBalances:
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> None:
         """This is a helper function to serialize the balances for BTC & BCH accounts."""
-        accounts_balances: dict[BTCAddress, Balance] = getattr(self, blockchain.value.lower())
+        accounts_balances: dict[BTCAddress, Balance] = getattr(self, blockchain.get_key())
         for account, balances in accounts_balances.items():
             xpub_result = xpub_mappings.get(account, None)
             if xpub_result is None:

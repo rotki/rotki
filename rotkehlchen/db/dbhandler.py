@@ -2239,7 +2239,7 @@ class DBHandler:
         )
         bindings = [from_ts, to_ts, asset.identifier]
 
-        if settings.treat_eth2_as_eth and asset.identifier == 'ETH':
+        if settings.treat_eth2_as_eth and asset == A_ETH:
             querystr = querystr.replace('currency=?', 'currency IN (?,?)')
             bindings.append('ETH2')
 
@@ -2708,7 +2708,7 @@ class DBHandler:
             )
             raise InputError(
                 f'Tried to remove non existing xpub {xpub_data.xpub.xpub} '
-                f'for {xpub_data.blockchain.value} with {derivation_str}',
+                f'for {xpub_data.blockchain!s} with {derivation_str}',
             )
 
         # Delete the tag mappings for all derived addresses
@@ -3059,7 +3059,7 @@ class DBHandler:
                         name=entry[1],
                         endpoint=entry[2],
                         owned=bool(entry[3]),
-                        blockchain=SupportedBlockchain(entry[6]),  # type: ignore
+                        blockchain=SupportedBlockchain.deserialize(entry[6]),  # type: ignore
                     ),
                     weight=FVal(entry[4]),
                     active=bool(entry[5]),

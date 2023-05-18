@@ -67,7 +67,7 @@ def _check_xpub_addition_outcome(outcome, xpub):
     """Checks the outcome of the xpub additions for the following test.
     Both results should be the same since the 2nd xpub derives no mainnet addresses
     """
-    btc = outcome['per_account']['BTC']
+    btc = outcome['per_account']['btc']
     assert len(btc['standalone']) == 2
     assert UNIT_BTC_ADDRESS1 in btc['standalone']
     assert UNIT_BTC_ADDRESS2 in btc['standalone']
@@ -222,13 +222,13 @@ def test_add_delete_xpub(rotkehlchen_api_server):
                 assert address_data['address'] in EXPECTED_XPUB_ADDESSES
                 assert address_data['label'] is None
                 assert address_data['tags'] == xpub1_tags
-                assert entry['blockchain'] == 'BTC'
+                assert entry['blockchain'] == 'btc'
         else:
             assert entry['xpub'] == TEST_BITCOIN_XPUB_2
             assert entry['addresses'] is None
             assert entry['label'] is None
             assert entry['tags'] is None
-            assert entry['blockchain'] == 'BTC'
+            assert entry['blockchain'] == 'btc'
 
     # Now delete the xpub and make sure all derived addresses are gone
     json_data = {
@@ -373,7 +373,7 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server):
     assert len(result['xpubs']) == 1
     xpub_return = result['xpubs'][0]
     assert xpub_return['label'] == 'qwerty'
-    assert xpub_return['blockchain'] == 'BTC'
+    assert xpub_return['blockchain'] == 'btc'
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -385,7 +385,7 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server):
     assert len(result['xpubs']) == 1
     xpub_return = result['xpubs'][0]
     assert xpub_return['label'] is None
-    assert xpub_return['blockchain'] == 'BCH'
+    assert xpub_return['blockchain'] == 'bch'
 
     # Test that deleting a BCH xpub works as expected
     response = requests.delete(api_url_for(
@@ -478,7 +478,7 @@ def test_delete_nonexisting_xpub(rotkehlchen_api_server):
     ), json=json_data)
     assert_error_response(
         response=response,
-        contained_in_msg=f'Tried to remove non existing xpub {xpub} for BTC with no derivation path',  # noqa: 501
+        contained_in_msg=f'Tried to remove non existing xpub {xpub} for {SupportedBlockchain.BITCOIN!s} with no derivation path',  # noqa: 501
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -495,7 +495,7 @@ def test_delete_nonexisting_xpub(rotkehlchen_api_server):
     ), json=json_data)
     assert_error_response(
         response=response,
-        contained_in_msg=f'Tried to remove non existing xpub {xpub} for BTC with derivation path {path}',  # noqa: 501
+        contained_in_msg=f'Tried to remove non existing xpub {xpub} for {SupportedBlockchain.BITCOIN!s} with derivation path {path}',  # noqa: 501
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

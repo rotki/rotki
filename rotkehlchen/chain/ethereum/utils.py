@@ -91,7 +91,7 @@ def get_decimals(asset: CryptoAsset) -> int:
     May raise:
     - UnsupportedAsset if the given asset is not ETH or an ethereum token
     """
-    if asset.identifier == 'ETH':
+    if asset == A_ETH:
         return 18
     try:
         token = asset.resolve_to_evm_token()

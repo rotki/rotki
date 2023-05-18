@@ -126,7 +126,7 @@ def test_trove_staking(rotkehlchen_api_server, inquirer):  # pylint: disable=unu
                 'usd_value': '0.1396486258287869865',
             },
             'eth_rewards': {
-                'asset': 'ETH',
+                'asset': A_ETH.identifier,
                 'amount': '0.000000023029038481',
                 'usd_value': '0.0000000345435577215',
             },

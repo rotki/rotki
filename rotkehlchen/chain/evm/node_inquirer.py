@@ -295,7 +295,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         """
         balances: dict[ChecksumEvmAddress, FVal] = {}
         log.debug(
-            f'Querying {self.chain_name} chain for {self.blockchain.value} balance',
+            f'Querying {self.chain_name} chain for {self.blockchain.serialize()} balance',
             eth_addresses=accounts,
         )
         result = self.contract_scan.call(

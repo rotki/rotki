@@ -615,10 +615,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         """
         db_btc_accounts = getattr(
             self.database.get_blockchain_accounts(cursor),
-            blockchain.value.lower(),
+            blockchain.get_key(),
         )
         accounts_to_remove = []
-        for account in getattr(self.accounts, blockchain.value.lower()):
+        for account in getattr(self.accounts, blockchain.get_key()):
             if account not in db_btc_accounts:
                 accounts_to_remove.append(account)
 
@@ -821,7 +821,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 f'exception: {e!s}',
             )
             raise EthSyncError(
-                f'Tried to use the {manager.node_inquirer.blockchain.value} chain of the provided '
+                f'Tried to use the {manager.node_inquirer.blockchain!s} chain of the provided '
                 'client to query token balances but the chain is not synced.',
             ) from e
 
