@@ -23,6 +23,7 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
     DecoderContext,
     DecodingOutput,
@@ -30,7 +31,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
-from rotkehlchen.constants.assets import A_CVX
+from rotkehlchen.constants.assets import A_CRV, A_CVX
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CURVE_POOL_PROTOCOL, ChecksumEvmAddress, DecoderEventMappingType
@@ -40,11 +41,37 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 DEPOSIT_EVENT = b'\x9eq\xbc\x8e\xea\x02\xa69i\xf5\t\x81\x8f-\xaf\xb9%E2\x90C\x19\xf9\xdb\xday\xb6{\xd3J_='  # noqa: E501
+REWARD_ADDED = b'\xde\x88\xa9"\xe0\xd3\xb8\x8b$\xe9b>\xfe\xb4d\x91\x9ck\xf9\xf6hW\xa6^+\xfc\xf2\xce\x87\xa9C='  # noqa: E501
 
 
 class ConvexDecoder(DecoderInterface):
 
     def _decode_convex_events(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == REWARD_ADDED:
+            return self._decode_compound_crv(context=context)
+
+        return self._decode_gauge_events(context=context)
+
+    def _decode_compound_crv(self, context: DecoderContext) -> DecodingOutput:
+        """Decode compounding of CRV in convex pools"""
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.asset == A_CRV
+            ):
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.counterparty = CPT_CONVEX
+                event.notes = f'Claim {event.balance.amount} {event.asset.resolve_to_crypto_asset().symbol} after compounding Convex pool'  # noqa: E501
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_gauge_events(self, context: DecoderContext) -> DecodingOutput:
+        """
+        Decode events in convex gauges:
+        - deposits/withdrawals
+        - claim rewards
+        """
         amount_raw = hex_or_bytes_to_int(context.tx_log.data[0:32])
         interacted_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         found_event_modifying_balances = False
