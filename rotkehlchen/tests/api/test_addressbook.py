@@ -169,7 +169,7 @@ def test_insert_into_addressbook(
         )
         assert_error_response(
             response=response,
-            contained_in_msg='address "0x9D904063e7e120302a13C6820561940538a2Ad57" and blockchain ETH already exists in the address book.',  # noqa: E501
+            contained_in_msg=f'address "0x9D904063e7e120302a13C6820561940538a2Ad57" and blockchain {SupportedBlockchain.ETHEREUM!s} already exists in the address book.',  # noqa: E501
             status_code=HTTPStatus.CONFLICT,
         )
         assert db_addressbook.get_addressbook_entries(cursor) == entries_in_db_before_bad_put
@@ -447,7 +447,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
             ),
             json={
                 'addresses': [
-                    {'address': chain_address.address, 'blockchain': chain_address.blockchain.value if chain_address.blockchain is not None else None} for chain_address in chain_addresses],  # noqa: E501
+                    {'address': chain_address.address, 'blockchain': chain_address.blockchain.serialize() if chain_address.blockchain is not None else None} for chain_address in chain_addresses],  # noqa: E501
             },
         )
     address_rotki = to_checksum_address('0x9531c059098e3d194ff87febb587ab07b30b1306')

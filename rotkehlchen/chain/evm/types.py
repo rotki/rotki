@@ -34,7 +34,7 @@ class NodeName(NamedTuple):
             'name': self.name,
             'endpoint': self.endpoint,
             'owned': self.owned,
-            'blockchain': self.blockchain.value,
+            'blockchain': self.blockchain.serialize(),
         }
 
 
@@ -53,7 +53,7 @@ class WeightedNode:
             'weight': self.weight.to_percentage(precision=2, with_perc_sign=False),
             'owned': self.node_info.owned,
             'active': self.active,
-            'blockchain': self.node_info.blockchain.value,
+            'blockchain': self.node_info.blockchain.serialize(),
         }
 
     def serialize_for_db(self) -> tuple[str, str, bool, bool, str, str]:

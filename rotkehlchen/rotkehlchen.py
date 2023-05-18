@@ -734,8 +734,7 @@ class Rotkehlchen():
         unknown_accounts = set(accounts).difference(self.chains_aggregator.accounts.get(blockchain))  # noqa: E501
         if len(unknown_accounts) != 0:
             raise InputError(
-                f'Tried to edit unknown {blockchain.value} '
-                f'accounts {",".join(unknown_accounts)}',
+                f'Tried to edit unknown {blockchain!s} accounts {",".join(unknown_accounts)}',
             )
 
         self.data.db.ensure_tags_exist(

@@ -1681,7 +1681,7 @@ def _transform_btc_or_bch_address(
     except (RemoteError, InputError) as e:
         raise ValidationError(
             f'Given ENS address {given_address} could not be resolved '
-            f'for {blockchain.value} due to: {e!s}',
+            f'for {blockchain!s} due to: {e!s}',
             field_name='address',
         ) from None
 
@@ -1695,12 +1695,12 @@ def _transform_btc_or_bch_address(
         address = scriptpubkey_to_btc_address(bytes.fromhex(resolved_address))
     except EncodingError as e:
         raise ValidationError(
-            f'Given ENS address {given_address} does not contain a valid {blockchain.value} '
-            f"scriptpubkey: {resolved_address}. {blockchain.value} address can't be obtained.",
+            f'Given ENS address {given_address} does not contain a valid {blockchain!s} '
+            f"scriptpubkey: {resolved_address}. {blockchain!s} address can't be obtained.",
             field_name='address',
         ) from e
 
-    log.debug(f'Resolved {blockchain.value} ENS {given_address} to {address}')
+    log.debug(f'Resolved {blockchain!s} ENS {given_address} to {address}')
 
     return address
 

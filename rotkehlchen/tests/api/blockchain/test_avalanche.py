@@ -1,8 +1,10 @@
 import random
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
+from rotkehlchen.constants.assets import A_AVAX
 
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -18,6 +20,9 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR
 from rotkehlchen.tests.utils.substrate import SUBSTRATE_ACC1_DOT_ADDR
 from rotkehlchen.types import SupportedBlockchain
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -42,16 +47,17 @@ def test_add_avax_blockchain_account_invalid(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('avalanche_mock_data', [{'covalent_balances': 'test_balances/covalent_query_balances.json'}])  # noqa: E501
-def test_add_avax_blockchain_account(rotkehlchen_api_server):
+def test_add_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> None:
     """Test adding an Avalanche blockchain account when there is none in the db
     works as expected."""
     async_query = random.choice([False, True])
 
+    avalance_chain_key = SupportedBlockchain.AVALANCHE.serialize()
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'blockchainsaccountsresource',
-            blockchain=SupportedBlockchain.AVALANCHE.value,
+            blockchain=avalance_chain_key,
         ),
         json={
             'accounts': [{'address': AVALANCHE_ACC1_AVAX_ADDR}],
@@ -66,20 +72,20 @@ def test_add_avax_blockchain_account(rotkehlchen_api_server):
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'named_blockchain_balances_resource',
-        blockchain='AVAX',
+        blockchain=avalance_chain_key,
     ))
     result = assert_proper_response_with_result(response)
 
     # Check per account
-    account_balances = result['per_account']['AVAX'][AVALANCHE_ACC1_AVAX_ADDR]
+    account_balances = result['per_account'][avalance_chain_key][AVALANCHE_ACC1_AVAX_ADDR]
     assert 'liabilities' in account_balances
-    asset_avax = account_balances['assets']['AVAX']
+    asset_avax = account_balances['assets'][A_AVAX.identifier]
     assert FVal(asset_avax['amount']) >= ZERO
     assert FVal(asset_avax['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    total_avax = result['totals']['assets']['AVAX']
+    total_avax = result['totals']['assets'][A_AVAX.identifier]
     assert FVal(total_avax['amount']) >= ZERO
     assert FVal(total_avax['usd_value']) >= ZERO
 
@@ -87,7 +93,7 @@ def test_add_avax_blockchain_account(rotkehlchen_api_server):
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('avax_accounts', [[AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR]])
 @pytest.mark.parametrize('avalanche_mock_data', [{'covalent_balances': 'test_balances/covalent_query_balances.json'}])  # noqa: E501
-def test_remove_avax_blockchain_account(rotkehlchen_api_server):
+def test_remove_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> None:
     """Test removing an Avalanche blockchain account works as expected"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     async_query = random.choice([False, True])
@@ -100,7 +106,7 @@ def test_remove_avax_blockchain_account(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'blockchainsaccountsresource',
-            blockchain=SupportedBlockchain.AVALANCHE.value,
+            blockchain=SupportedBlockchain.AVALANCHE.serialize(),
         ),
         json={
             'accounts': [AVALANCHE_ACC2_AVAX_ADDR],
@@ -114,16 +120,17 @@ def test_remove_avax_blockchain_account(rotkehlchen_api_server):
         result = assert_proper_response_with_result(response)
 
     # Check per account
-    assert AVALANCHE_ACC2_AVAX_ADDR not in result['per_account']['AVAX']
-    account_balances = result['per_account']['AVAX'][AVALANCHE_ACC1_AVAX_ADDR]
+    avax_chain_key = SupportedBlockchain.AVALANCHE.serialize()
+    assert AVALANCHE_ACC2_AVAX_ADDR not in result['per_account'][avax_chain_key]
+    account_balances = result['per_account'][avax_chain_key][AVALANCHE_ACC1_AVAX_ADDR]
     assert 'liabilities' in account_balances
-    asset_avax = account_balances['assets']['AVAX']
+    asset_avax = account_balances['assets'][A_AVAX.identifier]
     assert FVal(asset_avax['amount']) >= ZERO
     assert FVal(asset_avax['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    total_avax = result['totals']['assets']['AVAX']
+    total_avax = result['totals']['assets'][A_AVAX.identifier]
     assert FVal(total_avax['amount']) >= ZERO
     assert FVal(total_avax['usd_value']) >= ZERO
     # Also make sure it's removed from the DB

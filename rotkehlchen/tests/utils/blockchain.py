@@ -8,7 +8,7 @@ from web3._utils.abi import get_abi_input_types, get_abi_output_types
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.chain.evm.types import NodeName, Web3Node, string_to_evm_address
-from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -42,7 +42,7 @@ def assert_btc_balances_result(
         assert len(per_account) == 2
     else:
         assert len(per_account) == 1
-    per_account = per_account['BTC']
+    per_account = per_account['btc']
     assert len(per_account) == 1  # make sure we only have standalone accounts in these tests
     standalone = per_account['standalone']
     msg = 'standalone results num does not match number of btc accounts'
@@ -91,12 +91,12 @@ def assert_eth_balances_result(
             assert len(per_account) == 2
         else:
             assert len(per_account) == 1
-        per_account = per_account['ETH']
+        per_account = per_account[SupportedBlockchain.ETHEREUM.serialize()]
         assert len(per_account) == len(eth_accounts)
         for idx, account in enumerate(eth_accounts):
             expected_amount = from_wei(FVal(eth_balances[idx]))
-            amount = FVal(per_account[account]['assets']['ETH']['amount'])
-            usd_value = FVal(per_account[account]['assets']['ETH']['usd_value'])
+            amount = FVal(per_account[account]['assets'][A_ETH.identifier]['amount'])
+            usd_value = FVal(per_account[account]['assets'][A_ETH.identifier]['usd_value'])
             assert amount == expected_amount
             if amount == ZERO:
                 assert usd_value == ZERO
@@ -121,7 +121,7 @@ def assert_eth_balances_result(
         totals = result['totals']['assets']
 
     if expected_liabilities is not None:
-        per_account = result['per_account']['ETH']
+        per_account = result['per_account'][SupportedBlockchain.ETHEREUM.serialize()]
         for token, balances in expected_liabilities.items():
             total_amount = ZERO
             for idx, account in enumerate(eth_accounts):
@@ -138,11 +138,11 @@ def assert_eth_balances_result(
     assert len(totals) == len(owned_assets)
 
     expected_total_eth = sum(from_wei(FVal(balance)) for balance in eth_balances)
-    assert FVal(totals['ETH']['amount']) == expected_total_eth
+    assert FVal(totals[A_ETH.identifier]['amount']) == expected_total_eth
     if expected_total_eth == ZERO:
-        assert FVal(totals['ETH']['usd_value']) == ZERO
+        assert FVal(totals[A_ETH.identifier]['usd_value']) == ZERO
     else:
-        assert FVal(totals['ETH']['usd_value']) > ZERO
+        assert FVal(totals[A_ETH.identifier]['usd_value']) > ZERO
 
     for token, balances in token_balances.items():
         symbol = token.identifier

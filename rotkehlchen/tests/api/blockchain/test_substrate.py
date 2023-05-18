@@ -4,6 +4,7 @@ from http import HTTPStatus
 import pytest
 import requests
 from flaky import flaky
+from rotkehlchen.constants.assets import A_KSM
 
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -56,11 +57,12 @@ def test_add_ksm_blockchain_account(rotkehlchen_api_server):
     """
     async_query = random.choice([False, True])
 
+    kusama_chain_key = SupportedBlockchain.KUSAMA.serialize()
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'blockchainsaccountsresource',
-            blockchain=SupportedBlockchain.KUSAMA.value,
+            blockchain=kusama_chain_key,
         ),
         json={
             'accounts': [{'address': SUBSTRATE_ACC1_KSM_ADDR}],
@@ -75,20 +77,20 @@ def test_add_ksm_blockchain_account(rotkehlchen_api_server):
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'named_blockchain_balances_resource',
-        blockchain=SupportedBlockchain.KUSAMA.value,
+        blockchain=kusama_chain_key,
     ))
     result = assert_proper_response_with_result(response)
 
     # Check per account
-    account_balances = result['per_account']['KSM'][SUBSTRATE_ACC1_KSM_ADDR]
+    account_balances = result['per_account'][kusama_chain_key][SUBSTRATE_ACC1_KSM_ADDR]
     assert 'liabilities' in account_balances
-    asset_ksm = account_balances['assets']['KSM']
+    asset_ksm = account_balances['assets'][A_KSM.identifier]
     assert FVal(asset_ksm['amount']) >= ZERO
     assert FVal(asset_ksm['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    total_ksm = result['totals']['assets']['KSM']
+    total_ksm = result['totals']['assets'][A_KSM.identifier]
     assert FVal(total_ksm['amount']) >= ZERO
     assert FVal(total_ksm['usd_value']) >= ZERO
 
@@ -104,6 +106,7 @@ def test_remove_ksm_blockchain_account(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     async_query = random.choice([False, True])
 
+    kusama_chain_key = SupportedBlockchain.KUSAMA.serialize()
     requests.get(api_url_for(
         rotkehlchen_api_server,
         'blockchainbalancesresource',
@@ -112,7 +115,7 @@ def test_remove_ksm_blockchain_account(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'blockchainsaccountsresource',
-            blockchain=SupportedBlockchain.KUSAMA.value,
+            blockchain=kusama_chain_key,
         ),
         json={
             'accounts': [SUBSTRATE_ACC2_KSM_ADDR],
@@ -126,16 +129,16 @@ def test_remove_ksm_blockchain_account(rotkehlchen_api_server):
         result = assert_proper_response_with_result(response)
 
     # Check per account
-    assert SUBSTRATE_ACC2_KSM_ADDR not in result['per_account']['KSM']
-    account_balances = result['per_account']['KSM'][SUBSTRATE_ACC1_KSM_ADDR]
+    assert SUBSTRATE_ACC2_KSM_ADDR not in result['per_account'][kusama_chain_key]
+    account_balances = result['per_account'][kusama_chain_key][SUBSTRATE_ACC1_KSM_ADDR]
     assert 'liabilities' in account_balances
-    asset_ksm = account_balances['assets']['KSM']
+    asset_ksm = account_balances['assets'][A_KSM.identifier]
     assert FVal(asset_ksm['amount']) >= ZERO
     assert FVal(asset_ksm['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    total_ksm = result['totals']['assets']['KSM']
+    total_ksm = result['totals']['assets'][A_KSM.identifier]
     assert FVal(total_ksm['amount']) >= ZERO
     assert FVal(total_ksm['usd_value']) >= ZERO
 
@@ -155,7 +158,7 @@ def test_add_ksm_blockchain_account_invalid_ens_domain(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'blockchainsaccountsresource',
-            blockchain=SupportedBlockchain.KUSAMA.value,
+            blockchain=SupportedBlockchain.KUSAMA.serialize(),
         ),
         json={'accounts': [{'address': invalid_ens_domain}]},
     )
@@ -182,7 +185,7 @@ def test_add_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'blockchainsaccountsresource',
-            blockchain=SupportedBlockchain.KUSAMA.value,
+            blockchain=SupportedBlockchain.KUSAMA.serialize(),
         ),
         json={
             'accounts': [{'address': ENS_BRUNO}],
@@ -214,7 +217,7 @@ def test_remove_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'blockchainsaccountsresource',
-            blockchain=SupportedBlockchain.KUSAMA.value,
+            blockchain=SupportedBlockchain.KUSAMA.serialize(),
         ),
         json={
             'accounts': [ENS_BRUNO],
