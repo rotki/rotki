@@ -53,7 +53,7 @@ export const useBlockchainBalances = () => {
 
       if (ethBalances) {
         const addresses = [...Object.keys(ethBalances)];
-        await fetchEnsNames(addresses, ignoreCache);
+        startPromise(fetchEnsNames(addresses, ignoreCache));
       }
       updateEth(blockchain, balances);
       updateBtc(blockchain, balances);

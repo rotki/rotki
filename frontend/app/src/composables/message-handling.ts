@@ -185,7 +185,7 @@ export const useMessageHandling = () => {
       notifications.push(handleNewTokenDetectedMessage(message.data));
     } else if (type === SocketMessageType.REFRESH_BALANCES) {
       await fetchBlockchainBalances({
-        blockchain: message.data.blockchain,
+        blockchain: message.data.blockchain.toUpperCase(),
         ignoreCache: true
       });
     } else {
