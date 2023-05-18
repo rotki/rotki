@@ -4,18 +4,15 @@ from marshmallow import Schema, fields, post_load
 
 from rotkehlchen.api.v1.fields import AssetField, AssetTypeField, TimestampField
 from rotkehlchen.api.v1.schemas import OptionalEvmTokenInformationSchema, UnderlyingTokenInfoSchema
-from rotkehlchen.assets.asset import CryptoAsset, CustomAsset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
 
 
-class AssetWithOraclesSchema(OptionalEvmTokenInformationSchema):
-    def __init__(self, asset_type: AssetType) -> None:
-        super().__init__()
-        self.asset_type = asset_type
-
+class AssetDataSchema(OptionalEvmTokenInformationSchema):
     identifier = fields.String(required=True)
     name = fields.String(required=True)
     symbol = fields.String(required=True)
+    asset_type = AssetTypeField(required=True)
     forked = AssetField(expected_type=CryptoAsset, required=True, allow_none=True)
     swapped_for = AssetField(expected_type=CryptoAsset, required=True, allow_none=True)
     cryptocompare = fields.String(required=True, allow_none=True)
@@ -49,12 +46,13 @@ class AssetWithOraclesSchema(OptionalEvmTokenInformationSchema):
                     token_kind=data['token_kind'],
                 ))
 
+        asset_type = data['asset_type']
         extra_information: Union[dict[str, Any], EvmToken]
         swapped_for, swapped_for_ident = data.pop('swapped_for'), None
         if swapped_for is not None:
             swapped_for_ident = swapped_for.identifier
 
-        if self.asset_type == AssetType.EVM_TOKEN:
+        if asset_type == AssetType.EVM_TOKEN:
             extra_information = EvmToken.initialize(
                 address=data.pop('address'),
                 chain_id=data.pop('evm_chain'),
@@ -84,52 +82,9 @@ class AssetWithOraclesSchema(OptionalEvmTokenInformationSchema):
             }
 
         data['underlying_tokens'] = underlying_tokens
-        data['asset_type'] = self.asset_type
+        data['asset_type'] = asset_type
         data['extra_information'] = extra_information
         return data
-
-
-class CustomAssetSchema(Schema):
-    identifier = fields.String(required=True)
-    name = fields.String(required=True)
-    notes = fields.String(load_default=None)
-    custom_asset_type = fields.String(required=True)
-
-    @post_load
-    def make_custom_asset(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> dict[str, CustomAsset]:
-        custom_asset = CustomAsset.initialize(
-            identifier=str(data['identifier']),
-            name=data['name'],
-            notes=data['notes'],
-            custom_asset_type=data['custom_asset_type'],
-        )
-        data['asset_type'] = AssetType.CUSTOM_ASSET
-        data['extra_information'] = custom_asset
-        return data
-
-
-class AssetDataSchema(Schema):
-    identifier = fields.String(required=True)
-    asset_type = AssetTypeField(required=True)
-
-    class Meta:
-        unknown = 'include'  # Needed to accept extra arguments depending on asset type
-
-    @post_load
-    def transform_data(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> dict[str, Any]:
-        asset_type = data.pop('asset_type')
-        if asset_type == AssetType.CUSTOM_ASSET:
-            return CustomAssetSchema().load(data)
-
-        return AssetWithOraclesSchema(asset_type=asset_type).load(data)
 
 
 class ExportedAssetsSchema(Schema):
