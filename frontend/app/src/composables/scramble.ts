@@ -38,23 +38,26 @@ export const useScramble = () => {
     );
   };
 
-  const scrambleInteger = (number: number, max = -1): number => {
-    const multiplied = Math.floor(number * get(scrambleMultiplier));
+  const scrambleInteger = (number: number, min = 0, max = -1): number => {
+    const multiplied = Math.floor(number * get(scrambleMultiplier)) + min;
 
     if (max > -1) {
-      return multiplied % max;
+      return (multiplied % (max - min)) + min;
     }
 
     return multiplied;
   };
 
-  const scrambleIdentifier = (number: number | string): number => {
+  const scrambleIdentifier = (number: number | string): string => {
     const parsed = typeof number === 'string' ? parseInt(number) : number;
     if (!get(scrambleData)) {
-      return parsed;
+      return parsed.toString();
     }
 
-    return scrambleInteger(parsed, 64000);
+    const min = 10 ** Math.floor(Math.log10(parsed));
+    const max = min * 10 - 1;
+
+    return scrambleInteger(parsed, min, max).toString();
   };
 
   return {

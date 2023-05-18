@@ -86,6 +86,7 @@ declare global {
   const fetchDataAsync: typeof import('./utils/fetch-async')['fetchDataAsync']
   const filterAddresses: typeof import('./utils/addresses')['filterAddresses']
   const filterAddressesFromWords: typeof import('./utils/history/index')['filterAddressesFromWords']
+  const generateRandomScrambleMultiplier: typeof import('./utils/session')['generateRandomScrambleMultiplier']
   const get: typeof import('@vueuse/shared')['get']
   const getActivePinia: typeof import('pinia')['getActivePinia']
   const getAddressFromEvmIdentifier: typeof import('./utils/assets')['getAddressFromEvmIdentifier']
@@ -759,6 +760,7 @@ declare module 'vue' {
     readonly fetchDataAsync: UnwrapRef<typeof import('./utils/fetch-async')['fetchDataAsync']>
     readonly filterAddresses: UnwrapRef<typeof import('./utils/addresses')['filterAddresses']>
     readonly filterAddressesFromWords: UnwrapRef<typeof import('./utils/history/index')['filterAddressesFromWords']>
+    readonly generateRandomScrambleMultiplier: UnwrapRef<typeof import('./utils/session')['generateRandomScrambleMultiplier']>
     readonly get: UnwrapRef<typeof import('@vueuse/shared')['get']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
     readonly getAddressFromEvmIdentifier: UnwrapRef<typeof import('./utils/assets')['getAddressFromEvmIdentifier']>

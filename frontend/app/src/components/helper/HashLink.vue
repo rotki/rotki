@@ -39,7 +39,8 @@ const props = withDefaults(
 );
 
 const { text, baseUrl, chain, type } = toRefs(props);
-const { scrambleData, shouldShowAmount, scrambleHex } = useScramble();
+const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } =
+  useScramble();
 
 const { explorers } = storeToRefs(useFrontendSettingsStore());
 const { dark } = useTheme();
@@ -56,6 +57,12 @@ const aliasName = computed<string | null>(() => {
 
 const displayText = computed<string>(() => {
   const textVal = get(text);
+  const typeVal = get(type);
+
+  if (typeVal === 'block' || /^\d+$/.test(textVal)) {
+    return scrambleIdentifier(textVal);
+  }
+
   return scrambleHex(textVal);
 });
 

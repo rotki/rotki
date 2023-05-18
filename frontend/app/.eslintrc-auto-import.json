@@ -89,6 +89,7 @@
     "fetchDataAsync": true,
     "filterAddresses": true,
     "filterAddressesFromWords": true,
+    "generateRandomScrambleMultiplier": true,
     "get": true,
     "getActivePinia": true,
     "getAddressFromEvmIdentifier": true,
