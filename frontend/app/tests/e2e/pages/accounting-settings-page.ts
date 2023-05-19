@@ -17,21 +17,29 @@ export class AccountingSettingsPage {
     );
   }
 
-  changeSwitch(target: string) {
-    cy.get(`${target} input`).then($switch => {
-      const initialValue = $switch.attr('aria-checked');
-      cy.get(target).click();
-      cy.get(target).then(() => {
-        expect($switch.attr('aria-checked')).not.to.eq(initialValue);
-      });
-    });
+  changeSwitch(target: string, enabled: boolean) {
+    cy.get(`${target}`).scrollIntoView();
+    cy.get(`${target}`).should('be.visible');
+    cy.get(`${target} input`).should(
+      'have.attr',
+      'aria-checked',
+      (!enabled).toString()
+    );
+    cy.get(target).click();
+    cy.get(`${target} input`).should(
+      'have.attr',
+      'aria-checked',
+      enabled.toString()
+    );
     this.confirmInlineSuccess(target);
   }
 
-  verifySwitchState(target: string, state: string) {
-    cy.get(`${target} input`).then($el => {
-      expect($el.attr('aria-checked')).eq(state);
-    });
+  verifySwitchState(target: string, enabled: boolean) {
+    cy.get(`${target} input`).should(
+      'have.attr',
+      'aria-checked',
+      enabled.toString()
+    );
   }
 
   confirmInlineSuccess(target: string, messageContains?: string) {
