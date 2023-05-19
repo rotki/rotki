@@ -1,10 +1,12 @@
 import { type MaybeRef } from '@vueuse/core';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 import { type ComputedRef, type Ref } from 'vue';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type TokenChains, isTokenChain } from '@/types/blockchain/chains';
+import { type BlockchainAssetBalances } from '@/types/blockchain/balances';
 import {
   type EthDetectedTokensInfo,
   type EvmTokensRecord
@@ -55,6 +57,31 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
         ...data
       }
     });
+  };
+
+  /**
+   * Temporary function to update detected token count on balance refresh
+   *
+   * @param {TokenChains} chain
+   * @param {BlockchainAssetBalances} chainValues
+   */
+  const updateStateOnBalanceRefresh = (
+    chain: TokenChains,
+    chainValues: BlockchainAssetBalances
+  ) => {
+    const lastUpdateTimestamp = Date.now() / 1000;
+    if (isEmpty(chainValues)) {
+      return setState(chain, {});
+    }
+    for (const address in chainValues) {
+      const { assets } = chainValues[address];
+      const tokens = Object.keys(assets).filter(
+        addr => addr !== Blockchain.ETH
+      );
+      setState(chain, {
+        [address]: { tokens, lastUpdateTimestamp }
+      });
+    }
   };
 
   const fetchDetectedTokens = async (
@@ -168,6 +195,8 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
 
   return {
     shouldRefreshBalances,
+    tokensState,
+    updateStateOnBalanceRefresh,
     fetchDetected,
     fetchDetectedTokens,
     getEthDetectedTokensInfo
