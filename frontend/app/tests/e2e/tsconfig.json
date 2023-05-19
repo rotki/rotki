@@ -2,7 +2,9 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "types": ["cypress", "node"],
-    "target": "ES5"
+    "target": "ES5",
+    "sourceMap": false,
+    "inlineSourceMap": true
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules/**", "**/.*"],

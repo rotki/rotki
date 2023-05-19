@@ -669,6 +669,7 @@
     "watchWithFilter": true,
     "whenever": true,
     "xpubToPayload": true,
-    "zeroBalance": true
+    "zeroBalance": true,
+    "toValue": true
   }
 }
