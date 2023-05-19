@@ -1,4 +1,4 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef, type Ref } from 'vue';
 import { AccountAssetBalances, type AssetBalances } from '@/types/balances';
@@ -38,7 +38,6 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
   const { notify } = useNotificationsStore();
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
   const { queryLoopringBalances } = useBlockchainBalancesApi();
-  const { updateStateOnBalanceRefresh } = useBlockchainTokensStore();
   const { tc } = useI18n();
 
   const getLoopringAssetBalances = (
@@ -116,18 +115,10 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
       return;
     }
 
-    const chainValues = perAccount[chain] ?? {};
-
     set(balances, {
       ...get(balances),
-      [chain]: chainValues
+      [chain]: perAccount[chain] ?? {}
     });
-
-    // todo: this is temporary, to update the tokens count
-    // todo: remove when BE updates the endpoint to refresh detected tokens
-    if (chain === Blockchain.ETH) {
-      updateStateOnBalanceRefresh(chain, chainValues);
-    }
 
     set(totals, {
       ...get(totals),

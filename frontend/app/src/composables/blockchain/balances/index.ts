@@ -19,6 +19,7 @@ export const useBlockchainBalances = () => {
   const { update: updateChains, updatePrices: updateChainPrices } =
     useChainBalancesStore();
   const { fetchEnsNames } = useAddressesNamesStore();
+  const { updateStateOnBalanceRefresh } = useBlockchainTokensStore();
   const { tc } = useI18n();
 
   const handleFetch = async (
@@ -58,6 +59,16 @@ export const useBlockchainBalances = () => {
       updateEth(blockchain, balances);
       updateBtc(blockchain, balances);
       updateChains(blockchain, balances);
+
+      // todo: this is temporary, to update the tokens count
+      // todo: remove when BE updates the endpoint to refresh detected tokens
+      if (blockchain === Blockchain.OPTIMISM || blockchain === Blockchain.ETH) {
+        updateStateOnBalanceRefresh(
+          blockchain,
+          balances.perAccount[blockchain] ?? {}
+        );
+      }
+
       setStatus(Status.LOADED);
     } catch (e: any) {
       logger.error(e);

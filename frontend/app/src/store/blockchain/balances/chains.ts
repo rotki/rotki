@@ -1,4 +1,4 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import { type Ref } from 'vue';
 import { type AssetBalances } from '@/types/balances';
@@ -30,7 +30,6 @@ export const useChainBalancesStore = defineStore('balances/chain', () => {
   const balances: Ref<Balances> = ref(defaultBalances());
   const totals: Ref<Totals> = ref(defaultTotals());
   const liabilities: Ref<Totals> = ref(defaultTotals());
-  const { updateStateOnBalanceRefresh } = useBlockchainTokensStore();
 
   const update = (
     chain: Blockchain,
@@ -40,18 +39,10 @@ export const useChainBalancesStore = defineStore('balances/chain', () => {
       return;
     }
 
-    const chainValues = perAccount[chain] ?? {};
-
     set(balances, {
       ...get(balances),
-      [chain]: chainValues
+      [chain]: perAccount[chain] ?? {}
     });
-
-    // todo: this is temporary, to update the tokens count
-    // todo: remove when BE updates the endpoint to refresh detected tokens
-    if (chain === Blockchain.OPTIMISM) {
-      updateStateOnBalanceRefresh(chain, chainValues);
-    }
 
     set(totals, {
       ...get(totals),
