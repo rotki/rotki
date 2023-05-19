@@ -30,6 +30,7 @@ export const useChainBalancesStore = defineStore('balances/chain', () => {
   const balances: Ref<Balances> = ref(defaultBalances());
   const totals: Ref<Totals> = ref(defaultTotals());
   const liabilities: Ref<Totals> = ref(defaultTotals());
+  const { updateStateOnBalanceRefresh } = useBlockchainTokensStore();
 
   const update = (
     chain: Blockchain,
@@ -49,8 +50,6 @@ export const useChainBalancesStore = defineStore('balances/chain', () => {
     // todo: this is temporary, to update the tokens count
     // todo: remove when BE updates the endpoint to refresh detected tokens
     if (chain === Blockchain.OPTIMISM) {
-      const { updateStateOnBalanceRefresh } = useBlockchainTokensStore();
-
       updateStateOnBalanceRefresh(chain, chainValues);
     }
 
