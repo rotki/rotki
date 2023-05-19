@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type MaybeRef } from '@vueuse/core';
 import {
-  FilterBehaviour,
   type MatchedKeywordWithBehaviour,
   type SearchMatcher,
   assetDeserializer,
@@ -213,69 +212,10 @@ export const useHistoryEventFilter = (
     [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString
   });
 
-  const transformFilters = (filters: Filters): Filters => {
-    const matchersVal: Matcher[] = get(matchers).filter(
-      item => 'string' in item && item.behaviourRequired
-    );
-
-    const newFilters: Filters = { ...filters };
-    matchersVal.forEach(matcher => {
-      if (!('string' in matcher)) {
-        return;
-      }
-      const keyValue = matcher.keyValue;
-      if (keyValue && keyValue in filters) {
-        const data = filters[keyValue];
-        if (!data) {
-          return;
-        }
-
-        if (typeof data === 'object' && !Array.isArray(data)) {
-          if (data.values) {
-            newFilters[keyValue] = {
-              behaviour: data.behaviour ?? FilterBehaviour.INCLUDE,
-              values: data.values
-            };
-          }
-          return;
-        }
-
-        let formattedData: string | string[] = data;
-        let exclude = false;
-
-        if (matcher.allowExclusion) {
-          if (typeof data === 'string' && data.startsWith('!')) {
-            exclude = true;
-            formattedData = data.substring(1);
-          } else if (
-            Array.isArray(data) &&
-            data.length > 0 &&
-            data[0].startsWith('!')
-          ) {
-            exclude = true;
-            formattedData = data.map(item =>
-              item.startsWith('!') ? item.substring(1) : item
-            );
-          }
-        }
-
-        newFilters[keyValue] = {
-          behaviour: exclude
-            ? FilterBehaviour.EXCLUDE
-            : FilterBehaviour.INCLUDE,
-          values: formattedData
-        };
-      }
-    });
-
-    return newFilters;
-  };
-
   return {
     matchers,
     filters,
     updateFilter,
-    transformFilters,
     RouteFilterSchema
   };
 };

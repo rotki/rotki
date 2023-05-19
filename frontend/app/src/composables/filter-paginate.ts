@@ -13,13 +13,17 @@ import {
   RouterPaginationOptionsSchema
 } from '@/types/route';
 import { getUpdatedKey } from '@/services/axios-tranformers';
+import {
+  FilterBehaviour,
+  type MatchedKeywordWithBehaviour,
+  type SearchMatcher
+} from '@/types/filtering';
 
 interface FilterSchema<F, M> {
   filters: Ref<F>;
   matchers: ComputedRef<M[]>;
   updateFilter: (filter: F) => void;
   RouteFilterSchema: ZodSchema;
-  transformFilters?: (filter: F) => F;
 }
 
 /**
@@ -38,8 +42,8 @@ export const usePaginationFilters = <
   U = PaginationRequestPayload<T>,
   V extends Object = T,
   S extends Collection<V> = Collection<V>,
-  W extends Object | void = undefined,
-  X = undefined
+  W extends MatchedKeywordWithBehaviour<string> | void = undefined,
+  X extends SearchMatcher<string, string> | void = undefined
 >(
   locationOverview: MaybeRef<string | null>,
   mainPage: MaybeRef<boolean>,
@@ -77,13 +81,77 @@ export const usePaginationFilters = <
     defaultSortBy
   } = options;
 
-  const {
-    filters,
-    matchers,
-    updateFilter,
-    RouteFilterSchema,
-    transformFilters
-  } = filterSchema();
+  const { filters, matchers, updateFilter, RouteFilterSchema } = filterSchema();
+
+  const transformFilters = (filters: W): W => {
+    const matchersVal = get(matchers);
+
+    if (typeof filters !== 'object' || matchersVal.length === 0) {
+      return filters;
+    }
+
+    const newFilters = { ...filters };
+
+    matchersVal.forEach(matcher => {
+      if (
+        typeof matcher !== 'object' ||
+        !('string' in matcher) ||
+        !matcher.behaviourRequired
+      ) {
+        return;
+      }
+
+      const keyValue = matcher.keyValue;
+      const key = matcher.key;
+
+      const usedKey = keyValue ?? key;
+
+      if (usedKey in filters) {
+        const data = filters[usedKey];
+        if (!data) {
+          return;
+        }
+
+        if (typeof data === 'object' && !Array.isArray(data)) {
+          if (data.values && usedKey in newFilters) {
+            newFilters[usedKey] = {
+              behaviour: data.behaviour ?? FilterBehaviour.INCLUDE,
+              values: data.values
+            };
+          }
+          return;
+        }
+
+        let formattedData: string | string[] = data;
+        let exclude = false;
+
+        if (matcher.allowExclusion) {
+          if (typeof data === 'string' && data.startsWith('!')) {
+            exclude = true;
+            formattedData = data.substring(1);
+          } else if (
+            Array.isArray(data) &&
+            data.length > 0 &&
+            data[0].startsWith('!')
+          ) {
+            exclude = true;
+            formattedData = data.map(item =>
+              item.startsWith('!') ? item.substring(1) : item
+            );
+          }
+        }
+
+        newFilters[usedKey] = {
+          behaviour: exclude
+            ? FilterBehaviour.EXCLUDE
+            : FilterBehaviour.INCLUDE,
+          values: formattedData
+        };
+      }
+    });
+
+    return newFilters;
+  };
 
   const pageParams: ComputedRef<U> = computed(() => {
     const { itemsPerPage, page, sortBy, sortDesc } = get(paginationOptions);
@@ -99,24 +167,17 @@ export const usePaginationFilters = <
       selectedFilters.location = overview;
     }
 
-    let transformedFilters = {
+    const transformedFilters = {
       ...selectedFilters,
       ...get(extraParams),
       ...nonEmptyProperties(get(customPageParams) ?? {})
     };
 
-    if (transformFilters) {
-      transformedFilters = {
-        ...transformedFilters,
-        ...transformFilters(transformedFilters)
-      };
-    }
-
     const orderByAttributes =
       sortBy?.length > 0 ? sortBy : [defaultSortBy?.key ?? 'timestamp'];
 
     return {
-      ...transformedFilters,
+      ...transformFilters(transformedFilters),
       limit: itemsPerPage,
       offset,
       orderByAttributes: orderByAttributes.map(item =>
