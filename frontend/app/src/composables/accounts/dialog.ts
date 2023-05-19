@@ -10,10 +10,10 @@ const defaultTitle = (): Title => ({ title: '' });
 
 export const useAccountDialog = createSharedComposable(() => {
   const accountToEdit: Ref<BlockchainAccountWithBalance | null> = ref(null);
-  const dialogText = ref<Title>(defaultTitle());
-  const openDialog = ref(false);
-  const valid = ref(false);
-  const saveFunc = ref<Function>();
+  const dialogText: Ref<Title> = ref(defaultTitle());
+  const openDialog: Ref<boolean> = ref(false);
+  const valid: Ref<boolean> = ref(false);
+  const saveFunc: Ref<Function> = ref(() => {});
 
   const { t } = useI18n();
 

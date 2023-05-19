@@ -8,7 +8,7 @@ import { XpubPrefix, type XpubType } from '@/utils/xpub';
 import { type ValidationErrors } from '@/types/api/errors';
 import { type BtcChains } from '@/types/blockchain/chains';
 import { type XpubPayload } from '@/types/blockchain/accounts';
-import { toMessages } from '@/utils/validation-errors';
+import { toMessages } from '@/utils/validation';
 
 const props = defineProps<{
   disabled: boolean;

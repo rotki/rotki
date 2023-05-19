@@ -11,7 +11,7 @@ import {
 import isEmpty from 'lodash/isEmpty';
 import { type Eth2Validator } from '@/types/balances';
 import { type ValidationErrors } from '@/types/api/errors';
-import { toMessages } from '@/utils/validation-errors';
+import { toMessages } from '@/utils/validation';
 
 const props = defineProps<{
   validator: Eth2Validator | null;

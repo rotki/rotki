@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredUnless } from '@vuelidate/validators';
-import { toMessages } from '@/utils/validation-errors';
+import { toMessages } from '@/utils/validation';
 
 defineProps<{ value: boolean }>();
 

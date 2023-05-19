@@ -13,7 +13,7 @@ import {
   type NewEvmHistoryEventPayload
 } from '@/types/history/events';
 import { TaskType } from '@/types/task-type';
-import { toMessages } from '@/utils/validation-errors';
+import { toMessages } from '@/utils/validation';
 import { type ActionDataEntry } from '@/types/action';
 
 const props = withDefaults(

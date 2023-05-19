@@ -1,18 +1,20 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import omit from 'lodash/omit';
-import { type Ref } from 'vue';
 import { type CustomAsset } from '@/types/asset';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
+import { toMessages } from '@/utils/validation';
+import { useCustomAssetForm } from '@/composables/assets/forms/custom-asset-form';
 
 const props = withDefaults(
   defineProps<{
-    edit: boolean;
+    edit?: CustomAsset | null;
     types?: string[];
   }>(),
-  { types: () => [] }
+  { edit: null, types: () => [] }
 );
+
+const { edit } = toRefs(props);
 
 const emptyCustomAsset: () => CustomAsset = () => ({
   identifier: '',
@@ -23,7 +25,8 @@ const emptyCustomAsset: () => CustomAsset = () => ({
 
 const formData = ref<CustomAsset>(emptyCustomAsset());
 
-const setForm = (form?: CustomAsset) => {
+const checkEditableItem = () => {
+  const form = get(edit);
   if (form) {
     set(search, form.customAssetType);
     set(formData, form);
@@ -33,11 +36,8 @@ const setForm = (form?: CustomAsset) => {
   }
 };
 
-const emit = defineEmits<{
-  (e: 'valid', valid: boolean): void;
-}>();
-
-const { edit } = toRefs(props);
+watch(edit, checkEditableItem);
+onMounted(checkEditableItem);
 
 const input = (asset: Partial<CustomAsset>) => {
   set(formData, { ...get(formData), ...asset });
@@ -72,7 +72,9 @@ const rules = {
   }
 };
 
-const v$ = useVuelidate(
+const { valid, setValidation, setSubmitFunc } = useCustomAssetForm();
+
+const v$ = setValidation(
   rules,
   {
     name: computed(() => get(formData).name),
@@ -81,10 +83,6 @@ const v$ = useVuelidate(
   { $autoDirty: true }
 );
 
-watch(v$, ({ $invalid }) => {
-  emit('valid', !$invalid);
-});
-
 const saveIcon = (identifier: string) => {
   get(assetIconFormRef)?.saveIcon(identifier);
 };
@@ -92,7 +90,7 @@ const saveIcon = (identifier: string) => {
 const { setMessage } = useMessageStore();
 const { editCustomAsset, addCustomAsset } = useAssetManagementApi();
 
-const save = async () => {
+const save = async (): Promise<string> => {
   const data = get(formData);
   let success = false;
   let identifier = data.identifier;
@@ -121,15 +119,11 @@ const save = async () => {
   return success ? identifier : '';
 };
 
-defineExpose({
-  saveIcon,
-  setForm,
-  save
-});
+setSubmitFunc(save);
 </script>
 
 <template>
-  <v-form :value="!v$.$invalid">
+  <v-form :value="valid">
     <v-row class="mt-2">
       <v-col cols="12" md="6">
         <v-text-field
@@ -139,7 +133,7 @@ defineExpose({
           persistent-hint
           clearable
           :label="t('common.name')"
-          :error-messages="v$.name.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.name)"
           @input="input({ name: $event })"
         />
       </v-col>
@@ -152,7 +146,7 @@ defineExpose({
           persistent-hint
           clearable
           :label="t('common.type')"
-          :error-messages="v$.type.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.type)"
           :search-input.sync="search"
           @input="input({ customAssetType: $event })"
         />

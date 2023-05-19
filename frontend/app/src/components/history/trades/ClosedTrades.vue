@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import { type Collection } from '@/types/collection';
 import Fragment from '@/components/helper/Fragment';
@@ -121,7 +120,6 @@ const { deleteExternalTrade, fetchTrades, refreshTrades } = useTrades();
 const {
   options,
   selected,
-  openDialog,
   editableItem,
   itemsToDelete: tradesToDelete,
   confirmationMessage,
@@ -150,14 +148,18 @@ const {
 
 useHistoryAutoRefresh(fetchData);
 
+const { setOpenDialog, setPostSubmitFunc } = useTradesForm();
+
+setPostSubmitFunc(fetchData);
+
 const newExternalTrade = () => {
   set(editableItem, null);
-  set(openDialog, true);
+  setOpenDialog(true);
 };
 
 const editTradeHandler = (trade: TradeEntry) => {
   set(editableItem, trade);
-  set(openDialog, true);
+  setOpenDialog(true);
 };
 
 const { floatingPrecision } = storeToRefs(useGeneralSettingsStore());
@@ -475,12 +477,8 @@ watch(loading, async (isLoading, wasLoading) => {
       </collection-handler>
     </card>
     <external-trade-form-dialog
-      v-model="openDialog"
       :loading="loading"
       :editable-item="editableItem"
-      :open="openDialog"
-      @reset-edit="editableItem = null"
-      @saved="fetchData()"
     />
   </fragment>
 </template>

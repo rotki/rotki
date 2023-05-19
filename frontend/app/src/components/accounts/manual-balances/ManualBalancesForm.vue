@@ -1,19 +1,17 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { type Ref } from 'vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { type TradeLocation } from '@/types/history/trade/location';
 import { type ManualBalance } from '@/types/manual-balances';
-import { toMessages } from '@/utils/validation-errors';
+import { toMessages } from '@/utils/validation';
 import { BalanceType } from '@/types/balances';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
-import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
+import { useCustomAssetForm } from '@/composables/assets/forms/custom-asset-form';
+import { useManualBalancesForm } from '@/composables/balances/manual/form';
 
 const props = withDefaults(
   defineProps<{
     edit?: ManualBalance | null;
-    value: boolean;
     context: BalanceType;
   }>(),
   {
@@ -23,14 +21,11 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'clear'): void;
-  (e: 'input', valid: boolean): void;
 }>();
 
 const { t } = useI18n();
 
 const { edit, context } = toRefs(props);
-
-const pending = ref(false);
 
 const errors: Ref<Record<string, string[]>> = ref({});
 
@@ -54,10 +49,6 @@ const reset = () => {
 const clear = () => {
   emit('clear');
   reset();
-};
-
-const input = (value: boolean) => {
-  emit('input', value);
 };
 
 const setBalance = (balance: ManualBalance) => {
@@ -87,8 +78,45 @@ const { editManualBalance, addManualBalance, manualLabels } =
 const { refreshPrices } = useBalances();
 const { setMessage } = useMessageStore();
 
+const { valid, submitting, setValidation, setSubmitFunc } =
+  useManualBalancesForm();
+
+const rules = {
+  amount: {
+    required: helpers.withMessage(
+      t('manual_balances_form.validation.amount'),
+      required
+    )
+  },
+  label: {
+    required: helpers.withMessage(
+      t('manual_balances_form.validation.label_empty'),
+      required
+    )
+  },
+  asset: {
+    required: helpers.withMessage(
+      t('manual_balances_form.validation.asset'),
+      required
+    )
+  },
+  location: {
+    required
+  }
+};
+
+const v$ = setValidation(
+  rules,
+  {
+    amount,
+    asset,
+    label,
+    location
+  },
+  { $autoDirty: true, $externalResults: errors }
+);
+
 const save = async () => {
-  set(pending, true);
   const balance: Omit<ManualBalance, 'id' | 'asset'> = {
     amount: bigNumberify(get(amount)),
     label: get(label),
@@ -109,7 +137,6 @@ const save = async () => {
     ? editManualBalance({ ...balance, id: idVal, asset: usedAsset })
     : addManualBalance({ ...balance, asset: usedAsset }));
 
-  set(pending, false);
   startPromise(refreshPrices(true));
 
   if (status.success) {
@@ -132,6 +159,8 @@ const save = async () => {
   }
   return false;
 };
+
+setSubmitFunc(save);
 
 watch(label, label => {
   if (get(edit)) {
@@ -159,11 +188,13 @@ watch(label, label => {
   get(v$).label.$validate();
 });
 
-const customAssetFormRef: Ref<InstanceType<typeof CustomAssetForm> | null> =
-  ref(null);
-const showCustomAssetForm: Ref<boolean> = ref(false);
-const customAssetFormValid: Ref<boolean> = ref(false);
-const customAssetFormSaving: Ref<boolean> = ref(false);
+const { setOpenDialog, setPostSubmitFunc } = useCustomAssetForm();
+
+const postSubmit = (assetId: string) => {
+  set(asset, assetId);
+};
+
+setPostSubmitFunc(postSubmit);
 
 const customAssetTypes = ref<string[]>([]);
 
@@ -174,61 +205,8 @@ const openCustomAssetForm = async () => {
     set(customAssetTypes, await getCustomAssetTypes());
   }
 
-  set(showCustomAssetForm, true);
+  setOpenDialog(true);
 };
-
-const saveCustomAsset = async () => {
-  set(customAssetFormSaving, true);
-
-  set(customAssetFormSaving, true);
-  const identifier = await get(customAssetFormRef)?.save();
-
-  if (identifier) {
-    set(showCustomAssetForm, false);
-    set(asset, identifier);
-  }
-
-  set(customAssetFormSaving, false);
-};
-
-const rules = {
-  amount: {
-    required: helpers.withMessage(
-      t('manual_balances_form.validation.amount'),
-      required
-    )
-  },
-  label: {
-    required: helpers.withMessage(
-      t('manual_balances_form.validation.label_empty'),
-      required
-    )
-  },
-  asset: {
-    required: helpers.withMessage(
-      t('manual_balances_form.validation.asset'),
-      required
-    )
-  },
-  location: {
-    required
-  }
-};
-
-const v$ = useVuelidate(
-  rules,
-  {
-    amount,
-    asset,
-    label,
-    location
-  },
-  { $autoDirty: true, $externalResults: errors }
-);
-
-watch(v$, ({ $invalid }) => {
-  input(!$invalid);
-});
 
 onMounted(async () => {
   const editPayload = get(edit);
@@ -236,16 +214,15 @@ onMounted(async () => {
     set(asset, editPayload.asset);
   }
 });
-defineExpose({
-  save
-});
+
+const css = useCssModule();
 </script>
 
 <template>
   <v-form
     ref="form"
-    :value="!v$.$invalid"
-    :class="$style.form"
+    :value="valid"
+    :class="css.form"
     data-cy="manual-balance-form"
   >
     <v-text-field
@@ -254,13 +231,13 @@ defineExpose({
       outlined
       :label="t('manual_balances_form.fields.label')"
       :error-messages="toMessages(v$.label)"
-      :disabled="pending"
+      :disabled="submitting"
       @blur="v$.label.$touch()"
     />
 
     <balance-type-input
       v-model="balanceType"
-      :disabled="pending"
+      :disabled="submitting"
       :label="t('manual_balances_form.fields.balance_type')"
       outlined
     />
@@ -273,7 +250,7 @@ defineExpose({
           class="manual-balances-form__asset"
           outlined
           :error-messages="toMessages(v$.asset)"
-          :disabled="pending"
+          :disabled="submitting"
           @blur="v$.asset.$touch()"
         />
       </v-col>
@@ -284,7 +261,7 @@ defineExpose({
               text
               color="primary"
               class="mt-1 py-6"
-              :disabled="pending"
+              :disabled="submitting"
               v-on="on"
               @click="openCustomAssetForm()"
             >
@@ -303,7 +280,7 @@ defineExpose({
 
     <manual-balances-price-form
       ref="priceForm"
-      :pending="pending"
+      :pending="submitting"
       :asset="asset"
     />
 
@@ -314,14 +291,14 @@ defineExpose({
       class="manual-balances-form__amount"
       outlined
       autocomplete="off"
-      :disabled="pending"
+      :disabled="submitting"
       @blur="v$.amount.$touch()"
     />
 
     <tag-input
       v-model="tags"
       :label="t('manual_balances_form.fields.tags')"
-      :disabled="pending"
+      :disabled="submitting"
       outlined
       class="manual-balances-form__tags"
     />
@@ -331,28 +308,15 @@ defineExpose({
       class="manual-balances-form__location"
       outlined
       :error-messages="toMessages(v$.location)"
-      :disabled="pending"
+      :disabled="submitting"
       :label="t('common.location')"
       attach=".manual-balances-form__location"
       @blur="v$.location.$touch()"
     />
-
-    <big-dialog
-      :display="showCustomAssetForm"
+    <custom-asset-form-dialog
       :title="t('asset_management.add_title')"
-      :action-disabled="!customAssetFormValid || customAssetFormSaving"
-      :primary-action="t('common.actions.save')"
-      :loading="customAssetFormSaving"
-      @confirm="saveCustomAsset()"
-      @cancel="showCustomAssetForm = false"
-    >
-      <custom-asset-form
-        ref="customAssetFormRef"
-        :types="customAssetTypes"
-        :edit="false"
-        @valid="customAssetFormValid = $event"
-      />
-    </big-dialog>
+      :types="customAssetTypes"
+    />
   </v-form>
 </template>
 

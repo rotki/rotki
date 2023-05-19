@@ -672,6 +672,11 @@
     "whenever": true,
     "xpubToPayload": true,
     "zeroBalance": true,
-    "toValue": true
+    "toValue": true,
+    "checkBeforeSubmission": true,
+    "useCustomAssetForm": true,
+    "useForm": true,
+    "useManualBalancesForm": true,
+    "useTradesForm": true
   }
 }

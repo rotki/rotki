@@ -42,6 +42,7 @@ declare global {
   const calculatePercentage: typeof import('./utils/calculation')['calculatePercentage']
   const calculateTotalProfitLoss: typeof import('./utils/report')['calculateTotalProfitLoss']
   const changeDateFormat: typeof import('./utils/date')['changeDateFormat']
+  const checkBeforeSubmission: typeof import('./utils/validation')['checkBeforeSubmission']
   const checkIfDevelopment: typeof import('./utils/env-utils')['checkIfDevelopment']
   const chunkArray: typeof import('./utils/data')['chunkArray']
   const compareSymbols: typeof import('./utils/assets')['compareSymbols']
@@ -246,7 +247,7 @@ declare global {
   const throttledWatch: typeof import('@vueuse/core')['throttledWatch']
   const toCapitalCase: typeof import('./utils/text')['toCapitalCase']
   const toEvmChainAndTxHash: typeof import('./utils/history/index')['toEvmChainAndTxHash']
-  const toMessages: typeof import('./utils/validation-errors')['toMessages']
+  const toMessages: typeof import('./utils/validation')['toMessages']
   const toProfitLossModel: typeof import('./utils/defi/index')['toProfitLossModel']
   const toRaw: typeof import('vue')['toRaw']
   const toReactive: typeof import('@vueuse/core')['toReactive']
@@ -377,6 +378,7 @@ declare global {
   const useCssVars: typeof import('vue')['useCssVars']
   const useCurrentElement: typeof import('@vueuse/core')['useCurrentElement']
   const useCustomAssetFilter: typeof import('./composables/filters/custom-assets')['useCustomAssetFilter']
+  const useCustomAssetForm: typeof import('./composables/assets/forms/custom-asset-form')['useCustomAssetForm']
   const useCycleList: typeof import('@vueuse/core')['useCycleList']
   const useDark: typeof import('@vueuse/core')['useDark']
   const useDarkMode: typeof import('./composables/dark-mode')['useDarkMode']
@@ -429,6 +431,7 @@ declare global {
   const useFocus: typeof import('@vueuse/core')['useFocus']
   const useFocusWithin: typeof import('@vueuse/core')['useFocusWithin']
   const useFooterProps: typeof import('./composables/datatable.common')['useFooterProps']
+  const useForm: typeof import('./composables/form')['useForm']
   const useFps: typeof import('@vueuse/core')['useFps']
   const useFrontendSettingsStore: typeof import('./store/settings/frontend')['useFrontendSettingsStore']
   const useFullscreen: typeof import('@vueuse/core')['useFullscreen']
@@ -483,8 +486,9 @@ declare global {
   const useMainStore: typeof import('./store/main')['useMainStore']
   const useMakerDaoApi: typeof import('./composables/api/defi/makerdao')['useMakerDaoApi']
   const useMakerDaoStore: typeof import('./store/defi/makerdao/index')['useMakerDaoStore']
-  const useManualAssetBalances: typeof import('./composables/balances/manual')['useManualAssetBalances']
+  const useManualAssetBalances: typeof import('./composables/balances/manual/index')['useManualAssetBalances']
   const useManualBalancesApi: typeof import('./composables/api/balances/manual')['useManualBalancesApi']
+  const useManualBalancesForm: typeof import('./composables/balances/manual/form')['useManualBalancesForm']
   const useManualBalancesStore: typeof import('./store/balances/manual')['useManualBalancesStore']
   const useManualRefHistory: typeof import('@vueuse/core')['useManualRefHistory']
   const useMath: typeof import('@vueuse/math')['useMath']
@@ -622,6 +626,7 @@ declare global {
   const useTradeFilters: typeof import('./composables/filters/trades')['useTradeFilters']
   const useTrades: typeof import('./composables/history/trades/index')['useTrades']
   const useTradesApi: typeof import('./composables/api/history/trades')['useTradesApi']
+  const useTradesForm: typeof import('./composables/history/trades/form')['useTradesForm']
   const useTransactionQueryStatus: typeof import('./composables/history/events/query-status/tx-query-status')['useTransactionQueryStatus']
   const useTransition: typeof import('@vueuse/core')['useTransition']
   const useTrunc: typeof import('@vueuse/math')['useTrunc']
@@ -718,6 +723,7 @@ declare module 'vue' {
     readonly calculatePercentage: UnwrapRef<typeof import('./utils/calculation')['calculatePercentage']>
     readonly calculateTotalProfitLoss: UnwrapRef<typeof import('./utils/report')['calculateTotalProfitLoss']>
     readonly changeDateFormat: UnwrapRef<typeof import('./utils/date')['changeDateFormat']>
+    readonly checkBeforeSubmission: UnwrapRef<typeof import('./utils/validation')['checkBeforeSubmission']>
     readonly checkIfDevelopment: UnwrapRef<typeof import('./utils/env-utils')['checkIfDevelopment']>
     readonly chunkArray: UnwrapRef<typeof import('./utils/data')['chunkArray']>
     readonly compareSymbols: UnwrapRef<typeof import('./utils/assets')['compareSymbols']>
@@ -922,7 +928,7 @@ declare module 'vue' {
     readonly throttledWatch: UnwrapRef<typeof import('@vueuse/core')['throttledWatch']>
     readonly toCapitalCase: UnwrapRef<typeof import('./utils/text')['toCapitalCase']>
     readonly toEvmChainAndTxHash: UnwrapRef<typeof import('./utils/history/index')['toEvmChainAndTxHash']>
-    readonly toMessages: UnwrapRef<typeof import('./utils/validation-errors')['toMessages']>
+    readonly toMessages: UnwrapRef<typeof import('./utils/validation')['toMessages']>
     readonly toProfitLossModel: UnwrapRef<typeof import('./utils/defi/index')['toProfitLossModel']>
     readonly toRaw: UnwrapRef<typeof import('vue')['toRaw']>
     readonly toReactive: UnwrapRef<typeof import('@vueuse/core')['toReactive']>
@@ -1053,6 +1059,7 @@ declare module 'vue' {
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>
     readonly useCurrentElement: UnwrapRef<typeof import('@vueuse/core')['useCurrentElement']>
     readonly useCustomAssetFilter: UnwrapRef<typeof import('./composables/filters/custom-assets')['useCustomAssetFilter']>
+    readonly useCustomAssetForm: UnwrapRef<typeof import('./composables/assets/forms/custom-asset-form')['useCustomAssetForm']>
     readonly useCycleList: UnwrapRef<typeof import('@vueuse/core')['useCycleList']>
     readonly useDark: UnwrapRef<typeof import('@vueuse/core')['useDark']>
     readonly useDarkMode: UnwrapRef<typeof import('./composables/dark-mode')['useDarkMode']>
@@ -1105,6 +1112,7 @@ declare module 'vue' {
     readonly useFocus: UnwrapRef<typeof import('@vueuse/core')['useFocus']>
     readonly useFocusWithin: UnwrapRef<typeof import('@vueuse/core')['useFocusWithin']>
     readonly useFooterProps: UnwrapRef<typeof import('./composables/datatable.common')['useFooterProps']>
+    readonly useForm: UnwrapRef<typeof import('./composables/form')['useForm']>
     readonly useFps: UnwrapRef<typeof import('@vueuse/core')['useFps']>
     readonly useFrontendSettingsStore: UnwrapRef<typeof import('./store/settings/frontend')['useFrontendSettingsStore']>
     readonly useFullscreen: UnwrapRef<typeof import('@vueuse/core')['useFullscreen']>
@@ -1159,8 +1167,9 @@ declare module 'vue' {
     readonly useMainStore: UnwrapRef<typeof import('./store/main')['useMainStore']>
     readonly useMakerDaoApi: UnwrapRef<typeof import('./composables/api/defi/makerdao')['useMakerDaoApi']>
     readonly useMakerDaoStore: UnwrapRef<typeof import('./store/defi/makerdao/index')['useMakerDaoStore']>
-    readonly useManualAssetBalances: UnwrapRef<typeof import('./composables/balances/manual')['useManualAssetBalances']>
+    readonly useManualAssetBalances: UnwrapRef<typeof import('./composables/balances/manual/index')['useManualAssetBalances']>
     readonly useManualBalancesApi: UnwrapRef<typeof import('./composables/api/balances/manual')['useManualBalancesApi']>
+    readonly useManualBalancesForm: UnwrapRef<typeof import('./composables/balances/manual/form')['useManualBalancesForm']>
     readonly useManualBalancesStore: UnwrapRef<typeof import('./store/balances/manual')['useManualBalancesStore']>
     readonly useManualRefHistory: UnwrapRef<typeof import('@vueuse/core')['useManualRefHistory']>
     readonly useMath: UnwrapRef<typeof import('@vueuse/math')['useMath']>
@@ -1298,6 +1307,7 @@ declare module 'vue' {
     readonly useTradeFilters: UnwrapRef<typeof import('./composables/filters/trades')['useTradeFilters']>
     readonly useTrades: UnwrapRef<typeof import('./composables/history/trades/index')['useTrades']>
     readonly useTradesApi: UnwrapRef<typeof import('./composables/api/history/trades')['useTradesApi']>
+    readonly useTradesForm: UnwrapRef<typeof import('./composables/history/trades/form')['useTradesForm']>
     readonly useTransactionQueryStatus: UnwrapRef<typeof import('./composables/history/events/query-status/tx-query-status')['useTransactionQueryStatus']>
     readonly useTransition: UnwrapRef<typeof import('@vueuse/core')['useTransition']>
     readonly useTrunc: UnwrapRef<typeof import('@vueuse/math')['useTrunc']>
@@ -1388,6 +1398,7 @@ declare module '@vue/runtime-core' {
     readonly calculatePercentage: UnwrapRef<typeof import('./utils/calculation')['calculatePercentage']>
     readonly calculateTotalProfitLoss: UnwrapRef<typeof import('./utils/report')['calculateTotalProfitLoss']>
     readonly changeDateFormat: UnwrapRef<typeof import('./utils/date')['changeDateFormat']>
+    readonly checkBeforeSubmission: UnwrapRef<typeof import('./utils/validation')['checkBeforeSubmission']>
     readonly checkIfDevelopment: UnwrapRef<typeof import('./utils/env-utils')['checkIfDevelopment']>
     readonly chunkArray: UnwrapRef<typeof import('./utils/data')['chunkArray']>
     readonly compareSymbols: UnwrapRef<typeof import('./utils/assets')['compareSymbols']>
@@ -1592,7 +1603,7 @@ declare module '@vue/runtime-core' {
     readonly throttledWatch: UnwrapRef<typeof import('@vueuse/core')['throttledWatch']>
     readonly toCapitalCase: UnwrapRef<typeof import('./utils/text')['toCapitalCase']>
     readonly toEvmChainAndTxHash: UnwrapRef<typeof import('./utils/history/index')['toEvmChainAndTxHash']>
-    readonly toMessages: UnwrapRef<typeof import('./utils/validation-errors')['toMessages']>
+    readonly toMessages: UnwrapRef<typeof import('./utils/validation')['toMessages']>
     readonly toProfitLossModel: UnwrapRef<typeof import('./utils/defi/index')['toProfitLossModel']>
     readonly toRaw: UnwrapRef<typeof import('vue')['toRaw']>
     readonly toReactive: UnwrapRef<typeof import('@vueuse/core')['toReactive']>
@@ -1723,6 +1734,7 @@ declare module '@vue/runtime-core' {
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>
     readonly useCurrentElement: UnwrapRef<typeof import('@vueuse/core')['useCurrentElement']>
     readonly useCustomAssetFilter: UnwrapRef<typeof import('./composables/filters/custom-assets')['useCustomAssetFilter']>
+    readonly useCustomAssetForm: UnwrapRef<typeof import('./composables/assets/forms/custom-asset-form')['useCustomAssetForm']>
     readonly useCycleList: UnwrapRef<typeof import('@vueuse/core')['useCycleList']>
     readonly useDark: UnwrapRef<typeof import('@vueuse/core')['useDark']>
     readonly useDarkMode: UnwrapRef<typeof import('./composables/dark-mode')['useDarkMode']>
@@ -1775,6 +1787,7 @@ declare module '@vue/runtime-core' {
     readonly useFocus: UnwrapRef<typeof import('@vueuse/core')['useFocus']>
     readonly useFocusWithin: UnwrapRef<typeof import('@vueuse/core')['useFocusWithin']>
     readonly useFooterProps: UnwrapRef<typeof import('./composables/datatable.common')['useFooterProps']>
+    readonly useForm: UnwrapRef<typeof import('./composables/form')['useForm']>
     readonly useFps: UnwrapRef<typeof import('@vueuse/core')['useFps']>
     readonly useFrontendSettingsStore: UnwrapRef<typeof import('./store/settings/frontend')['useFrontendSettingsStore']>
     readonly useFullscreen: UnwrapRef<typeof import('@vueuse/core')['useFullscreen']>
@@ -1829,8 +1842,9 @@ declare module '@vue/runtime-core' {
     readonly useMainStore: UnwrapRef<typeof import('./store/main')['useMainStore']>
     readonly useMakerDaoApi: UnwrapRef<typeof import('./composables/api/defi/makerdao')['useMakerDaoApi']>
     readonly useMakerDaoStore: UnwrapRef<typeof import('./store/defi/makerdao/index')['useMakerDaoStore']>
-    readonly useManualAssetBalances: UnwrapRef<typeof import('./composables/balances/manual')['useManualAssetBalances']>
+    readonly useManualAssetBalances: UnwrapRef<typeof import('./composables/balances/manual/index')['useManualAssetBalances']>
     readonly useManualBalancesApi: UnwrapRef<typeof import('./composables/api/balances/manual')['useManualBalancesApi']>
+    readonly useManualBalancesForm: UnwrapRef<typeof import('./composables/balances/manual/form')['useManualBalancesForm']>
     readonly useManualBalancesStore: UnwrapRef<typeof import('./store/balances/manual')['useManualBalancesStore']>
     readonly useManualRefHistory: UnwrapRef<typeof import('@vueuse/core')['useManualRefHistory']>
     readonly useMath: UnwrapRef<typeof import('@vueuse/math')['useMath']>
@@ -1968,6 +1982,7 @@ declare module '@vue/runtime-core' {
     readonly useTradeFilters: UnwrapRef<typeof import('./composables/filters/trades')['useTradeFilters']>
     readonly useTrades: UnwrapRef<typeof import('./composables/history/trades/index')['useTrades']>
     readonly useTradesApi: UnwrapRef<typeof import('./composables/api/history/trades')['useTradesApi']>
+    readonly useTradesForm: UnwrapRef<typeof import('./composables/history/trades/form')['useTradesForm']>
     readonly useTransactionQueryStatus: UnwrapRef<typeof import('./composables/history/events/query-status/tx-query-status')['useTransactionQueryStatus']>
     readonly useTransition: UnwrapRef<typeof import('@vueuse/core')['useTransition']>
     readonly useTrunc: UnwrapRef<typeof import('@vueuse/math')['useTrunc']>

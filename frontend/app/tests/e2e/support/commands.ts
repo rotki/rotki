@@ -45,6 +45,7 @@ const logout = () => {
           cy.request({
             url: `${backendUrl}/api/1/users/${user}`,
             method: 'PATCH',
+            failOnStatusCode: false,
             body: {
               action: 'logout'
             }

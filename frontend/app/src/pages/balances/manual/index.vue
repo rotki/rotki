@@ -3,11 +3,10 @@ import { type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { type ManualBalance } from '@/types/manual-balances';
 import { BalanceType } from '@/types/balances';
+import { useManualBalancesForm } from '@/composables/balances/manual/form';
 
-const form = ref<any | null>(null);
 const balanceToEdit: Ref<ManualBalance | null> = ref(null);
 const loading = ref(false);
-const valid = ref(true);
 
 const store = useManualBalancesStore();
 const { fetchManualBalances } = store;
@@ -15,29 +14,34 @@ const { manualBalances, manualLiabilities } = storeToRefs(store);
 
 const dialogTitle = ref('');
 const dialogSubtitle = ref('');
-const openDialog = ref(false);
-const dialogDisabled = ref(false);
-const dialogLoading = ref(false);
 
 const { t } = useI18n();
+
+const {
+  valid,
+  openDialog,
+  submitting,
+  setOpenDialog,
+  trySubmit,
+  closeDialog,
+  setPostSubmitFunc
+} = useManualBalancesForm();
 
 const add = () => {
   set(dialogTitle, t('manual_balances.dialog.add.title').toString());
   set(dialogSubtitle, '');
-  set(openDialog, true);
-  set(valid, false);
+  setOpenDialog(true);
 };
 
 const edit = (balance: ManualBalance) => {
   set(balanceToEdit, balance);
   set(dialogTitle, t('manual_balances.dialog.edit.title').toString());
   set(dialogSubtitle, t('manual_balances.dialog.edit.subtitle').toString());
-  set(openDialog, true);
-  set(valid, true);
+  setOpenDialog(true);
 };
 
-const cancel = () => {
-  set(openDialog, false);
+const cancelForm = () => {
+  closeDialog();
   set(balanceToEdit, null);
 };
 
@@ -47,19 +51,11 @@ const refresh = async () => {
   set(loading, false);
 };
 
-const save = async () => {
-  set(dialogDisabled, true);
-  set(dialogLoading, true);
-  const success = await get(form)?.save();
-  set(dialogDisabled, false);
-  set(dialogLoading, false);
-
-  if (!success) {
-    return;
-  }
-  set(openDialog, false);
+const postSubmit = async () => {
   set(balanceToEdit, null);
 };
+
+setPostSubmitFunc(postSubmit);
 
 const router = useRouter();
 onMounted(async () => {
@@ -157,18 +153,13 @@ const threshold = [1];
       :display="openDialog"
       :title="dialogTitle"
       :subtitle="dialogSubtitle"
-      :action-disabled="dialogDisabled || !valid || dialogLoading"
-      :loading="dialogLoading"
-      primary-action="Save"
-      @confirm="save()"
-      @cancel="cancel()"
+      :action-disabled="submitting || !valid"
+      :loading="submitting"
+      :primary-action="t('common.actions.save')"
+      @confirm="trySubmit()"
+      @cancel="cancelForm()"
     >
-      <manual-balances-form
-        ref="form"
-        v-model="valid"
-        :edit="balanceToEdit"
-        :context="context"
-      />
+      <manual-balances-form :edit="balanceToEdit" :context="context" />
     </big-dialog>
   </fragment>
 </template>

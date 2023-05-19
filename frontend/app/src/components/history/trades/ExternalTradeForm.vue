@@ -1,5 +1,4 @@
 ﻿<script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { type Writeable } from '@/types';
@@ -9,25 +8,20 @@ import {
   type TradeType
 } from '@/types/history/trade';
 import { TaskType } from '@/types/task-type';
-import { toMessages } from '@/utils/validation-errors';
+import { toMessages } from '@/utils/validation';
+import { useTradesForm } from '@/composables/history/trades/form';
 
 const props = withDefaults(
   defineProps<{
-    value?: boolean;
     edit?: Trade | null;
   }>(),
   {
-    value: false,
     edit: null
   }
 );
 
-const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
-
 const { t } = useI18n();
 const { edit } = toRefs(props);
-
-const input = (valid: boolean) => emit('input', valid);
 
 const { isTaskRunning } = useTaskStore();
 const { getHistoricPrice } = useBalancePricesStore();
@@ -100,7 +94,9 @@ const rules = {
   }
 };
 
-const v$ = useVuelidate(
+const { valid, setValidation, setSubmitFunc } = useTradesForm();
+
+const v$ = setValidation(
   rules,
   {
     baseAsset: base,
@@ -116,10 +112,6 @@ const v$ = useVuelidate(
     $externalResults: errorMessages
   }
 );
-
-watch(v$, ({ $invalid }) => {
-  input(!$invalid);
-});
 
 const triggerFeeValidator = () => {
   get(feeInput)?.textInput?.validate(true);
@@ -229,7 +221,7 @@ const save = async (): Promise<boolean> => {
   return false;
 };
 
-defineExpose({ save, reset, focus });
+setSubmitFunc(save);
 
 const updateRate = (forceUpdate = false) => {
   if (
@@ -279,10 +271,6 @@ const onQuoteAmountChange = () => {
   }
 };
 
-watch(edit, () => {
-  setEditMode();
-});
-
 watch([datetime, quote, base], async () => {
   await fetchPrice();
 });
@@ -300,13 +288,12 @@ watch(quoteAmount, () => {
   onQuoteAmountChange();
 });
 
-onMounted(() => {
-  setEditMode();
-});
+watch(edit, setEditMode);
+onMounted(setEditMode);
 </script>
 
 <template>
-  <v-form :value="value" data-cy="trade-form" class="external-trade-form">
+  <v-form :value="valid" data-cy="trade-form" class="external-trade-form">
     <v-row>
       <v-col>
         <v-row class="pt-1">

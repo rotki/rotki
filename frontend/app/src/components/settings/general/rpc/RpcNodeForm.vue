@@ -4,7 +4,7 @@ import { between, required, requiredIf } from '@vuelidate/validators';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import isEmpty from 'lodash/isEmpty';
 import { type EvmRpcNode, getPlaceholderNode } from '@/types/settings';
-import { toMessages } from '@/utils/validation-errors';
+import { toMessages } from '@/utils/validation';
 
 const { t } = useI18n();
 

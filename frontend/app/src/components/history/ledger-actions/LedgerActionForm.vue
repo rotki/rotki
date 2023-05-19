@@ -9,7 +9,7 @@ import {
   type NewLedgerAction
 } from '@/types/history/ledger-action/ledger-actions';
 import { LedgerActionType } from '@/types/history/ledger-action/ledger-actions-type';
-import { toMessages } from '@/utils/validation-errors';
+import { toMessages } from '@/utils/validation';
 
 const props = withDefaults(
   defineProps<{
