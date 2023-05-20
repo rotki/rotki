@@ -120,7 +120,7 @@ class AssetsUpdater:
         self.last_remote_checked_version = -1  # integer value that represents no update
         self.conflicts: list[tuple[AssetData, AssetData]] = []
         self.assets_re = re.compile(r'.*INSERT +INTO +assets\( *identifier *, *name *, *type *\) +VALUES\(([^\)]*?),([^\)]*?),([^\)]*?)\).*?')  # noqa: E501
-        self.ethereum_tokens_re = re.compile(r'.*INSERT +INTO +evm_tokens\( *identifier *, *token_kind *, *chain *, *address *, *decimals *, *protocol *\) +VALUES\(([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?)\).*')  # noqa: E501
+        self.evm_tokens_re = re.compile(r'.*INSERT +INTO +evm_tokens\( *identifier *, *token_kind *, *chain *, *address *, *decimals *, *protocol *\) +VALUES\(([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?)\).*')  # noqa: E501
         self.common_asset_details_re = re.compile(r'.*INSERT +INTO +common_asset_details\( *identifier *, *symbol *, *coingecko *, *cryptocompare *, *forked *, *started *, *swapped_for *\) +VALUES\((.*?),(.*?),(.*?),(.*?),(.*?),([^\)]*?),([^\)]*?)\).*')  # noqa: E501
         self.assets_collection_re = re.compile(r'.*INSERT +INTO +asset_collections\( *id *, *name *, *symbol *\) +VALUES +\(([^\)]*?),([^\)]*?),([^\)]*?)\).*?')  # noqa: E501
         self.multiasset_mappings_re = re.compile(r'.*INSERT +INTO +multiasset_mappings\( *collection_id *, *asset *\) +VALUES +\(([^\)]*?), *"([^\)]+?)"\).*?')  # noqa: E501
@@ -246,11 +246,11 @@ class AssetsUpdater:
             forked=self._parse_optional_str(common_details_match.group(5), 'forked', insert_text),
         )
 
-    def _parse_ethereum_token_data(
+    def _parse_evm_token_data(
             self,
             insert_text: str,
     ) -> tuple[ChecksumEvmAddress, Optional[int], Optional[str], Optional[ChainID], Optional[EvmTokenKind]]:  # noqa: E501
-        match = self.ethereum_tokens_re.match(insert_text)
+        match = self.evm_tokens_re.match(insert_text)
         if match is None:
             raise DeserializationError(
                 f'At asset DB update could not parse evm token data out '
@@ -301,7 +301,7 @@ class AssetsUpdater:
         asset_data = self._parse_asset_data(insert_text)
         address = decimals = protocol = chain_id = token_kind = None
         if asset_data.asset_type == AssetType.EVM_TOKEN:
-            address, decimals, protocol, chain_id, token_kind = self._parse_ethereum_token_data(insert_text)  # noqa: E501
+            address, decimals, protocol, chain_id, token_kind = self._parse_evm_token_data(insert_text)  # noqa: E501
 
         # types are not really proper here (except for asset_type, chain_id and token_kind)
         return AssetData(

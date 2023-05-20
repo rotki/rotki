@@ -841,16 +841,16 @@ class EthereumAssetsResource(BaseMethodView):
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_edit_schema, location='json')
     def put(self, token: EvmToken) -> Response:
-        return self.rest_api.add_custom_ethereum_token(token=token)
+        return self.rest_api.add_custom_evm_token(token=token)
 
     @resource_parser.use_kwargs(make_edit_schema, location='json')
     def patch(self, token: EvmToken) -> Response:
-        return self.rest_api.edit_custom_ethereum_token(token=token)
+        return self.rest_api.edit_custom_evm_token(token=token)
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
     def delete(self, address: ChecksumEvmAddress, evm_chain: ChainID) -> Response:
-        return self.rest_api.delete_custom_ethereum_token(address=address, chain_id=evm_chain)
+        return self.rest_api.delete_custom_evm_token(address=address, chain_id=evm_chain)
 
 
 class AssetUpdatesResource(BaseMethodView):

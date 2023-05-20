@@ -1447,7 +1447,7 @@ class RestAPI():
             log_result=False,
         )
 
-    def add_custom_ethereum_token(self, token: EvmToken) -> Response:
+    def add_custom_evm_token(self, token: EvmToken) -> Response:
         try:
             GlobalDBHandler().add_asset(
                 asset_id=token.identifier,
@@ -1467,7 +1467,7 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
-    def edit_custom_ethereum_token(self, token: EvmToken) -> Response:
+    def edit_custom_evm_token(self, token: EvmToken) -> Response:
         try:
             identifier = GlobalDBHandler().edit_evm_token(token)
         except InputError as e:
@@ -1483,7 +1483,7 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
-    def delete_custom_ethereum_token(
+    def delete_custom_evm_token(
             self,
             address: ChecksumEvmAddress,
             chain_id: ChainID,

@@ -479,16 +479,14 @@ def deserialize_int_from_hex_or_int(symbol: Union[str, int], location: str) -> i
     return result
 
 
-def deserialize_ethereum_token_from_db(identifier: str) -> EvmToken:
+def deserialize_evm_token_from_db(identifier: str) -> EvmToken:
     """Takes an identifier and returns the <EvmToken>"""
     try:
-        ethereum_token = EvmToken(identifier)
+        return EvmToken(identifier)
     except (UnknownAsset, WrongAssetType) as e:
         raise DeserializationError(
-            f'Could not initialize an ethereum token with identifier {identifier}',
+            f'Could not initialize an evm token with identifier {identifier}',
         ) from e
-
-    return ethereum_token
 
 
 X = TypeVar('X')

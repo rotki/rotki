@@ -11,7 +11,7 @@ from eth_utils import is_checksum_address
 
 from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, FiatAsset, Nft
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.assets.utils import get_or_create_evm_token, symbol_to_ethereum_token
+from rotkehlchen.assets.utils import get_or_create_evm_token, symbol_to_evm_token
 from rotkehlchen.constants.assets import A_DAI, A_USDT
 from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
@@ -333,8 +333,8 @@ def test_case_does_not_matter_for_asset_constructor():
     assert a1.identifier == 'BTC'
     assert a2.identifier == 'BTC'
 
-    a3 = symbol_to_ethereum_token('DAI')
-    a4 = symbol_to_ethereum_token('dAi')
+    a3 = symbol_to_evm_token('DAI')
+    a4 = symbol_to_evm_token('dAi')
     assert a3.identifier == a4.identifier == strethaddress_to_identifier('0x6B175474E89094C44Da98b954EedeAC495271d0F')  # noqa: E501
 
 

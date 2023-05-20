@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def add_ethereum_token_to_db(token_data: EvmToken) -> EvmToken:
-    """Adds an ethereum token to the DB and returns it
+def add_evm_token_to_db(token_data: EvmToken) -> EvmToken:
+    """Adds an evm token to the DB and returns it
 
     May raise:
     - InputError if token already exists in the DB
@@ -76,7 +76,7 @@ def _query_or_get_given_token_info(
 
 
 def _edit_token_and_clean_cache(
-        ethereum_token: EvmToken,
+        evm_token: EvmToken,
         name: Optional[str],
         decimals: Optional[int],
         evm_inquirer: Optional['EvmNodeInquirer'],
@@ -87,32 +87,32 @@ def _edit_token_and_clean_cache(
     """
     updated_fields = False
 
-    if ethereum_token.name == ethereum_token.identifier:
+    if evm_token.name == evm_token.identifier:
         if name is not None:
-            object.__setattr__(ethereum_token, 'name', name)
+            object.__setattr__(evm_token, 'name', name)
             updated_fields = True
         elif evm_inquirer is not None:
             # query the chain for available information
             on_chain_name, _, on_chain_decimals = _query_or_get_given_token_info(
                 evm_inquirer=evm_inquirer,
-                evm_address=ethereum_token.evm_address,
+                evm_address=evm_token.evm_address,
                 name=name,
-                symbol=ethereum_token.symbol,
+                symbol=evm_token.symbol,
                 decimals=decimals,
-                token_kind=ethereum_token.token_kind,
+                token_kind=evm_token.token_kind,
             )
-            object.__setattr__(ethereum_token, 'name', on_chain_name)
-            object.__setattr__(ethereum_token, 'decimals', on_chain_decimals)
+            object.__setattr__(evm_token, 'name', on_chain_name)
+            object.__setattr__(evm_token, 'decimals', on_chain_decimals)
             updated_fields = True
 
-    if decimals is not None and ethereum_token.decimals != decimals:
-        object.__setattr__(ethereum_token, 'decimals', decimals)
+    if decimals is not None and evm_token.decimals != decimals:
+        object.__setattr__(evm_token, 'decimals', decimals)
         updated_fields = True
 
     # clean the cache if we need to update the token
     if updated_fields is True:
-        AssetResolver.clean_memory_cache(ethereum_token.identifier)
-        GlobalDBHandler().edit_evm_token(ethereum_token)
+        AssetResolver.clean_memory_cache(evm_token.identifier)
+        GlobalDBHandler().edit_evm_token(evm_token)
 
 
 class TokenSeenAt(NamedTuple):
@@ -161,12 +161,12 @@ def get_or_create_evm_token(
     )
     with userdb.get_or_create_evm_token_lock:
         try:
-            ethereum_token = EvmToken(identifier=identifier)
+            evm_token = EvmToken(identifier=identifier)
             # It can happen that the asset is missing basic information but can be queried on
             # is provided by the developer. In that case make sure that no information
             # is cached and trigger the edit process.
             _edit_token_and_clean_cache(
-                ethereum_token=ethereum_token,
+                evm_token=evm_token,
                 name=name,
                 decimals=decimals,
                 evm_inquirer=evm_inquirer,
@@ -196,7 +196,7 @@ def get_or_create_evm_token(
             decimals = 18 if decimals is None else decimals
 
             # Store the information in the database
-            ethereum_token = EvmToken.initialize(
+            evm_token = EvmToken.initialize(
                 address=evm_address,
                 chain_id=chain_id,
                 token_kind=token_kind,
@@ -209,7 +209,7 @@ def get_or_create_evm_token(
             if asset_exists is True:
                 # This means that we need to update the information in the database with the
                 # newly queried data
-                GlobalDBHandler().edit_evm_token(ethereum_token)
+                GlobalDBHandler().edit_evm_token(evm_token)
             else:
                 # inform frontend new token detected
                 data = {'token_identifier': identifier}
@@ -223,12 +223,12 @@ def get_or_create_evm_token(
                     data=data,
                 )
                 # This can but should not raise InputError since it should not already exist.
-                add_ethereum_token_to_db(token_data=ethereum_token)
+                add_evm_token_to_db(token_data=evm_token)
 
                 with userdb.user_write() as cursor:
-                    userdb.add_asset_identifiers(cursor, [ethereum_token.identifier])
+                    userdb.add_asset_identifiers(cursor, [evm_token.identifier])
 
-    return ethereum_token
+    return evm_token
 
 
 def get_crypto_asset_by_symbol(
@@ -279,11 +279,11 @@ def symbol_to_asset_or_token(
     return asset
 
 
-def symbol_to_ethereum_token(symbol: str) -> EvmToken:
-    """Tries to turn the given symbol to an ethereum token
+def symbol_to_evm_token(symbol: str) -> EvmToken:
+    """Tries to turn the given symbol to an evm token
 
     May raise:
-    - UnknownAsset if an ethereum token can't be found by the symbol or if
+    - UnknownAsset if an evm token can't be found by the symbol or if
     more than one tokens match this symbol
     """
     maybe_asset = get_crypto_asset_by_symbol(

@@ -14,7 +14,7 @@ from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
-    deserialize_ethereum_token_from_db,
+    deserialize_evm_token_from_db,
     deserialize_timestamp,
 )
 from rotkehlchen.types import (
@@ -184,8 +184,8 @@ class LiquidityPoolEvent(NamedTuple):
         11 - lp_amount
         """
         event_type = EventType.deserialize_from_db(event_tuple[4])
-        token0 = deserialize_ethereum_token_from_db(identifier=event_tuple[6])
-        token1 = deserialize_ethereum_token_from_db(identifier=event_tuple[7])
+        token0 = deserialize_evm_token_from_db(identifier=event_tuple[6])
+        token1 = deserialize_evm_token_from_db(identifier=event_tuple[7])
         tx_hash = deserialize_evm_tx_hash(event_tuple[0])
 
         return cls(

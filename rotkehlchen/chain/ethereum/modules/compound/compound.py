@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, Union
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceType
 from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
-from rotkehlchen.assets.utils import symbol_to_asset_or_token, symbol_to_ethereum_token
+from rotkehlchen.assets.utils import symbol_to_asset_or_token, symbol_to_evm_token
 from rotkehlchen.chain.ethereum.constants import ETH_MANTISSA
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.graph import Graph, get_common_params
@@ -129,7 +129,7 @@ def _compound_symbol_to_token(symbol: str, timestamp: Timestamp) -> EvmToken:
         # else
         return EvmToken('eip155:1/erc20:0xC11b1268C1A384e55C48c2391d8d480264A3A7F4')
     # else
-    return symbol_to_ethereum_token(symbol)
+    return symbol_to_evm_token(symbol)
 
 
 class Compound(EthereumModule):
