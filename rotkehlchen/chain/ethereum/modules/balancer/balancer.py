@@ -9,7 +9,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
-from rotkehlchen.assets.utils import add_ethereum_token_to_db
+from rotkehlchen.assets.utils import add_evm_token_to_db
 from rotkehlchen.chain.ethereum.graph import (
     GRAPH_QUERY_LIMIT,
     GRAPH_QUERY_SKIP_LIMIT,
@@ -669,7 +669,7 @@ class Balancer(EthereumModule):
                         underlying_tokens=underlying_tokens,
                         protocol='balancer',
                     )
-                    balancer_pool = add_ethereum_token_to_db(token_data=token_data)
+                    balancer_pool = add_evm_token_to_db(token_data=token_data)
                     balancer_pools.append(balancer_pool)
 
                 # Aggregate the <BalancerInvestEvent> token amounts related with the

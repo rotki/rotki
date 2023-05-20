@@ -1123,16 +1123,16 @@ class GlobalDBHandler():
             chain_id: Optional[ChainID] = None,
     ) -> list[AssetWithOracles]:
         """Find all asset entries that have the given symbol"""
-        eth_token_type = AssetType.EVM_TOKEN.serialize_for_db()    # pylint: disable=no-member
+        evm_token_type = AssetType.EVM_TOKEN.serialize_for_db()    # pylint: disable=no-member
         extra_check_evm = ''
-        evm_query_list: list[Union[int, str]] = [eth_token_type, symbol]
+        evm_query_list: list[Union[int, str]] = [evm_token_type, symbol]
         if chain_id is not None:
             extra_check_evm += ' AND B.chain=? '
             evm_query_list.append(chain_id.serialize_for_db())
 
         extra_check_common = ''
         common_query_list: list[Union[int, str]] = [
-            eth_token_type,
+            evm_token_type,
             AssetType.CUSTOM_ASSET.serialize_for_db(),
             symbol,
         ]

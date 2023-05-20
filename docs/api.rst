@@ -3361,9 +3361,9 @@ Getting custom EVM tokens
           "message": ""
       }
 
-   .. _custom_ethereum_token:
+   .. _custom_evm_token:
 
-   :resjson list result: A list of ethereum tokens
+   :resjson list result: A list of evm tokens
    :resjsonarr string identifier: The rotki identifier of the token. This is only returned from the GET endpoint and not input from the add/edit one.
    :resjsonarr string address: The address of the token. This is a required field.
    :resjsonarr string evm_chain: The chain where the token is deployed. This is a required field.
@@ -3416,7 +3416,7 @@ Adding custom ethereum tokens
          ]
        }}
 
-   :reqjson object token: A token to add. For details on the possible fields see `here <custom_ethereum_token_>`_.
+   :reqjson object token: A token to add. For details on the possible fields see `here <custom_evm_token_>`_.
 
    **Example Response**:
 
@@ -3467,7 +3467,7 @@ Editing custom ethereum tokens
          }
       }
 
-   :reqjson object token: Token to edit. Token is edited by address. The old token is completely replaced by all new entries passed by this endpoint. For details on the possible fields see `here <custom_ethereum_token_>`_.
+   :reqjson object token: Token to edit. Token is edited by address. The old token is completely replaced by all new entries passed by this endpoint. For details on the possible fields see `here <custom_evm_token_>`_.
 
    **Example Response**:
 
@@ -3819,7 +3819,7 @@ Performing an asset update
            "local": {
                    "coingecko": "aave",
                    "ethereum_address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
-                   "ethereum_token_decimals": 18,
+                   "decimals": 18,
                    "name": "Aave Token",
                    "started": 1600970788,
                    "symbol": "AAVE",
@@ -3828,7 +3828,7 @@ Performing an asset update
            "remote": {
                    "coingecko": "aaveNGORZ",
                    "ethereum_address": "0x1Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
-                   "ethereum_token_decimals": 15,
+                   "decimals": 15,
                    "name": "Aave Token FOR REALZ",
                    "started": 1600970789,
                    "symbol": "AAVE_YO!",
