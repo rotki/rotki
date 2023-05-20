@@ -39,7 +39,8 @@ export const useScramble = () => {
   };
 
   const scrambleInteger = (number: number, min = 0, max = -1): number => {
-    const multiplied = Math.floor(number * get(scrambleMultiplier)) + min;
+    const multiplied =
+      Math.floor(number * number * get(scrambleMultiplier)) + min;
 
     if (max > -1) {
       return (multiplied % (max - min)) + min;
@@ -54,8 +55,8 @@ export const useScramble = () => {
       return parsed.toString();
     }
 
-    const min = 10 ** Math.floor(Math.log10(parsed));
-    const max = min * 10 - 1;
+    const min = Math.max(100000, 10 ** Math.floor(Math.log10(parsed)));
+    const max = Math.max(999999, min * 10);
 
     return scrambleInteger(parsed, min, max).toString();
   };

@@ -59,7 +59,7 @@ const displayText = computed<string>(() => {
   const textVal = get(text);
   const typeVal = get(type);
 
-  if (typeVal === 'block' || /^\d+$/.test(textVal)) {
+  if (typeVal === 'block' || consistOfNumbers(textVal)) {
     return scrambleIdentifier(textVal);
   }
 

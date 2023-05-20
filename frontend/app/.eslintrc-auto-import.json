@@ -53,6 +53,7 @@
     "computedEager": true,
     "computedInject": true,
     "computedWithControl": true,
+    "consistOfNumbers": true,
     "controlledComputed": true,
     "controlledRef": true,
     "convertDateByTimezone": true,
