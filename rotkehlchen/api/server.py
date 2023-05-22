@@ -20,7 +20,6 @@ from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.resources import (
     AaveBalancesResource,
-    AaveHistoryResource,
     AccountingReportDataResource,
     AccountingReportsResource,
     AddressbookResource,
@@ -249,7 +248,6 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/makerdao/vaults', MakerdaoVaultsResource),
     ('/blockchains/ETH/modules/makerdao/vaultdetails', MakerdaoVaultDetailsResource),
     ('/blockchains/ETH/modules/aave/balances', AaveBalancesResource),
-    ('/blockchains/ETH/modules/aave/history', AaveHistoryResource),
     ('/blockchains/ETH/modules/balancer/balances', BalancerBalancesResource),
     ('/blockchains/ETH/modules/balancer/history/events', BalancerEventsHistoryResource),
     ('/blockchains/ETH/modules/compound/balances', CompoundBalancesResource),

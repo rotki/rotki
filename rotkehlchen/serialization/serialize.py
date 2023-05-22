@@ -25,7 +25,6 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
 from rotkehlchen.chain.ethereum.modules.aave.aave import (
     AaveBalances,
     AaveBorrowingBalance,
-    AaveHistory,
     AaveLendingBalance,
 )
 from rotkehlchen.chain.ethereum.modules.aave.structures import AaveEvent
@@ -175,7 +174,6 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             VaultEvent,
             MakerdaoVaultDetails,
             AaveBalances,
-            AaveHistory,
             DefiBalance,
             DefiProtocolBalances,
             YearnVaultHistory,
