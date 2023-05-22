@@ -91,7 +91,11 @@ from rotkehlchen.db.utils import (
     replace_tag_mappings,
     str_to_bool,
 )
-from rotkehlchen.errors.api import AuthenticationError, IncorrectApiKeyFormat
+from rotkehlchen.errors.api import (
+    AuthenticationError,
+    IncorrectApiKeyFormat,
+    RotkehlchenPermissionError,
+)
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import (
     DBUpgradeError,
@@ -180,6 +184,7 @@ class DBHandler:
             msg_aggregator: MessagesAggregator,
             initial_settings: Optional[ModifiableDBSettings],
             sql_vm_instructions_cb: int,
+            resume_from_backup: bool,
     ):
         """Database constructor
 
@@ -209,7 +214,7 @@ class DBHandler:
         self.get_or_create_evm_token_lock = Semaphore()
         self.password = password
         self._connect()
-        self._check_unfinished_upgrades()
+        self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
         self._run_actions_after_first_connection()
         with self.user_write() as cursor:
             if initial_settings is not None:
@@ -217,7 +222,7 @@ class DBHandler:
             self.update_owned_assets_in_globaldb(cursor)
             self.add_globaldb_assetids(cursor)
 
-    def _check_unfinished_upgrades(self) -> None:
+    def _check_unfinished_upgrades(self, resume_from_backup: bool) -> None:
         """
         Checks the database whether there are any not finished upgrades and automatically uses a
         backup if there are any. If no backup found, throws an error to the user
@@ -233,7 +238,18 @@ class DBHandler:
         if ongoing_upgrade_from_version is None:
             return  # We are all good
 
-        # Otherwise replace the db with a backup and reconnect
+        # if there is an unfinished upgrade, check user approval to resume from backup
+        if resume_from_backup is False:
+            raise RotkehlchenPermissionError(
+                error_message=(
+                    'The encrypted database is in a semi upgraded state. '
+                    'Either resume from a backup or solve the issue manually.'
+                ),
+                payload=None,
+            )
+
+        # If resume_from_backup is True, the user gave approval.
+        # Replace the db with a backup and reconnect
         self.disconnect()
         backup_postfix = f'rotkehlchen_db_v{ongoing_upgrade_from_version}.backup'
         found_backups = list(filter(

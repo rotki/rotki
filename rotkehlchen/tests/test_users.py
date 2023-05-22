@@ -14,11 +14,21 @@ def _user_creation_and_login(username, password, data_dir, msg_aggregator, sql_v
         msg_aggregator=msg_aggregator,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
     )
-    filepath = handler.unlock(username=username, password=password, create_new=True)
+    filepath = handler.unlock(
+        username=username,
+        password=password,
+        create_new=True,
+        resume_from_backup=False,
+    )
     assert filepath is not None
     # Also login as non-new user with same password
     handler.logout()
-    filepath = handler.unlock(username=username, password=password, create_new=False)
+    filepath = handler.unlock(
+        username=username,
+        password=password,
+        create_new=False,
+        resume_from_backup=False,
+    )
     assert filepath is not None
 
 
@@ -92,6 +102,11 @@ def test_new_user_permission_error(data_dir, function_scope_messages_aggregator,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
     )
     with pytest.raises(SystemPermissionError):
-        handler.unlock(username='someuser', password='123', create_new=True)
+        handler.unlock(
+            username='someuser',
+            password='123',
+            create_new=True,
+            resume_from_backup=False,
+        )
     # Change permissions back to that pytest cleanup can clean it
     os.chmod(not_allowed_dir, 0o777)

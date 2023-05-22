@@ -36,6 +36,7 @@ def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, s
         msg_aggregator=function_scope_messages_aggregator,
         initial_settings=None,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        resume_from_backup=False,
     )
 
     # Test with etherscan API key

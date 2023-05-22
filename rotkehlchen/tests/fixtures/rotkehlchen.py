@@ -1,5 +1,6 @@
 import base64
 from contextlib import ExitStack
+from typing import Optional
 from unittest.mock import patch
 
 import pytest
@@ -7,7 +8,7 @@ import pytest
 import rotkehlchen.tests.utils.exchanges as exchange_tests
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB
 from rotkehlchen.data_migrations.manager import LAST_DATA_MIGRATION
-from rotkehlchen.db.settings import DBSettings
+from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
@@ -165,11 +166,23 @@ def initialize_mock_rotkehlchen_instance(
 
     original_unlock = rotki.data.unlock
 
-    def augmented_unlock(user, password, create_new, initial_settings):
+    def augmented_unlock(
+            username: str,
+            password: str,
+            create_new: bool,
+            resume_from_backup: bool,
+            initial_settings: Optional[ModifiableDBSettings] = None,
+    ):
         """This is an augmented_unlock for the tests where after the original data.unlock
         happening in the start of rotkehlchen.unlock_user() we also add various fixture data
         to the DB so they can be picked up by the rest of the unlock function logic"""
-        return_value = original_unlock(user, password, create_new, initial_settings)
+        return_value = original_unlock(
+            username=username,
+            password=password,
+            create_new=create_new,
+            initial_settings=initial_settings,
+            resume_from_backup=resume_from_backup,
+        )
         add_settings_to_test_db(rotki.data.db, db_settings, ignored_assets, data_migration_version)
         maybe_include_etherscan_key(rotki.data.db, include_etherscan_key)
         maybe_include_cryptocompare_key(rotki.data.db, include_cryptocompare_key)
@@ -248,6 +261,7 @@ def initialize_mock_rotkehlchen_instance(
             create_new=create_new,
             sync_approval='no',
             premium_credentials=None,
+            resume_from_backup=False,
         )
 
     inquirer_inject_ethereum_set_order(

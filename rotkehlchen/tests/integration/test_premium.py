@@ -110,7 +110,12 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_s
 
     # and now logout and login again and make sure that the last_data_upload_ts is correct
     rotkehlchen_instance.logout()
-    rotkehlchen_instance.data.unlock(username, db_password, create_new=False)
+    rotkehlchen_instance.data.unlock(
+        username=username,
+        password=db_password,
+        create_new=False,
+        resume_from_backup=False,
+    )
     assert last_ts == rotkehlchen_instance.premium_sync_manager.last_data_upload_ts
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         assert last_ts == rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')  # noqa: E501

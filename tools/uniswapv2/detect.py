@@ -211,6 +211,7 @@ if __name__ == '__main__':
             msg_aggregator=msg_aggregator,
             initial_settings=None,
             sql_vm_instructions_cb=5000,
+            resume_from_backup=False,
         )
         ethereum = init_ethereum(
             rpc_endpoint=args.eth_rpc_endpoint,

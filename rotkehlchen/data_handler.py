@@ -54,6 +54,7 @@ class DataHandler():
             username: str,
             password: str,
             create_new: bool,
+            resume_from_backup: bool,
             initial_settings: Optional[ModifiableDBSettings] = None,
     ) -> Path:
         """Unlocks a user, either logging them in or creating a new user
@@ -114,6 +115,7 @@ class DataHandler():
             msg_aggregator=self.msg_aggregator,
             initial_settings=initial_settings,
             sql_vm_instructions_cb=self.sql_vm_instructions_cb,
+            resume_from_backup=resume_from_backup,
         )
         self.user_data_dir = user_data_dir
         self.logged_in = True

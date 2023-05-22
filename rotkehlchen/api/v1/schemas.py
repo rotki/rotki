@@ -1314,6 +1314,7 @@ class UserActionLoginSchema(AsyncQueryArgumentSchema):
         load_default='unknown',
         validate=webargs.validate.OneOf(choices=('unknown', 'yes', 'no')),
     )
+    resume_from_backup = fields.Boolean(load_default=False)
 
 
 class UserPasswordChangeSchema(Schema):

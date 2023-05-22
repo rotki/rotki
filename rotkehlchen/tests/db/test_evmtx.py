@@ -29,7 +29,7 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
     """
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
-    data.unlock(username, '123', create_new=True)
+    data.unlock(username, '123', create_new=True, resume_from_backup=False)
     tx2_hash = deserialize_evm_tx_hash(b'.h\xdd\x82\x85\x94\xeaq\xfe\n\xfc\xcf\xadwH\xc9\x0f\xfc\xd0\xf1\xad\xd4M\r$\x9b\xf7\x98\x87\xda\x93\x18')  # noqa: E501
     with data.db.user_write() as cursor:
         data.db.add_blockchain_accounts(
@@ -134,7 +134,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
     """
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
-    data.unlock(username, '123', create_new=True)
+    data.unlock(username, '123', create_new=True, resume_from_backup=False)
     address_4 = make_evm_address()
 
     with data.db.user_write() as cursor:

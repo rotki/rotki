@@ -99,6 +99,7 @@ def _init_db_with_target_version(
         target_version: int,
         user_data_dir: Path,
         msg_aggregator: MessagesAggregator,
+        resume_from_backup: bool,
 ) -> DBHandler:
     no_tables_created_after_init = patch(
         'rotkehlchen.db.dbhandler.DB_SCRIPT_CREATE_TABLES',
@@ -117,6 +118,7 @@ def _init_db_with_target_version(
             msg_aggregator=msg_aggregator,
             initial_settings=None,
             sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+            resume_from_backup=resume_from_backup,
         )
     return db
 
@@ -133,6 +135,7 @@ def test_upgrade_db_26_to_27(user_data_dir):  # pylint: disable=unused-argument
         target_version=26,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     # Checks before migration
     cursor = db_v26.conn.cursor()
@@ -153,6 +156,7 @@ def test_upgrade_db_26_to_27(user_data_dir):  # pylint: disable=unused-argument
         target_version=27,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     cursor = db.conn.cursor()
     assert cursor.execute('SELECT COUNT(*) from used_query_ranges;').fetchone()[0] == 2
@@ -177,6 +181,7 @@ def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
         target_version=27,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     cursor = db_v27.conn.cursor()
 
@@ -190,6 +195,7 @@ def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
         target_version=28,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     cursor = db.conn.cursor()
 
@@ -226,6 +232,7 @@ def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
         target_version=28,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     cursor = db_v28.conn.cursor()
 
@@ -282,6 +289,7 @@ def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
         target_version=29,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     cursor = db.conn.cursor()
 
@@ -343,6 +351,7 @@ def test_upgrade_db_29_to_30(user_data_dir):  # pylint: disable=unused-argument
         target_version=30,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     # Finally also make sure that we have updated to the target version
     with db.conn.read_ctx() as cursor:
@@ -373,6 +382,7 @@ def test_upgrade_db_30_to_31(user_data_dir):  # pylint: disable=unused-argument
         target_version=30,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     cursor = db_v30.conn.cursor()
     result = cursor.execute('SELECT COUNT(*) FROM eth2_deposits;')
@@ -399,6 +409,7 @@ def test_upgrade_db_30_to_31(user_data_dir):  # pylint: disable=unused-argument
         target_version=31,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
 
     cursor = db.conn.cursor()
@@ -439,6 +450,7 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument
         target_version=31,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     cursor = db_v31.conn.cursor()
     result = cursor.execute('SELECT rowid from history_events')
@@ -528,6 +540,7 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument
         target_version=32,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     cursor = db.conn.cursor()
     cursor.execute('SELECT subtype FROM history_events')
@@ -623,6 +636,7 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument
         target_version=32,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     cursor = db_v32.conn.cursor()
     # check that you cannot add blockchain column in xpub_mappings
@@ -674,6 +688,7 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument
         target_version=33,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     cursor = db.conn.cursor()
     # check that xpubs mappings were not altered.
@@ -738,6 +753,7 @@ def test_upgrade_db_33_to_34(user_data_dir):  # pylint: disable=unused-argument
         target_version=33,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     with db_v33.conn.read_ctx() as cursor:
         cursor.execute('SELECT * FROM combined_trades_view ORDER BY time ASC')
@@ -750,6 +766,7 @@ def test_upgrade_db_33_to_34(user_data_dir):  # pylint: disable=unused-argument
         target_version=34,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     with db.conn.read_ctx() as cursor:
         cursor.execute('SELECT * FROM combined_trades_view ORDER BY time ASC')
@@ -773,6 +790,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
             target_version=34,
             user_data_dir=user_data_dir,
             msg_aggregator=msg_aggregator,
+            resume_from_backup=False,
         )
 
     upgraded_tables = (
@@ -899,6 +917,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
         target_version=35,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     # it should not fail after upgrade since we added `blockchain` to primary key
     with db_v35.conn.write_ctx() as write_cursor:
@@ -1012,6 +1031,7 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         target_version=35,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     cursor = db_v35.conn.cursor()
 
@@ -1127,6 +1147,7 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
         target_version=36,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     cursor = db.conn.cursor()
 
@@ -1309,6 +1330,7 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
         target_version=36,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     cursor = db_v36.conn.cursor()
     # Test state of DB before upgrade is as expected
@@ -1412,6 +1434,7 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
         target_version=37,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     cursor = db.conn.cursor()
 
@@ -1516,6 +1539,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
         target_version=35,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     cursor = last_db.conn.cursor()
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="table"')
@@ -1530,6 +1554,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
         target_version=36,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     cursor = db.conn.cursor()
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="table"')
@@ -1588,6 +1613,7 @@ def test_steps_counted_properly_in_upgrades(user_data_dir):
         target_version=MIN_SUPPORTED_USER_DB_VERSION,
         user_data_dir=user_data_dir,
         msg_aggregator=msessages_aggregator,
+        resume_from_backup=False,
     )
     progress_handler = DBUpgradeProgressHandler(
         messages_aggregator=msessages_aggregator,
@@ -1613,7 +1639,7 @@ def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instruct
     """
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
-    data.unlock(username, '123', create_new=True)
+    data.unlock(username, '123', create_new=True, resume_from_backup=False)
     # Manually set a bigger version than the current known one
     cursor = data.db.conn.cursor()
     cursor.execute(
@@ -1626,7 +1652,7 @@ def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instruct
     del data
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     with pytest.raises(DBUpgradeError):
-        data.unlock(username, '123', create_new=False)
+        data.unlock(username, '123', create_new=False, resume_from_backup=False)
 
 
 def test_upgrades_list_is_sane():
@@ -1649,6 +1675,7 @@ def test_old_versions_raise_error(user_data_dir):  # pylint: disable=unused-argu
             target_version=34,
             user_data_dir=user_data_dir,
             msg_aggregator=msg_aggregator,
+            resume_from_backup=False,
         )
     assert 'Your account was last opened by a very old version of rotki' in str(upgrade_exception)
 
@@ -1660,6 +1687,7 @@ def test_unfinished_upgrades(user_data_dir):
         target_version=33,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
     )
     with db.user_write() as write_cursor:
         db.set_setting(  # Pretend that an upgrade was started
@@ -1674,6 +1702,7 @@ def test_unfinished_upgrades(user_data_dir):
             target_version=34,
             user_data_dir=user_data_dir,
             msg_aggregator=msg_aggregator,
+            resume_from_backup=True,
         )
 
     # Add a backup
@@ -1692,6 +1721,7 @@ def test_unfinished_upgrades(user_data_dir):
         target_version=34,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
+        resume_from_backup=True,
     )
     # Check that there is no setting left
     with db.conn.read_ctx() as cursor:
