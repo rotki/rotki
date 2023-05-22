@@ -190,11 +190,14 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
 
         for _, name, is_pkg in pkgutil.walk_packages(package.__path__):
             full_name = package.__name__ + '.' + name
-            if full_name == __name__:
-                continue  # skip -- this is this source file
+            if full_name == __name__ or is_pkg is False:
+                continue  # skip
 
-            if is_pkg:
-                submodule = importlib.import_module(full_name)
+            submodule = None
+            with suppress(ModuleNotFoundError):
+                submodule = importlib.import_module(full_name + '.decoder')
+
+            if submodule is not None:
                 # take module name, transform it and find decoder if exists
                 class_name = full_name[self.chain_modules_prefix_length:].translate({ord('.'): None})  # noqa: E501
                 parts = class_name.split('_')
@@ -237,6 +240,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                                 op=lambda a, b: a | b,
                             )
 
+            if is_pkg:
                 recursive_results = self._recursively_initialize_decoders(full_name)
                 results += recursive_results
 

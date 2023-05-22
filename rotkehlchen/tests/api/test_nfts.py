@@ -827,7 +827,7 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
             ]}
 
     get_all_nft_data_patch = patch('rotkehlchen.chain.ethereum.modules.nft.nfts.Nfts._get_all_nft_data', side_effect=mock_get_all_nft_data)  # noqa: E501
-    get_v3_balances_patch = patch('rotkehlchen.chain.ethereum.modules.uniswap.Uniswap.get_v3_balances', side_effect=mock_uniswap_v3_balances)  # noqa: E501
+    get_v3_balances_patch = patch('rotkehlchen.chain.ethereum.modules.uniswap.uniswap.Uniswap.get_v3_balances', side_effect=mock_uniswap_v3_balances)  # noqa: E501
 
     with get_all_nft_data_patch, get_v3_balances_patch:
         response = requests.get(

@@ -17,6 +17,11 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocol,
     DefiProtocolBalances,
 )
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
+    LiquidityPool,
+    LiquidityPoolAsset,
+    LiquidityPoolEventsBalance,
+)
 from rotkehlchen.chain.ethereum.modules.aave.aave import (
     AaveBalances,
     AaveBorrowingBalance,
@@ -42,11 +47,6 @@ from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
 )
 from rotkehlchen.chain.ethereum.modules.nft.structures import NFTResult
 from rotkehlchen.chain.ethereum.modules.pickle_finance.main import DillBalance
-from rotkehlchen.chain.ethereum.modules.uniswap import (
-    UniswapPool,
-    UniswapPoolAsset,
-    UniswapPoolEventsBalance,
-)
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
     YearnVaultBalance,
     YearnVaultEvent,
@@ -150,9 +150,9 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             YearnVaultEvent,
             YearnVaultBalance,
             AaveEvent,
-            UniswapPool,
-            UniswapPoolAsset,
-            UniswapPoolEventsBalance,
+            LiquidityPool,
+            LiquidityPoolAsset,
+            LiquidityPoolEventsBalance,
             BalancerBPTEventPoolToken,
             BalancerEvent,
             BalancerPoolEventsBalance,

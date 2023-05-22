@@ -38,6 +38,8 @@ from rotkehlchen.types import ChecksumEvmAddress, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
+from .constants import UNISWAP_EVENTS_PREFIX
+
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
@@ -45,8 +47,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-UNISWAP_EVENTS_PREFIX = 'uniswap_events'
 
 
 class Uniswap(AMMSwapPlatform, EthereumModule):

@@ -8,12 +8,13 @@ import requests
 from flaky import flaky
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.interfaces.ammswap.types import UNISWAP_EVENTS_TYPES, EventType
-from rotkehlchen.chain.ethereum.modules.uniswap import (
-    UNISWAP_EVENTS_PREFIX,
-    UniswapPoolEvent,
-    UniswapPoolEventsBalance,
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
+    UNISWAP_EVENTS_TYPES,
+    EventType,
+    LiquidityPoolEvent,
+    LiquidityPoolEventsBalance,
 )
+from rotkehlchen.chain.ethereum.modules.uniswap.constants import UNISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
 from rotkehlchen.constants.assets import A_WETH
 from rotkehlchen.constants.misc import ZERO
@@ -163,13 +164,13 @@ def get_expected_events_balances_2():
     dice_token = EvmToken('eip155:1/erc20:0xCF67CEd76E8356366291246A9222169F4dBdBe64')
     return [
         # Response index 0
-        UniswapPoolEventsBalance(
+        LiquidityPoolEventsBalance(
             address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
             pool_address=string_to_evm_address('0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55'),
             token0=A_WETH,
             token1=dice_token,
             events=[
-                UniswapPoolEvent(
+                LiquidityPoolEvent(
                     tx_hash=TXHASH_HEX_TO_BYTES['0x1e7fd116b316af49f6c52b3ca44f3c5d24c2a6f80a5b5e674b5f94155bd2cec4'],  # noqa: 501
                     log_index=99,
                     address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
@@ -183,7 +184,7 @@ def get_expected_events_balances_2():
                     usd_price=Price(FVal('1281.249386421513581165086356450817')),
                     lp_amount=AssetAmount(FVal('2.074549918528068811')),
                 ),
-                UniswapPoolEvent(
+                LiquidityPoolEvent(
                     tx_hash=TXHASH_HEX_TO_BYTES['0x140bdba831f9494cf0ead6d57009e1eae45ed629a78ee74ccbf49018afae0ffa'],  # noqa: 501
                     log_index=208,
                     address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
@@ -203,13 +204,13 @@ def get_expected_events_balances_2():
             usd_profit_loss=Price(FVal('-352.3903567533354058260380955')),
         ),
         # Response index 3
-        UniswapPoolEventsBalance(
+        LiquidityPoolEventsBalance(
             address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
             pool_address=string_to_evm_address('0x7CDc560CC66126a5Eb721e444abC30EB85408f7A'),  # noqa: E501
             token0=EvmToken('eip155:1/erc20:0x26E43759551333e57F073bb0772F50329A957b30'),  # DGVC
             token1=A_WETH,
             events=[
-                UniswapPoolEvent(
+                LiquidityPoolEvent(
                     tx_hash=TXHASH_HEX_TO_BYTES['0xc612f05bf9f3d814ffbe3649feacbf5bda213297bf7af53a56956814652fe9cc'],  # noqa: 501
                     log_index=171,
                     address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
@@ -223,7 +224,7 @@ def get_expected_events_balances_2():
                     usd_price=Price(FVal('945.2160925652988117900888961551871')),
                     lp_amount=AssetAmount(FVal('18.297385821424685079')),
                 ),
-                UniswapPoolEvent(
+                LiquidityPoolEvent(
                     tx_hash=TXHASH_HEX_TO_BYTES['0x597f8790a3b9353114b364777c9d32373930e5ad6b8c8f97a58cd2dd58f12b89'],  # noqa: 501
                     log_index=201,
                     address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
@@ -262,13 +263,13 @@ def test_get_events_history_filtering_by_timestamp_case1(
       protocol (meaning the response amounts should be assertable).
     """
     expected_events_balances_1 = [
-        UniswapPoolEventsBalance(
+        LiquidityPoolEventsBalance(
             address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
             pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),
             token0=A_DOLLAR_BASED.resolve_to_evm_token(),
             token1=A_WETH.resolve_to_evm_token(),
             events=[
-                UniswapPoolEvent(
+                LiquidityPoolEvent(
                     tx_hash=TXHASH_HEX_TO_BYTES['0xa9ce328d0e2d2fa8932890bfd4bc61411abd34a4aaa48fc8b853c873a55ea824'],  # noqa: 501
                     log_index=263,
                     address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
@@ -282,7 +283,7 @@ def test_get_events_history_filtering_by_timestamp_case1(
                     usd_price=Price(FVal('872.4689300619698095220125311431804')),
                     lp_amount=AssetAmount(FVal('1.220680531244355402')),
                 ),
-                UniswapPoolEvent(
+                LiquidityPoolEvent(
                     tx_hash=TXHASH_HEX_TO_BYTES['0x27ddad4f187e965a3ee37257b75d297ff79b2663fd0a2d8d15f7efaccf1238fa'],  # noqa: 501
                     log_index=66,
                     address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
