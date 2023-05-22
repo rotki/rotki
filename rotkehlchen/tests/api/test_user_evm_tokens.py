@@ -258,12 +258,9 @@ def test_adding_user_tokens(rotkehlchen_api_server):
         ),
         json={'token': serialized_bad_token},
     )
-    expected_msg = (
-        f'Gave an empty list for underlying tokens of {bad_token.evm_address}'
-    )
     assert_error_response(
         response=response,
-        contained_in_msg=expected_msg,
+        contained_in_msg='{"token": {"underlying_tokens": ["List cant be empty"]}}',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # test that adding invalid coingecko fails

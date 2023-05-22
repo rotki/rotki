@@ -82,6 +82,15 @@ class Asset:
 
         return AssetResolver().get_asset_type(self.identifier)
 
+    def exists(self, query_packaged_db: bool = True) -> bool:
+        """Returns True if this asset exists. False otherwise"""
+        try:
+            self.check_existence(query_packaged_db=query_packaged_db)
+        except UnknownAsset:
+            return False
+
+        return True
+
     def check_existence(self, query_packaged_db: bool = True) -> 'Asset':
         """
         If this asset exists, returns the instance. If it doesn't, throws an error.
