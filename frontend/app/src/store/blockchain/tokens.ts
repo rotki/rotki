@@ -65,7 +65,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
    * @param {TokenChains} chain
    * @param {BlockchainAssetBalances} chainValues
    */
-  const updateStateOnBalanceRefresh = (
+  const updateDetectedTokens = (
     chain: TokenChains,
     chainValues: BlockchainAssetBalances
   ) => {
@@ -168,6 +168,8 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
 
   const { isTaskRunning } = useTaskStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
+  const { balances: ethBalances } = storeToRefs(useEthBalancesStore());
+  const { balances: chainBalances } = storeToRefs(useChainBalancesStore());
 
   const isEthDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
     chain: Blockchain.ETH
@@ -193,10 +195,31 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     }
   });
 
+  // todo: this is temporary, to update the detected tokens count
+  // todo: remove when BE updates the endpoint for fetching detected tokens
+  watch(ethBalances, (balances, oldBalances) => {
+    const chain = Blockchain.ETH;
+    const chainValues = get(balances)[chain];
+    // we're only interested on the eth chain changes
+    if (!isEqual(chainValues, get(oldBalances)[chain])) {
+      updateDetectedTokens(chain, chainValues);
+    }
+  });
+
+  // todo: this is temporary, to update the detected tokens count
+  // todo: remove when BE updates the endpoint for fetching detected tokens
+  watch(chainBalances, (balances, oldBalances) => {
+    const chain = Blockchain.OPTIMISM;
+    const chainValues = get(balances)[chain];
+    // we're only interested on the optimism chain changes
+    if (!isEqual(chainValues, get(oldBalances)[chain])) {
+      updateDetectedTokens(chain, chainValues);
+    }
+  });
+
   return {
     shouldRefreshBalances,
-    tokensState,
-    updateStateOnBalanceRefresh,
+    updateDetectedTokens,
     fetchDetected,
     fetchDetectedTokens,
     getEthDetectedTokensInfo
