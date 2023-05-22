@@ -10,7 +10,8 @@ const props = defineProps<{
 
 const { account } = toRefs(props);
 const { currentBreakpoint } = useTheme();
-const { scrambleData, shouldShowAmount, scrambleHex } = useScramble();
+const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } =
+  useScramble();
 const { addressNameSelector } = useAddressesNamesStore();
 
 const aliasName = computed<string | null>(() => {
@@ -68,6 +69,11 @@ const truncated = computed<boolean>(() => {
 const label = computed<string>(() => {
   const bp = get(currentBreakpoint);
   const label = get(account).label;
+
+  if (consistOfNumbers(label)) {
+    return scrambleIdentifier(label);
+  }
+
   let length = -1;
 
   if (bp.xlOnly && label.length > 50) {

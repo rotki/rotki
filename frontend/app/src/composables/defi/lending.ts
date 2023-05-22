@@ -68,7 +68,7 @@ export const useDefiLending = () => {
             value =>
               ({
                 identifier: `${value.identifier}`,
-                label: `${scrambleIdentifier(value.identifier)}`,
+                label: scrambleIdentifier(value.identifier),
                 protocol: DefiProtocol.MAKERDAO_VAULTS
               } satisfies DefiLoan)
           )

@@ -162,3 +162,11 @@ export const isValidTxHash = (address?: string): boolean => {
   }
   return !!address.match(/^0x[\dA-Fa-f]{64}$/);
 };
+
+export const consistOfNumbers = (text?: string): boolean => {
+  if (!text) {
+    return false;
+  }
+
+  return !!text.match(/^\d+$/);
+};
