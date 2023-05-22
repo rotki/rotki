@@ -186,11 +186,13 @@ Handling user creation, sign-in, log-out and querying
 
       {
           "password": "supersecurepassword",
-          "sync_approval": "unknown"
+          "sync_approval": "unknown",
+          "resume_from_backup": false
       }
 
    :reqjson string password: The password that unlocks the account
    :reqjson bool sync_approval: A string denoting if the user approved an initial syncing of data from premium. Valid values are ``"unknown"``, ``"yes"`` and ``"no"``. Should always be ``"unknown"`` at first and only if the user approves should a login with approval as ``"yes`` be sent. If he does not approve a login with approval as ``"no"`` should be sent. If there is the possibility of data sync from the premium server and this is ``"unknown"`` the login will fail with an appropriate error asking the consumer of the api to set it to ``"yes"`` or ``"no"``.
+   :reqjson bool resume_from_backup: An optional boolean denoting if the user approved a resume from backup. This is used to handle the case where the encrypted user database is in a semi upgraded state during user login. If not given, the value defaults to ``false`` so if a semi upgraded database exists during login, the consumer of the api will receive a response with a status '300 Multiple Choices', an explanatory message and an empty result. If the value is ``true`` then the latest backup will be used and the login will proceed as usual.
 
    **Example Response**:
 
@@ -235,7 +237,11 @@ Handling user creation, sign-in, log-out and querying
 
    :resjson object result: For successful requests, result contains the currently connected exchanges,and the user's settings. For details on the user settings refer to the `Getting or modifying settings`_ section.
    :statuscode 200: Logged in successfully
-   :statuscode 300: Possibility of syncing exists and the login was sent with sync_approval set to ``"unknown"``. Consumer of api must resend with ``"yes"`` or ``"no"``. In this case the result will contain an object with a payload for the message under the ``result`` key and the message under the ``message`` key. The payload has the following keys: ``local_size``, ``remote_size``, ``local_last_modified``, ``remote_last_modified``.
+   :statuscode 300: This would be the response status in the following two cases:
+
+        - There is an unfinished upgrade to the encrypted user database, and the login was sent with resume_from_backup set to ``false``. The consumer of the api can resend with resume_from_backup set to ``true``, so that the user will login using the latest backup of the encrypted database. In this case the response will contain an empty ``result`` key and an explanatory ``message`` on the message key.
+        - Possibility of syncing exists and the login was sent with sync_approval set to ``"unknown"``. Consumer of api must resend with ``"yes"`` or ``"no"``. In this case the result will contain an object with a payload for the message under the ``result`` key and the message under the ``message`` key. The payload has the following keys: ``local_size``, ``remote_size``, ``local_last_modified``, ``remote_last_modified``.
+
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 401: Provided password is wrong for the user or some other authentication error.
    :statuscode 409: Another user is already logged in. User does not exist. There was a fatal error during the upgrade of the DB. Permission error while trying to access the directory where rotki saves data.

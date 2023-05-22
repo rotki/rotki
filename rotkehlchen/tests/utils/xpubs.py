@@ -12,7 +12,7 @@ def setup_db_for_xpub_tests_impl(data_dir, username, sql_vm_instructions_cb):
     """Setups a test database with xpub data"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
-    data.unlock(username, '123', create_new=True)
+    data.unlock(username, '123', create_new=True, resume_from_backup=False)
 
     with data.db.user_write() as cursor:
         data.db.add_tag(cursor, 'public', 'foooo', 'ffffff', '000000')

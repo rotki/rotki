@@ -241,6 +241,7 @@ class Rotkehlchen():
             create_new: bool,
             sync_approval: Literal['yes', 'no', 'unknown'],
             premium_credentials: Optional[PremiumCredentials],
+            resume_from_backup: bool,
             initial_settings: Optional[ModifiableDBSettings] = None,
             sync_database: bool = True,
     ) -> None:
@@ -265,10 +266,17 @@ class Rotkehlchen():
             sync_approval=sync_approval,
             sync_database=sync_database,
             initial_settings=initial_settings,
+            resume_from_backup=resume_from_backup,
         )
 
         # unlock or create the DB
-        self.user_directory = self.data.unlock(user, password, create_new, initial_settings)
+        self.user_directory = self.data.unlock(
+            username=user,
+            password=password,
+            create_new=create_new,
+            initial_settings=initial_settings,
+            resume_from_backup=resume_from_backup,
+        )
         # Run the DB integrity check due to https://github.com/rotki/rotki/issues/3010
         # TODO: Hopefully once 3010 is handled this can go away
         self.greenlet_manager.spawn_and_track(

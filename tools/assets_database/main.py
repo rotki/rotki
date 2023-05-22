@@ -108,6 +108,7 @@ def main() -> None:
             msg_aggregator=msg_aggregator,
             initial_settings=None,
             sql_vm_instructions_cb=0,
+            resume_from_backup=False,
         )
         GlobalDBHandler(data_dir=target_directory, sql_vm_instructions_cb=0)
         assets_updater = AssetsUpdater(msg_aggregator=msg_aggregator, user_db=db)

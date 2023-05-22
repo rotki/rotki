@@ -18,7 +18,7 @@ def test_initializing_exchanges(uninitialized_rotkehlchen):
     rotki = uninitialized_rotkehlchen
     username = 'someusername'
     db_password = '123'
-    rotki.data.unlock(username, db_password, create_new=True)
+    rotki.data.unlock(username, db_password, create_new=True, resume_from_backup=False)
     database = rotki.data.db
     # Mock having user_credentials for all exchanges and for premium
     cmd = (

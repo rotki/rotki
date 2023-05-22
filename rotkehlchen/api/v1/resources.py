@@ -1261,12 +1261,14 @@ class UsersByNameResource(BaseMethodView):
             name: str,
             password: str,
             sync_approval: Literal['yes', 'no', 'unknown'],
+            resume_from_backup: bool,
     ) -> Response:
         return self.rest_api.user_login(
             async_query=async_query,
             name=name,
             password=password,
             sync_approval=sync_approval,
+            resume_from_backup=resume_from_backup,
         )
 
 

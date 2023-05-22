@@ -155,6 +155,7 @@ def _init_database(
             msg_aggregator=msg_aggregator,
             initial_settings=None,
             sql_vm_instructions_cb=sql_vm_instructions_cb,
+            resume_from_backup=False,
         )
     # Make sure that the fixture provided data are included in the DB
     add_settings_to_test_db(db, db_settings, ignored_assets, data_migration_version)

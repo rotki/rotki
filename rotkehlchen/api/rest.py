@@ -1087,6 +1087,7 @@ class RestAPI():
                 premium_credentials=premium_credentials,
                 initial_settings=initial_settings,
                 sync_database=sync_database,
+                resume_from_backup=False,
             )
         # not catching RotkehlchenPermissionError here as for new account with premium
         # syncing there is no way that permission needs to be asked by the user
@@ -1117,6 +1118,7 @@ class RestAPI():
             name: str,
             password: str,
             sync_approval: Literal['yes', 'no', 'unknown'],
+            resume_from_backup: bool,
     ) -> dict[str, Any]:
         if self.rotkehlchen.user_is_logged_in:
             return wrap_in_fail_result(
@@ -1135,6 +1137,7 @@ class RestAPI():
                 create_new=False,
                 sync_approval=sync_approval,
                 premium_credentials=None,
+                resume_from_backup=resume_from_backup,
             )
         # We are not catching PremiumAuthenticationError here since it should not bubble
         # up until here. Even with non valid keys in the DB login should work fine
@@ -3146,7 +3149,7 @@ class RestAPI():
             return OK_RESULT
 
         return {
-            'result': result,
+            'result': result,  # returned conflicts
             'message': 'Found conflicts during assets upgrade',
             'status_code': HTTPStatus.CONFLICT,
         }

@@ -1,5 +1,6 @@
 import os
 import random
+import shutil
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
@@ -7,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Optional
 import pytest
 import requests
 
+from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.api import (
@@ -24,6 +26,7 @@ from rotkehlchen.tests.utils.premium import (
     VALID_PREMIUM_SECRET,
     create_patched_premium,
 )
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -630,6 +633,89 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     assert len(users_data) == 2
     assert users_data[username] == 'loggedin'
     assert users_data['another_user'] == 'loggedout'
+
+    # Pretend that a user db upgrade is ongoing, so that we can test the resume_from_backup
+    # functionality on user login while an upgrade is ongoing.
+    ongoing_upgrade_from_version = 33  # pretend we are upgrading from v33
+
+    # Add a backup
+    backup_path = data_dir / username / f'{ts_now()}_rotkehlchen_db_v{ongoing_upgrade_from_version}.backup'  # noqa: E501
+    shutil.copy(data_dir / username / 'rotkehlchen.db', backup_path)
+    backup_connection = DBConnection(
+        path=str(backup_path),
+        connection_type=DBConnectionType.USER,
+        sql_vm_instructions_cb=0,
+    )
+    backup_connection.executescript(f'PRAGMA key="{db_password}"')  # unlock
+    with backup_connection.write_ctx() as write_cursor:
+        write_cursor.execute('INSERT INTO settings VALUES("is_backup", "Yes")')
+
+    with rotki.data.db.user_write() as write_cursor:
+        rotki.data.db.set_setting(  # Pretend that an upgrade was started
+            write_cursor=write_cursor,
+            name='ongoing_upgrade_from_version',
+            value=ongoing_upgrade_from_version,
+        )
+
+    # Logout again
+    data = {'action': 'logout'}
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
+        json=data,
+    )
+    assert_simple_ok_response(response)
+    assert rotki.user_is_logged_in is False
+    users_data = check_user_status(rotkehlchen_api_server)
+    assert len(users_data) == 2
+    assert users_data[username] == 'loggedout'
+    assert users_data['another_user'] == 'loggedout'
+
+    # Now let's try to login (without a consent to resume from backup)
+    data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True, 'resume_from_backup': False}  # noqa: E501
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
+        json=data,
+    )
+    task_id = assert_ok_async_response(response)
+    response_data = wait_for_async_task(rotkehlchen_api_server, task_id)
+    assert_error_async_response(
+        response_data=response_data,
+        contained_in_msg='Either resume from a backup or solve the issue manually',
+        status_code=HTTPStatus.MULTIPLE_CHOICES,
+        result_exists=True,
+    )
+
+    # Now let's try to login (with a consent to resume from backup)
+    data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True, 'resume_from_backup': True}  # noqa: E501
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
+        json=data,
+    )
+    # And make sure it works
+    task_id = assert_ok_async_response(response)
+    result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+    check_proper_unlock_result(result)
+    assert rotki.user_is_logged_in is True
+    users_data = check_user_status(rotkehlchen_api_server)
+    assert len(users_data) == 2
+    assert users_data[username] == 'loggedin'
+    assert users_data['another_user'] == 'loggedout'
+
+    # check that the backup db is used
+    with rotki.data.db.conn.read_ctx() as cursor:
+        cursor.execute('SELECT * FROM settings WHERE name = "is_backup";')
+        results = cursor.fetchall()
+        assert len(results) == 1, f'Expected one result, got {len(results)}'
+        result = results[0]
+        assert result[1] == 'Yes'
+
+    # Remove the ongoing upgrade setting
+    with rotki.data.db.user_write() as write_cursor:
+        rotki.data.db.set_setting(
+            write_cursor=write_cursor,
+            name='ongoing_upgrade_from_version',
+            value=None,
+        )
 
 
 def test_user_set_premium_credentials(rotkehlchen_api_server, username):
