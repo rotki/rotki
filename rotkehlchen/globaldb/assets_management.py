@@ -2,11 +2,10 @@ import json
 import logging
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -34,7 +33,6 @@ def import_assets_from_file(
     - InputError: If the version of the file is not valid for the current
     globaldb version
     """
-    globaldb = GlobalDBHandler()
     with open(path) as f:
         data = ExportedAssetsSchema().loads(f.read())
 
@@ -47,48 +45,26 @@ def import_assets_from_file(
         raise InputError('The imported file is missing a valid list of assets')
 
     identifiers = []
-    for asset_data in data['assets']:
-        # Check if we already have the asset with that name and symbol. It is possible that
-        # we have added a missing asset. Using check_asset_exists for non ethereum tokens and
-        # for ethereum tokens comparing by identifier. The edge case of a non-ethereum token
-        # with same name and symbol will make this fail.
-        asset_type = asset_data['asset_type']
-        asset_ref: Union[Optional[list[str]], Optional[AssetData]]
-        if asset_type == AssetType.EVM_TOKEN:
-            asset_ref = globaldb.get_asset_data(
-                identifier=asset_data['identifier'],
-                form_with_incomplete_data=True,
-            )
-        else:
-            asset_ref = globaldb.check_asset_exists(
-                asset_type=asset_type,
-                name=asset_data['name'],
-                symbol=asset_data['symbol'],
-            )
-        if asset_ref is not None:
+    for asset in data['assets']:
+        if asset.exists():
             msg_aggregator.add_warning(
-                f'Tried to import existing asset {asset_data["identifier"]} with '
-                f'name {asset_data["name"]}',
+                f'Tried to import existing asset {asset.identifier} with '
+                f'name {asset.name}',
             )
             continue
 
         try:
-            globaldb.add_asset(
-                asset_id=asset_data['identifier'],
-                asset_type=asset_type,
-                data=asset_data['extra_information'],
-            )
+            GlobalDBHandler().add_asset(asset)
         except InputError as e:
             log.error(
-                f'Failed to import asset with {asset_data["identifier"]=}',
-                f'{asset_type=} and {asset_data=}. {e!s}',
+                f'Failed to import asset {asset=}. {e!s}',
             )
             msg_aggregator.add_error(
-                f'Failed to save import with identifier '
-                f'{asset_data["identifier"]}. Check logs for more details',
+                f'Failed to import asset with identifier '
+                f'{asset.identifier}. Check logs for more details',
             )
             continue
-        identifiers.append(asset_data['identifier'])
+        identifiers.append(asset.identifier)
 
     with db_handler.user_write() as cursor:
         db_handler.add_asset_identifiers(cursor, identifiers)

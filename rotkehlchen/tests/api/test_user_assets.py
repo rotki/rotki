@@ -930,9 +930,9 @@ def test_importing_user_assets_list(rotkehlchen_api_server, method, file_type):
     assert_simple_ok_response(response)
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     errors = rotki.msg_aggregator.consume_errors()
-    warnings = rotki.msg_aggregator.consume_errors()
+    warnings = rotki.msg_aggregator.consume_warnings()
     assert len(errors) == 0
-    assert len(warnings) == 0
+    assert warnings == ['Tried to import existing asset eip155:1/erc20:0xFEEf77d3f69374f66429C91d732A244f074bdf74 with name Convex FXS']  # noqa: E501
 
     assert_proper_response_with_result(response)
     stinch = EvmToken('eip155:1/erc20:0xA0446D8804611944F1B527eCD37d7dcbE442caba')
