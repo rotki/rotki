@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { BrowserWindow, Menu, MenuItem, app, protocol } from 'electron';
+import { BrowserWindow, Menu, MenuItem, app, protocol, screen } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 import { ipcSetup } from '@/electron-main/ipc-setup';
 import { getUserMenu } from '@/electron-main/menu';
@@ -163,16 +163,36 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 async function createWindow(): Promise<BrowserWindow> {
-  // set default window Width and Height in case not specific
+  const { width: screenWidth, height: screenHeight } =
+    screen.getPrimaryDisplay().workAreaSize;
+
+  const regularScreenWidth = 1366;
+  const regularScreenHeight = 768;
+
+  const minimumWidth = 1200;
+  const ratio = regularScreenWidth / minimumWidth;
+  const minimumHeight = regularScreenHeight / ratio;
+
+  const defaultWidth = Math.floor(Math.max(screenWidth / ratio, minimumWidth));
+  const defaultHeight = Math.floor(
+    Math.max(screenHeight / ratio, minimumHeight)
+  );
+
+  // set default window width and height to be proportional with screen resolution, in case not specified
+  // A = regular screen size
+  // B = minimum window size
+  // C = screen resolution
+  // D = expected window size
+  // A / B = C / D
   const mainWindowState = windowStateKeeper({
-    defaultWidth: 1200,
-    defaultHeight: 800
+    defaultWidth,
+    defaultHeight
   });
 
   // Create the browser window.
   win = new BrowserWindow({
     x: mainWindowState.x, // defaults to middle of the screen if not specified
-    y: mainWindowState.y, // defaults to middle of the screen if not specifiede
+    y: mainWindowState.y, // defaults to middle of the screen if not specified
     width: mainWindowState.width,
     height: mainWindowState.height,
     webPreferences: {
