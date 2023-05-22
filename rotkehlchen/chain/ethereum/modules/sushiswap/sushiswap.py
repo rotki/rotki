@@ -21,6 +21,8 @@ from rotkehlchen.types import ChecksumEvmAddress, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
+from .constants import SUSHISWAP_EVENTS_PREFIX
+
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
@@ -28,8 +30,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-SUSHISWAP_EVENTS_PREFIX = 'sushiswap_events'
 
 
 class Sushiswap(AMMSwapPlatform, EthereumModule):

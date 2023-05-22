@@ -33,8 +33,8 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType, Liqui
 from rotkehlchen.chain.ethereum.modules.aave.common import atoken_to_asset
 from rotkehlchen.chain.ethereum.modules.aave.structures import AaveEvent, aave_event_from_db
 from rotkehlchen.chain.ethereum.modules.balancer import BALANCER_EVENTS_PREFIX
-from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
-from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
+from rotkehlchen.chain.ethereum.modules.sushiswap.constants import SUSHISWAP_EVENTS_PREFIX
+from rotkehlchen.chain.ethereum.modules.uniswap.constants import UNISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     YEARN_VAULTS_PREFIX,
     YEARN_VAULTS_V2_PREFIX,

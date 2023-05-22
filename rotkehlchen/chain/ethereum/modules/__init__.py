@@ -22,13 +22,13 @@ MODULE_NAME_TO_PATH = {
 
 from .aave.aave import Aave
 from .balancer.balancer import Balancer
-from .compound import Compound
+from .compound.compound import Compound
 from .eth2.eth2 import Eth2
 from .l2.loopring import Loopring
 from .liquity.trove import Liquity
 from .makerdao.dsr import MakerdaoDsr
 from .makerdao.vaults import MakerdaoVaults
-from .pickle_finance import PickleFinance
+from .pickle_finance.main import PickleFinance
 from .sushiswap.sushiswap import Sushiswap
 from .uniswap.uniswap import Uniswap
 from .yearn.vaults import YearnVaults

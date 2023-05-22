@@ -7,12 +7,13 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.interfaces.ammswap.types import SUSHISWAP_EVENTS_TYPES, EventType
-from rotkehlchen.chain.ethereum.modules.sushiswap import (
-    SUSHISWAP_EVENTS_PREFIX,
-    SushiswapPoolEvent,
-    SushiswapPoolEventsBalance,
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
+    SUSHISWAP_EVENTS_TYPES,
+    EventType,
+    LiquidityPoolEvent,
+    LiquidityPoolEventsBalance,
 )
+from rotkehlchen.chain.ethereum.modules.sushiswap.constants import SUSHISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -134,13 +135,13 @@ def test_get_events_history_filtering_by_timestamp(
 ):
     """Test the events balances from 1627401169 to 1627401170 (both included)."""
     expected_events_balances_1 = [
-        SushiswapPoolEventsBalance(
+        LiquidityPoolEventsBalance(
             address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
             pool_address=string_to_evm_address('0xC3f279090a47e80990Fe3a9c30d24Cb117EF91a8'),
             token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
             token1=EvmToken('eip155:1/erc20:0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF'),
             events=[
-                SushiswapPoolEvent(
+                LiquidityPoolEvent(
                     tx_hash=deserialize_evm_tx_hash(
                         '0xb226ddb8cbb286a7a998a35263ad258110eed5f923488f03a8d890572cd4608e',
                     ),
