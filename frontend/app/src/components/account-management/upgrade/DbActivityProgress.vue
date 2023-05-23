@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { type CurrentDbUpgradeProgress } from '@/types/login';
 
+const { t } = useI18n();
+
 const props = withDefaults(
   defineProps<{
     progress: CurrentDbUpgradeProgress | null;
@@ -12,8 +14,6 @@ const props = withDefaults(
 );
 
 const { progress } = toRefs(props);
-
-const { tc } = useI18n();
 
 const multipleUpgrades = computed(() => {
   if (isDefined(progress)) {
@@ -27,8 +27,8 @@ const multipleUpgrades = computed(() => {
 <template>
   <card v-if="progress" flat>
     <template #title>
-      <span v-if="dataMigration">{{ tc('login.migrating_data.title') }} </span>
-      <span v-else> {{ tc('login.upgrading_db.title') }}</span>
+      <span v-if="dataMigration">{{ t('login.migrating_data.title') }} </span>
+      <span v-else> {{ t('login.upgrading_db.title') }}</span>
     </template>
     <v-row class="my-2">
       <v-col cols="auto">
@@ -52,20 +52,20 @@ const multipleUpgrades = computed(() => {
       <v-col class="text-body-1">
         <div v-if="!dataMigration">
           <div>
-            {{ tc('login.upgrading_db.warning', 0, progress) }}
+            {{ t('login.upgrading_db.warning', { ...progress }) }}
           </div>
           <v-divider class="my-2" />
           <div>
-            {{ tc('login.upgrading_db.current', 0, progress) }}
+            {{ t('login.upgrading_db.current', { ...progress }) }}
           </div>
         </div>
         <div v-else>
           <div>
-            {{ tc('login.migrating_data.warning', 0, progress) }}
+            {{ t('login.migrating_data.warning', { ...progress }) }}
           </div>
           <v-divider class="my-2" />
           <div>
-            {{ tc('login.migrating_data.current', 0, progress) }}
+            {{ t('login.migrating_data.current', { ...progress }) }}
           </div>
           <ul v-if="progress.description" class="ml-n2">
             <li>{{ progress.description }}</li>

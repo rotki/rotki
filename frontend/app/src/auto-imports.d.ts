@@ -445,7 +445,7 @@ declare global {
   const useHistoryIgnoringApi: typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']
   const useHistoryStore: typeof import('./store/history/index')['useHistoryStore']
   const useHistoryTransactions: typeof import('./composables/history/events/tx')['useHistoryTransactions']
-  const useI18n: typeof import('vue-i18n-composable')['useI18n']
+  const useI18n: typeof import('./composables/usei18n')['useI18n']
   const useIdle: typeof import('@vueuse/core')['useIdle']
   const useIgnore: typeof import('./composables/history/index')['useIgnore']
   const useIgnoredAssetsStore: typeof import('./store/assets/ignored')['useIgnoredAssetsStore']
@@ -1119,7 +1119,7 @@ declare module 'vue' {
     readonly useHistoryIgnoringApi: UnwrapRef<typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']>
     readonly useHistoryStore: UnwrapRef<typeof import('./store/history/index')['useHistoryStore']>
     readonly useHistoryTransactions: UnwrapRef<typeof import('./composables/history/events/tx')['useHistoryTransactions']>
-    readonly useI18n: UnwrapRef<typeof import('vue-i18n-composable')['useI18n']>
+    readonly useI18n: UnwrapRef<typeof import('./composables/usei18n')['useI18n']>
     readonly useIdle: UnwrapRef<typeof import('@vueuse/core')['useIdle']>
     readonly useIgnore: UnwrapRef<typeof import('./composables/history/index')['useIgnore']>
     readonly useIgnoredAssetsStore: UnwrapRef<typeof import('./store/assets/ignored')['useIgnoredAssetsStore']>
@@ -1787,7 +1787,7 @@ declare module '@vue/runtime-core' {
     readonly useHistoryIgnoringApi: UnwrapRef<typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']>
     readonly useHistoryStore: UnwrapRef<typeof import('./store/history/index')['useHistoryStore']>
     readonly useHistoryTransactions: UnwrapRef<typeof import('./composables/history/events/tx')['useHistoryTransactions']>
-    readonly useI18n: UnwrapRef<typeof import('vue-i18n-composable')['useI18n']>
+    readonly useI18n: UnwrapRef<typeof import('./composables/usei18n')['useI18n']>
     readonly useIdle: UnwrapRef<typeof import('@vueuse/core')['useIdle']>
     readonly useIgnore: UnwrapRef<typeof import('./composables/history/index')['useIgnore']>
     readonly useIgnoredAssetsStore: UnwrapRef<typeof import('./store/assets/ignored')['useIgnoredAssetsStore']>

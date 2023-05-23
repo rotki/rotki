@@ -6,6 +6,8 @@ import { displayDateFormatter } from '@/data/date_formatter';
 import { type UserDbBackup } from '@/types/backup';
 import { size } from '@/utils/data';
 
+const { t } = useI18n();
+
 const props = defineProps({
   items: { required: true, type: Array as PropType<UserDbBackup[]> },
   selected: { required: true, type: Array as PropType<UserDbBackup[]> },
@@ -18,21 +20,19 @@ const emit = defineEmits<{
   (e: 'remove', backup: UserDbBackup): void;
 }>();
 
-const { tc } = useI18n();
-
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
     value: 'version',
-    text: tc('database_backups.column.version')
+    text: t('database_backups.column.version')
   },
   {
     value: 'time',
-    text: tc('common.datetime')
+    text: t('common.datetime')
   },
   {
     value: 'size',
     align: 'end',
-    text: tc('database_backups.column.size')
+    text: t('database_backups.column.size')
   },
   { value: 'actions', align: 'end', sortable: false, text: '' }
 ]);
@@ -86,8 +86,8 @@ const showDeleteConfirmation = (item: UserDbBackup & { index: number }) => {
 
   show(
     {
-      title: tc('database_backups.confirm.title'),
-      message: tc('database_backups.confirm.message', 0, messageInfo)
+      title: t('database_backups.confirm.title'),
+      message: t('database_backups.confirm.message', { ...messageInfo })
     },
     () => remove(item)
   );
@@ -126,7 +126,7 @@ const showDeleteConfirmation = (item: UserDbBackup & { index: number }) => {
               <v-icon small> mdi-delete-outline </v-icon>
             </v-btn>
           </template>
-          <span>{{ tc('database_backups.action.delete') }}</span>
+          <span>{{ t('database_backups.action.delete') }}</span>
         </v-tooltip>
         <v-tooltip top>
           <template #activator="{ on, attrs }">
@@ -141,13 +141,13 @@ const showDeleteConfirmation = (item: UserDbBackup & { index: number }) => {
               <v-icon small> mdi-download </v-icon>
             </v-btn>
           </template>
-          <span>{{ tc('database_backups.action.download') }}</span>
+          <span>{{ t('database_backups.action.download') }}</span>
         </v-tooltip>
       </template>
       <template #body.append="{ isMobile }">
         <row-append
           label-colspan="3"
-          :label="tc('common.total')"
+          :label="t('common.total')"
           :right-patch-colspan="1"
           :is-mobile="isMobile"
         >

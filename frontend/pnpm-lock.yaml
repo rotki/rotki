@@ -330,9 +330,6 @@ importers:
       vue:
         specifier: 2.7.14
         version: 2.7.14
-      vue-i18n:
-        specifier: 8.28.2
-        version: 8.28.2(vue@2.7.14)
 
   dev-proxy:
     dependencies:
@@ -10253,6 +10250,7 @@ packages:
       vue: ^2
     dependencies:
       vue: 2.7.14
+    dev: false
 
   /vue-router@3.6.5(vue@2.7.14):
     resolution: {integrity: sha512-VYXZQLtjuvKxxcshuRAwjHnciqZVoXAjTjcqBTz4rKc8qih9g9pI3hbDjmqXaHdgL3v8pV6P8Z335XvHzESxLQ==}
