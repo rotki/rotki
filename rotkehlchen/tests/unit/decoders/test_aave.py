@@ -6,18 +6,21 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_REN, A_WETH
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.aave import A_ADAI_V1, A_AETH_V1
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
+    ChecksumEvmAddress,
     EvmTransaction,
     Location,
     TimestampMS,
@@ -909,3 +912,53 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x1dB64086b4cdA94884E4FC296799a512dfc564CA']])
+def test_aave_liquidation(
+        database: 'DBHandler',
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Data taken from
+    https://etherscan.io/tx/0x2077a54ecae4a06c553f96c120acc0237887fdd1fc2596aab103f6681712974d
+    """
+    tx_hash = deserialize_evm_tx_hash('0x2077a54ecae4a06c553f96c120acc0237887fdd1fc2596aab103f6681712974d')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp = TimestampMS(1684738775000)
+    user_address = ethereum_accounts[0]
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=6,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+            asset=EvmToken('eip155:1/erc20:0xF63B34710400CAd3e044cFfDcAb00a0f32E33eCf'),
+            balance=Balance(amount=FVal('0.910875161581518408')),
+            location_label=user_address,
+            notes='Payback 0.910875161581518408 variableDebtWETH',
+            counterparty=CPT_AAVE_V2,
+            address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=11,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.LIQUIDATE,
+            asset=EvmToken('eip155:1/erc20:0x030bA81f1c18d280636F32af80b9AAd02Cf0854e'),
+            balance=Balance(amount=FVal('0.956418919660594328')),
+            location_label=user_address,
+            notes='0.956418919660594328 aWETH got liquidated',
+            counterparty=CPT_AAVE_V2,
+            address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
+        ),
+    ]
+    assert expected_events == events
