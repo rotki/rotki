@@ -40,6 +40,7 @@ DEPOSIT = b'\xdehW!\x95D\xbb[wF\xf4\x8e\xd3\x0b\xe68o\xef\xc6\x1b/\x86L\xac\xf5Y
 WITHDRAW = b'1\x15\xd1D\x9a{s,\x98l\xba\x18$N\x89zE\x0fa\xe1\xbb\x8dX\x9c\xd2\xe6\x9el\x89$\xf9\xf7'  # noqa: E501
 BORROW = b'\xc6\xa8\x980\x9e\x82>\xe5\x0b\xacd\xe4\\\xa8\xad\xbaf\x90\xe9\x9exA\xc4]uN*8\xe9\x01\x9d\x9b'  # noqa: E501
 REPAY = b'L\xdd\xe6\xe0\x9b\xb7U\xc9\xa5X\x9e\xba\xecd\x0b\xbf\xed\xff\x13b\xd4\xb2U\xeb\xf83\x97\x82\xb9\x94/\xaa'  # noqa: E501
+LIQUIDATION_CALL = b'\xe4\x13\xa3!\xe8h\x1d\x83\x1fM\xbc\xcb\xcay\r)R\xb5o\x97y\x08\xe4[\xe3s5S>\x00R\x86'  # noqa: E501
 
 
 class Aavev2Decoder(DecoderInterface):
@@ -183,6 +184,43 @@ class Aavev2Decoder(DecoderInterface):
                 # Set protocol for both events
                 event.counterparty = CPT_AAVE_V2
 
+    def _decode_liquidation(
+            self,
+            tx_log: EvmTxReceiptLog,
+            decoded_events: list['EvmEvent'],
+    ) -> None:
+        """
+        Decode AAVE v2 liquidations. When a liquidation happens the user returns the debt token
+        and part of the collateral deposited is lost too. Those two events happen as transfers in
+        a transaction started by the liquidator.
+        """
+        if self.base.is_tracked(hex_or_bytes_to_address(tx_log.topics[3])) is False:
+            return
+
+        for event in decoded_events:
+            if event.event_type != HistoryEventType.SPEND:
+                continue
+
+            asset = event.asset.resolve_to_evm_token()
+            if asset_normalized_value(
+                amount=hex_or_bytes_to_int(tx_log.data[32:64]),  # liquidated amount
+                asset=asset,
+            ) == event.balance.amount and asset.protocol == CPT_AAVE_V2:
+                # we are transfering the aTOKEN
+                event.event_subtype = HistoryEventSubType.LIQUIDATE
+                event.notes = f'{event.balance.amount} {asset.symbol} got liquidated'
+                event.counterparty = CPT_AAVE_V2
+                event.address = tx_log.address
+            elif asset_normalized_value(
+                amount=hex_or_bytes_to_int(tx_log.data[:32]),  # debt amount
+                asset=asset,
+            ) == event.balance.amount:
+                # we are transfering the debt token
+                event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
+                event.notes = f'Payback {event.balance.amount} {asset.symbol}'
+                event.counterparty = CPT_AAVE_V2
+                event.address = tx_log.address
+
     def _decode_repay(
             self,
             token: 'EvmToken',
@@ -223,7 +261,12 @@ class Aavev2Decoder(DecoderInterface):
 
     def _decode_lending_pool_events(self, context: DecoderContext) -> DecodingOutput:
         """Decodes AAVE V2 Lending Pool events"""
-        if context.tx_log.topics[0] not in (ENABLE_COLLATERAL, DISABLE_COLLATERAL, DEPOSIT, WITHDRAW, BORROW, REPAY):  # noqa: E501
+        if context.tx_log.topics[0] not in (LIQUIDATION_CALL, ENABLE_COLLATERAL, DISABLE_COLLATERAL, DEPOSIT, WITHDRAW, BORROW, REPAY):  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        if context.tx_log.topics[0] == LIQUIDATION_CALL:
+            # the liquidation event has two tokens and needs to be checked per event
+            self._decode_liquidation(context.tx_log, context.decoded_events)
             return DEFAULT_DECODING_OUTPUT
 
         token = EvmToken(evm_address_to_identifier(
@@ -260,8 +303,8 @@ class Aavev2Decoder(DecoderInterface):
             },
             HistoryEventType.SPEND: {
                 HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
+                HistoryEventSubType.LIQUIDATE: EventCategory.LIQUIDATE,
                 HistoryEventSubType.PAYBACK_DEBT: EventCategory.REPAY,
-
             },
             HistoryEventType.WITHDRAWAL: {
                 HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
