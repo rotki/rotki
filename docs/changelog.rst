@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` ENS avatar fetching for each name's avatar should now work for all name resolvers. Even older or custom ones.
 * :bug:`-` Users will now be able to decode compounding transactions for Convex gauges.
 
 * :release:`1.28.0 <2023-05-17>`
