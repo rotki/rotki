@@ -19,6 +19,7 @@ from rotkehlchen.assets.asset import (
     CryptoAsset,
     CustomAsset,
     EvmToken,
+    FiatAsset,
     UnderlyingToken,
 )
 from rotkehlchen.assets.types import AssetType
@@ -61,38 +62,24 @@ class UnderlyingTokenInfoSchema(Schema):
     weight = FloatingPercentageField(required=True)
 
 
-class RequiredEvmAddressSchema(Schema):
-    address = EvmAddressField(required=True)
-    evm_chain = EvmChainNameField(required=True)
-
-
-class BaseCryptoAssetSchema(Schema):
+class BaseAssetSchema(Schema):
     name = fields.String(required=True)
+
+
+class AssetWithOraclesSchema(BaseAssetSchema):
+    identifier = fields.String(required=False, load_default=None)
     symbol = fields.String(required=True)
-    started = TimestampField(load_default=None)
-    swapped_for = AssetField(expected_type=CryptoAsset, load_default=None)
     coingecko = fields.String(load_default=None)
     cryptocompare = fields.String(load_default=None)
-    forked = AssetField(expected_type=CryptoAsset, load_default=None)
-
-
-class CryptoAssetSchema(BaseCryptoAssetSchema):
-    identifier = fields.String(required=False, load_default=None)
-    asset_type = AssetTypeField(
-        exclude_types=(AssetType.EVM_TOKEN, AssetType.NFT, AssetType.CUSTOM_ASSET),
-        load_default=None,
-    )
 
     def __init__(
             self,
             identifier_required: bool,
-            expected_asset_type: Optional[AssetType] = None,
             coingecko: Optional['Coingecko'] = None,
             cryptocompare: Optional['Cryptocompare'] = None,
     ) -> None:
         super().__init__()
         self.identifier_required = identifier_required
-        self.expected_asset_type = expected_asset_type
         self.coingecko_obj = coingecko
         self.cryptocompare_obj = cryptocompare
 
@@ -102,10 +89,6 @@ class CryptoAssetSchema(BaseCryptoAssetSchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        if self.expected_asset_type is None and data['asset_type'] is None:
-            raise ValidationError(message='asset_type should be given', field_name='asset_type')
-        if self.expected_asset_type is not None and data['asset_type'] is not None and data['asset_type'] != self.expected_asset_type:  # noqa: E501
-            raise ValidationError(message=f'asset_type should be {self.expected_asset_type}', field_name='asset_type')  # noqa: E501
         if self.identifier_required is True and data['identifier'] is None:
             raise ValidationError(message='Asset identifier should be given', field_name='identifier')  # noqa: E501
         if self.coingecko_obj is not None:
@@ -113,13 +96,72 @@ class CryptoAssetSchema(BaseCryptoAssetSchema):
         if self.cryptocompare_obj is not None:
             _validate_single_oracle_id(data, 'cryptocompare', self.cryptocompare_obj)
 
+
+class FiatAssetSchema(AssetWithOraclesSchema):
+    @post_load
+    def transform_data(self, data: dict[str, Any], **_kwargs: Any) -> FiatAsset:
+        return FiatAsset.initialize(
+            # asset id needs to be unique but no combination of asset data is guaranteed to be
+            # unique. And especially with the ability to edit assets we need an external uuid.
+            # TODO: Asset uuid is generated only for crypto and fiat assets, but we should figure
+            # out a way to generate the identifier out of the asset fields, same as we do for
+            # evm tokens.
+            identifier=data['identifier'] if data['identifier'] is not None else str(uuid4()),
+            name=data['name'],
+            symbol=data['symbol'],
+            coingecko=data['coingecko'],
+            cryptocompare=data['cryptocompare'],
+        )
+
+
+class CryptoAssetFieldsSchema(AssetWithOraclesSchema):
+    """
+    Adds fields specific to crypto assets.
+    We keep it separately from CryptoAssetSchema because CryptoAssetSchema has extra logic for
+    checking identifier and asset_type, which is not needed for evm tokens.
+    """
+    started = TimestampField(load_default=None)
+    swapped_for = AssetField(expected_type=CryptoAsset, load_default=None)
+    forked = AssetField(expected_type=CryptoAsset, load_default=None)
+
+
+class CryptoAssetSchema(CryptoAssetFieldsSchema):
+    asset_type = AssetTypeField(load_default=None)
+
+    def __init__(
+            self,
+            identifier_required: bool,
+            coingecko: Optional['Coingecko'] = None,
+            cryptocompare: Optional['Cryptocompare'] = None,
+            expected_asset_type: Optional[AssetType] = None,
+    ) -> None:
+        super().__init__(
+            identifier_required=identifier_required,
+            coingecko=coingecko,
+            cryptocompare=cryptocompare,
+        )
+        self.expected_asset_type = expected_asset_type
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        super().validate_schema(data, **_kwargs)
+        if self.expected_asset_type is None and data['asset_type'] is None:
+            raise ValidationError(message='asset_type should be given', field_name='asset_type')
+        if self.expected_asset_type is not None and data['asset_type'] is not None and data['asset_type'] != self.expected_asset_type:  # noqa: E501
+            raise ValidationError(message=f'asset_type should be {self.expected_asset_type}', field_name='asset_type')  # noqa: E501
+
     @post_load
     def transform_data(self, data: dict[str, Any], **_kwargs: Any) -> dict[str, CryptoAsset]:
         crypto_asset = CryptoAsset.initialize(
             # asset id needs to be unique but no combination of asset data is guaranteed to be
             # unique. And especially with the ability to edit assets we need an external uuid.
-            # TODO: Asset uuid is generated only for crypto assets, but we should figure out a way
-            # to generate the identifier out of the asset fields, same as we do for evm tokens.
+            # TODO: Asset uuid is generated only for crypto and fiat assets, but we should figure
+            # out a way to generate the identifier out of the asset fields, same as we do for
+            # evm tokens.
             identifier=data['identifier'] if data['identifier'] is not None else str(uuid4()),
             name=data['name'],
             symbol=data['symbol'],
@@ -133,7 +175,9 @@ class CryptoAssetSchema(BaseCryptoAssetSchema):
         return {'crypto_asset': crypto_asset}
 
 
-class EvmTokenSchema(BaseCryptoAssetSchema, RequiredEvmAddressSchema):
+class EvmTokenSchema(CryptoAssetFieldsSchema):
+    address = EvmAddressField(required=True)
+    evm_chain = EvmChainNameField(required=True)
     token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=True)
     decimals = fields.Integer(
         strict=True,
@@ -154,18 +198,20 @@ class EvmTokenSchema(BaseCryptoAssetSchema, RequiredEvmAddressSchema):
             self,
             coingecko: Optional['Coingecko'] = None,
             cryptocompare: Optional['Cryptocompare'] = None,
-            **kwargs: Any,
     ) -> None:
-        super().__init__(**kwargs)
-        self.coingecko_obj = coingecko
-        self.cryptocompare_obj = cryptocompare
+        super().__init__(
+            identifier_required=False,  # for evm tokens is always computed from address, token kind and chain  # noqa: E501
+            coingecko=coingecko,
+            cryptocompare=cryptocompare,
+        )
 
     @validates_schema
-    def validate_ethereum_token_schema(
+    def validate_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
+        super().validate_schema(data, **_kwargs)
         given_underlying_tokens = data.get('underlying_tokens', None)
         if given_underlying_tokens is not None:
             weight_sum = sum(x['weight'] for x in given_underlying_tokens)
@@ -180,14 +226,6 @@ class EvmTokenSchema(BaseCryptoAssetSchema, RequiredEvmAddressSchema):
                     f'is {weight_sum * 100} and does not add up to 100%',
                 )
 
-        # most probably validation happens at ModifyEvmTokenSchema
-        # so this is not needed. Kind of an ugly way to do this but can't
-        # find a way around it at the moment
-        if self.coingecko_obj is not None:
-            _validate_single_oracle_id(data, 'coingecko', self.coingecko_obj)
-        if self.cryptocompare_obj is not None:
-            _validate_single_oracle_id(data, 'cryptocompare', self.cryptocompare_obj)
-
     @post_load
     def transform_data(
             self,
@@ -195,8 +233,6 @@ class EvmTokenSchema(BaseCryptoAssetSchema, RequiredEvmAddressSchema):
             **_kwargs: Any,
     ) -> EvmToken:
         given_underlying_tokens = data.pop('underlying_tokens', None)
-        chain_id = data.pop('evm_chain')
-        data['chain_id'] = chain_id
         underlying_tokens = None
         if given_underlying_tokens is not None:
             underlying_tokens = []
@@ -206,11 +242,24 @@ class EvmTokenSchema(BaseCryptoAssetSchema, RequiredEvmAddressSchema):
                     token_kind=entry['token_kind'],
                     weight=entry['weight'],
                 ))
-        return EvmToken.initialize(**data, underlying_tokens=underlying_tokens)
+        return EvmToken.initialize(
+            address=data['address'],
+            chain_id=data['evm_chain'],
+            token_kind=data['token_kind'],
+            name=data['name'],
+            symbol=data['symbol'],
+            started=data['started'],
+            forked=data['forked'],
+            swapped_for=data['swapped_for'],
+            coingecko=data['coingecko'],
+            cryptocompare=data['cryptocompare'],
+            decimals=data['decimals'],
+            protocol=data['protocol'],
+            underlying_tokens=underlying_tokens,
+        )
 
 
-class BaseCustomAssetSchema(Schema):
-    name = fields.String(required=True)
+class BaseCustomAssetSchema(BaseAssetSchema):
     notes = fields.String(load_default=None)
     custom_asset_type = fields.String(required=True)
 
@@ -247,33 +296,73 @@ class CustomAssetWithIdentifierSchema(BaseCustomAssetSchema):
         return {'custom_asset': custom_asset}
 
 
-class AssetDataSchema(Schema):
+class AssetSchema(Schema):
     asset_type = AssetTypeField(required=True)
-    name = fields.String(required=True)
 
     class Meta:
         # Set unknown = 'INCLUDE' to allow extra parameters
         unknown = 'include'
+
+    def __init__(
+            self,
+            identifier_required: bool,
+            disallowed_asset_types: Optional[list[AssetType]] = None,
+            coingecko: Optional['Coingecko'] = None,
+            cryptocompare: Optional['Cryptocompare'] = None,
+            **kwargs: Any,
+    ) -> None:
+        """
+        Initializes an asset schema depending on the given asset type.
+
+        If identifier_required is True then the identifier field is required.
+        Provided asset_type must not be in disallowed_asset_types list.
+        If coingecko is not None then the coingecko identifier has to be valid.
+        If cryptocompare is not None then the cryptocompare identifier has to be valid.
+        """
+        super().__init__(**kwargs)
+        self.identifier_required = identifier_required
+        self.disallowed_asset_types = disallowed_asset_types
+        self.coingecko_obj = coingecko
+        self.cryptocompare_obj = cryptocompare
 
     @post_load
     def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
-    ) -> AssetWithNameAndType:
+    ) -> dict[str, AssetWithNameAndType]:
         """Returns a deserialized asset based on the given asset type"""
         asset_type = data.pop('asset_type')
+        if self.disallowed_asset_types is not None and asset_type in self.disallowed_asset_types:
+            raise ValidationError(
+                field_name='asset_type',
+                message=f'Asset type {asset_type} is not allowed in this context',
+            )
+
         if asset_type == AssetType.CUSTOM_ASSET:
-            return CustomAssetWithIdentifierSchema().load(data)['custom_asset']
+            asset = CustomAssetWithIdentifierSchema().load(data)['custom_asset']
+        elif asset_type == AssetType.FIAT:
+            asset = FiatAssetSchema(
+                identifier_required=self.identifier_required,
+                coingecko=self.coingecko_obj,
+                cryptocompare=self.cryptocompare_obj,
+            ).load(data)
         elif asset_type == AssetType.EVM_TOKEN:
-            return EvmTokenSchema().load(data)
-        else:
-            return CryptoAssetSchema(
+            asset = EvmTokenSchema(
+                coingecko=self.coingecko_obj,
+                cryptocompare=self.cryptocompare_obj,
+            ).load(data)
+        else:  # only other case is generic crypto asset
+            asset = CryptoAssetSchema(
                 expected_asset_type=asset_type,
-                identifier_required=True,
+                identifier_required=self.identifier_required,
+                coingecko=self.coingecko_obj,
+                cryptocompare=self.cryptocompare_obj,
             ).load(data)['crypto_asset']
+
+        return {'asset': asset}
 
 
 class ExportedAssetsSchema(Schema):
     version = fields.String(required=True)
-    assets = fields.List(fields.Nested(AssetDataSchema), load_default=None)
+    assets = fields.List(fields.Nested(AssetSchema(identifier_required=True)), load_default=None)

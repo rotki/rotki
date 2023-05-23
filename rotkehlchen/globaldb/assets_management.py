@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, AssetWithNameAndType
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -45,7 +45,8 @@ def import_assets_from_file(
         raise InputError('The imported file is missing a valid list of assets')
 
     identifiers = []
-    for asset in data['assets']:
+    for asset_data in data['assets']:
+        asset: AssetWithNameAndType = asset_data['asset']
         if asset.exists():
             msg_aggregator.add_warning(
                 f'Tried to import existing asset {asset.identifier} with '

@@ -12,10 +12,12 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.constants.assets import A_DAI, A_EUR
 from rotkehlchen.constants.misc import ASSET_TYPES_EXCLUDED_FOR_USERS, ONE
 from rotkehlchen.constants.resolver import (
     ChainID,
     ethaddress_to_identifier,
+    evm_address_to_identifier,
     strethaddress_to_identifier,
 )
 from rotkehlchen.fval import FVal
@@ -90,6 +92,51 @@ def test_add_user_assets(rotkehlchen_api_server, globaldb):
     assert data.coingecko == user_asset2['coingecko']
     assert data.cryptocompare == user_asset2['cryptocompare']
 
+    # Add a fiat asset with the user asset endpoint
+    fiat_asset_data = {
+        'identifier': 'new-fiat-asset',
+        'asset_type': 'fiat',
+        'name': 'Awesome new fiat asset',
+        'symbol': 'NEWFIAT',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json=fiat_asset_data,
+    )
+    assert_proper_response(response)
+    resolved_eur = Asset('new-fiat-asset').resolve_to_fiat_asset()
+    assert resolved_eur.name == 'Awesome new fiat asset'
+    assert resolved_eur.symbol == 'NEWFIAT'
+
+    # Add an evm token with the user asset endpoint
+    new_evm_token_address = make_evm_address()
+    new_evm_token_data = {
+        'asset_type': 'evm token',
+        'name': 'New ERC20 token',
+        'symbol': 'NEWTOKEN',
+        'token_kind': 'ERC20',
+        'address': new_evm_token_address,
+        'decimals': 18,
+        'evm_chain': 'ethereum',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json=new_evm_token_data,
+    )
+    new_token = EvmToken(evm_address_to_identifier(
+        address=new_evm_token_address,
+        chain_id=ChainID.ETHEREUM,
+        token_type=EvmTokenKind.ERC20,
+    ))
+    assert new_token.name == 'New ERC20 token'
+    assert new_token.symbol == 'NEWTOKEN'
+
     # try to add a token type/name/symbol combo that exists
     bad_asset = {
         'asset_type': 'fiat',
@@ -108,25 +155,6 @@ def test_add_user_assets(rotkehlchen_api_server, globaldb):
         response=response,
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.CONFLICT,
-    )
-    # try to add an ethereum token with the user asset endpoint
-    bad_asset = {
-        'asset_type': 'evm token',
-        'name': 'Euro',
-        'symbol': 'EUR',
-    }
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'allassetsresource',
-        ),
-        json=bad_asset,
-    )
-    expected_msg = 'Asset type evm token is not allowed in this endpoint'
-    assert_error_response(
-        response=response,
-        contained_in_msg=expected_msg,
-        status_code=HTTPStatus.BAD_REQUEST,
     )
     # try to add non existing forked and swapped for
     bad_asset = {
@@ -253,6 +281,47 @@ def test_editing_user_assets(rotkehlchen_api_server, globaldb):
     assert data.coingecko == user_asset1_v2['coingecko']
     assert data.cryptocompare == user_asset1_v2['cryptocompare']
 
+    # Edit an evm token with the user asset endpoint
+    evm_token_data = {
+        'asset_type': 'evm token',
+        'name': 'Edited DAI',
+        'symbol': 'NEWDAI',
+        'token_kind': 'ERC20',
+        'address': '0x6B175474E89094C44Da98b954EedeAC495271d0F',  # DAI
+        'decimals': 18,
+        'evm_chain': 'ethereum',
+    }
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json=evm_token_data,
+    )
+    assert_proper_response(response)
+    resolved_dai = A_DAI.resolve_to_evm_token()
+    assert resolved_dai.name == 'Edited DAI'
+    assert resolved_dai.symbol == 'NEWDAI'
+
+    # Edit a fiat asset with the user asset endpoint
+    fiat_asset_data = {
+        'identifier': 'EUR',
+        'asset_type': 'fiat',
+        'name': 'Edited EUR',
+        'symbol': 'NEWEUR',
+    }
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json=fiat_asset_data,
+    )
+    assert_proper_response(response)
+    resolved_eur = A_EUR.resolve_to_fiat_asset()
+    assert resolved_eur.name == 'Edited EUR'
+    assert resolved_eur.symbol == 'NEWEUR'
+
     # try to edit an asset with a non-existing identifier
     bad_asset = {
         'identifier': 'notexisting',
@@ -273,26 +342,7 @@ def test_editing_user_assets(rotkehlchen_api_server, globaldb):
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.CONFLICT,
     )
-    # try to edit an ethereum token with the user asset endpoint
-    bad_asset = {
-        'identifier': 'EUR',
-        'asset_type': 'evm token',
-        'name': 'ethereum Euro',
-        'symbol': 'EUR',
-    }
-    response = requests.patch(
-        api_url_for(
-            rotkehlchen_api_server,
-            'allassetsresource',
-        ),
-        json=bad_asset,
-    )
-    expected_msg = 'Asset type evm token is not allowed in this endpoint'
-    assert_error_response(
-        response=response,
-        contained_in_msg=expected_msg,
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
+
     # try to edit non existing forked and swapped for
     bad_asset = {
         'identifier': 'EUR',

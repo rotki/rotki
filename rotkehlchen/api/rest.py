@@ -47,7 +47,6 @@ from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
     AssetWithOracles,
-    CryptoAsset,
     CustomAsset,
     EvmToken,
     FiatAsset,
@@ -1349,44 +1348,44 @@ class RestAPI():
         types = [str(x) for x in AssetType if x not in ASSET_TYPES_EXCLUDED_FOR_USERS]
         return api_response(_wrap_in_ok_result(types), status_code=HTTPStatus.OK)
 
-    def add_user_asset(self, crypto_asset: CryptoAsset) -> Response:
+    def add_user_asset(self, asset: AssetWithOracles) -> Response:
         globaldb = GlobalDBHandler()
         # There is no good way to figure out if an asset already exists in the DB
         # Best approximation we can do is this.
         identifiers = globaldb.check_asset_exists(
-            asset_type=crypto_asset.asset_type,
-            name=crypto_asset.name,
-            symbol=crypto_asset.symbol,
+            asset_type=asset.asset_type,
+            name=asset.name,
+            symbol=asset.symbol,
         )
         if identifiers is not None:
             return api_response(
                 result=wrap_in_fail_result(
-                    f'Failed to add {crypto_asset.asset_type!s} {crypto_asset.name} '
+                    f'Failed to add {asset.asset_type!s} {asset.name} '
                     f'since it already exists. Existing ids: {",".join(identifiers)}'),
                 status_code=HTTPStatus.CONFLICT,
             )
         try:
-            globaldb.add_asset(crypto_asset)
+            globaldb.add_asset(asset)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         with self.rotkehlchen.data.db.user_write() as cursor:
-            self.rotkehlchen.data.db.add_asset_identifiers(cursor, [crypto_asset.identifier])
+            self.rotkehlchen.data.db.add_asset_identifiers(cursor, [asset.identifier])
         return api_response(
-            _wrap_in_ok_result({'identifier': crypto_asset.identifier}),
+            _wrap_in_ok_result({'identifier': asset.identifier}),
             status_code=HTTPStatus.OK,
         )
 
-    def edit_user_asset(self, crypto_asset: CryptoAsset) -> Response:
+    def edit_user_asset(self, asset: AssetWithOracles) -> Response:
         try:
-            GlobalDBHandler().edit_user_asset(crypto_asset)
+            GlobalDBHandler().edit_user_asset(asset)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Also clear the in-memory cache of the asset resolver to requery DB
-        AssetResolver().assets_cache.remove(crypto_asset.identifier)
+        AssetResolver().assets_cache.remove(asset.identifier)
         # clear the icon cache in case the coingecko id was edited
-        self.rotkehlchen.icon_manager.failed_asset_ids.remove(crypto_asset.identifier)
+        self.rotkehlchen.icon_manager.failed_asset_ids.remove(asset.identifier)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def delete_asset(self, identifier: str) -> Response:
