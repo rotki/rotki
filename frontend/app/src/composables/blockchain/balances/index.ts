@@ -58,7 +58,6 @@ export const useBlockchainBalances = () => {
       updateEth(blockchain, balances);
       updateBtc(blockchain, balances);
       updateChains(blockchain, balances);
-
       setStatus(Status.LOADED);
     } catch (e: any) {
       logger.error(e);

@@ -1,6 +1,5 @@
 import { type MaybeRef } from '@vueuse/core';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 import { type ComputedRef, type Ref } from 'vue';
 import { type TaskMeta } from '@/types/task';
@@ -70,18 +69,16 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     chainValues: BlockchainAssetBalances
   ) => {
     const lastUpdateTimestamp = Date.now() / 1000;
-    if (isEmpty(chainValues)) {
-      return setState(chain, {});
-    }
+    const data: EvmTokensRecord = {};
     for (const address in chainValues) {
       const { assets } = chainValues[address];
       const tokens = Object.keys(assets).filter(
         addr => addr !== Blockchain.ETH
       );
-      setState(chain, {
-        [address]: { tokens, lastUpdateTimestamp }
-      });
+      data[address] = { tokens, lastUpdateTimestamp };
     }
+
+    setState(chain, data);
   };
 
   const fetchDetectedTokens = async (
