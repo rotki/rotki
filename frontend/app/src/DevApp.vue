@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Routes } from '@/router/routes';
+
 const reset = () => {
   sessionStorage.removeItem('vuex');
   window.location.reload();
@@ -10,7 +12,7 @@ const resetState = 'Reset State ->';
 <template>
   <v-app id="rotki">
     <v-app-bar app fixed>
-      <v-btn icon to="/">
+      <v-btn icon :to="Routes.DASHBOARD">
         <v-icon>mdi-home</v-icon>
       </v-btn>
       <v-spacer />

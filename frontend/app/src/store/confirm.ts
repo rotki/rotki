@@ -51,16 +51,22 @@ export const useConfirmStore = defineStore('confirm', () => {
     stop();
   };
 
-  const dismiss = async () => {
+  const reset = () => {
     set(visible, false);
-    const method = get(onDismiss);
-    await method();
+    set(onConfirm, defaultFunc);
+    set(onDismiss, defaultFunc);
     start();
   };
 
+  const dismiss = async () => {
+    const method = get(onDismiss);
+    reset();
+    await method();
+  };
+
   const confirm = async () => {
-    set(visible, false);
     const method = get(onConfirm);
+    reset();
     await method();
   };
 
