@@ -2,7 +2,8 @@
 Changelog
 =========
 
-* :feature:`-` Events involving locking and unlocking GNO using the locked GNO contract will now be decoded properly.
+* :feature:`-` Ethereum transactions involing bribe claim payouts from StakeDAO will now be decoded properly.
+* :feature:`-` Ethereum transactions involving locking and unlocking GNO using the locked GNO contract will now be decoded properly.
 
 * :release:`1.28.0 <2023-05-17>`
 * :feature:`2469` History events have now been unified under a common history events section. At the moment it features all kraken exchange events, evm events, custom imported events, block productions, staking withdrawals. Missing events retain their own sections and will be merged into the unified history in subsequent releases.
