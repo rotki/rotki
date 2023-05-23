@@ -156,10 +156,10 @@ from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
     AssetWithOracles,
-    CryptoAsset,
     CustomAsset,
     EvmToken,
 )
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -187,8 +187,8 @@ from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.serialization.schemas import (
+    AssetSchema,
     BaseCustomAssetSchema,
-    CryptoAssetSchema,
     CustomAssetWithIdentifierSchema,
     RequiredEvmAddressSchema,
 )
@@ -730,8 +730,7 @@ class DatabaseBackupsResource(BaseMethodView):
 
 class AllAssetsResource(BaseMethodView):
     """
-    Supports querying of all assets and modification of crypto assets / evm tokens.
-    TODO: Support editing of fiat assets.
+    Supports querying of all assets and modification of fiat assets / crypto assets / evm tokens.
     """
 
     delete_schema = StringIdentifierSchema()
@@ -741,16 +740,18 @@ class AllAssetsResource(BaseMethodView):
             db=self.rest_api.rotkehlchen.data.db,
         )
 
-    def make_add_schema(self) -> CryptoAssetSchema:
-        return CryptoAssetSchema(
+    def make_add_schema(self) -> AssetSchema:
+        return AssetSchema(
             identifier_required=False,
+            disallowed_asset_types=[AssetType.CUSTOM_ASSET],  # custom assets are handled on a separate endpoint  # noqa: E501
             coingecko=self.rest_api.rotkehlchen.coingecko,
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
         )
 
-    def make_edit_schema(self) -> CryptoAssetSchema:
-        return CryptoAssetSchema(
+    def make_edit_schema(self) -> AssetSchema:
+        return AssetSchema(
             identifier_required=True,
+            disallowed_asset_types=[AssetType.CUSTOM_ASSET],  # custom assets are handled on a separate endpoint  # noqa: E501
             coingecko=self.rest_api.rotkehlchen.coingecko,
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
         )
@@ -761,12 +762,12 @@ class AllAssetsResource(BaseMethodView):
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_add_schema, location='json')
-    def put(self, crypto_asset: CryptoAsset) -> Response:
-        return self.rest_api.add_user_asset(crypto_asset)
+    def put(self, asset: AssetWithOracles) -> Response:  # is asset with oracles since we disallow custom assets  # noqa: E501
+        return self.rest_api.add_user_asset(asset)
 
     @resource_parser.use_kwargs(make_edit_schema, location='json')
-    def patch(self, crypto_asset: CryptoAsset) -> Response:
-        return self.rest_api.edit_user_asset(crypto_asset)
+    def patch(self, asset: AssetWithOracles) -> Response:  # is asset with oracles since we disallow custom assets  # noqa: E501
+        return self.rest_api.edit_user_asset(asset)
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')

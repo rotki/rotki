@@ -1031,6 +1031,9 @@ class GlobalDBHandler():
                 f'Tried to edit non existing asset with identifier {asset.identifier}',
             ) from e
 
+        if asset.is_evm_token():
+            GlobalDBHandler().edit_evm_token(cast(EvmToken, asset))
+
         details_update_query = 'UPDATE common_asset_details SET symbol=?, coingecko=?, cryptocompare=?'  # noqa: E501
         details_update_bindings: tuple = (asset.symbol, asset.coingecko, asset.cryptocompare)
         if asset.is_crypto():
