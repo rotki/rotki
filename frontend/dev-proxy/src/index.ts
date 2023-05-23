@@ -10,7 +10,7 @@ import type * as http from 'node:http';
 const server = express();
 
 const port = process.env.PORT || 4243;
-const backend = process.env.BACKEND || 'http://localhost:4242';
+const backend = process.env.BACKEND || 'http://127.0.0.1:4242';
 const componentsDir = process.env.PREMIUM_COMPONENT_DIR;
 
 enableCors(server);
@@ -348,5 +348,5 @@ server.use(
 );
 
 server.listen(port, () => {
-  console.log(`Proxy server is running at http://localhost:${port}`);
+  console.log(`Proxy server is running at http://127.0.0.1:${port}`);
 });

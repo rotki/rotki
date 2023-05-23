@@ -23,13 +23,16 @@ require('dotenv').config({
 
 const frontendPort = 22230;
 
+const backendUrl = process.env.VITE_BACKEND_URL;
+process.env.CYPRESS_BACKEND_URL = backendUrl;
+
 // pnpm will cause the commands to exit with
 // ELIFECYCLE Command failed.
 // If we find away around this we should change to pnpm.
 const services = [
   {
     start: 'node scripts/start-backend.js',
-    url: 'http://localhost:22221/api/1/ping'
+    url: `${backendUrl}/api/1/ping`
   },
   {
     start: `node scripts/serve.js --web --port ${frontendPort}`,

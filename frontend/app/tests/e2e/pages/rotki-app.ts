@@ -58,6 +58,7 @@ export class RotkiApp {
   }
 
   closePremiumOverlay() {
+    cy.get('[data-cy=premium-reminder]').should('be.visible');
     cy.get('[data-cy=premium-reminder]', {
       timeout: 10000
     }).should('include.text', 'Upgrade to Premium');
@@ -66,6 +67,7 @@ export class RotkiApp {
   }
 
   login(username: string, password = '1234') {
+    cy.get('.login__fields__username').should('be.visible');
     cy.get('.login__fields__username').type(username);
     cy.get('.login__fields__password').type(password);
     cy.get('.login__button__sign-in').click();
@@ -97,12 +99,6 @@ export class RotkiApp {
       cy.get('@input').type('{uparrow}'.repeat(mode));
     }
     cy.get('[data-cy=privacy-menu]').click();
-  }
-
-  drawerIsVisible(isVisible: boolean) {
-    cy.get('.app__navigation-drawer', { timeout: 120000 }).should(
-      isVisible ? 'be.visible' : 'not.be.visible'
-    );
   }
 
   /**

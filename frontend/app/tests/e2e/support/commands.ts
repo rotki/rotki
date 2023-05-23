@@ -23,12 +23,13 @@
 //
 // -- This is will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... });
-
 import { type ExternalLedgerAction, type ExternalTrade } from './types';
+
+const backendUrl = Cypress.env('BACKEND_URL');
 
 const logout = () => {
   cy.request({
-    url: 'http://localhost:22221/api/1/users',
+    url: `${backendUrl}/api/1/users`,
     method: 'GET',
     failOnStatusCode: false
   })
@@ -42,7 +43,7 @@ const logout = () => {
         if (loggedUsers.length === 1) {
           const user = loggedUsers[0];
           cy.request({
-            url: `http://localhost:22221/api/1/users/${user}`,
+            url: `${backendUrl}/api/1/users/${user}`,
             method: 'PATCH',
             body: {
               action: 'logout'
@@ -55,7 +56,7 @@ const logout = () => {
 
 const updateAssets = () => {
   cy.request({
-    url: 'http://localhost:22221/api/1/assets/updates',
+    url: `${backendUrl}/api/1/assets/updates`,
     method: 'DELETE',
     body: {
       reset: 'soft'
@@ -73,7 +74,7 @@ const updateAssets = () => {
 
 const disableModules = () => {
   cy.request({
-    url: 'http://localhost:22221/api/1/settings',
+    url: `${backendUrl}/api/1/settings`,
     method: 'PUT',
     body: {
       settings: {
@@ -95,7 +96,7 @@ const createAccount = (username: string, password = '1234') => {
   cy.logout();
   return cy
     .request({
-      url: 'http://localhost:22221/api/1/users',
+      url: `${backendUrl}/api/1/users`,
       method: 'PUT',
       body: {
         name: username,
@@ -103,7 +104,8 @@ const createAccount = (username: string, password = '1234') => {
         initial_settings: {
           submit_usage_analytics: true
         }
-      }
+      },
+      failOnStatusCode: false
     })
     .its('body');
 };
@@ -111,7 +113,7 @@ const createAccount = (username: string, password = '1234') => {
 const addExternalTrade = (trade: ExternalTrade) =>
   cy
     .request({
-      url: 'http://localhost:22221/api/1/trades',
+      url: `${backendUrl}/api/1/trades`,
       method: 'PUT',
       body: {
         timestamp: new Date(trade.time).getTime() / 1000,
@@ -132,7 +134,7 @@ const addExternalTrade = (trade: ExternalTrade) =>
 const addLedgerAction = (action: ExternalLedgerAction) =>
   cy
     .request({
-      url: 'http://localhost:22221/api/1/ledgeractions',
+      url: `${backendUrl}/api/1/ledgeractions`,
       method: 'PUT',
       body: {
         timestamp: new Date(action.datetime).getTime() / 1000,
@@ -151,14 +153,15 @@ const addLedgerAction = (action: ExternalLedgerAction) =>
 const addEtherscanKey = (key: string) =>
   cy
     .request({
-      url: 'http://localhost:22221/api/1/external_services',
+      url: `${backendUrl}/api/1/external_services`,
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json; charset=utf-8'
       },
       body: {
         services: [{ name: 'etherscan', api_key: key }]
-      }
+      },
+      failOnStatusCode: false
     })
     .its('status');
 
