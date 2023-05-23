@@ -5,6 +5,7 @@ import { type ComputedRef, type Ref } from 'vue';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type TokenChains, isTokenChain } from '@/types/blockchain/chains';
+import { type BlockchainAssetBalances } from '@/types/blockchain/balances';
 import {
   type EthDetectedTokensInfo,
   type EvmTokensRecord
@@ -55,6 +56,29 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
         ...data
       }
     });
+  };
+
+  /**
+   * Temporary function to update detected token count on balance refresh
+   *
+   * @param {TokenChains} chain
+   * @param {BlockchainAssetBalances} chainValues
+   */
+  const updateDetectedTokens = (
+    chain: TokenChains,
+    chainValues: BlockchainAssetBalances
+  ) => {
+    const lastUpdateTimestamp = Date.now() / 1000;
+    const data: EvmTokensRecord = {};
+    for (const address in chainValues) {
+      const { assets } = chainValues[address];
+      const tokens = Object.keys(assets).filter(
+        addr => addr !== Blockchain.ETH
+      );
+      data[address] = { tokens, lastUpdateTimestamp };
+    }
+
+    setState(chain, data);
   };
 
   const fetchDetectedTokens = async (
@@ -141,6 +165,8 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
 
   const { isTaskRunning } = useTaskStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
+  const { balances: ethBalances } = storeToRefs(useEthBalancesStore());
+  const { balances: chainBalances } = storeToRefs(useChainBalancesStore());
 
   const isEthDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
     chain: Blockchain.ETH
@@ -166,8 +192,31 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     }
   });
 
+  // todo: this is temporary, to update the detected tokens count
+  // todo: remove when BE updates the endpoint for fetching detected tokens
+  watch(ethBalances, (balances, oldBalances) => {
+    const chain = Blockchain.ETH;
+    const chainValues = get(balances)[chain];
+    // we're only interested on the eth chain changes
+    if (!isEqual(chainValues, get(oldBalances)[chain])) {
+      updateDetectedTokens(chain, chainValues);
+    }
+  });
+
+  // todo: this is temporary, to update the detected tokens count
+  // todo: remove when BE updates the endpoint for fetching detected tokens
+  watch(chainBalances, (balances, oldBalances) => {
+    const chain = Blockchain.OPTIMISM;
+    const chainValues = get(balances)[chain];
+    // we're only interested on the optimism chain changes
+    if (!isEqual(chainValues, get(oldBalances)[chain])) {
+      updateDetectedTokens(chain, chainValues);
+    }
+  });
+
   return {
     shouldRefreshBalances,
+    updateDetectedTokens,
     fetchDetected,
     fetchDetectedTokens,
     getEthDetectedTokensInfo
