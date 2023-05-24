@@ -47,33 +47,34 @@ def assert_token_entry_exists_in_result(
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('start_with_logged_in_user', [False])
+# @pytest.mark.parametrize('start_with_logged_in_user', [False])
 @pytest.mark.parametrize('generatable_user_ethereum_tokens', [True])
 @pytest.mark.parametrize('user_ethereum_tokens', [create_initial_globaldb_test_tokens])
 def test_query_user_tokens(rotkehlchen_api_server):
     """Test that using the query user ethereum tokens endpoint works"""
     expected_tokens = create_initial_expected_globaldb_test_tokens()
     # Test querying by address
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
         json={'address': user_token_address1, 'evm_chain': ChainID.ETHEREUM.to_name()},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_response_with_result(response)['entries'][0]
     expected_result = expected_tokens[0].to_dict()
     expected_result['identifier'] = ethaddress_to_identifier(user_token_address1)
     assert result == expected_result
 
     # Test querying all
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
+        json={'asset_type': 'evm token'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_response_with_result(response)['entries']
     expected_result = [x.to_dict() for x in expected_tokens]
     assert_token_entry_exists_in_result(result, expected_result)
     # This check is to make sure the sqlite query works correctly and queries only for tokens
@@ -81,18 +82,15 @@ def test_query_user_tokens(rotkehlchen_api_server):
 
     # test that querying an unknown address for a token is properly handled
     unknown_address = make_evm_address()
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
         json={'address': unknown_address, 'evm_chain': ChainID.ETHEREUM.to_name()},
     )
-    assert_error_response(
-        response=response,
-        contained_in_msg=f'Custom token with address {unknown_address} and chain ethereum not found',  # noqa: E501
-        status_code=HTTPStatus.NOT_FOUND,
-    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) == 0
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -105,25 +103,25 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     expected_tokens = create_initial_expected_globaldb_test_tokens()
     serialized_token = USER_TOKEN3.to_dict()
     del serialized_token['identifier']
-    del serialized_token['asset_type']
     del serialized_token['forked']
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={'token': serialized_token},
+        json=serialized_token,
     )
     result = assert_proper_response_with_result(response)
     assert result == {'identifier': USER_TOKEN3.identifier}
 
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
+        json={'asset_type': 'evm token'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_response_with_result(response)['entries']
     expected_tokens = expected_tokens.copy() + [
         USER_TOKEN3,
         EvmToken.initialize(
@@ -138,14 +136,13 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     # test that adding an already existing address is handled properly
     serialized_token = initial_tokens[1].to_dict()
     del serialized_token['identifier']
-    del serialized_token['asset_type']
     del serialized_token['forked']
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={'token': serialized_token},
+        json=serialized_token,
     )
     expected_msg = (
         f'Ethereum token with address {initial_tokens[1].evm_address} already '
@@ -185,14 +182,13 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     )
     serialized_token = bad_token.to_dict()
     del serialized_token['identifier']
-    del serialized_token['asset_type']
     del serialized_token['forked']
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={'token': serialized_token},
+        json=serialized_token,
     )
     expected_msg = (
         f'The sum of underlying token weights for {bad_token.evm_address} is '
@@ -218,14 +214,13 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     )
     serialized_token = bad_token.to_dict()
     del serialized_token['identifier']
-    del serialized_token['asset_type']
     del serialized_token['forked']
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={'token': serialized_token},
+        json=serialized_token,
     )
     expected_msg = (
         f'The sum of underlying token weights for {bad_token.evm_address} is '
@@ -248,24 +243,24 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     )
     serialized_bad_token = bad_token.to_dict()
     del serialized_bad_token['identifier']
-    del serialized_bad_token['asset_type']
     del serialized_bad_token['forked']
     serialized_bad_token['underlying_tokens'] = []
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={'token': serialized_bad_token},
+        json=serialized_bad_token,
     )
     assert_error_response(
         response=response,
-        contained_in_msg='{"token": {"underlying_tokens": ["List cant be empty"]}}',
+        contained_in_msg='{"underlying_tokens": ["List cant be empty"]}',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # test that adding invalid coingecko fails
     bad_identifier = 'INVALIDID'
     bad_token = {
+        'asset_type': 'evm token',
         'address': make_evm_address(),
         'evm_chain': 'ethereum',
         'token_kind': 'erc20',
@@ -277,9 +272,9 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={'token': bad_token},
+        json=bad_token,
     )
     assert_error_response(
         response=response,
@@ -292,9 +287,9 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={'token': bad_token},
+        json=bad_token,
     )
     assert_error_response(
         response=response,
@@ -312,7 +307,6 @@ def test_editing_user_tokens(rotkehlchen_api_server):
     expected_tokens = create_initial_expected_globaldb_test_tokens()
     new_token1 = expected_tokens[0].to_dict()
     del new_token1['identifier']
-    del new_token1['asset_type']
     del new_token1['forked']
     new_name = 'Edited token'
     new_symbol = 'ESMBL'
@@ -325,21 +319,20 @@ def test_editing_user_tokens(rotkehlchen_api_server):
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={'token': new_token1},
+        json=new_token1,
     )
-    result = assert_proper_response_with_result(response)
-    token0_id = ethaddress_to_identifier(expected_tokens[0].evm_address)
-    assert result == {'identifier': token0_id}
+    result = assert_proper_response(response)
 
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
+        json={'asset_type': 'evm token'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_response_with_result(response)['entries']
     expected_tokens = deepcopy(expected_tokens)
     object.__setattr__(expected_tokens[0], 'name', new_name)
     object.__setattr__(expected_tokens[0], 'symbol', new_symbol)
@@ -351,16 +344,15 @@ def test_editing_user_tokens(rotkehlchen_api_server):
     # test that editing an non existing address is handled properly
     non_existing_token = expected_tokens[0].to_dict()
     del non_existing_token['identifier']
-    del non_existing_token['asset_type']
     del non_existing_token['forked']
     non_existing_address = make_evm_address()
     non_existing_token['address'] = non_existing_address
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={'token': non_existing_token},
+        json=non_existing_token,
     )
     expected_msg = (
         f'Tried to edit non existing ethereum token with '
@@ -379,9 +371,9 @@ def test_editing_user_tokens(rotkehlchen_api_server):
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={'token': bad_token},
+        json=bad_token,
     )
     assert_error_response(
         response=response,
@@ -396,9 +388,9 @@ def test_editing_user_tokens(rotkehlchen_api_server):
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={'token': bad_token},
+        json=bad_token,
     )
     assert_error_response(
         response=response,
@@ -432,20 +424,20 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={'address': initial_tokens[1].evm_address, 'evm_chain': ChainID.ETHEREUM.to_name()},
+        json={'identifier': initial_tokens[1].identifier},
     )
-    result = assert_proper_response_with_result(response)
-    assert result == {'identifier': token1_id}
+    assert_proper_response(response)
 
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
+        json={'asset_type': 'evm token'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_response_with_result(response)['entries']
     expected_tokens = initial_expected_tokens[:-1]
     expected_result = [x.to_dict() for x in expected_tokens]
     assert_token_entry_exists_in_result(result, expected_result)
@@ -454,17 +446,22 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
     assert result == initial_underlying_num, 'check underlying tokens mapping is unchanged'  # noqa: E501
 
     # test that deleting a non existing address is handled properly
-    non_existing_address = make_evm_address()
+    non_existent_address = make_evm_address()
+    non_existent_identifier = evm_address_to_identifier(
+        address=non_existent_address,
+        chain_id=ChainID.ETHEREUM,
+        token_type=EvmTokenKind.ERC20,
+    )
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={'address': non_existing_address, 'evm_chain': ChainID.ETHEREUM.to_name()},
+        json={'identifier': non_existent_identifier},
     )
     expected_msg = (
-        f'Tried to delete EVM token with address {non_existing_address} '
-        f'at chain ethereum but it was not found in the DB'
+        f'Tried to delete asset with identifier {non_existent_identifier} '
+        f'but it was not found in the DB'
     )
     assert_error_response(
         response=response,
@@ -477,22 +474,26 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={'address': underlying_address1, 'evm_chain': ChainID.ETHEREUM.to_name()},
+        json={'identifier': evm_address_to_identifier(
+            address=underlying_address1,
+            chain_id=ChainID.ETHEREUM,
+            token_type=EvmTokenKind.ERC20,
+        )},
     )
     assert_proper_response(response)
 
     # Check that the initial token of the test has MKR as swapped for token
     # this is just a sanity check as the fixture initialization should take care of it
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
         json={'address': initial_tokens[0].evm_address, 'evm_chain': ChainID.ETHEREUM.to_name()},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_response_with_result(response)['entries'][0]
     assert result['swapped_for'] == A_MKR.identifier
 
     # test that trying to delete a token (MKR) that is used as swapped_for
@@ -500,12 +501,9 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={
-            'address': A_MKR.resolve_to_evm_token().evm_address,
-            'evm_chain': ChainID.ETHEREUM.to_name(),
-        },
+        json={'identifier': A_MKR.identifier},
     )
     assert_proper_response(response)
     # Check that with the MKR deletion `swapped_for` was set to null
@@ -516,20 +514,20 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={'address': initial_tokens[0].evm_address, 'evm_chain': ChainID.ETHEREUM.to_name()},
+        json={'identifier': initial_tokens[0].identifier},
     )
-    result = assert_proper_response_with_result(response)
-    assert result == {'identifier': token0_id}
+    assert_proper_response(response)
 
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
+        json={'asset_type': 'evm token'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_response_with_result(response)['entries']
     expected_tokens = initial_expected_tokens[2:-1]
     expected_result = [x.to_dict() for x in expected_tokens]
     assert_token_entry_exists_in_result(result, expected_result)
@@ -568,9 +566,9 @@ def test_user_tokens_delete_guard(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
-        json={'address': expected_tokens[0].evm_address, 'evm_chain': ChainID.ETHEREUM.to_name()},
+        json={'identifier': expected_tokens[0].identifier},
     )
     expected_msg = 'Failed to delete asset with id'
     assert_error_response(
@@ -584,23 +582,22 @@ def test_add_non_ethereum_token(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
         json={
-            'token': {
-                'name': 'Some random name',
-                'symbol': 'XYZ',
-                'cryptocompare': None,
-                'coingecko': None,
-                'started': 1599646888,
-                'swapped_for': None,
-                'address': '0xC88eA7a5df3A7BA59C72393C5b2dc2CE260ff04D',
-                'evm_chain': 'binance',  # important that is not `ethereum` here
-                'token_kind': 'erc20',
-                'decimals': 18,
-                'protocol': 'my-own-protocol',
-                'underlying_tokens': None,
-            },
+            'asset_type': 'evm token',
+            'name': 'Some random name',
+            'symbol': 'XYZ',
+            'cryptocompare': None,
+            'coingecko': None,
+            'started': 1599646888,
+            'swapped_for': None,
+            'address': '0xC88eA7a5df3A7BA59C72393C5b2dc2CE260ff04D',
+            'evm_chain': 'binance',  # important that is not `ethereum` here
+            'token_kind': 'erc20',
+            'decimals': 18,
+            'protocol': 'my-own-protocol',
+            'underlying_tokens': None,
         },
     )
     identifier = assert_proper_response_with_result(response)['identifier']
@@ -629,31 +626,30 @@ def test_adding_evm_token_with_underlying_token(rotkehlchen_api_server):
         token_type=EvmTokenKind.ERC20,
     )
     payload = {
-        'token': {
-            'address': token_address,
-            'name': 'my balancer token',
-            'symbol': 'BPT',
-            'decimals': 18,
-            'coingecko': 'blackpool-token',
-            'cryptocompare': '',
-            'underlying_tokens': [
-                {
-                    'address': '0xB2FdD60AD80ca7bA89B9BAb3b5336c2601C020b4',
-                    'token_kind': 'erc20',
-                    'weight': '50',
-                },
-                {
-                    'address': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-                    'token_kind': 'erc20',
-                    'weight': '50',
-                },
-            ],
-            'evm_chain': 'ethereum',
-            'token_kind': 'erc20',
-            'protocol': 'balancer',
-            'swapped_for': swapped_for,
-            'started': 10,
-        },
+        'asset_type': 'evm token',
+        'address': token_address,
+        'name': 'my balancer token',
+        'symbol': 'BPT',
+        'decimals': 18,
+        'coingecko': 'blackpool-token',
+        'cryptocompare': '',
+        'underlying_tokens': [
+            {
+                'address': '0xB2FdD60AD80ca7bA89B9BAb3b5336c2601C020b4',
+                'token_kind': 'erc20',
+                'weight': '50',
+            },
+            {
+                'address': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+                'token_kind': 'erc20',
+                'weight': '50',
+            },
+        ],
+        'evm_chain': 'ethereum',
+        'token_kind': 'erc20',
+        'protocol': 'balancer',
+        'swapped_for': swapped_for,
+        'started': 10,
     }
     # also add a token with the similar name to test pagination
     new_token_address = make_evm_address()
@@ -682,7 +678,7 @@ def test_adding_evm_token_with_underlying_token(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'ethereumassetsresource',
+            'allassetsresource',
         ),
         json=payload,
     )
@@ -714,7 +710,7 @@ def test_adding_evm_token_with_underlying_token(rotkehlchen_api_server):
     expected_result = [
         {
             'identifier': token_identifier,
-            'type': 'evm token',
+            'asset_type': 'evm token',
             'name': 'my balancer token',
             'address': token_address,
             'evm_chain': 'ethereum',

@@ -67,7 +67,6 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.schemas import EvmTokenSchema, _validate_single_oracle_id
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     DEFAULT_ADDRESS_NAME_PRIORITY,
@@ -80,7 +79,6 @@ from rotkehlchen.types import (
     AddressbookType,
     AssetMovementCategory,
     BTCAddress,
-    ChainID,
     ChecksumEvmAddress,
     CostBasisMethod,
     ExchangeLocationID,
@@ -134,8 +132,6 @@ from .types import EvmPendingTransactionDecodingApiData, IncludeExcludeFilterDat
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.externalapis.coingecko import Coingecko
-    from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -208,11 +204,6 @@ class DBOrderBySchema(Schema):
                 message="order_by_attributes and ascending don't have the same length",
                 field_name='order_by_attributes',
             )
-
-
-class OptionalEthereumAddressSchema(Schema):
-    address = EvmAddressField(required=False, load_default=None)
-    evm_chain = EvmChainNameField(required=False, load_default=ChainID.ETHEREUM)
 
 
 class RequiredEvmAddressOptionalChainSchema(Schema):
@@ -2090,42 +2081,6 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
 
 class AssetsMappingSchema(Schema):
     identifiers = DelimitedOrNormalList(fields.String(required=True), required=True)
-
-
-class ModifyEvmTokenSchema(Schema):
-    token = fields.Nested(EvmTokenSchema, required=True)
-
-    def __init__(
-            self,
-            coingecko: 'Coingecko',
-            cryptocompare: 'Cryptocompare',
-            **kwargs: Any,
-    ) -> None:
-        super().__init__(**kwargs)
-        token: fields.Nested = self.declared_fields['token']  # type: ignore
-        token.schema.coingecko_obj = coingecko
-        token.schema.cryptocompare_obj = cryptocompare
-
-    @validates_schema
-    def validate_modify_ethereum_token_schema(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        # Not the best way to do it. Need to manually validate, coingecko/cryptocompare id here
-        token: fields.Nested = self.declared_fields['token']  # type: ignore
-        serialized_token = data['token'].to_dict()
-        serialized_token.pop('identifier')
-        _validate_single_oracle_id(
-            data=serialized_token,
-            oracle_name='coingecko',
-            oracle_obj=token.schema.coingecko_obj,
-        )
-        _validate_single_oracle_id(
-            data=serialized_token,
-            oracle_name='cryptocompare',
-            oracle_obj=token.schema.cryptocompare_obj,
-        )
 
 
 class AssetsReplaceSchema(Schema):

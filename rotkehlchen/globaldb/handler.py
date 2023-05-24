@@ -357,7 +357,7 @@ class GlobalDBHandler():
                 asset_type = AssetType.deserialize_from_db(entry[1])
                 data = {
                     'identifier': entry[0],
-                    'type': str(asset_type),
+                    'asset_type': str(asset_type),
                     'name': entry[4],
                 }
                 # for evm tokens and crypto assets
@@ -1032,7 +1032,8 @@ class GlobalDBHandler():
             ) from e
 
         if asset.is_evm_token():
-            GlobalDBHandler().edit_evm_token(cast(EvmToken, asset))
+            GlobalDBHandler().edit_evm_token(asset)  # type: ignore[arg-type]  # It's evm token as guaranteed by the if  # noqa: E501
+            return
 
         details_update_query = 'UPDATE common_asset_details SET symbol=?, coingecko=?, cryptocompare=?'  # noqa: E501
         details_update_bindings: tuple = (asset.symbol, asset.coingecko, asset.cryptocompare)

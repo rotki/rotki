@@ -283,7 +283,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert 'entries_total' in result
     assert 'entries_limit' in result
     for entry in result['entries']:
-        assert entry['type'] == 'fiat'
+        assert entry['asset_type'] == 'fiat'
     assert_asset_result_order(data=result['entries'], is_ascending=True, order_field='name')
 
     # use a different filter
@@ -307,7 +307,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert 'entries_limit' in result
     for entry in result['entries']:
         assert 'uniswap' in entry['name'].lower()
-        if entry['type'] == AssetType.EVM_TOKEN.serialize():
+        if entry['asset_type'] == AssetType.EVM_TOKEN.serialize():
             assert entry['evm_chain'] in [x.to_name() for x in ChainID]
     assert_asset_result_order(data=result['entries'], is_ascending=False, order_field='symbol')
 
@@ -341,7 +341,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert 'entries_total' in result
     assert 'entries_limit' in result
     for entry in result['entries']:
-        assert entry['type'] == 'fiat'
+        assert entry['asset_type'] == 'fiat'
         assert entry['symbol'] != A_USD.resolve_to_asset_with_symbol().symbol and entry['symbol'] != A_EUR.resolve_to_asset_with_symbol().symbol  # noqa: E501
     assert_asset_result_order(data=result['entries'], is_ascending=True, order_field='name')
 
@@ -396,7 +396,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries'][0]['identifier'] == custom_asset_id
-    assert result['entries'][0]['type'] == 'custom asset'
+    assert result['entries'][0]['asset_type'] == 'custom asset'
 
     # filter by name & symbol
     response = requests.post(
@@ -419,7 +419,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     for entry in result['entries']:
         assert 'uniswap' in entry['name'].casefold()
         assert 'UNI' in entry['symbol']
-        if entry['type'] == AssetType.EVM_TOKEN.serialize():
+        if entry['asset_type'] == AssetType.EVM_TOKEN.serialize():
             assert entry['evm_chain'] in [x.to_name() for x in ChainID]
 
     # check that providing multiple order_by_attributes fails
@@ -453,7 +453,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert 'address' in result['entries'][0]
     assert 'decimals' in result['entries'][0]
     assert result['entries'][0]['evm_chain'] == 'ethereum'
-    assert result['entries'][0]['type'] == AssetType.EVM_TOKEN.serialize()
+    assert result['entries'][0]['asset_type'] == AssetType.EVM_TOKEN.serialize()
 
     # ask for a crypto asset and a fiat asset (test multiple asset query)
     response = requests.post(
