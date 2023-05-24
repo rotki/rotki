@@ -2857,6 +2857,12 @@ class EvmCounterpartiesResource(BaseMethodView):
         return self.rest_api.get_evm_counterparties_details()
 
 
+class EvmProductsResource(BaseMethodView):
+
+    def get(self) -> Response:
+        return self.rest_api.get_evm_products()
+
+
 class LocationResource(BaseMethodView):
 
     def get(self) -> Response:

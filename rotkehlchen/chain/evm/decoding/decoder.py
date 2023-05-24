@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Protocol, Union
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.accounting.structures.types import (
     ActionType,
     HistoryEventSubType,
@@ -164,6 +165,8 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         self.decoders: dict[str, 'DecoderInterface'] = {}
         # store the mapping of possible counterparties to the allowed types and subtypes in events
         self.events_types_tuples: DecoderEventMappingType = {}
+        # store the mapping of possible counterparties to their evm products
+        self.possible_products: dict[str, list[EvmProduct]] = {}
         # Recursively check all submodules to get all decoder address mappings and rules
         rules = self._recursively_initialize_decoders(self.chain_modules_root)
         self.rules += rules
@@ -236,6 +239,9 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                                 b=new_events,
                                 op=lambda a, b: a | b,
                             )
+                    # for the products shouldn't be any conflict. If we find any we can update
+                    # this code
+                    self.possible_products.update(self.decoders[class_name].possible_products())
 
             if is_pkg:
                 recursive_results = self._recursively_initialize_decoders(full_name)

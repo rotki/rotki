@@ -1048,6 +1048,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             tx_hashes: Optional[list[EVMTxHash]] = None,
             counterparties: Optional[list[str]] = None,
             products: Optional[list[EvmProduct]] = None,
+            addresses: Optional[list[ChecksumEvmAddress]] = None,
     ) -> 'EvmEventFilterQuery':
         if entry_types is None:
             entry_type_values = [HistoryBaseEntryType.EVM_EVENT]
@@ -1092,7 +1093,15 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             filter_query.filters.append(DBMultiBytesFilter(
                 and_op=True,
                 column='tx_hash',
-                values=tx_hashes,  # type: ignore  # EVMTxHash is equal to bytes
+                values=cast(list[bytes], tx_hashes),  # EVMTxHash is equal to bytes
+                operator='IN',
+            ))
+
+        if addresses is not None:
+            filter_query.filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='address',
+                values=cast(list[str], addresses),  # ChecksumEvmAddress is equal to str
                 operator='IN',
             ))
 

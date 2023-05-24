@@ -600,6 +600,7 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
     tx_hashes = DelimitedOrNormalList(EVMTransactionHashField(), load_default=None)
     counterparties = DelimitedOrNormalList(fields.String(), load_default=None)
     products = DelimitedOrNormalList(SerializableEnumField(enum_class=EvmProduct), load_default=None)  # noqa: E501
+    addresses = DelimitedOrNormalList(EvmAddressField(), load_default=None)
 
     # EthStakingEvent only
     validator_indices = DelimitedOrNormalList(fields.Integer(), load_default=None)
@@ -631,7 +632,7 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
             **_kwargs: Any,
     ) -> dict[str, Any]:
         should_query_eth_staking_event = data['validator_indices'] is not None
-        should_query_evm_event = any(data[x] is not None for x in ('products', 'counterparties', 'tx_hashes'))  # noqa: E501
+        should_query_evm_event = any(data[x] is not None for x in ('products', 'counterparties', 'tx_hashes', 'addresses'))  # noqa: E501
         counterparties = data['counterparties']
         entry_types = data['entry_types']
         if counterparties is not None and CPT_ETH2 in counterparties:
@@ -690,6 +691,7 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
                 **common_arguments,
                 tx_hashes=data['tx_hashes'],
                 products=data['products'],
+                addresses=data['addresses'],
                 counterparties=counterparties,
             )
         elif should_query_eth_staking_event:

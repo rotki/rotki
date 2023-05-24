@@ -8,7 +8,10 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
+from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
+from rotkehlchen.chain.ethereum.modules.convex.constants import CPT_CONVEX
+from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
 from rotkehlchen.constants.assets import A_ETH, A_POLYGON_POS_MATIC
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.fval import FVal
@@ -434,6 +437,7 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges):
     Test different mappings and information that we provide for rendering events information
     - Test that the structure for types mappings is correctly generated
     - Test that the valid locations are correctly provided to the frontend
+    - Test the the products are correctly returned
     """
     response = requests.get(
         api_url_for(
@@ -466,3 +470,14 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges):
     assert set(result['locations'].keys()) == valid_locations
     for detail in result['locations'].values():
         assert 'icon' in detail or 'image' in detail
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            'evmproductsresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['mappings'][CPT_CONVEX] == [EvmProduct.GAUGE.serialize(), EvmProduct.STAKING.serialize()]  # noqa: E501
+    assert result['mappings'][CPT_CURVE] == [EvmProduct.GAUGE.serialize()]
+    assert result['products'] == [product.serialize() for product in EvmProduct]
