@@ -26,7 +26,6 @@ import {
   type TimedAssetBalances,
   type TimedBalances
 } from '../statistics';
-import type VueI18n from 'vue-i18n';
 
 export interface PremiumInterface {
   readonly useHostComponents: boolean;
@@ -131,8 +130,19 @@ export interface SettingsApi {
   themes(): Themes;
   user: UserSettingsApi;
   i18n: {
-    t: typeof VueI18n.prototype.t;
-    tc: typeof VueI18n.prototype.tc;
+    t: (
+      key: string,
+      values?: Record<string, unknown>,
+      choice?: number
+    ) => string;
+    /**
+     * @deprecated
+     */
+    tc: (
+      key: string,
+      choice?: number,
+      values?: Record<string, unknown>
+    ) => string;
   };
 }
 

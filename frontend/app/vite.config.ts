@@ -84,7 +84,6 @@ export default defineConfig({
         '@vueuse/core',
         '@vueuse/math',
         'pinia',
-        { 'vue-i18n-composable': ['useI18n'] },
         { '@vueuse/shared': ['get', 'set'] },
         {
           'vue-router/composables': [
