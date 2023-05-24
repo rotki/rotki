@@ -8,7 +8,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirerWithDSProxy
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ class HasDSProxy(EthereumModule):
 
     def __init__(
             self,
-            ethereum_inquirer: 'EvmNodeInquirer',
+            ethereum_inquirer: 'EvmNodeInquirerWithDSProxy',
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,

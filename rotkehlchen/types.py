@@ -120,6 +120,7 @@ class ExternalService(SerializableEnumNameMixin):
     OPENSEA = 4
     COVALENT = 5
     OPTIMISM_ETHERSCAN = 6
+    POLYGON_POS_ETHERSCAN = 7
 
 
 class ExternalServiceApiCredentials(NamedTuple):
@@ -212,7 +213,7 @@ class ChainID(Enum):
     OPTIMISM = 10
     BINANCE = 56
     GNOSIS = 100
-    MATIC = 137
+    POLYGON_POS = 137
     FANTOM = 250
     ARBITRUM = 42161
     AVALANCHE = 43114
@@ -259,7 +260,7 @@ class ChainID(Enum):
         return CHAINID_TO_SUPPORTED_BLOCKCHAIN[self]
 
 
-SUPPORTED_CHAIN_IDS = Literal[ChainID.ETHEREUM, ChainID.OPTIMISM]
+SUPPORTED_CHAIN_IDS = Literal[ChainID.ETHEREUM, ChainID.OPTIMISM, ChainID.POLYGON_POS]
 
 
 class EvmTransaction(NamedTuple):
@@ -394,6 +395,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     AVALANCHE = 'AVAX'
     POLKADOT = 'DOT'
     OPTIMISM = 'OPTIMISM'
+    POLYGON_POS = 'POLYGON_POS'
 
     def __str__(self) -> str:
         if self == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
@@ -455,6 +457,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
 EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
     SupportedBlockchain.ETHEREUM,
     SupportedBlockchain.OPTIMISM,
+    SupportedBlockchain.POLYGON_POS,
 ]
 
 EVM_CHAINS_WITH_TRANSACTIONS: tuple[EVM_CHAINS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAINS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
@@ -462,6 +465,7 @@ EVM_CHAINS_WITH_TRANSACTIONS: tuple[EVM_CHAINS_WITH_TRANSACTIONS_TYPE, ...] = ty
 EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE = Literal[
     ChainID.ETHEREUM,
     ChainID.OPTIMISM,
+    ChainID.POLYGON_POS,
 ]
 
 EVM_CHAIN_IDS_WITH_TRANSACTIONS: tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
@@ -470,6 +474,7 @@ SUPPORTED_EVM_CHAINS = Literal[
     SupportedBlockchain.ETHEREUM,
     SupportedBlockchain.OPTIMISM,
     SupportedBlockchain.AVALANCHE,
+    SupportedBlockchain.POLYGON_POS,
 ]
 
 SUPPORTED_NON_BITCOIN_CHAINS = Literal[
@@ -479,6 +484,7 @@ SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.AVALANCHE,
     SupportedBlockchain.POLKADOT,
     SupportedBlockchain.OPTIMISM,
+    SupportedBlockchain.POLYGON_POS,
 ]
 
 SUPPORTED_BITCOIN_CHAINS = Literal[
@@ -495,12 +501,22 @@ SUPPORTED_BLOCKCHAIN_TO_CHAINID = {
     SupportedBlockchain.ETHEREUM: ChainID.ETHEREUM,
     SupportedBlockchain.OPTIMISM: ChainID.OPTIMISM,
     SupportedBlockchain.AVALANCHE: ChainID.AVALANCHE,
+    SupportedBlockchain.POLYGON_POS: ChainID.POLYGON_POS,
 }
 CHAINID_TO_SUPPORTED_BLOCKCHAIN = {
     value: key
     for key, value in SUPPORTED_BLOCKCHAIN_TO_CHAINID.items()
 }
 NON_EVM_CHAINS = set(SupportedBlockchain) - set(SUPPORTED_BLOCKCHAIN_TO_CHAINID.keys())
+
+CHAINS_WITH_CHAIN_MANAGER = Literal[
+    SupportedBlockchain.ETHEREUM,
+    SupportedBlockchain.OPTIMISM,
+    SupportedBlockchain.POLYGON_POS,
+    SupportedBlockchain.AVALANCHE,
+    SupportedBlockchain.POLKADOT,
+    SupportedBlockchain.KUSAMA,
+]
 
 
 class TradeType(DBCharEnumMixIn):
@@ -575,13 +591,17 @@ class Location(DBCharEnumMixIn):
     OKX = 37
     ETHEREUM = 38  # on-chain ethereum events
     OPTIMISM = 39  # on-chain optimism events
+    POLYGON_POS = 40  # on-chain Polygon POS events
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'Location':
         if chain_id == ChainID.ETHEREUM:
             return Location.ETHEREUM
+
+        if chain_id == ChainID.OPTIMISM:
+            return Location.OPTIMISM
         # else
-        return Location.OPTIMISM
+        return Location.POLYGON_POS
 
     def to_chain_id(self) -> int:
         """EVMLocation to chain id
@@ -591,11 +611,13 @@ class Location(DBCharEnumMixIn):
         assert self in EVM_LOCATIONS
         if self == Location.ETHEREUM:
             return 1
-        assert self == Location.OPTIMISM, 'should have only been optimism here'
-        return 10
+        if self == Location.OPTIMISM:
+            return 10
+        assert self == Location.POLYGON_POS, 'should have only been polygon pos here'
+        return 137
 
 
-EVM_LOCATIONS_TYPE_ = Literal[Location.ETHEREUM, Location.OPTIMISM]
+EVM_LOCATIONS_TYPE_ = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS]
 EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE_, ...] = typing.get_args(EVM_LOCATIONS_TYPE_)
 
 

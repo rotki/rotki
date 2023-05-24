@@ -257,6 +257,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server):
         'ETH': [common_account, contract_account],
         'AVAX': [common_account],
         'OPTIMISM': [common_account],
+        'POLYGON_POS': [common_account],
     }
 
     # Now get accounts to make sure they are all input correctly

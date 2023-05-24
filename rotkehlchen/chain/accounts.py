@@ -17,6 +17,7 @@ from rotkehlchen.types import (
 class BlockchainAccounts:
     eth: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
     optimism: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
+    polygon_pos: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
     btc: tuple[BTCAddress, ...] = field(default_factory=tuple)
     bch: tuple[BTCAddress, ...] = field(default_factory=tuple)
     ksm: tuple[SubstrateAddress, ...] = field(default_factory=tuple)

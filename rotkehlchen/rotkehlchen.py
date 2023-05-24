@@ -34,6 +34,8 @@ from rotkehlchen.chain.evm.nodes import populate_rpc_nodes_in_database
 from rotkehlchen.chain.optimism.accountant import OptimismAccountingAggregator
 from rotkehlchen.chain.optimism.manager import OptimismManager
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
+from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
+from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODES_TO_CONNECT_AT_START,
@@ -361,6 +363,14 @@ class Rotkehlchen():
             connect_at_start=optimism_nodes,
         )
         optimism_manager = OptimismManager(optimism_inquirer)
+        # POLYGON_TODO: populate polygon nodes and update default nodes
+        polygon_pos_nodes = self.data.db.get_rpc_nodes(blockchain=SupportedBlockchain.POLYGON_POS, only_active=True)  # noqa: E501
+        polygon_pos_inquirer = PolygonPOSInquirer(
+            greenlet_manager=self.greenlet_manager,
+            database=self.data.db,
+            connect_at_start=polygon_pos_nodes,
+        )
+        polygon_pos_manager = PolygonPOSManager(polygon_pos_inquirer)
         kusama_manager = SubstrateManager(
             chain=SupportedBlockchain.KUSAMA,
             msg_aggregator=self.msg_aggregator,
@@ -403,6 +413,7 @@ class Rotkehlchen():
             blockchain_accounts=blockchain_accounts,
             ethereum_manager=ethereum_manager,
             optimism_manager=optimism_manager,
+            polygon_pos_manager=polygon_pos_manager,
             kusama_manager=kusama_manager,
             polkadot_manager=polkadot_manager,
             avalanche_manager=avalanche_manager,
@@ -1086,6 +1097,7 @@ class Rotkehlchen():
                 result['last_balance_save'] = self.data.db.get_last_balance_save_time(cursor)
                 result['connected_eth_nodes'] = [node.name for node in self.chains_aggregator.ethereum.node_inquirer.get_connected_nodes()]  # noqa: E501
                 result['connected_optimism_nodes'] = [node.name for node in self.chains_aggregator.optimism.node_inquirer.get_connected_nodes()]  # noqa: E501
+                result['connected_polygon_pos_nodes'] = [node.name for node in self.chains_aggregator.polygon_pos.node_inquirer.get_connected_nodes()]  # noqa: E501
                 result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_data_upload_ts)  # noqa: E501
         return result
 

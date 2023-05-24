@@ -1,1 +1,1 @@
-from .decoder import EVMTransactionDecoder  # noqa: F401
+from .decoder import EthereumTransactionDecoder  # noqa: F401

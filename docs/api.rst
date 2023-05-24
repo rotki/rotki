@@ -2026,7 +2026,8 @@ Getting all supported chains
                 {"id": "DOT", "name": "polkadot", "type": "substrate"},
                 {"id": "KSM", "name": "kusama", "type": "substrate"},
                 {"id": "BTC", "name": "bitcoin", "type": "bitcoin"},
-                {"id": "BCH", "name": "bitcoin cash", "type": "bitcoin"}
+                {"id": "BCH", "name": "bitcoin cash", "type": "bitcoin"},
+                {"id": "POLYGON_POS", "name": "polygon pos", type: "evm"}
             ]
             "message": ""
         }
@@ -6010,6 +6011,7 @@ Querying periodic data
               "last_balance_save": 1572345881,
               "connected_eth_nodes": ["nodeX", "nodeY"],
               "connected_optimism_nodes": ["nodeW", "nodeZ"],
+              "connected_polygon_pos_nodes": ["nodeA", "nodeB"],
               "last_data_upload_ts": 0
           }
           "message": ""
@@ -12389,6 +12391,14 @@ Event Mappings
               }
             },
             "optimism":{
+              "aave":{
+                "spend":{
+                  "payback debt":"repay",
+                  "liquidate":"liquidate"
+                }
+              }
+            },
+            "polygon pos":{
               "aave":{
                 "spend":{
                   "payback debt":"repay",

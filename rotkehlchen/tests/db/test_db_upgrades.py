@@ -1523,6 +1523,35 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     ).fetchone()[0] == '42'
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
+    """Test upgrading the DB from version 37 to version 38"""
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v37_rotkehlchen.db')
+    db_v37 = _init_db_with_target_version(
+        target_version=37,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
+    )
+    cursor = db_v37.conn.cursor()
+    assert cursor.execute('SELECT MAX(seq) FROM location').fetchone()[0] == 39
+
+    db_v37.logout()
+    # Execute upgrade
+    db = _init_db_with_target_version(
+        target_version=38,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
+    )
+    cursor = db.conn.cursor()
+    assert cursor.execute(  # Check that Polygon POS location was added
+        'SELECT location FROM location WHERE seq=?',
+        (Location.POLYGON_POS.value,),
+    ).fetchone()[0] == Location.POLYGON_POS.serialize_for_db()
+
+
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
     """
     This is a test that we can only do for the last upgrade.
@@ -1533,10 +1562,10 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     this is just to reminds us not to forget to add create table statements.
     """
     msg_aggregator = MessagesAggregator()
-    base_database = 'v35_rotkehlchen.db'
+    base_database = 'v37_rotkehlchen.db'
     _use_prepared_db(user_data_dir, base_database)
     last_db = _init_db_with_target_version(
-        target_version=35,
+        target_version=37,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
@@ -1551,7 +1580,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
 
     # Execute upgrade
     db = _init_db_with_target_version(
-        target_version=36,
+        target_version=38,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
@@ -1568,35 +1597,16 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="view"')
     views_after_creation = {x[0] for x in result}
 
-    removed_tables = {
-        'adex_events',
-        'ethtx_receipt_log_topics',
-        'ethereum_internal_transactions',
-        'ethtx_receipts',
-        'ethereum_transactions',
-        'web3_nodes',
-        'ethtx_address_mappings',
-        'ethtx_receipt_logs',
-        'accounts_details',
-    }
+    removed_tables = set()
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade
     assert missing_tables == removed_tables
     assert missing_views == removed_views
-    assert tables_after_creation - tables_after_upgrade == {'evm_events_info', 'eth_staking_events_info'}  # noqa: E501
+    assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {
-        'evmtx_receipt_log_topics',
-        'evm_internal_transactions',
-        'evmtx_receipts',
-        'evm_transactions',
-        'rpc_nodes',
-        'evmtx_address_mappings',
-        'evmtx_receipt_logs',
-        'evm_accounts_details',
-    }
+    assert new_tables == set()
     new_views = views_after_upgrade - views_before
     assert new_views == set()
 

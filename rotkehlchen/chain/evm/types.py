@@ -1,13 +1,19 @@
 import re
 from dataclasses import dataclass
-from typing import Any, Literal, NamedTuple, Optional
+from typing import Any, NamedTuple, Optional
 
 from eth_typing import HexAddress, HexStr
 from web3 import Web3
 
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChainID, ChecksumEvmAddress, SupportedBlockchain
+from rotkehlchen.types import (
+    CHAINS_WITH_CHAIN_MANAGER,
+    SUPPORTED_CHAIN_IDS,
+    ChainID,
+    ChecksumEvmAddress,
+    SupportedBlockchain,
+)
 
 
 def string_to_evm_address(value: str) -> ChecksumEvmAddress:
@@ -27,7 +33,7 @@ class NodeName(NamedTuple):
     name: str
     endpoint: str
     owned: bool
-    blockchain: Literal[SupportedBlockchain.ETHEREUM, SupportedBlockchain.KUSAMA, SupportedBlockchain.POLKADOT, SupportedBlockchain.AVALANCHE, SupportedBlockchain.OPTIMISM]  # noqa: E501
+    blockchain: CHAINS_WITH_CHAIN_MANAGER
 
     def serialize(self) -> dict[str, Any]:
         return {

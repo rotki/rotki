@@ -9,7 +9,7 @@ import requests
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_ETH, A_POLYGON_POS_MATIC
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -410,6 +410,8 @@ def test_query_supported_chains(rotkehlchen_api_server):
                     assert result_entry['evm_chain_name'] == entry.to_chain_id().to_name()
                 if entry == SupportedBlockchain.OPTIMISM:
                     assert result_entry['native_asset'] == A_ETH.serialize()
+                elif entry == SupportedBlockchain.POLYGON_POS:
+                    assert result_entry['native_asset'] == A_POLYGON_POS_MATIC.serialize()
                 else:
                     assert 'native_asset' not in result_entry
 

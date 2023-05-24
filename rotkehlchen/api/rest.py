@@ -76,7 +76,7 @@ from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import WeightedNode
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_ETH, A_POLYGON_POS_MATIC
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
     FREE_ETH_TX_LIMIT,
@@ -172,6 +172,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
+    EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_LOCATIONS,
     SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_CHAIN_IDS,
@@ -655,6 +656,8 @@ class RestAPI():
             }
             if blockchain == SupportedBlockchain.OPTIMISM:
                 data['native_asset'] = A_ETH.serialize()
+            elif blockchain == SupportedBlockchain.POLYGON_POS:
+                data['native_asset'] = A_POLYGON_POS_MATIC.serialize()
             if blockchain.is_evm() is True:
                 data['evm_chain_name'] = blockchain.to_chain_id().to_name()
             result.append(data)
@@ -4344,8 +4347,8 @@ class RestAPI():
             'exchange_mappings': self.rotkehlchen.exchange_manager.get_exchange_mappings(),
             'accounting_events_icons': ACCOUNTING_EVENTS_ICONS,
             'per_protocol_mappings': {
-                'ethereum': self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.events_types_tuples,  # noqa: E501
-                'optimism': self.rotkehlchen.chains_aggregator.optimism.transactions_decoder.events_types_tuples,  # noqa: E501
+                chain_id.to_name(): self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id).transactions_decoder.events_types_tuples  # noqa: E501
+                for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
             },
         }
         return api_response(
@@ -4360,9 +4363,14 @@ class RestAPI():
         """
         ethereum_counterparties = self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.rules.all_counterparties  # noqa: E501
         optimism_counterparties = self.rotkehlchen.chains_aggregator.optimism.transactions_decoder.rules.all_counterparties  # noqa: E501
+        polygon_pos_counterparties = self.rotkehlchen.chains_aggregator.polygon_pos.transactions_decoder.rules.all_counterparties  # noqa: E501
         return api_response(
             result=process_result(_wrap_in_ok_result(
-                list(ethereum_counterparties | optimism_counterparties),
+                list(
+                    ethereum_counterparties |
+                    optimism_counterparties |
+                    polygon_pos_counterparties,
+                ),
             )),
             status_code=HTTPStatus.OK,
         )
