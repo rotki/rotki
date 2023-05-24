@@ -270,7 +270,12 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         new event or actions need to be propagated.
         """
         for rule in self.rules.event_rules:
-            decoding_output = rule(token=token, tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, action_items=action_items, all_logs=all_logs)  # noqa: E501
+            try:
+                decoding_output = rule(token=token, tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, action_items=action_items, all_logs=all_logs)  # noqa: E501
+            except (DeserializationError, IndexError) as e:
+                self.msg_aggregator.add_error(f'Decoding tx log with index {tx_log.log_index} of {transaction.tx_hash.hex()} through {rule} failed due to {e!s}. Skipping rule.')  # noqa: E501
+                continue
+
             if decoding_output.event is not None or len(decoding_output.action_items) > 0:
                 return decoding_output
 
@@ -310,7 +315,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             else:
                 result = method(context, *mapping_result[1:])
         except (DeserializationError, ConversionError, UnknownAsset) as e:
-            log.debug(
+            self.msg_aggregator.add_error(
                 f'Decoding tx log with index {tx_log.log_index} of transaction '
                 f'{transaction.tx_hash.hex()} through {method.__name__} failed due to {e!s}')
             return DEFAULT_DECODING_OUTPUT
@@ -347,7 +352,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         # Sort post decoding rules by priority (which is the first element of the tuple)
         rules.sort(key=lambda x: x[0])
         for _, rule in rules:
-            decoded_events = rule(transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
+            try:
+                decoded_events = rule(transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
+            except (DeserializationError, IndexError) as e:
+                self.msg_aggregator.add_error(f'Applying post-decoding rule {rule} for {transaction.tx_hash.hex()} failed due to {e!s}. Skipping rule.')  # noqa: E501
 
         assert self._check_correct_types(decoded_events)
         return decoded_events
